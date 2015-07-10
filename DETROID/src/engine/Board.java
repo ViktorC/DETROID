@@ -2390,16 +2390,22 @@ public class Board {
 			return this.pawnBlackCapture & allWhitePieces;
 		}
 		public long getWhitePawnAdvances(long allEmpty) {
-			return this.pawnWhiteAdvance & allEmpty;
+			if (this.sqrInd > 15)
+				return this.pawnWhiteAdvance & allEmpty;
+			long firstBlocker = BitOperations.getLSBit(this.pawnWhiteAdvance & ~allEmpty);
+			return this.pawnWhiteAdvance & (-1 + firstBlocker);
 		}
 		public long getBlackPawnAdvances(long allEmpty) {
-			return this.pawnBlackAdvance & allEmpty;
+			if (this.sqrInd < 48)
+				return this.pawnBlackAdvance & allEmpty;
+			long firstBlocker = BitOperations.getMSBit(this.pawnBlackAdvance & ~allEmpty);
+			return this.pawnBlackAdvance^(this.pawnBlackAdvance & -(firstBlocker << 1));
 		}
 		public long getWhitePawnMoves(long allBlackPieces, long allEmpty) {
-			return (this.pawnWhiteAdvance & allEmpty) | (this.pawnWhiteCapture & allBlackPieces);
+			return this.getWhitePawnAdvances(allEmpty) | this.getWhitePawnCaptures(allBlackPieces);
 		}
 		public long getBlackPawnMoves(long allWhitePieces, long allEmpty) {
-			return (this.pawnBlackAdvance & allEmpty) | (this.pawnBlackCapture & allWhitePieces);
+			return this.getBlackPawnAdvances(allEmpty) | this.getBlackPawnCaptures(allWhitePieces);
 		}
 		public long getWhiteRookMoves(long allNonWhiteOccupied, long allOccupied) {
 			long occupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).rookOccupancyMask & allOccupied;
@@ -3052,7 +3058,7 @@ public class Board {
 			sqrInd = BitOperations.indexOfLSBit(this.whiteKing);
 			straightSliders = this.blackQueens | this.blackRooks;
 			diagonalSliders = this.blackQueens | this.blackBishops;
-			attRayMask = SliderAttackRayMask.getByIndex(sqrInd);
+			attRayMask 		= SliderAttackRayMask.getByIndex(sqrInd);
 			rankPos 		= attRayMask.getRankPos() 			& this.allOccupied;
 			rankNeg 		= attRayMask.getRankNeg() 			& this.allOccupied;
 			filePos 		= attRayMask.getFilePos() 			& this.allOccupied;
@@ -3098,7 +3104,7 @@ public class Board {
 			sqrInd = BitOperations.indexOfLSBit(this.blackKing);
 			straightSliders = this.whiteQueens | this.whiteRooks;
 			diagonalSliders = this.whiteQueens | this.whiteBishops;
-			attRayMask = SliderAttackRayMask.getByIndex(sqrInd);
+			attRayMask		= SliderAttackRayMask.getByIndex(sqrInd);
 			rankPos 		= attRayMask.getRankPos() 			& this.allOccupied;
 			rankNeg 		= attRayMask.getRankNeg() 			& this.allOccupied;
 			filePos 		= attRayMask.getFilePos() 			& this.allOccupied;
@@ -3898,9 +3904,6 @@ public class Board {
 		int square;
 		long fromBit = Square.getBitmapByIndex(from);
 		long toBit	 = Square.getBitmapByIndex(to);
-		System.out.println("type: " + type);
-		System.out.println("from: " + from + "; to: " + to);
-		System.out.println("moved: " + moved + "; captured: " + captured);
 		switch (type) {
 			case 0: {
 				this.offsetBoard[from]  = 0;
@@ -4009,12 +4012,7 @@ public class Board {
 		}
 		this.setTurn();
 		this.moveList.add(move);
-		this.setMoveIndices();
-		this.setCastlingRights();
-		this.setEnPassantRights();
-		this.setKeys();
-		this.setRepetitions();
-		this.setCheck();
+		
 	}
 	public void unMakeMove() {
 		long move = this.moveList.getData();
@@ -4135,23 +4133,20 @@ public class Board {
 				}
 			}
 		}
-		this.resetKeys();
-		this.resetMoveIndices();
-		this.resetCastlingRights();
-		this.resetEnPassantRights();
-		this.resetCheck();
+		
 		this.moveList.pop();
 	}
 	public long perft(int depth) {
 		LongList moves;
 		long move, leafNodes = 0;
-		if (depth == 0)
+		if (depth == 0) {
+			
 			return 1;
+		}
 		moves = this.generateMoves();
 		while (moves != null) {
 			move = moves.getData();
 			this.makeMove(move);
-			this.printBitboardToConsole();
 			leafNodes += this.perft(depth - 1);
 			this.unMakeMove();
 			moves = moves.getNext();
