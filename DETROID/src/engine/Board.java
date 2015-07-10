@@ -4140,7 +4140,7 @@ public class Board {
 		LongList moves;
 		long move, leafNodes = 0;
 		if (depth == 0) {
-			
+			this.printBitboardToConsole();
 			return 1;
 		}
 		moves = this.generateMoves();
