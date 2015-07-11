@@ -2621,7 +2621,7 @@ public class Board {
 	private Zobrist keyGen = new Zobrist();
 	
 	private long zobristKey;
-	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinet–Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
+	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinetï¿½Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 	
 	private int repetitions = 0;
 	
@@ -2974,7 +2974,7 @@ public class Board {
 		}
 	}
 	public long getAttackers(int sqrInd, boolean byWhite) {
-		long attackers = 0, move;
+		long attackers = 0;
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			attackers  =  this.whiteKing						& dB.getCrudeKingMoves();
@@ -2982,11 +2982,8 @@ public class Board {
 			attackers |=  this.whitePawns 						& dB.getCrudeBlackPawnCaptures();
 			attackers |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
 			attackers |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
-			if (this.offsetBoard[sqrInd] == 12) {
-				move = this.moveList.getData();
-				if ((move >> Move.FROM.shift) == sqrInd + 16)
-					attackers |=  this.whitePawns 				& dB.getCrudeKingMoves() & Rank.getBySquareIndex(sqrInd);
-			}
+			if (this.offsetBoard[sqrInd] == 12 && this.enPassantRights == sqrInd%8)
+				attackers |=  this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4);
 		}
 		else {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
@@ -2995,16 +2992,12 @@ public class Board {
 			attackers |=  this.blackPawns 						& dB.getCrudeWhitePawnCaptures();
 			attackers |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
 			attackers |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
-			if (this.offsetBoard[sqrInd] == 6) {
-				move = this.moveList.getData();
-				if ((move >> Move.FROM.shift) == sqrInd - 16)
-					attackers |=  this.blackPawns 				& dB.getCrudeKingMoves() & Rank.getBySquareIndex(sqrInd);
-			}
+			if (this.offsetBoard[sqrInd] == 6 && this.enPassantRights == sqrInd%8)
+				attackers |=  this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3);
 		}
 		return attackers;
 	}
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
-		long move;
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			if ((this.whiteKing		& dB.getCrudeKingMoves()) != 0)
@@ -3017,12 +3010,9 @@ public class Board {
 				return true;
 			if (((this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied)) != 0)
 				return true;
-			if (this.offsetBoard[sqrInd] == 12) {
-				move = this.moveList.getData();
-				if ((move >>> Move.FROM.shift & Move.FROM.mask) == sqrInd + 16) {
-					if ((this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(5)) != 0);
-						return true;
-				}
+			if (this.offsetBoard[sqrInd] == 12 && this.enPassantRights == sqrInd%8) {
+				if ((this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4)) != 0)
+					return true;
 			}
 		}
 		else {
@@ -3037,12 +3027,9 @@ public class Board {
 				return true;
 			if (((this.blackQueens | this.blackBishops) & dB.getBlackBishopMoves(this.allNonWhiteOccupied, this.allOccupied)) != 0)
 				return true;
-			if (this.offsetBoard[sqrInd] == 6) {
-				move = this.moveList.getData();
-				if ((move >>> Move.FROM.shift & Move.FROM.mask) == sqrInd - 16) {
-					if ((this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3)) != 0);
-						return true;
-				}
+			if (this.offsetBoard[sqrInd] == 6 && this.enPassantRights == sqrInd%8) {
+				if ((this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3)) != 0)
+					return true;
 			}
 		}
 		return false;
