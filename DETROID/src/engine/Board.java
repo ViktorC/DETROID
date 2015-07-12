@@ -4138,48 +4138,6 @@ public class Board {
 		}
 		return leafNodes;
 	}
-	private long perftWithBitboardConsoleOutput(int depth, long lowerLimitNodeNo, long upperLimitNodeNo, long count) {
-		LongList moves;
-		long move;
-		if (depth == 0) {
-			if (count >= lowerLimitNodeNo && count <= upperLimitNodeNo)
-				this.printBitboardToConsole();
-			return 1;
-		}
-		moves = this.generateMoves();
-		while (moves != null) {
-			move = moves.getData();
-			this.makeMove(move);
-			count += this.perftWithBitboardConsoleOutput(depth - 1, lowerLimitNodeNo, upperLimitNodeNo, count);
-			this.unMakeMove();
-			moves = moves.getNext();
-		}
-		return count;
-	}
-	private long perftWithOffsetBoardConsoleOutput(int depth, long lowerLimitNodeNo, long upperLimitNodeNo, long count) {
-		LongList moves;
-		long move;
-		if (depth == 0) {
-			if (count >= lowerLimitNodeNo && count <= upperLimitNodeNo)
-				this.printOffsetBoardToConsole();
-			return 1;
-		}
-		moves = this.generateMoves();
-		while (moves != null) {
-			move = moves.getData();
-			this.makeMove(move);
-			count += this.perftWithOffsetBoardConsoleOutput(depth - 1, lowerLimitNodeNo, upperLimitNodeNo, count);
-			this.unMakeMove();
-			moves = moves.getNext();
-		}
-		return count;
-	}
-	public void perftWithConsoleOutput(int depth, long lowerLimitNodeNo, long upperLimitNodeNo, boolean detailed) {
-		if (detailed)
-			this.perftWithOffsetBoardConsoleOutput(depth, lowerLimitNodeNo, upperLimitNodeNo, 0);
-		else
-			this.perftWithBitboardConsoleOutput(depth, lowerLimitNodeNo, upperLimitNodeNo, 0);
-	}
 	public void printOffsetBoardToConsole() {
 		for (int i = 0; i < 64; i++) {
 			System.out.format("%2d", this.offsetBoard[i]);
