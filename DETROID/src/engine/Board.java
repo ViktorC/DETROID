@@ -4127,7 +4127,7 @@ public class Board {
 		LongList moves;
 		long move, leafNodes = 0;
 		if (depth == 0)
-			return 1;
+		return 1;
 		moves = this.generateMoves();
 		while (moves != null) {
 			move = moves.getData();
@@ -4137,6 +4137,48 @@ public class Board {
 			moves = moves.getNext();
 		}
 		return leafNodes;
+	}
+	private long perftWithBitboardConsoleOutput(int depth, long lowerBound, long upperBound, long count) {
+		LongList moves;
+		long move;
+		if (depth == 0) {
+			if (count >= lowerBound && count <= upperBound)
+				this.printBitboardToConsole();
+			return 1;
+		}
+		moves = this.generateMoves();
+		while (moves != null) {
+			move = moves.getData();
+			this.makeMove(move);
+			count += this.perftWithBitboardConsoleOutput(depth - 1, lowerBound, upperBound, count);
+			this.unMakeMove();
+			moves = moves.getNext();
+		}
+		return count;
+	}
+	private long perftWithOffsetBoardConsoleOutput(int depth, long lowerBound, long upperBound, long count) {
+		LongList moves;
+		long move;
+		if (depth == 0) {
+			if (count >= lowerBound && count <= upperBound)
+				this.printOffsetBoardToConsole();
+			return 1;
+		}
+		moves = this.generateMoves();
+		while (moves != null) {
+			move = moves.getData();
+			this.makeMove(move);
+			count += this.perftWithOffsetBoardConsoleOutput(depth - 1, lowerBound, upperBound, count);
+			this.unMakeMove();
+			moves = moves.getNext();
+		}
+		return count;
+	}
+	public void perftWithConsoleOutput(int depth, long lowerBound, long upperBound, boolean detailed) {
+		if (detailed)
+			this.perftWithOffsetBoardConsoleOutput(depth, lowerBound, upperBound, 0);
+		else
+			this.perftWithBitboardConsoleOutput(depth, lowerBound, upperBound, 0);
 	}
 	public void printOffsetBoardToConsole() {
 		for (int i = 0; i < 64; i++) {
