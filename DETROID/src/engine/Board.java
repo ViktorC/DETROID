@@ -4138,47 +4138,54 @@ public class Board {
 		}
 		return leafNodes;
 	}
-	private long perftWithBitboardConsoleOutput(int depth, long lowerBound, long upperBound, long count) {
+	private long perftWithBitboardConsoleOutput(int depth, long lowerBound, long upperBound, long[] count) {
 		LongList moves;
-		long move;
+		long move, leafNodes = 0;
 		if (depth == 0) {
-			if (count >= lowerBound && count <= upperBound)
+			if (count[0] >= lowerBound && count[0] <= upperBound) {
+				System.out.println(count[0]);
 				this.printBitboardToConsole();
+			}
+			count[0]++;
 			return 1;
 		}
 		moves = this.generateMoves();
 		while (moves != null) {
 			move = moves.getData();
 			this.makeMove(move);
-			count += this.perftWithBitboardConsoleOutput(depth - 1, lowerBound, upperBound, count);
+			leafNodes += this.perftWithBitboardConsoleOutput(depth - 1, lowerBound, upperBound, count);
 			this.unMakeMove();
 			moves = moves.getNext();
 		}
-		return count;
+		return leafNodes;
 	}
-	private long perftWithOffsetBoardConsoleOutput(int depth, long lowerBound, long upperBound, long count) {
+	private long perftWithOffsetBoardConsoleOutput(int depth, long lowerBound, long upperBound, long[] count) {
 		LongList moves;
-		long move;
+		long move, leafNodes = 0;
 		if (depth == 0) {
-			if (count >= lowerBound && count <= upperBound)
+			if (count[0] >= lowerBound && count[0] <= upperBound) {
+				System.out.println(count[0]);
 				this.printOffsetBoardToConsole();
+			}
+			count[0]++;
 			return 1;
 		}
 		moves = this.generateMoves();
 		while (moves != null) {
 			move = moves.getData();
 			this.makeMove(move);
-			count += this.perftWithOffsetBoardConsoleOutput(depth - 1, lowerBound, upperBound, count);
+			leafNodes += this.perftWithOffsetBoardConsoleOutput(depth - 1, lowerBound, upperBound, count);
 			this.unMakeMove();
 			moves = moves.getNext();
 		}
-		return count;
+		return leafNodes;
 	}
 	public void perftWithConsoleOutput(int depth, long lowerBound, long upperBound, boolean detailed) {
+		long[] count = {0};
 		if (detailed)
-			this.perftWithOffsetBoardConsoleOutput(depth, lowerBound, upperBound, 0);
+			this.perftWithOffsetBoardConsoleOutput(depth, lowerBound, upperBound, count);
 		else
-			this.perftWithBitboardConsoleOutput(depth, lowerBound, upperBound, 0);
+			this.perftWithBitboardConsoleOutput(depth, lowerBound, upperBound, count);
 	}
 	public void printOffsetBoardToConsole() {
 		for (int i = 0; i < 64; i++) {
