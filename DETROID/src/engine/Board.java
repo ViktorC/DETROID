@@ -4,8 +4,30 @@ import util.*;
 
 import java.util.Random;
 
+/**A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
+ * on castling and en passant rights, and on the player to move. It uses its own precalculated 'magic' move database to avoid the cost of
+ * computing the possible move sets of sliding pieces on the fly. The functions include:
+ * {@link #generateMoves() generateMoves}
+ * {@link #makeMove(long) makeMove}
+ * {@link #unmakeMove() unmakeMove}
+ * {@link #perft(int) perft}
+ * {@link #perftWithConsoleOutput(int, long, long, boolean) perftWithConsoleOutput}
+ * 
+ * It relies heavily on values hard-coded or computed upon the initialization of the class. These values are always different for each square 
+ * on the board, thus most of them are stored in 64-fold enums with switch statements providing fast access (faster than array access) based
+ * on the index of the square.
+ *  
+ * @author Viktor
+ *
+ */
 public class Board {
 	
+	/**A static class exclusively for bitwise operations. Some of them are implemented in the Java API, but to have a clear idea about
+	 * the costs and to understand the logic, they are re-implemented and provided here.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public final static class BitOperations {
 		
 		final static int[] 		DE_BRUIJN_TABLE 	  	  = { 0,  1, 48,  2, 57, 49, 28,  3,
@@ -37,6 +59,7 @@ public class Board {
 		final static long		BIT_REVERSAL_32_CONST1	  =  0b1111111111111111111111111111111100000000000000000000000000000000L;
 		final static long		BIT_REVERSAL_32_CONST2	  =  0b0000000000000000000000000000000011111111111111111111111111111111L;
 		
+		/**Returns the most significant (leftmost) bit in a long.*/
 		public final static long getMSBit(long bitmap) {
 			bitmap |= (bitmap >> 1);
 			bitmap |= (bitmap >> 2);
@@ -46,21 +69,27 @@ public class Board {
 			bitmap |= (bitmap >> 32);
 			return bitmap - (bitmap >>> 1);
 		}
+		/**Returns a long with the most significant (leftmost) bit in the input parameter reset.*/
 		public final static long resetMSBit(long bitmap) {
 			return bitmap^getMSBit(bitmap);
 		}
+		/**Returns the index of the most significant (leftmost) bit in a long.*/
 		public final static int indexOfMSBit(long bitmap) {
 			return DE_BRUIJN_TABLE[(int)((getMSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
 		}
+		/**Returns the least significant (rightmost) bit in a long.*/
 		public final static long getLSBit(long bitmap) {
 			return bitmap & -bitmap;
 		}
+		/**Returns a long with the least significant (rightmost) bit in the input parameter reset.*/
 		public final static long resetLSBit(long bitmap) {
 			return bitmap & (bitmap - 1);
 		}
+		/**Returns the index of the least significant (rightmost) bit in a long.*/
 		public final static int indexOfLSBit(long bitmap) {
 			return DE_BRUIJN_TABLE[(int)((getLSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
 		}
+		/**Returns a queue of the indexes of all set bits in the input parameter.*/
 		public final static IntQueue serialize(long bitmap) {
 			IntQueue out = new IntQueue();
 			while (bitmap != 0) {
@@ -69,7 +98,9 @@ public class Board {
 			}
 			return out;
 		}
-		//The argument numberOfSetBits is not checked.
+		/**Returns an array of the indexes of all set bits in the input parameter.
+		 * 
+		 * @param numberOfSetBits is not checked*/
 		public final static int[] serialize(long bitmap, int numberOfSetBits) {
 			int[] series = new int[numberOfSetBits];
 			int ind = 0;
@@ -80,12 +111,16 @@ public class Board {
 			}
 			return series;
 		}
+		/**Returns the number of set bits in a long.*/
 		public final static int getCardinality(long bitmap) {
 			bitmap -= ((bitmap >>> 1) & SWAR_POPCOUNT_CONST1);
 			bitmap  = (bitmap & SWAR_POPCOUNT_CONST2) + ((bitmap >>> 2) & SWAR_POPCOUNT_CONST2);
 			bitmap  = (bitmap + (bitmap >>> 4)) & SWAR_POPCOUNT_CONST3;
 		    return (int)((bitmap*SWAR_POPCOUNT_CONSTF) >>> 56);
 		}
+		/**Returns a long with the bits of the input parameter reversed/flipped.
+		 * 
+		 * It is equal to a 180° rotation of the board.*/
 		public final static long reverse(long bitmap) {
 			bitmap = (((bitmap & BIT_REVERSAL_1_CONST1)  >>> 1)  | ((bitmap & BIT_REVERSAL_1_CONST2)  << 1));
 			bitmap = (((bitmap & BIT_REVERSAL_2_CONST1)  >>> 2)  | ((bitmap & BIT_REVERSAL_2_CONST2)  << 2));
@@ -94,38 +129,55 @@ public class Board {
 			bitmap = (((bitmap & BIT_REVERSAL_16_CONST1) >>> 16) | ((bitmap & BIT_REVERSAL_16_CONST2) << 16));
 			return   (( bitmap >>> 32) 							 | ( bitmap << 32));
 		}
+		/**Returns a long with the bytes of the input parameter reversed/flipped.
+		 * 
+		 * It is equal to the 'horizontal' mirroring of the board.*/
 		public final static long reverseBytes(long bitmap) {
 			bitmap = (bitmap & BIT_REVERSAL_32_CONST1) >>> 32 | (bitmap & BIT_REVERSAL_32_CONST2) << 32;
 			bitmap = (bitmap & BIT_REVERSAL_16_CONST1) >>> 16 | (bitmap & BIT_REVERSAL_16_CONST2) << 16;
 			return	 (bitmap & BIT_REVERSAL_8_CONST1)  >>> 8  | (bitmap & BIT_REVERSAL_8_CONST2)  << 8;
 		}
+		/**One square westward shift.*/
 		protected final static long vShiftRight(long bitmap) {
 			return bitmap << 1;
 		}
+		/**One square eastward shift.*/
 		protected final static long vShiftLeft(long bitmap) {
 			return bitmap >>> 1;
 		}
+		/**One square northward shift.*/
 		protected final static long vShiftUp(long bitmap) {
 			return bitmap << 8;
 		}
+		/**One square southward shift.*/
 		protected final static long vShiftDown(long bitmap) {
 			return bitmap >>> 8;
 		}
+		/**One square north-westward shift.*/
 		protected final static long vShiftUpRight(long bitmap) {
 			return bitmap << 9;
 		}
+		/**One square south-westward shift.*/
 		protected final static long vShiftDownRight(long bitmap) {
 			return bitmap >>> 7;
 		}
+		/**One square north-eastward shift.*/
 		protected final static long vShiftUpLeft(long bitmap) {
 			return bitmap << 7;
 		}
+		/**One square south-eastward shift.*/
 		protected final static long vShiftDownLeft(long bitmap) {
 			return bitmap >>> 9;
 		}
 		
 	}
 
+	/**An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
+	 * the respective square's index set.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum Square {
 		
 		A1 (0b0000000000000000000000000000000000000000000000000000000000000001L),
@@ -201,6 +253,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
+		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
 		public final static void printCodeGetByIndex() {
 			int ind = 0;
 			System.out.println("public static Square getByIndex(int sqrInd) {\n" +
@@ -215,6 +268,7 @@ public class Board {
 							"\t}\n" +
 						"}");
 		}
+		/**@return a Square enum.*/
 		public static Square getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:
@@ -349,6 +403,7 @@ public class Board {
 					throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
+		/**Prints the code for the switch statement based {@link #getBitmapByIndex(int) getBitmapByIndex} method.*/
 		public final static void printCodeGetBitmapByIndex() {
 			int ind = 0;
 			System.out.println("public static long getByIndex(int sqrInd) {\n" +
@@ -363,6 +418,7 @@ public class Board {
 							"\t}\n" +
 						"}");
 		}
+		/**@return a long with only the selected square set.*/
 		public static long getBitmapByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:
@@ -499,6 +555,12 @@ public class Board {
 		}
 	}
 	
+	/**An enum type for the 8 ranks/rows of a chess board. Each constant has a field that contains a long with only the byte on the rank's
+	 * index set.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum Rank {
 		
 		R1 (0b0000000000000000000000000000000000000000000000000000000011111111L),
@@ -518,6 +580,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
+		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
 		public final static void printCodeGetByIndex() {
 			int ind = 0;
 			System.out.println("public static long getByIndex(int rnkInd) {\n" +
@@ -532,6 +595,9 @@ public class Board {
 							"\t}\n" +
 						"}");
 		}
+		/**Returns a the numeric representation of a rank of the chess board with only the byte on the rank's index set.
+		 * 
+		 * @param rnkInd the index of the rank*/
 		public static long getByIndex(int rnkInd) {
 			switch(rnkInd) {
 				case 0:
@@ -554,14 +620,28 @@ public class Board {
 					throw new IllegalArgumentException("Invalid rank index.");
 			}
 		}
+		/**Returns a the numeric representation of the rank of the chess board on which the input parameter square lies with only
+		 * the byte on the rank's index set.
+		 * 
+		 * @param sqr a Square enum*/
 		public static long getBySquare(Square sqr) {
 			return getByIndex(sqr.ordinal() >>> 3);
 		}
+		/**Returns a the numeric representation of the rank of the chess board on which the input parameter square lies with only
+		 * the byte on the rank's index set.
+		 * 
+		 * @param sqrInd the index of the square*/
 		public static long getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd >>> 3);
 		}
 	}
 
+	/**An enum type for the 8 files/columns of a chess board. Each constant has a field that contains a long with only the bits falling on the
+	 * file set.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum File {
 		
 		A (0b0000000100000001000000010000000100000001000000010000000100000001L),
@@ -581,6 +661,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
+		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
 		public final static void printCodeGetByIndex() {
 			int ind = 0;
 			System.out.println("public static long getByIndex(int fileInd) {\n" +
@@ -595,6 +676,9 @@ public class Board {
 							"\t}\n" +
 						"}");
 		}
+		/**Returns a the numeric representation of a file of the chess board with only the bits falling on the specified file set.
+		 * 
+		 * @param fileInd the index of the file*/
 		public static long getByIndex(int fileInd) {
 			switch(fileInd) {
 				case 0:
@@ -617,14 +701,28 @@ public class Board {
 					throw new IllegalArgumentException("Invalid file index.");
 			}
 		}
+		/**Returns a the numeric representation of the file of the chess board on which the input parameter square lies with only
+		 * the relevant bits set.
+		 * 
+		 * @param sqr a Square enum*/
 		public static long getBySquare(Square sqr) {
 			return getByIndex(sqr.ordinal() & 7);
 		}
+		/**Returns a the numeric representation of the file of the chess board on which the input parameter square lies with only
+		 * the relevant bits set.
+		 * 
+		 * @param sqrInd the index of the square*/
 		public static long getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd & 7);
 		}
 	}
 	
+	/**An enum type for the 15 diagonals of a chess board. Each constant has a field that contains a long with only the bits on indexes
+	 * of the squares falling on the diagonal set.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum Diagonal {
 		
 		DG1  (0b0000000000000000000000000000000000000000000000000000000000000001L),
@@ -651,6 +749,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
+		/**Prints the binary literals for the enum constants so they can be hard-coded.*/
 		public void printBitmapLiterals() {
 			long[] aDiag = new long[15];
 			aDiag[0]	= Square.A1.getBitmap();
@@ -672,6 +771,7 @@ public class Board {
 				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + Board.toBinaryLiteral(aDiag[i]));
 			}
 		}
+		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
 		public final static void printCodeGetByIndex() {
 			int ind = 0;
 			System.out.println("public static long getByIndex(int dgnInd) {\n" +
@@ -686,6 +786,9 @@ public class Board {
 							"\t}\n" +
 						"}");
 		}
+		/**Returns a the numeric representation of a diagonal of the chess board with only the bits falling on the specified diagonal set.
+		 * 
+		 * @param dgnInd the index of the diagonal*/
 		public static long getByIndex(int dgnInd) {
 			switch(dgnInd) {
 				case 0:
@@ -722,18 +825,31 @@ public class Board {
 					throw new IllegalArgumentException("Invalid diagonal index.");
 			}
 		}
-
+		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
+		 * the relevant bits set.
+		 * 
+		 * @param sqr a Square enum*/
 		public static long getBySquare(Square sqr) {
 			int sqrInd = sqr.ordinal();
 			int fileInd = sqrInd & 7;
 			return getByIndex(((sqrInd - fileInd) >>> 3) + fileInd);
 		}
+		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
+		 * the relevant bits set.
+		 * 
+		 * @param sqrInd the index of a square*/
 		public static long getBySquareIndex(int sqrInd) {
 			int fileInd = sqrInd & 7;
 			return getByIndex(((sqrInd - fileInd) >>> 3) + fileInd);
 		}
 	}
 	
+	/**An enum type for the 15 anti-diagonals of a chess board. Each constant has a field that contains a long with only the bits on indexes
+	 * of the squares falling on the diagonal set.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum AntiDiagonal {
 		
 		ADG1  (0b0000000100000000000000000000000000000000000000000000000000000000L),
@@ -760,6 +876,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
+		/**Prints the binary literals for the enum constants so they can be hard-coded.*/
 		public void printBitmapLiterals() {
 			long[] diag = new long[15];
 			diag[0]		= Square.A8.getBitmap();
@@ -781,6 +898,7 @@ public class Board {
 				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + Board.toBinaryLiteral(diag[i]));
 			}
 		}
+		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
 		public final static void printCodeGetByIndex() {
 			int ind = 0;
 			System.out.println("public static long getByIndex(int adgnInd) {\n" +
@@ -795,6 +913,9 @@ public class Board {
 							"\t}\n" +
 						"}");
 		}
+		/**Returns a the numeric representation of an anti-diagonal of the chess board with only the bits falling on the specified diagonal set.
+		 * 
+		 * @param adgnInd the index of the anti-diagonal*/
 		public static long getByIndex(int adgnInd) {
 			switch(adgnInd) {
 				case 0:
@@ -831,17 +952,31 @@ public class Board {
 					throw new IllegalArgumentException("Invalid anti-diagonal index.");
 			}
 		}
+		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
+		 * the relevant bits set.
+		 * 
+		 * @param sqr a Square enum*/
 		public static long getBySquare(Square sqr) {
 			int sqrInd = sqr.ordinal();
 			int rightMostSquare = sqrInd | 7;
 			return getByIndex(7 - (rightMostSquare >>> 3) + (sqrInd & 7));
 		}
+		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
+		 * the relevant bits set.
+		 * 
+		 * @param sqrInd the index of a square*/
 		public static long getBySquareIndex(int sqrInd) {
 			int rightMostSquare = sqrInd^7;
 			return getByIndex(7 - (rightMostSquare >>> 3) + (sqrInd & 7));
 		}
 	}
 	
+	/**An enum type for the different chess pieces. Each piece has an initial position and and id number by which it is represented on the
+	 * array of the auxiliary offset board.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum Piece {
 		
 		WHITE_KING		(0b0000000000000000000000000000000000000000000000000000000000010000L, 1),
@@ -3054,36 +3189,36 @@ public class Board {
 			diagonalNeg 	= attRayMask.getDiagonalNeg() 		& this.allOccupied;
 			antiDiagonalPos = attRayMask.getAntiDiagonalPos() 	& this.allOccupied;
 			antiDiagonalNeg = attRayMask.getAntiDiagonalNeg() 	& this.allOccupied;
-			if ((pinnedPiece = BitOperations.getLSBit(rankPos)			& this.allWhitePieces) != 0) {
-				if ((BitOperations.getLSBit(rankPos^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(rankPos)			 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getLSBit(rankPos^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(filePos)			& this.allWhitePieces) != 0) {
-				if ((BitOperations.getLSBit(filePos^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(filePos)			 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getLSBit(filePos^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos)	 	& this.allWhitePieces) != 0) {
-				if ((BitOperations.getLSBit(diagonalPos^pinnedPiece) 		& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos)	 	 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getLSBit(diagonalPos^pinnedPiece) 	 & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) 	& this.allWhitePieces) != 0) {
-				if ((BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) 	& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) 	 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getMSBit(rankNeg)		 	& this.allWhitePieces) != 0) {
-				if ((BitOperations.getMSBit(rankNeg^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getMSBit(rankNeg)		 	 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getMSBit(rankNeg^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getMSBit(fileNeg)			& this.allWhitePieces) != 0) {
-				if ((BitOperations.getMSBit(fileNeg^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getMSBit(fileNeg)			 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getMSBit(fileNeg^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg)	 	& this.allWhitePieces) != 0) {
-				if ((BitOperations.getMSBit(diagonalNeg^pinnedPiece) 		& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg)	 	 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getMSBit(diagonalNeg^pinnedPiece) 	 & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalNeg) 	& this.allWhitePieces) != 0) {
-				if ((BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) 	& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalNeg) 	 & this.allWhitePieces) != 0) {
+				if ((BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
 		}
@@ -3100,36 +3235,36 @@ public class Board {
 			diagonalNeg 	= attRayMask.getDiagonalNeg() 		& this.allOccupied;
 			antiDiagonalPos = attRayMask.getAntiDiagonalPos() 	& this.allOccupied;
 			antiDiagonalNeg = attRayMask.getAntiDiagonalNeg() 	& this.allOccupied;
-			if ((pinnedPiece = BitOperations.getLSBit(rankPos)			& this.allBlackPieces) != 0) {
-				if ((BitOperations.getLSBit(rankPos^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(rankPos)			 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getLSBit(rankPos^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(filePos)			& this.allBlackPieces) != 0) {
-				if ((BitOperations.getLSBit(filePos^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(filePos)			 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getLSBit(filePos^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos)	 	& this.allBlackPieces) != 0) {
-				if ((BitOperations.getLSBit(diagonalPos^pinnedPiece) 		& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos)	 	 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getLSBit(diagonalPos^pinnedPiece) 	 & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) 	& this.allBlackPieces) != 0) {
-				if ((BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) 	& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) 	 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getMSBit(rankNeg)		 	& this.allBlackPieces) != 0) {
-				if ((BitOperations.getMSBit(rankNeg^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getMSBit(rankNeg)		 	 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getMSBit(rankNeg^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getMSBit(fileNeg)			& this.allBlackPieces) != 0) {
-				if ((BitOperations.getMSBit(fileNeg^pinnedPiece) 			& straightSliders) != 0)
+			if ((pinnedPiece = BitOperations.getMSBit(fileNeg)			 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getMSBit(fileNeg^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg)	 	& this.allBlackPieces) != 0) {
-				if ((BitOperations.getMSBit(diagonalNeg^pinnedPiece) 		& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg)	 	 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getMSBit(diagonalNeg^pinnedPiece) 	 & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
-			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalNeg) 	& this.allBlackPieces) != 0) {
-				if ((BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) 	& diagonalSliders) != 0)
+			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalNeg) 	 & this.allBlackPieces) != 0) {
+				if ((BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) & diagonalSliders) != 0)
 					pinnedPieces |= pinnedPiece;
 			}
 		}
@@ -3611,7 +3746,7 @@ public class Board {
 						}
 					}
 				}
-				kingMoves	= BitOperations.serialize(kingMoveSet);
+				kingMoves = BitOperations.serialize(kingMoveSet);
 				if (kingMoves.getData() != 0) {
 					while (kingMoves != null) {
 						to = kingMoves.getData();
