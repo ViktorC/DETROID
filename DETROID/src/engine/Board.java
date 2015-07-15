@@ -120,7 +120,7 @@ public class Board {
 		}
 		/**Returns a long with the bits of the input parameter reversed/flipped.
 		 * 
-		 * It is equal to a 180° rotation of the board.*/
+		 * It is equal to a 180ï¿½ rotation of the board.*/
 		public final static long reverse(long bitmap) {
 			bitmap = (((bitmap & BIT_REVERSAL_1_CONST1)  >>> 1)  | ((bitmap & BIT_REVERSAL_1_CONST2)  << 1));
 			bitmap = (((bitmap & BIT_REVERSAL_2_CONST1)  >>> 2)  | ((bitmap & BIT_REVERSAL_2_CONST2)  << 2));
@@ -4329,6 +4329,83 @@ public class Board {
 				System.out.println();
 		}
 		System.out.println();
+	}
+	public String toString() {
+		String fen = "";
+		int piece, emptyCount;
+		for (int i = 0; i < 8; i++) {
+			emptyCount = 0;
+			for (int j = 0; j < 8; j++) {
+				piece = this.offsetBoard[i*8 + j];
+				if (piece == 0)
+					emptyCount++;
+				else {
+					if (emptyCount != 0)
+						fen += emptyCount;
+					emptyCount = 0;
+					switch (piece) {
+						case 1:
+							fen += 'K';
+						break;
+						case 2:
+							fen += 'Q';
+						break;
+						case 3:
+							fen += 'R';
+						break;
+						case 4:
+							fen += 'B';
+						break;
+						case 5:
+							fen += 'N';
+						break;
+						case 6:
+							fen += 'P';
+						break;
+						case 7:
+							fen += 'k';
+						break;
+						case 8:
+							fen += 'q';
+						break;
+						case 9:
+							fen += 'r';
+						break;
+						case 10:
+							fen += 'b';
+						break;
+						case 11:
+							fen += 'n';
+						break;
+						case 12:
+							fen += 'p';
+					}
+				}
+			}
+			if (i != 7)
+				fen += '/';
+		}
+		fen += ' ';
+		if (this.whitesTurn)
+			fen += 'w';
+		else
+			fen += 'b';
+		fen += ' ';
+		if (this.whiteCastlingRights != 0) {
+			if ((this.whiteCastlingRights & 1) != 0)
+				fen += 'K';
+			if ((this.whiteCastlingRights & 2) != 0)
+				fen += 'Q';
+		}
+		if (this.blackCastlingRights != 0) {
+			if ((this.blackCastlingRights & 1) != 0)
+				fen += 'k';
+			if ((this.blackCastlingRights & 2) != 0)
+				fen += 'q';
+		}
+		if (this.whiteCastlingRights == 0 && this.blackCastlingRights == 0)
+			fen += '-';
+		fen += ' ';
 	}
 	public static String toBinary(long bitmap) {
 		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
