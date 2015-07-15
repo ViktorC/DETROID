@@ -8,7 +8,7 @@ import util.*;
 public class Playground {
 
 	public static void main(String[] args) {
-		Board b = new Board();
+		Board b = new Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 		long start = System.currentTimeMillis();
 		System.out.println(b.toString());
 		long end = System.currentTimeMillis();

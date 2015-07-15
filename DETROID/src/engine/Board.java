@@ -2781,15 +2781,15 @@ public class Board {
 		ranks = board.split("/");
 		if (ranks.length != 8)
 			throw new IllegalArgumentException("The board position representation does not have eight ranks.");
+		this.offsetBoard = new int[64];
 		for (int i = 0; i < 64; i++)
 			this.offsetBoard[i] = 0;
 		for (int i = 7; i >= 0; i--) {
 			rank = ranks[i];
 			for (int j = 0; j < rank.length(); j++) {
 				piece = rank.charAt(j);
-				if (piece >= 0 && piece <= 8) {
-					index += piece;
-				}
+				if (piece >= 0 && piece <= 8)
+					index += Character.getNumericValue(piece);
 				else {
 					switch (piece) {
 						case 'K':
@@ -2844,9 +2844,9 @@ public class Board {
 			this.whiteCastlingRights += 2;
 		this.blackCastlingRights = 0;
 		if (castling.contains("k"))
-			this.whiteCastlingRights += 1;
+			this.blackCastlingRights += 1;
 		if (castling.contains("q"))
-			this.whiteCastlingRights += 2;
+			this.blackCastlingRights += 2;
 		if (enPassant.compareTo("-") == 0)
 			this.enPassantRights = 8;
 		else
