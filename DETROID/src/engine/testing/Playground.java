@@ -10,7 +10,7 @@ public class Playground {
 	public static void main(String[] args) {
 		Board b = new Board();
 		long start = System.currentTimeMillis();
-		b.perftWithConsoleOutput(3, 800, 1300, false);
+		System.out.println(b.toString());
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}

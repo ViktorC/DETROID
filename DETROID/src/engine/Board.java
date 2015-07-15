@@ -13,9 +13,8 @@ import java.util.Random;
  * {@link #perft(int) perft}
  * {@link #perftWithConsoleOutput(int, long, long, boolean) perftWithConsoleOutput}
  * 
- * It relies heavily on values hard-coded or computed upon the initialization of the class. These values are always different for each square 
- * on the board, thus most of them are stored in 64-fold enums with switch statements providing fast access (faster than array access) based
- * on the index of the square.
+ * It relies heavily on values hard-coded or computed on compile. These values are always different for each square on the board, thus most of them 
+ * are stored in 64-fold enums with switch statements providing fast access (about a percent faster than array access) based on the index of the square.
  *  
  * @author Viktor
  *
@@ -2746,7 +2745,7 @@ public class Board {
 	
 	private int moveIndex = 0;	
 	private int lastIrreversibleMoveIndex = 0;
-	private int fiftyMoveRuleIndex = 0;
+	private int fiftyMoveRuleClock = 0;
 	
 	private int enPassantRights = 8;
 	
@@ -2756,7 +2755,7 @@ public class Board {
 	private Zobrist keyGen = new Zobrist();
 	
 	private long zobristKey;
-	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinetï¿½Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
+	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinet–Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 	
 	private int repetitions = 0;
 	
@@ -2764,6 +2763,108 @@ public class Board {
 		this.initializeBitBoards();
 		this.initializeOffsetBoard();
 		this.initializeZobristKeys();
+	}
+	/**It parses a FEN-String and sets the instance fields accordingly.*/
+	public Board(String fen) {
+		String[] fenFields = fen.split(" "), ranks;
+		String board, turn, castling, enPassant, fiftyMoveClock, moveCount, rank;
+		char piece;
+		int index = 0;
+		if (fenFields.length != 6)
+			throw new IllegalArgumentException("The FEN-String does not have six fields.");
+		board 			= fenFields[0];
+		turn 			= fenFields[1];
+		castling 		= fenFields[2];
+		enPassant 		= fenFields[3];
+		fiftyMoveClock 	= fenFields[4];
+		moveCount 		= fenFields[5];
+		ranks = board.split("/");
+		if (ranks.length != 8)
+			throw new IllegalArgumentException("The board position representation does not have eight ranks.");
+		for (int i = 0; i < 64; i++)
+			this.offsetBoard[i] = 0;
+		for (int i = 7; i >= 0; i--) {
+			rank = ranks[i];
+			for (int j = 0; j < rank.length(); j++) {
+				piece = rank.charAt(j);
+				if (piece >= 0 && piece <= 8) {
+					index += piece;
+				}
+				else {
+					switch (piece) {
+						case 'K':
+							this.offsetBoard[index] = 1;
+						break;
+						case 'Q':
+							this.offsetBoard[index] = 2;
+						break;
+						case 'R':
+							this.offsetBoard[index] = 3;
+						break;
+						case 'B':
+							this.offsetBoard[index] = 4;
+						break;
+						case 'N':
+							this.offsetBoard[index] = 5;
+						break;
+						case 'P':
+							this.offsetBoard[index] = 6;
+						break;
+						case 'k':
+							this.offsetBoard[index] = 7;
+						break;
+						case 'q':
+							this.offsetBoard[index] = 8;	
+						break;
+						case 'r':
+							this.offsetBoard[index] = 9;	
+						break;
+						case 'b':
+							this.offsetBoard[index] = 10;	
+						break;
+						case 'n':
+							this.offsetBoard[index] = 11;
+						break;
+						case 'p':
+							this.offsetBoard[index] = 12;
+						break;
+					}
+				}
+				index++;
+			}
+		}
+		if (turn.toLowerCase().compareTo("w") == 0)
+			this.whitesTurn = true;
+		else
+			this.whitesTurn = false;
+		this.whiteCastlingRights = 0;
+		if (castling.contains("K"))
+			this.whiteCastlingRights += 1;
+		if (castling.contains("Q"))
+			this.whiteCastlingRights += 2;
+		this.blackCastlingRights = 0;
+		if (castling.contains("k"))
+			this.whiteCastlingRights += 1;
+		if (castling.contains("q"))
+			this.whiteCastlingRights += 2;
+		if (enPassant.compareTo("-") == 0)
+			this.enPassantRights = 8;
+		else
+			this.enPassantRights = enPassant.toLowerCase().charAt(0) - 'a';
+		try {
+			this.fiftyMoveRuleClock = Integer.parseInt(fiftyMoveClock);
+		}
+		catch (NumberFormatException e) {
+			throw new IllegalArgumentException("The fifty-move rule clock field of the FEN-string does not conform to the standards. Parsing not possible.");
+		}
+		try {
+			this.moveIndex = (Integer.parseInt(moveCount) - 1)*2;
+			if (!this.whitesTurn)
+				this.moveIndex++;
+		}
+		catch (NumberFormatException e) {
+			throw new IllegalArgumentException("The move index field does not conform to the standards. Parsing not possible.");
+		}
 	}
 	private void initializeCollections() {
 		this.allWhitePieces		 =  this.whiteKing | this.whiteQueens | this.whiteRooks | this.whiteBishops | this.whiteKnights | this.whitePawns;
@@ -2829,8 +2930,8 @@ public class Board {
 	public int getMoveIndex() {
 		return this.moveIndex;
 	}
-	public int getFiftyMoveRulesIndex() {
-		return this.fiftyMoveRuleIndex;
+	public int getFiftyMoveRuleClock() {
+		return this.fiftyMoveRuleClock;
 	}
 	public int getWhiteCastlingRights() {
 		return this.whiteCastlingRights;
@@ -2977,17 +3078,17 @@ public class Board {
 		long moved		= ((lastMove >>> Move.MOVED_PIECE.shift) 		& Move.MOVED_PIECE.mask);
 		long captured 	= ((lastMove >>> Move.CAPTURED_PIECE.shift) 	& Move.CAPTURED_PIECE.mask);
 		if (captured != 0 || moved == 6 || moved == 12) {
-			this.fiftyMoveRuleIndex = 0;
+			this.fiftyMoveRuleClock = 0;
 			this.lastIrreversibleMoveIndex = this.moveIndex;
 		}
 		else
-			this.fiftyMoveRuleIndex++;
+			this.fiftyMoveRuleClock++;
 	}
 	/**Should be used after resetKeys().*/
 	private void resetMoveIndices() {
 		this.moveIndex--;
 		long lastMove 					= this.moveList.getData();
-		this.fiftyMoveRuleIndex			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift) 		& Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.mask);
+		this.fiftyMoveRuleClock			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift) 		& Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.mask);
 		this.lastIrreversibleMoveIndex 	= (int)((lastMove >>> Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.shift) 	& Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.mask);
 	}
 	private void setEnPassantRights() {
@@ -3283,7 +3384,7 @@ public class Board {
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
 		move |= (this.check	? 1 : 0				<< Move.PREVIOUS_CHECK.shift);
-		move |= (this.fiftyMoveRuleIndex		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
+		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
 		move |= (this.lastIrreversibleMoveIndex << Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
@@ -3599,7 +3700,7 @@ public class Board {
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
 		move |= (this.check	? 1 : 0				<< Move.PREVIOUS_CHECK.shift);
-		move |= (this.fiftyMoveRuleIndex		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
+		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
 		move |= (this.lastIrreversibleMoveIndex << Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
@@ -4258,11 +4359,148 @@ public class Board {
 		
 		this.moveList.pop();
 	}
+	/**Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated by spaces.
+	 * The six fields are as follows:
+	 * 		1. board position
+	 * 		2. color to move
+	 * 		3. castling rights
+	 * 		4. en passant rights
+	 * 		5. fifty-move rule clock
+	 * 		6. fullmove number
+	 */
+	public String toString() {
+		String fen = "";
+		int piece, emptyCount;
+		for (int i = 7; i >= 0; i--) {
+			emptyCount = 0;
+			for (int j = 0; j < 8; j++) {
+				piece = this.offsetBoard[i*8 + j];
+				if (piece == 0)
+					emptyCount++;
+				else {
+					if (emptyCount != 0)
+						fen += emptyCount;
+					emptyCount = 0;
+					switch (piece) {
+						case 1:
+							fen += 'K';
+						break;
+						case 2:
+							fen += 'Q';
+						break;
+						case 3:
+							fen += 'R';
+						break;
+						case 4:
+							fen += 'B';
+						break;
+						case 5:
+							fen += 'N';
+						break;
+						case 6:
+							fen += 'P';
+						break;
+						case 7:
+							fen += 'k';
+						break;
+						case 8:
+							fen += 'q';
+						break;
+						case 9:
+							fen += 'r';
+						break;
+						case 10:
+							fen += 'b';
+						break;
+						case 11:
+							fen += 'n';
+						break;
+						case 12:
+							fen += 'p';
+					}
+				}
+			}
+			if (emptyCount != 0)
+				fen += emptyCount;
+			if (i != 0)
+				fen += '/';
+		}
+		fen += ' ';
+		if (this.whitesTurn)
+			fen += 'w';
+		else
+			fen += 'b';
+		fen += ' ';
+		if (this.whiteCastlingRights != 0) {
+			if ((this.whiteCastlingRights & 1) != 0)
+				fen += 'K';
+			if ((this.whiteCastlingRights & 2) != 0)
+				fen += 'Q';
+		}
+		if (this.blackCastlingRights != 0) {
+			if ((this.blackCastlingRights & 1) != 0)
+				fen += 'k';
+			if ((this.blackCastlingRights & 2) != 0)
+				fen += 'q';
+		}
+		if (this.whiteCastlingRights == 0 && this.blackCastlingRights == 0)
+			fen += '-';
+		fen += ' ';
+		if (this.enPassantRights == 8)
+			fen += '-';
+		else {
+			fen += (char)(this.enPassantRights + 'a');
+			if (this.whitesTurn)
+				fen += 6;
+			else
+				fen += 3;
+		}
+		fen += ' ';
+		fen += this.fiftyMoveRuleClock;
+		fen += ' ';
+		fen += 1 + this.moveIndex/2;
+		return fen;
+	}
+	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.*/
+	public static String toBinary(long bitmap) {
+		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
+	}
+	/**Returns the binary literal of the input long as a String.*/
+	public static String toBinaryLiteral(long bitmap) {
+		return "0b"+ toBinary(bitmap) + "L";
+	}
+	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.*/
+	public static void printBitboardToConsole(long bitmap) {
+		String board = toBinary(bitmap);
+		for (int i = 0; i < 64; i += 8) {
+			for (int j = i + 7; j >= i; j--)
+				System.out.print(board.charAt(j));
+			System.out.println();
+		}
+		System.out.println();
+	}
+	/**Prints a bitboard representing all the occupied squares of the object's board position to the console in a human-readable form,
+	 * aligned like a chess board.*/
+	public void printBitboardToConsole() {
+		printBitboardToConsole(this.allOccupied);
+	}
+	/**Prints an array representing the object's board position to the console in a human-readable form, aligned like a chess board with 
+	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
+	public void printOffsetBoardToConsole() {
+		for (int i = 0; i < 64; i++) {
+			System.out.format("%2d", this.offsetBoard[i]);
+			if ((i + 1)%8 == 0)
+				System.out.println();
+		}
+		System.out.println();
+	}
+	/**Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had. It is used mainly for bug detection
+	 * by comparing the returned values to validated results.*/
 	public long perft(int depth) {
 		LongList moves;
 		long move, leafNodes = 0;
 		if (depth == 0)
-		return 1;
+			return 1;
 		moves = this.generateMoves();
 		while (moves != null) {
 			move = moves.getData();
@@ -4315,114 +4553,14 @@ public class Board {
 		}
 		return leafNodes;
 	}
+	/**Runs a perft test to the given depth and prints out the leaf nodes that fall within the specified range's board positions using
+	 * {@link #printOffsetBoardToConsole() printOffsetBoardToConsole} if @param detailed is true or using {@link #printBitboardToConsole() printBitboardToConsole}
+	 * if false. Useful for debugging purposes.*/
 	public void perftWithConsoleOutput(int depth, long lowerBound, long upperBound, boolean detailed) {
 		long[] count = {0};
 		if (detailed)
 			this.perftWithOffsetBoardConsoleOutput(depth, lowerBound, upperBound, count);
 		else
 			this.perftWithBitboardConsoleOutput(depth, lowerBound, upperBound, count);
-	}
-	public void printOffsetBoardToConsole() {
-		for (int i = 0; i < 64; i++) {
-			System.out.format("%2d", this.offsetBoard[i]);
-			if ((i + 1)%8 == 0)
-				System.out.println();
-		}
-		System.out.println();
-	}
-	public String toString() {
-		String fen = "";
-		int piece, emptyCount;
-		for (int i = 0; i < 8; i++) {
-			emptyCount = 0;
-			for (int j = 0; j < 8; j++) {
-				piece = this.offsetBoard[i*8 + j];
-				if (piece == 0)
-					emptyCount++;
-				else {
-					if (emptyCount != 0)
-						fen += emptyCount;
-					emptyCount = 0;
-					switch (piece) {
-						case 1:
-							fen += 'K';
-						break;
-						case 2:
-							fen += 'Q';
-						break;
-						case 3:
-							fen += 'R';
-						break;
-						case 4:
-							fen += 'B';
-						break;
-						case 5:
-							fen += 'N';
-						break;
-						case 6:
-							fen += 'P';
-						break;
-						case 7:
-							fen += 'k';
-						break;
-						case 8:
-							fen += 'q';
-						break;
-						case 9:
-							fen += 'r';
-						break;
-						case 10:
-							fen += 'b';
-						break;
-						case 11:
-							fen += 'n';
-						break;
-						case 12:
-							fen += 'p';
-					}
-				}
-			}
-			if (i != 7)
-				fen += '/';
-		}
-		fen += ' ';
-		if (this.whitesTurn)
-			fen += 'w';
-		else
-			fen += 'b';
-		fen += ' ';
-		if (this.whiteCastlingRights != 0) {
-			if ((this.whiteCastlingRights & 1) != 0)
-				fen += 'K';
-			if ((this.whiteCastlingRights & 2) != 0)
-				fen += 'Q';
-		}
-		if (this.blackCastlingRights != 0) {
-			if ((this.blackCastlingRights & 1) != 0)
-				fen += 'k';
-			if ((this.blackCastlingRights & 2) != 0)
-				fen += 'q';
-		}
-		if (this.whiteCastlingRights == 0 && this.blackCastlingRights == 0)
-			fen += '-';
-		fen += ' ';
-	}
-	public static String toBinary(long bitmap) {
-		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
-	}
-	public static String toBinaryLiteral(long bitmap) {
-		return "0b"+ toBinary(bitmap) + "L";
-	}
-	public void printBitboardToConsole() {
-		printBitboardToConsole(this.allOccupied);
-	}
-	public static void printBitboardToConsole(long bitmap) {
-		String board = toBinary(bitmap);
-		for (int i = 0; i < 64; i += 8) {
-			for (int j = i + 7; j >= i; j--)
-				System.out.print(board.charAt(j));
-			System.out.println();
-		}
-		System.out.println();
 	}
 }
