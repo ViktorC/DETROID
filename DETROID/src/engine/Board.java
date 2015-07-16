@@ -2788,7 +2788,7 @@ public class Board {
 			rank = ranks[i];
 			for (int j = 0; j < rank.length(); j++) {
 				piece = rank.charAt(j);
-				pieceNum = Character.getNumericValue(piece);
+				pieceNum = piece - '0';
 				if (pieceNum >= 0 && pieceNum <= 8)
 					index += pieceNum;
 				else {
@@ -2830,8 +2830,8 @@ public class Board {
 							this.offsetBoard[index] = 12;
 						break;
 					}
+					index++;
 				}
-				index++;
 			}
 		}
 		if (turn.toLowerCase().compareTo("w") == 0)
