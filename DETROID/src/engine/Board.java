@@ -2755,7 +2755,7 @@ public class Board {
 	private Zobrist keyGen = new Zobrist();
 	
 	private long zobristKey;
-	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinet–Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
+	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinetï¿½Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 	
 	private int repetitions = 0;
 	
@@ -2769,7 +2769,7 @@ public class Board {
 		String[] fenFields = fen.split(" "), ranks;
 		String board, turn, castling, enPassant, fiftyMoveClock, moveCount, rank;
 		char piece;
-		int index = 0;
+		int pieceNum, index = 0;
 		if (fenFields.length != 6)
 			throw new IllegalArgumentException("The FEN-String does not have six fields.");
 		board 			= fenFields[0];
@@ -2788,8 +2788,9 @@ public class Board {
 			rank = ranks[i];
 			for (int j = 0; j < rank.length(); j++) {
 				piece = rank.charAt(j);
-				if (piece >= 0 && piece <= 8)
-					index += Character.getNumericValue(piece);
+				pieceNum = Character.getNumericValue(piece);
+				if (pieceNum >= 0 && pieceNum <= 8)
+					index += pieceNum;
 				else {
 					switch (piece) {
 						case 'K':
