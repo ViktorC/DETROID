@@ -1,5 +1,12 @@
 package engine;
 
+/**Moves are stored in longs and this enum type contains the ranges of the different bits of information held within the long that can be extracted
+ * using simple bit-shifts by the specified numbers contained in the 'shift' field and then AND-ing the shifted values with the numbers contained
+ * in the 'mask' field.
+ * 
+ * @author Viktor
+ *
+ */
 public enum Move {
 	
 	FROM 									(0,  63),

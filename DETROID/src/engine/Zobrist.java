@@ -2,6 +2,21 @@ package engine;
 
 import java.util.Random;
 
+/**A class whose object encodes the most important pieces of information stored in a Board class into a long by XOR-operations.
+ * Two Board objects with identical states will always have the same Zobrist keys within one runtime and two Board objects with
+ * different values for the concerned instance fields will almost always have different Zobrist keys. The concerned fields are:
+ * 		1. color to move
+ * 		2. board position
+ * 		3. white's castling rights
+ * 		4. black's castling rights
+ * 		5. en passant rights
+ * 
+ * The class creates its own random values it then uses for XOR-ing on compile thus Board objects with identical states are 
+ * likely to have different keys for each runtime.
+ * 
+ * @author Viktor
+ *
+ */
 public class Zobrist {
 	
 	private long turn;
@@ -13,6 +28,7 @@ public class Zobrist {
 	public Zobrist() {
 		this.pseudorandNumGen();
 	}
+	/**Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.*/
 	private void pseudorandNumGen() {
 		Random random = new Random();
 		this.turn = random.nextLong();
@@ -29,6 +45,7 @@ public class Zobrist {
 		for (int i = 0; i < 8; i++)
 			this.enPassantRights[i] = random.nextLong();
 	}
+	/**Encodes a Board objects and returns the 64-bit key.*/
 	public long hash(Board b) {
 		int[] board64 = b.getOffsetBoard();
 		long key = 0;
@@ -42,6 +59,8 @@ public class Zobrist {
 		key ^= this.enPassantRights[b.getEnPassantRights()];
 		return key;
 	}
+	/**Modifies a Board object's Zobrist key by XOR-ing it with the Zobrist object's respective instance fields for the fields of the Board
+	 * object changed by the last move made.*/
 	public long updateKey(Board b) {
 		long key	 	= b.getZobristKey();
 		long move	 	= b.getLastMove();
