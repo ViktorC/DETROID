@@ -51,10 +51,10 @@ public enum Move {
 			return "0-0";
 		else if (type == 2)
 			return "0-0-0";
-		originRank	= Integer.toString(from%8 + 1);
-		originFile	= Character.toString((char)(from/8 + 'a'));
-		destRank	= Integer.toString(to%8 + 1);
-		destFile	= Character.toString((char)(to/8 + 'a'));
+		originRank	= Integer.toString(from/8 + 1);
+		originFile	= Character.toString((char)(from%8 + 'a'));
+		destRank	= Integer.toString(to/8 + 1);
+		destFile	= Character.toString((char)(to%8 + 'a'));
 		if (moved > 6)
 			moved -= 6;
 		switch (moved) {
