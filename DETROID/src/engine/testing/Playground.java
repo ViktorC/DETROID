@@ -8,9 +8,10 @@ import util.*;
 public class Playground {
 
 	public static void main(String[] args) {
-		Board b = new Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		Board b = new Board("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+		b.printOffsetBoardToConsole();
 		long start = System.currentTimeMillis();
-		System.out.println(b.toString());
+		Move.printMovesToConsole(b.generateMoves());
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}

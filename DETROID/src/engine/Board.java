@@ -14,7 +14,8 @@ import java.util.Random;
  * {@link #perftWithConsoleOutput(int, long, long, boolean) perftWithConsoleOutput}
  * 
  * It relies heavily on values hard-coded or computed on compile. These values are always different for each square on the board, thus most of them 
- * are stored in 64-fold enums with switch statements providing fast access (about a percent faster than array access) based on the index of the square.
+ * are stored in 64-fold enums with switch statements providing fast access (about one to five percent faster than array access) based on the index 
+ * of the square.
  *  
  * @author Viktor
  *
@@ -2711,6 +2712,7 @@ public class Board {
 		}
 	}
 	
+	//the bitboards for each piece
 	private long whiteKing;
 	private long whiteQueens;
 	private long whiteRooks;
@@ -2725,6 +2727,7 @@ public class Board {
 	private long blackKnights;
 	private long blackPawns;
 	
+	//bitboard collections maintained for faster processing of the position
 	private long allWhitePieces;
 	private long allBlackPieces;
 	
@@ -2734,30 +2737,31 @@ public class Board {
 	private long allOccupied;
 	private long allEmpty;
 	
-	private int[] offsetBoard;
+	private int[] offsetBoard;							//a complimentary board data-structure to the bitboards to efficiently detect pieces on specific squares
 	
 	private boolean whitesTurn = true;
 	
-	private long checkers = 0;
+	private long checkers = 0;							//a bitboard of all the pieces that attack the color to move's king
 	private boolean check = false;
 	
-	private LongStack moveList = new LongStack();
+	private LongStack moveList = new LongStack();		//a stack of all the moves made so far
 	
-	private int moveIndex = 0;	
-	private int lastIrreversibleMoveIndex = 0;
-	private int fiftyMoveRuleClock = 0;
+	private int moveIndex = 0;							//the count of the current move
+	private int lastIrreversibleMoveIndex = 0;			//the count of the last irreversible move; i.e. a capture or a pawn move
+	private int fiftyMoveRuleClock = 0;					//the number of moves made since the last irreversible move;
 	
-	private int enPassantRights = 8;
+	private int enPassantRights = 8;					//denotes the file on which en passant is possible; 8 means no en passant rights
 	
-	private int whiteCastlingRights = 3;
-	private int blackCastlingRights = 3;
+	private int whiteCastlingRights = 3;				//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
+	private int blackCastlingRights = 3;				//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
 	
-	private Zobrist keyGen = new Zobrist();
+	private Zobrist keyGen = new Zobrist();				//a Zobrist key generator for hashing the board
 	
-	private long zobristKey;
-	private long[] zobristKeyHistory = new long[2*237];	//"The longest decisive tournament game is Fressinet�Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
-	
-	private int repetitions = 0;
+	private long zobristKey;							//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
+	private long[] zobristKeyHistory = new long[2*237];	/*All the positions that have occured so far represented in Zobrist keys.
+														 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
+
+	private int repetitions = 0;						//the number of times the current position has occured before
 	
 	public Board() {
 		this.initializeBitBoards();
@@ -2793,47 +2797,71 @@ public class Board {
 					index += pieceNum;
 				else {
 					switch (piece) {
-						case 'K':
+						case 'K': {
 							this.offsetBoard[index] = 1;
+							this.whiteKing		|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'Q':
+						case 'Q': {
 							this.offsetBoard[index] = 2;
+							this.whiteQueens	|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'R':
+						case 'R': {
 							this.offsetBoard[index] = 3;
+							this.whiteRooks		|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'B':
+						case 'B': {
 							this.offsetBoard[index] = 4;
+							this.whiteBishops	|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'N':
+						case 'N': {
 							this.offsetBoard[index] = 5;
+							this.whiteKnights	|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'P':
+						case 'P': {
 							this.offsetBoard[index] = 6;
+							this.whitePawns		|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'k':
+						case 'k': {
 							this.offsetBoard[index] = 7;
+							this.blackKing		|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'q':
-							this.offsetBoard[index] = 8;	
+						case 'q': {
+							this.offsetBoard[index] = 8;
+							this.blackQueens	|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'r':
-							this.offsetBoard[index] = 9;	
+						case 'r': {
+							this.offsetBoard[index] = 9;
+							this.blackRooks		|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'b':
-							this.offsetBoard[index] = 10;	
+						case 'b': {
+							this.offsetBoard[index] = 10;
+							this.blackBishops	|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'n':
+						case 'n': {
 							this.offsetBoard[index] = 11;
+							this.blackKnights	|= Square.getBitmapByIndex(index);
+						}
 						break;
-						case 'p':
+						case 'p': {
 							this.offsetBoard[index] = 12;
-						break;
+							this.blackPawns		|= Square.getBitmapByIndex(index);
+						}
 					}
 					index++;
 				}
 			}
 		}
+		this.initializeCollections();
 		if (turn.toLowerCase().compareTo("w") == 0)
 			this.whitesTurn = true;
 		else
@@ -2866,6 +2894,8 @@ public class Board {
 		catch (NumberFormatException e) {
 			throw new IllegalArgumentException("The move index field does not conform to the standards. Parsing not possible.");
 		}
+		this.setCheck();
+		this.initializeZobristKeys();
 	}
 	private void initializeCollections() {
 		this.allWhitePieces		 =  this.whiteKing | this.whiteQueens | this.whiteRooks | this.whiteBishops | this.whiteKnights | this.whitePawns;
@@ -4117,7 +4147,6 @@ public class Board {
 			return this.generateCheckEvasionMoves();
 		else
 			return this.generateNormalMoves();
-		
 	}
 	public void makeMove(long move) {
 		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
@@ -4488,10 +4517,10 @@ public class Board {
 	/**Prints an array representing the object's board position to the console in a human-readable form, aligned like a chess board with 
 	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
 	public void printOffsetBoardToConsole() {
-		for (int i = 0; i < 64; i++) {
-			System.out.format("%2d", this.offsetBoard[i]);
-			if ((i + 1)%8 == 0)
-				System.out.println();
+		for (int i = 7; i >= 0; i--) {
+			for (int j = 0; j < 8; j++)
+				System.out.format("%3d", this.offsetBoard[i*8 + j]);
+			System.out.println();
 		}
 		System.out.println();
 	}
