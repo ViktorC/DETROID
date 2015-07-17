@@ -2799,7 +2799,7 @@ public class Board {
 					switch (piece) {
 						case 'K': {
 							this.offsetBoard[index] = 1;
-							this.whiteKing		|= Square.getBitmapByIndex(index);
+							this.whiteKing		 = Square.getBitmapByIndex(index);
 						}
 						break;
 						case 'Q': {
@@ -2829,7 +2829,7 @@ public class Board {
 						break;
 						case 'k': {
 							this.offsetBoard[index] = 7;
-							this.blackKing		|= Square.getBitmapByIndex(index);
+							this.blackKing		 = Square.getBitmapByIndex(index);
 						}
 						break;
 						case 'q': {
@@ -3751,13 +3751,13 @@ public class Board {
 				switch (this.offsetBoard[checker1]) {
 					case 8: {
 						if ((File.getBySquareIndex(king) & this.checkers) != 0 || (Rank.getBySquareIndex(king) & this.checkers) != 0)
-							squaresOfInterventionSet	= (dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
+							squaresOfInterventionSet	= (dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
 						else
-							squaresOfInterventionSet	= (dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
+							squaresOfInterventionSet	= (dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
-							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.whiteKing;
+							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers != null) {
@@ -3784,7 +3784,7 @@ public class Board {
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
-							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.whiteKing;
+							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers != null) {
@@ -3811,7 +3811,7 @@ public class Board {
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
-							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.whiteKing;
+							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers != null) {
@@ -3834,7 +3834,7 @@ public class Board {
 					}
 					break;
 					case 11: {
-						checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~this.whiteKing;
+						checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~this.whiteKing;
 						if (checkerAttackerSet != 0) {
 							checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 							while (checkerAttackers != null) {
@@ -3855,7 +3855,7 @@ public class Board {
 					}
 					break;
 					case 12: {
-						checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~this.whiteKing;
+						checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~this.whiteKing;
 						if (checkerAttackerSet != 0) {
 							checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 							while (checkerAttackers != null) {
@@ -3960,7 +3960,7 @@ public class Board {
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
-							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.blackKing;
+							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers != null) {
@@ -3987,7 +3987,7 @@ public class Board {
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
-							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.blackKing;
+							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers != null) {
@@ -4014,7 +4014,7 @@ public class Board {
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
-							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.blackKing;
+							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers != null) {
@@ -4037,7 +4037,7 @@ public class Board {
 					}
 					break;
 					case 5: {
-						checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~this.blackKing;
+						checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~this.blackKing;
 						if (checkerAttackerSet != 0) {
 							checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 							while (checkerAttackers != null) {
@@ -4085,7 +4085,7 @@ public class Board {
 				if (kingMoves.getData() != 0) {
 					while (kingMoves != null) {
 						to = kingMoves.getData();
-						if (!isAttacked(to, false)) {
+						if (!isAttacked(to, true)) {
 							moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 						}
 						kingMoves = kingMoves.getNext();
