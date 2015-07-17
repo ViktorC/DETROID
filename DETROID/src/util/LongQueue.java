@@ -1,22 +1,15 @@
 package util;
 
-public class LongQueue {
-
-	private class LongListItem {
-
-		long data;
-		LongListItem next;
-
-		LongListItem(long data) {
-			this.data = data;
-		}
-	}
-
-	private LongListItem head;
-	private LongListItem tail;
-	private LongListItem iterator;
-	private int length = 0;
-
+/**A primitive type queue data structure for 64-bit integers, i.e. longs.
+ * 
+ * @author Viktor
+ *
+ */
+public class LongQueue extends LongList {
+	
+	private LongListItem tail;		//a reference to the last node of the queue; for faster addition
+	private int length = 0;			//the number of nodes contained in the list
+	
 	public LongQueue() {
 
 	}
@@ -26,12 +19,15 @@ public class LongQueue {
 		this.iterator = head;
 		length++;
 	}
-	public long getHead() {
-		return this.head.data;
-	}
+	/**Returns the data held in the last element of the list.*/
 	public long getTail() {
 		return this.tail.data;
 	}
+	/**Returns the number of nodes in the list.*/
+	public int length() {
+		return this.length;
+	}
+	/**Enqueues a new node storing the input parameter data.*/
 	public void add(long data) {
 		if (this.head == null) {
 			this.head = new LongListItem(data);
@@ -44,27 +40,12 @@ public class LongQueue {
 		}
 		length++;
 	}
-	public boolean hasNext() {
-		if (this.iterator == null)
-			return false;
-		return true;
-	}
-	public long next() {
-		long next = this.iterator.data;
-		this.iterator = this.iterator.next;
-		return next;
-	}
-	public void reset() {
-		this.iterator = this.head;
-	}
+	/**Removes the head node form the list.
+	 * 
+	 * !It does not return its value!
+	 */
 	public void pop() {
-		if (this.head != null) {
-			if (this.head.next != null)
-				this.head = this.head.next;
-			else
-				this.head = null;
-		}
-		this.reset();
+		super.pop();
 		length--;
 		if (length == 0)
 			this.tail = null;

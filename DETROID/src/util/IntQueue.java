@@ -1,21 +1,14 @@
 package util;
 
-public class IntQueue {
+/**A primitive type queue data structure for 32-bit integers.
+ * 
+ * @author Viktor
+ *
+ */
+public class IntQueue extends IntList {
 	
-	private class IntListItem {
-		
-		int data;
-		IntListItem next;
-		
-		IntListItem(int data) {
-			this.data = data;
-		}
-	}
-	
-	private IntListItem head;
-	private IntListItem tail;
-	private IntListItem iterator;
-	private int length = 0;
+	private IntListItem tail;		//a reference to the last node of the queue; for faster addition
+	private int length = 0;			//the number of nodes contained in the list
 	
 	public IntQueue() {
 
@@ -26,12 +19,15 @@ public class IntQueue {
 		this.iterator = head;
 		length++;
 	}
-	public int getHead() {
-		return this.head.data;
-	}
+	/**Returns the data held in the last element of the list.*/
 	public int getTail() {
 		return this.tail.data;
 	}
+	/**Returns the number of nodes in the list.*/
+	public int length() {
+		return this.length;
+	}
+	/**Enqueues a new node storing the input parameter data.*/
 	public void add(int data) {
 		if (this.head == null) {
 			this.head = new IntListItem(data);
@@ -44,27 +40,12 @@ public class IntQueue {
 		}
 		length++;
 	}
-	public boolean hasNext() {
-		if (this.iterator == null)
-			return false;
-		return true;
-	}
-	public int next() {
-		int next = this.iterator.data;
-		this.iterator = this.iterator.next;
-		return next;
-	}
-	public void reset() {
-		this.iterator = this.head;
-	}
+	/**Removes the head node form the list.
+	 * 
+	 * !It does not return its value!
+	 */
 	public void pop() {
-		if (this.head != null) {
-			if (this.head.next != null)
-				this.head = this.head.next;
-			else
-				this.head = null;
-		}
-		this.reset();
+		super.pop();
 		length--;
 		if (length == 0)
 			this.tail = null;
