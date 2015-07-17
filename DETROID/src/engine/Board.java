@@ -3807,7 +3807,7 @@ public class Board {
 					}
 					break;
 					case 10: {
-							squaresOfInterventionSet	= (dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getWhiteBishopMoves((this.allNonWhiteOccupied, this.allOccupied)) | checkers;
+							squaresOfInterventionSet	= (dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
