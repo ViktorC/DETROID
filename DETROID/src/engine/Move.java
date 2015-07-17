@@ -97,12 +97,10 @@ public enum Move {
 		}
 	}
 	/**Prints all moves contained in the input parameter to the console.*/
-	public static void printMovesToConsole(LongList moves) {
+	public static void printMovesToConsole(LongQueue moves) {
 		System.out.println();
-		while (moves != null) {
-			System.out.println(pseudoAlgebraicNotation(moves.getData()));
-			moves = moves.getNext();
-		}
+		while (moves.hasNext())
+			System.out.println(pseudoAlgebraicNotation(moves.next()));
 		System.out.println();
 	}
 	/**Prints all moves contained in the input parameter to the console.*/

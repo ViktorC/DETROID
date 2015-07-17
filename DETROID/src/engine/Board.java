@@ -90,8 +90,8 @@ public class Board {
 			return DE_BRUIJN_TABLE[(int)((getLSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
 		}
 		/**Returns a queue of the indexes of all set bits in the input parameter.*/
-		public final static IntQueue serialize(long bitmap) {
-			IntQueue out = new IntQueue();
+		public final static IntStack serialize(long bitmap) {
+			IntStack out = new IntStack();
 			while (bitmap != 0) {
 				out.add(indexOfLSBit(bitmap));
 				bitmap = resetLSBit(bitmap);
@@ -3405,9 +3405,9 @@ public class Board {
 	private LongQueue generateNormalMoves() {
 		long pinnedPieces, movablePieces, pieceSet, moveSet;
 		int king, queen, rook, bishop, knight, pawn;
-		IntList queens, rooks, bishops, knights, pawns, enPassantAggressorPawns;
+		IntStack queens, rooks, bishops, knights, pawns, enPassantAggressorPawns;
 		long kingMove = 0, queenMove = 0, rookMove = 0, bishopMove = 0, knightMove = 0, pawnMove = 0;
-		IntList kingMoves, queenMoves, rookMoves, bishopMoves, knightMoves, pawnMoves;
+		IntStack kingMoves, queenMoves, rookMoves, bishopMoves, knightMoves, pawnMoves;
 		LongQueue moves = new LongQueue();
 		long move = 0, enPassantAggressors;
 		int to;
@@ -3443,7 +3443,7 @@ public class Board {
 				}
 				if (this.whiteCastlingRights == 2 || this.whiteCastlingRights == 3) {
 					if (((Square.getBitmapByIndex(1) | Square.getBitmapByIndex(2) | Square.getBitmapByIndex(3)) & this.allOccupied) == 0) {
-						if (((moves.getData() >>> Move.TO.shift) & Move.TO.mask) == 3 && !isAttacked(2, false))
+						if (((moves.getHead() >>> Move.TO.shift) & Move.TO.mask) == 3 && !isAttacked(2, false))
 							moves.add(kingMove | (1 << Move.TO.shift) | (2 << Move.TYPE.shift));
 					}
 				}
@@ -3586,7 +3586,7 @@ public class Board {
 				}
 				if (this.blackCastlingRights == 1 || this.blackCastlingRights == 3) {
 					if (((Square.getBitmapByIndex(61) | Square.getBitmapByIndex(62)) & this.allOccupied) == 0) {
-						if (((moves.getLast().getData() >>> Move.TO.shift) & Move.TO.mask) == 61 && !isAttacked(62, true))
+						if (((moves.getTail() >>> Move.TO.shift) & Move.TO.mask) == 61 && !isAttacked(62, true))
 							moves.add(kingMove | (62 << Move.TO.shift) | (1 << Move.TYPE.shift));
 					}
 				}
@@ -3722,7 +3722,7 @@ public class Board {
 		long move = 0, kingMove = 0, checkerAttackerMove, kingMoveSet, pinnedPieces, movablePieces, squaresOfInterventionSet, checkerAttackerSet;
 		int checker1, checker2, squareOfIntervention, checkerAttackerSquare;
 		int king;
-		IntList kingMoves, squaresOfIntervention, checkerAttackers;
+		IntStack kingMoves, squaresOfIntervention, checkerAttackers;
 		LongQueue moves = new LongQueue();
 		MoveDatabase dB, kingDb;
 		boolean promotionPossible = false;
