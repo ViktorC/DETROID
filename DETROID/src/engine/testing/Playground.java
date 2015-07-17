@@ -4,15 +4,17 @@ import engine.Board;
 import engine.Move;
 import engine.Board.*;
 import util.*;
+import java.util.Random;
 
 public class Playground {
 
 	public static void main(String[] args) {
-		Board b = new Board();
-		b.printOffsetBoardToConsole();
-		long start = System.currentTimeMillis();
-		Move.printMovesToConsole(b.generateMoves());
-		long end = System.currentTimeMillis();
-		System.out.println(end - start);
+		Random rand = new Random();
+		LongList moves = new LongStack();
+		for (int i = 0; i < 10; i++)
+			moves.add(rand.nextLong());
+		while (moves.hasNext()) {
+			System.out.println(moves.next());
+		}
 	}
 }

@@ -3405,11 +3405,11 @@ public class Board {
 	private LongQueue generateNormalMoves() {
 		long pinnedPieces, movablePieces, pieceSet, moveSet;
 		int king, queen, rook, bishop, knight, pawn;
-		IntStack queens, rooks, bishops, knights, pawns, enPassantAggressorPawns;
+		IntStack queens, rooks, bishops, knights, pawns;
 		long kingMove = 0, queenMove = 0, rookMove = 0, bishopMove = 0, knightMove = 0, pawnMove = 0;
 		IntStack kingMoves, queenMoves, rookMoves, bishopMoves, knightMoves, pawnMoves;
 		LongQueue moves = new LongQueue();
-		long move = 0, enPassantAggressors;
+		long move = 0;
 		int to;
 		move |= (this.whiteCastlingRights		<< Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift);
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);

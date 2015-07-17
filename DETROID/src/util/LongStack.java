@@ -16,8 +16,9 @@ public class LongStack extends LongList {
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
 	public void add(long data) {
-		LongListItem temp = head;
+		LongListItem temp = this.head;
 		this.head = new LongListItem(data);
 		this.head.next = temp;
+		this.reset();
 	}
 }

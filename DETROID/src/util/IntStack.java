@@ -16,8 +16,9 @@ public class IntStack extends IntList {
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
 	public void add(int data) {
-		IntListItem temp = head;
+		IntListItem temp = this.head;
 		this.head = new IntListItem(data);
 		this.head.next = temp;
+		this.reset();
 	}
 }
