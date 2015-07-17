@@ -3240,30 +3240,6 @@ public class Board {
 			}
 		}
 	}
-	public long getAttackers(int sqrInd, boolean byWhite) {
-		long attackers = 0;
-		if (byWhite) {
-			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
-			attackers  =  this.whiteKing						& dB.getCrudeKingMoves();
-			attackers |=  this.whiteKnights						& dB.getCrudeKnightMoves();
-			attackers |=  this.whitePawns 						& dB.getCrudeBlackPawnCaptures();
-			attackers |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
-			attackers |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
-			if (this.offsetBoard[sqrInd] == 12 && this.enPassantRights == sqrInd%8)
-				attackers |=  this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4);
-		}
-		else {
-			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
-			attackers  =  this.blackKing						& dB.getCrudeKingMoves();
-			attackers |=  this.blackKnights						& dB.getCrudeKnightMoves();
-			attackers |=  this.blackPawns 						& dB.getCrudeWhitePawnCaptures();
-			attackers |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
-			attackers |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
-			if (this.offsetBoard[sqrInd] == 6 && this.enPassantRights == sqrInd%8)
-				attackers |=  this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3);
-		}
-		return attackers;
-	}
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
@@ -3300,6 +3276,58 @@ public class Board {
 			}
 		}
 		return false;
+	}
+	public long getAttackers(int sqrInd, boolean byWhite) {
+		long attackers = 0;
+		if (byWhite) {
+			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+			attackers  =  this.whiteKing						& dB.getCrudeKingMoves();
+			attackers |=  this.whiteKnights						& dB.getCrudeKnightMoves();
+			attackers |=  this.whitePawns 						& dB.getCrudeBlackPawnCaptures();
+			attackers |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
+			attackers |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
+			if (this.offsetBoard[sqrInd] == 12 && this.enPassantRights == sqrInd%8)
+				attackers |=  this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4);
+		}
+		else {
+			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+			attackers  =  this.blackKing						& dB.getCrudeKingMoves();
+			attackers |=  this.blackKnights						& dB.getCrudeKnightMoves();
+			attackers |=  this.blackPawns 						& dB.getCrudeWhitePawnCaptures();
+			attackers |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
+			attackers |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
+			if (this.offsetBoard[sqrInd] == 6 && this.enPassantRights == sqrInd%8)
+				attackers |=  this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3);
+		}
+		return attackers;
+	}
+	public long getBlockerCandidates(int sqrInd, boolean byWhite) {
+		long blockerCandidates = 0;
+		long sqrBit = Square.getBitmapByIndex(sqrInd);
+		long blackPawnAdvance = BitOperations.vShiftDown(sqrBit), whitePawnAdvance = BitOperations.vShiftUp(sqrBit);
+		if (byWhite) {
+			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+			blockerCandidates |=  this.whiteKnights						& dB.getCrudeKnightMoves();
+			blockerCandidates |=  this.whitePawns 						& blackPawnAdvance;
+			if ((sqrBit & Rank.getByIndex(3)) != 0 && (this.allEmpty & blackPawnAdvance) != 0)
+				blockerCandidates |=  this.whitePawns 					& BitOperations.vShiftDown(blackPawnAdvance);
+			blockerCandidates |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
+			blockerCandidates |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
+			if (this.enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(5)) != 0)
+				blockerCandidates |=  this.whitePawns & dB.getCrudeBlackPawnCaptures();
+		}
+		else {
+			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+			blockerCandidates |=  this.blackKnights						& dB.getCrudeKnightMoves();
+			blockerCandidates |=  this.blackPawns 						& whitePawnAdvance;
+			if ((sqrBit & Rank.getByIndex(4)) != 0 && (this.allEmpty & whitePawnAdvance) != 0)
+				blockerCandidates |=  this.blackPawns 					& BitOperations.vShiftUp(whitePawnAdvance);
+			blockerCandidates |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
+			blockerCandidates |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
+			if (this.enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(2)) != 0)
+				blockerCandidates |=  this.blackPawns & dB.getCrudeWhitePawnCaptures();
+		}
+		return blockerCandidates;
 	}
 	public long getPinnedPieces(boolean forWhite) {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
@@ -3712,7 +3740,7 @@ public class Board {
 				kingDb	  = MoveDatabase.getByIndex(king);
 				kingMoveSet = kingDb.getWhiteKingMoves(this.allNonWhiteOccupied);
 				dB = MoveDatabase.getByIndex(checker1);
-				if ((checkers & Rank.getByIndex(7)) != 0)
+				if ((this.checkers & Rank.getByIndex(7)) != 0)
 					promotionPossible = true;
 				switch (this.offsetBoard[checker1]) {
 					case 8: {
@@ -3723,7 +3751,10 @@ public class Board {
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention.hasNext()) {
 							squareOfIntervention = squaresOfIntervention.next();
-							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
+							if (squareOfIntervention == checker1)
+								checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
+							else
+								checkerAttackerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers.hasNext()) {
@@ -3748,7 +3779,10 @@ public class Board {
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention.hasNext()) {
 							squareOfIntervention = squaresOfIntervention.next();
-							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
+							if (squareOfIntervention == checker1)
+								checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
+							else
+								checkerAttackerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers.hasNext()) {
@@ -3773,7 +3807,10 @@ public class Board {
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention.hasNext()) {
 							squareOfIntervention = squaresOfIntervention.next();
-							checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
+							if (squareOfIntervention == checker1)
+								checkerAttackerSet = getAttackers(squareOfIntervention, true) & movablePieces & ~this.whiteKing;
+							else
+								checkerAttackerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers.hasNext()) {
@@ -3903,7 +3940,7 @@ public class Board {
 				kingDb	  = MoveDatabase.getByIndex(king);
 				kingMoveSet = kingDb.getBlackKingMoves(this.allNonBlackOccupied);
 				dB = MoveDatabase.getByIndex(checker1);
-				if ((checkers & Rank.getByIndex(0)) != 0)
+				if ((this.checkers & Rank.getByIndex(0)) != 0)
 					promotionPossible = true;
 				switch (this.offsetBoard[checker1]) {
 					case 2: {
@@ -3914,7 +3951,10 @@ public class Board {
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention.hasNext()) {
 							squareOfIntervention = squaresOfIntervention.next();
-							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
+							if (squareOfIntervention == checker1)
+								checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
+							else
+								checkerAttackerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers.hasNext()) {
@@ -3939,7 +3979,10 @@ public class Board {
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention.hasNext()) {
 							squareOfIntervention = squaresOfIntervention.next();
-							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
+							if (squareOfIntervention == checker1)
+								checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
+							else
+								checkerAttackerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers.hasNext()) {
@@ -3964,7 +4007,10 @@ public class Board {
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention.hasNext()) {
 							squareOfIntervention = squaresOfIntervention.next();
-							checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
+							if (squareOfIntervention == checker1)
+								checkerAttackerSet = getAttackers(squareOfIntervention, false) & movablePieces & ~this.blackKing;
+							else
+								checkerAttackerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
 							if (checkerAttackerSet != 0) {
 								checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 								while (checkerAttackers.hasNext()) {
