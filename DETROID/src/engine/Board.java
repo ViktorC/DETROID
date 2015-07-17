@@ -3780,7 +3780,7 @@ public class Board {
 					}
 					break;
 					case 9: {
-						squaresOfInterventionSet	= (dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
+						squaresOfInterventionSet	= (dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
@@ -3807,7 +3807,7 @@ public class Board {
 					}
 					break;
 					case 10: {
-						squaresOfInterventionSet	= (dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
+							squaresOfInterventionSet	= (dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied) & kingDb.getWhiteBishopMoves((this.allNonWhiteOccupied, this.allOccupied)) | checkers;
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
@@ -3954,9 +3954,9 @@ public class Board {
 				switch (this.offsetBoard[checker1]) {
 					case 2: {
 						if ((File.getBySquareIndex(king) & this.checkers) != 0 || (Rank.getBySquareIndex(king) & this.checkers) != 0)
-							squaresOfInterventionSet	= (dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied) & kingDb.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
+							squaresOfInterventionSet	= (dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied) & kingDb.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
 						else
-							squaresOfInterventionSet	= (dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied) & kingDb.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
+								squaresOfInterventionSet	= (dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied) & kingDb.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
@@ -3983,7 +3983,7 @@ public class Board {
 					}
 					break;
 					case 3: {
-						squaresOfInterventionSet	= (dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied) & kingDb.getWhiteRookMoves(this.allNonBlackOccupied, this.allOccupied)) | checkers;
+						squaresOfInterventionSet	= (dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied) & kingDb.getBlackRookMoves(this.allNonWhiteOccupied, this.allOccupied)) | checkers;
 						squaresOfIntervention		= BitOperations.serialize(squaresOfInterventionSet);
 						while (squaresOfIntervention != null) {
 							squareOfIntervention = squaresOfIntervention.getData();
@@ -4097,7 +4097,7 @@ public class Board {
 				kingMove |= move;
 				kingMove |= king;
 				kingMove |= (7 << Move.MOVED_PIECE.shift);
-				kingMoveSet = MoveDatabase.getByIndex(king).getWhiteKingMoves(this.allNonBlackOccupied);
+				kingMoveSet = MoveDatabase.getByIndex(king).getBlackKingMoves(this.allNonBlackOccupied);
 				checker1 	= BitOperations.indexOfLSBit(this.checkers);
 				checker2	= BitOperations.indexOfLSBit(BitOperations.resetLSBit(this.checkers));
 				dB = MoveDatabase.getByIndex(checker1);
