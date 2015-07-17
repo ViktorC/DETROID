@@ -3462,16 +3462,16 @@ public class Board {
 						moves.add(kingMove | (to << Move.TO.getShift()) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 					}
 				}
-				if (this.whiteCastlingRights == 1 || this.whiteCastlingRights == 3) {
+				if ((this.whiteCastlingRights & 2) != 0) {
+					if (((Square.getBitmapByIndex(1) | Square.getBitmapByIndex(2) | Square.getBitmapByIndex(3)) & this.allOccupied) == 0) {
+						if (((moves.getTail() >>> Move.TO.shift) & Move.TO.mask) == 3 && !isAttacked(2, false))
+							moves.add(kingMove | (1 << Move.TO.shift) | (2 << Move.TYPE.shift));
+					}
+				}
+				if ((this.whiteCastlingRights & 1) != 0) {
 					if (((Square.getBitmapByIndex(5) | Square.getBitmapByIndex(6)) & this.allOccupied) == 0) {
 						if (!isAttacked(5, false) && !isAttacked(6, false))
 							moves.add(kingMove | (6 << Move.TO.shift) | (1 << Move.TYPE.shift));
-					}
-				}
-				if (this.whiteCastlingRights == 2 || this.whiteCastlingRights == 3) {
-					if (((Square.getBitmapByIndex(1) | Square.getBitmapByIndex(2) | Square.getBitmapByIndex(3)) & this.allOccupied) == 0) {
-						if (((moves.getHead() >>> Move.TO.shift) & Move.TO.mask) == 3 && !isAttacked(2, false))
-							moves.add(kingMove | (1 << Move.TO.shift) | (2 << Move.TYPE.shift));
 					}
 				}
 			}
@@ -3594,13 +3594,13 @@ public class Board {
 						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 					}
 				}
-				if (this.blackCastlingRights == 1 || this.blackCastlingRights == 3) {
+				if ((this.whiteCastlingRights & 1) != 0) {
 					if (((Square.getBitmapByIndex(61) | Square.getBitmapByIndex(62)) & this.allOccupied) == 0) {
-						if (((moves.getTail() >>> Move.TO.shift) & Move.TO.mask) == 61 && !isAttacked(62, true))
+						if (((moves.getHead() >>> Move.TO.shift) & Move.TO.mask) == 61 && !isAttacked(62, true))
 							moves.add(kingMove | (62 << Move.TO.shift) | (1 << Move.TYPE.shift));
 					}
 				}
-				if (this.blackCastlingRights == 2 || this.blackCastlingRights == 3) {
+				if ((this.whiteCastlingRights & 2) != 0) {
 					if (((Square.getBitmapByIndex(57) | Square.getBitmapByIndex(58) | Square.getBitmapByIndex(59)) & this.allOccupied) == 0) {
 						if (!isAttacked(58, true) && !isAttacked(59, true))
 							moves.add(kingMove | (58 << Move.TO.shift) | (2 << Move.TYPE.shift));
