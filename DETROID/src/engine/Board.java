@@ -2768,20 +2768,37 @@ public class Board {
 		this.initializeOffsetBoard();
 		this.initializeZobristKeys();
 	}
-	/**It parses a FEN-String and sets the instance fields accordingly.*/
+	/**It parses a FEN-String and sets the instance fields accordingly.
+	 * Beside standard six-field FEN-Strings, it also accepts four-field Strings without the fifty-move rule clock and the move index.*/
 	public Board(String fen) {
 		String[] fenFields = fen.split(" "), ranks;
 		String board, turn, castling, enPassant, fiftyMoveClock, moveCount, rank;
 		char piece;
 		int pieceNum, index = 0;
-		if (fenFields.length != 6)
-			throw new IllegalArgumentException("The FEN-String does not have six fields.");
+		if (fenFields.length == 6) {
+			fiftyMoveClock 	= fenFields[4];
+			moveCount 		= fenFields[5];
+			try {
+				this.fiftyMoveRuleClock = Integer.parseInt(fiftyMoveClock);
+			}
+			catch (NumberFormatException e) {
+				throw new IllegalArgumentException("The fifty-move rule clock field of the FEN-string does not conform to the standards. Parsing not possible.");
+			}
+			try {
+				this.moveIndex = (Integer.parseInt(moveCount) - 1)*2;
+				if (!this.whitesTurn)
+					this.moveIndex++;
+			}
+			catch (NumberFormatException e) {
+				throw new IllegalArgumentException("The move index field does not conform to the standards. Parsing not possible.");
+			}
+		}
+		else if (fenFields.length != 4)
+			throw new IllegalArgumentException("The FEN-String has an unallowed number of fields.");
 		board 			= fenFields[0];
 		turn 			= fenFields[1];
 		castling 		= fenFields[2];
 		enPassant 		= fenFields[3];
-		fiftyMoveClock 	= fenFields[4];
-		moveCount 		= fenFields[5];
 		ranks = board.split("/");
 		if (ranks.length != 8)
 			throw new IllegalArgumentException("The board position representation does not have eight ranks.");
@@ -2880,20 +2897,6 @@ public class Board {
 			this.enPassantRights = 8;
 		else
 			this.enPassantRights = enPassant.toLowerCase().charAt(0) - 'a';
-		try {
-			this.fiftyMoveRuleClock = Integer.parseInt(fiftyMoveClock);
-		}
-		catch (NumberFormatException e) {
-			throw new IllegalArgumentException("The fifty-move rule clock field of the FEN-string does not conform to the standards. Parsing not possible.");
-		}
-		try {
-			this.moveIndex = (Integer.parseInt(moveCount) - 1)*2;
-			if (!this.whitesTurn)
-				this.moveIndex++;
-		}
-		catch (NumberFormatException e) {
-			throw new IllegalArgumentException("The move index field does not conform to the standards. Parsing not possible.");
-		}
 		this.setCheck();
 		this.initializeZobristKeys();
 	}
