@@ -8,10 +8,12 @@ import util.*;
 public class Playground {
 
 	public static void main(String[] args) {
-		Board b = new Board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+		Board b = new Board("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
 		b.printOffsetBoardToConsole();
 		long start = System.currentTimeMillis();
-		Move.printMovesToConsole(b.generateMoves());
+		LongQueue moves = b.generateMoves();
+		System.out.println(moves.length() + "\n");
+		Move.printMovesToConsole(moves);
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}
