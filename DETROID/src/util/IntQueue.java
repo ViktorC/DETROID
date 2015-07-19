@@ -21,7 +21,9 @@ public class IntQueue extends IntList {
 	}
 	/**Returns the data held in the last element of the list.*/
 	public int getTail() {
-		return this.tail.data;
+		if (this.tail != null)
+			return this.tail.data;
+		return 0;
 	}
 	/**Returns the number of nodes in the list.*/
 	public int length() {

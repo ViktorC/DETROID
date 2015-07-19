@@ -27,7 +27,9 @@ public abstract class IntList {
 	
 	/**Returns the data held in the first element of the list.*/
 	public int getHead() {
-		return this.head.data;
+		if (this.head != null)
+			return this.head.data;
+		return 0;
 	}
 	/**The addition method that differs for different types of list data structures thus needs to be implemented by subclasses.*/
 	public abstract void add(int data);
