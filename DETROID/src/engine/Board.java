@@ -3453,7 +3453,7 @@ public class Board {
 			pinnedPieces  =  getPinnedPieces(true);
 			movablePieces = ~pinnedPieces;
 			king = BitOperations.indexOfLSBit(this.whiteKing);
-			kingMove |= move;
+			kingMove  = move;
 			kingMove |= king;
 			kingMove |= (1 << Move.MOVED_PIECE.shift);
 			moveSet	  = MoveDatabase.getByIndex(king).getWhiteKingMoves(this.allNonWhiteOccupied);
@@ -3585,7 +3585,7 @@ public class Board {
 			pinnedPieces  =  getPinnedPieces(false);
 			movablePieces = ~pinnedPieces;
 			king = BitOperations.indexOfLSBit(this.blackKing);
-			kingMove |= move;
+			kingMove  = move;
 			kingMove |= king;
 			kingMove |= (7 << Move.MOVED_PIECE.shift);
 			moveSet	  = MoveDatabase.getByIndex(king).getBlackKingMoves(this.allNonBlackOccupied);
@@ -3738,7 +3738,7 @@ public class Board {
 				checker1  		 = BitOperations.indexOfLSBit(this.checkers);
 				checkerPiece1 	 = this.offsetBoard[checker1];
 				king 	  		 = BitOperations.indexOfLSBit(this.whiteKing);
-				kingMove 		|= move;
+				kingMove 		 = move;
 				kingMove		|= king;
 				kingMove		|= (1 << Move.MOVED_PIECE.shift);
 				kingDb			 = MoveDatabase.getByIndex(king);
@@ -3793,7 +3793,7 @@ public class Board {
 								}
 							}
 						}
-						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, this.allOccupied);
+						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.whiteKing));
 					}
 					break;
 					case 9: {
@@ -3870,7 +3870,7 @@ public class Board {
 				dB = MoveDatabase.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 8:
-						kingMoveSet &= ~dB.getCrudeQueenMoves();
+						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.whiteKing));
 					break;
 					case 9:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3884,7 +3884,7 @@ public class Board {
 				dB = MoveDatabase.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 8:
-						kingMoveSet &= ~dB.getCrudeQueenMoves();
+						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.whiteKing));
 					break;
 					case 9:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3912,7 +3912,7 @@ public class Board {
 				checker1  		= BitOperations.indexOfLSBit(this.checkers);
 				checkerPiece1	= this.offsetBoard[checker1];
 				king 	  		= BitOperations.indexOfLSBit(this.blackKing);
-				kingMove 	   |= move;
+				kingMove 	    = move;
 				kingMove 	   |= king;
 				kingMove 	   |= (7 << Move.MOVED_PIECE.shift);
 				kingDb	 		= MoveDatabase.getByIndex(king);
@@ -3967,7 +3967,7 @@ public class Board {
 								}
 							}
 						}
-						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, this.allOccupied);
+						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.blackKing));
 					}
 					break;
 					case 3: {
@@ -4044,7 +4044,7 @@ public class Board {
 				dB				= MoveDatabase.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 2:
-						kingMoveSet &= ~dB.getCrudeQueenMoves();
+						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.blackKing));
 					break;
 					case 3:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -4058,7 +4058,7 @@ public class Board {
 				dB = MoveDatabase.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 2:
-						kingMoveSet &= ~dB.getCrudeQueenMoves();
+						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.blackKing));
 					break;
 					case 3:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
