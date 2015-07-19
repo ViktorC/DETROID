@@ -22,20 +22,20 @@ public enum Move {
 	PREVIOUS_CHECK					 		(31, 1),
 	PREVIOUS_FIFTY_MOVE_RULE_INDEX			(32, 127),
 	PREVIOUS_REPETITIONS			 		(39, 7),
-	VALUE							 		(42, Integer.MAX_VALUE);
+	VALUE							 		(42, Long.MAX_VALUE);
 	
 	
 	final byte shift;
-	final int  mask;
+	final long  mask;
 	
-	private Move(int shift, int mask) {
+	private Move(int shift, long mask) {
 		this.shift = (byte) shift;
 		this.mask = mask;
 	}
 	public byte getShift() {
 		return this.shift;
 	}
-	public int getMask() {
+	public long getMask() {
 		return this.mask;
 	}
 	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.*/
