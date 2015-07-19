@@ -2747,8 +2747,7 @@ public class Board {
 	private LongStack moveList = new LongStack();		//a stack of all the moves made so far
 	
 	private int moveIndex = 0;							//the count of the current move
-	private int lastIrreversibleMoveIndex = 0;			//the count of the last irreversible move; i.e. a capture or a pawn move
-	private int fiftyMoveRuleClock = 0;					//the number of moves made since the last irreversible move;
+	private int fiftyMoveRuleClock = 0;					//the number of moves made since the last pawn move or capture
 	
 	private int enPassantRights = 8;					//denotes the file on which en passant is possible; 8 means no en passant rights
 	
@@ -2760,7 +2759,6 @@ public class Board {
 	private long zobristKey;							//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
 	private long[] zobristKeyHistory = new long[2*237];	/*All the positions that have occured so far represented in Zobrist keys.
 														 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
-
 	private int repetitions = 0;						//the number of times the current position has occured before
 	
 	public Board() {
@@ -3111,10 +3109,8 @@ public class Board {
 		long lastMove 	= this.moveList.getHead();
 		long moved		= ((lastMove >>> Move.MOVED_PIECE.shift) 		& Move.MOVED_PIECE.mask);
 		long captured 	= ((lastMove >>> Move.CAPTURED_PIECE.shift) 	& Move.CAPTURED_PIECE.mask);
-		if (captured != 0 || moved == 6 || moved == 12) {
+		if (captured != 0 || moved == 6 || moved == 12)
 			this.fiftyMoveRuleClock = 0;
-			this.lastIrreversibleMoveIndex = this.moveIndex;
-		}
 		else
 			this.fiftyMoveRuleClock++;
 	}
@@ -3122,8 +3118,7 @@ public class Board {
 	private void resetMoveIndices() {
 		this.moveIndex--;
 		long lastMove 					= this.moveList.getHead();
-		this.fiftyMoveRuleClock			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift) 		& Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.mask);
-		this.lastIrreversibleMoveIndex 	= (int)((lastMove >>> Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.shift) 	& Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.mask);
+		this.fiftyMoveRuleClock			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.mask);
 	}
 	private void setEnPassantRights() {
 		long lastMove 	= this.moveList.getHead();
@@ -3235,13 +3230,14 @@ public class Board {
 		this.zobristKey = this.zobristKeyHistory[this.moveIndex - 1];
 	}
 	private void setRepetitions() {
-		this.repetitions = 0;
-		if (this.moveIndex >= (this.lastIrreversibleMoveIndex + 4)) {
-			for (int i = this.lastIrreversibleMoveIndex; i <= this.moveIndex; i += 2) {
+		if ((this.fiftyMoveRuleClock) >= 4) {
+			for (int i = this.moveIndex; i >= (this.moveIndex - this.fiftyMoveRuleClock); i -= 2) {
 				if (this.zobristKeyHistory[i] == this.zobristKey)
 					this.repetitions++;
 			}
 		}
+		else
+			this.repetitions = 0;
 	}
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
 		if (byWhite) {
@@ -3447,7 +3443,6 @@ public class Board {
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
 		move |= (this.check	? 1 : 0				<< Move.PREVIOUS_CHECK.shift);
 		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
-		move |= (this.lastIrreversibleMoveIndex << Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
 			pinnedPieces  =  getPinnedPieces(true);
@@ -3729,7 +3724,6 @@ public class Board {
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
 		move |= (this.check	? 1 : 0				<< Move.PREVIOUS_CHECK.shift);
 		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
-		move |= (this.lastIrreversibleMoveIndex << Move.PREVIOUS_LAST_IRREVERSIBLE_MOVE_INDEX.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
 			if (BitOperations.resetLSBit(this.checkers) == 0) {
