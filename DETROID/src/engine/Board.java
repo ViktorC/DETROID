@@ -3230,14 +3230,18 @@ public class Board {
 		this.zobristKey = this.zobristKeyHistory[this.moveIndex - 1];
 	}
 	private void setRepetitions() {
-		if ((this.fiftyMoveRuleClock) >= 4) {
-			for (int i = this.moveIndex; i >= (this.moveIndex - this.fiftyMoveRuleClock); i -= 2) {
+		System.out.println("move index: " + this.moveIndex + "; 50 move rule clock: " + this.fiftyMoveRuleClock);
+		if (this.fiftyMoveRuleClock >= 4) {
+			for (int i = this.moveIndex; i > (this.moveIndex - this.fiftyMoveRuleClock) + 1; i -= 2) {
 				if (this.zobristKeyHistory[i] == this.zobristKey)
 					this.repetitions++;
 			}
 		}
 		else
 			this.repetitions = 0;
+	}
+	private void resetRepetitions() {
+		this.repetitions = (int)(this.moveList.getHead() >>> Move.PREVIOUS_REPETITIONS.shift & Move.PREVIOUS_REPETITIONS.mask);
 	}
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
 		if (byWhite) {
@@ -4327,6 +4331,7 @@ public class Board {
 				}
 			}
 		}
+		this.resetRepetitions();
 		this.resetKeys();
 		this.resetMoveIndices();
 		this.resetEnPassantRights();

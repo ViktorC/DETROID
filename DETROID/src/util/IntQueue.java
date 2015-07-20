@@ -19,7 +19,7 @@ public class IntQueue extends IntList {
 		this.iterator = head;
 		length++;
 	}
-	/**Returns the data held in the last element of the list.*/
+	/**Returns the data held in the last element of the list. If the list is empty, it returns 0.*/
 	public int getTail() {
 		if (this.tail != null)
 			return this.tail.data;

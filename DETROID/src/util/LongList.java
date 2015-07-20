@@ -25,7 +25,7 @@ public abstract class LongList {
 	protected LongListItem head;
 	protected LongListItem iterator;			//used for keeping track of the current node while iterating over the list
 	
-	/**Returns the data held in the first element of the list.*/
+	/**Returns the data held in the first element of the list. If the list is empty, it returns 0.*/
 	public long getHead() {
 		if (this.head != null)
 			return this.head.data;
