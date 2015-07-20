@@ -3441,7 +3441,6 @@ public class Board {
 		move |= (this.whiteCastlingRights		<< Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift);
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
-		move |= (this.check	? 1 : 0				<< Move.PREVIOUS_CHECK.shift);
 		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
@@ -3722,7 +3721,7 @@ public class Board {
 		move |= (this.whiteCastlingRights		<< Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift);
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
-		move |= (this.check	? 1 : 0				<< Move.PREVIOUS_CHECK.shift);
+		move |= (1 								<< Move.PREVIOUS_CHECK.shift);
 		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
@@ -3754,6 +3753,8 @@ public class Board {
 						}
 						else if (checkerPiece1 == 12 && (Rank.getBySquareIndex(checker1) & Square.getBitmapByIndex(checkerAttackerSquare)) != 0)
 							moves.add(((checkerAttackerMove | (Move.TO.mask << Move.TO.shift))^(Move.TO.mask << Move.TO.shift)) | ((checker1 + 8) << Move.TO.shift) | (3 << Move.TYPE.shift));
+						else
+							moves.add(checkerAttackerMove);
 					}
 					else
 						moves.add(checkerAttackerMove);
@@ -3928,6 +3929,8 @@ public class Board {
 						}
 						else if (checkerPiece1 == 6 && (Rank.getBySquareIndex(checker1) & Square.getBitmapByIndex(checkerAttackerSquare)) != 0)
 							moves.add(((checkerAttackerMove | (Move.TO.mask << Move.TO.shift))^(Move.TO.mask << Move.TO.shift)) | ((checker1 - 8) << Move.TO.shift) | (3 << Move.TYPE.shift));
+						else
+							moves.add(checkerAttackerMove);
 					}
 					else
 						moves.add(checkerAttackerMove);
