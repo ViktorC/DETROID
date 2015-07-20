@@ -2991,27 +2991,27 @@ public class Board {
 				break;
 				case 2: {
 					this.whiteQueens ^= fromBit;
-					this.whiteQueens |= toBit;
+					this.whiteQueens ^= toBit;
 				}
 				break;
 				case 3: {
 					this.whiteRooks ^= fromBit;
-					this.whiteRooks |= toBit;
+					this.whiteRooks ^= toBit;
 				}
 				break;
 				case 4: {
 					this.whiteBishops ^= fromBit;
-					this.whiteBishops |= toBit;
+					this.whiteBishops ^= toBit;
 				}
 				break;
 				case 5: {
 					this.whiteKnights ^= fromBit;
-					this.whiteKnights |= toBit;
+					this.whiteKnights ^= toBit;
 				}
 				break;
 				case 6: {
 					this.whitePawns ^= fromBit;
-					this.whitePawns |= toBit;
+					this.whitePawns ^= toBit;
 				}
 				break;
 			}
@@ -3035,7 +3035,7 @@ public class Board {
 				break;
 			}
 			this.allWhitePieces 	 ^=  fromBit;
-			this.allWhitePieces 	 |=  toBit;
+			this.allWhitePieces 	 ^=  toBit;
 			this.allBlackPieces 	 &= ~toBit;
 			this.allNonWhiteOccupied  = ~this.allWhitePieces;
 			this.allNonBlackOccupied  = ~this.allBlackPieces;
@@ -3049,27 +3049,27 @@ public class Board {
 				break;
 				case 8: {
 					this.blackQueens ^= fromBit;
-					this.blackQueens |= toBit;
+					this.blackQueens ^= toBit;
 				}
 				break;
 				case 9: {
 					this.blackRooks ^= fromBit;
-					this.blackRooks |= toBit;
+					this.blackRooks ^= toBit;
 				}
 				break;
 				case 10: {
 					this.blackBishops ^= fromBit;
-					this.blackBishops |= toBit;
+					this.blackBishops ^= toBit;
 				}
 				break;
 				case 11: {
 					this.blackKnights ^= fromBit;
-					this.blackKnights |= toBit;
+					this.blackKnights ^= toBit;
 				}
 				break;
 				case 12: {
 					this.blackPawns ^= fromBit;
-					this.blackPawns |= toBit;
+					this.blackPawns ^= toBit;
 				}
 				break;
 			}
@@ -3093,7 +3093,7 @@ public class Board {
 				break;
 			}
 			this.allBlackPieces 	 ^=  fromBit;
-			this.allBlackPieces 	 |=  toBit;
+			this.allBlackPieces 	 ^=  toBit;
 			this.allWhitePieces 	 &= ~toBit;
 			this.allNonWhiteOccupied  = ~this.allWhitePieces;
 			this.allNonBlackOccupied  = ~this.allBlackPieces;
@@ -4199,9 +4199,14 @@ public class Board {
 				}
 			}
 		}
-		this.setTurn();
 		this.moveList.add(move);
-		
+		this.setTurn();
+		this.setCheck();
+		this.setCastlingRights();
+		this.setEnPassantRights();
+		this.setMoveIndices();
+		this.setKeys();
+		this.setRepetitions();
 	}
 	public void unMakeMove() {
 		long move = this.moveList.getHead();
@@ -4322,7 +4327,11 @@ public class Board {
 				}
 			}
 		}
-		
+		this.resetKeys();
+		this.resetMoveIndices();
+		this.resetEnPassantRights();
+		this.resetCastlingRights();
+		this.resetCheck();
 		this.moveList.pop();
 	}
 	/**Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated by spaces.
