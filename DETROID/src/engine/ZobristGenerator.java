@@ -17,7 +17,7 @@ import java.util.Random;
  * @author Viktor
  *
  */
-public class Zobrist {
+public class ZobristGenerator {
 	
 	private long turn;
 	private long[][] board = new long[13][64];
@@ -25,7 +25,7 @@ public class Zobrist {
 	private long[] blackCastlingRights = new long[4];
 	private long[] enPassantRights = new long[9];
 	
-	public Zobrist() {
+	public ZobristGenerator() {
 		this.pseudorandNumGen();
 	}
 	/**Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.*/
