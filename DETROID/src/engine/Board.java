@@ -3013,7 +3013,6 @@ public class Board {
 					this.whitePawns ^= fromBit;
 					this.whitePawns ^= toBit;
 				}
-				break;
 			}
 			switch (captured) {
 				case 0:
@@ -3032,7 +3031,6 @@ public class Board {
 				break;
 				case 12:
 					this.blackPawns ^= toBit;
-				break;
 			}
 			this.allWhitePieces 	 ^=  fromBit;
 			this.allWhitePieces 	 ^=  toBit;
@@ -3071,7 +3069,6 @@ public class Board {
 					this.blackPawns ^= fromBit;
 					this.blackPawns ^= toBit;
 				}
-				break;
 			}
 			switch (captured) {
 				case 0:
@@ -3090,7 +3087,6 @@ public class Board {
 				break;
 				case 6:
 					this.whitePawns ^= toBit;
-				break;
 			}
 			this.allBlackPieces 	 ^=  fromBit;
 			this.allBlackPieces 	 ^=  toBit;
@@ -4094,9 +4090,10 @@ public class Board {
 		int moved			= (int)((move >>> Move.MOVED_PIECE.shift) 	  & Move.MOVED_PIECE.mask);
 		int captured	 	= (int)((move >>> Move.CAPTURED_PIECE.shift)  & Move.CAPTURED_PIECE.mask);
 		int type			= (int)((move >>> Move.TYPE.shift)  		  & Move.TYPE.mask);
-		int square;
 		long fromBit = Square.getBitmapByIndex(from);
 		long toBit	 = Square.getBitmapByIndex(to);
+		int enPassantVictimSquare;
+		long enPassantVictimSquareBit;
 		switch (type) {
 			case 0: {
 				this.offsetBoard[from]  = 0;
@@ -4139,67 +4136,68 @@ public class Board {
 			case 3: {
 				this.offsetBoard[from]   = 0;
 				this.offsetBoard[to]	 = moved;
-				this.setBitboards(moved, 0, fromBit, toBit);
 				if (this.whitesTurn) {
-					square = to - 8;
-					this.offsetBoard[square] = 0;
+					enPassantVictimSquare = to - 8;
+					this.offsetBoard[enPassantVictimSquare] = 0;
 				}
 				else {
-					square = to + 8;
-					this.offsetBoard[square] = 0;
+					enPassantVictimSquare = to + 8;
+					this.offsetBoard[enPassantVictimSquare] = 0;
 				}
-				this.setBitboards(captured, 0, Square.getBitmapByIndex(square), 0);
+				enPassantVictimSquareBit = Square.getBitmapByIndex(enPassantVictimSquare);
+				this.setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
+				this.setBitboards(moved, 0, enPassantVictimSquareBit, toBit);
 			}
 			break;
 			case 4: {
 				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, captured, fromBit, 0);
+				this.setBitboards(moved, 0, fromBit, 0);
 				if (this.whitesTurn) {
 					this.offsetBoard[to] = 2;
-					this.setBitboards(2, 0, 0, toBit);
+					this.setBitboards(2, captured, 0, toBit);
 				}
 				else {
 					this.offsetBoard[to] = 8;
-					this.setBitboards(8, 0, 0, toBit);
+					this.setBitboards(8, captured, 0, toBit);
 				}
 			}
 			break;
 			case 5: {
 				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, captured, fromBit, 0);
+				this.setBitboards(moved, 0, fromBit, 0);
 				if (this.whitesTurn) {
 					this.offsetBoard[to] = 3;
-					this.setBitboards(3, 0, 0, toBit);
+					this.setBitboards(3, captured, 0, toBit);
 				}
 				else {
 					this.offsetBoard[to] = 9;
-					this.setBitboards(9, 0, 0, toBit);
+					this.setBitboards(9, captured, 0, toBit);
 				}
 			}
 			break;
 			case 6: {
 				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, captured, fromBit, 0);
+				this.setBitboards(moved, 0, fromBit, 0);
 				if (this.whitesTurn) {
 					this.offsetBoard[to] = 4;
-					this.setBitboards(4, 0, 0, toBit);
+					this.setBitboards(4, captured, 0, toBit);
 				}
 				else {
 					this.offsetBoard[to] = 10;
-					this.setBitboards(10, 0, 0, toBit);
+					this.setBitboards(10, captured, 0, toBit);
 				}
 			}
 			break;
 			case 7: {
 				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, captured, fromBit, 0);
+				this.setBitboards(moved, 0, fromBit, 0);
 				if (this.whitesTurn) {
 					this.offsetBoard[to] = 5;
-					this.setBitboards(5, 0, 0, toBit);
+					this.setBitboards(5, captured, 0, toBit);
 				}
 				else {
 					this.offsetBoard[to] = 11;
-					this.setBitboards(11, 0, 0, toBit);
+					this.setBitboards(11, captured, 0, toBit);
 				}
 			}
 		}
