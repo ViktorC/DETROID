@@ -3135,6 +3135,8 @@ public class Board {
 	}
 	private void setRepetitions() {
 		System.out.println("move index: " + this.moveIndex + "; 50 move rule clock: " + this.fiftyMoveRuleClock);
+		this.printBitboardToConsole();
+		this.printOffsetBoardToConsole();
 		if (this.fiftyMoveRuleClock >= 4) {
 			for (int i = this.moveIndex; i > (this.moveIndex - this.fiftyMoveRuleClock) + 1; i -= 2) {
 				if (this.zobristKeyHistory[i] == this.zobristKey)
