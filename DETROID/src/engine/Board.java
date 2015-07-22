@@ -3362,9 +3362,8 @@ public class Board {
 				kingMoves = BitOperations.serialize(moveSet);
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
-					if (!isAttacked(to, false)) {
+					if (!isAttacked(to, false))
 						moves.add(kingMove | (to << Move.TO.getShift()) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
-					}
 				}
 				if ((this.whiteCastlingRights & 2) != 0) {
 					if (((Square.getBitmapByIndex(1) | Square.getBitmapByIndex(2) | Square.getBitmapByIndex(3)) & this.allOccupied) == 0) {
@@ -3494,9 +3493,8 @@ public class Board {
 				kingMoves = BitOperations.serialize(moveSet);
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
-					if (!isAttacked(to, true)) {
+					if (!isAttacked(to, true))
 						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
-					}
 				}
 				if ((this.whiteCastlingRights & 1) != 0) {
 					if (((Square.getBitmapByIndex(61) | Square.getBitmapByIndex(62)) & this.allOccupied) == 0) {
