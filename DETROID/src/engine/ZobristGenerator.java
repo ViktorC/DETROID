@@ -50,9 +50,9 @@ public class ZobristGenerator {
 		int[] board64 = b.getOffsetBoard();
 		long key = 0;
 		if (!b.getTurn())
-			key ^= turn;
+			key ^= this.turn;
 		for (int i = 0; i < 64; i++) {
-			key ^= board[board64[i]][i];
+			key ^= this.board[board64[i]][i];
 		}
 		key ^= this.whiteCastlingRights[b.getWhiteCastlingRights()];
 		key ^= this.blackCastlingRights[b.getBlackCastlingRights()];

@@ -3022,7 +3022,7 @@ public class Board {
 	private void resetMoveIndices() {
 		this.moveIndex--;
 		long lastMove 					= this.moveList.getHead();
-		this.fiftyMoveRuleClock			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.mask);
+		this.fiftyMoveRuleClock			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.mask);
 	}
 	private void setEnPassantRights() {
 		long lastMove 	= this.moveList.getHead();
@@ -3044,7 +3044,7 @@ public class Board {
 		this.enPassantRights = 8;
 	}
 	private void resetEnPassantRights() {
-		this.enPassantRights = (int)(this.moveList.getHead() >>> Move.PREVIOUS_ENPASSANT_RIGHTS.shift & Move.PREVIOUS_ENPASSANT_RIGHTS.mask);
+		this.enPassantRights = (int)((this.moveList.getHead() >>> Move.PREVIOUS_ENPASSANT_RIGHTS.shift) & Move.PREVIOUS_ENPASSANT_RIGHTS.mask);
 	}
 	private void setCastlingRights() {
 		if (this.whitesTurn) {
@@ -3102,8 +3102,8 @@ public class Board {
 	}
 	private void resetCastlingRights() {
 		long lastMove = this.moveList.getHead();
-		this.whiteCastlingRights = (int)(lastMove >>> Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift & Move.PREVIOUS_WHITE_CASTLING_RIGHTS.mask);
-		this.blackCastlingRights = (int)(lastMove >>> Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift & Move.PREVIOUS_BLACK_CASTLING_RIGHTS.mask);
+		this.whiteCastlingRights = (int)((lastMove >>> Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift) & Move.PREVIOUS_WHITE_CASTLING_RIGHTS.mask);
+		this.blackCastlingRights = (int)((lastMove >>> Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift) & Move.PREVIOUS_BLACK_CASTLING_RIGHTS.mask);
 	}
 	private void setCheck() {
 		if (this.whitesTurn) {
@@ -3122,7 +3122,7 @@ public class Board {
 		}
 	}
 	private void resetCheck() {
-		this.check = (this.moveList.getHead() >>> Move.PREVIOUS_CHECK.shift & Move.PREVIOUS_CHECK.mask) == 1 ? true : false;
+		this.check = ((this.moveList.getHead() >>> Move.PREVIOUS_CHECK.shift) & Move.PREVIOUS_CHECK.mask) == 1 ? true : false;
 	}
 	private void setKeys() {
 		this.zobristKey = keyGen.updateKey(this);
@@ -3144,7 +3144,7 @@ public class Board {
 			this.repetitions = 0;
 	}
 	private void resetRepetitions() {
-		this.repetitions = (int)(this.moveList.getHead() >>> Move.PREVIOUS_REPETITIONS.shift & Move.PREVIOUS_REPETITIONS.mask);
+		this.repetitions = (int)((this.moveList.getHead() >>> Move.PREVIOUS_REPETITIONS.shift) & Move.PREVIOUS_REPETITIONS.mask);
 	}
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
 		if (byWhite) {
@@ -3348,7 +3348,7 @@ public class Board {
 		move |= (this.whiteCastlingRights		<< Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift);
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
-		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
+		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
 			pinnedPieces  =  getPinnedPieces(true);
@@ -3627,7 +3627,7 @@ public class Board {
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
 		move |= (1 								<< Move.PREVIOUS_CHECK.shift);
-		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_INDEX.shift);
+		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
 			if (BitOperations.resetLSBit(this.checkers) == 0) {
