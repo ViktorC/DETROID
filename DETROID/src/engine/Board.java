@@ -3021,8 +3021,7 @@ public class Board {
 	/**Should be used after resetKeys().*/
 	private void resetMoveIndices() {
 		this.moveIndex--;
-		long lastMove 					= this.moveList.getHead();
-		this.fiftyMoveRuleClock			= (int)((lastMove >>> Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.mask);
+		this.fiftyMoveRuleClock	= (int)((this.moveList.getHead() >>> Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.mask);
 	}
 	private void setEnPassantRights() {
 		long lastMove 	= this.moveList.getHead();
@@ -3135,7 +3134,7 @@ public class Board {
 	}
 	private void setRepetitions() {
 		if (this.fiftyMoveRuleClock >= 4) {
-			for (int i = this.moveIndex; i > (this.moveIndex - this.fiftyMoveRuleClock) + 1; i -= 2) {
+			for (int i = this.moveIndex; i >= (this.moveIndex - this.fiftyMoveRuleClock); i -= 2) {
 				if (this.zobristKeyHistory[i] == this.zobristKey)
 					this.repetitions++;
 			}
