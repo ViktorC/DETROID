@@ -843,8 +843,8 @@ public class Board {
 		BLACK_KNIGHT	(0b0100001000000000000000000000000000000000000000000000000000000000L, 11),
 		BLACK_PAWN		(0b0000000011111111000000000000000000000000000000000000000000000000L, 12);
 		
-		final long initPosBitmap;
-		final int  offsetBoardRep;
+		final long initPosBitmap;		//a bitmap representing the initial position of the respective pieces at the start of the game
+		final int  offsetBoardRep;		//a number between 1 and 12 that generally represents the respective piece, among others, for example on the offset board
 		
 		private Piece(long initPosBitmap, int offsetBoardRep) {
 			this.initPosBitmap = initPosBitmap;
@@ -858,8 +858,14 @@ public class Board {
 		}
 	}
 	
+	/**A static class that generates the basic move masks for each piece type. It does not include special moves or check considerations and it disregards occupancies.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public final static class MoveMask {
 		
+		/**Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.*/
 		public final static long generateKingsMoveMask(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
@@ -873,6 +879,7 @@ public class Board {
 				mask &= ~File.A.getBitmap();
 			return mask;
 		}
+		/**Generates a bitmap of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.*/
 		public final static long generateKnightMasks(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
@@ -891,6 +898,7 @@ public class Board {
 				mask &= ~File.A.getBitmap();
 			return mask;
 		}
+		/**Generates a bitmap of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.*/
 		public final static long generateWhitePawnsCaptureMasks(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
@@ -904,6 +912,7 @@ public class Board {
 				mask &= ~File.A.getBitmap();
 			return mask;
 		}
+		/**Generates a bitmap of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.*/
 		public final static long generateBlackPawnsCaptureMasks(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
@@ -917,6 +926,7 @@ public class Board {
 				mask &= ~File.A.getBitmap();
 			return mask;
 		}
+		/**Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.*/
 		public final static long generateWhitePawnsAdvanceMasks(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
@@ -932,6 +942,7 @@ public class Board {
 			mask = 		BitOperations.vShiftUp(sqrBit);
 			return mask;
 		}
+		/**Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.*/
 		public final static long generateBlackPawnsAdvanceMasks(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
@@ -947,48 +958,59 @@ public class Board {
 			mask =		BitOperations.vShiftDown(sqrBit);
 			return mask;
 		}
+		/**Generates a bitmap of the basic rook's rank-wise/horizontal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateRooksRankMoveMask(Square sqr) {
 			long mask;
 			mask =	(Rank.getBySquare(sqr)^sqr.getBitmap());
 			return mask;
 		}
+		/**Generates a bitmap of the basic rook's file-wise/vertical move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateRooksFileMoveMask(Square sqr) {
 			long mask;
 			mask =	(File.getBySquare(sqr)^sqr.getBitmap());
 			return mask;
 		}
+		/**Generates a bitmap of the basic rook's complete move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateRooksCompleteMoveMask(Square sqr) {
 			long mask;
 			mask = generateRooksRankMoveMask(sqr) | generateRooksFileMoveMask(sqr);
 			return mask;
 		}
+		/**Generates a bitmap of the basic bishop's diagonal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateBishopsDiagonalMoveMask(Square sqr) {
 			long mask;
 			mask = (Diagonal.getBySquare(sqr)^sqr.getBitmap());
 			return mask;
 		}
+		/**Generates a bitmap of the basic bishop's anti-diagonal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateBishopsAntiDiagonalMoveMask(Square sqr) {
 			long mask;
 			mask = (AntiDiagonal.getBySquare(sqr)^sqr.getBitmap());
 			return mask;
 		}
+		/**Generates a bitmap of the basic bishop's complete move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateBishopsCompleteMoveMask(Square sqr) {
 			long mask;
 			mask = generateBishopsDiagonalMoveMask(sqr) | generateBishopsAntiDiagonalMoveMask(sqr);
 			return mask;
 		}
+		/**Generates a bitmap of the basic queen's rank-wise/horizontal move mask. It is identical to the rook's rank-wise move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateQueensRankMoveMask(Square sqr) {
 			return generateRooksRankMoveMask(sqr);
 		}
+		/**Generates a bitmap of the basic queen's file-wise/vertical move mask. It is identical to the rook's file-wise move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateQueensFileMoveMask(Square sqr) {
 			return generateRooksFileMoveMask(sqr);
 		}
+		/**Generates a bitmap of the basic queen's diagonal move mask. It is identical to the bishop's diagonal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateQueensDiagonalMoveMask(Square sqr) {
 			return generateBishopsDiagonalMoveMask(sqr);
 		}
+		/**Generates a bitmap of the basic queen's anti-diagonal move mask. It is identical to the bishop's anti-diagonal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateQueensAntiDiagonalMoveMask(Square sqr) {
 			return generateBishopsAntiDiagonalMoveMask(sqr);
 		}
+		/**Generates a bitmap of the basic queen's complete move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateQueensCompleteMoveMask(Square sqr) {
 			long mask;
 			mask = generateRooksCompleteMoveMask(sqr) | generateBishopsCompleteMoveMask(sqr);
@@ -996,6 +1018,11 @@ public class Board {
 		}
 	}
 	
+	/**An enum type that holds all the attack rays for each direction from each square on the board as bitmaps.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum SliderAttackRayMask {
 		
 		A1 (Square.A1),
@@ -1248,6 +1275,11 @@ public class Board {
 		}
 	}
 	
+	/**An enum type that holds the rank, file, diagonal, and anti-diagonal that cross the square for each square as bitmaps. The square itself and the perimeter squares are excluded as their occupancies do not affect the attack set variations.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum SliderOccupancyMask {
 		
 		A1 (Square.A1),
@@ -1510,6 +1542,11 @@ public class Board {
 		}
 	}
 	
+	/**A class with two static two-dimensional arrays for instance fields that hold all the different occupancy variations for each square's occupancy mask once generated.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static class SliderOccupancyVariations {
 		
 		private final static long[][] rookOccupancyVariations	= initializeRookOccupancyVariations();
@@ -1574,6 +1611,11 @@ public class Board {
 		}
 	}
 	
+	/**A class with two static two-dimensional arrays for instance fields that hold the attack sets for the respective occupancy variations. .
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static class SliderAttackSetVariations {
 		
 		private final static long[][] rookAttackSetVariations	= initializeRookAttackSetVariations();
@@ -2596,7 +2638,7 @@ public class Board {
 	
 	private LongStack moveList = new LongStack();				//a stack of all the moves made so far
 	
-	private int moveIndex = 0;									//the count of the current move
+	private int plyIndex = 0;									//the count of the current ply/half-move
 	private int fiftyMoveRuleClock = 0;							//the number of moves made since the last pawn move or capture
 	
 	private int enPassantRights = 8;							//denotes the file on which en passant is possible; 8 means no en passant rights
@@ -2611,6 +2653,7 @@ public class Board {
 														 		 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
 	private int repetitions = 0;								//the number of times the current position has occured before
 	
+	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Board() {
 		this.initializeBitBoards();
 		this.initializeOffsetBoard();
@@ -2620,22 +2663,28 @@ public class Board {
 	 * Beside standard six-field FEN-Strings, it also accepts four-field Strings without the fifty-move rule clock and the move index.*/
 	public Board(String fen) {
 		String[] fenFields = fen.split(" "), ranks;
-		String board, turn, castling, enPassant, fiftyMoveClock, moveCount, rank;
+		String board, turn, castling, enPassant, rank;
 		char piece;
-		int pieceNum, index = 0;
+		int pieceNum, index = 0, fiftyMoveRuleClock, moveIndex;
 		if (fenFields.length == 6) {
-			fiftyMoveClock 	= fenFields[4];
-			moveCount 		= fenFields[5];
 			try {
-				this.fiftyMoveRuleClock = Integer.parseInt(fiftyMoveClock);
+				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
+				if (fiftyMoveRuleClock >= 0)
+					this.fiftyMoveRuleClock = fiftyMoveRuleClock;
+				else
+					this.fiftyMoveRuleClock = 0;
 			}
 			catch (NumberFormatException e) {
 				throw new IllegalArgumentException("The fifty-move rule clock field of the FEN-string does not conform to the standards. Parsing not possible.");
 			}
 			try {
-				this.moveIndex = (Integer.parseInt(moveCount) - 1)*2;
+				moveIndex = (Integer.parseInt(fenFields[5]) - 1)*2;
 				if (!this.whitesTurn)
-					this.moveIndex++;
+					moveIndex++;
+				if (moveIndex >= 0)
+					this.plyIndex = moveIndex;
+				else
+					this.plyIndex = 0;
 			}
 			catch (NumberFormatException e) {
 				throw new IllegalArgumentException("The move index field does not conform to the standards. Parsing not possible.");
@@ -2800,36 +2849,59 @@ public class Board {
 		this.zobristKey = keyGen.hash(this);
 		this.zobristKeyHistory[0] = this.zobristKey;
 	}
+	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.*/
 	public int[] getOffsetBoard() {
 		return this.offsetBoard;
 	}
+	/**Returns whether it is white's turn or not.*/
 	public boolean getTurn() {
 		return this.whitesTurn;
 	}
+	/**Returns whether the color to move's king is in check.*/
 	public boolean getCheck() {
 		return this.check;
 	}
-	public int getMoveIndex() {
-		return this.moveIndex;
+	/**Returns the current ply/half-move index.*/
+	public int getPlyIndex() {
+		return this.plyIndex;
 	}
+	/**Returns the number of half-moves made since the last pawn-move or capture.*/
 	public int getFiftyMoveRuleClock() {
 		return this.fiftyMoveRuleClock;
 	}
+	/**Returns a number denoting white's castling rights.
+	 * 0 - no castling rights
+	 * 1 - king-side castling only
+	 * 2 - queen-side castling only
+	 * 3 - all castling rights
+	 */
 	public int getWhiteCastlingRights() {
 		return this.whiteCastlingRights;
 	}
+	/**Returns a number denoting black's castling rights.
+	 * 0 - no castling rights
+	 * 1 - king-side castling only
+	 * 2 - queen-side castling only
+	 * 3 - all castling rights
+	 */
 	public int getBlackCastlingRights() {
 		return this.blackCastlingRights;
 	}
+	/**Returns a number denoting the file on which in the current position en passant is possible.
+	 * 0 - a; 1 - b; ...; 7 - h; 8 - no en passant rights
+	 */
 	public int getEnPassantRights() {
 		return this.enPassantRights;
 	}
+	/**Returns the number of times the current position has occured since the initialization of the object.*/
 	public int getRepetitions() {
 		return this.repetitions;
 	}
+	/**Returns the 64-bit Zobrist key of the current position. A Zobrist key is used to almost uniquely hash a chess position to an integer.*/
 	public long getZobristKey() {
 		return this.zobristKey;
 	}
+	/**Returns a long containing all relevant information about the last move made according to the Move enum. if the move history list is empty, it returns 0.*/
 	public long getLastMove() {
 		return this.moveList.getHead();
 	}
@@ -3009,7 +3081,7 @@ public class Board {
 		this.whitesTurn = !this.whitesTurn;
 	}
 	private void setMoveIndices() {
-		this.moveIndex++;
+		this.plyIndex++;
 		long lastMove 	= this.moveList.getHead();
 		long moved		= ((lastMove >>> Move.MOVED_PIECE.shift) 		& Move.MOVED_PIECE.mask);
 		long captured 	= ((lastMove >>> Move.CAPTURED_PIECE.shift) 	& Move.CAPTURED_PIECE.mask);
@@ -3020,7 +3092,7 @@ public class Board {
 	}
 	/**Should be used after resetKeys().*/
 	private void resetMoveIndices() {
-		this.moveIndex--;
+		this.plyIndex--;
 		this.fiftyMoveRuleClock	= (int)((this.moveList.getHead() >>> Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.mask);
 	}
 	private void setEnPassantRights() {
@@ -3125,16 +3197,16 @@ public class Board {
 	}
 	private void setKeys() {
 		this.zobristKey = keyGen.updateKey(this);
-		this.zobristKeyHistory[this.moveIndex] = this.zobristKey;
+		this.zobristKeyHistory[this.plyIndex] = this.zobristKey;
 	}
 	/**Should be used before resetMoveIndices().*/
 	private void resetKeys() {
-		this.zobristKeyHistory[this.moveIndex] = 0;
-		this.zobristKey = this.zobristKeyHistory[this.moveIndex - 1];
+		this.zobristKeyHistory[this.plyIndex] = 0;
+		this.zobristKey = this.zobristKeyHistory[this.plyIndex - 1];
 	}
 	private void setRepetitions() {
 		if (this.fiftyMoveRuleClock >= 4) {
-			for (int i = this.moveIndex; i >= (this.moveIndex - this.fiftyMoveRuleClock); i -= 2) {
+			for (int i = this.plyIndex; i >= (this.plyIndex - this.fiftyMoveRuleClock); i -= 2) {
 				if (this.zobristKeyHistory[i] == this.zobristKey)
 					this.repetitions++;
 			}
@@ -3145,6 +3217,7 @@ public class Board {
 	private void resetRepetitions() {
 		this.repetitions = (int)((this.moveList.getHead() >>> Move.PREVIOUS_REPETITIONS.shift) & Move.PREVIOUS_REPETITIONS.mask);
 	}
+	/**Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the supposedly enemy occupied square specified by sqrInd.*/
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
@@ -3182,6 +3255,7 @@ public class Board {
 		}
 		return false;
 	}
+	/**Returns a long representing all the squares on which the pieces are of the color defined by byWhite and in the current position could legally be moved to the supposedly enemy occupied square specified by sqrInd.*/
 	public long getAttackers(int sqrInd, boolean byWhite) {
 		long attackers = 0;
 		if (byWhite) {
@@ -3206,6 +3280,7 @@ public class Board {
 		}
 		return attackers;
 	}
+	/**Returns a long representing all the squares on which the pieces are of the color defined by byWhite and in the current position could legally be moved to the supposedly empty square specified by sqrInd.*/
 	public long getBlockerCandidates(int sqrInd, boolean byWhite) {
 		long blockerCandidates = 0;
 		long sqrBit = Square.getBitmapByIndex(sqrInd);
@@ -3234,6 +3309,7 @@ public class Board {
 		}
 		return blockerCandidates;
 	}
+	/**Returns a long representing all the squares on which there are pinned pieces of the color defined by forWhite in the current position. A pinned piece is one that when moved would expose its king to a check.*/
 	public long getPinnedPieces(boolean forWhite) {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders;
@@ -3982,12 +4058,14 @@ public class Board {
 		}
 		return moves;
 	}
+	/**Generates a queue of longs that represents all the legal moves from the current position.*/
 	public LongQueue generateMoves() {
 		if (this.check)
 			return this.generateCheckEvasionMoves();
 		else
 			return this.generateNormalMoves();
 	}
+	/**Makes a single move from a LongQueue generated by generateMoves.*/
 	public void makeMove(long move) {
 		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
 		int to	 			= (int)((move >>> Move.TO.shift) 			  & Move.TO.mask);
@@ -4111,6 +4189,7 @@ public class Board {
 		this.setKeys();
 		this.setRepetitions();
 	}
+	/**Reverts the state of the instance to that before the last move made.*/
 	public void unMakeMove() {
 		long move = this.moveList.getHead();
 		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
@@ -4324,7 +4403,7 @@ public class Board {
 		fen += ' ';
 		fen += this.fiftyMoveRuleClock;
 		fen += ' ';
-		fen += 1 + this.moveIndex/2;
+		fen += 1 + this.plyIndex/2;
 		return fen;
 	}
 	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.*/
