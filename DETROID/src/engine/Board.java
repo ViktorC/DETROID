@@ -879,8 +879,9 @@ public class Board {
 		}
 		public static long[] generateRookOccupancyVariations(Square sqr) {
 			int sqrInd = sqr.ordinal();
-			long mask = SliderOccupancyMask.getByIndex(sqrInd).getRookOccupancyMask();
-			byte numOfSetBitsInMask = SliderOccupancyMask.getByIndex(sqrInd).getRookOccupancyMaskBitCount();
+			SliderOccupancyMask occupancyMask = SliderOccupancyMask.getByIndex(sqrInd);
+			long mask = occupancyMask.getRookOccupancyMask();
+			byte numOfSetBitsInMask = occupancyMask.getRookOccupancyMaskBitCount();
 			int[] setBitsInMask = BitOperations.serialize(mask, numOfSetBitsInMask);
 			int totalNumOfVariations = (1 << numOfSetBitsInMask);
 			long[] occVar = new long[totalNumOfVariations];
@@ -894,8 +895,9 @@ public class Board {
 		}
 		public static long[] generateBishopOccupancyVariations(Square sqr) {
 			int sqrInd = sqr.ordinal();
-			long mask = SliderOccupancyMask.getByIndex(sqrInd).getBishopOccupancyMask();
-			byte numOfSetBitsInMask = SliderOccupancyMask.getByIndex(sqrInd).getBishopOccupancyMaskBitCount();
+			SliderOccupancyMask occupancyMask = SliderOccupancyMask.getByIndex(sqrInd);
+			long mask = occupancyMask.getBishopOccupancyMask();
+			byte numOfSetBitsInMask = occupancyMask.getBishopOccupancyMaskBitCount();
 			int[] setBitsInMask = BitOperations.serialize(mask, numOfSetBitsInMask);
 			int totalNumOfVariations = (1 << numOfSetBitsInMask);
 			long[] occVar = new long[totalNumOfVariations];
