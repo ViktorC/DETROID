@@ -103,304 +103,88 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
-		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
-		public final static void printCodeGetByIndex() {
-			int ind = 0;
-			System.out.println("public static Square getByIndex(int sqrInd) {\n" +
-									"\tswitch(sqrInd) {");
-			for (Square sqr : Square.values()) {
-				System.out.println("\t\tcase " + ind + ":\n" +
-										"\t\t\treturn " + sqr + ";");
-				ind++;
-			}
-			System.out.println("\t\tdefault:\n" +
-									"\t\t\tthrow new IllegalArgumentException(\"Invalid square index.\");\n" +
-							"\t}\n" +
-						"}");
-		}
 		/**@return a Square enum.*/
 		public static Square getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return A1;
-				case 1:
-					return B1;
-				case 2:
-					return C1;
-				case 3:
-					return D1;
-				case 4:
-					return E1;
-				case 5:
-					return F1;
-				case 6:
-					return G1;
-				case 7:
-					return H1;
-				case 8:
-					return A2;
-				case 9:
-					return B2;
-				case 10:
-					return C2;
-				case 11:
-					return D2;
-				case 12:
-					return E2;
-				case 13:
-					return F2;
-				case 14:
-					return G2;
-				case 15:
-					return H2;
-				case 16:
-					return A3;
-				case 17:
-					return B3;
-				case 18:
-					return C3;
-				case 19:
-					return D3;
-				case 20:
-					return E3;
-				case 21:
-					return F3;
-				case 22:
-					return G3;
-				case 23:
-					return H3;
-				case 24:
-					return A4;
-				case 25:
-					return B4;
-				case 26:
-					return C4;
-				case 27:
-					return D4;
-				case 28:
-					return E4;
-				case 29:
-					return F4;
-				case 30:
-					return G4;
-				case 31:
-					return H4;
-				case 32:
-					return A5;
-				case 33:
-					return B5;
-				case 34:
-					return C5;
-				case 35:
-					return D5;
-				case 36:
-					return E5;
-				case 37:
-					return F5;
-				case 38:
-					return G5;
-				case 39:
-					return H5;
-				case 40:
-					return A6;
-				case 41:
-					return B6;
-				case 42:
-					return C6;
-				case 43:
-					return D6;
-				case 44:
-					return E6;
-				case 45:
-					return F6;
-				case 46:
-					return G6;
-				case 47:
-					return H6;
-				case 48:
-					return A7;
-				case 49:
-					return B7;
-				case 50:
-					return C7;
-				case 51:
-					return D7;
-				case 52:
-					return E7;
-				case 53:
-					return F7;
-				case 54:
-					return G7;
-				case 55:
-					return H7;
-				case 56:
-					return A8;
-				case 57:
-					return B8;
-				case 58:
-					return C8;
-				case 59:
-					return D8;
-				case 60:
-					return E8;
-				case 61:
-					return F8;
-				case 62:
-					return G8;
-				case 63:
-					return H8;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
+				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
+				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
+				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
+				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
+				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
-		}
-		/**Prints the code for the switch statement based {@link #getBitmapByIndex(int) getBitmapByIndex} method.*/
-		public final static void printCodeGetBitmapByIndex() {
-			int ind = 0;
-			System.out.println("public static long getByIndex(int sqrInd) {\n" +
-									"\tswitch(sqrInd) {");
-			for (Square sqr : Square.values()) {
-				System.out.println("\t\tcase " + ind + ":\n" +
-										"\t\t\treturn " + Board.toBinaryLiteral(sqr.getBitmap()) + ";");
-				ind++;
-			}
-			System.out.println("\t\tdefault:\n" +
-									"\t\t\tthrow new IllegalArgumentException(\"Invalid square index.\");\n" +
-							"\t}\n" +
-						"}");
 		}
 		/**@return a long with only the selected square set.*/
 		public static long getBitmapByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return 0b0000000000000000000000000000000000000000000000000000000000000001L;
-				case 1:
-					return 0b0000000000000000000000000000000000000000000000000000000000000010L;
-				case 2:
-					return 0b0000000000000000000000000000000000000000000000000000000000000100L;
-				case 3:
-					return 0b0000000000000000000000000000000000000000000000000000000000001000L;
-				case 4:
-					return 0b0000000000000000000000000000000000000000000000000000000000010000L;
-				case 5:
-					return 0b0000000000000000000000000000000000000000000000000000000000100000L;
-				case 6:
-					return 0b0000000000000000000000000000000000000000000000000000000001000000L;
-				case 7:
-					return 0b0000000000000000000000000000000000000000000000000000000010000000L;
-				case 8:
-					return 0b0000000000000000000000000000000000000000000000000000000100000000L;
-				case 9:
-					return 0b0000000000000000000000000000000000000000000000000000001000000000L;
-				case 10:
-					return 0b0000000000000000000000000000000000000000000000000000010000000000L;
-				case 11:
-					return 0b0000000000000000000000000000000000000000000000000000100000000000L;
-				case 12:
-					return 0b0000000000000000000000000000000000000000000000000001000000000000L;
-				case 13:
-					return 0b0000000000000000000000000000000000000000000000000010000000000000L;
-				case 14:
-					return 0b0000000000000000000000000000000000000000000000000100000000000000L;
-				case 15:
-					return 0b0000000000000000000000000000000000000000000000001000000000000000L;
-				case 16:
-					return 0b0000000000000000000000000000000000000000000000010000000000000000L;
-				case 17:
-					return 0b0000000000000000000000000000000000000000000000100000000000000000L;
-				case 18:
-					return 0b0000000000000000000000000000000000000000000001000000000000000000L;
-				case 19:
-					return 0b0000000000000000000000000000000000000000000010000000000000000000L;
-				case 20:
-					return 0b0000000000000000000000000000000000000000000100000000000000000000L;
-				case 21:
-					return 0b0000000000000000000000000000000000000000001000000000000000000000L;
-				case 22:
-					return 0b0000000000000000000000000000000000000000010000000000000000000000L;
-				case 23:
-					return 0b0000000000000000000000000000000000000000100000000000000000000000L;
-				case 24:
-					return 0b0000000000000000000000000000000000000001000000000000000000000000L;
-				case 25:
-					return 0b0000000000000000000000000000000000000010000000000000000000000000L;
-				case 26:
-					return 0b0000000000000000000000000000000000000100000000000000000000000000L;
-				case 27:
-					return 0b0000000000000000000000000000000000001000000000000000000000000000L;
-				case 28:
-					return 0b0000000000000000000000000000000000010000000000000000000000000000L;
-				case 29:
-					return 0b0000000000000000000000000000000000100000000000000000000000000000L;
-				case 30:
-					return 0b0000000000000000000000000000000001000000000000000000000000000000L;
-				case 31:
-					return 0b0000000000000000000000000000000010000000000000000000000000000000L;
-				case 32:
-					return 0b0000000000000000000000000000000100000000000000000000000000000000L;
-				case 33:
-					return 0b0000000000000000000000000000001000000000000000000000000000000000L;
-				case 34:
-					return 0b0000000000000000000000000000010000000000000000000000000000000000L;
-				case 35:
-					return 0b0000000000000000000000000000100000000000000000000000000000000000L;
-				case 36:
-					return 0b0000000000000000000000000001000000000000000000000000000000000000L;
-				case 37:
-					return 0b0000000000000000000000000010000000000000000000000000000000000000L;
-				case 38:
-					return 0b0000000000000000000000000100000000000000000000000000000000000000L;
-				case 39:
-					return 0b0000000000000000000000001000000000000000000000000000000000000000L;
-				case 40:
-					return 0b0000000000000000000000010000000000000000000000000000000000000000L;
-				case 41:
-					return 0b0000000000000000000000100000000000000000000000000000000000000000L;
-				case 42:
-					return 0b0000000000000000000001000000000000000000000000000000000000000000L;
-				case 43:
-					return 0b0000000000000000000010000000000000000000000000000000000000000000L;
-				case 44:
-					return 0b0000000000000000000100000000000000000000000000000000000000000000L;
-				case 45:
-					return 0b0000000000000000001000000000000000000000000000000000000000000000L;
-				case 46:
-					return 0b0000000000000000010000000000000000000000000000000000000000000000L;
-				case 47:
-					return 0b0000000000000000100000000000000000000000000000000000000000000000L;
-				case 48:
-					return 0b0000000000000001000000000000000000000000000000000000000000000000L;
-				case 49:
-					return 0b0000000000000010000000000000000000000000000000000000000000000000L;
-				case 50:
-					return 0b0000000000000100000000000000000000000000000000000000000000000000L;
-				case 51:
-					return 0b0000000000001000000000000000000000000000000000000000000000000000L;
-				case 52:
-					return 0b0000000000010000000000000000000000000000000000000000000000000000L;
-				case 53:
-					return 0b0000000000100000000000000000000000000000000000000000000000000000L;
-				case 54:
-					return 0b0000000001000000000000000000000000000000000000000000000000000000L;
-				case 55:
-					return 0b0000000010000000000000000000000000000000000000000000000000000000L;
-				case 56:
-					return 0b0000000100000000000000000000000000000000000000000000000000000000L;
-				case 57:
-					return 0b0000001000000000000000000000000000000000000000000000000000000000L;
-				case 58:
-					return 0b0000010000000000000000000000000000000000000000000000000000000000L;
-				case 59:
-					return 0b0000100000000000000000000000000000000000000000000000000000000000L;
-				case 60:
-					return 0b0001000000000000000000000000000000000000000000000000000000000000L;
-				case 61:
-					return 0b0010000000000000000000000000000000000000000000000000000000000000L;
-				case 62:
-					return 0b0100000000000000000000000000000000000000000000000000000000000000L;
-				case 63:
-					return 0b1000000000000000000000000000000000000000000000000000000000000000L;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return 0b0000000000000000000000000000000000000000000000000000000000000001L;
+				case 1:  return 0b0000000000000000000000000000000000000000000000000000000000000010L;
+				case 2:  return 0b0000000000000000000000000000000000000000000000000000000000000100L;
+				case 3:  return 0b0000000000000000000000000000000000000000000000000000000000001000L;
+				case 4:  return 0b0000000000000000000000000000000000000000000000000000000000010000L;
+				case 5:  return 0b0000000000000000000000000000000000000000000000000000000000100000L;
+				case 6:  return 0b0000000000000000000000000000000000000000000000000000000001000000L;
+				case 7:  return 0b0000000000000000000000000000000000000000000000000000000010000000L;
+				case 8:  return 0b0000000000000000000000000000000000000000000000000000000100000000L;
+				case 9:  return 0b0000000000000000000000000000000000000000000000000000001000000000L;
+				case 10: return 0b0000000000000000000000000000000000000000000000000000010000000000L;
+				case 11: return 0b0000000000000000000000000000000000000000000000000000100000000000L;
+				case 12: return 0b0000000000000000000000000000000000000000000000000001000000000000L;
+				case 13: return 0b0000000000000000000000000000000000000000000000000010000000000000L;
+				case 14: return 0b0000000000000000000000000000000000000000000000000100000000000000L;
+				case 15: return 0b0000000000000000000000000000000000000000000000001000000000000000L;
+				case 16: return 0b0000000000000000000000000000000000000000000000010000000000000000L;
+				case 17: return 0b0000000000000000000000000000000000000000000000100000000000000000L;
+				case 18: return 0b0000000000000000000000000000000000000000000001000000000000000000L;
+				case 19: return 0b0000000000000000000000000000000000000000000010000000000000000000L;
+				case 20: return 0b0000000000000000000000000000000000000000000100000000000000000000L;
+				case 21: return 0b0000000000000000000000000000000000000000001000000000000000000000L;
+				case 22: return 0b0000000000000000000000000000000000000000010000000000000000000000L;
+				case 23: return 0b0000000000000000000000000000000000000000100000000000000000000000L;
+				case 24: return 0b0000000000000000000000000000000000000001000000000000000000000000L;
+				case 25: return 0b0000000000000000000000000000000000000010000000000000000000000000L;
+				case 26: return 0b0000000000000000000000000000000000000100000000000000000000000000L;
+				case 27: return 0b0000000000000000000000000000000000001000000000000000000000000000L;
+				case 28: return 0b0000000000000000000000000000000000010000000000000000000000000000L;
+				case 29: return 0b0000000000000000000000000000000000100000000000000000000000000000L;
+				case 30: return 0b0000000000000000000000000000000001000000000000000000000000000000L;
+				case 31: return 0b0000000000000000000000000000000010000000000000000000000000000000L;
+				case 32: return 0b0000000000000000000000000000000100000000000000000000000000000000L;
+				case 33: return 0b0000000000000000000000000000001000000000000000000000000000000000L;
+				case 34: return 0b0000000000000000000000000000010000000000000000000000000000000000L;
+				case 35: return 0b0000000000000000000000000000100000000000000000000000000000000000L;
+				case 36: return 0b0000000000000000000000000001000000000000000000000000000000000000L;
+				case 37: return 0b0000000000000000000000000010000000000000000000000000000000000000L;
+				case 38: return 0b0000000000000000000000000100000000000000000000000000000000000000L;
+				case 39: return 0b0000000000000000000000001000000000000000000000000000000000000000L;
+				case 40: return 0b0000000000000000000000010000000000000000000000000000000000000000L;
+				case 41: return 0b0000000000000000000000100000000000000000000000000000000000000000L;
+				case 42: return 0b0000000000000000000001000000000000000000000000000000000000000000L;
+				case 43: return 0b0000000000000000000010000000000000000000000000000000000000000000L;
+				case 44: return 0b0000000000000000000100000000000000000000000000000000000000000000L;
+				case 45: return 0b0000000000000000001000000000000000000000000000000000000000000000L;
+				case 46: return 0b0000000000000000010000000000000000000000000000000000000000000000L;
+				case 47: return 0b0000000000000000100000000000000000000000000000000000000000000000L;
+				case 48: return 0b0000000000000001000000000000000000000000000000000000000000000000L;
+				case 49: return 0b0000000000000010000000000000000000000000000000000000000000000000L;
+				case 50: return 0b0000000000000100000000000000000000000000000000000000000000000000L;
+				case 51: return 0b0000000000001000000000000000000000000000000000000000000000000000L;
+				case 52: return 0b0000000000010000000000000000000000000000000000000000000000000000L;
+				case 53: return 0b0000000000100000000000000000000000000000000000000000000000000000L;
+				case 54: return 0b0000000001000000000000000000000000000000000000000000000000000000L;
+				case 55: return 0b0000000010000000000000000000000000000000000000000000000000000000L;
+				case 56: return 0b0000000100000000000000000000000000000000000000000000000000000000L;
+				case 57: return 0b0000001000000000000000000000000000000000000000000000000000000000L;
+				case 58: return 0b0000010000000000000000000000000000000000000000000000000000000000L;
+				case 59: return 0b0000100000000000000000000000000000000000000000000000000000000000L;
+				case 60: return 0b0001000000000000000000000000000000000000000000000000000000000000L;
+				case 61: return 0b0010000000000000000000000000000000000000000000000000000000000000L;
+				case 62: return 0b0100000000000000000000000000000000000000000000000000000000000000L;
+				case 63: return 0b1000000000000000000000000000000000000000000000000000000000000000L;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}
@@ -430,44 +214,20 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
-		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
-		public final static void printCodeGetByIndex() {
-			int ind = 0;
-			System.out.println("public static long getByIndex(int rnkInd) {\n" +
-									"\tswitch(rnkInd) {");
-			for (Rank rnk : Rank.values()) {
-				System.out.println("\t\tcase " + ind + ":\n" +
-										"\t\t\treturn " + Board.toBinaryLiteral(rnk.getBitmap()) + ";");
-				ind++;
-			}
-			System.out.println("\t\tdefault:\n" +
-									"\t\t\tthrow new IllegalArgumentException(\"Invalid rank index.\");\n" +
-							"\t}\n" +
-						"}");
-		}
 		/**Returns a the numeric representation of a rank of the chess board with only the byte on the rank's index set.
 		 * 
 		 * @param rnkInd the index of the rank*/
 		public static long getByIndex(int rnkInd) {
 			switch(rnkInd) {
-				case 0:
-					return 0b0000000000000000000000000000000000000000000000000000000011111111L;
-				case 1:
-					return 0b0000000000000000000000000000000000000000000000001111111100000000L;
-				case 2:
-					return 0b0000000000000000000000000000000000000000111111110000000000000000L;
-				case 3:
-					return 0b0000000000000000000000000000000011111111000000000000000000000000L;
-				case 4:
-					return 0b0000000000000000000000001111111100000000000000000000000000000000L;
-				case 5:
-					return 0b0000000000000000111111110000000000000000000000000000000000000000L;
-				case 6:
-					return 0b0000000011111111000000000000000000000000000000000000000000000000L;
-				case 7:
-					return 0b1111111100000000000000000000000000000000000000000000000000000000L;
-				default:
-					throw new IllegalArgumentException("Invalid rank index.");
+				case 0:  return 0b0000000000000000000000000000000000000000000000000000000011111111L;
+				case 1:  return 0b0000000000000000000000000000000000000000000000001111111100000000L;
+				case 2:  return 0b0000000000000000000000000000000000000000111111110000000000000000L;
+				case 3:  return 0b0000000000000000000000000000000011111111000000000000000000000000L;
+				case 4:  return 0b0000000000000000000000001111111100000000000000000000000000000000L;
+				case 5:  return 0b0000000000000000111111110000000000000000000000000000000000000000L;
+				case 6:  return 0b0000000011111111000000000000000000000000000000000000000000000000L;
+				case 7:  return 0b1111111100000000000000000000000000000000000000000000000000000000L;
+				default: throw new IllegalArgumentException("Invalid rank index.");
 			}
 		}
 		/**Returns a the numeric representation of the rank of the chess board on which the input parameter square lies with only
@@ -511,44 +271,20 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
-		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
-		public final static void printCodeGetByIndex() {
-			int ind = 0;
-			System.out.println("public static long getByIndex(int fileInd) {\n" +
-									"\tswitch(fileInd) {");
-			for (File file : File.values()) {
-				System.out.println("\t\tcase " + ind + ":\n" +
-										"\t\t\treturn " + Board.toBinaryLiteral(file.getBitmap()) + ";");
-				ind++;
-			}
-			System.out.println("\t\tdefault:\n" +
-									"\t\t\tthrow new IllegalArgumentException(\"Invalid file index.\");\n" +
-							"\t}\n" +
-						"}");
-		}
 		/**Returns a the numeric representation of a file of the chess board with only the bits falling on the specified file set.
 		 * 
 		 * @param fileInd the index of the file*/
 		public static long getByIndex(int fileInd) {
 			switch(fileInd) {
-				case 0:
-					return 0b0000000100000001000000010000000100000001000000010000000100000001L;
-				case 1:
-					return 0b0000001000000010000000100000001000000010000000100000001000000010L;
-				case 2:
-					return 0b0000010000000100000001000000010000000100000001000000010000000100L;
-				case 3:
-					return 0b0000100000001000000010000000100000001000000010000000100000001000L;
-				case 4:
-					return 0b0001000000010000000100000001000000010000000100000001000000010000L;
-				case 5:
-					return 0b0010000000100000001000000010000000100000001000000010000000100000L;
-				case 6:
-					return 0b0100000001000000010000000100000001000000010000000100000001000000L;
-				case 7:
-					return 0b1000000010000000100000001000000010000000100000001000000010000000L;
-				default:
-					throw new IllegalArgumentException("Invalid file index.");
+				case 0:  return 0b0000000100000001000000010000000100000001000000010000000100000001L;
+				case 1:  return 0b0000001000000010000000100000001000000010000000100000001000000010L;
+				case 2:  return 0b0000010000000100000001000000010000000100000001000000010000000100L;
+				case 3:  return 0b0000100000001000000010000000100000001000000010000000100000001000L;
+				case 4:  return 0b0001000000010000000100000001000000010000000100000001000000010000L;
+				case 5:  return 0b0010000000100000001000000010000000100000001000000010000000100000L;
+				case 6:  return 0b0100000001000000010000000100000001000000010000000100000001000000L;
+				case 7:  return 0b1000000010000000100000001000000010000000100000001000000010000000L;
+				default: throw new IllegalArgumentException("Invalid file index.");
 			}
 		}
 		/**Returns a the numeric representation of the file of the chess board on which the input parameter square lies with only
@@ -599,7 +335,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
-		/**Prints the binary literals for the enum constants so they can be hard-coded.*/
+		/**Prints the binary literals for the enum constants.*/
 		public void printBitmapLiterals() {
 			long[] aDiag = new long[15];
 			aDiag[0]	= Square.A1.getBitmap();
@@ -618,61 +354,30 @@ public class Board {
 			aDiag[13] 	= Square.G8.getBitmap() | Square.H7.getBitmap();
 			aDiag[14]	= Square.H8.getBitmap();
 			for (int i = 0; i < aDiag.length; i++) {
-				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + Board.toBinaryLiteral(aDiag[i]));
+				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + BitOperations.toBinaryLiteral(aDiag[i]));
 			}
-		}
-		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
-		public final static void printCodeGetByIndex() {
-			int ind = 0;
-			System.out.println("public static long getByIndex(int dgnInd) {\n" +
-									"\tswitch(dgnInd) {");
-			for (Diagonal dgn : Diagonal.values()) {
-				System.out.println("\t\tcase " + ind + ":\n" +
-										"\t\t\treturn " + Board.toBinaryLiteral(dgn.getBitmap()) + ";");
-				ind++;
-			}
-			System.out.println("\t\tdefault:\n" +
-									"\t\t\tthrow new IllegalArgumentException(\"Invalid diagonal index.\");\n" +
-							"\t}\n" +
-						"}");
 		}
 		/**Returns a the numeric representation of a diagonal of the chess board with only the bits falling on the specified diagonal set.
 		 * 
 		 * @param dgnInd the index of the diagonal*/
 		public static long getByIndex(int dgnInd) {
 			switch(dgnInd) {
-				case 0:
-					return 0b0000000000000000000000000000000000000000000000000000000000000001L;
-				case 1:
-					return 0b0000000000000000000000000000000000000000000000000000000100000010L;
-				case 2:
-					return 0b0000000000000000000000000000000000000000000000010000001000000100L;
-				case 3:
-					return 0b0000000000000000000000000000000000000001000000100000010000001000L;
-				case 4:
-					return 0b0000000000000000000000000000000100000010000001000000100000010000L;
-				case 5:
-					return 0b0000000000000000000000010000001000000100000010000001000000100000L;
-				case 6:
-					return 0b0000000000000001000000100000010000001000000100000010000001000000L;
-				case 7:
-					return 0b0000000100000010000001000000100000010000001000000100000010000000L;
-				case 8:
-					return 0b0000001000000100000010000001000000100000010000001000000000000000L;
-				case 9:
-					return 0b0000010000001000000100000010000001000000100000000000000000000000L;
-				case 10:
-					return 0b0000100000010000001000000100000010000000000000000000000000000000L;
-				case 11:
-					return 0b0001000000100000010000001000000000000000000000000000000000000000L;
-				case 12:
-					return 0b0010000001000000100000000000000000000000000000000000000000000000L;
-				case 13:
-					return 0b0100000010000000000000000000000000000000000000000000000000000000L;
-				case 14:
-					return 0b1000000000000000000000000000000000000000000000000000000000000000L;
-				default:
-					throw new IllegalArgumentException("Invalid diagonal index.");
+				case 0:  return 0b0000000000000000000000000000000000000000000000000000000000000001L;
+				case 1:  return 0b0000000000000000000000000000000000000000000000000000000100000010L;
+				case 2:  return 0b0000000000000000000000000000000000000000000000010000001000000100L;
+				case 3:  return 0b0000000000000000000000000000000000000001000000100000010000001000L;
+				case 4:  return 0b0000000000000000000000000000000100000010000001000000100000010000L;
+				case 5:  return 0b0000000000000000000000010000001000000100000010000001000000100000L;
+				case 6:  return 0b0000000000000001000000100000010000001000000100000010000001000000L;
+				case 7:  return 0b0000000100000010000001000000100000010000001000000100000010000000L;
+				case 8:  return 0b0000001000000100000010000001000000100000010000001000000000000000L;
+				case 9:  return 0b0000010000001000000100000010000001000000100000000000000000000000L;
+				case 10: return 0b0000100000010000001000000100000010000000000000000000000000000000L;
+				case 11: return 0b0001000000100000010000001000000000000000000000000000000000000000L;
+				case 12: return 0b0010000001000000100000000000000000000000000000000000000000000000L;
+				case 13: return 0b0100000010000000000000000000000000000000000000000000000000000000L;
+				case 14: return 0b1000000000000000000000000000000000000000000000000000000000000000L;
+				default: throw new IllegalArgumentException("Invalid diagonal index.");
 			}
 		}
 		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
@@ -726,7 +431,7 @@ public class Board {
 		public long getBitmap() {
 			return this.bitmap;
 		}
-		/**Prints the binary literals for the enum constants so they can be hard-coded.*/
+		/**Prints the binary literals for the enum constants.*/
 		public void printBitmapLiterals() {
 			long[] diag = new long[15];
 			diag[0]		= Square.A8.getBitmap();
@@ -745,61 +450,30 @@ public class Board {
 			diag[13] 	= Square.G1.getBitmap() | Square.H2.getBitmap();
 			diag[14]	= Square.H1.getBitmap();
 			for (int i = 0; i < diag.length; i++) {
-				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + Board.toBinaryLiteral(diag[i]));
+				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + BitOperations.toBinaryLiteral(diag[i]));
 			}
-		}
-		/**Prints the code for the switch statement based {@link #getByIndex(int) getByIndex} method.*/
-		public final static void printCodeGetByIndex() {
-			int ind = 0;
-			System.out.println("public static long getByIndex(int adgnInd) {\n" +
-									"\tswitch(adgnInd) {");
-			for (AntiDiagonal adgn : AntiDiagonal.values()) {
-				System.out.println("\t\tcase " + ind + ":\n" +
-										"\t\t\treturn " + Board.toBinaryLiteral(adgn.getBitmap()) + ";");
-				ind++;
-			}
-			System.out.println("\t\tdefault:\n" +
-									"\t\t\tthrow new IllegalArgumentException(\"Invalid anti-diagonal index.\");\n" +
-							"\t}\n" +
-						"}");
 		}
 		/**Returns a the numeric representation of an anti-diagonal of the chess board with only the bits falling on the specified diagonal set.
 		 * 
 		 * @param adgnInd the index of the anti-diagonal*/
 		public static long getByIndex(int adgnInd) {
 			switch(adgnInd) {
-				case 0:
-					return 0b0000000100000000000000000000000000000000000000000000000000000000L;
-				case 1:
-					return 0b0000001000000001000000000000000000000000000000000000000000000000L;
-				case 2:
-					return 0b0000010000000010000000010000000000000000000000000000000000000000L;
-				case 3:
-					return 0b0000100000000100000000100000000100000000000000000000000000000000L;
-				case 4:
-					return 0b0001000000001000000001000000001000000001000000000000000000000000L;
-				case 5:
-					return 0b0010000000010000000010000000010000000010000000010000000000000000L;
-				case 6:
-					return 0b0100000000100000000100000000100000000100000000100000000100000000L;
-				case 7:
-					return 0b1000000001000000001000000001000000001000000001000000001000000001L;
-				case 8:
-					return 0b0000000010000000010000000010000000010000000010000000010000000010L;
-				case 9:
-					return 0b0000000000000000100000000100000000100000000100000000100000000100L;
-				case 10:
-					return 0b0000000000000000000000001000000001000000001000000001000000001000L;
-				case 11:
-					return 0b0000000000000000000000000000000010000000010000000010000000010000L;
-				case 12:
-					return 0b0000000000000000000000000000000000000000100000000100000000100000L;
-				case 13:
-					return 0b0000000000000000000000000000000000000000000000001000000001000000L;
-				case 14:
-					return 0b0000000000000000000000000000000000000000000000000000000010000000L;
-				default:
-					throw new IllegalArgumentException("Invalid anti-diagonal index.");
+				case 0:  return 0b0000000100000000000000000000000000000000000000000000000000000000L;
+				case 1:  return 0b0000001000000001000000000000000000000000000000000000000000000000L;
+				case 2:  return 0b0000010000000010000000010000000000000000000000000000000000000000L;
+				case 3:  return 0b0000100000000100000000100000000100000000000000000000000000000000L;
+				case 4:  return 0b0001000000001000000001000000001000000001000000000000000000000000L;
+				case 5:  return 0b0010000000010000000010000000010000000010000000010000000000000000L;
+				case 6:  return 0b0100000000100000000100000000100000000100000000100000000100000000L;
+				case 7:  return 0b1000000001000000001000000001000000001000000001000000001000000001L;
+				case 8:  return 0b0000000010000000010000000010000000010000000010000000010000000010L;
+				case 9:  return 0b0000000000000000100000000100000000100000000100000000100000000100L;
+				case 10: return 0b0000000000000000000000001000000001000000001000000001000000001000L;
+				case 11: return 0b0000000000000000000000000000000010000000010000000010000000010000L;
+				case 12: return 0b0000000000000000000000000000000000000000100000000100000000100000L;
+				case 13: return 0b0000000000000000000000000000000000000000000000001000000001000000L;
+				case 14: return 0b0000000000000000000000000000000000000000000000000000000010000000L;
+				default: throw new IllegalArgumentException("Invalid anti-diagonal index.");
 			}
 		}
 		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
@@ -870,9 +544,9 @@ public class Board {
 			long mask;
 			int sqrInd = sqr.ordinal();
 			long sqrBit = sqr.getBitmap();
-			mask =	BitOperations.vShiftUpLeft(sqrBit)   | BitOperations.vShiftUp(sqrBit)  	| BitOperations.vShiftUpRight(sqrBit)   |
-					BitOperations.vShiftLeft(sqrBit)    									| BitOperations.vShiftRight(sqrBit)     |
-					BitOperations.vShiftDownLeft(sqrBit) | BitOperations.vShiftDown(sqrBit) | BitOperations.vShiftDownRight(sqrBit) ;
+			mask =	BitOperations.vShiftNorthEast(sqrBit) | BitOperations.vShiftNorth(sqrBit) | BitOperations.vShiftNorthWest(sqrBit) |
+					BitOperations.vShiftEast(sqrBit)    									  | BitOperations.vShiftWest(sqrBit)      |
+					BitOperations.vShiftSouthEast(sqrBit) | BitOperations.vShiftSouth(sqrBit) | BitOperations.vShiftSouthWest(sqrBit) ;
 			if (sqrInd%8 == 0)
 				mask &= ~File.H.getBitmap();
 			else if ((sqrInd + 1)%8 == 0)
@@ -884,10 +558,10 @@ public class Board {
 			long mask;
 			int sqrInd = sqr.ordinal();
 			long sqrBit = sqr.getBitmap();
-			mask =		 	BitOperations.vShiftUpLeft(BitOperations.vShiftUp(sqrBit))	   | BitOperations.vShiftUpRight(BitOperations.vShiftUp(sqrBit)) 	|
-					BitOperations.vShiftUpLeft(BitOperations.vShiftLeft(sqrBit))		   | 		  BitOperations.vShiftUpRight(BitOperations.vShiftRight(sqrBit))   |
-					BitOperations.vShiftDownLeft(BitOperations.vShiftLeft(sqrBit))	 	   |		  BitOperations.vShiftDownRight(BitOperations.vShiftRight(sqrBit)) |
-							BitOperations.vShiftDownLeft(BitOperations.vShiftDown(sqrBit)) | BitOperations.vShiftDownRight(BitOperations.vShiftDown(sqrBit));
+			mask =		 	BitOperations.vShiftNorthEast(BitOperations.vShiftNorth(sqrBit))	| BitOperations.vShiftNorthWest(BitOperations.vShiftNorth(sqrBit)) |
+					BitOperations.vShiftNorthEast(BitOperations.vShiftEast(sqrBit))				| 		  BitOperations.vShiftNorthWest(BitOperations.vShiftWest(sqrBit))   |
+					BitOperations.vShiftSouthEast(BitOperations.vShiftEast(sqrBit))				|		  BitOperations.vShiftSouthWest(BitOperations.vShiftWest(sqrBit))	|
+							BitOperations.vShiftSouthEast(BitOperations.vShiftSouth(sqrBit))	| BitOperations.vShiftSouthWest(BitOperations.vShiftSouth(sqrBit));
 			if (sqrInd%8 == 0)
 				mask &= ~(File.H.getBitmap() | File.G.getBitmap());
 			else if ((sqrInd - 1)%8 == 0)
@@ -905,7 +579,7 @@ public class Board {
 			if (sqrInd < 8 || sqrInd > 55)
 					return 0;
 			long sqrBit = sqr.getBitmap();
-			mask =		BitOperations.vShiftUpLeft(sqrBit)	 | BitOperations.vShiftUpRight(sqrBit);
+			mask =		BitOperations.vShiftNorthEast(sqrBit) | BitOperations.vShiftNorthWest(sqrBit);
 			if (sqrInd%8 == 0)
 				mask &= ~File.H.getBitmap();
 			else if ((sqrInd + 1)%8 == 0)
@@ -919,7 +593,7 @@ public class Board {
 			if (sqrInd < 8 || sqrInd > 55)
 					return 0;
 			long sqrBit = sqr.getBitmap();
-			mask =		BitOperations.vShiftDownLeft(sqrBit) | BitOperations.vShiftDownRight(sqrBit);
+			mask =		BitOperations.vShiftSouthEast(sqrBit) | BitOperations.vShiftSouthWest(sqrBit);
 			if (sqrInd%8 == 0)
 				mask &= ~File.H.getBitmap();
 			else if ((sqrInd + 1)%8 == 0)
@@ -934,12 +608,12 @@ public class Board {
 				return 0;
 			if (sqrInd < 16) {
 				long sqrBit = sqr.getBitmap();
-				mask =  BitOperations.vShiftUp(BitOperations.vShiftUp(sqrBit))	|
-						BitOperations.vShiftUp(sqrBit);
+				mask =  BitOperations.vShiftNorth(BitOperations.vShiftNorth(sqrBit))	|
+						BitOperations.vShiftNorth(sqrBit);
 				return mask;
 			}
 			long sqrBit = sqr.getBitmap();
-			mask = 		BitOperations.vShiftUp(sqrBit);
+			mask = 		BitOperations.vShiftNorth(sqrBit);
 			return mask;
 		}
 		/**Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.*/
@@ -950,12 +624,12 @@ public class Board {
 				return 0;
 			if (sqrInd >= 48) {
 				long sqrBit = sqr.getBitmap();
-				mask =	BitOperations.vShiftDown(sqrBit) |
-						BitOperations.vShiftDown(BitOperations.vShiftDown(sqrBit));
+				mask =	BitOperations.vShiftSouth(sqrBit) |
+						BitOperations.vShiftSouth(BitOperations.vShiftSouth(sqrBit));
 				return mask;
 			}
 			long sqrBit = sqr.getBitmap();
-			mask =		BitOperations.vShiftDown(sqrBit);
+			mask =		BitOperations.vShiftSouth(sqrBit);
 			return mask;
 		}
 		/**Generates a bitmap of the basic rook's rank-wise/horizontal move mask. Occupancies are disregarded. Perimeter squares are included.*/
@@ -1025,70 +699,14 @@ public class Board {
 	 */
 	public static enum SliderAttackRayMask {
 		
-		A1 (Square.A1),
-		B1 (Square.B1),
-		C1 (Square.C1),
-		D1 (Square.D1),
-		E1 (Square.E1),
-		F1 (Square.F1),
-		G1 (Square.G1),
-		H1 (Square.H1),
-		A2 (Square.A2),
-		B2 (Square.B2),
-		C2 (Square.C2),
-		D2 (Square.D2),
-		E2 (Square.E2),
-		F2 (Square.F2),
-		G2 (Square.G2),
-		H2 (Square.H2),
-		A3 (Square.A3),
-		B3 (Square.B3),
-		C3 (Square.C3),
-		D3 (Square.D3),
-		E3 (Square.E3),
-		F3 (Square.F3),
-		G3 (Square.G3),
-		H3 (Square.H3),
-		A4 (Square.A4),
-		B4 (Square.B4),
-		C4 (Square.C4),
-		D4 (Square.D4),
-		E4 (Square.E4),
-		F4 (Square.F4),
-		G4 (Square.G4),
-		H4 (Square.H4),
-		A5 (Square.A5),
-		B5 (Square.B5),
-		C5 (Square.C5),
-		D5 (Square.D5),
-		E5 (Square.E5),
-		F5 (Square.F5),
-		G5 (Square.G5),
-		H5 (Square.H5),
-		A6 (Square.A6),
-		B6 (Square.B6),
-		C6 (Square.C6),
-		D6 (Square.D6),
-		E6 (Square.E6),
-		F6 (Square.F6),
-		G6 (Square.G6),
-		H6 (Square.H6),
-		A7 (Square.A7),
-		B7 (Square.B7),
-		C7 (Square.C7),
-		D7 (Square.D7),
-		E7 (Square.E7),
-		F7 (Square.F7),
-		G7 (Square.G7),
-		H7 (Square.H7),
-		A8 (Square.A8),
-		B8 (Square.B8),
-		C8 (Square.C8),
-		D8 (Square.D8),
-		E8 (Square.E8),
-		F8 (Square.F8),
-		G8 (Square.G8),
-		H8 (Square.H8);
+		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
+		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
+		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
+		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
+		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
+		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
+		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
+		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
 		
 		final long rankPos;
 		final long rankNeg;
@@ -1099,9 +717,9 @@ public class Board {
 		final long antiDiagonalPos;
 		final long antiDiagonalNeg;
 		
-		private SliderAttackRayMask(Square sqr) {
-			int sqrInd = sqr.ordinal();
-			long sqrBit = sqr.getBitmap();
+		private SliderAttackRayMask( ) {
+			int sqrInd = this.ordinal();
+			long sqrBit = Square.getBitmapByIndex(sqrInd);
 			long rank = Rank.getBySquareIndex(sqrInd);
 			long file = File.getBySquareIndex(sqrInd);
 			long diagonal = Diagonal.getBySquareIndex(sqrInd);
@@ -1141,136 +759,15 @@ public class Board {
 		}
 		public static SliderAttackRayMask getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return A1;
-				case 1:
-					return B1;
-				case 2:
-					return C1;
-				case 3:
-					return D1;
-				case 4:
-					return E1;
-				case 5:
-					return F1;
-				case 6:
-					return G1;
-				case 7:
-					return H1;
-				case 8:
-					return A2;
-				case 9:
-					return B2;
-				case 10:
-					return C2;
-				case 11:
-					return D2;
-				case 12:
-					return E2;
-				case 13:
-					return F2;
-				case 14:
-					return G2;
-				case 15:
-					return H2;
-				case 16:
-					return A3;
-				case 17:
-					return B3;
-				case 18:
-					return C3;
-				case 19:
-					return D3;
-				case 20:
-					return E3;
-				case 21:
-					return F3;
-				case 22:
-					return G3;
-				case 23:
-					return H3;
-				case 24:
-					return A4;
-				case 25:
-					return B4;
-				case 26:
-					return C4;
-				case 27:
-					return D4;
-				case 28:
-					return E4;
-				case 29:
-					return F4;
-				case 30:
-					return G4;
-				case 31:
-					return H4;
-				case 32:
-					return A5;
-				case 33:
-					return B5;
-				case 34:
-					return C5;
-				case 35:
-					return D5;
-				case 36:
-					return E5;
-				case 37:
-					return F5;
-				case 38:
-					return G5;
-				case 39:
-					return H5;
-				case 40:
-					return A6;
-				case 41:
-					return B6;
-				case 42:
-					return C6;
-				case 43:
-					return D6;
-				case 44:
-					return E6;
-				case 45:
-					return F6;
-				case 46:
-					return G6;
-				case 47:
-					return H6;
-				case 48:
-					return A7;
-				case 49:
-					return B7;
-				case 50:
-					return C7;
-				case 51:
-					return D7;
-				case 52:
-					return E7;
-				case 53:
-					return F7;
-				case 54:
-					return G7;
-				case 55:
-					return H7;
-				case 56:
-					return A8;
-				case 57:
-					return B8;
-				case 58:
-					return C8;
-				case 59:
-					return D8;
-				case 60:
-					return E8;
-				case 61:
-					return F8;
-				case 62:
-					return G8;
-				case 63:
-					return H8;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
+				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
+				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
+				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
+				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
+				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}
@@ -1282,70 +779,14 @@ public class Board {
 	 */
 	public static enum SliderOccupancyMask {
 		
-		A1 (Square.A1),
-		B1 (Square.B1),
-		C1 (Square.C1),
-		D1 (Square.D1),
-		E1 (Square.E1),
-		F1 (Square.F1),
-		G1 (Square.G1),
-		H1 (Square.H1),
-		A2 (Square.A2),
-		B2 (Square.B2),
-		C2 (Square.C2),
-		D2 (Square.D2),
-		E2 (Square.E2),
-		F2 (Square.F2),
-		G2 (Square.G2),
-		H2 (Square.H2),
-		A3 (Square.A3),
-		B3 (Square.B3),
-		C3 (Square.C3),
-		D3 (Square.D3),
-		E3 (Square.E3),
-		F3 (Square.F3),
-		G3 (Square.G3),
-		H3 (Square.H3),
-		A4 (Square.A4),
-		B4 (Square.B4),
-		C4 (Square.C4),
-		D4 (Square.D4),
-		E4 (Square.E4),
-		F4 (Square.F4),
-		G4 (Square.G4),
-		H4 (Square.H4),
-		A5 (Square.A5),
-		B5 (Square.B5),
-		C5 (Square.C5),
-		D5 (Square.D5),
-		E5 (Square.E5),
-		F5 (Square.F5),
-		G5 (Square.G5),
-		H5 (Square.H5),
-		A6 (Square.A6),
-		B6 (Square.B6),
-		C6 (Square.C6),
-		D6 (Square.D6),
-		E6 (Square.E6),
-		F6 (Square.F6),
-		G6 (Square.G6),
-		H6 (Square.H6),
-		A7 (Square.A7),
-		B7 (Square.B7),
-		C7 (Square.C7),
-		D7 (Square.D7),
-		E7 (Square.E7),
-		F7 (Square.F7),
-		G7 (Square.G7),
-		H7 (Square.H7),
-		A8 (Square.A8),
-		B8 (Square.B8),
-		C8 (Square.C8),
-		D8 (Square.D8),
-		E8 (Square.E8),
-		F8 (Square.F8),
-		G8 (Square.G8),
-		H8 (Square.H8);
+		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
+		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
+		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
+		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
+		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
+		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
+		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
+		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
 		
 		final long rookOccupancyMask;
 		final long bishopOccupancyMask;
@@ -1357,8 +798,9 @@ public class Board {
 		private static long ANTIFRAME_HORIZONTAL;
 		private static long ANTIFRAME;
 		
-		private SliderOccupancyMask(Square sqr) {
+		private SliderOccupancyMask() {
 			this.initializeAntiFrames();
+			Square sqr = Square.getByIndex(this.ordinal());
 			this.rookOccupancyMask = generateRooksCompleteOccupancyMask(sqr);
 			this.bishopOccupancyMask = generateBishopsCompleteOccupancyMask(sqr);
 			this.rookOccupancyMaskBitCount = (byte)BitOperations.getCardinality(this.rookOccupancyMask);
@@ -1401,143 +843,17 @@ public class Board {
 		private static long generateBishopsCompleteOccupancyMask(Square sqr) {
 			return (generateBishopsDiagonalOccupancyMask(sqr) | generateBishopsAntiDiagonalOccupancyMask(sqr));
 		}
-		public static void printCodeVariables() {
-			for (int i = 0; i < 63; i++)
-				System.out.println(Square.getByIndex(i) + " (Square." + Square.getByIndex(i) + "),");
-			System.out.println(Square.getByIndex(63) + " (Square." + Square.getByIndex(63) + ");");
-		}
 		public static SliderOccupancyMask getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return A1;
-				case 1:
-					return B1;
-				case 2:
-					return C1;
-				case 3:
-					return D1;
-				case 4:
-					return E1;
-				case 5:
-					return F1;
-				case 6:
-					return G1;
-				case 7:
-					return H1;
-				case 8:
-					return A2;
-				case 9:
-					return B2;
-				case 10:
-					return C2;
-				case 11:
-					return D2;
-				case 12:
-					return E2;
-				case 13:
-					return F2;
-				case 14:
-					return G2;
-				case 15:
-					return H2;
-				case 16:
-					return A3;
-				case 17:
-					return B3;
-				case 18:
-					return C3;
-				case 19:
-					return D3;
-				case 20:
-					return E3;
-				case 21:
-					return F3;
-				case 22:
-					return G3;
-				case 23:
-					return H3;
-				case 24:
-					return A4;
-				case 25:
-					return B4;
-				case 26:
-					return C4;
-				case 27:
-					return D4;
-				case 28:
-					return E4;
-				case 29:
-					return F4;
-				case 30:
-					return G4;
-				case 31:
-					return H4;
-				case 32:
-					return A5;
-				case 33:
-					return B5;
-				case 34:
-					return C5;
-				case 35:
-					return D5;
-				case 36:
-					return E5;
-				case 37:
-					return F5;
-				case 38:
-					return G5;
-				case 39:
-					return H5;
-				case 40:
-					return A6;
-				case 41:
-					return B6;
-				case 42:
-					return C6;
-				case 43:
-					return D6;
-				case 44:
-					return E6;
-				case 45:
-					return F6;
-				case 46:
-					return G6;
-				case 47:
-					return H6;
-				case 48:
-					return A7;
-				case 49:
-					return B7;
-				case 50:
-					return C7;
-				case 51:
-					return D7;
-				case 52:
-					return E7;
-				case 53:
-					return F7;
-				case 54:
-					return G7;
-				case 55:
-					return H7;
-				case 56:
-					return A8;
-				case 57:
-					return B8;
-				case 58:
-					return C8;
-				case 59:
-					return D8;
-				case 60:
-					return E8;
-				case 61:
-					return F8;
-				case 62:
-					return G8;
-				case 63:
-					return H8;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
+				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
+				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
+				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
+				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
+				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}
@@ -1720,78 +1036,22 @@ public class Board {
 	
 	public static enum MagicShift {
 		
-		A1	(computeRookShifts(0),  computeBishopShifts(0)),
-		B1	(computeRookShifts(1),  computeBishopShifts(1)),
-		C1	(computeRookShifts(2),  computeBishopShifts(2)),
-		D1	(computeRookShifts(3),  computeBishopShifts(3)),
-		E1	(computeRookShifts(4),  computeBishopShifts(4)),
-		F1	(computeRookShifts(5),  computeBishopShifts(5)),
-		G1	(computeRookShifts(6),  computeBishopShifts(6)),
-		H1	(computeRookShifts(7),  computeBishopShifts(7)),
-		A2	(computeRookShifts(8),  computeBishopShifts(8)),
-		B2	(computeRookShifts(9),  computeBishopShifts(9)),
-		C2	(computeRookShifts(10), computeBishopShifts(10)),
-		D2	(computeRookShifts(11), computeBishopShifts(11)),
-		E2	(computeRookShifts(12), computeBishopShifts(12)),
-		F2	(computeRookShifts(13), computeBishopShifts(13)),
-		G2	(computeRookShifts(14), computeBishopShifts(14)),
-		H2	(computeRookShifts(15), computeBishopShifts(15)),
-		A3	(computeRookShifts(16), computeBishopShifts(16)),
-		B3	(computeRookShifts(17), computeBishopShifts(17)),
-		C3	(computeRookShifts(18), computeBishopShifts(18)),
-		D3	(computeRookShifts(19), computeBishopShifts(19)),
-		E3	(computeRookShifts(20), computeBishopShifts(20)),
-		F3	(computeRookShifts(21), computeBishopShifts(21)),
-		G3	(computeRookShifts(22), computeBishopShifts(22)),
-		H3	(computeRookShifts(23), computeBishopShifts(23)),
-		A4	(computeRookShifts(24), computeBishopShifts(24)),
-		B4	(computeRookShifts(25), computeBishopShifts(25)),
-		C4	(computeRookShifts(26), computeBishopShifts(26)),
-		D4	(computeRookShifts(27), computeBishopShifts(27)),
-		E4	(computeRookShifts(28), computeBishopShifts(28)),
-		F4	(computeRookShifts(29), computeBishopShifts(29)),
-		G4	(computeRookShifts(30), computeBishopShifts(30)),
-		H4	(computeRookShifts(31), computeBishopShifts(31)),
-		A5	(computeRookShifts(32), computeBishopShifts(32)),
-		B5	(computeRookShifts(33), computeBishopShifts(33)),
-		C5	(computeRookShifts(34), computeBishopShifts(34)),
-		D5	(computeRookShifts(35), computeBishopShifts(35)),
-		E5	(computeRookShifts(36), computeBishopShifts(36)),
-		F5	(computeRookShifts(37), computeBishopShifts(37)),
-		G5	(computeRookShifts(38), computeBishopShifts(38)),
-		H5	(computeRookShifts(39), computeBishopShifts(39)),
-		A6	(computeRookShifts(40), computeBishopShifts(40)),
-		B6	(computeRookShifts(41), computeBishopShifts(41)),
-		C6	(computeRookShifts(42), computeBishopShifts(42)),
-		D6	(computeRookShifts(43), computeBishopShifts(43)),
-		E6	(computeRookShifts(44), computeBishopShifts(44)),
-		F6	(computeRookShifts(45), computeBishopShifts(45)),
-		G6	(computeRookShifts(46), computeBishopShifts(46)),
-		H6	(computeRookShifts(47), computeBishopShifts(47)),
-		A7	(computeRookShifts(48), computeBishopShifts(48)),
-		B7	(computeRookShifts(49), computeBishopShifts(49)),
-		C7	(computeRookShifts(50), computeBishopShifts(50)),
-		D7	(computeRookShifts(51), computeBishopShifts(51)),
-		E7	(computeRookShifts(52), computeBishopShifts(52)),
-		F7	(computeRookShifts(53), computeBishopShifts(53)),
-		G7	(computeRookShifts(54), computeBishopShifts(54)),
-		H7	(computeRookShifts(55), computeBishopShifts(55)),
-		A8	(computeRookShifts(56), computeBishopShifts(56)),
-		B8	(computeRookShifts(57), computeBishopShifts(57)),
-		C8	(computeRookShifts(58), computeBishopShifts(58)),
-		D8	(computeRookShifts(59), computeBishopShifts(59)),
-		E8	(computeRookShifts(60), computeBishopShifts(60)),
-		F8	(computeRookShifts(61), computeBishopShifts(61)),
-		G8	(computeRookShifts(62), computeBishopShifts(62)),
-		H8	(computeRookShifts(63), computeBishopShifts(63));
-
+		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
+		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
+		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
+		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
+		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
+		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
+		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
+		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
 		
 		final byte rook;
 		final byte bishop;
 		
-		private MagicShift(byte rook, byte bishop) {
-			this.rook = rook;
-			this.bishop = bishop;
+		private MagicShift() {
+			int ind = this.ordinal();
+			this.rook = computeRookShifts(ind);
+			this.bishop = computeBishopShifts(ind);
 		}
 		public byte getRook() {
 			return this.rook;
@@ -1805,145 +1065,17 @@ public class Board {
 		private static byte computeBishopShifts(int sqrInd) {
 			return (byte)(64 - SliderOccupancyMask.getByIndex(sqrInd).getBishopOccupancyMaskBitCount());
 		}
-		public static void printCodeVariables() {
-			for (int i = 0; i < 10; i++)
-				System.out.println(Square.getByIndex(i) + "\t(computeRookMagicShift(" + i + "),  computeBishopMagicShift(" + i + ")),");
-			for (int i = 10; i < 63; i++) 
-				System.out.println(Square.getByIndex(i) + "\t(computeRookMagicShift(" + i + "), computeBishopMagicShift(" + i + ")),");
-			System.out.println(Square.getByIndex(63) + "\t(computeRookMagicShift(" + 63 + "), computeBishopMagicShift(" + 63 + "));");
-		}
 		public static MagicShift getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return A1;
-				case 1:
-					return B1;
-				case 2:
-					return C1;
-				case 3:
-					return D1;
-				case 4:
-					return E1;
-				case 5:
-					return F1;
-				case 6:
-					return G1;
-				case 7:
-					return H1;
-				case 8:
-					return A2;
-				case 9:
-					return B2;
-				case 10:
-					return C2;
-				case 11:
-					return D2;
-				case 12:
-					return E2;
-				case 13:
-					return F2;
-				case 14:
-					return G2;
-				case 15:
-					return H2;
-				case 16:
-					return A3;
-				case 17:
-					return B3;
-				case 18:
-					return C3;
-				case 19:
-					return D3;
-				case 20:
-					return E3;
-				case 21:
-					return F3;
-				case 22:
-					return G3;
-				case 23:
-					return H3;
-				case 24:
-					return A4;
-				case 25:
-					return B4;
-				case 26:
-					return C4;
-				case 27:
-					return D4;
-				case 28:
-					return E4;
-				case 29:
-					return F4;
-				case 30:
-					return G4;
-				case 31:
-					return H4;
-				case 32:
-					return A5;
-				case 33:
-					return B5;
-				case 34:
-					return C5;
-				case 35:
-					return D5;
-				case 36:
-					return E5;
-				case 37:
-					return F5;
-				case 38:
-					return G5;
-				case 39:
-					return H5;
-				case 40:
-					return A6;
-				case 41:
-					return B6;
-				case 42:
-					return C6;
-				case 43:
-					return D6;
-				case 44:
-					return E6;
-				case 45:
-					return F6;
-				case 46:
-					return G6;
-				case 47:
-					return H6;
-				case 48:
-					return A7;
-				case 49:
-					return B7;
-				case 50:
-					return C7;
-				case 51:
-					return D7;
-				case 52:
-					return E7;
-				case 53:
-					return F7;
-				case 54:
-					return G7;
-				case 55:
-					return H7;
-				case 56:
-					return A8;
-				case 57:
-					return B8;
-				case 58:
-					return C8;
-				case 59:
-					return D8;
-				case 60:
-					return E8;
-				case 61:
-					return F8;
-				case 62:
-					return G8;
-				case 63:
-					return H8;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
+				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
+				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
+				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
+				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
+				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}
@@ -2047,7 +1179,7 @@ public class Board {
 				System.out.format("%s %5s %70s\n\n", "SQ", "ROOK", "BISHOP");
 				for (Square sqr : Square.values()) {
 					int sqrInd = sqr.ordinal();
-					System.out.println(sqr + " (" + toBinaryLiteral(this.rookMagicNumbers[sqrInd]) + ", " + toBinaryLiteral(this.bishopMagicNumbers[sqrInd]) + "),");
+					System.out.println(sqr + " (" + BitOperations.toBinaryLiteral(this.rookMagicNumbers[sqrInd]) + ", " + BitOperations.toBinaryLiteral(this.bishopMagicNumbers[sqrInd]) + "),");
 				}
 			}
 			else
@@ -2137,206 +1269,29 @@ public class Board {
 		}
 		public static MagicNumber getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return A1;
-				case 1:
-					return B1;
-				case 2:
-					return C1;
-				case 3:
-					return D1;
-				case 4:
-					return E1;
-				case 5:
-					return F1;
-				case 6:
-					return G1;
-				case 7:
-					return H1;
-				case 8:
-					return A2;
-				case 9:
-					return B2;
-				case 10:
-					return C2;
-				case 11:
-					return D2;
-				case 12:
-					return E2;
-				case 13:
-					return F2;
-				case 14:
-					return G2;
-				case 15:
-					return H2;
-				case 16:
-					return A3;
-				case 17:
-					return B3;
-				case 18:
-					return C3;
-				case 19:
-					return D3;
-				case 20:
-					return E3;
-				case 21:
-					return F3;
-				case 22:
-					return G3;
-				case 23:
-					return H3;
-				case 24:
-					return A4;
-				case 25:
-					return B4;
-				case 26:
-					return C4;
-				case 27:
-					return D4;
-				case 28:
-					return E4;
-				case 29:
-					return F4;
-				case 30:
-					return G4;
-				case 31:
-					return H4;
-				case 32:
-					return A5;
-				case 33:
-					return B5;
-				case 34:
-					return C5;
-				case 35:
-					return D5;
-				case 36:
-					return E5;
-				case 37:
-					return F5;
-				case 38:
-					return G5;
-				case 39:
-					return H5;
-				case 40:
-					return A6;
-				case 41:
-					return B6;
-				case 42:
-					return C6;
-				case 43:
-					return D6;
-				case 44:
-					return E6;
-				case 45:
-					return F6;
-				case 46:
-					return G6;
-				case 47:
-					return H6;
-				case 48:
-					return A7;
-				case 49:
-					return B7;
-				case 50:
-					return C7;
-				case 51:
-					return D7;
-				case 52:
-					return E7;
-				case 53:
-					return F7;
-				case 54:
-					return G7;
-				case 55:
-					return H7;
-				case 56:
-					return A8;
-				case 57:
-					return B8;
-				case 58:
-					return C8;
-				case 59:
-					return D8;
-				case 60:
-					return E8;
-				case 61:
-					return F8;
-				case 62:
-					return G8;
-				case 63:
-					return H8;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
+				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
+				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
+				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
+				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
+				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}
 	
 	public static enum MoveDatabase {
 		
-		A1 (Square.A1),
-		B1 (Square.B1),
-		C1 (Square.C1),
-		D1 (Square.D1),
-		E1 (Square.E1),
-		F1 (Square.F1),
-		G1 (Square.G1),
-		H1 (Square.H1),
-		A2 (Square.A2),
-		B2 (Square.B2),
-		C2 (Square.C2),
-		D2 (Square.D2),
-		E2 (Square.E2),
-		F2 (Square.F2),
-		G2 (Square.G2),
-		H2 (Square.H2),
-		A3 (Square.A3),
-		B3 (Square.B3),
-		C3 (Square.C3),
-		D3 (Square.D3),
-		E3 (Square.E3),
-		F3 (Square.F3),
-		G3 (Square.G3),
-		H3 (Square.H3),
-		A4 (Square.A4),
-		B4 (Square.B4),
-		C4 (Square.C4),
-		D4 (Square.D4),
-		E4 (Square.E4),
-		F4 (Square.F4),
-		G4 (Square.G4),
-		H4 (Square.H4),
-		A5 (Square.A5),
-		B5 (Square.B5),
-		C5 (Square.C5),
-		D5 (Square.D5),
-		E5 (Square.E5),
-		F5 (Square.F5),
-		G5 (Square.G5),
-		H5 (Square.H5),
-		A6 (Square.A6),
-		B6 (Square.B6),
-		C6 (Square.C6),
-		D6 (Square.D6),
-		E6 (Square.E6),
-		F6 (Square.F6),
-		G6 (Square.G6),
-		H6 (Square.H6),
-		A7 (Square.A7),
-		B7 (Square.B7),
-		C7 (Square.C7),
-		D7 (Square.D7),
-		E7 (Square.E7),
-		F7 (Square.F7),
-		G7 (Square.G7),
-		H7 (Square.H7),
-		A8 (Square.A8),
-		B8 (Square.B8),
-		C8 (Square.C8),
-		D8 (Square.D8),
-		E8 (Square.E8),
-		F8 (Square.F8),
-		G8 (Square.G8),
-		H8 (Square.H8);
+		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
+		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
+		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
+		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
+		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
+		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
+		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
+		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
 		
 		final byte sqrInd;
 		
@@ -2349,8 +1304,9 @@ public class Board {
 		final long pawnBlackAdvance;
 		final long pawnBlackCapture;
 		
-		private MoveDatabase(Square sqr) {
-			this.sqrInd = (byte)sqr.ordinal();
+		private MoveDatabase() {
+			this.sqrInd = (byte)this.ordinal();
+			Square sqr = Square.getByIndex(this.sqrInd);
 			SliderOccupancyVariations occVar = new SliderOccupancyVariations();
 			long[] rookOccVar 	= occVar.getRookOccupancyVariations()[this.sqrInd];
 			long[] bishopOccVar = occVar.getBishopOccupancyVariations()[this.sqrInd];
@@ -2470,136 +1426,15 @@ public class Board {
 		}
 		public static MoveDatabase getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:
-					return A1;
-				case 1:
-					return B1;
-				case 2:
-					return C1;
-				case 3:
-					return D1;
-				case 4:
-					return E1;
-				case 5:
-					return F1;
-				case 6:
-					return G1;
-				case 7:
-					return H1;
-				case 8:
-					return A2;
-				case 9:
-					return B2;
-				case 10:
-					return C2;
-				case 11:
-					return D2;
-				case 12:
-					return E2;
-				case 13:
-					return F2;
-				case 14:
-					return G2;
-				case 15:
-					return H2;
-				case 16:
-					return A3;
-				case 17:
-					return B3;
-				case 18:
-					return C3;
-				case 19:
-					return D3;
-				case 20:
-					return E3;
-				case 21:
-					return F3;
-				case 22:
-					return G3;
-				case 23:
-					return H3;
-				case 24:
-					return A4;
-				case 25:
-					return B4;
-				case 26:
-					return C4;
-				case 27:
-					return D4;
-				case 28:
-					return E4;
-				case 29:
-					return F4;
-				case 30:
-					return G4;
-				case 31:
-					return H4;
-				case 32:
-					return A5;
-				case 33:
-					return B5;
-				case 34:
-					return C5;
-				case 35:
-					return D5;
-				case 36:
-					return E5;
-				case 37:
-					return F5;
-				case 38:
-					return G5;
-				case 39:
-					return H5;
-				case 40:
-					return A6;
-				case 41:
-					return B6;
-				case 42:
-					return C6;
-				case 43:
-					return D6;
-				case 44:
-					return E6;
-				case 45:
-					return F6;
-				case 46:
-					return G6;
-				case 47:
-					return H6;
-				case 48:
-					return A7;
-				case 49:
-					return B7;
-				case 50:
-					return C7;
-				case 51:
-					return D7;
-				case 52:
-					return E7;
-				case 53:
-					return F7;
-				case 54:
-					return G7;
-				case 55:
-					return H7;
-				case 56:
-					return A8;
-				case 57:
-					return B8;
-				case 58:
-					return C8;
-				case 59:
-					return D8;
-				case 60:
-					return E8;
-				case 61:
-					return F8;
-				case 62:
-					return G8;
-				case 63:
-					return H8;
-				default:
-					throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
+				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
+				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
+				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
+				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
+				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
+				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}
@@ -3284,13 +2119,13 @@ public class Board {
 	public long getBlockerCandidates(int sqrInd, boolean byWhite) {
 		long blockerCandidates = 0;
 		long sqrBit = Square.getBitmapByIndex(sqrInd);
-		long blackPawnAdvance = BitOperations.vShiftDown(sqrBit), whitePawnAdvance = BitOperations.vShiftUp(sqrBit);
+		long blackPawnAdvance = BitOperations.vShiftSouth(sqrBit), whitePawnAdvance = BitOperations.vShiftNorth(sqrBit);
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			blockerCandidates |=  this.whiteKnights						& dB.getCrudeKnightMoves();
 			blockerCandidates |=  this.whitePawns 						& blackPawnAdvance;
 			if ((sqrBit & Rank.getByIndex(3)) != 0 && (this.allEmpty & blackPawnAdvance) != 0)
-				blockerCandidates |=  this.whitePawns 					& BitOperations.vShiftDown(blackPawnAdvance);
+				blockerCandidates |=  this.whitePawns 					& BitOperations.vShiftSouth(blackPawnAdvance);
 			blockerCandidates |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
 			blockerCandidates |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
 			if (this.enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(5)) != 0)
@@ -3301,7 +2136,7 @@ public class Board {
 			blockerCandidates |=  this.blackKnights						& dB.getCrudeKnightMoves();
 			blockerCandidates |=  this.blackPawns 						& whitePawnAdvance;
 			if ((sqrBit & Rank.getByIndex(4)) != 0 && (this.allEmpty & whitePawnAdvance) != 0)
-				blockerCandidates |=  this.blackPawns 					& BitOperations.vShiftUp(whitePawnAdvance);
+				blockerCandidates |=  this.blackPawns 					& BitOperations.vShiftNorth(whitePawnAdvance);
 			blockerCandidates |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
 			blockerCandidates |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
 			if (this.enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(2)) != 0)
@@ -4406,17 +3241,9 @@ public class Board {
 		fen += 1 + this.plyIndex/2;
 		return fen;
 	}
-	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.*/
-	public static String toBinary(long bitmap) {
-		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
-	}
-	/**Returns the binary literal of the input long as a String.*/
-	public static String toBinaryLiteral(long bitmap) {
-		return "0b"+ toBinary(bitmap) + "L";
-	}
 	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.*/
 	public static void printBitboardToConsole(long bitmap) {
-		String board = toBinary(bitmap);
+		String board = BitOperations.toBinary(bitmap);
 		for (int i = 0; i < 64; i += 8) {
 			for (int j = i + 7; j >= i; j--)
 				System.out.print(board.charAt(j));

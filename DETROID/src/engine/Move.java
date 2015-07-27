@@ -22,7 +22,7 @@ public enum Move {
 	PREVIOUS_CHECK					 		(31, 1),
 	PREVIOUS_FIFTY_MOVE_RULE_CLOCK			(32, 127),
 	PREVIOUS_REPETITIONS			 		(39, 7),
-	VALUE							 		(42, Long.MAX_VALUE);
+	VALUE							 		(42, 2097151);
 	
 	
 	final byte shift;
@@ -32,9 +32,11 @@ public enum Move {
 		this.shift = (byte) shift;
 		this.mask = mask;
 	}
+	/**Returns the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long.*/
 	public byte getShift() {
 		return this.shift;
 	}
+	/**Returns the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value.*/
 	public long getMask() {
 		return this.mask;
 	}

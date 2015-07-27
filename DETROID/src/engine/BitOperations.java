@@ -118,36 +118,43 @@ public final class BitOperations {
 		return	 (bitmap & BIT_REVERSAL_8_CONST1)  >>> 8  | (bitmap & BIT_REVERSAL_8_CONST2)  << 8;
 	}
 	/**One square westward shift.*/
-	protected final static long vShiftRight(long bitmap) {
+	protected final static long vShiftWest(long bitmap) {
 		return bitmap << 1;
 	}
 	/**One square eastward shift.*/
-	protected final static long vShiftLeft(long bitmap) {
+	protected final static long vShiftEast(long bitmap) {
 		return bitmap >>> 1;
 	}
 	/**One square northward shift.*/
-	protected final static long vShiftUp(long bitmap) {
+	protected final static long vShiftNorth(long bitmap) {
 		return bitmap << 8;
 	}
 	/**One square southward shift.*/
-	protected final static long vShiftDown(long bitmap) {
+	protected final static long vShiftSouth(long bitmap) {
 		return bitmap >>> 8;
 	}
 	/**One square north-westward shift.*/
-	protected final static long vShiftUpRight(long bitmap) {
+	protected final static long vShiftNorthWest(long bitmap) {
 		return bitmap << 9;
 	}
 	/**One square south-westward shift.*/
-	protected final static long vShiftDownRight(long bitmap) {
+	protected final static long vShiftSouthWest(long bitmap) {
 		return bitmap >>> 7;
 	}
 	/**One square north-eastward shift.*/
-	protected final static long vShiftUpLeft(long bitmap) {
+	protected final static long vShiftNorthEast(long bitmap) {
 		return bitmap << 7;
 	}
 	/**One square south-eastward shift.*/
-	protected final static long vShiftDownLeft(long bitmap) {
+	protected final static long vShiftSouthEast(long bitmap) {
 		return bitmap >>> 9;
 	}
-	
+	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.*/
+	public static String toBinary(long bitmap) {
+		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
+	}
+	/**Returns the binary literal of the input long as a String.*/
+	public static String toBinaryLiteral(long bitmap) {
+		return "0b"+ toBinary(bitmap) + "L";
+	}
 }
