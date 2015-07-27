@@ -3241,20 +3241,10 @@ public class Board {
 		fen += 1 + this.plyIndex/2;
 		return fen;
 	}
-	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.*/
-	public static void printBitboardToConsole(long bitmap) {
-		String board = BitOperations.toBinary(bitmap);
-		for (int i = 0; i < 64; i += 8) {
-			for (int j = i + 7; j >= i; j--)
-				System.out.print(board.charAt(j));
-			System.out.println();
-		}
-		System.out.println();
-	}
 	/**Prints a bitboard representing all the occupied squares of the object's board position to the console in a human-readable form,
 	 * aligned like a chess board.*/
 	public void printBitboardToConsole() {
-		printBitboardToConsole(this.allOccupied);
+		BitOperations.printBitboardToConsole(this.allOccupied);
 	}
 	/**Prints an array representing the object's board position to the console in a human-readable form, aligned like a chess board with 
 	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/

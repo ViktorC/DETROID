@@ -157,4 +157,14 @@ public final class BitOperations {
 	public static String toBinaryLiteral(long bitmap) {
 		return "0b"+ toBinary(bitmap) + "L";
 	}
+	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.*/
+	public static void printBitboardToConsole(long bitmap) {
+		String board = toBinary(bitmap);
+		for (int i = 0; i < 64; i += 8) {
+			for (int j = i + 7; j >= i; j--)
+				System.out.print(board.charAt(j));
+			System.out.println();
+		}
+		System.out.println();
+	}
 }
