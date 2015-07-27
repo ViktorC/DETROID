@@ -1456,7 +1456,7 @@ public class Board {
 	private long blackKnights;
 	private long blackPawns;
 	
-	//bitboard collections maintained for faster processing of the position
+	//bitboard unions maintained for faster processing of the position
 	private long allWhitePieces;
 	private long allBlackPieces;
 	
