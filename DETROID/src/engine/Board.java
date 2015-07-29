@@ -1745,7 +1745,8 @@ public class Board {
 		if (this.whitesTurn) {
 			switch (moved) {
 				case 1: {
-					this.whiteKing 			  =  toBit;
+					this.whiteKing 			 ^=  fromBit;
+					this.whiteKing 			 ^=  toBit;
 					this.allWhitePieces 	 ^=  fromBit;
 					this.allWhitePieces 	 ^=  toBit;
 					this.allNonWhiteOccupied  = ~this.allWhitePieces;
@@ -1830,7 +1831,8 @@ public class Board {
 		else {
 			switch (moved) {
 				case 7: {
-					this.blackKing 			  =  toBit;
+					this.blackKing 			 ^=  fromBit;
+					this.blackKing 			 ^=  toBit;
 					this.allBlackPieces 	 ^=  fromBit;
 					this.allBlackPieces 	 ^=  toBit;
 					this.allNonBlackOccupied  = ~this.allBlackPieces;
@@ -3047,7 +3049,7 @@ public class Board {
 			case 1: {
 				this.offsetBoard[from]  = moved;
 				this.offsetBoard[to]	= 0;
-				this.setBitboards(moved, 0, toBit, fromBit);
+				this.setBitboards(moved, 0, fromBit, toBit);
 				if (this.whitesTurn) {
 					this.offsetBoard[7]	 = 3;
 					this.offsetBoard[5]	 = 0;
@@ -3063,7 +3065,7 @@ public class Board {
 			case 2: {
 				this.offsetBoard[from]  = moved;
 				this.offsetBoard[to]	= 0;
-				this.setBitboards(moved, 0, toBit, fromBit);
+				this.setBitboards(moved, 0, fromBit, toBit);
 				if (this.whitesTurn) {
 					this.offsetBoard[0]	 = 3;
 					this.offsetBoard[3]	 = 0;
