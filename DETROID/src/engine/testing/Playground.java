@@ -5,9 +5,9 @@ import engine.Board;
 public class Playground {
 
 	public static void main(String[] args) {
-		Board b = new Board("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+		Board b = new Board("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
 		long start = System.currentTimeMillis();
-		System.out.println(b.perftWithMoveConsoleOutput(2));
+		System.out.println(b.perftWithMoveConsoleOutput(3));
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}

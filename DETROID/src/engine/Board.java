@@ -1985,24 +1985,24 @@ public class Board {
 		else {
 			if (this.blackCastlingRights != 0) {
 				if (this.blackCastlingRights == 1) {
-					if (this.offsetBoard[60] != 1 || this.offsetBoard[63] != 3)
+					if (this.offsetBoard[60] != 7 || this.offsetBoard[63] != 9)
 						this.blackCastlingRights = 0;
 				}
 				else if (this.blackCastlingRights == 2) {
-					if (this.offsetBoard[60] != 1 || this.offsetBoard[56] != 3)
+					if (this.offsetBoard[60] != 7 || this.offsetBoard[56] != 9)
 						this.blackCastlingRights = 0;
 				}
 				else {
-					if (this.offsetBoard[60] != 1) {
+					if (this.offsetBoard[60] != 7) {
 						this.blackCastlingRights = 0;
 					}
-					else if (this.offsetBoard[56] != 3) {
-						if (this.offsetBoard[63] == 3)
+					else if (this.offsetBoard[56] != 9) {
+						if (this.offsetBoard[63] == 9)
 							this.blackCastlingRights = 2;
 						else
 							this.blackCastlingRights = 0;
 					}
-					else if (this.offsetBoard[63] != 3) {
+					else if (this.offsetBoard[63] != 9) {
 						this.blackCastlingRights = 1;
 					}
 				}
@@ -2409,13 +2409,13 @@ public class Board {
 					if (!isAttacked(to, true))
 						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 				}
-				if ((this.whiteCastlingRights & 1) != 0) {
+				if ((this.blackCastlingRights & 1) != 0) {
 					if (((Square.getBitmapByIndex(61) | Square.getBitmapByIndex(62)) & this.allOccupied) == 0) {
 						if (((moves.getHead() >>> Move.TO.shift) & Move.TO.mask) == 61 && !isAttacked(62, true))
 							moves.add(kingMove | (62L << Move.TO.shift) | (1L << Move.TYPE.shift));
 					}
 				}
-				if ((this.whiteCastlingRights & 2) != 0) {
+				if ((this.blackCastlingRights & 2) != 0) {
 					if (((Square.getBitmapByIndex(57) | Square.getBitmapByIndex(58) | Square.getBitmapByIndex(59)) & this.allOccupied) == 0) {
 						if (!isAttacked(58, true) && !isAttacked(59, true))
 							moves.add(kingMove | (58L << Move.TO.shift) | (2L << Move.TYPE.shift));
