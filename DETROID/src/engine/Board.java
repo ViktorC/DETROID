@@ -1382,8 +1382,8 @@ public class Board {
 		public long getBlackPawnAdvances(long allEmpty) {
 			if (this.sqrInd < 48)
 				return this.pawnBlackAdvance & allEmpty;
-			long firstBlocker = BitOperations.getMSBit(this.pawnBlackAdvance & ~allEmpty);
-			return this.pawnBlackAdvance^(this.pawnBlackAdvance & -(firstBlocker << 1));
+			long attackSet = Square.getBitmapByIndex(this.sqrInd - 8) & allEmpty;
+			return attackSet | (BitOperations.vShiftSouth(attackSet) & allEmpty);
 		}
 		public long getWhitePawnMoves(long allBlackPieces, long allEmpty) {
 			return this.getWhitePawnAdvances(allEmpty) | this.getWhitePawnCaptures(allBlackPieces);
@@ -3047,7 +3047,7 @@ public class Board {
 			case 1: {
 				this.offsetBoard[from]  = moved;
 				this.offsetBoard[to]	= 0;
-				this.setBitboards(moved, 0, fromBit, toBit);
+				this.setBitboards(moved, 0, toBit, fromBit);
 				if (this.whitesTurn) {
 					this.offsetBoard[7]	 = 3;
 					this.offsetBoard[5]	 = 0;
@@ -3063,7 +3063,7 @@ public class Board {
 			case 2: {
 				this.offsetBoard[from]  = moved;
 				this.offsetBoard[to]	= 0;
-				this.setBitboards(moved, 0, fromBit, toBit);
+				this.setBitboards(moved, 0, toBit, fromBit);
 				if (this.whitesTurn) {
 					this.offsetBoard[0]	 = 3;
 					this.offsetBoard[3]	 = 0;
@@ -3284,7 +3284,7 @@ public class Board {
 			while (this.moveList.hasNext())
 				chronMoves.add(this.moveList.next());
 			while (chronMoves.hasNext()) {
-				System.out.printf(i + ". %-10s ", Move.pseudoAlgebraicNotation(chronMoves.next()));
+				System.out.printf(i + ". %-8s ", Move.pseudoAlgebraicNotation(chronMoves.next()));
 				i++;
 			}
 			System.out.println();
