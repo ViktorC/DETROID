@@ -1,7 +1,6 @@
 package engine;
 
 import util.*;
-
 import java.util.Random;
 
 /**A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
@@ -3274,6 +3273,32 @@ public class Board {
 		}
 		return leafNodes;
 	}
+	/**Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had and prints the whole move list of the object to the console
+	 * in pseudo-algebraic chess notation once @param depth has been reached. It is used mainly for bug detection by comparing the returned values to validated results.*/
+	public long perftWithMoveConsoleOutput(int depth) {
+		LongList moves, chronMoves;
+		long move, leafNodes = 0;
+		int i = 1;
+		if (depth == 0) {
+			chronMoves = new LongStack();
+			while (this.moveList.hasNext())
+				chronMoves.add(this.moveList.next());
+			while (chronMoves.hasNext()) {
+				System.out.printf(i + ". %-10s ", Move.pseudoAlgebraicNotation(chronMoves.next()));
+				i++;
+			}
+			System.out.println();
+			return 1;
+		}
+		moves = this.generateMoves();
+		while (moves.hasNext()) {
+			move = moves.next();
+			this.makeMove(move);
+			leafNodes += this.perftWithMoveConsoleOutput(depth - 1);
+			this.unMakeMove();
+		}
+		return leafNodes;
+	}
 	private long perftWithBitboardConsoleOutput(int depth, long lowerBound, long upperBound, long[] count) {
 		LongList moves;
 		long move, leafNodes = 0;
@@ -3317,7 +3342,7 @@ public class Board {
 	/**Runs a perft test to the given depth and prints out the leaf nodes that fall within the specified range's board positions using
 	 * {@link #printOffsetBoardToConsole() printOffsetBoardToConsole} if @param detailed is true or using {@link #printBitboardToConsole() printBitboardToConsole}
 	 * if false. Useful for debugging purposes.*/
-	public void perftWithConsoleOutput(int depth, long lowerBound, long upperBound, boolean detailed) {
+	public void perftWithBoardConsoleOutput(int depth, long lowerBound, long upperBound, boolean detailed) {
 		long[] count = {0};
 		if (detailed)
 			this.perftWithOffsetBoardConsoleOutput(depth, lowerBound, upperBound, count);
