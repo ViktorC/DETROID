@@ -2503,7 +2503,7 @@ public class Board {
 					pawnMove |= pawn;
 					pawnMove |= (12L << Move.MOVED_PIECE.shift);
 					if (this.enPassantRights != 8) {
-						to = 24 + this.enPassantRights;
+						to = 16 + this.enPassantRights;
 						if ((MoveDatabase.getByIndex(to).getCrudeWhitePawnCaptures() & pawn) != 0)
 							moves.add(pawnMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
 					}
