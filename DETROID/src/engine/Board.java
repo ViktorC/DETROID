@@ -2350,7 +2350,7 @@ public class Board {
 					knight = knights.next();
 					knightMove  = move;
 					knightMove |= knight;
-					knightMove |= (5 << Move.MOVED_PIECE.shift);
+					knightMove |= (5L << Move.MOVED_PIECE.shift);
 					moveSet		= MoveDatabase.getByIndex(knight).getWhiteKnightMoves(this.allNonWhiteOccupied);
 					if (moveSet != 0) {
 						knightMoves = BitOperations.serialize(moveSet);
@@ -2545,13 +2545,11 @@ public class Board {
 	}
 	private LongQueue generateCheckEvasionMoves() {
 		long move = 0, kingMove = 0, kingMoveSet, pinnedPieces, movablePieces, squaresOfInterventionSet, checkerAttackerSet, checkerBlockerSet, checkerAttackerMove, checkerBlockerMove;
-		int checker1, checker2, checkerPiece1, checkerPiece2, squareOfIntervention, checkerAttackerSquare, checkerBlockerSquare;
-		int king;
+		int checker1, checker2, checkerPiece1, checkerPiece2, squareOfIntervention, checkerAttackerSquare, checkerBlockerSquare, king, to;
 		IntStack kingMoves, squaresOfIntervention, checkerAttackers, checkerBlockers;
 		LongQueue moves = new LongQueue();
 		MoveDatabase dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
-		int to;
 		move |= (this.whiteCastlingRights		<< Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift);
 		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
 		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
@@ -2567,7 +2565,7 @@ public class Board {
 				king 	  		 = BitOperations.indexOfLSBit(this.whiteKing);
 				kingMove 		 = move;
 				kingMove		|= king;
-				kingMove		|= (1 << Move.MOVED_PIECE.shift);
+				kingMove		|= (1L << Move.MOVED_PIECE.shift);
 				kingDb			 = MoveDatabase.getByIndex(king);
 				kingMoveSet		 = kingDb.getWhiteKingMoves(this.allNonWhiteOccupied);
 				dB = MoveDatabase.getByIndex(checker1);
@@ -2577,21 +2575,22 @@ public class Board {
 				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
-					checkerAttackerMove = move | checkerAttackerSquare | (checker1 << Move.TO.shift) | (this.offsetBoard[checkerAttackerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[checker1] << Move.CAPTURED_PIECE.shift);
+					checkerAttackerMove = move | checkerAttackerSquare | (this.offsetBoard[checkerAttackerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[checker1] << Move.CAPTURED_PIECE.shift);
 					if ((checkerAttackerMove >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 6) {
 						if (promotionOnAttackPossible) {
+							checkerAttackerMove |= (checker1 << Move.TO.shift);
 							moves.add(checkerAttackerMove | (4L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (5L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (6L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (7L << Move.TYPE.shift));
 						}
-						else if (checkerPiece1 == 12 && (Rank.getBySquareIndex(checker1) & Square.getBitmapByIndex(checkerAttackerSquare)) != 0)
-							moves.add(((checkerAttackerMove | (Move.TO.mask << Move.TO.shift))^(Move.TO.mask << Move.TO.shift)) | ((checker1 + 8) << Move.TO.shift) | (3 << Move.TYPE.shift));
+						else if (this.enPassantRights == checker1%8 && (MoveDatabase.getByIndex(to = checker1 + 8).getCrudeBlackPawnCaptures() & (1L << checkerAttackerSquare)) != 0)
+							moves.add(checkerAttackerMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 						else
-							moves.add(checkerAttackerMove);
+							moves.add(checkerAttackerMove | (checker1 << Move.TO.shift));
 					}
 					else
-						moves.add(checkerAttackerMove);
+						moves.add(checkerAttackerMove | (checker1 << Move.TO.shift));
 				}
 				switch (checkerPiece1) {
 					case 8: {
@@ -2743,7 +2742,7 @@ public class Board {
 				king 	  		= BitOperations.indexOfLSBit(this.blackKing);
 				kingMove 	    = move;
 				kingMove 	   |= king;
-				kingMove 	   |= (7 << Move.MOVED_PIECE.shift);
+				kingMove 	   |= (7L << Move.MOVED_PIECE.shift);
 				kingDb	 		= MoveDatabase.getByIndex(king);
 				kingMoveSet		= kingDb.getBlackKingMoves(this.allNonBlackOccupied);
 				dB				= MoveDatabase.getByIndex(checker1);
@@ -2753,21 +2752,22 @@ public class Board {
 				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
-					checkerAttackerMove = move | checkerAttackerSquare | (checker1 << Move.TO.shift) | (this.offsetBoard[checkerAttackerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[checker1] << Move.CAPTURED_PIECE.shift);
+					checkerAttackerMove = move | checkerAttackerSquare | (this.offsetBoard[checkerAttackerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[checker1] << Move.CAPTURED_PIECE.shift);
 					if ((checkerAttackerMove >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 12) {
 						if (promotionOnAttackPossible) {
+							checkerAttackerMove |= (checker1 << Move.TO.shift);
 							moves.add(checkerAttackerMove | (4L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (5L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (6L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (7L << Move.TYPE.shift));
 						}
-						else if (checkerPiece1 == 6 && (Rank.getBySquareIndex(checker1) & Square.getBitmapByIndex(checkerAttackerSquare)) != 0)
-							moves.add(((checkerAttackerMove | (Move.TO.mask << Move.TO.shift))^(Move.TO.mask << Move.TO.shift)) | ((checker1 - 8) << Move.TO.shift) | (3 << Move.TYPE.shift));
+						else if (this.enPassantRights == checker1%8 && (MoveDatabase.getByIndex(to = checker1 - 8).getCrudeWhitePawnCaptures() & (1L << checkerAttackerSquare)) != 0)
+							moves.add(checkerAttackerMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 						else
-							moves.add(checkerAttackerMove);
+							moves.add(checkerAttackerMove | (checker1 << Move.TO.shift));
 					}
 					else
-						moves.add(checkerAttackerMove);
+						moves.add(checkerAttackerMove | (checker1 << Move.TO.shift));
 				}
 				switch (checkerPiece1) {
 					case 2: {
