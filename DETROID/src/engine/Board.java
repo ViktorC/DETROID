@@ -495,43 +495,6 @@ public class Board {
 		}
 	}
 	
-	/**An enum type for the different chess pieces. Each piece has an initial position and and id number by which it is represented on the
-	 * array of the auxiliary offset board.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public static enum Piece {
-		
-		WHITE_KING		(0b0000000000000000000000000000000000000000000000000000000000010000L, 1),
-		WHITE_QUEEN		(0b0000000000000000000000000000000000000000000000000000000000001000L, 2),
-		WHITE_ROOK		(0b0000000000000000000000000000000000000000000000000000000010000001L, 3),
-		WHITE_BISHOP	(0b0000000000000000000000000000000000000000000000000000000000100100L, 4),
-		WHITE_KNIGHT 	(0b0000000000000000000000000000000000000000000000000000000001000010L, 5),
-		WHITE_PAWN		(0b0000000000000000000000000000000000000000000000001111111100000000L, 6),
-		
-		BLACK_KING		(0b0001000000000000000000000000000000000000000000000000000000000000L, 7),
-		BLACK_QUEEN		(0b0000100000000000000000000000000000000000000000000000000000000000L, 8),
-		BLACK_ROOK		(0b1000000100000000000000000000000000000000000000000000000000000000L, 9),
-		BLACK_BISHOP	(0b0010010000000000000000000000000000000000000000000000000000000000L, 10),
-		BLACK_KNIGHT	(0b0100001000000000000000000000000000000000000000000000000000000000L, 11),
-		BLACK_PAWN		(0b0000000011111111000000000000000000000000000000000000000000000000L, 12);
-		
-		final long initPosBitmap;		//a bitmap representing the initial position of the respective pieces at the start of the game
-		final int  offsetBoardRep;		//a number between 1 and 12 that generally represents the respective piece, among others, for example on the offset board
-		
-		private Piece(long initPosBitmap, int offsetBoardRep) {
-			this.initPosBitmap = initPosBitmap;
-			this.offsetBoardRep = offsetBoardRep;
-		}
-		public long getInitPosBitmap() {
-			return this.initPosBitmap;
-		}
-		public int getOffsetBoardRep() {
-			return this.offsetBoardRep;
-		}
-	}
-	
 	/**A static class that generates the basic move masks for each piece type. It does not include special moves or check considerations and it disregards occupancies.
 	 * 
 	 * @author Viktor
