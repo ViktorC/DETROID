@@ -45,25 +45,33 @@ public class ZobristGenerator {
 		for (int i = 0; i < 8; i++)
 			this.enPassantRights[i] = random.nextLong();
 	}
-	/**Encodes a Board objects and returns the 64-bit key.*/
-	public long hash(Board b) {
-		int[] board64 = b.getOffsetBoard();
+	/**Encodes a Board objects and returns the 64-bit key.
+	 * 
+	 * @param board
+	 * @return
+	 */
+	public long hash(Board board) {
+		int[] board64 = board.getOffsetBoard();
 		long key = 0;
-		if (!b.getTurn())
+		if (!board.getTurn())
 			key ^= this.turn;
 		for (int i = 0; i < 64; i++) {
 			key ^= this.board[board64[i]][i];
 		}
-		key ^= this.whiteCastlingRights[b.getWhiteCastlingRights()];
-		key ^= this.blackCastlingRights[b.getBlackCastlingRights()];
-		key ^= this.enPassantRights[b.getEnPassantRights()];
+		key ^= this.whiteCastlingRights[board.getWhiteCastlingRights()];
+		key ^= this.blackCastlingRights[board.getBlackCastlingRights()];
+		key ^= this.enPassantRights[board.getEnPassantRights()];
 		return key;
 	}
 	/**Modifies a Board object's Zobrist key by XOR-ing it with the Zobrist object's respective instance fields for the fields of the Board
-	 * object changed by the last move made.*/
-	public long updateKey(Board b) {
-		long key	 	= b.getZobristKey();
-		long move	 	= b.getLastMove();
+	 * object changed by the last move made.
+	 * 
+	 * @param board
+	 * @return
+	 */
+	public long updateKey(Board board) {
+		long key	 	= board.getZobristKey();
+		long move	 	= board.getLastMove();
 		int from		= (int)((move >>> Move.FROM.shift)  			& Move.FROM.mask);
 		int to			= (int)((move >>> Move.TO.shift) 				& Move.TO.mask);
 		int moved		= (int)((move >>> Move.MOVED_PIECE.shift) 	& Move.MOVED_PIECE.mask);
@@ -163,9 +171,9 @@ public class ZobristGenerator {
 		key ^= this.whiteCastlingRights[(int)((move >>> Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift) & Move.PREVIOUS_WHITE_CASTLING_RIGHTS.mask)];
 		key ^= this.blackCastlingRights[(int)((move >>> Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift) & Move.PREVIOUS_BLACK_CASTLING_RIGHTS.mask)];
 		key ^= this.enPassantRights[(int)((move >>> Move.PREVIOUS_ENPASSANT_RIGHTS.shift) & Move.PREVIOUS_ENPASSANT_RIGHTS.mask)];
-		key ^= this.whiteCastlingRights[b.getWhiteCastlingRights()];
-		key ^= this.blackCastlingRights[b.getBlackCastlingRights()];
-		key ^= this.enPassantRights[b.getEnPassantRights()];
+		key ^= this.whiteCastlingRights[board.getWhiteCastlingRights()];
+		key ^= this.blackCastlingRights[board.getBlackCastlingRights()];
+		key ^= this.enPassantRights[board.getEnPassantRights()];
 		return key;
 	}
 }

@@ -39,7 +39,11 @@ public final class BitOperations {
 	private final static long		BIT_REVERSAL_32_CONST1	=  0b1111111111111111111111111111111100000000000000000000000000000000L;
 	private final static long		BIT_REVERSAL_32_CONST2	=  0b0000000000000000000000000000000011111111111111111111111111111111L;
 	
-	/**Returns the most significant (leftmost) bit in a long.*/
+	/**Returns the most significant (leftmost) bit in a long.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static long getMSBit(long bitmap) {
 		bitmap |= (bitmap >> 1);
 		bitmap |= (bitmap >> 2);
@@ -49,27 +53,51 @@ public final class BitOperations {
 		bitmap |= (bitmap >> 32);
 		return bitmap - (bitmap >>> 1);
 	}
-	/**Returns a long with the most significant (leftmost) bit in the input parameter reset.*/
+	/**Returns a long with the most significant (leftmost) bit in the input parameter reset.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static long resetMSBit(long bitmap) {
 		return bitmap^getMSBit(bitmap);
 	}
-	/**Returns the index of the most significant (leftmost) bit in a long.*/
+	/**Returns the index of the most significant (leftmost) bit in a long.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static int indexOfMSBit(long bitmap) {
 		return DE_BRUIJN_TABLE[(int)((getMSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
 	}
-	/**Returns the least significant (rightmost) bit in a long.*/
+	/**Returns the least significant (rightmost) bit in a long.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static long getLSBit(long bitmap) {
 		return bitmap & -bitmap;
 	}
-	/**Returns a long with the least significant (rightmost) bit in the input parameter reset.*/
+	/**Returns a long with the least significant (rightmost) bit in the input parameter reset.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static long resetLSBit(long bitmap) {
 		return bitmap & (bitmap - 1);
 	}
-	/**Returns the index of the least significant (rightmost) bit in a long.*/
+	/**Returns the index of the least significant (rightmost) bit in a long.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static int indexOfLSBit(long bitmap) {
 		return DE_BRUIJN_TABLE[(int)((getLSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
 	}
-	/**Returns a queue of the indexes of all set bits in the input parameter.*/
+	/**Returns a queue of the indexes of all set bits in the input parameter.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static IntStack serialize(long bitmap) {
 		IntStack out = new IntStack();
 		while (bitmap != 0) {
@@ -80,7 +108,10 @@ public final class BitOperations {
 	}
 	/**Returns an array of the indexes of all set bits in the input parameter.
 	 * 
-	 * @param numberOfSetBits is not checked*/
+	 * @param bitmap
+	 * @param numberOfSetBits is not checked
+	 * @return
+	 */
 	public final static int[] serialize(long bitmap, int numberOfSetBits) {
 		int[] series = new int[numberOfSetBits];
 		int ind = 0;
@@ -91,7 +122,11 @@ public final class BitOperations {
 		}
 		return series;
 	}
-	/**Returns the number of set bits in a long.*/
+	/**Returns the number of set bits in a long.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static int getCardinality(long bitmap) {
 		bitmap -= ((bitmap >>> 1) & SWAR_POPCOUNT_CONST1);
 		bitmap  = (bitmap & SWAR_POPCOUNT_CONST2) + ((bitmap >>> 2) & SWAR_POPCOUNT_CONST2);
@@ -100,7 +135,11 @@ public final class BitOperations {
 	}
 	/**Returns a long with the bits of the input parameter reversed/flipped.
 	 * 
-	 * It is equal to a 180-degree rotation of the board.*/
+	 * It is equal to a 180-degree rotation of the board.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static long reverse(long bitmap) {
 		bitmap = (((bitmap & BIT_REVERSAL_1_CONST1)  >>> 1)  | ((bitmap & BIT_REVERSAL_1_CONST2)  << 1));
 		bitmap = (((bitmap & BIT_REVERSAL_2_CONST1)  >>> 2)  | ((bitmap & BIT_REVERSAL_2_CONST2)  << 2));
@@ -111,53 +150,100 @@ public final class BitOperations {
 	}
 	/**Returns a long with the bytes of the input parameter reversed/flipped.
 	 * 
-	 * It is equal to the 'horizontal' mirroring of the board.*/
+	 * It is equal to the 'horizontal' mirroring of the board.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public final static long reverseBytes(long bitmap) {
 		bitmap = (bitmap & BIT_REVERSAL_32_CONST1) >>> 32 | (bitmap & BIT_REVERSAL_32_CONST2) << 32;
 		bitmap = (bitmap & BIT_REVERSAL_16_CONST1) >>> 16 | (bitmap & BIT_REVERSAL_16_CONST2) << 16;
 		return	 (bitmap & BIT_REVERSAL_8_CONST1)  >>> 8  | (bitmap & BIT_REVERSAL_8_CONST2)  << 8;
 	}
-	/**One square westward shift.*/
+	/**One square westward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftWest(long bitmap) {
 		return bitmap << 1;
 	}
-	/**One square eastward shift.*/
+	/**One square eastward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftEast(long bitmap) {
 		return bitmap >>> 1;
 	}
-	/**One square northward shift.*/
+	/**One square northward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftNorth(long bitmap) {
 		return bitmap << 8;
 	}
-	/**One square southward shift.*/
+	/**One square southward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftSouth(long bitmap) {
 		return bitmap >>> 8;
 	}
-	/**One square north-westward shift.*/
+	/**One square north-westward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftNorthWest(long bitmap) {
 		return bitmap << 9;
 	}
-	/**One square south-westward shift.*/
+	/**One square south-westward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftSouthWest(long bitmap) {
 		return bitmap >>> 7;
 	}
-	/**One square north-eastward shift.*/
+	/**One square north-eastward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftNorthEast(long bitmap) {
 		return bitmap << 7;
 	}
-	/**One square south-eastward shift.*/
+	/**One square south-eastward shift.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	protected final static long vShiftSouthEast(long bitmap) {
 		return bitmap >>> 9;
 	}
-	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.*/
+	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public static String toBinary(long bitmap) {
 		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
 	}
-	/**Returns the binary literal of the input long as a String.*/
+	/**Returns the binary literal of the input long as a String.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
 	public static String toBinaryLiteral(long bitmap) {
 		return "0b"+ toBinary(bitmap) + "L";
 	}
-	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.*/
+	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.
+	 * 
+	 * @param bitmap
+	 */
 	public static void printBitboardToConsole(long bitmap) {
 		String board = toBinary(bitmap);
 		for (int i = 0; i < 64; i += 8) {

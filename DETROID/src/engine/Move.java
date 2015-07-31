@@ -40,7 +40,11 @@ public enum Move {
 	public long getMask() {
 		return this.mask;
 	}
-	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.*/
+	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.
+	 * 
+	 * @param move
+	 * @return
+	 */
 	public static String pseudoAlgebraicNotation(long move) {
 		String alg, movedPiece, capture, originFile, originRank, destFile, destRank;
 		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
@@ -97,14 +101,20 @@ public enum Move {
 				return alg;
 		}
 	}
-	/**Prints all moves contained in the input parameter to the console.*/
+	/**Prints all moves contained in the input parameter to the console.
+	 * 
+	 * @param moves
+	 */
 	public static void printMovesToConsole(LongList moves) {
 		System.out.println();
 		while (moves.hasNext())
 			System.out.println(pseudoAlgebraicNotation(moves.next()));
 		System.out.println();
 	}
-	/**Prints all moves contained in the input parameter to the console.*/
+	/**Prints all moves contained in the input parameter to the console.
+	 * 
+	 * @param moves
+	 */
 	public static void printMovesToConsole(long[] moves) {
 		System.out.println();
 		for (int i = 0; i < moves.length; i++)
