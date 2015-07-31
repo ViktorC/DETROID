@@ -3260,6 +3260,18 @@ public class Board {
 		fen += 1 + this.plyIndex/2;
 		return fen;
 	}
+	/**Prints the object's move history to the console in chronological order in pseudo-algebraic chess notation.*/
+	public void printMoveHistoryToConsole() {
+		LongList chronMoves = new LongStack();
+		int i = 0;
+		while (this.moveList.hasNext())
+			chronMoves.add(this.moveList.next());
+		while (chronMoves.hasNext()) {
+			System.out.printf(i + ". %-8s ", Move.pseudoAlgebraicNotation(chronMoves.next()));
+			i++;
+		}
+		System.out.println();
+	}
 	/**Prints a bitboard representing all the occupied squares of the object's board position to the console in a human-readable form,
 	 * aligned like a chess board.*/
 	public void printBitboardToConsole() {
@@ -3275,8 +3287,8 @@ public class Board {
 		}
 		System.out.println();
 	}
-	/**Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had. It is used mainly for bug detection
-	 * by comparing the returned values to validated results.*/
+	/**Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had. It is used mainly for move generation and move
+	 * making speed benchmarking; and bug detection by comparing the returned values to validated results.*/
 	public long perft(int depth) {
 		LongList moves;
 		long move, leafNodes = 0;
@@ -3291,80 +3303,99 @@ public class Board {
 		}
 		return leafNodes;
 	}
-	/**Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had and prints the whole move list of the object to the console
-	 * in pseudo-algebraic chess notation once @param depth has been reached. It is used mainly for bug detection by comparing the returned values to validated results.*/
-	public long perftWithMoveConsoleOutput(int depth) {
-		LongList moves, chronMoves;
-		long move, leafNodes = 0;
-		int i = 1;
-		if (depth == 0) {
-			chronMoves = new LongStack();
-			while (this.moveList.hasNext())
-				chronMoves.add(this.moveList.next());
-			while (chronMoves.hasNext()) {
-				System.out.printf(i + ". %-8s ", Move.pseudoAlgebraicNotation(chronMoves.next()));
-				i++;
-			}
-			System.out.println();
-			return 1;
-		}
-		moves = this.generateMoves();
-		while (moves.hasNext()) {
-			move = moves.next();
-			this.makeMove(move);
-			leafNodes += this.perftWithMoveConsoleOutput(depth - 1);
-			this.unMakeMove();
-		}
-		return leafNodes;
-	}
-	private long perftWithBitboardConsoleOutput(int depth, long lowerBound, long upperBound, long[] count) {
+	/**Runs a perft test to the given depth and returns the number of leafnodes resulting from moves of the type specified by @param moveType.
+	 * Expected @param moveType values:
+	 * default - all kinds of moves
+	 * 1 - ordinary moves
+	 * 2 - castling
+	 * 3 - en passant
+	 * 4 - promotion
+	 * It can also print to the console either the move list or one of two kinds of representations of the board position in the leafnodes according to @param consoleOutputType.
+	 * Expected @param consoleOutputType
+	 * default - no output
+	 * 1 - the whole move list in chronological order
+	 * 2 - a bitboard representing all the occupied squares using {@link #printBitboardToConsole() printBitboardToConsole}
+	 * 3 - a matrix of integers denoting chess pieces according to {@link #Board.Piece Piece} using {@link #printOffsetBoardToConsole() printOffsetBoardToConsole}*/
+	public long perftFancy(int depth, int moveType, int consoleOutputType) {
 		LongList moves;
-		long move, leafNodes = 0;
+		long move, type, leafNodes = 0;
 		if (depth == 0) {
-			if (count[0] >= lowerBound && count[0] <= upperBound) {
-				System.out.println(count[0]);
-				this.printBitboardToConsole();
+			switch (moveType) {
+				case 1: {
+					if (((this.moveList.getHead() >>> Move.TYPE.shift) & Move.TYPE.mask) == 0) {
+						switch (consoleOutputType) {
+							case 1: 
+								this.printMoveHistoryToConsole();
+							break;
+							case 2:
+								this.printBitboardToConsole();
+							break;
+							case 3:
+								this.printOffsetBoardToConsole();
+						}
+						return 1;
+					}
+				}
+				break;
+				case 2: {
+					if ((type = (this.moveList.getHead() >>> Move.TYPE.shift) & Move.TYPE.mask) == 1 || type == 2) {
+						switch (consoleOutputType) {
+							case 1: 
+								this.printMoveHistoryToConsole();
+							break;
+							case 2:
+								this.printBitboardToConsole();
+							break;
+							case 3:
+								this.printOffsetBoardToConsole();
+						}
+						return 1;
+					}
+				}
+				break;
+				case 3: {
+					if (((this.moveList.getHead() >>> Move.TYPE.shift) & Move.TYPE.mask) == 3) {
+						switch (consoleOutputType) {
+							case 1: 
+								this.printMoveHistoryToConsole();
+							break;
+							case 2:
+								this.printBitboardToConsole();
+							break;
+							case 3:
+								this.printOffsetBoardToConsole();
+						}
+						return 1;
+					}
+				}
+				break;
+				case 4: {
+					if (((this.moveList.getHead() >>> Move.TYPE.shift) & Move.TYPE.mask) > 3) {
+						switch (consoleOutputType) {
+							case 1: 
+								this.printMoveHistoryToConsole();
+							break;
+							case 2:
+								this.printBitboardToConsole();
+							break;
+							case 3:
+								this.printOffsetBoardToConsole();
+						}
+						return 1;
+					}
+				}
+				break;
+				default:
+					return 1;
 			}
-			count[0]++;
-			return 1;
 		}
 		moves = this.generateMoves();
 		while (moves.hasNext()) {
 			move = moves.next();
 			this.makeMove(move);
-			leafNodes += this.perftWithBitboardConsoleOutput(depth - 1, lowerBound, upperBound, count);
+			leafNodes += this.perftFancy(depth - 1, moveType, consoleOutputType);
 			this.unMakeMove();
 		}
 		return leafNodes;
-	}
-	private long perftWithOffsetBoardConsoleOutput(int depth, long lowerBound, long upperBound, long[] count) {
-		LongList moves;
-		long move, leafNodes = 0;
-		if (depth == 0) {
-			if (count[0] >= lowerBound && count[0] <= upperBound) {
-				System.out.println(count[0]);
-				this.printOffsetBoardToConsole();
-			}
-			count[0]++;
-			return 1;
-		}
-		moves = this.generateMoves();
-		while (moves.hasNext()) {
-			move = moves.next();
-			this.makeMove(move);
-			leafNodes += this.perftWithOffsetBoardConsoleOutput(depth - 1, lowerBound, upperBound, count);
-			this.unMakeMove();
-		}
-		return leafNodes;
-	}
-	/**Runs a perft test to the given depth and prints out the leaf nodes that fall within the specified range's board positions using
-	 * {@link #printOffsetBoardToConsole() printOffsetBoardToConsole} if @param detailed is true or using {@link #printBitboardToConsole() printBitboardToConsole}
-	 * if false. Useful for debugging purposes.*/
-	public void perftWithBoardConsoleOutput(int depth, long lowerBound, long upperBound, boolean detailed) {
-		long[] count = {0};
-		if (detailed)
-			this.perftWithOffsetBoardConsoleOutput(depth, lowerBound, upperBound, count);
-		else
-			this.perftWithBitboardConsoleOutput(depth, lowerBound, upperBound, count);
 	}
 }
