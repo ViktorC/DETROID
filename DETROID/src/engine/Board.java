@@ -2584,7 +2584,7 @@ public class Board {
 							moves.add(checkerAttackerMove | (6L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (7L << Move.TYPE.shift));
 						}
-						else if (this.enPassantRights == checker1%8 && (MoveDatabase.getByIndex(to = checker1 + 8).getCrudeBlackPawnCaptures() & (1L << checkerAttackerSquare)) != 0)
+						else if (this.enPassantRights == checker1%8 && (Rank.getByIndex(4) & checker1) != 0 && (MoveDatabase.getByIndex(to = checker1 + 8).getCrudeBlackPawnCaptures() & (1L << checkerAttackerSquare)) != 0)
 							moves.add(checkerAttackerMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 						else
 							moves.add(checkerAttackerMove | (checker1 << Move.TO.shift));
@@ -2761,7 +2761,7 @@ public class Board {
 							moves.add(checkerAttackerMove | (6L << Move.TYPE.shift));
 							moves.add(checkerAttackerMove | (7L << Move.TYPE.shift));
 						}
-						else if (this.enPassantRights == checker1%8 && (MoveDatabase.getByIndex(to = checker1 - 8).getCrudeWhitePawnCaptures() & (1L << checkerAttackerSquare)) != 0)
+						else if (this.enPassantRights == checker1%8 && (Rank.getByIndex(3) & checker1) != 0 && (MoveDatabase.getByIndex(to = checker1 - 8).getCrudeWhitePawnCaptures() & (1L << checkerAttackerSquare)) != 0)
 							moves.add(checkerAttackerMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 						else
 							moves.add(checkerAttackerMove | (checker1 << Move.TO.shift));
