@@ -52,17 +52,19 @@ public abstract class IntList {
 	public void reset() {
 		this.iterator = this.head;
 	}
-	/**Removes the head node form the list.
+	/**Removes the head node form the list and returns the data stored in it.
 	 * 
-	 * !It does not return its value!
-	 */
-	public void pop() {
+	 * If there is nothing to pop, it returns.*/
+	public int pop() {
 		if (this.head != null) {
+			int data = this.head.data;
 			if (this.head.next != null)
 				this.head = this.head.next;
 			else
 				this.head = null;
+			this.reset();
+			return data;
 		}
-		this.reset();
+		return 0;
 	}
 }

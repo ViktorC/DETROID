@@ -42,14 +42,13 @@ public class LongQueue extends LongList {
 		}
 		length++;
 	}
-	/**Removes the head node form the list.
+	/**Removes the head node form the list and returns the data stored in it.
 	 * 
-	 * !It does not return its value!
-	 */
-	public void pop() {
-		super.pop();
+	 * If there is nothing to pop, it returns.*/
+	public long pop() {
 		length--;
 		if (length == 0)
 			this.tail = null;
+		return super.pop();
 	}
 }

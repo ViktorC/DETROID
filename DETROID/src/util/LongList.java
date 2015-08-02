@@ -52,17 +52,19 @@ public abstract class LongList {
 	public void reset() {
 		this.iterator = this.head;
 	}
-	/**Removes the head node form the list.
+	/**Removes the head node form the list and returns the data stored in it.
 	 * 
-	 * !It does not return its value!
-	 */
-	public void pop() {
+	 * If there is nothing to pop, it returns.*/
+	public long pop() {
 		if (this.head != null) {
+			long data = this.head.data;
 			if (this.head.next != null)
 				this.head = this.head.next;
 			else
 				this.head = null;
+			this.reset();
+			return data;
 		}
-		this.reset();
+		return 0;
 	}
 }
