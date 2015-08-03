@@ -3742,11 +3742,16 @@ public class Board {
 	 * @return
 	 */
 	public long perft(int depth) {
-		LongList moves;
+		LongQueue moves;
 		long move, leafNodes = 0;
 		if (depth == 0)
 			return 1;
 		moves = this.generateMoves();
+		if (depth == 1 && ((this.moveList.getHead() >>> Move.TYPE.shift) & Move.TYPE.mask) == 5) {
+			System.out.print(moves.length() + " ");
+			this.printMoveHistoryToConsole();
+			Move.printMovesToConsole(moves);
+		}
 		while (moves.hasNext()) {
 			move = moves.next();
 			this.makeMove(move);
