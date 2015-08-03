@@ -2406,7 +2406,7 @@ public class Board {
 					pinnedPieces	|= pinnedPieceBit;
 					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
-					if ((pinnedPiece & 4) == 0) {
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |=  move;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
@@ -3014,7 +3014,7 @@ public class Board {
 								}
 							}
 						}
-						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.whiteKing));
+						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.whiteKing));
 					}
 					break;
 					case 9: {
@@ -3091,7 +3091,7 @@ public class Board {
 				dB = MoveDatabase.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 8:
-						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.whiteKing));
+						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.whiteKing));
 					break;
 					case 9:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3105,7 +3105,7 @@ public class Board {
 				dB = MoveDatabase.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 8:
-						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.whiteKing));
+						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.whiteKing));
 					break;
 					case 9:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3191,7 +3191,7 @@ public class Board {
 								}
 							}
 						}
-						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.blackKing));
+						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.blackKing));
 					}
 					break;
 					case 3: {
@@ -3268,7 +3268,7 @@ public class Board {
 				dB				= MoveDatabase.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 2:
-						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.blackKing));
+						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.blackKing));
 					break;
 					case 3:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3282,7 +3282,7 @@ public class Board {
 				dB = MoveDatabase.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 2:
-						kingMoveSet &= ~dB.getWhiteQueenMoves(this.allNonWhiteOccupied, (this.allOccupied^this.blackKing));
+						kingMoveSet &= ~dB.getBlackQueenMoves(this.allNonBlackOccupied, (this.allOccupied^this.blackKing));
 					break;
 					case 3:
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3508,7 +3508,7 @@ public class Board {
 					this.setBitboards(2, 0, toBit, 0);
 				else
 					this.setBitboards(8, 0, toBit, 0);
-				this.setBitboards(captured, 0, 0, toBit);
+				this.setBitboards(0, captured, 0, toBit);
 			}
 			break;
 			case 5: {
@@ -3519,7 +3519,7 @@ public class Board {
 					this.setBitboards(3, 0, toBit, 0);
 				else
 					this.setBitboards(9, 0, toBit, 0);
-				this.setBitboards(captured, 0, 0, toBit);
+				this.setBitboards(0, captured, 0, toBit);
 			}
 			break;
 			case 6: {
@@ -3530,7 +3530,7 @@ public class Board {
 					this.setBitboards(4, 0, toBit, 0);
 				else
 					this.setBitboards(10, 0, toBit, 0);
-				this.setBitboards(captured, 0, 0, toBit);
+				this.setBitboards(0, captured, 0, toBit);
 			}
 			break;
 			case 7: {
@@ -3541,7 +3541,7 @@ public class Board {
 					this.setBitboards(5, 0, toBit, 0);
 				else
 					this.setBitboards(11, 0, toBit, 0);
-				this.setBitboards(captured, 0, 0, toBit);
+				this.setBitboards(0, captured, 0, toBit);
 			}
 		}
 	}
@@ -3747,11 +3747,6 @@ public class Board {
 		if (depth == 0)
 			return 1;
 		moves = this.generateMoves();
-		if (depth == 1 && ((this.moveList.getHead() >>> Move.TYPE.shift) & Move.TYPE.mask) == 5) {
-			System.out.print(moves.length() + " ");
-			this.printMoveHistoryToConsole();
-			Move.printMovesToConsole(moves);
-		}
 		while (moves.hasNext()) {
 			move = moves.next();
 			this.makeMove(move);
@@ -3874,12 +3869,14 @@ public class Board {
 		return leafNodes;
 	}
 	private long perftDivideProper(int depth, int rootDepth, String prefix) {
-		LongList moves;
+		LongQueue moves;
 		long move, branchNodes, leafNodes = 0;
 		int i = 1;
+		moves = this.generateMoves();
+		if (depth == 1 && rootDepth != 1)
+			return moves.length();
 		if (depth == 0)
 			return 1;
-		moves = this.generateMoves();
 		while (moves.hasNext()) {
 			move = moves.next();
 			this.makeMove(move);
