@@ -7,7 +7,7 @@ public class Playground {
 	public static void main(String[] args) {
 		Board b = new Board();
 		long start = System.currentTimeMillis();
-		b.perftDivide(5);
+		b.perft(4);
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}

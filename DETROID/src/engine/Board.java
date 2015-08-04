@@ -116,6 +116,20 @@ public class Board {
 		public static String toString(int sqrInd) {
 			return "" + (char)('a' + sqrInd%8) + "" + (sqrInd/8 + 1);
 		}
+		/**Returns the index of a square specified by its file and rank.
+		 * 
+		 * @param square
+		 * @return
+		 */
+		public static int toNumeric(String square) {
+			if (square.length() == 2) {
+				square = square.toLowerCase();
+				int out = 8*(square.charAt(0) - 'a') + (square.charAt(1) - '1');
+				if (out >= 0 && out < 64)
+					return out;
+			}
+			throw new IllegalArgumentException();
+		}
 		/**@return a Square enum.*/
 		public static Square getByIndex(int sqrInd) {
 			switch(sqrInd) {
@@ -3755,6 +3769,26 @@ public class Board {
 		}
 		return leafNodes;
 	}
+	/**Runs a perft test faster than the standard method. Instead of making and unmaking the moves leading to the leafnodes, it simply
+	 * returns the number of generated moves from the nodes at depth 1. More suitable for benchmarking move generation.
+	 * 
+	 * @param depth
+	 * @return
+	 */
+	public long quickPerft(int depth) {
+		LongQueue moves;
+		long move, leafNodes = 0;
+		moves = this.generateMoves();
+		if (depth == 1)
+			return moves.length();
+		while (moves.hasNext()) {
+			move = moves.next();
+			this.makeMove(move);
+			leafNodes += this.quickPerft(depth - 1);
+			this.unMakeMove();
+		}
+		return leafNodes;
+	}
 	/**Runs a perft test to the given depth and returns the number of leafnodes resulting from moves of the type specified by moveType.
 	 * Expected moveType values:
 	 * default:	all kinds of moves;
@@ -3929,5 +3963,23 @@ public class Board {
 		}
 		in.close();
 		System.out.println("DIVIDE_END");
+	}
+	/**Breaks up the number perft would return into the root's subtrees. It prints all the legal moves and the number of leafnodes
+	 * the subtrees that the moves lead to have to the console.
+	 * 
+	 * @param depth
+	 */
+	public void divide(int depth) {
+		long move, total = 0;
+		LongQueue moves = this.generateMoves();
+		while (moves.hasNext()) {
+			move = moves.next();
+			System.out.printf("%-10s ", Move.pseudoAlgebraicNotation(move) + ":");
+			this.makeMove(move);
+			System.out.println(total += this.quickPerft(depth - 1));
+			this.unMakeMove();
+		}
+		System.out.println("Moves: " + moves.length());
+		System.out.println("Total nodes: " + total);
 	}
 }
