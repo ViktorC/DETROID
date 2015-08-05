@@ -1875,13 +1875,13 @@ public class Board {
 	private void setEnPassantRights(int from, int to, int movedPiece) {
 		if (movedPiece == 6) {
 			if (to - from == 16) {
-				this.enPassantRights = (int)to%8;
+				this.enPassantRights = to%8;
 				return;
 			}
 		}
 		else if (movedPiece == 12) {
 			if (from - to == 16) {
-				this.enPassantRights = (int)to%8;
+				this.enPassantRights = to%8;
 				return;
 			}
 		}
@@ -3738,16 +3738,21 @@ public class Board {
 	 * 
 	 * @return
 	 */
-	public boolean makeMove(String command) {
+	public boolean makeMove(String input) {
 		char zero, one, two, three, four;
 		int from, to, type = 0;
 		long move;
 		LongQueue moves;
+		String command = "";
+		for (int i = 0; i < input.length(); i++) {
+			if (Character.toString(input.charAt(i)).matches("\\p{Graph}"))
+				command += input.charAt(i);
+		}
 		if (command.length() >= 4 && command.length() <= 5) {
 			command = command.toLowerCase();
-			if ((zero = command.charAt(0)) >= 'a' && zero <= 'h' && (two = command.charAt(2)) >= 'a' && two <= 'h' && (one = command.charAt(1)) > 0 && one < 9 && (three = command.charAt(3)) > 0 && three < 9) {
-				from = (zero - 'a') + (one - 1)*8;
-				to 	 = (two - 'a') + (three - 1)*8;
+			if (Character.toString(zero = command.charAt(0)).matches("[a-h]") && Character.toString(two = command.charAt(2)).matches("[a-h]") && Character.toString(one = command.charAt(1)).matches("[1-8]") && Character.toString(three = command.charAt(3)).matches("[1-8]")) {
+				from = (zero - 'a') + (one - '1')*8;
+				to 	 = (two - 'a') + (three - '1')*8;
 				if (command.length() == 5) {
 					four = command.charAt(4);
 					if (three == 1 || three == 8) {
