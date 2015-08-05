@@ -413,16 +413,14 @@ public class Board {
 		 * @param sqr a Square enum*/
 		public static long getBySquare(Square sqr) {
 			int sqrInd = sqr.ordinal();
-			int fileInd = sqrInd & 7;
-			return getByIndex(((sqrInd - fileInd) >>> 3) + fileInd);
+			return getByIndex((sqrInd & 7) + (sqrInd >>> 3));
 		}
 		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
 		 * the relevant bits set.
 		 * 
 		 * @param sqrInd the index of a square*/
 		public static long getBySquareIndex(int sqrInd) {
-			int fileInd = sqrInd & 7;
-			return getByIndex(((sqrInd - fileInd) >>> 3) + fileInd);
+			return getByIndex((sqrInd & 7) + (sqrInd >>> 3));
 		}
 	}
 	
@@ -509,16 +507,14 @@ public class Board {
 		 * @param sqr a Square enum*/
 		public static long getBySquare(Square sqr) {
 			int sqrInd = sqr.ordinal();
-			int rightMostSquare = sqrInd | 7;
-			return getByIndex(7 - (rightMostSquare >>> 3) + (sqrInd & 7));
+			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
 		/**Returns a the numeric representation of a diagonal of the chess board on which the input parameter square lies with only
 		 * the relevant bits set.
 		 * 
 		 * @param sqrInd the index of a square*/
 		public static long getBySquareIndex(int sqrInd) {
-			int rightMostSquare = sqrInd^7;
-			return getByIndex(7 - (rightMostSquare >>> 3) + (sqrInd & 7));
+			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
 	}
 	
@@ -689,14 +685,14 @@ public class Board {
 	 */
 	public static enum SliderAttackRayMask {
 		
-		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
-		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
-		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
-		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
-		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
-		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
-		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
-		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
+		A1, B1, C1, D1, E1, F1, G1, H1,
+		A2, B2, C2, D2, E2, F2, G2, H2,
+		A3, B3, C3, D3, E3, F3, G3, H3,
+		A4, B4, C4, D4, E4, F4, G4, H4,
+		A5, B5, C5, D5, E5, F5, G5, H5,
+		A6, B6, C6, D6, E6, F6, G6, H6,
+		A7, B7, C7, D7, E7, F7, G7, H7,
+		A8, B8, C8, D8, E8, F8, G8, H8;
 		
 		final long rankPos;
 		final long rankNeg;
@@ -769,14 +765,14 @@ public class Board {
 	 */
 	public static enum SliderOccupancyMask {
 		
-		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
-		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
-		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
-		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
-		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
-		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
-		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
-		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
+		A1, B1, C1, D1, E1, F1, G1, H1,
+		A2, B2, C2, D2, E2, F2, G2, H2,
+		A3, B3, C3, D3, E3, F3, G3, H3,
+		A4, B4, C4, D4, E4, F4, G4, H4,
+		A5, B5, C5, D5, E5, F5, G5, H5,
+		A6, B6, C6, D6, E6, F6, G6, H6,
+		A7, B7, C7, D7, E7, F7, G7, H7,
+		A8, B8, C8, D8, E8, F8, G8, H8;
 		
 		final long rookOccupancyMask;
 		final long bishopOccupancyMask;
@@ -788,6 +784,13 @@ public class Board {
 		private static long ANTIFRAME_HORIZONTAL;
 		private static long ANTIFRAME;
 		
+		private void initializeAntiFrames() {
+			if (ANTIFRAME == 0) {
+				ANTIFRAME_VERTICAL 		= ~(File.A.getBitmap() 	| File.H.getBitmap());
+				ANTIFRAME_HORIZONTAL	= ~(Rank.R1.getBitmap() | Rank.R8.getBitmap());
+				ANTIFRAME				=  (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
+			}
+		}
 		private SliderOccupancyMask() {
 			this.initializeAntiFrames();
 			Square sqr = Square.getByIndex(this.ordinal());
@@ -807,13 +810,6 @@ public class Board {
 		}
 		public byte getBishopOccupancyMaskBitCount() {
 			return this.bishopOccupancyMaskBitCount;
-		}
-		private void initializeAntiFrames() {
-			if (ANTIFRAME == 0) {
-				ANTIFRAME_VERTICAL 		= ~(File.A.getBitmap() 	| File.H.getBitmap());
-				ANTIFRAME_HORIZONTAL	= ~(Rank.R1.getBitmap() | Rank.R8.getBitmap());
-				ANTIFRAME				=  (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
-			}
 		}
 		private static long generateRooksRankOccupancyMask(Square sqr) {
 			return (MoveMask.generateRooksRankMoveMask(sqr) & ANTIFRAME_VERTICAL);
@@ -1026,52 +1022,6 @@ public class Board {
 		}
 	}
 	
-	public static enum MagicShift {
-		
-		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
-		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
-		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
-		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
-		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
-		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
-		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
-		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
-		
-		final byte rook;
-		final byte bishop;
-		
-		private MagicShift() {
-			int ind = this.ordinal();
-			this.rook = computeRookShifts(ind);
-			this.bishop = computeBishopShifts(ind);
-		}
-		public byte getRook() {
-			return this.rook;
-		}
-		public byte getBishop() {
-			return this.bishop;
-		}
-		private static byte computeRookShifts(int sqrInd) {
-			return (byte)(64 - SliderOccupancyMask.getByIndex(sqrInd).getRookOccupancyMaskBitCount());
-		}
-		private static byte computeBishopShifts(int sqrInd) {
-			return (byte)(64 - SliderOccupancyMask.getByIndex(sqrInd).getBishopOccupancyMaskBitCount());
-		}
-		public static MagicShift getByIndex(int sqrInd) {
-			switch(sqrInd) {
-				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
-				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
-				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
-				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
-				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
-				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
-				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
-				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
-				default: throw new IllegalArgumentException("Invalid square index.");
-			}
-		}
-	}
-	
 	public static class MagicNumberGenerator {
 		
 		private long[][] rookOccupancyVariations;
@@ -1115,7 +1065,7 @@ public class Board {
 					magicNumber = random.nextLong() & random.nextLong() & random.nextLong();
 					rookMagicNumbers[i] = magicNumber;
 					for (int j = 0; j < variations; j++) {
-						index = (int)((occVar[j]*magicNumber) >>> MagicShift.getByIndex(i).getRook());
+						index = (int)((occVar[j]*magicNumber) >>> (64 - SliderOccupancyMask.getByIndex(i).rookOccupancyMaskBitCount));
 						if (magicRookDatabase[i][index] == 0)
 							magicRookDatabase[i][index] = attVar[j];
 						else if (magicRookDatabase[i][index] != attVar[j]) {
@@ -1146,7 +1096,7 @@ public class Board {
 					magicNumber = random.nextLong() & random.nextLong() & random.nextLong();
 					bishopMagicNumbers[i] = magicNumber;
 					for (int j = 0; j < variations; j++) {
-						index = (int)((occVar[j]*magicNumber) >>> MagicShift.getByIndex(i).getBishop());
+						index = (int)((occVar[j]*magicNumber) >>> (64 - SliderOccupancyMask.getByIndex(i).bishopOccupancyMaskBitCount));
 						if (magicBishopDatabase[i][index] == 0)
 							magicBishopDatabase[i][index] = attVar[j];
 						else if (magicBishopDatabase[i][index] != attVar[j]) {
@@ -1179,7 +1129,7 @@ public class Board {
 		}
 	}
 	
-	public static enum MagicNumber {
+	public static enum Magics {
 		
 		A1 (0b1001000010000000000000000001001000100000010000000000000010000001L, 0b0000000000000010000100000000000100001000000000001000000010000000L),
 		B1 (0b0000000011000000000100000000001001100000000000000100000000000000L, 0b1010000000010001000100000000000110000010100100001000000001000100L),
@@ -1246,12 +1196,24 @@ public class Board {
 		G8 (0b1000010000000000001000001000000100010000000010000000001000000100L, 0b0010001000000100000010010010000001011000001000001000100100000000L),
 		H8 (0b1000001000000000000000010000010000001110001000001000010101000010L, 0b0100000000000100110010000000000010001000000100100000000001000100L);
 		
+		final byte rookShift;
+		final byte bishopShift;
+		
 		final long rookMagicNumber;
 		final long bishopMagicNumber;
 		
-		private MagicNumber(long rookMagicNumber, long bishopMagicNumber) {
-			this.rookMagicNumber = rookMagicNumber;
-			this.bishopMagicNumber = bishopMagicNumber;
+		private Magics(long rookMagicNumber, long bishopMagicNumber) {
+			SliderOccupancyMask sliderOccupancy = SliderOccupancyMask.getByIndex(this.ordinal());
+			this.rookShift 			= (byte)(64 - sliderOccupancy.rookOccupancyMaskBitCount);
+			this.bishopShift 		= (byte)(64 - sliderOccupancy.bishopOccupancyMaskBitCount);
+			this.rookMagicNumber 	= rookMagicNumber;
+			this.bishopMagicNumber 	= bishopMagicNumber;
+		}
+		public byte getRookShift() {
+			return this.rookShift;
+		}
+		public byte getBishopShift() {
+			return this.bishopShift;
 		}
 		public long getRookMagicNumber() {
 			return this.rookMagicNumber;
@@ -1259,7 +1221,7 @@ public class Board {
 		public long getBishopMagicNumber() {
 			return this.bishopMagicNumber;
 		}
-		public static MagicNumber getByIndex(int sqrInd) {
+		public static Magics getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
 				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
@@ -1276,20 +1238,23 @@ public class Board {
 	
 	public static enum MoveDatabase {
 		
-		A1 (), B1 (), C1 (), D1 (), E1 (), F1 (), G1 (), H1 (),
-		A2 (), B2 (), C2 (), D2 (), E2 (), F2 (), G2 (), H2 (),
-		A3 (), B3 (), C3 (), D3 (), E3 (), F3 (), G3 (), H3 (),
-		A4 (), B4 (), C4 (), D4 (), E4 (), F4 (), G4 (), H4 (),
-		A5 (), B5 (), C5 (), D5 (), E5 (), F5 (), G5 (), H5 (),
-		A6 (), B6 (), C6 (), D6 (), E6 (), F6 (), G6 (), H6 (),
-		A7 (), B7 (), C7 (), D7 (), E7 (), F7 (), G7 (), H7 (),
-		A8 (), B8 (), C8 (), D8 (), E8 (), F8 (), G8 (), H8 ();
+		A1, B1, C1, D1, E1, F1, G1, H1,
+		A2, B2, C2, D2, E2, F2, G2, H2,
+		A3, B3, C3, D3, E3, F3, G3, H3,
+		A4, B4, C4, D4, E4, F4, G4, H4,
+		A5, B5, C5, D5, E5, F5, G5, H5,
+		A6, B6, C6, D6, E6, F6, G6, H6,
+		A7, B7, C7, D7, E7, F7, G7, H7,
+		A8, B8, C8, D8, E8, F8, G8, H8;
 		
 		final byte sqrInd;
 		
-		final long king;
+		SliderOccupancyMask occupancy;
+		Magics magics;
+		
 		private final long[] rook;
 		private final long[] bishop;
+		final long king;
 		final long knight;
 		final long pawnWhiteAdvance;
 		final long pawnWhiteCapture;
@@ -1299,6 +1264,8 @@ public class Board {
 		private MoveDatabase() {
 			this.sqrInd = (byte)this.ordinal();
 			Square sqr = Square.getByIndex(this.sqrInd);
+			this.magics = Magics.getByIndex(this.sqrInd);
+			this.occupancy = SliderOccupancyMask.getByIndex(this.sqrInd);
 			SliderOccupancyVariations occVar = new SliderOccupancyVariations();
 			long[] rookOccVar 	= occVar.getRookOccupancyVariations()[this.sqrInd];
 			long[] bishopOccVar = occVar.getBishopOccupancyVariations()[this.sqrInd];
@@ -1311,11 +1278,11 @@ public class Board {
 			long[] bishopAttVar = attVar.getBishopAttackSetVariations()[this.sqrInd];
 			int index;
 			for (int i = 0; i < rookNumOfVar; i++) {
-				index = (int)((rookOccVar[i]*MagicNumber.getByIndex(this.sqrInd).getRookMagicNumber()) >>> MagicShift.getByIndex(this.sqrInd).getRook());
+				index = (int)((rookOccVar[i]*this.magics.rookMagicNumber) >>> this.magics.rookShift);
 				this.rook[index] = rookAttVar[i];
 			}
 			for (int i = 0; i < bishopNumOfVar; i++) {
-				index = (int)((bishopOccVar[i]*MagicNumber.getByIndex(this.sqrInd).getBishopMagicNumber()) >>> MagicShift.getByIndex(this.sqrInd).getBishop());
+				index = (int)((bishopOccVar[i]*this.magics.bishopMagicNumber) >>> this.magics.bishopShift);
 				this.bishop[index] = bishopAttVar[i];
 			}
 			this.king 				= MoveMask.generateKingsMoveMask(sqr);
@@ -1373,8 +1340,8 @@ public class Board {
 		public long getBlackPawnAdvances(long allEmpty) {
 			if (this.sqrInd < 48)
 				return this.pawnBlackAdvance & allEmpty;
-			long attackSet = Square.getBitmapByIndex(this.sqrInd - 8) & allEmpty;
-			return attackSet | (BitOperations.vShiftSouth(attackSet) & allEmpty);
+			long attackSet = (1L << (this.sqrInd - 8)) & allEmpty;
+			return attackSet | ((attackSet >>> 8) & allEmpty);
 		}
 		public long getWhitePawnMoves(long allBlackPieces, long allEmpty) {
 			return this.getWhitePawnAdvances(allEmpty) | this.getWhitePawnCaptures(allBlackPieces);
@@ -1383,38 +1350,24 @@ public class Board {
 			return this.getBlackPawnAdvances(allEmpty) | this.getBlackPawnCaptures(allWhitePieces);
 		}
 		public long getWhiteRookMoves(long allNonWhiteOccupied, long allOccupied) {
-			long occupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).rookOccupancyMask & allOccupied;
-			int index 		= (int)((occupancy*MagicNumber.getByIndex(this.sqrInd).rookMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).rook);
-			return this.rook[index] & allNonWhiteOccupied;
+			return this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] & allNonWhiteOccupied;
 		}
 		public long getBlackRookMoves(long allNonBlackOccupied, long allOccupied) {
-			long occupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).rookOccupancyMask & allOccupied;
-			int index 		= (int)((occupancy*MagicNumber.getByIndex(this.sqrInd).rookMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).rook);
-			return this.rook[index] & allNonBlackOccupied;
+			return this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] & allNonBlackOccupied;
 		}
 		public long getWhiteBishopMoves(long allNonWhiteOccupied, long allOccupied) {
-			long occupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).bishopOccupancyMask & allOccupied;
-			int index 		= (int)((occupancy*MagicNumber.getByIndex(this.sqrInd).bishopMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).bishop);
-			return this.bishop[index] & allNonWhiteOccupied;
+			return this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)] & allNonWhiteOccupied;
 		}
 		public long getBlackBishopMoves(long allNonBlackOccupied, long allOccupied) {
-			long occupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).bishopOccupancyMask & allOccupied;
-			int index 		= (int)((occupancy*MagicNumber.getByIndex(this.sqrInd).bishopMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).bishop);
-			return this.bishop[index] & allNonBlackOccupied;
+			return this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)] & allNonBlackOccupied;
 		}
 		public long getWhiteQueenMoves(long allNonWhiteOccupied, long allOccupied) {
-			long rookOccupancy 		= SliderOccupancyMask.getByIndex(this.sqrInd).rookOccupancyMask & allOccupied;
-			long bishopOccupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).bishopOccupancyMask & allOccupied;
-			int rookIndex 			= (int)((rookOccupancy*MagicNumber.getByIndex(this.sqrInd).rookMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).rook);
-			int bishopIndex 		= (int)((bishopOccupancy*MagicNumber.getByIndex(this.sqrInd).bishopMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).bishop);
-			return (this.bishop[bishopIndex] | this.rook[rookIndex]) & allNonWhiteOccupied;
+			return (this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] |
+				    this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)]) & allNonWhiteOccupied;
 		}
 		public long getBlackQueenMoves(long allNonBlackOccupied, long allOccupied) {
-			long rookOccupancy 		= SliderOccupancyMask.getByIndex(this.sqrInd).rookOccupancyMask & allOccupied;
-			long bishopOccupancy 	= SliderOccupancyMask.getByIndex(this.sqrInd).bishopOccupancyMask & allOccupied;
-			int rookIndex 			= (int)((rookOccupancy*MagicNumber.getByIndex(this.sqrInd).rookMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).rook);
-			int bishopIndex 		= (int)((bishopOccupancy*MagicNumber.getByIndex(this.sqrInd).bishopMagicNumber) >>> MagicShift.getByIndex(this.sqrInd).bishop);
-			return (this.bishop[bishopIndex] | this.rook[rookIndex]) & allNonBlackOccupied;
+			return (this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] |
+				    this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)]) & allNonBlackOccupied;
 		}
 		public static MoveDatabase getByIndex(int sqrInd) {
 			switch(sqrInd) {
@@ -1912,26 +1865,14 @@ public class Board {
 	private void setTurn() {
 		this.whitesTurn = !this.whitesTurn;
 	}
-	private void setMoveIndices() {
+	private void setMoveIndices(int moved, int captured) {
 		this.plyIndex++;
-		long lastMove 	= this.moveList.getHead();
-		long moved		= ((lastMove >>> Move.MOVED_PIECE.shift) 		& Move.MOVED_PIECE.mask);
-		long captured 	= ((lastMove >>> Move.CAPTURED_PIECE.shift) 	& Move.CAPTURED_PIECE.mask);
 		if (captured != 0 || moved == 6 || moved == 12)
 			this.fiftyMoveRuleClock = 0;
 		else
 			this.fiftyMoveRuleClock++;
 	}
-	/**Should be used after resetKeys().*/
-	private void resetMoveIndices() {
-		this.plyIndex--;
-		this.fiftyMoveRuleClock	= (int)((this.moveList.getHead() >>> Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift) & Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.mask);
-	}
-	private void setEnPassantRights() {
-		long lastMove 	= this.moveList.getHead();
-		long from		= ((lastMove >>> Move.FROM.shift) 			& Move.FROM.mask);
-		long to	  		= ((lastMove >>> Move.TO.shift) 			& Move.TO.mask);
-		long movedPiece = ((lastMove >>> Move.MOVED_PIECE.shift) 	& Move.MOVED_PIECE.mask);
+	private void setEnPassantRights(int from, int to, int movedPiece) {
 		if (movedPiece == 6) {
 			if (to - from == 16) {
 				this.enPassantRights = (int)to%8;
@@ -1945,9 +1886,6 @@ public class Board {
 			}
 		}
 		this.enPassantRights = 8;
-	}
-	private void resetEnPassantRights() {
-		this.enPassantRights = (int)((this.moveList.getHead() >>> Move.PREVIOUS_ENPASSANT_RIGHTS.shift) & Move.PREVIOUS_ENPASSANT_RIGHTS.mask);
 	}
 	private void setCastlingRights() {
 		if (this.whitesTurn) {
@@ -2002,11 +1940,6 @@ public class Board {
 			}
 		}
 	}
-	private void resetCastlingRights() {
-		long lastMove = this.moveList.getHead();
-		this.whiteCastlingRights = (int)((lastMove >>> Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift) & Move.PREVIOUS_WHITE_CASTLING_RIGHTS.mask);
-		this.blackCastlingRights = (int)((lastMove >>> Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift) & Move.PREVIOUS_BLACK_CASTLING_RIGHTS.mask);
-	}
 	private void setCheck() {
 		if (this.whitesTurn) {
 			this.checkers = getAttackers(BitOperations.indexOfLSBit(this.whiteKing), false);
@@ -2023,18 +1956,11 @@ public class Board {
 				this.check = true;
 		}
 	}
-	private void resetCheck() {
-		this.check = ((this.moveList.getHead() >>> Move.PREVIOUS_CHECK.shift) & Move.PREVIOUS_CHECK.mask) == 1 ? true : false;
-	}
 	private void setKeys() {
 		this.zobristKey = keyGen.updateKey(this);
 		this.zobristKeyHistory[this.plyIndex] = this.zobristKey;
 	}
 	/**Should be used before resetMoveIndices().*/
-	private void resetKeys() {
-		this.zobristKeyHistory[this.plyIndex] = 0;
-		this.zobristKey = this.zobristKeyHistory[this.plyIndex - 1];
-	}
 	private void setRepetitions() {
 		if (this.fiftyMoveRuleClock >= 4) {
 			for (int i = this.plyIndex; i >= (this.plyIndex - this.fiftyMoveRuleClock); i -= 2) {
@@ -2044,9 +1970,6 @@ public class Board {
 		}
 		else
 			this.repetitions = 0;
-	}
-	private void resetRepetitions() {
-		this.repetitions = (int)((this.moveList.getHead() >>> Move.PREVIOUS_REPETITIONS.shift) & Move.PREVIOUS_REPETITIONS.mask);
 	}
 	/**Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the supposedly enemy occupied square specified by sqrInd.*/
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
@@ -3563,28 +3486,322 @@ public class Board {
 	 * 
 	 * @param move
 	 */
-	public void makeMove(long move) {
-		this.makeMoveOnBoard(move);
+	protected void makeMove(long move) {
+		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
+		int to	 			= (int)((move >>> Move.TO.shift) 			  & Move.TO.mask);
+		int moved			= (int)((move >>> Move.MOVED_PIECE.shift) 	  & Move.MOVED_PIECE.mask);
+		int captured	 	= (int)((move >>> Move.CAPTURED_PIECE.shift)  & Move.CAPTURED_PIECE.mask);
+		int type			= (int)((move >>> Move.TYPE.shift)  		  & Move.TYPE.mask);
+		long fromBit = Square.getBitmapByIndex(from);
+		long toBit	 = Square.getBitmapByIndex(to);
+		int enPassantVictimSquare;
+		long enPassantVictimSquareBit;
+		switch (type) {
+			case 0: {
+				this.offsetBoard[from]  = 0;
+				this.offsetBoard[to]	= moved;
+				this.setBitboards(moved, captured, fromBit, toBit);
+			}
+			break;
+			case 1: {
+				this.offsetBoard[from]   = 0;
+				this.offsetBoard[to]	 = moved;
+				this.setBitboards(moved, 0, fromBit, toBit);
+				if (this.whitesTurn) {
+					this.offsetBoard[7]	 = 0;
+					this.offsetBoard[5]	 = 3;
+					this.setBitboards(3, 0, Square.getBitmapByIndex(7), Square.getBitmapByIndex(5));
+				}
+				else {
+					this.offsetBoard[63] = 0;
+					this.offsetBoard[61] = 9;
+					this.setBitboards(9, 0, Square.getBitmapByIndex(63), Square.getBitmapByIndex(61));
+				}
+			}
+			break;
+			case 2: {
+				this.offsetBoard[from]   = 0;
+				this.offsetBoard[to]	 = moved;
+				this.setBitboards(moved, 0, fromBit, toBit);
+				if (this.whitesTurn) {
+					this.offsetBoard[0]	 = 0;
+					this.offsetBoard[3]	 = 3;
+					this.setBitboards(3, 0, Square.getBitmapByIndex(0), Square.getBitmapByIndex(3));
+				}
+				else {
+					this.offsetBoard[56] = 0;
+					this.offsetBoard[59] = 9;
+					this.setBitboards(9, 0, Square.getBitmapByIndex(56), Square.getBitmapByIndex(59));
+				}
+			}
+			break;
+			case 3: {
+				this.offsetBoard[from]   = 0;
+				this.offsetBoard[to]	 = moved;
+				if (this.whitesTurn)
+					enPassantVictimSquare = to - 8;
+				else
+					enPassantVictimSquare = to + 8;
+				this.offsetBoard[enPassantVictimSquare] = 0;
+				enPassantVictimSquareBit = Square.getBitmapByIndex(enPassantVictimSquare);
+				this.setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
+				this.setBitboards(moved, 0, enPassantVictimSquareBit, toBit);
+			}
+			break;
+			case 4: {
+				this.offsetBoard[from]   = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn) {
+					this.offsetBoard[to] = 2;
+					this.setBitboards(2, captured, 0, toBit);
+				}
+				else {
+					this.offsetBoard[to] = 8;
+					this.setBitboards(8, captured, 0, toBit);
+				}
+			}
+			break;
+			case 5: {
+				this.offsetBoard[from]   = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn) {
+					this.offsetBoard[to] = 3;
+					this.setBitboards(3, captured, 0, toBit);
+				}
+				else {
+					this.offsetBoard[to] = 9;
+					this.setBitboards(9, captured, 0, toBit);
+				}
+			}
+			break;
+			case 6: {
+				this.offsetBoard[from]   = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn) {
+					this.offsetBoard[to] = 4;
+					this.setBitboards(4, captured, 0, toBit);
+				}
+				else {
+					this.offsetBoard[to] = 10;
+					this.setBitboards(10, captured, 0, toBit);
+				}
+			}
+			break;
+			case 7: {
+				this.offsetBoard[from]   = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn) {
+					this.offsetBoard[to] = 5;
+					this.setBitboards(5, captured, 0, toBit);
+				}
+				else {
+					this.offsetBoard[to] = 11;
+					this.setBitboards(11, captured, 0, toBit);
+				}
+			}
+		}
 		this.moveList.add(move);
 		this.setTurn();
 		this.setCheck();
 		this.setCastlingRights();
-		this.setEnPassantRights();
-		this.setMoveIndices();
+		this.setEnPassantRights(from, to, moved);
+		this.setMoveIndices(moved, captured);
 		this.setKeys();
 		this.setRepetitions();
 	}
-	/**Reverts the state of the instance to that before the last move made.*/
-	public void unMakeMove() {
+	/**Reverts the state of the instance to that before the last move made in every aspect necessary for the traversal of the game tree. Used within the engine.*/
+	protected void unMakeMove() {
 		this.setTurn();
-		this.unMakeMoveOnBoard(this.moveList.getHead());
-		this.resetRepetitions();
-		this.resetKeys();
-		this.resetMoveIndices();
-		this.resetEnPassantRights();
-		this.resetCastlingRights();
-		this.resetCheck();
-		this.moveList.pop();
+		long move = this.moveList.pop();
+		int from					= (int)((move >>> Move.FROM.shift)		 	  					& Move.FROM.mask);
+		int to						= (int)((move >>> Move.TO.shift) 			  					& Move.TO.mask);
+		int moved					= (int)((move >>> Move.MOVED_PIECE.shift) 	 					& Move.MOVED_PIECE.mask);
+		int captured				= (int)((move >>> Move.CAPTURED_PIECE.shift)  					& Move.CAPTURED_PIECE.mask);
+		int type					= (int)((move >>> Move.TYPE.shift)  							& Move.TYPE.mask);
+		int prevWhiteCastlingRights	= (int)((move >>> Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift)	& Move.PREVIOUS_WHITE_CASTLING_RIGHTS.mask);
+		int prevBlackCastlingRights	= (int)((move >>> Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift)	& Move.PREVIOUS_BLACK_CASTLING_RIGHTS.mask);
+		int prevEnPassantRights		= (int)((move >>> Move.PREVIOUS_ENPASSANT_RIGHTS.shift)			& Move.PREVIOUS_ENPASSANT_RIGHTS.mask);
+		int prevCheck				= (int)((move >>> Move.PREVIOUS_CHECK.shift)  		  			& Move.PREVIOUS_CHECK.mask);
+		long prevFiftyMoveRuleClock = 		(move >>> Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift)	& Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.mask;
+		long prevRepetitions 		= 		(move >>> Move.PREVIOUS_REPETITIONS.shift)				& Move.PREVIOUS_REPETITIONS.mask;
+		int enPassantVictimSquare;
+		long fromBit = Square.getBitmapByIndex(from);
+		long toBit	 = Square.getBitmapByIndex(to);
+		switch (type) {
+			case 0: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to]	= captured;
+				this.setBitboards(moved, captured, fromBit, toBit);
+			}
+			break;
+			case 1: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to]	= 0;
+				this.setBitboards(moved, 0, fromBit, toBit);
+				if (this.whitesTurn) {
+					this.offsetBoard[7]	 = 3;
+					this.offsetBoard[5]	 = 0;
+					this.setBitboards(3, 0, Square.getBitmapByIndex(5), Square.getBitmapByIndex(7));
+				}
+				else {
+					this.offsetBoard[63] = 9;
+					this.offsetBoard[61] = 0;
+					this.setBitboards(9, 0, Square.getBitmapByIndex(61), Square.getBitmapByIndex(63));
+				}
+			}
+			break;
+			case 2: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to]	= 0;
+				this.setBitboards(moved, 0, fromBit, toBit);
+				if (this.whitesTurn) {
+					this.offsetBoard[0]	 = 3;
+					this.offsetBoard[3]	 = 0;
+					this.setBitboards(3, 0, Square.getBitmapByIndex(3), Square.getBitmapByIndex(0));
+				}
+				else {
+					this.offsetBoard[56] = 9;
+					this.offsetBoard[59] = 0;
+					this.setBitboards(9, 0, Square.getBitmapByIndex(59), Square.getBitmapByIndex(56));
+				}
+			}
+			break;
+			case 3: {
+				this.offsetBoard[from]   = moved;
+				this.offsetBoard[to]	 = 0;
+				this.setBitboards(moved, 0, fromBit, toBit);
+				if (this.whitesTurn)
+					enPassantVictimSquare = to - 8;
+				else
+					enPassantVictimSquare = to + 8;
+				this.offsetBoard[enPassantVictimSquare] = captured;
+				this.setBitboards(0, captured, 0, Square.getBitmapByIndex(enPassantVictimSquare));
+			}
+			break;
+			case 4: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to] 	= captured;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn)
+					this.setBitboards(2, 0, toBit, 0);
+				else
+					this.setBitboards(8, 0, toBit, 0);
+				this.setBitboards(0, captured, 0, toBit);
+			}
+			break;
+			case 5: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to] 	= captured;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn)
+					this.setBitboards(3, 0, toBit, 0);
+				else
+					this.setBitboards(9, 0, toBit, 0);
+				this.setBitboards(0, captured, 0, toBit);
+			}
+			break;
+			case 6: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to] 	= captured;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn)
+					this.setBitboards(4, 0, toBit, 0);
+				else
+					this.setBitboards(10, 0, toBit, 0);
+				this.setBitboards(0, captured, 0, toBit);
+			}
+			break;
+			case 7: {
+				this.offsetBoard[from]  = moved;
+				this.offsetBoard[to] 	= captured;
+				this.setBitboards(moved, 0, fromBit, 0);
+				if (this.whitesTurn)
+					this.setBitboards(5, 0, toBit, 0);
+				else
+					this.setBitboards(11, 0, toBit, 0);
+				this.setBitboards(0, captured, 0, toBit);
+			}
+		}
+		this.repetitions = prevRepetitions;
+		this.zobristKeyHistory[this.plyIndex] = 0;
+		this.zobristKey = this.zobristKeyHistory[this.plyIndex - 1];
+		this.plyIndex--;
+		this.fiftyMoveRuleClock	= prevFiftyMoveRuleClock;
+		this.enPassantRights = prevEnPassantRights;
+		this.whiteCastlingRights = prevWhiteCastlingRights;
+		this.blackCastlingRights = prevBlackCastlingRights;
+		this.check = prevCheck == 1 ? true : false;
+	}
+	/**Makes a move specified by user input. If it is legal and the command is valid ([origin square + destination square] as e.g.: b1a3 without any spaces; in case of promotion,
+	 * the FEN notation of the piece the pawn is wished to be promoted to should be appended to the command as in c7c8q; the parser is not case sensitive), it returns true, else
+	 * false.
+	 * 
+	 * @return
+	 */
+	public boolean makeMove(String command) {
+		char zero, one, two, three, four;
+		int from, to, type = 0;
+		long move;
+		LongQueue moves;
+		if (command.length() >= 4 && command.length() <= 5) {
+			command = command.toLowerCase();
+			if ((zero = command.charAt(0)) >= 'a' && zero <= 'h' && (two = command.charAt(2)) >= 'a' && two <= 'h' && (one = command.charAt(1)) > 0 && one < 9 && (three = command.charAt(3)) > 0 && three < 9) {
+				from = (zero - 'a') + (one - 1)*8;
+				to 	 = (two - 'a') + (three - 1)*8;
+				if (command.length() == 5) {
+					four = command.charAt(4);
+					if (three == 1 || three == 8) {
+						switch (four) {
+							case 'q':
+								type = 4;
+							break;
+							case 'r':
+								type = 5;
+							break;
+							case 'b':
+								type = 6;
+							break;
+							case 'n':
+								type = 7;
+							break;
+							default:
+								return false;
+						}
+					}
+					else
+						return false;
+				}
+				moves = this.generateMoves();
+				while (moves.hasNext()) {
+					move = moves.next();
+					if (((move >>> Move.FROM.shift) & Move.FROM.mask) == from && ((move >>> Move.TO.shift) & Move.TO.mask) == to) {
+						if (type != 0) {
+							if (((move >>> Move.TYPE.shift) & Move.TYPE.mask) == type) {
+								this.makeMove(move);
+								return true;
+							}
+						}
+						this.makeMove(move);
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	/**Reverts the state of the instance to that before the last move made. Used within the interface to allow the human player to take steps back during the course of a game.
+	 * If a move has already been made, the body is executed and the method returns true, else false.
+	 * 
+	 * @return
+	 */
+	public boolean revert() {
+		if (this.moveList.getHead() != 0) {
+			this.unMakeMove();
+			if (this.check)
+				this.setCheck();
+			return true;
+		}
+		return false;
 	}
 	/**Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated by spaces.
 	 * The six fields are as follows:
@@ -3808,7 +4025,7 @@ public class Board {
 	 * @param consoleOutputType
 	 * @return
 	 */
-	public long perftFancy(int depth, int moveType, int consoleOutputType) {
+	public long detailedPerft(int depth, int moveType, int consoleOutputType) {
 		LongList moves;
 		long move, type, leafNodes = 0;
 		if (depth == 0) {
@@ -3897,29 +4114,7 @@ public class Board {
 		while (moves.hasNext()) {
 			move = moves.next();
 			this.makeMove(move);
-			leafNodes += this.perftFancy(depth - 1, moveType, consoleOutputType);
-			this.unMakeMove();
-		}
-		return leafNodes;
-	}
-	private long perftDivideProper(int depth, int rootDepth, String prefix) {
-		LongQueue moves;
-		long move, branchNodes, leafNodes = 0;
-		int i = 1;
-		moves = this.generateMoves();
-		if (depth == 1 && rootDepth != 1)
-			return moves.length();
-		if (depth == 0)
-			return 1;
-		while (moves.hasNext()) {
-			move = moves.next();
-			this.makeMove(move);
-			branchNodes = this.perftDivideProper(depth - 1, rootDepth, prefix);
-			if (depth == rootDepth) {
-				System.out.printf(prefix + "%3d. %-8s nodes: " + branchNodes + "\n", i, Move.pseudoAlgebraicNotation(move));
-				i++;
-			}
-			leafNodes += branchNodes;
+			leafNodes += this.detailedPerft(depth - 1, moveType, consoleOutputType);
 			this.unMakeMove();
 		}
 		return leafNodes;
@@ -3930,42 +4125,64 @@ public class Board {
 	 * 
 	 * @param depth
 	 */
-	public void perftDivide(int depth) {
+	public void dividePerft(int depth) {
 		System.out.println("DIVIDE_START");
 		Scanner in = new Scanner(System.in);
-		String prefix = "";
 		int moveIndex, i;
+		IntQueue moveIndices = new IntQueue();
+		long move, nodes, total;
 		LongQueue moves;
-		long move;
+		LongStack chronoHistory;
 		boolean found = true;
 		while (depth > 0 && found) {
+			depth--;
 			this.printStateToConsole();
+			total = 0;
 			found = false;
 			i = 0;
-			System.out.println("\nTotal nodes: " + this.perftDivideProper(depth, depth, prefix));
-			depth--;
-			if (this.check)
-				this.setCheck();
+			chronoHistory = new LongStack();
+			while (this.moveList.hasNext())
+				chronoHistory.add(this.moveList.next());
 			moves = this.generateMoves();
-			System.out.println("Moves: " + moves.length());
-			System.out.print("Enter the index of the move to divide: ");
-			moveIndex = in.nextInt();
 			while (moves.hasNext()) {
+				while (chronoHistory.hasNext()) {
+					move = chronoHistory.next();
+					System.out.printf("%3d. %-8s ", moveIndices.next(), Move.pseudoAlgebraicNotation(move));
+				}
+				moveIndices.reset();
 				i++;
 				move = moves.next();
-				if (i == moveIndex) {
-					prefix += String.format("%3d. %-8s ", i, Move.pseudoAlgebraicNotation(move));
-					this.makeMove(move);
-					found = true;
-					break;
+				this.makeMove(move);
+				if (depth > 0)
+					nodes = this.quickPerft(depth);
+				else
+					nodes = 1;
+				System.out.printf("%3d. %-8s nodes: %d\n", i, Move.pseudoAlgebraicNotation(move), nodes);
+				total += nodes;
+				this.unMakeMove();
+			}
+			System.out.println("\nMoves: " + moves.length());
+			System.out.println("Total nodes: " + total);
+			System.out.print("Enter the index of the move to divide: ");
+			moveIndex = in.nextInt();
+			if (moveIndex >= 0 && moveIndex <= i) {
+				i = 0;
+				while (moves.hasNext()) {
+					i++;
+					move = moves.next();
+					if (i == moveIndex) {
+						this.makeMove(move);
+						moveIndices.add(moveIndex);
+						found = true;
+					}
 				}
 			}
 		}
 		in.close();
 		System.out.println("DIVIDE_END");
 	}
-	/**Breaks up the number perft would return into the root's subtrees. It prints all the legal moves and the number of leafnodes
-	 * the subtrees that the moves lead to have to the console.
+	/**Breaks up the number perft would return into the root's subtrees. It prints to the console all the legal moves from the root position and the number of leafnodes in
+	 * the subtrees to which the moves lead.
 	 * 
 	 * @param depth
 	 */
