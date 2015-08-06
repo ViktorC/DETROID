@@ -2180,7 +2180,7 @@ public class Board {
 		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift);
 		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
 		if (this.whitesTurn) {
-			king = BitOperations.indexOfLSBit(this.whiteKing);
+			king = BitOperations.indexOfBit(this.whiteKing);
 			kingMove  = move;
 			kingMove |= king;
 			kingMove |= (1L << Move.MOVED_PIECE.shift);
@@ -2219,7 +2219,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(rankPos & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((rankPos & this.allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2236,7 +2236,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(filePos & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((filePos & this.allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2263,7 +2263,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(diagonalPos & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((diagonalPos & this.allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2302,7 +2302,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(antiDiagonalPos & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((antiDiagonalPos & this.allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2341,7 +2341,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(rankNeg & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((rankNeg & this.allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2358,7 +2358,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(fileNeg & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((fileNeg & this.allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2385,7 +2385,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(diagonalNeg & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((diagonalNeg & this.allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2402,7 +2402,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(antiDiagonalNeg & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((antiDiagonalNeg & this.allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2526,7 +2526,7 @@ public class Board {
 			}
 		}
 		else {
-			king = BitOperations.indexOfLSBit(this.blackKing);
+			king = BitOperations.indexOfBit(this.blackKing);
 			kingMove  = move;
 			kingMove |= king;
 			kingMove |= (7L << Move.MOVED_PIECE.shift);
@@ -2565,7 +2565,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(rankPos & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((rankPos & this.allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2582,7 +2582,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(filePos & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((filePos & this.allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2609,7 +2609,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(diagonalPos & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((diagonalPos & this.allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2626,7 +2626,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getLSBit(antiDiagonalPos & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((antiDiagonalPos & this.allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2643,7 +2643,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(rankNeg & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((rankNeg & this.allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2660,7 +2660,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(fileNeg & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((fileNeg & this.allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2687,7 +2687,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(diagonalNeg & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((diagonalNeg & this.allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2726,7 +2726,7 @@ public class Board {
 			if ((pinnedPieceBit = BitOperations.getMSBit(antiDiagonalNeg & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((antiDiagonalNeg & this.allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfLSBit(pinnedPieceBit);
+					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
@@ -2890,9 +2890,9 @@ public class Board {
 			if (BitOperations.resetLSBit(this.checkers) == 0) {
 				pinnedPieces 	 =  getPinnedPieces(true);
 				movablePieces	 = ~pinnedPieces;
-				checker1  		 = BitOperations.indexOfLSBit(this.checkers);
+				checker1  		 = BitOperations.indexOfBit(this.checkers);
 				checkerPiece1 	 = this.offsetBoard[checker1];
-				king 	  		 = BitOperations.indexOfLSBit(this.whiteKing);
+				king 	  		 = BitOperations.indexOfBit(this.whiteKing);
 				kingMove 		 = move;
 				kingMove		|= king;
 				kingMove		|= (1L << Move.MOVED_PIECE.shift);
@@ -3016,14 +3016,14 @@ public class Board {
 				}
 			}
 			else {
-				king 	  		= BitOperations.indexOfLSBit(this.whiteKing);
+				king 	  		= BitOperations.indexOfBit(this.whiteKing);
 				kingMove	   |= move;
 				kingMove 	   |= king;
 				kingMove 	   |= (1L << Move.MOVED_PIECE.shift);
 				kingMoveSet		= MoveDatabase.getByIndex(king).getWhiteKingMoves(this.allNonWhiteOccupied);
 				checker1 		= BitOperations.indexOfLSBit(this.checkers);
 				checkerPiece1 	= this.offsetBoard[checker1];
-				checker2		= BitOperations.indexOfLSBit(BitOperations.resetLSBit(this.checkers));
+				checker2		= BitOperations.indexOfBit(BitOperations.resetLSBit(this.checkers));
 				checkerPiece2 	= this.offsetBoard[checker2];
 				dB = MoveDatabase.getByIndex(checker1);
 				switch (checkerPiece1) {
@@ -3067,9 +3067,9 @@ public class Board {
 			if (BitOperations.resetLSBit(this.checkers) == 0) {
 				pinnedPieces  	=  getPinnedPieces(false);
 				movablePieces 	= ~pinnedPieces;
-				checker1  		= BitOperations.indexOfLSBit(this.checkers);
+				checker1  		= BitOperations.indexOfBit(this.checkers);
 				checkerPiece1	= this.offsetBoard[checker1];
-				king 	  		= BitOperations.indexOfLSBit(this.blackKing);
+				king 	  		= BitOperations.indexOfBit(this.blackKing);
 				kingMove 	    = move;
 				kingMove 	   |= king;
 				kingMove 	   |= (7L << Move.MOVED_PIECE.shift);
@@ -3193,14 +3193,14 @@ public class Board {
 				}
 			}
 			else {
-				king			= BitOperations.indexOfLSBit(this.blackKing);
+				king			= BitOperations.indexOfBit(this.blackKing);
 				kingMove 	   |= move;
 				kingMove 	   |= king;
 				kingMove 	   |= (7L << Move.MOVED_PIECE.shift);
 				kingMoveSet 	= MoveDatabase.getByIndex(king).getBlackKingMoves(this.allNonBlackOccupied);
 				checker1 		= BitOperations.indexOfLSBit(this.checkers);
 				checkerPiece1 	= this.offsetBoard[checker1];
-				checker2		= BitOperations.indexOfLSBit(BitOperations.resetLSBit(this.checkers));
+				checker2		= BitOperations.indexOfBit(BitOperations.resetLSBit(this.checkers));
 				checkerPiece2 	= this.offsetBoard[checker2];
 				dB				= MoveDatabase.getByIndex(checker1);
 				switch (checkerPiece1) {
@@ -3242,7 +3242,7 @@ public class Board {
 		}
 		return moves;
 	}
-	/**Generates a queue of longs that represents all the legal moves from the current position.
+	/**Generates a queue of longs that represent all the legal moves from the current position.
 	 * 
 	 * @return
 	 */

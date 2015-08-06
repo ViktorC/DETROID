@@ -39,6 +39,15 @@ public final class BitOperations {
 	private final static long		BIT_REVERSAL_32_CONST1	=  0b1111111111111111111111111111111100000000000000000000000000000000L;
 	private final static long		BIT_REVERSAL_32_CONST2	=  0b0000000000000000000000000000000011111111111111111111111111111111L;
 	
+	/**Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only one set bit and it is not checked,
+	 * thus this method is not safe!
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
+	public final static int indexOfBit(long bitmap) {
+		return DE_BRUIJN_TABLE[(int)((bitmap*DE_BRUIJN_CONST) >>> 58)];
+	}
 	/**Returns the most significant (leftmost) bit in a long.
 	 * 
 	 * @param bitmap
