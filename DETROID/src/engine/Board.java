@@ -757,7 +757,8 @@ public class Board {
 	 */
 	public static enum SliderOccupancyMask {
 		
-		A1, B1, C1, D1, E1, F1, G1, H1,
+		A1(true),
+			B1, C1, D1, E1, F1, G1, H1,
 		A2, B2, C2, D2, E2, F2, G2, H2,
 		A3, B3, C3, D3, E3, F3, G3, H3,
 		A4, B4, C4, D4, E4, F4, G4, H4,
@@ -777,14 +778,19 @@ public class Board {
 		private static long ANTIFRAME;
 		
 		private void initializeAntiFrames() {
-			if (ANTIFRAME == 0) {
-				ANTIFRAME_VERTICAL 		= ~(File.A.getBitmap() 	| File.H.getBitmap());
-				ANTIFRAME_HORIZONTAL	= ~(Rank.R1.getBitmap() | Rank.R8.getBitmap());
-				ANTIFRAME				=  (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
-			}
+			ANTIFRAME_VERTICAL 		= ~(File.A.getBitmap() 	| File.H.getBitmap());
+			ANTIFRAME_HORIZONTAL	= ~(Rank.R1.getBitmap() | Rank.R8.getBitmap());
+			ANTIFRAME				=  (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
+		}
+		private SliderOccupancyMask(boolean flag) {
+			this.initializeAntiFrames();
+			Square sqr = Square.getByIndex(this.ordinal());
+			this.rookOccupancyMask = generateRooksCompleteOccupancyMask(sqr);
+			this.bishopOccupancyMask = generateBishopsCompleteOccupancyMask(sqr);
+			this.rookOccupancyMaskBitCount = (byte)BitOperations.getCardinality(this.rookOccupancyMask);
+			this.bishopOccupancyMaskBitCount = (byte)BitOperations.getCardinality(this.bishopOccupancyMask);
 		}
 		private SliderOccupancyMask() {
-			this.initializeAntiFrames();
 			Square sqr = Square.getByIndex(this.ordinal());
 			this.rookOccupancyMask = generateRooksCompleteOccupancyMask(sqr);
 			this.bishopOccupancyMask = generateBishopsCompleteOccupancyMask(sqr);
@@ -1581,48 +1587,96 @@ public class Board {
 		this.allEmpty			 = ~this.allOccupied;
 	}
 	private void initializeBitBoards() {
-		this.whiteKing		=  Piece.WHITE_KING.getInitPosBitmap();
-		this.whiteQueens	=  Piece.WHITE_QUEEN.getInitPosBitmap();
-		this.whiteRooks		=  Piece.WHITE_ROOK.getInitPosBitmap();
-		this.whiteBishops	=  Piece.WHITE_BISHOP.getInitPosBitmap();
-		this.whiteKnights	=  Piece.WHITE_KNIGHT.getInitPosBitmap();
-		this.whitePawns		=  Piece.WHITE_PAWN.getInitPosBitmap();
+		this.whiteKing		=  Piece.WHITE_KING.initPosBitmap;
+		this.whiteQueens	=  Piece.WHITE_QUEEN.initPosBitmap;
+		this.whiteRooks		=  Piece.WHITE_ROOK.initPosBitmap;
+		this.whiteBishops	=  Piece.WHITE_BISHOP.initPosBitmap;
+		this.whiteKnights	=  Piece.WHITE_KNIGHT.initPosBitmap;
+		this.whitePawns		=  Piece.WHITE_PAWN.initPosBitmap;
 		
-		this.blackKing		=  Piece.BLACK_KING.getInitPosBitmap();
-		this.blackQueens	=  Piece.BLACK_QUEEN.getInitPosBitmap();
-		this.blackRooks		=  Piece.BLACK_ROOK.getInitPosBitmap();
-		this.blackBishops	=  Piece.BLACK_BISHOP.getInitPosBitmap();
-		this.blackKnights	=  Piece.BLACK_KNIGHT.getInitPosBitmap();
-		this.blackPawns		=  Piece.BLACK_PAWN.getInitPosBitmap();
+		this.blackKing		=  Piece.BLACK_KING.initPosBitmap;
+		this.blackQueens	=  Piece.BLACK_QUEEN.initPosBitmap;
+		this.blackRooks		=  Piece.BLACK_ROOK.initPosBitmap;
+		this.blackBishops	=  Piece.BLACK_BISHOP.initPosBitmap;
+		this.blackKnights	=  Piece.BLACK_KNIGHT.initPosBitmap;
+		this.blackPawns		=  Piece.BLACK_PAWN.initPosBitmap;
 		this.initializeCollections();
 	}
 	private void initializeOffsetBoard() {
 		this.offsetBoard = new int[64];
-		this.offsetBoard[0] =  Piece.WHITE_ROOK.getNumericNotation();
-		this.offsetBoard[1] =  Piece.WHITE_KNIGHT.getNumericNotation();
-		this.offsetBoard[2] =  Piece.WHITE_BISHOP.getNumericNotation();
-		this.offsetBoard[3] =  Piece.WHITE_QUEEN.getNumericNotation();
-		this.offsetBoard[4] =  Piece.WHITE_KING.getNumericNotation();
-		this.offsetBoard[5] =  Piece.WHITE_BISHOP.getNumericNotation();
-		this.offsetBoard[6] =  Piece.WHITE_KNIGHT.getNumericNotation();
-		this.offsetBoard[7] =  Piece.WHITE_ROOK.getNumericNotation();
+		this.offsetBoard[0] =  Piece.WHITE_ROOK.numericNotation;
+		this.offsetBoard[1] =  Piece.WHITE_KNIGHT.numericNotation;
+		this.offsetBoard[2] =  Piece.WHITE_BISHOP.numericNotation;
+		this.offsetBoard[3] =  Piece.WHITE_QUEEN.numericNotation;
+		this.offsetBoard[4] =  Piece.WHITE_KING.numericNotation;
+		this.offsetBoard[5] =  Piece.WHITE_BISHOP.numericNotation;
+		this.offsetBoard[6] =  Piece.WHITE_KNIGHT.numericNotation;
+		this.offsetBoard[7] =  Piece.WHITE_ROOK.numericNotation;
 		for (int i = 8; i < 16; i++)
-			this.offsetBoard[i] = Piece.WHITE_PAWN.getNumericNotation();
+			this.offsetBoard[i] = Piece.WHITE_PAWN.numericNotation;
 		
 		for (int i = 48; i < 56; i++)
-			this.offsetBoard[i] = Piece.BLACK_PAWN.getNumericNotation();
-		this.offsetBoard[56] = Piece.BLACK_ROOK.getNumericNotation();
-		this.offsetBoard[57] = Piece.BLACK_KNIGHT.getNumericNotation();
-		this.offsetBoard[58] = Piece.BLACK_BISHOP.getNumericNotation();
-		this.offsetBoard[59] = Piece.BLACK_QUEEN.getNumericNotation();
-		this.offsetBoard[60] = Piece.BLACK_KING.getNumericNotation();
-		this.offsetBoard[61] = Piece.BLACK_BISHOP.getNumericNotation();
-		this.offsetBoard[62] = Piece.BLACK_KNIGHT.getNumericNotation();
-		this.offsetBoard[63] = Piece.BLACK_ROOK.getNumericNotation();
+			this.offsetBoard[i] = Piece.BLACK_PAWN.numericNotation;
+		this.offsetBoard[56] = Piece.BLACK_ROOK.numericNotation;
+		this.offsetBoard[57] = Piece.BLACK_KNIGHT.numericNotation;
+		this.offsetBoard[58] = Piece.BLACK_BISHOP.numericNotation;
+		this.offsetBoard[59] = Piece.BLACK_QUEEN.numericNotation;
+		this.offsetBoard[60] = Piece.BLACK_KING.numericNotation;
+		this.offsetBoard[61] = Piece.BLACK_BISHOP.numericNotation;
+		this.offsetBoard[62] = Piece.BLACK_KNIGHT.numericNotation;
+		this.offsetBoard[63] = Piece.BLACK_ROOK.numericNotation;
 	}
 	private void initializeZobristKeys() {
 		this.zobristKey = keyGen.hash(this);
 		this.zobristKeyHistory[0] = this.zobristKey;
+	}
+	/**Returns a bitmap representing the white king's position.*/
+	public long getWhiteKing() {
+		return this.whiteKing;
+	}
+	/**Returns a bitmap representing the white queens' position.*/
+	public long getWhiteQueens() {
+		return this.whiteQueens;
+	}
+	/**Returns a bitmap representing the white rooks' position.*/
+	public long getWhiteRooks() {
+		return this.whiteRooks;
+	}
+	/**Returns a bitmap representing the white bishops' position.*/
+	public long getWhiteBishops() {
+		return this.whiteBishops;
+	}
+	/**Returns a bitmap representing the white knights' position.*/
+	public long getWhiteKnights() {
+		return this.whiteKnights;
+	}
+	/**Returns a bitmap representing the white pawns' position.*/
+	public long getWhitePawns() {
+		return this.whitePawns;
+	}
+	/**Returns a bitmap representing the black king's position.*/
+	public long getBlackKing() {
+		return this.blackKing;
+	}
+	/**Returns a bitmap representing the black queens' position.*/
+	public long getBlackQueens() {
+		return this.blackQueens;
+	}
+	/**Returns a bitmap representing the black rooks' position.*/
+	public long getBlackRooks() {
+		return this.blackRooks;
+	}
+	/**Returns a bitmap representing the black bishops' position.*/
+	public long getBlackBishops() {
+		return this.blackBishops;
+	}
+	/**Returns a bitmap representing the black knights' position.*/
+	public long getBlackKnights() {
+		return this.blackKnights;
+	}
+	/**Returns a bitmap representing the black pawns' position.*/
+	public long getBlackPawns() {
+		return this.blackPawns;
 	}
 	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.*/
 	public int[] getOffsetBoard() {
@@ -1965,8 +2019,8 @@ public class Board {
 	}
 	/**Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the supposedly enemy occupied square specified by sqrInd.*/
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
+		MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 		if (byWhite) {
-			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			if ((this.whiteKing		& dB.getCrudeKingMoves()) != 0)
 				return true;
 			if ((this.whiteKnights 	& dB.getCrudeKnightMoves()) != 0)
@@ -1977,13 +2031,12 @@ public class Board {
 				return true;
 			if (((this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied)) != 0)
 				return true;
-			if (this.offsetBoard[sqrInd] == 12 && this.enPassantRights == sqrInd%8) {
+			if (this.enPassantRights != 8 && sqrInd == 32 + this.enPassantRights) {
 				if ((this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4)) != 0)
 					return true;
 			}
 		}
 		else {
-			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			if ((this.blackKing		& dB.getCrudeKingMoves()) != 0)
 				return true;
 			if ((this.blackKnights 	& dB.getCrudeKnightMoves()) != 0)
@@ -1994,7 +2047,7 @@ public class Board {
 				return true;
 			if (((this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied)) != 0)
 				return true;
-			if (this.offsetBoard[sqrInd] == 6 && this.enPassantRights == sqrInd%8) {
+			if (this.enPassantRights != 8 && sqrInd == 24 + this.enPassantRights) {
 				if ((this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3)) != 0)
 					return true;
 			}
