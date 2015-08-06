@@ -530,9 +530,9 @@ public class Board {
 			long mask;
 			int sqrInd = sqr.ordinal();
 			long sqrBit = sqr.getBitmap();
-			mask =	BitOperations.vShiftNorthEast(sqrBit) | BitOperations.vShiftNorth(sqrBit) | BitOperations.vShiftNorthWest(sqrBit) |
-					BitOperations.vShiftEast(sqrBit)    									  | BitOperations.vShiftWest(sqrBit)      |
-					BitOperations.vShiftSouthEast(sqrBit) | BitOperations.vShiftSouth(sqrBit) | BitOperations.vShiftSouthWest(sqrBit) ;
+			mask =	(sqrBit << 7)  | (sqrBit << 8)  | (sqrBit << 9)  |
+					(sqrBit << 1)    			    | (sqrBit >>> 1) |
+					(sqrBit >>> 9) | (sqrBit >>> 8) | (sqrBit >>> 7) ;
 			if (sqrInd%8 == 0)
 				mask &= ~File.H.getBitmap();
 			else if ((sqrInd + 1)%8 == 0)
@@ -544,10 +544,10 @@ public class Board {
 			long mask;
 			int sqrInd = sqr.ordinal();
 			long sqrBit = sqr.getBitmap();
-			mask =		 	BitOperations.vShiftNorthEast(BitOperations.vShiftNorth(sqrBit))	| BitOperations.vShiftNorthWest(BitOperations.vShiftNorth(sqrBit)) |
-					BitOperations.vShiftNorthEast(BitOperations.vShiftEast(sqrBit))				| 		  BitOperations.vShiftNorthWest(BitOperations.vShiftWest(sqrBit))   |
-					BitOperations.vShiftSouthEast(BitOperations.vShiftEast(sqrBit))				|		  BitOperations.vShiftSouthWest(BitOperations.vShiftWest(sqrBit))	|
-							BitOperations.vShiftSouthEast(BitOperations.vShiftSouth(sqrBit))	| BitOperations.vShiftSouthWest(BitOperations.vShiftSouth(sqrBit));
+			mask =		 	(sqrBit << 15)	| (sqrBit << 17) |
+					(sqrBit << 6)			| 		  (sqrBit << 10)   |
+					(sqrBit >>> 10)			|		  (sqrBit >>> 6)   |
+							(sqrBit >>> 17)	| (sqrBit >>> 15);
 			if (sqrInd%8 == 0)
 				mask &= ~(File.H.getBitmap() | File.G.getBitmap());
 			else if ((sqrInd - 1)%8 == 0)
@@ -565,7 +565,7 @@ public class Board {
 			if (sqrInd > 55)
 					return 0;
 			long sqrBit = sqr.getBitmap();
-			mask =		BitOperations.vShiftNorthEast(sqrBit) | BitOperations.vShiftNorthWest(sqrBit);
+			mask =		(sqrBit << 7) | (sqrBit << 9);
 			if (sqrInd%8 == 0)
 				mask &= ~File.H.getBitmap();
 			else if ((sqrInd + 1)%8 == 0)
@@ -579,7 +579,7 @@ public class Board {
 			if (sqrInd < 8)
 					return 0;
 			long sqrBit = sqr.getBitmap();
-			mask =		BitOperations.vShiftSouthEast(sqrBit) | BitOperations.vShiftSouthWest(sqrBit);
+			mask =		(sqrBit >>> 9) | (sqrBit >>> 7);
 			if (sqrInd%8 == 0)
 				mask &= ~File.H.getBitmap();
 			else if ((sqrInd + 1)%8 == 0)
@@ -592,14 +592,10 @@ public class Board {
 			int sqrInd = sqr.ordinal();
 			if (sqrInd < 8 || sqrInd > 55)
 				return 0;
-			if (sqrInd < 16) {
-				long sqrBit = sqr.getBitmap();
-				mask =  BitOperations.vShiftNorth(BitOperations.vShiftNorth(sqrBit))	|
-						BitOperations.vShiftNorth(sqrBit);
-				return mask;
-			}
 			long sqrBit = sqr.getBitmap();
-			mask = 		BitOperations.vShiftNorth(sqrBit);
+			mask = (sqrBit << 8);
+			if (sqrInd < 16)
+				mask |= (sqrBit << 16);
 			return mask;
 		}
 		/**Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.*/
@@ -608,14 +604,10 @@ public class Board {
 			int sqrInd = sqr.ordinal();
 			if (sqrInd < 8 || sqrInd > 55)
 				return 0;
-			if (sqrInd >= 48) {
-				long sqrBit = sqr.getBitmap();
-				mask =	BitOperations.vShiftSouth(sqrBit) |
-						BitOperations.vShiftSouth(BitOperations.vShiftSouth(sqrBit));
-				return mask;
-			}
 			long sqrBit = sqr.getBitmap();
-			mask =		BitOperations.vShiftSouth(sqrBit);
+			mask = (sqrBit >>> 8);
+			if (sqrInd >= 48)
+				mask |= (sqrBit >>> 16);
 			return mask;
 		}
 		/**Generates a bitmap of the basic rook's rank-wise/horizontal move mask. Occupancies are disregarded. Perimeter squares are included.*/
@@ -2019,7 +2011,7 @@ public class Board {
 			attackers |=  this.whitePawns 						& dB.getCrudeBlackPawnCaptures();
 			attackers |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
 			attackers |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
-			if (this.offsetBoard[sqrInd] == 12 && this.enPassantRights == sqrInd%8)
+			if (this.enPassantRights != 8 && sqrInd == 32 + this.enPassantRights)
 				attackers |=  this.whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4);
 		}
 		else {
@@ -2028,7 +2020,7 @@ public class Board {
 			attackers |=  this.blackPawns 						& dB.getCrudeWhitePawnCaptures();
 			attackers |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
 			attackers |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
-			if (this.offsetBoard[sqrInd] == 6 && this.enPassantRights == sqrInd%8)
+			if (this.enPassantRights != 8 && sqrInd == 24 + this.enPassantRights)
 				attackers |=  this.blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3);
 		}
 		return attackers;
@@ -2037,13 +2029,13 @@ public class Board {
 	public long getBlockerCandidates(int sqrInd, boolean byWhite) {
 		long blockerCandidates = 0;
 		long sqrBit = Square.getBitmapByIndex(sqrInd);
-		long blackPawnAdvance = BitOperations.vShiftSouth(sqrBit), whitePawnAdvance = BitOperations.vShiftNorth(sqrBit);
+		long blackPawnAdvance = (sqrBit >>> 8), whitePawnAdvance = (sqrBit << 8);
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			blockerCandidates |=  this.whiteKnights						& dB.getCrudeKnightMoves();
 			blockerCandidates |=  this.whitePawns 						& blackPawnAdvance;
 			if ((sqrBit & Rank.getByIndex(3)) != 0 && (this.allEmpty & blackPawnAdvance) != 0)
-				blockerCandidates |=  this.whitePawns 					& BitOperations.vShiftSouth(blackPawnAdvance);
+				blockerCandidates |=  this.whitePawns 					& (blackPawnAdvance >>> 8);
 			blockerCandidates |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
 			blockerCandidates |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
 			if (this.enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(5)) != 0)
@@ -2054,7 +2046,7 @@ public class Board {
 			blockerCandidates |=  this.blackKnights						& dB.getCrudeKnightMoves();
 			blockerCandidates |=  this.blackPawns 						& whitePawnAdvance;
 			if ((sqrBit & Rank.getByIndex(4)) != 0 && (this.allEmpty & whitePawnAdvance) != 0)
-				blockerCandidates |=  this.blackPawns 					& BitOperations.vShiftNorth(whitePawnAdvance);
+				blockerCandidates |=  this.blackPawns 					& (whitePawnAdvance << 8);
 			blockerCandidates |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
 			blockerCandidates |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
 			if (this.enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(2)) != 0)
@@ -2071,18 +2063,18 @@ public class Board {
 		long pinnedPiece;
 		long pinnedPieces = 0;
 		if (forWhite) {
-			sqrInd = BitOperations.indexOfLSBit(this.whiteKing);
+			sqrInd = BitOperations.indexOfBit(this.whiteKing);
 			straightSliders = this.blackQueens | this.blackRooks;
 			diagonalSliders = this.blackQueens | this.blackBishops;
 			attRayMask 		= SliderAttackRayMask.getByIndex(sqrInd);
-			rankPos 		= attRayMask.getRankPos() 			& this.allOccupied;
-			rankNeg 		= attRayMask.getRankNeg() 			& this.allOccupied;
-			filePos 		= attRayMask.getFilePos() 			& this.allOccupied;
-			fileNeg 		= attRayMask.getFileNeg() 			& this.allOccupied;
-			diagonalPos 	= attRayMask.getDiagonalPos() 		& this.allOccupied;
-			diagonalNeg 	= attRayMask.getDiagonalNeg() 		& this.allOccupied;
-			antiDiagonalPos = attRayMask.getAntiDiagonalPos() 	& this.allOccupied;
-			antiDiagonalNeg = attRayMask.getAntiDiagonalNeg() 	& this.allOccupied;
+			rankPos 		= attRayMask.rankPos 			& this.allOccupied;
+			rankNeg 		= attRayMask.rankNeg 			& this.allOccupied;
+			filePos 		= attRayMask.filePos 			& this.allOccupied;
+			fileNeg 		= attRayMask.fileNeg 			& this.allOccupied;
+			diagonalPos 	= attRayMask.diagonalPos 		& this.allOccupied;
+			diagonalNeg 	= attRayMask.diagonalNeg 		& this.allOccupied;
+			antiDiagonalPos = attRayMask.antiDiagonalPos 	& this.allOccupied;
+			antiDiagonalNeg = attRayMask.antiDiagonalNeg 	& this.allOccupied;
 			if ((pinnedPiece = BitOperations.getLSBit(rankPos)			 & this.allWhitePieces) != 0) {
 				if ((BitOperations.getLSBit(rankPos^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
@@ -2117,18 +2109,18 @@ public class Board {
 			}
 		}
 		else {
-			sqrInd = BitOperations.indexOfLSBit(this.blackKing);
+			sqrInd = BitOperations.indexOfBit(this.blackKing);
 			straightSliders = this.whiteQueens | this.whiteRooks;
 			diagonalSliders = this.whiteQueens | this.whiteBishops;
 			attRayMask		= SliderAttackRayMask.getByIndex(sqrInd);
-			rankPos 		= attRayMask.getRankPos() 			& this.allOccupied;
-			rankNeg 		= attRayMask.getRankNeg() 			& this.allOccupied;
-			filePos 		= attRayMask.getFilePos() 			& this.allOccupied;
-			fileNeg 		= attRayMask.getFileNeg() 			& this.allOccupied;
-			diagonalPos 	= attRayMask.getDiagonalPos() 		& this.allOccupied;
-			diagonalNeg 	= attRayMask.getDiagonalNeg() 		& this.allOccupied;
-			antiDiagonalPos = attRayMask.getAntiDiagonalPos() 	& this.allOccupied;
-			antiDiagonalNeg = attRayMask.getAntiDiagonalNeg() 	& this.allOccupied;
+			rankPos 		= attRayMask.rankPos 			& this.allOccupied;
+			rankNeg 		= attRayMask.rankNeg 			& this.allOccupied;
+			filePos 		= attRayMask.filePos 			& this.allOccupied;
+			fileNeg 		= attRayMask.fileNeg 			& this.allOccupied;
+			diagonalPos 	= attRayMask.diagonalPos 		& this.allOccupied;
+			diagonalNeg 	= attRayMask.diagonalNeg 		& this.allOccupied;
+			antiDiagonalPos = attRayMask.antiDiagonalPos 	& this.allOccupied;
+			antiDiagonalNeg = attRayMask.antiDiagonalNeg 	& this.allOccupied;
 			if ((pinnedPiece = BitOperations.getLSBit(rankPos)			 & this.allBlackPieces) != 0) {
 				if ((BitOperations.getLSBit(rankPos^pinnedPiece) 		 & straightSliders) != 0)
 					pinnedPieces |= pinnedPiece;
