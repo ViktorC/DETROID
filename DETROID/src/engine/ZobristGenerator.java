@@ -74,9 +74,9 @@ public class ZobristGenerator {
 		long move	 	= board.getLastMove();
 		int from		= (int)((move >>> Move.FROM.shift)  			& Move.FROM.mask);
 		int to			= (int)((move >>> Move.TO.shift) 				& Move.TO.mask);
-		int moved		= (int)((move >>> Move.MOVED_PIECE.shift) 	& Move.MOVED_PIECE.mask);
+		int moved		= (int)((move >>> Move.MOVED_PIECE.shift) 		& Move.MOVED_PIECE.mask);
 		int captured	= (int)((move >>> Move.CAPTURED_PIECE.shift) 	& Move.CAPTURED_PIECE.mask);
-		int type		= (int)((move >>> Move.TYPE.shift) 			& Move.TYPE.mask);
+		int type		= (int)((move >>> Move.TYPE.shift) 				& Move.TYPE.mask);
 		switch (type) {
 			case 0: {
 				key ^= this.board[moved][from];

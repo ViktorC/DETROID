@@ -1,15 +1,13 @@
 package engine.testing;
 
 import engine.Board;
-import engine.Move;
-import engine.Search;
 
 public class Playground {
 
 	public static void main(String[] args) {
-		Board b = new Board();
+		Board b = new Board("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
 		long start = System.currentTimeMillis();
-		System.out.println(((-666667L << Move.VALUE.getShift()) >>> Move.VALUE.getShift()) & Move.VALUE.getMask());
+		System.out.println(b.perft(7));
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}
