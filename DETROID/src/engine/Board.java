@@ -2019,6 +2019,8 @@ public class Board {
 	}
 	/**Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the supposedly enemy occupied square specified by sqrInd.
 	 * 
+	 * Not accurate for pawns! En passant is not calculated with as for the method's current use, it is irrelevant and costs a lot.
+	 * 
 	 * @param sqrInd
 	 * @param byWhite
 	 * @return
