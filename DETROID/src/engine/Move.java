@@ -16,29 +16,15 @@ public enum Move {
 	MOVED_PIECE 							(12, 15),		//denotes the type of the moved piece according to Board.Piece
 	CAPTURED_PIECE 							(16, 15),		//denotes the type of the captured piece according to Board.Piece, 0 means no piece has been captured
 	TYPE									(20, 7),		//denotes the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
-	PREVIOUS_WHITE_CASTLING_RIGHTS	 		(23, 3),	
-	PREVIOUS_BLACK_CASTLING_RIGHTS	 		(25, 3),
-	PREVIOUS_ENPASSANT_RIGHTS		 		(27, 15),
-	PREVIOUS_CHECK					 		(31, 1),
-	PREVIOUS_FIFTY_MOVE_RULE_CLOCK			(32, 127),
-	PREVIOUS_REPETITIONS			 		(39, 7),
-	VALUE							 		(42, 2097151);
+	VALUE							 		(23, Long.MAX_VALUE);
 	
 	
-	final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
-	final long  mask;		//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
+	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
+	public final long  mask;		//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
 	
 	private Move(int shift, long mask) {
 		this.shift = (byte) shift;
 		this.mask = mask;
-	}
-	/**Returns the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long.*/
-	public byte getShift() {
-		return this.shift;
-	}
-	/**Returns the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value.*/
-	public long getMask() {
-		return this.mask;
 	}
 	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.
 	 * 

@@ -1424,11 +1424,13 @@ public class Board {
 	private int whiteCastlingRights = 3;						//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
 	private int blackCastlingRights = 3;						//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
 	
-	private ZobristGenerator keyGen = new ZobristGenerator();	//a Zobrist key generator for hashing the board
+	private long[] positionInfoHistory = new long[2*237];		/*A history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
+																 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
+	private ZobristGenerator keyGen = new ZobristGenerator(); 	//a Zobrist key generator for hashing the board
 	
 	private long zobristKey;									//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
-	private long[] zobristKeyHistory = new long[2*237];			/*All the positions that have occured so far represented in Zobrist keys.
-														 		 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
+	private long[] zobristKeyHistory = new long[2*237];			//All the positions that have occured so far represented in Zobrist keys.
+	
 	private long repetitions = 0;								//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
@@ -2006,6 +2008,15 @@ public class Board {
 		this.zobristKey = keyGen.updateKey(this);
 		this.zobristKeyHistory[this.plyIndex] = this.zobristKey;
 	}
+	private void setPositionInfo() {
+		this.positionInfoHistory[this.plyIndex] = this.whiteCastlingRights |
+		 										 (this.blackCastlingRights << PositionInfo.BLACK_CASTLING_RIGHTS.shift) |
+												 (this.enPassantRights << PositionInfo.EN_PASSANT_RIGHTS.shift) |
+												 (this.fiftyMoveRuleClock << PositionInfo.FIFTY_MOVE_RULE_CLOCK.shift) |
+												 (this.repetitions << PositionInfo.REPETITIONS.shift) |
+												 (BitOperations.indexOfLSBit(this.checkers) << PositionInfo.CHECKER1.shift) |
+												 (BitOperations.indexOfBit(BitOperations.resetLSBit(this.checkers)) << PositionInfo.CHECKER2.shift);
+	}
 	/**Should be used before resetMoveIndices().*/
 	private void setRepetitions() {
 		if (this.fiftyMoveRuleClock >= 4) {
@@ -2217,11 +2228,7 @@ public class Board {
 		IntStack queens, rooks, bishops, knights, pawns;
 		IntStack kingMoves, queenMoves, rookMoves, bishopMoves, knightMoves, pawnMoves, pinnedPieceMoves;
 		LongQueue moves = new LongQueue();
-		move |= (this.whiteCastlingRights		<< Move.PREVIOUS_WHITE_CASTLING_RIGHTS.shift);
-		move |= (this.blackCastlingRights		<< Move.PREVIOUS_BLACK_CASTLING_RIGHTS.shift);
-		move |= (this.enPassantRights	 		<< Move.PREVIOUS_ENPASSANT_RIGHTS.shift);
-		move |= (this.fiftyMoveRuleClock		<< Move.PREVIOUS_FIFTY_MOVE_RULE_CLOCK.shift);
-		move |= (this.repetitions				<< Move.PREVIOUS_REPETITIONS.shift);
+		this.setPositionInfo();
 		if (this.whitesTurn) {
 			king = BitOperations.indexOfBit(this.whiteKing);
 			kingMove  = move;

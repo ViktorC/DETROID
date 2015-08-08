@@ -22,26 +22,14 @@ public enum Piece {
 	BLACK_KNIGHT	(0b0100001000000000000000000000000000000000000000000000000000000000L, 11, 'n'),
 	BLACK_PAWN		(0b0000000011111111000000000000000000000000000000000000000000000000L, 12, 'p');
 	
-	final long initPosBitmap;		//a bitmap representing the initial position of the respective pieces at the start of the game
-	final int  numericNotation;		//a number between 1 and 12 that generally represents the respective piece, among others, for example on the offset board
-	final char fenNotation;			//a character denoting the piece-type in FEN notation
+	public final long initPosBitmap;		//a bitmap representing the initial position of the respective pieces at the start of the game
+	public final int  numericNotation;		//a number between 1 and 12 that generally represents the respective piece, among others, for example on the offset board
+	public final char fenNotation;			//a character denoting the piece-type in FEN notation
 	
 	private Piece(long initPosBitmap, int numericNotation, char fenNotation) {
 		this.initPosBitmap = initPosBitmap;
 		this.numericNotation = numericNotation;
 		this.fenNotation = fenNotation;
-	}
-	/**Returns a bitmap representing the piece-type's initial position on the chess board.*/
-	public long getInitPosBitmap() {
-		return this.initPosBitmap;
-	}
-	/**Returns an integer code denoting the piece-type used in the Board class' offset board and various procedures.*/
-	public int getNumericNotation() {
-		return this.numericNotation;
-	}
-	/**Returns a character code denoting the piece-type in FEN notation.*/
-	public int getFenNotation() {
-		return this.fenNotation;
 	}
 	/**Returns the piece defined by the input parameter according to {@link #engine.Piece Piece}'s character equivalent in FEN notation.
 	 * 
