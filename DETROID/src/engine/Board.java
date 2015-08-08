@@ -2213,7 +2213,7 @@ public class Board {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders, pinnedPieceBit, pinnedPieces = 0, movablePieces, pinnerBit, pieceSet, moveSet, movedPiece;
 		long pinnedPieceMove = 0, kingMove = 0, queenMove = 0, rookMove = 0, bishopMove = 0, knightMove = 0, pawnMove = 0, move = 0;
-		int pinnedPieceInd, pinnedPiece, king, queen, rook, bishop, knight, pawn, to, enPassantDestination = 0;
+		int pinnedPieceInd, pinnedPiece, king, queen, rook, bishop, knight, pawn, to, enPassantDestination = -1;
 		IntStack queens, rooks, bishops, knights, pawns;
 		IntStack kingMoves, queenMoves, rookMoves, bishopMoves, knightMoves, pawnMoves, pinnedPieceMoves;
 		LongQueue moves = new LongQueue();
