@@ -463,7 +463,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public final static class MoveMask {
+	public final static class MoveMaskGenerator {
 		
 		/**Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.*/
 		public final static long generateKingsMoveMask(Square sqr) {
@@ -615,7 +615,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public static enum SliderAttackRayMask {
+	public static enum RayMask {
 		
 		A1, B1, C1, D1, E1, F1, G1, H1,
 		A2, B2, C2, D2, E2, F2, G2, H2,
@@ -635,7 +635,7 @@ public class Board {
 		public final long antiDiagonalPos;
 		public final long antiDiagonalNeg;
 		
-		private SliderAttackRayMask( ) {
+		private RayMask( ) {
 			int sqrInd = this.ordinal();
 			long sqrBit = Square.getBitmapByIndex(sqrInd);
 			long rank = Rank.getBySquareIndex(sqrInd);
@@ -651,7 +651,7 @@ public class Board {
 			this.antiDiagonalPos = antiDiagonal & ~((sqrBit << 1) - 1);
 			this.antiDiagonalNeg = antiDiagonal & (sqrBit - 1);
 		}
-		public static SliderAttackRayMask getByIndex(int sqrInd) {
+		public static RayMask getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
 				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
@@ -714,19 +714,19 @@ public class Board {
 			this.bishopOccupancyMaskBitCount = (byte)BitOperations.getCardinality(this.bishopOccupancyMask);
 		}
 		private static long generateRooksRankOccupancyMask(Square sqr) {
-			return (MoveMask.generateRooksRankMoveMask(sqr) & ANTIFRAME_VERTICAL);
+			return (MoveMaskGenerator.generateRooksRankMoveMask(sqr) & ANTIFRAME_VERTICAL);
 		}
 		private static long generateRooksFileOccupancyMask(Square sqr) {
-			return (MoveMask.generateRooksFileMoveMask(sqr) & ANTIFRAME_HORIZONTAL);
+			return (MoveMaskGenerator.generateRooksFileMoveMask(sqr) & ANTIFRAME_HORIZONTAL);
 		}
 		private static long generateRooksCompleteOccupancyMask(Square sqr) {
 			return (generateRooksRankOccupancyMask(sqr) | generateRooksFileOccupancyMask(sqr));
 		}
 		private static long generateBishopsDiagonalOccupancyMask(Square sqr) {
-			return (MoveMask.generateBishopsDiagonalMoveMask(sqr) & ANTIFRAME);
+			return (MoveMaskGenerator.generateBishopsDiagonalMoveMask(sqr) & ANTIFRAME);
 		}
 		private static long generateBishopsAntiDiagonalOccupancyMask(Square sqr) {
-			return (MoveMask.generateBishopsAntiDiagonalMoveMask(sqr) & ANTIFRAME);
+			return (MoveMaskGenerator.generateBishopsAntiDiagonalMoveMask(sqr) & ANTIFRAME);
 		}
 		private static long generateBishopsCompleteOccupancyMask(Square sqr) {
 			return (generateBishopsDiagonalOccupancyMask(sqr) | generateBishopsAntiDiagonalOccupancyMask(sqr));
@@ -1171,12 +1171,12 @@ public class Board {
 				index = (int)((bishopOccVar[i]*this.magics.bishopMagicNumber) >>> this.magics.bishopShift);
 				this.bishop[index] = bishopAttVar[i];
 			}
-			this.king 				= MoveMask.generateKingsMoveMask(sqr);
-			this.knight 			= MoveMask.generateKnightMasks(sqr);
-			this.pawnWhiteAdvance 	= MoveMask.generateWhitePawnsAdvanceMasks(sqr);
-			this.pawnWhiteCapture 	= MoveMask.generateWhitePawnsCaptureMasks(sqr);
-			this.pawnBlackAdvance 	= MoveMask.generateBlackPawnsAdvanceMasks(sqr);
-			this.pawnBlackCapture 	= MoveMask.generateBlackPawnsCaptureMasks(sqr);
+			this.king 				= MoveMaskGenerator.generateKingsMoveMask(sqr);
+			this.knight 			= MoveMaskGenerator.generateKnightMasks(sqr);
+			this.pawnWhiteAdvance 	= MoveMaskGenerator.generateWhitePawnsAdvanceMasks(sqr);
+			this.pawnWhiteCapture 	= MoveMaskGenerator.generateWhitePawnsCaptureMasks(sqr);
+			this.pawnBlackAdvance 	= MoveMaskGenerator.generateBlackPawnsAdvanceMasks(sqr);
+			this.pawnBlackCapture 	= MoveMaskGenerator.generateBlackPawnsCaptureMasks(sqr);
 		}
 		public long getCrudeKingMoves() {
 			return this.king;
@@ -1312,7 +1312,7 @@ public class Board {
 	private int whiteCastlingRights = 3;						//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
 	private int blackCastlingRights = 3;						//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
 	
-	private LongStack positionInfoHistory = new LongStack();	/*A history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
+	private LongStack positionInfoHistory = new LongStack(); 	/*A history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 																 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
 	private ZobristGenerator keyGen = new ZobristGenerator(); 	//a Zobrist key generator for hashing the board
 	
@@ -1900,6 +1900,15 @@ public class Board {
 		this.zobristKey = keyGen.updateKey(this);
 		this.zobristKeyHistory[this.plyIndex] = this.zobristKey;
 	}
+	private void extendKeyHistory() {
+		long[] temp;
+		if (this.zobristKeyHistory.length - this.plyIndex <= 75) {
+			temp = this.zobristKeyHistory;
+			this.zobristKeyHistory = new long[this.zobristKeyHistory.length + 25];
+			for (int i = 0; i < temp.length; i++)
+				this.zobristKeyHistory[i] = temp[i];
+		}
+	}
 	private void setPositionInfo() {
 		long positionInfo, checker2;
 		positionInfo = this.whiteCastlingRights |
@@ -2037,10 +2046,10 @@ public class Board {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders, pinnedPiece, pinnedPieces = 0;
 		int sqrInd;
-		SliderAttackRayMask attRayMask;
+		RayMask attRayMask;
 		if (forWhite) {
 			sqrInd = BitOperations.indexOfBit(this.whiteKing);
-			attRayMask = SliderAttackRayMask.getByIndex(sqrInd);
+			attRayMask = RayMask.getByIndex(sqrInd);
 			rankPos 		= attRayMask.rankPos 			& this.allOccupied;
 			rankNeg 		= attRayMask.rankNeg 			& this.allOccupied;
 			filePos 		= attRayMask.filePos 			& this.allOccupied;
@@ -2086,7 +2095,7 @@ public class Board {
 		}
 		else {
 			sqrInd = BitOperations.indexOfBit(this.blackKing);
-			attRayMask = SliderAttackRayMask.getByIndex(sqrInd);
+			attRayMask = RayMask.getByIndex(sqrInd);
 			rankPos 		= attRayMask.rankPos 			& this.allOccupied;
 			rankNeg 		= attRayMask.rankNeg 			& this.allOccupied;
 			filePos 		= attRayMask.filePos 			& this.allOccupied;
@@ -2141,11 +2150,11 @@ public class Board {
 		long straightSliders, diagonalSliders, pinnedPieceBit, pinnerBit, pinnedPieceMove, pinnedPieces = 0, promotion = 0, enPassantDestination = 0;
 		int pinnedPieceInd, pinnedPiece, to;
 		IntStack pinnedPieceMoves;
-		SliderAttackRayMask attRayMask;
+		RayMask attRayMask;
 		if (this.whitesTurn) {
 			straightSliders = this.blackQueens | this.blackRooks;
 			diagonalSliders = this.blackQueens | this.blackBishops;
-			attRayMask 		= SliderAttackRayMask.getByIndex(BitOperations.indexOfBit(this.whiteKing));
+			attRayMask 		= RayMask.getByIndex(BitOperations.indexOfBit(this.whiteKing));
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & this.allOccupied) & this.allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & this.allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
@@ -2340,7 +2349,7 @@ public class Board {
 		else {
 			straightSliders = this.whiteQueens | this.whiteRooks;
 			diagonalSliders = this.whiteQueens | this.whiteBishops;
-			attRayMask 		= SliderAttackRayMask.getByIndex(BitOperations.indexOfBit(this.blackKing));
+			attRayMask 		= RayMask.getByIndex(BitOperations.indexOfBit(this.blackKing));
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & this.allOccupied) & this.allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & this.allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces	|= pinnedPieceBit;
@@ -3649,11 +3658,15 @@ public class Board {
 						if (type != 0) {
 							if (((move >>> Move.TYPE.shift) & Move.TYPE.mask) == type) {
 								this.makeMove(move);
+								this.extendKeyHistory();
 								return true;
 							}
 						}
-						this.makeMove(move);
-						return true;
+						else {
+							this.makeMove(move);
+							this.extendKeyHistory();
+							return true;
+						}
 					}
 				}
 			}
