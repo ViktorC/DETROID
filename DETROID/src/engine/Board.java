@@ -95,14 +95,10 @@ public class Board {
 		G8 (0b0100000000000000000000000000000000000000000000000000000000000000L),
 		H8 (0b1000000000000000000000000000000000000000000000000000000000000000L);
 		
-		final long bitmap;
+		public final long bitmap;
 		
 		private Square(long bitmap) {
 			this.bitmap = bitmap;
-		}
-		/**Returns a bitmap with only the bit on the square's index set.*/
-		public long getBitmap() {
-			return this.bitmap;
 		}
 		/**Returns a String representation of the square.*/
 		public String toString() {
@@ -233,13 +229,10 @@ public class Board {
 		R7 (0b0000000011111111000000000000000000000000000000000000000000000000L),
 		R8 (0b1111111100000000000000000000000000000000000000000000000000000000L);
 		
-		final long bitmap;
+		public final long bitmap;
 		
 		private Rank(long bitmap) {
 			this.bitmap = bitmap;
-		}
-		public long getBitmap() {
-			return this.bitmap;
 		}
 		/**Returns a the numeric representation of a rank of the chess board with only the byte on the rank's index set.
 		 * 
@@ -290,13 +283,10 @@ public class Board {
 		G (0b0100000001000000010000000100000001000000010000000100000001000000L),
 		H (0b1000000010000000100000001000000010000000100000001000000010000000L);
 		
-		final long bitmap;
+		public final long bitmap;
 		
 		private File(long bitmap) {
 			this.bitmap = bitmap;
-		}
-		public long getBitmap() {
-			return this.bitmap;
 		}
 		/**Returns a the numeric representation of a file of the chess board with only the bits falling on the specified file set.
 		 * 
@@ -354,35 +344,10 @@ public class Board {
 		DG14 (0b0100000010000000000000000000000000000000000000000000000000000000L),
 		DG15 (0b1000000000000000000000000000000000000000000000000000000000000000L);
 		
-		final long bitmap;
+		public final long bitmap;
 		
 		private Diagonal(long bitmap) {
 			this.bitmap = bitmap;
-		}
-		public long getBitmap() {
-			return this.bitmap;
-		}
-		/**Prints the binary literals for the enum constants.*/
-		public void printBitmapLiterals() {
-			long[] diag = new long[15];
-			diag[0]		= Square.A1.getBitmap();
-			diag[1]		= Square.A2.getBitmap() | Square.B1.getBitmap();
-			diag[2]		= Square.A3.getBitmap() | Square.B2.getBitmap() | Square.C1.getBitmap();
-			diag[3]		= Square.A4.getBitmap() | Square.B3.getBitmap() | Square.C2.getBitmap() | Square.D1.getBitmap();
-			diag[4]		= Square.A5.getBitmap() | Square.B4.getBitmap() | Square.C3.getBitmap() | Square.D2.getBitmap() | Square.E1.getBitmap();
-			diag[5]		= Square.A6.getBitmap() | Square.B5.getBitmap() | Square.C4.getBitmap() | Square.D3.getBitmap() | Square.E2.getBitmap() | Square.F1.getBitmap();
-			diag[6]		= Square.A7.getBitmap() | Square.B6.getBitmap() | Square.C5.getBitmap() | Square.D4.getBitmap() | Square.E3.getBitmap() | Square.F2.getBitmap() | Square.G1.getBitmap();
-			diag[7] 	= Square.A8.getBitmap() | Square.B7.getBitmap() | Square.C6.getBitmap() | Square.D5.getBitmap() | Square.E4.getBitmap() | Square.F3.getBitmap() | Square.G2.getBitmap() | Square.H1.getBitmap();
-			diag[8] 	= Square.B8.getBitmap() | Square.C7.getBitmap() | Square.D6.getBitmap() | Square.E5.getBitmap() | Square.F4.getBitmap() | Square.G3.getBitmap() | Square.H2.getBitmap();
-			diag[9]		= Square.C8.getBitmap() | Square.D7.getBitmap() | Square.E6.getBitmap() | Square.F5.getBitmap() | Square.G4.getBitmap() | Square.H3.getBitmap();
-			diag[10] 	= Square.D8.getBitmap() | Square.E7.getBitmap() | Square.F6.getBitmap() | Square.G5.getBitmap() | Square.H4.getBitmap();
-			diag[11] 	= Square.E8.getBitmap() | Square.F7.getBitmap() | Square.G6.getBitmap() | Square.H5.getBitmap();
-			diag[12] 	= Square.F8.getBitmap() | Square.G7.getBitmap() | Square.H6.getBitmap();
-			diag[13] 	= Square.G8.getBitmap() | Square.H7.getBitmap();
-			diag[14]	= Square.H8.getBitmap();
-			for (int i = 0; i < diag.length; i++) {
-				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + BitOperations.toBinaryLiteral(diag[i]));
-			}
 		}
 		/**Returns a the numeric representation of a diagonal of the chess board with only the bits falling on the specified diagonal set.
 		 * 
@@ -453,31 +418,6 @@ public class Board {
 		private AntiDiagonal(long bitmap) {
 			this.bitmap = bitmap;
 		}
-		public long getBitmap() {
-			return this.bitmap;
-		}
-		/**Prints the binary literals for the enum constants.*/
-		public void printBitmapLiterals() {
-			long[] aDiag = new long[15];
-			aDiag[0]	= Square.A8.getBitmap();
-			aDiag[1]	= Square.A7.getBitmap() | Square.B8.getBitmap();
-			aDiag[2]	= Square.A6.getBitmap() | Square.B7.getBitmap() | Square.C8.getBitmap();
-			aDiag[3]	= Square.A5.getBitmap() | Square.B6.getBitmap() | Square.C7.getBitmap() | Square.D8.getBitmap();
-			aDiag[4]	= Square.A4.getBitmap() | Square.B5.getBitmap() | Square.C6.getBitmap() | Square.D7.getBitmap() | Square.E8.getBitmap();
-			aDiag[5]	= Square.A3.getBitmap() | Square.B4.getBitmap() | Square.C5.getBitmap() | Square.D6.getBitmap() | Square.E7.getBitmap() | Square.F8.getBitmap();
-			aDiag[6]	= Square.A2.getBitmap() | Square.B3.getBitmap() | Square.C4.getBitmap() | Square.D5.getBitmap() | Square.E6.getBitmap() | Square.F7.getBitmap() | Square.G8.getBitmap();
-			aDiag[7] 	= Square.A1.getBitmap() | Square.B2.getBitmap() | Square.C3.getBitmap() | Square.D4.getBitmap() | Square.E5.getBitmap() | Square.F6.getBitmap() | Square.G7.getBitmap() | Square.H8.getBitmap();
-			aDiag[8] 	= Square.B1.getBitmap() | Square.C2.getBitmap() | Square.D3.getBitmap() | Square.E4.getBitmap() | Square.F5.getBitmap() | Square.G6.getBitmap() | Square.H7.getBitmap();
-			aDiag[9]	= Square.C1.getBitmap() | Square.D2.getBitmap() | Square.E3.getBitmap() | Square.F4.getBitmap() | Square.G5.getBitmap() | Square.H6.getBitmap();
-			aDiag[10] 	= Square.D1.getBitmap() | Square.E2.getBitmap() | Square.F3.getBitmap() | Square.G4.getBitmap() | Square.H5.getBitmap();
-			aDiag[11] 	= Square.E1.getBitmap() | Square.F2.getBitmap() | Square.G3.getBitmap() | Square.H4.getBitmap();
-			aDiag[12] 	= Square.F1.getBitmap() | Square.G2.getBitmap() | Square.H3.getBitmap();
-			aDiag[13] 	= Square.G1.getBitmap() | Square.H2.getBitmap();
-			aDiag[14]	= Square.H1.getBitmap();
-			for (int i = 0; i < aDiag.length; i++) {
-				System.out.println("Diagonal " + String.format("%2d", i+1) + ": " + BitOperations.toBinaryLiteral(aDiag[i]));
-			}
-		}
 		/**Returns a the numeric representation of an anti-diagonal of the chess board with only the bits falling on the specified diagonal set.
 		 * 
 		 * @param adgnInd the index of the anti-diagonal*/
@@ -529,33 +469,33 @@ public class Board {
 		public final static long generateKingsMoveMask(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
-			long sqrBit = sqr.getBitmap();
+			long sqrBit = sqr.bitmap;
 			mask =	(sqrBit << 7)  | (sqrBit << 8)  | (sqrBit << 9)  |
 					(sqrBit << 1)    			    | (sqrBit >>> 1) |
 					(sqrBit >>> 9) | (sqrBit >>> 8) | (sqrBit >>> 7) ;
 			if (sqrInd%8 == 0)
-				mask &= ~File.H.getBitmap();
+				mask &= ~File.H.bitmap;
 			else if ((sqrInd + 1)%8 == 0)
-				mask &= ~File.A.getBitmap();
+				mask &= ~File.A.bitmap;
 			return mask;
 		}
 		/**Generates a bitmap of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.*/
 		public final static long generateKnightMasks(Square sqr) {
 			long mask;
 			int sqrInd = sqr.ordinal();
-			long sqrBit = sqr.getBitmap();
+			long sqrBit = sqr.bitmap;
 			mask =		 	(sqrBit << 15)	| (sqrBit << 17) |
 					(sqrBit << 6)			| 		  (sqrBit << 10)   |
 					(sqrBit >>> 10)			|		  (sqrBit >>> 6)   |
 							(sqrBit >>> 17)	| (sqrBit >>> 15);
 			if (sqrInd%8 == 0)
-				mask &= ~(File.H.getBitmap() | File.G.getBitmap());
+				mask &= ~(File.H.bitmap | File.G.bitmap);
 			else if ((sqrInd - 1)%8 == 0)
-				mask &= ~File.H.getBitmap();
+				mask &= ~File.H.bitmap;
 			else if ((sqrInd + 1)%8 == 0)
-				mask &= ~(File.A.getBitmap() | File.B.getBitmap());
+				mask &= ~(File.A.bitmap | File.B.bitmap);
 			else if ((sqrInd + 2)%8 == 0)
-				mask &= ~File.A.getBitmap();
+				mask &= ~File.A.bitmap;
 			return mask;
 		}
 		/**Generates a bitmap of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.*/
@@ -564,12 +504,12 @@ public class Board {
 			int sqrInd = sqr.ordinal();
 			if (sqrInd > 55)
 					return 0;
-			long sqrBit = sqr.getBitmap();
+			long sqrBit = sqr.bitmap;
 			mask =		(sqrBit << 7) | (sqrBit << 9);
 			if (sqrInd%8 == 0)
-				mask &= ~File.H.getBitmap();
+				mask &= ~File.H.bitmap;
 			else if ((sqrInd + 1)%8 == 0)
-				mask &= ~File.A.getBitmap();
+				mask &= ~File.A.bitmap;
 			return mask;
 		}
 		/**Generates a bitmap of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.*/
@@ -578,12 +518,12 @@ public class Board {
 			int sqrInd = sqr.ordinal();
 			if (sqrInd < 8)
 					return 0;
-			long sqrBit = sqr.getBitmap();
+			long sqrBit = sqr.bitmap;
 			mask =		(sqrBit >>> 9) | (sqrBit >>> 7);
 			if (sqrInd%8 == 0)
-				mask &= ~File.H.getBitmap();
+				mask &= ~File.H.bitmap;
 			else if ((sqrInd + 1)%8 == 0)
-				mask &= ~File.A.getBitmap();
+				mask &= ~File.A.bitmap;
 			return mask;
 		}
 		/**Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.*/
@@ -592,7 +532,7 @@ public class Board {
 			int sqrInd = sqr.ordinal();
 			if (sqrInd < 8 || sqrInd > 55)
 				return 0;
-			long sqrBit = sqr.getBitmap();
+			long sqrBit = sqr.bitmap;
 			mask = (sqrBit << 8);
 			if (sqrInd < 16)
 				mask |= (sqrBit << 16);
@@ -604,7 +544,7 @@ public class Board {
 			int sqrInd = sqr.ordinal();
 			if (sqrInd < 8 || sqrInd > 55)
 				return 0;
-			long sqrBit = sqr.getBitmap();
+			long sqrBit = sqr.bitmap;
 			mask = (sqrBit >>> 8);
 			if (sqrInd >= 48)
 				mask |= (sqrBit >>> 16);
@@ -613,13 +553,13 @@ public class Board {
 		/**Generates a bitmap of the basic rook's rank-wise/horizontal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateRooksRankMoveMask(Square sqr) {
 			long mask;
-			mask =	(Rank.getBySquare(sqr)^sqr.getBitmap());
+			mask =	(Rank.getBySquare(sqr)^sqr.bitmap);
 			return mask;
 		}
 		/**Generates a bitmap of the basic rook's file-wise/vertical move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateRooksFileMoveMask(Square sqr) {
 			long mask;
-			mask =	(File.getBySquare(sqr)^sqr.getBitmap());
+			mask =	(File.getBySquare(sqr)^sqr.bitmap);
 			return mask;
 		}
 		/**Generates a bitmap of the basic rook's complete move mask. Occupancies are disregarded. Perimeter squares are included.*/
@@ -631,13 +571,13 @@ public class Board {
 		/**Generates a bitmap of the basic bishop's diagonal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateBishopsDiagonalMoveMask(Square sqr) {
 			long mask;
-			mask = (Diagonal.getBySquare(sqr)^sqr.getBitmap());
+			mask = (Diagonal.getBySquare(sqr)^sqr.bitmap);
 			return mask;
 		}
 		/**Generates a bitmap of the basic bishop's anti-diagonal move mask. Occupancies are disregarded. Perimeter squares are included.*/
 		public final static long generateBishopsAntiDiagonalMoveMask(Square sqr) {
 			long mask;
-			mask = (AntiDiagonal.getBySquare(sqr)^sqr.getBitmap());
+			mask = (AntiDiagonal.getBySquare(sqr)^sqr.bitmap);
 			return mask;
 		}
 		/**Generates a bitmap of the basic bishop's complete move mask. Occupancies are disregarded. Perimeter squares are included.*/
@@ -686,14 +626,14 @@ public class Board {
 		A7, B7, C7, D7, E7, F7, G7, H7,
 		A8, B8, C8, D8, E8, F8, G8, H8;
 		
-		final long rankPos;
-		final long rankNeg;
-		final long filePos;
-		final long fileNeg;
-		final long diagonalPos;
-		final long diagonalNeg;
-		final long antiDiagonalPos;
-		final long antiDiagonalNeg;
+		public final long rankPos;
+		public final long rankNeg;
+		public final long filePos;
+		public final long fileNeg;
+		public final long diagonalPos;
+		public final long diagonalNeg;
+		public final long antiDiagonalPos;
+		public final long antiDiagonalNeg;
 		
 		private SliderAttackRayMask( ) {
 			int sqrInd = this.ordinal();
@@ -710,30 +650,6 @@ public class Board {
 			this.diagonalNeg = diagonal & (sqrBit - 1);
 			this.antiDiagonalPos = antiDiagonal & ~((sqrBit << 1) - 1);
 			this.antiDiagonalNeg = antiDiagonal & (sqrBit - 1);
-		}
-		public long getRankPos() {
-			return this.rankPos;
-		}
-		public long getRankNeg() {
-			return this.rankNeg;
-		}
-		public long getFilePos() {
-			return this.filePos;
-		}
-		public long getFileNeg() {
-			return this.fileNeg;
-		}
-		public long getDiagonalPos() {
-			return this.diagonalPos;
-		}
-		public long getDiagonalNeg() {
-			return this.diagonalNeg;
-		}
-		public long getAntiDiagonalPos() {
-			return this.antiDiagonalPos;
-		}
-		public long getAntiDiagonalNeg() {
-			return this.antiDiagonalNeg;
 		}
 		public static SliderAttackRayMask getByIndex(int sqrInd) {
 			switch(sqrInd) {
@@ -767,19 +683,19 @@ public class Board {
 		A7, B7, C7, D7, E7, F7, G7, H7,
 		A8, B8, C8, D8, E8, F8, G8, H8;
 		
-		final long rookOccupancyMask;
-		final long bishopOccupancyMask;
+		public final long rookOccupancyMask;
+		public final long bishopOccupancyMask;
 		
-		final byte rookOccupancyMaskBitCount;
-		final byte bishopOccupancyMaskBitCount;
+		public final byte rookOccupancyMaskBitCount;
+		public final byte bishopOccupancyMaskBitCount;
 		
 		private static long ANTIFRAME_VERTICAL;
 		private static long ANTIFRAME_HORIZONTAL;
 		private static long ANTIFRAME;
 		
 		private void initializeAntiFrames() {
-			ANTIFRAME_VERTICAL 		= ~(File.A.getBitmap() 	| File.H.getBitmap());
-			ANTIFRAME_HORIZONTAL	= ~(Rank.R1.getBitmap() | Rank.R8.getBitmap());
+			ANTIFRAME_VERTICAL 		= ~(File.A.bitmap 	| File.H.bitmap);
+			ANTIFRAME_HORIZONTAL	= ~(Rank.R1.bitmap  | Rank.R8.bitmap);
 			ANTIFRAME				=  (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
 		}
 		private SliderOccupancyMask(boolean flag) {
@@ -796,18 +712,6 @@ public class Board {
 			this.bishopOccupancyMask = generateBishopsCompleteOccupancyMask(sqr);
 			this.rookOccupancyMaskBitCount = (byte)BitOperations.getCardinality(this.rookOccupancyMask);
 			this.bishopOccupancyMaskBitCount = (byte)BitOperations.getCardinality(this.bishopOccupancyMask);
-		}
-		public long getRookOccupancyMask() {
-			return this.rookOccupancyMask;
-		}
-		public long getBishopOccupancyMask() {
-			return this.bishopOccupancyMask;
-		}
-		public byte getRookOccupancyMaskBitCount() {
-			return this.rookOccupancyMaskBitCount;
-		}
-		public byte getBishopOccupancyMaskBitCount() {
-			return this.bishopOccupancyMaskBitCount;
 		}
 		private static long generateRooksRankOccupancyMask(Square sqr) {
 			return (MoveMask.generateRooksRankMoveMask(sqr) & ANTIFRAME_VERTICAL);
@@ -864,8 +768,8 @@ public class Board {
 		public static long[] generateRookOccupancyVariations(Square sqr) {
 			int sqrInd = sqr.ordinal();
 			SliderOccupancyMask occupancyMask = SliderOccupancyMask.getByIndex(sqrInd);
-			long mask = occupancyMask.getRookOccupancyMask();
-			byte numOfSetBitsInMask = occupancyMask.getRookOccupancyMaskBitCount();
+			long mask = occupancyMask.rookOccupancyMask;
+			byte numOfSetBitsInMask = occupancyMask.rookOccupancyMaskBitCount;
 			int[] setBitsInMask = BitOperations.serialize(mask, numOfSetBitsInMask);
 			int totalNumOfVariations = (1 << numOfSetBitsInMask);
 			long[] occVar = new long[totalNumOfVariations];
@@ -880,8 +784,8 @@ public class Board {
 		public static long[] generateBishopOccupancyVariations(Square sqr) {
 			int sqrInd = sqr.ordinal();
 			SliderOccupancyMask occupancyMask = SliderOccupancyMask.getByIndex(sqrInd);
-			long mask = occupancyMask.getBishopOccupancyMask();
-			byte numOfSetBitsInMask = occupancyMask.getBishopOccupancyMaskBitCount();
+			long mask = occupancyMask.bishopOccupancyMask;
+			byte numOfSetBitsInMask = occupancyMask.bishopOccupancyMaskBitCount;
 			int[] setBitsInMask = BitOperations.serialize(mask, numOfSetBitsInMask);
 			int totalNumOfVariations = (1 << numOfSetBitsInMask);
 			long[] occVar = new long[totalNumOfVariations];
@@ -933,50 +837,46 @@ public class Board {
 			return bishopAttackSetVariations;
 		}
 		private static long rankAttacks(Square sqr, long occupancy) {
-			long sqrBit = sqr.getBitmap();
 			int sqrInd = sqr.ordinal();
 			long rank = Rank.getBySquareIndex(sqrInd);
 			long forward, reverse;
 			forward  = rank & occupancy;
 			reverse  = BitOperations.reverse(occupancy);
-			forward -= 2*sqrBit;
-			reverse -= 2*BitOperations.reverse(sqrBit);
+			forward -= 2*sqr.bitmap;
+			reverse -= 2*BitOperations.reverse(sqr.bitmap);
 			forward ^= BitOperations.reverse(reverse);
 			return forward & rank;
 		}
 		private static long fileAttacks(Square sqr, long occupancy) {
-			long sqrBit = sqr.getBitmap();
 			int sqrInd = sqr.ordinal();
 			long file = File.getBySquareIndex(sqrInd);
 			long forward, reverse;
 			forward  = file & occupancy;
 			reverse  = BitOperations.reverseBytes(forward);
-			forward -= sqrBit;
-			reverse -= BitOperations.reverseBytes(sqrBit);
+			forward -= sqr.bitmap;
+			reverse -= BitOperations.reverseBytes(sqr.bitmap);
 			forward ^= BitOperations.reverseBytes(reverse);
 			return forward & file;
 		}
 		private static long diagonalAttacks(Square sqr, long occupancy) {
-			long sqrBit = sqr.getBitmap();
 			int sqrInd = sqr.ordinal();
 			long diagonal = Diagonal.getBySquareIndex(sqrInd);
 			long forward, reverse;
 			forward  = diagonal & occupancy;
 			reverse  = BitOperations.reverseBytes(forward);
-			forward -= sqrBit;
-			reverse -= BitOperations.reverseBytes(sqrBit);
+			forward -= sqr.bitmap;
+			reverse -= BitOperations.reverseBytes(sqr.bitmap);
 			forward ^= BitOperations.reverseBytes(reverse);
 			return forward & diagonal;
 		}
 		private static long antiDiagonalAttacks(Square sqr, long occupancy) {
-			long sqrBit = sqr.getBitmap();
 			int sqrInd = sqr.ordinal();
 			long antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
 			long forward, reverse;
 			forward  = antiDiagonal & occupancy;
 			reverse  = BitOperations.reverseBytes(forward);
-			forward -= sqrBit;
-			reverse -= BitOperations.reverseBytes(sqrBit);
+			forward -= sqr.bitmap;
+			reverse -= BitOperations.reverseBytes(sqr.bitmap);
 			forward ^= BitOperations.reverseBytes(reverse);
 			return forward & antiDiagonal;
 		}
@@ -1194,11 +1094,11 @@ public class Board {
 		G8 (0b1000010000000000001000001000000100010000000010000000001000000100L, 0b0010001000000100000010010010000001011000001000001000100100000000L),
 		H8 (0b1000001000000000000000010000010000001110001000001000010101000010L, 0b0100000000000100110010000000000010001000000100100000000001000100L);
 		
-		final byte rookShift;
-		final byte bishopShift;
+		public final byte rookShift;
+		public final byte bishopShift;
 		
-		final long rookMagicNumber;
-		final long bishopMagicNumber;
+		public final long rookMagicNumber;
+		public final long bishopMagicNumber;
 		
 		private Magics(long rookMagicNumber, long bishopMagicNumber) {
 			SliderOccupancyMask sliderOccupancy = SliderOccupancyMask.getByIndex(this.ordinal());
@@ -1206,18 +1106,6 @@ public class Board {
 			this.bishopShift 		= (byte)(64 - sliderOccupancy.bishopOccupancyMaskBitCount);
 			this.rookMagicNumber 	= rookMagicNumber;
 			this.bishopMagicNumber 	= bishopMagicNumber;
-		}
-		public byte getRookShift() {
-			return this.rookShift;
-		}
-		public byte getBishopShift() {
-			return this.bishopShift;
-		}
-		public long getRookMagicNumber() {
-			return this.rookMagicNumber;
-		}
-		public long getBishopMagicNumber() {
-			return this.bishopMagicNumber;
 		}
 		public static Magics getByIndex(int sqrInd) {
 			switch(sqrInd) {
