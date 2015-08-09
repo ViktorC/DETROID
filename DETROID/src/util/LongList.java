@@ -54,7 +54,7 @@ public abstract class LongList {
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 * 
-	 * If there is nothing to pop, it returns.*/
+	 * If there is nothing to pop, it returns 0.*/
 	public long pop() {
 		if (this.head != null) {
 			long data = this.head.data;

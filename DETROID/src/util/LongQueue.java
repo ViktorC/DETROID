@@ -44,7 +44,7 @@ public class LongQueue extends LongList {
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 * 
-	 * If there is nothing to pop, it returns.*/
+	 * If there is nothing to pop, it returns 0.*/
 	public long pop() {
 		length--;
 		if (length == 0)

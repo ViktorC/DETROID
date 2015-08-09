@@ -54,7 +54,7 @@ public abstract class IntList {
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 * 
-	 * If there is nothing to pop, it returns.*/
+	 * If there is nothing to pop, it returns 0.*/
 	public int pop() {
 		if (this.head != null) {
 			int data = this.head.data;
