@@ -1140,12 +1140,12 @@ public class Board {
 		
 		private final long[] rook;
 		private final long[] bishop;
-		final long king;
-		final long knight;
-		final long pawnWhiteAdvance;
-		final long pawnWhiteCapture;
-		final long pawnBlackAdvance;
-		final long pawnBlackCapture;
+		private final long king;
+		private final long knight;
+		private final long pawnWhiteAdvance;
+		private final long pawnWhiteCapture;
+		private final long pawnBlackAdvance;
+		private final long pawnBlackCapture;
 		
 		private MoveDatabase() {
 			this.sqrInd = (byte)this.ordinal();
@@ -2137,7 +2137,7 @@ public class Board {
 	 * @param moves
 	 * @return
 	 */
-	private long generatePinnedPieceMoves(LongList moves) {
+	private long addPinnedPieceMoves(LongList moves) {
 		long straightSliders, diagonalSliders, pinnedPieceBit, pinnerBit, pinnedPieceMove, pinnedPieces = 0, promotion = 0, enPassantDestination = 0;
 		int pinnedPieceInd, pinnedPiece, to;
 		IntStack pinnedPieceMoves;
@@ -2562,7 +2562,7 @@ public class Board {
 						moves.add(move | (6L << Move.TO.shift) | (1L << Move.TYPE.shift));
 				}
 			}
-			movablePieces = ~this.generatePinnedPieceMoves(moves);
+			movablePieces = ~this.addPinnedPieceMoves(moves);
 			pieceSet = this.whiteQueens & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
@@ -2670,7 +2670,7 @@ public class Board {
 						moves.add(move | (58L << Move.TO.shift) | (2L << Move.TYPE.shift));
 				}
 			}
-			movablePieces = ~this.generatePinnedPieceMoves(moves);
+			movablePieces = ~this.addPinnedPieceMoves(moves);
 			pieceSet = this.blackQueens & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
