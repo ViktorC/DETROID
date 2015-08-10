@@ -817,7 +817,8 @@ public class Board {
 		}
 	}
 	
-	/**A class with two static two-dimensional arrays for instance fields that hold the attack sets for the respective occupancy variations. .
+	/**A class with two static two-dimensional arrays for instance fields that hold the attack sets for the respective occupancy variations.
+	 * It uses ray-wise parallel-prefix algorithms to determine the attack sets.
 	 * 
 	 * @author Viktor
 	 *
@@ -1302,8 +1303,6 @@ public class Board {
 	private long checkers = 0;									//a bitboard of all the pieces that attack the color to move's king
 	private boolean check = false;
 	
-	private LongStack moveList = new LongStack();				//a stack of all the moves made so far
-	
 	private int plyIndex = 0;									//the count of the current ply/half-move
 	private long fiftyMoveRuleClock = 0;						//the number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
 	
@@ -1312,13 +1311,14 @@ public class Board {
 	private int whiteCastlingRights = 3;						//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
 	private int blackCastlingRights = 3;						//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
 	
-	private LongStack positionInfoHistory = new LongStack(); 	/*A history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
-																 "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."*/
+	private LongStack moveList = new LongStack();				//a stack of all the moves made so far
+	private LongStack positionInfoHistory = new LongStack(); 	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
+	
 	private ZobristGenerator keyGen = new ZobristGenerator(); 	//a Zobrist key generator for hashing the board
 	
 	private long zobristKey;									//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
-	private long[] zobristKeyHistory = new long[2*237];			//All the positions that have occured so far represented in Zobrist keys.
-	
+	private long[] zobristKeyHistory = new long[237];			//all the positions that have occured so far represented in Zobrist keys.
+																//"The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves." - half of that is used as the initial length of the history array
 	private long repetitions = 0;								//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
