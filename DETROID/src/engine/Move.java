@@ -18,7 +18,6 @@ public enum Move {
 	TYPE			(20, 7),				//denotes the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
 	VALUE			(23, Long.MAX_VALUE);
 	
-	
 	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
 	public final long  mask;		//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
 	
