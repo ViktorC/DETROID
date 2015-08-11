@@ -169,12 +169,138 @@ public final class BitOperations {
 		bitmap = (bitmap & BIT_REVERSAL_16_CONST1) >>> 16 | (bitmap & BIT_REVERSAL_16_CONST2) << 16;
 		return	 (bitmap & BIT_REVERSAL_8_CONST1)  >>> 8  | (bitmap & BIT_REVERSAL_8_CONST2)  << 8;
 	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction north until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long northFill(long generator, long propagator) {
+		generator  |= (generator  << 8)  & propagator;
+		propagator &= (propagator << 8);
+		generator  |= (generator  << 16) & propagator;
+		propagator &= (propagator << 16);
+		generator  |= (generator  << 32) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction south until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long southFill(long generator, long propagator) {
+		generator  |= (generator  >>> 8)  & propagator;
+		propagator &= (propagator >>> 8);
+		generator  |= (generator  >>> 16) & propagator;
+		propagator &= (propagator >>> 16);
+		generator  |= (generator  >>> 32) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction west until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long westFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  >>> 1) & propagator;
+		propagator &= (propagator >>> 1);
+		generator  |= (generator  >>> 2) & propagator;
+		propagator &= (propagator >>> 2);
+		generator  |= (generator  >>> 4) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction east until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long eastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  << 1) & propagator;
+		propagator &= (propagator << 1);
+		generator  |= (generator  << 2) & propagator;
+		propagator &= (propagator << 2);
+		generator  |= (generator  << 4) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction north-west until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long northWestFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  << 7)  & propagator;
+		propagator &= (propagator << 7);
+		generator  |= (generator  << 14) & propagator;
+		propagator &= (propagator << 14);
+		generator  |= (generator  << 28) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction north-east until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long northEastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  << 9)  & propagator;
+		propagator &= (propagator << 9);
+		generator  |= (generator  << 18) & propagator;
+		propagator &= (propagator << 18);
+		generator  |= (generator  << 36) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction south-west until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long southWestFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  >>> 9)  & propagator;
+		propagator &= (propagator >>> 9);
+		generator  |= (generator  >>> 18) & propagator;
+		propagator &= (propagator >>> 18);
+		generator  |= (generator  >>> 36) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction south-east until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator
+	 * @param propagator
+	 * @return
+	 */
+	public final static long southEastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  >>> 7)  & propagator;
+		propagator &= (propagator >>> 7);
+		generator  |= (generator  >>> 14) & propagator;
+		propagator &= (propagator >>> 14);
+		generator  |= (generator  >>> 28) & propagator;
+		return generator;
+	}
 	/**Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.
 	 * 
 	 * @param bitmap
 	 * @return
 	 */
-	public static String toBinary(long bitmap) {
+	public final static String toBinary(long bitmap) {
 		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
 	}
 	/**Returns the binary literal of the input long as a String.
@@ -182,14 +308,14 @@ public final class BitOperations {
 	 * @param bitmap
 	 * @return
 	 */
-	public static String toBinaryLiteral(long bitmap) {
+	public final static String toBinaryLiteral(long bitmap) {
 		return "0b"+ toBinary(bitmap) + "L";
 	}
 	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.
 	 * 
 	 * @param bitmap
 	 */
-	public static void printBitboardToConsole(long bitmap) {
+	public final static void printBitboardToConsole(long bitmap) {
 		String board = toBinary(bitmap);
 		for (int i = 0; i < 64; i += 8) {
 			for (int j = i + 7; j >= i; j--)
