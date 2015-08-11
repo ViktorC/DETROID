@@ -14,8 +14,7 @@ import java.util.Scanner;
  * {@link #perftWithConsoleOutput(int, long, long, boolean) perftWithConsoleOutput}
  * 
  * It relies heavily on values hard-coded or computed on compile. These values are always different for each square on the board, thus most of them 
- * are stored in 64-fold enums with switch statements providing fast access (about one to five percent faster than array access) based on the index 
- * of the square.
+ * are stored in 64-fold enums with switch statements providing fast access based on the index of the square.
  *  
  * @author Viktor
  *
@@ -463,7 +462,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public final static class MoveMaskGenerator {
+	public static class MoveMaskGenerator {
 		
 		/**Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.*/
 		public final static long generateKingsMoveMask(Square sqr) {
@@ -690,27 +689,15 @@ public class Board {
 		}
 	}
 	
-	/**A class with two static two-dimensional arrays for instance fields that hold all the different occupancy variations for each square's occupancy mask once generated.
+	/**A class that generates possible occupancy variations for rooks and bishops. It either generates a one-dimensional array
+	 * of variations for either of the two pieces for the specified square index or a two-dimensional array for all squares.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class SliderOccupancyVariations {
-		
-		private final static long[][] rookOccupancyVariations	= initializeRookOccupancyVariations();
-		private final static long[][] bishopOccupancyVariations = initializeBishopOccupancyVariations();
-		
-		public SliderOccupancyVariations() {
-			
-		}
-		public long[][] getRookOccupancyVariations() {
-			return rookOccupancyVariations;
-		}
-		public long[][] getBishopOccupancyVariations() {
-			return bishopOccupancyVariations;
-		}
-		public static long[] generateRookOccupancyVariations(Square sqr) {
-			int sqrInd = sqr.ordinal();
+	public static class SliderOccupancyVariationGenerator {
+
+		public static long[] generateRookOccupancyVariations(int sqrInd) {
 			SliderOccupancyMask occupancyMask = SliderOccupancyMask.getByIndex(sqrInd);
 			long mask = occupancyMask.rookOccupancyMask;
 			byte numOfSetBitsInMask = occupancyMask.rookOccupancyMaskBitCount;
@@ -725,8 +712,7 @@ public class Board {
 			}
 			return occVar;
 		}
-		public static long[] generateBishopOccupancyVariations(Square sqr) {
-			int sqrInd = sqr.ordinal();
+		public static long[] generateBishopOccupancyVariations(int sqrInd) {
 			SliderOccupancyMask occupancyMask = SliderOccupancyMask.getByIndex(sqrInd);
 			long mask = occupancyMask.bishopOccupancyMask;
 			byte numOfSetBitsInMask = occupancyMask.bishopOccupancyMaskBitCount;
@@ -741,46 +727,29 @@ public class Board {
 			}
 			return occVar;
 		}
-		private static long[][] initializeRookOccupancyVariations() {
-			int sqrInd;
+		public static long[][] generateRookOccupancyVariations() {
 			long[][] rookOccVar = new long[64][];
-			for (Square sqr : Square.values()) {
-				sqrInd = sqr.ordinal();
-				rookOccVar[sqrInd] = generateRookOccupancyVariations(sqr);
-			}
+			for (int i = 0; i < 64; i++)
+				rookOccVar[i] = generateRookOccupancyVariations(i);
 			return rookOccVar;
 		}
-		private static long[][] initializeBishopOccupancyVariations() {
-			int sqrInd;
+		public static long[][] generateBishopOccupancyVariations() {
 			long[][] bishopOccVar = new long[64][];
-			for (Square sqr : Square.values()) {
-				sqrInd = sqr.ordinal();
-				bishopOccVar[sqrInd] = generateBishopOccupancyVariations(sqr);
-			}
+			for (int i = 0; i < 64; i++)
+				bishopOccVar[i] = generateBishopOccupancyVariations(i);
 			return bishopOccVar;
 		}
 	}
 	
-	/**A class with two static two-dimensional arrays for instance fields that hold the attack sets for the respective occupancy variations.
-	 * It uses ray-wise parallel-prefix algorithms to determine the attack sets.
+	/**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given occupancy or array of
+	 * occupancy variations. It can also generate the attack sets for all possible occupancy variations on all squares either for the rook
+	 * or for the bishop. It uses ray-wise parallel-prefix algorithms to determine the attack sets.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class SliderAttackSetVariations {
+	public static class SliderAttackSetCalculator {
 		
-		private final static long[][] rookAttackSetVariations	= initializeRookAttackSetVariations();
-		private final static long[][] bishopAttackSetVariations = initializeBishopAttackSetVariations();
-		
-		public SliderAttackSetVariations() {
-			
-		}
-		public long[][] getRookAttackSetVariations() {
-			return rookAttackSetVariations;
-		}
-		public long[][] getBishopAttackSetVariations() {
-			return bishopAttackSetVariations;
-		}
 		private static long rankAttacks(Square sqr, long occupancy) {
 			int sqrInd = sqr.ordinal();
 			long rank = Rank.getBySquareIndex(sqrInd);
@@ -831,35 +800,33 @@ public class Board {
 		public static long computeBishopAttackSet(Square sqr, long occupancy) {
 			return diagonalAttacks(sqr, occupancy) | antiDiagonalAttacks(sqr, occupancy);
 		}
-		private static long[][] initializeRookAttackSetVariations() {
-			SliderOccupancyVariations occVar = new SliderOccupancyVariations();
-			long[][] rookOccupancyVariations = occVar.getRookOccupancyVariations();
-			long[][] rookAttVar = new long[64][];
-			int variations;
+		public static long[] computeRookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
+			long[] rookAttVar = new long[rookOccupancyVariations.length];
+			for (int i = 0; i < rookAttVar.length; i++)
+				rookAttVar[i] = computeRookAttackSet(sqr, rookOccupancyVariations[i]);
+			return rookAttVar;
+		}
+		public static long[] computeBishopAttackSetVariations(Square sqr, long[] bishopOccupancyVariations) {
+			long[] bishopAttVar = new long[bishopOccupancyVariations.length];
+			for (int i = 0; i < bishopAttVar.length; i++)
+				bishopAttVar[i] = computeBishopAttackSet(sqr, bishopOccupancyVariations[i]);
+			return bishopAttVar;
+		}
+		public static long[][] computeRookAttackSetVariations(long[][] rookOccupancyVariations) {
 			int sqrInd;
+			long[][] rookAttVar = new long[64][];
 			for (Square sqr : Square.values()) {
 				sqrInd = sqr.ordinal();
-				variations = rookOccupancyVariations[sqrInd].length;
-				rookAttVar[sqrInd] = new long[variations];
-				for (int i = 0; i < variations; i++) {
-					rookAttVar[sqrInd][i] = computeRookAttackSet(sqr, rookOccupancyVariations[sqrInd][i]);
-				}
+				rookAttVar[sqrInd] = computeRookAttackSetVariations(sqr, rookOccupancyVariations[sqrInd]);
 			}
 			return rookAttVar;
 		}
-		private static long[][] initializeBishopAttackSetVariations() {
-			SliderOccupancyVariations occVar = new SliderOccupancyVariations();
-			long[][] bishopOccupancyVariations = occVar.getBishopOccupancyVariations();
-			long[][] bishopAttVar = new long[64][];
-			int variations;
+		public static long[][] computeBishopAttackSetVariations(long[][] bishopOccupancyVariations) {
 			int sqrInd;
+			long[][] bishopAttVar = new long[64][];
 			for (Square sqr : Square.values()) {
 				sqrInd = sqr.ordinal();
-				variations = bishopOccupancyVariations[sqrInd].length;
-				bishopAttVar[sqrInd] = new long[variations];
-				for (int i = 0; i < variations; i++) {
-					bishopAttVar[sqrInd][i] = computeBishopAttackSet(sqr, bishopOccupancyVariations[sqrInd][i]);
-				}
+				bishopAttVar[sqrInd] = computeBishopAttackSetVariations(sqr, bishopOccupancyVariations[sqrInd]);
 			}
 			return bishopAttVar;
 		}
@@ -867,21 +834,19 @@ public class Board {
 	
 	public static class MagicNumberGenerator {
 		
-		private long[][] rookOccupancyVariations;
-		private long[][] bishopOccupancyVariations;
-		private long[][] rookAttackSetVariations;
-		private long[][] bishopAttackSetVariations;
+		private static long[][] rookOccupancyVariations;
+		private static long[][] bishopOccupancyVariations;
+		private static long[][] rookAttackSetVariations;
+		private static long[][] bishopAttackSetVariations;
 		
 		private long[] rookMagicNumbers;
 		private long[] bishopMagicNumbers;
 		
-		public MagicNumberGenerator() {
-			SliderOccupancyVariations occVar = new SliderOccupancyVariations();
-			rookOccupancyVariations = occVar.getRookOccupancyVariations();
-			bishopOccupancyVariations = occVar.getBishopOccupancyVariations();
-			SliderAttackSetVariations attSetVar = new SliderAttackSetVariations();
-			rookAttackSetVariations = attSetVar.getRookAttackSetVariations();
-			bishopAttackSetVariations = attSetVar.getBishopAttackSetVariations();
+		static {
+			rookOccupancyVariations = SliderOccupancyVariationGenerator.generateRookOccupancyVariations();
+			bishopOccupancyVariations = SliderOccupancyVariationGenerator.generateBishopOccupancyVariations();
+			rookAttackSetVariations = SliderAttackSetCalculator.computeRookAttackSetVariations(rookOccupancyVariations);
+			bishopAttackSetVariations = SliderAttackSetCalculator.computeBishopAttackSetVariations(bishopOccupancyVariations);
 		}
 		public long[] getRookMagicNumbers() {
 			return this.rookMagicNumbers;
@@ -1097,16 +1062,14 @@ public class Board {
 			Square sqr = Square.getByIndex(this.sqrInd);
 			this.magics = Magics.getByIndex(this.sqrInd);
 			this.occupancy = SliderOccupancyMask.getByIndex(this.sqrInd);
-			SliderOccupancyVariations occVar = new SliderOccupancyVariations();
-			long[] rookOccVar 	= occVar.getRookOccupancyVariations()[this.sqrInd];
-			long[] bishopOccVar = occVar.getBishopOccupancyVariations()[this.sqrInd];
+			long[] rookOccVar 	= SliderOccupancyVariationGenerator.generateRookOccupancyVariations(this.sqrInd);
+			long[] bishopOccVar = SliderOccupancyVariationGenerator.generateBishopOccupancyVariations(this.sqrInd);
 			int rookNumOfVar 	= rookOccVar.length;
 			int bishopNumOfVar 	= bishopOccVar.length;
 			this.rook 	= new long[rookNumOfVar];
 			this.bishop = new long[bishopNumOfVar];
-			SliderAttackSetVariations attVar = new SliderAttackSetVariations();
-			long[] rookAttVar 	= attVar.getRookAttackSetVariations()[this.sqrInd];
-			long[] bishopAttVar = attVar.getBishopAttackSetVariations()[this.sqrInd];
+			long[] rookAttVar 	= SliderAttackSetCalculator.computeRookAttackSetVariations(sqr, rookOccVar);
+			long[] bishopAttVar = SliderAttackSetCalculator.computeBishopAttackSetVariations(sqr, bishopOccVar);
 			int index;
 			for (int i = 0; i < rookNumOfVar; i++) {
 				index = (int)((rookOccVar[i]*this.magics.rookMagicNumber) >>> this.magics.rookShift);
@@ -2184,23 +2147,33 @@ public class Board {
 					else if (pinnedPiece == 6) {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
-						if (this.enPassantRights != 8)
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces | (1L << (enPassantDestination = 40 + this.enPassantRights))) & attRayMask.diagonalPos);
-						else
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces) & attRayMask.diagonalPos);
-						while (pinnedPieceMoves.hasNext()) {
-							to = pinnedPieceMoves.next();
-							if (to == enPassantDestination)
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
-							else if (to >= 56) {
-								promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
-								moves.add(promotion | (4L << Move.TYPE.shift));
-								moves.add(promotion | (5L << Move.TYPE.shift));
-								moves.add(promotion | (6L << Move.TYPE.shift));
-								moves.add(promotion | (7L << Move.TYPE.shift));
+						if (this.enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 40 + this.enPassantRights)) & attRayMask.diagonalPos)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+								else if (to >= 56) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 							}
-							else
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.diagonalPos))) != 0) {
+								if (to >= 56) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							}
 						}
 					}
 				}
@@ -2222,23 +2195,33 @@ public class Board {
 					else if (pinnedPiece == 6) {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
-						if (this.enPassantRights != 8)
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces | (1L << (enPassantDestination = 40 + this.enPassantRights))) & attRayMask.antiDiagonalPos);
-						else
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces) & attRayMask.antiDiagonalPos);
-						while (pinnedPieceMoves.hasNext()) {
-							to = pinnedPieceMoves.next();
-							if (to == enPassantDestination)
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
-							else if (to >= 56) {
-								promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
-								moves.add(promotion | (4L << Move.TYPE.shift));
-								moves.add(promotion | (5L << Move.TYPE.shift));
-								moves.add(promotion | (6L << Move.TYPE.shift));
-								moves.add(promotion | (7L << Move.TYPE.shift));
+						if (this.enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 40 + this.enPassantRights)) & attRayMask.antiDiagonalPos)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+								else if (to >= 56) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 							}
-							else
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.antiDiagonalPos))) != 0) {
+								if (to >= 56) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							}
 						}
 					}
 				}
@@ -2452,23 +2435,33 @@ public class Board {
 					else if (pinnedPiece == 12) {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
-						if (this.enPassantRights != 8)
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces | (1L << (enPassantDestination = 16 + this.enPassantRights))) & attRayMask.diagonalNeg);
-						else
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces) & attRayMask.diagonalNeg);
-						while (pinnedPieceMoves.hasNext()) {
-							to = pinnedPieceMoves.next();
-							if (to == enPassantDestination)
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
-							else if (to < 8) {
-								promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
-								moves.add(promotion | (4L << Move.TYPE.shift));
-								moves.add(promotion | (5L << Move.TYPE.shift));
-								moves.add(promotion | (6L << Move.TYPE.shift));
-								moves.add(promotion | (7L << Move.TYPE.shift));
+						if (this.enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.diagonalNeg)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+								else if (to < 8) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 							}
-							else
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.diagonalNeg))) != 0) {
+								if (to < 8) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							}
 						}
 					}
 				}
@@ -2490,23 +2483,33 @@ public class Board {
 					else if (pinnedPiece == 12) {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
-						if (this.enPassantRights != 8)
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces | (1L << (enPassantDestination = 16 + this.enPassantRights))) & attRayMask.antiDiagonalNeg);
-						else
-							pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces) & attRayMask.antiDiagonalNeg);
-						while (pinnedPieceMoves.hasNext()) {
-							to = pinnedPieceMoves.next();
-							if (to == enPassantDestination)
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
-							else if (to < 8) {
-								promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
-								moves.add(promotion | (4L << Move.TYPE.shift));
-								moves.add(promotion | (5L << Move.TYPE.shift));
-								moves.add(promotion | (6L << Move.TYPE.shift));
-								moves.add(promotion | (7L << Move.TYPE.shift));
+						if (this.enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.antiDiagonalNeg)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+								else if (to < 8) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
 							}
-							else
-								moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.antiDiagonalNeg))) != 0) {
+								if (to < 8) {
+									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									moves.add(promotion | (4L << Move.TYPE.shift));
+									moves.add(promotion | (5L << Move.TYPE.shift));
+									moves.add(promotion | (6L << Move.TYPE.shift));
+									moves.add(promotion | (7L << Move.TYPE.shift));
+								}
+								else
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							}
 						}
 					}
 				}
