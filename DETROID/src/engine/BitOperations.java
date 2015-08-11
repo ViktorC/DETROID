@@ -170,10 +170,10 @@ public final class BitOperations {
 		return	 (bitmap & BIT_REVERSAL_8_CONST1)  >>> 8  | (bitmap & BIT_REVERSAL_8_CONST2)  << 8;
 	}
 	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction north until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * set of pieces to be shifted, and the propagator is the set of empty empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long northFill(long generator, long propagator) {
@@ -184,11 +184,11 @@ public final class BitOperations {
 		generator  |= (generator  << 32) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction south until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction south until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long southFill(long generator, long propagator) {
@@ -199,11 +199,11 @@ public final class BitOperations {
 		generator  |= (generator  >>> 32) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction west until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction west until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long westFill(long generator, long propagator) {
@@ -215,11 +215,11 @@ public final class BitOperations {
 		generator  |= (generator  >>> 4) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction east until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction east until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long eastFill(long generator, long propagator) {
@@ -231,11 +231,11 @@ public final class BitOperations {
 		generator  |= (generator  << 4) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction north-west until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction north-west until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long northWestFill(long generator, long propagator) {
@@ -247,11 +247,11 @@ public final class BitOperations {
 		generator  |= (generator  << 28) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction north-east until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction north-east until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long northEastFill(long generator, long propagator) {
@@ -263,11 +263,11 @@ public final class BitOperations {
 		generator  |= (generator  << 36) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction south-west until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction south-west until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long southWestFill(long generator, long propagator) {
@@ -279,11 +279,11 @@ public final class BitOperations {
 		generator  |= (generator  >>> 36) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the set of squares in direction south-east until the first blocker. The generator is usually the
-	 * set of pieces to be shifted, and the propagator is the set of empty squares.
+	/**A parallel prefix occluded fill algorithm that returns the set of empty squares in direction south-east until the first blocker. The generator is usually the
+	 * set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
-	 * @param generator
-	 * @param propagator
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
 	 * @return
 	 */
 	public final static long southEastFill(long generator, long propagator) {
