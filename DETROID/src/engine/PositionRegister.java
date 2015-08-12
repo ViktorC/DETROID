@@ -1,6 +1,7 @@
 package engine;
 
 import util.LongList;
+import engine.Board.*;
 
 /**Some position information--such as castling and en passant rights, fifty-move rule clock, repetitions and the square indices of checkers--is stored
  * in longs so as to make reverting to the previous position when unmaking a  move easier. This enum type contains the ranges of the different bits of

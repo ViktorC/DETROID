@@ -1,5 +1,5 @@
 package engine;
-
+import engine.Board.*;
 
 public enum MoveDatabase {
 	
