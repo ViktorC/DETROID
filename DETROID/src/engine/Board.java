@@ -1,5 +1,10 @@
 package engine;
 
+/*A class to group together objects exclusive to the chess board itself such as the squares, files, and ranks.
+ * 
+ * @author Viktor
+ *
+ */
 public class Board {
 	
 	/**An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
@@ -8,7 +13,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public enum Square {
+	public static enum Square {
 
 		A1 (0b0000000000000000000000000000000000000000000000000000000000000001L),
 		B1 (0b0000000000000000000000000000000000000000000000000000000000000010L),
@@ -198,7 +203,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public enum File {
+	public static enum File {
 		
 		A (0b0000000100000001000000010000000100000001000000010000000100000001L),
 		B (0b0000001000000010000000100000001000000010000000100000001000000010L),
@@ -252,7 +257,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public enum Rank {
+	public static enum Rank {
 		
 		R1 (0b0000000000000000000000000000000000000000000000000000000011111111L),
 		R2 (0b0000000000000000000000000000000000000000000000001111111100000000L),
@@ -306,7 +311,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public enum Diagonal {
+	public static enum Diagonal {
 		
 		DG1  (0b0000000000000000000000000000000000000000000000000000000000000001L),
 		DG2  (0b0000000000000000000000000000000000000000000000000000000100000010L),
@@ -375,7 +380,7 @@ public class Board {
 	 * @author Viktor
 	 *
 	 */
-	public enum AntiDiagonal {
+	public static enum AntiDiagonal {
 		
 		ADG1  (0b0000000100000000000000000000000000000000000000000000000000000000L),
 		ADG2  (0b0000001000000001000000000000000000000000000000000000000000000000L),
@@ -437,5 +442,4 @@ public class Board {
 			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
 	}
-	
 }
