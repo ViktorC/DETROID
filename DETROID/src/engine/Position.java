@@ -1,12 +1,9 @@
 package engine;
 
 import util.*;
+import engine.Board.*;
 
 import java.util.Scanner;
-
-import engine.board.File;
-import engine.board.Rank;
-import engine.board.Square;
 
 /**A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
  * on castling and en passant rights, and on the player to move. It uses a pre-calculated 'magic' move database to avoid the cost of computing the

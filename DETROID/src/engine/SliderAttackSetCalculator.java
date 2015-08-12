@@ -1,10 +1,6 @@
 package engine;
 
-import engine.board.AntiDiagonal;
-import engine.board.Diagonal;
-import engine.board.File;
-import engine.board.Rank;
-import engine.board.Square;
+import engine.Board.*;
 
 /**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given occupancy or array of
  * occupancy variations. It can also generate the attack sets for all possible occupancy variations on all squares either for the rook

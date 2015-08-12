@@ -1,6 +1,5 @@
 package engine;
 
-import engine.board.Square;
 
 public enum MoveDatabase {
 	

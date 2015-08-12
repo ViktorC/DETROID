@@ -1,10 +1,6 @@
 package engine;
 
-import engine.board.AntiDiagonal;
-import engine.board.Diagonal;
-import engine.board.File;
-import engine.board.Rank;
-import engine.board.Square;
+import engine.Board.*;
 
 /**An enum type that holds all the attack rays for each direction from each square on the board as bitmaps.
  * 

@@ -1,6 +1,5 @@
 package engine;
 
-import engine.board.Square;
 import util.LongList;
 
 /**Some position information--such as castling and en passant rights, fifty-move rule clock, repetitions and the square indices of checkers--is stored
