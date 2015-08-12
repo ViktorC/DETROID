@@ -1,7 +1,7 @@
 package engine;
 
 import util.*;
-import java.util.Random;
+
 import java.util.Scanner;
 
 /**A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
@@ -109,7 +109,7 @@ public class Board {
 		 * @return
 		 */
 		public static String toString(int sqrInd) {
-			return "" + (char)('a' + sqrInd%8) + "" + (sqrInd/8 + 1);
+			return ("" + (char)('a' + sqrInd%8) + "" + (sqrInd/8 + 1)).toUpperCase();
 		}
 		/**Returns the index of a square specified by its file and rank.
 		 * 
@@ -832,111 +832,6 @@ public class Board {
 		}
 	}
 	
-	public static class MagicNumberGenerator {
-		
-		private static long[][] rookOccupancyVariations;
-		private static long[][] bishopOccupancyVariations;
-		private static long[][] rookAttackSetVariations;
-		private static long[][] bishopAttackSetVariations;
-		
-		private long[] rookMagicNumbers;
-		private long[] bishopMagicNumbers;
-		
-		static {
-			rookOccupancyVariations = SliderOccupancyVariationGenerator.generateRookOccupancyVariations();
-			bishopOccupancyVariations = SliderOccupancyVariationGenerator.generateBishopOccupancyVariations();
-			rookAttackSetVariations = SliderAttackSetCalculator.computeRookAttackSetVariations(rookOccupancyVariations);
-			bishopAttackSetVariations = SliderAttackSetCalculator.computeBishopAttackSetVariations(bishopOccupancyVariations);
-		}
-		public long[] getRookMagicNumbers() {
-			return this.rookMagicNumbers;
-		}
-		public long[] getBishopMagicNumbers() {
-			return this.bishopMagicNumbers;
-		}
-		public void generateRookMagicNumbers() {
-			rookMagicNumbers = new long[64];
-			long[][] magicRookDatabase = new long[64][];
-			Random random = new Random();
-			long magicNumber;
-			int index;
-			boolean collision = false;
-			for (int i = 0; i < 64; i++) {
-				long[] occVar = this.rookOccupancyVariations[i];
-				long[] attVar = this.rookAttackSetVariations[i];
-				int variations = occVar.length;
-				magicRookDatabase[i] = new long[variations];
-				do {
-					for (int j = 0; j < variations; j++)
-						magicRookDatabase[i][j] = 0;
-					collision = false;
-					magicNumber = random.nextLong() & random.nextLong() & random.nextLong();
-					rookMagicNumbers[i] = magicNumber;
-					for (int j = 0; j < variations; j++) {
-						index = (int)((occVar[j]*magicNumber) >>> (64 - SliderOccupancyMask.getByIndex(i).rookOccupancyMaskBitCount));
-						if (magicRookDatabase[i][index] == 0)
-							magicRookDatabase[i][index] = attVar[j];
-						else if (magicRookDatabase[i][index] != attVar[j]) {
-							collision = true;
-							break;
-						}
-					}
-				}
-				while (collision);
-			}
-		}
-		public void generateBishopMagicNumbers() {
-			bishopMagicNumbers = new long[64];
-			long[][] magicBishopDatabase = new long[64][];
-			Random random = new Random();
-			long magicNumber;
-			int index;
-			boolean collision = false;
-			for (int i = 0; i < 64; i++) {
-				long[] occVar = this.bishopOccupancyVariations[i];
-				long[] attVar = this.bishopAttackSetVariations[i];
-				int variations = occVar.length;
-				magicBishopDatabase[i] = new long[variations];
-				do {
-					for (int j = 0; j < variations; j++)
-						magicBishopDatabase[i][j] = 0;
-					collision = false;
-					magicNumber = random.nextLong() & random.nextLong() & random.nextLong();
-					bishopMagicNumbers[i] = magicNumber;
-					for (int j = 0; j < variations; j++) {
-						index = (int)((occVar[j]*magicNumber) >>> (64 - SliderOccupancyMask.getByIndex(i).bishopOccupancyMaskBitCount));
-						if (magicBishopDatabase[i][index] == 0)
-							magicBishopDatabase[i][index] = attVar[j];
-						else if (magicBishopDatabase[i][index] != attVar[j]) {
-							collision = true;
-							break;
-						}
-					}
-				}
-				while (collision);
-			}
-		}
-		public void generateMagicNumbers() {
-			this.generateRookMagicNumbers();
-			this.generateBishopMagicNumbers();
-		}
-		public void printMagicNumbers() {
-			if (this.rookMagicNumbers != null || this.bishopMagicNumbers != null) {
-				if (this.rookMagicNumbers == null)
-					this.rookMagicNumbers = new long[64];
-				if (this.bishopMagicNumbers == null)
-					this.bishopMagicNumbers = new long[64];
-				System.out.format("%s %5s %70s\n\n", "SQ", "ROOK", "BISHOP");
-				for (Square sqr : Square.values()) {
-					int sqrInd = sqr.ordinal();
-					System.out.println(sqr + " (" + BitOperations.toBinaryLiteral(this.rookMagicNumbers[sqrInd]) + ", " + BitOperations.toBinaryLiteral(this.bishopMagicNumbers[sqrInd]) + "),");
-				}
-			}
-			else
-				System.out.println("No magic numbers have been generated so far.");
-		}
-	}
-	
 	public static enum Magics {
 		
 		A1 (0b1001000010000000000000000001001000100000010000000000000010000001L, 0b0000000000000010000100000000000100001000000000001000000010000000L),
@@ -1221,7 +1116,7 @@ public class Board {
 	private LongStack moveList = new LongStack();				//a stack of all the moves made so far
 	private LongStack positionInfoHistory = new LongStack(); 	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 	
-	private ZobristGenerator keyGen = new ZobristGenerator(); 	//a Zobrist key generator for hashing the board
+	private ZobristKeyGenerator keyGen = new ZobristKeyGenerator(); 	//a Zobrist key generator for hashing the board
 	
 	private long zobristKey;									//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
 	private long[] zobristKeyHistory;							//all the positions that have occured so far represented in Zobrist keys.
@@ -2436,7 +2331,7 @@ public class Board {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						if (this.enPassantRights != 8) {
-							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.diagonalNeg)))) != 0) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((this.allWhitePieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.diagonalNeg)))) != 0) {
 								if (to == enPassantDestination)
 									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
 								else if (to < 8) {
@@ -2451,7 +2346,7 @@ public class Board {
 							}
 						}
 						else {
-							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.diagonalNeg))) != 0) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces & attRayMask.diagonalNeg))) != 0) {
 								if (to < 8) {
 									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
@@ -2484,7 +2379,7 @@ public class Board {
 						pinnedPieceMove  =  pinnedPieceInd;
 						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						if (this.enPassantRights != 8) {
-							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.antiDiagonalNeg)))) != 0) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((this.allWhitePieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.antiDiagonalNeg)))) != 0) {
 								if (to == enPassantDestination)
 									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
 								else if (to < 8) {
@@ -2499,7 +2394,7 @@ public class Board {
 							}
 						}
 						else {
-							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.antiDiagonalNeg))) != 0) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces & attRayMask.antiDiagonalNeg))) != 0) {
 								if (to < 8) {
 									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
