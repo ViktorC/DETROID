@@ -50,7 +50,7 @@ public class ZobristKeyGenerator {
 	 * @param board
 	 * @return
 	 */
-	public long hash(Board board) {
+	public long hash(Position board) {
 		int[] board64 = board.getOffsetBoard();
 		long key = 0;
 		if (!board.getTurn())
@@ -69,7 +69,7 @@ public class ZobristKeyGenerator {
 	 * @param board
 	 * @return
 	 */
-	public long updateKey(Board board) {
+	public long updateKey(Position board) {
 		long key	 	 = board.getZobristKey();
 		long move	 	 = board.getLastMove();
 		long prevPosInfo = board.getPreviousPositionInfo();
@@ -169,9 +169,9 @@ public class ZobristKeyGenerator {
 			}
 		}
 		key ^= this.turn;
-		key ^= this.whiteCastlingRights[(int)((prevPosInfo >>> PositionInfo.WHITE_CASTLING_RIGHTS.shift) & PositionInfo.WHITE_CASTLING_RIGHTS.mask)];
-		key ^= this.blackCastlingRights[(int)((prevPosInfo >>> PositionInfo.BLACK_CASTLING_RIGHTS.shift) & PositionInfo.BLACK_CASTLING_RIGHTS.mask)];
-		key ^= this.enPassantRights[(int)((prevPosInfo >>> PositionInfo.EN_PASSANT_RIGHTS.shift) & PositionInfo.EN_PASSANT_RIGHTS.mask)];
+		key ^= this.whiteCastlingRights[(int)((prevPosInfo >>> PositionRegister.WHITE_CASTLING_RIGHTS.shift) & PositionRegister.WHITE_CASTLING_RIGHTS.mask)];
+		key ^= this.blackCastlingRights[(int)((prevPosInfo >>> PositionRegister.BLACK_CASTLING_RIGHTS.shift) & PositionRegister.BLACK_CASTLING_RIGHTS.mask)];
+		key ^= this.enPassantRights[(int)((prevPosInfo >>> PositionRegister.EN_PASSANT_RIGHTS.shift) & PositionRegister.EN_PASSANT_RIGHTS.mask)];
 		key ^= this.whiteCastlingRights[board.getWhiteCastlingRights()];
 		key ^= this.blackCastlingRights[board.getBlackCastlingRights()];
 		key ^= this.enPassantRights[board.getEnPassantRights()];

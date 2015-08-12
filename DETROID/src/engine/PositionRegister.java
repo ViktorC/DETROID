@@ -1,7 +1,7 @@
 package engine;
 
+import engine.board.Square;
 import util.LongList;
-import engine.Board.Square;
 
 /**Some position information--such as castling and en passant rights, fifty-move rule clock, repetitions and the square indices of checkers--is stored
  * in longs so as to make reverting to the previous position when unmaking a  move easier. This enum type contains the ranges of the different bits of
@@ -11,7 +11,7 @@ import engine.Board.Square;
  * @author Viktor
  *
  */
-public enum PositionInfo {
+public enum PositionRegister {
 	
 	WHITE_CASTLING_RIGHTS (0,  3),
 	BLACK_CASTLING_RIGHTS (2,  3),
@@ -25,7 +25,7 @@ public enum PositionInfo {
 	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
 	public final long mask;			//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
 
-	private PositionInfo(int shift, long mask) {
+	private PositionRegister(int shift, long mask) {
 		this.shift = (byte) shift;
 		this.mask = mask;
 	}
@@ -37,18 +37,18 @@ public enum PositionInfo {
 	public static String toString(long positionInfo) {
 		String rep = "";
 		long whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions;
-		fiftyMoveRuleClock		= (positionInfo >>> PositionInfo.FIFTY_MOVE_RULE_CLOCK.shift)	& PositionInfo.FIFTY_MOVE_RULE_CLOCK.mask;
-		enPassantRights 		= (positionInfo >>> PositionInfo.EN_PASSANT_RIGHTS.shift)		& PositionInfo.EN_PASSANT_RIGHTS.mask;
-		whiteCastlingRights 	= (positionInfo >>> PositionInfo.WHITE_CASTLING_RIGHTS.shift)	& PositionInfo.WHITE_CASTLING_RIGHTS.mask;
-		blackCastlingRights 	= (positionInfo >>> PositionInfo.BLACK_CASTLING_RIGHTS.shift)	& PositionInfo.BLACK_CASTLING_RIGHTS.mask;
-		repetitions				= (positionInfo >>> PositionInfo.REPETITIONS.shift)				& PositionInfo.REPETITIONS.mask;
-		switch ((int)((positionInfo >>> PositionInfo.CHECK.shift) & PositionInfo.CHECK.mask)) {
+		fiftyMoveRuleClock		= (positionInfo >>> PositionRegister.FIFTY_MOVE_RULE_CLOCK.shift)	& PositionRegister.FIFTY_MOVE_RULE_CLOCK.mask;
+		enPassantRights 		= (positionInfo >>> PositionRegister.EN_PASSANT_RIGHTS.shift)		& PositionRegister.EN_PASSANT_RIGHTS.mask;
+		whiteCastlingRights 	= (positionInfo >>> PositionRegister.WHITE_CASTLING_RIGHTS.shift)	& PositionRegister.WHITE_CASTLING_RIGHTS.mask;
+		blackCastlingRights 	= (positionInfo >>> PositionRegister.BLACK_CASTLING_RIGHTS.shift)	& PositionRegister.BLACK_CASTLING_RIGHTS.mask;
+		repetitions				= (positionInfo >>> PositionRegister.REPETITIONS.shift)				& PositionRegister.REPETITIONS.mask;
+		switch ((int)((positionInfo >>> PositionRegister.CHECK.shift) & PositionRegister.CHECK.mask)) {
 			case 1:
-				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> PositionInfo.CHECKER1.shift) & PositionInfo.CHECKER1.mask)) + "\n", "Checker:");
+				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> PositionRegister.CHECKER1.shift) & PositionRegister.CHECKER1.mask)) + "\n", "Checker:");
 			break;
 			case 2:
-				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> PositionInfo.CHECKER1.shift) & PositionInfo.CHECKER1.mask)) + ", " +
-												Square.toString((int)((positionInfo >>> PositionInfo.CHECKER2.shift) & PositionInfo.CHECKER2.mask)) + "\n", "Checker:");
+				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> PositionRegister.CHECKER1.shift) & PositionRegister.CHECKER1.mask)) + ", " +
+												Square.toString((int)((positionInfo >>> PositionRegister.CHECKER2.shift) & PositionRegister.CHECKER2.mask)) + "\n", "Checker:");
 		}
 		rep += String.format("%-23s ", "Castling rights:");
 		if ((whiteCastlingRights & 1) != 0)

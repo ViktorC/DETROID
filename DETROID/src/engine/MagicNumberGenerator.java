@@ -2,10 +2,7 @@ package engine;
 
 import java.util.Random;
 
-import engine.Board.SliderAttackSetCalculator;
-import engine.Board.SliderOccupancyMask;
-import engine.Board.SliderOccupancyVariationGenerator;
-import engine.Board.Square;
+import engine.board.Square;
 
 /**A class that generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move database by multiplying the intersection
  * of the occupancy bitmap and the occupancy mask, then right shifting the product by the magic shift value specific to the given square--calculated by extracting the number of
