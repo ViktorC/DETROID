@@ -4,7 +4,7 @@ import util.LongList;
 import engine.Board.*;
 
 /**Some position information--such as castling and en passant rights, fifty-move rule clock, repetitions and the square indices of checkers--is stored
- * in longs so as to make reverting to the previous position when unmaking a  move easier. This enum type contains the ranges of the different bits of
+ * in longs so as to make reverting to the previous position when unmaking a move faster. This enum type contains the ranges of the different bits of
  * information held within the long that can be extracted using simple bit-shifts by the specified numbers contained in the 'shift' field and then
  * AND-ing the shifted values with the numbers contained in the 'mask' field.
  * 
