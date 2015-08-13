@@ -11,83 +11,287 @@ import engine.Board.*;
  */
 public class SliderAttackSetCalculator {
 	
-	private static long rankAttacks(Square sqr, long occupancy) {
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction north of multiple sliding pieces at the same time. The generator
+	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long northFill(long generator, long propagator) {
+		generator  |= (generator  << 8)  & propagator;
+		propagator &= (propagator << 8);
+		generator  |= (generator  << 16) & propagator;
+		propagator &= (propagator << 16);
+		generator  |= (generator  << 32) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction south of multiple sliding pieces at the same time. The generator
+	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long southFill(long generator, long propagator) {
+		generator  |= (generator  >>> 8)  & propagator;
+		propagator &= (propagator >>> 8);
+		generator  |= (generator  >>> 16) & propagator;
+		propagator &= (propagator >>> 16);
+		generator  |= (generator  >>> 32) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction west of multiple sliding pieces at the same time. The generator
+	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long westFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  >>> 1) & propagator;
+		propagator &= (propagator >>> 1);
+		generator  |= (generator  >>> 2) & propagator;
+		propagator &= (propagator >>> 2);
+		generator  |= (generator  >>> 4) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction east of multiple sliding pieces at the same time. The generator
+	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long eastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  << 1) & propagator;
+		propagator &= (propagator << 1);
+		generator  |= (generator  << 2) & propagator;
+		propagator &= (propagator << 2);
+		generator  |= (generator  << 4) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction north-west of multiple sliding pieces at the same time. The
+	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long northWestFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  << 7)  & propagator;
+		propagator &= (propagator << 7);
+		generator  |= (generator  << 14) & propagator;
+		propagator &= (propagator << 14);
+		generator  |= (generator  << 28) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction north-east of multiple sliding pieces at the same time. The
+	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long northEastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  << 9)  & propagator;
+		propagator &= (propagator << 9);
+		generator  |= (generator  << 18) & propagator;
+		propagator &= (propagator << 18);
+		generator  |= (generator  << 36) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction south-west of multiple sliding pieces at the same time. The
+	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long southWestFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  >>> 9)  & propagator;
+		propagator &= (propagator >>> 9);
+		generator  |= (generator  >>> 18) & propagator;
+		propagator &= (propagator >>> 18);
+		generator  |= (generator  >>> 36) & propagator;
+		return generator;
+	}
+	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction south-east of multiple sliding pieces at the same time. The
+	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
+	 * 
+	 * @param generator - piece squares
+	 * @param propagator - all empty squares
+	 * @return
+	 */
+	public static long southEastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  >>> 7)  & propagator;
+		propagator &= (propagator >>> 7);
+		generator  |= (generator  >>> 14) & propagator;
+		propagator &= (propagator >>> 14);
+		generator  |= (generator  >>> 28) & propagator;
+		return generator;
+	}
+	/**A bit parallel method that returns the combined attack sets of multiple rooks simultaneously.
+	 * 
+	 * @param rooks
+	 * @param empty
+	 * @return
+	 */
+	public static long multiRookAttackSet(long rooks, long empty) {
+		return northFill(rooks, empty) | southFill(rooks, empty) | westFill(rooks, empty) | eastFill(rooks, empty);
+	}
+	/**A bit parallel method that returns the combined attack sets of multiple rooks simultaneously.
+	 * 
+	 * @param bishops
+	 * @param empty
+	 * @return
+	 */
+	public static long multiBishopAttackSet(long bishops, long empty) {
+		return northWestFill(bishops, empty) | southWestFill(bishops, empty) | northEastFill(bishops, empty) | southEastFill(bishops, empty);
+	}
+	/**Returns the rank-wise attack set for the relevant occupancy from the defined square.
+	 * 
+	 * @param sqr - the square on which the slider is
+	 * @param relevantOccupancy - the relevant occupancy of the rank on which the square is (all occupied AND rank [minus the perimeter squares, as they make no difference])
+	 * @return
+	 */
+	public static long rankAttacks(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long rank = Rank.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = rank & occupancy;
-		reverse  = BitOperations.reverse(occupancy);
+		forward  = rank & relevantOccupancy;
+		reverse  = BitOperations.reverse(relevantOccupancy);
 		forward -= 2*sqr.bitmap;
 		reverse -= 2*BitOperations.reverse(sqr.bitmap);
 		forward ^= BitOperations.reverse(reverse);
 		return forward & rank;
 	}
-	private static long fileAttacks(Square sqr, long occupancy) {
+	/**Returns the file-wise attack set for the relevant occupancy from the defined square.
+	 * 
+	 * @param sqr - the square on which the slider is
+	 * @param relevantOccupancy - the relevant occupancy of the file on which the square is (all occupied AND file [minus the perimeter squares, as they make no difference])
+	 * @return
+	 */
+	public static long fileAttacks(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long file = File.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = file & occupancy;
+		forward  = file & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
 		forward -= sqr.bitmap;
 		reverse -= BitOperations.reverseBytes(sqr.bitmap);
 		forward ^= BitOperations.reverseBytes(reverse);
 		return forward & file;
 	}
-	private static long diagonalAttacks(Square sqr, long occupancy) {
+	/**Returns the diagonal-wise attack set for the relevant occupancy from the defined square.
+	 * 
+	 * @param sqr - the square on which the slider is
+	 * @param relevantOccupancy - the relevant occupancy of the diagonal on which the square is (all occupied AND diagonal [minus the perimeter squares, as they make no difference])
+	 * @return
+	 */
+	public static long diagonalAttacks(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long diagonal = Diagonal.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = diagonal & occupancy;
+		forward  = diagonal & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
 		forward -= sqr.bitmap;
 		reverse -= BitOperations.reverseBytes(sqr.bitmap);
 		forward ^= BitOperations.reverseBytes(reverse);
 		return forward & diagonal;
 	}
-	private static long antiDiagonalAttacks(Square sqr, long occupancy) {
+	/**Returns the anti-diagonal-wise attack set for the relevant occupancy from the defined square.
+	 * 
+	 * @param sqr - the square on which the slider is
+	 * @param relevantOccupancy - the relevant occupancy of the anti-diagonal on which the square is (all occupied AND anti-diagonal [minus the perimeter squares, as they make no difference])
+	 * @return
+	 */
+	public static long antiDiagonalAttacks(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = antiDiagonal & occupancy;
+		forward  = antiDiagonal & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
 		forward -= sqr.bitmap;
 		reverse -= BitOperations.reverseBytes(sqr.bitmap);
 		forward ^= BitOperations.reverseBytes(reverse);
 		return forward & antiDiagonal;
 	}
-	public static long computeRookAttackSet(Square sqr, long occupancy) {
+	/**Returns a rook's attack set from the defined square with the given occupancy.
+	 * 
+	 * @param sqr - the square on which the rook is
+	 * @param relevantOccupancy - the relevant occupancy of the rank and file that cross each other on the specified square
+	 * (all occupied AND (rank OR file) [minus the perimeter squares, as they make no difference])
+	 * @return
+	 */
+	public static long rookAttackSet(Square sqr, long occupancy) {
 		return rankAttacks(sqr, occupancy) | fileAttacks(sqr, occupancy);
 	}
-	public static long computeBishopAttackSet(Square sqr, long occupancy) {
+	/**Returns a bishop's attack set from the defined square with the given occupancy.
+	 * 
+	 * @param sqr - the square on which the bishop is
+	 * @param relevantOccupancy - the relevant occupancy of the diagonal and anti-diagonal that cross each other on the specified square
+	 * (all occupied AND (diagonal OR anti-diagonal) [minus the perimeter squares, as they make no difference])
+	 * @return
+	 */
+	public static long bishopAttackSet(Square sqr, long occupancy) {
 		return diagonalAttacks(sqr, occupancy) | antiDiagonalAttacks(sqr, occupancy);
 	}
-	public static long[] computeRookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
+	/**Returns a rook's attack set variations from the given square for all occupancy variations specified.
+	 * 
+	 * @param sqr - the square on which the bishop is
+	 * @param rookOccupancyVariations - the occupancy variations within the rook's occupancy mask
+	 * @return
+	 */
+	public static long[] rookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
 		long[] rookAttVar = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < rookAttVar.length; i++)
-			rookAttVar[i] = computeRookAttackSet(sqr, rookOccupancyVariations[i]);
+			rookAttVar[i] = rookAttackSet(sqr, rookOccupancyVariations[i]);
 		return rookAttVar;
 	}
-	public static long[] computeBishopAttackSetVariations(Square sqr, long[] bishopOccupancyVariations) {
+	/**Returns a bishop's attack set variations from the given square for all occupancy variations specified.
+	 * 
+	 * @param sqr - the square on which the bishop is
+	 * @param bishopOccupancyVariations - the occupancy variations within the bishop's occupancy mask
+	 * @return
+	 */
+	public static long[] bishopAttackSetVariations(Square sqr, long[] bishopOccupancyVariations) {
 		long[] bishopAttVar = new long[bishopOccupancyVariations.length];
 		for (int i = 0; i < bishopAttVar.length; i++)
-			bishopAttVar[i] = computeBishopAttackSet(sqr, bishopOccupancyVariations[i]);
+			bishopAttVar[i] = bishopAttackSet(sqr, bishopOccupancyVariations[i]);
 		return bishopAttVar;
 	}
-	public static long[][] computeRookAttackSetVariations(long[][] rookOccupancyVariations) {
+	/**Returns a rook's attack set variations from each square for all occupancy variations specified.
+	 * 
+	 * @param rookOccupancyVariations - the occupancy variations within the rook's occupancy mask for each square
+	 * @return
+	 */
+	public static long[][] rookAttackSetVariations(long[][] rookOccupancyVariations) {
 		int sqrInd;
 		long[][] rookAttVar = new long[64][];
 		for (Square sqr : Square.values()) {
 			sqrInd = sqr.ordinal();
-			rookAttVar[sqrInd] = computeRookAttackSetVariations(sqr, rookOccupancyVariations[sqrInd]);
+			rookAttVar[sqrInd] = rookAttackSetVariations(sqr, rookOccupancyVariations[sqrInd]);
 		}
 		return rookAttVar;
 	}
-	public static long[][] computeBishopAttackSetVariations(long[][] bishopOccupancyVariations) {
+	/**Returns a bishop's attack set variations from each square for all occupancy variations specified.
+	 * 
+	 * @param bishopAttackSetVariations - the occupancy variations within the bishop's occupancy mask for each square
+	 * @return
+	 */
+	public static long[][] bishopAttackSetVariations(long[][] bishopOccupancyVariations) {
 		int sqrInd;
 		long[][] bishopAttVar = new long[64][];
 		for (Square sqr : Square.values()) {
 			sqrInd = sqr.ordinal();
-			bishopAttVar[sqrInd] = computeBishopAttackSetVariations(sqr, bishopOccupancyVariations[sqrInd]);
+			bishopAttVar[sqrInd] = bishopAttackSetVariations(sqr, bishopOccupancyVariations[sqrInd]);
 		}
 		return bishopAttVar;
 	}

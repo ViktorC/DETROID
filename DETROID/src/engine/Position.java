@@ -2341,49 +2341,19 @@ public class Position {
 		}
 		System.out.println();
 	}
-	/**Prints a bitboard representing all the occupied squares of the object's board position to the console in a human-readable form,
+	/**Prints a bitboard representing all the occupied squares of the Position object's board position to the console in a human-readable form,
 	 * aligned like a chess board.*/
 	public void printBitboardToConsole() {
-		BitOperations.printBitboardToConsole(this.allOccupied);
+		Board.printBitboardToConsole(this.allOccupied);
 	}
-	/**Prints an array representing the object's board position to the console in a human-readable form, aligned like a chess board with 
+	/**Prints the array representing the Position object's board position to the console in a human-readable form, aligned like a chess board with 
 	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
 	public void printOffsetBoardToConsole() {
-		for (int i = 7; i >= 0; i--) {
-			for (int j = 0; j < 8; j++)
-				System.out.format("%3d", this.offsetBoard[i*8 + j]);
-			System.out.println();
-		}
-		System.out.println();
+		Board.printOffsetBoardToConsole(this.offsetBoard);
 	}
 	/**Prints the chess board to the console. Pieces are represented according to the FEN notation.*/
 	public void printFancyBoardToConsole() {
-		for (int i = 16; i >= 0; i--) {
-			if (i%2 == 0) {
-				System.out.print("  ");
-				for (int j = 0; j < 17; j++) {
-					if (j%2 == 0)
-						System.out.print("+");
-					else
-						System.out.print("---");
-				}
-			}
-			else {
-				System.out.print((i + 1)/2 + " ");
-				for (int j = 0; j < 17; j++) {
-					if (j%2 == 0)
-						System.out.print("|");
-					else
-						System.out.print(" " + Piece.fenNotation(this.offsetBoard[(i - 1)*4 + j/2]) + " ");
-				}
-			}
-			System.out.println();
-		}
-		System.out.print("  ");
-		for (int i = 0; i < 8; i++) {
-			System.out.print("  " + (char)('A' + i) + " ");
-		}
-		System.out.println();
+		Board.printFancyBoardToConsole(this.offsetBoard);
 	}
 	/**Prints information that constitutes the Board instance's state to the console.*/
 	public void printStateToConsole() {

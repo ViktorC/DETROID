@@ -23,8 +23,8 @@ public class MagicNumberGenerator {
 	static {
 		rookOccupancyVariations = SliderOccupancyVariationGenerator.generateRookOccupancyVariations();
 		bishopOccupancyVariations = SliderOccupancyVariationGenerator.generateBishopOccupancyVariations();
-		rookAttackSetVariations = SliderAttackSetCalculator.computeRookAttackSetVariations(rookOccupancyVariations);
-		bishopAttackSetVariations = SliderAttackSetCalculator.computeBishopAttackSetVariations(bishopOccupancyVariations);
+		rookAttackSetVariations = SliderAttackSetCalculator.rookAttackSetVariations(rookOccupancyVariations);
+		bishopAttackSetVariations = SliderAttackSetCalculator.bishopAttackSetVariations(bishopOccupancyVariations);
 	}
 	/**Returns an 64-element array of the rook magic numbers.
 	 * 

@@ -37,8 +37,8 @@ public enum MoveDatabase {
 		int bishopNumOfVar 	= bishopOccVar.length;
 		this.rook 	= new long[rookNumOfVar];
 		this.bishop = new long[bishopNumOfVar];
-		long[] rookAttVar 	= SliderAttackSetCalculator.computeRookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = SliderAttackSetCalculator.computeBishopAttackSetVariations(sqr, bishopOccVar);
+		long[] rookAttVar 	= SliderAttackSetCalculator.rookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = SliderAttackSetCalculator.bishopAttackSetVariations(sqr, bishopOccVar);
 		int index;
 		for (int i = 0; i < rookNumOfVar; i++) {
 			index = (int)((rookOccVar[i]*this.magics.rookMagicNumber) >>> this.magics.rookShift);

@@ -1,6 +1,6 @@
 package engine;
 
-/*A class to group together objects exclusive to the chess board itself such as the squares, files, and ranks.
+/*A class to group together objects/enums exclusive to the chess board itself such as the squares, files, and ranks.
  * 
  * @author Viktor
  *
@@ -441,5 +441,58 @@ public class Board {
 		public static long getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
+	}
+	
+	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.
+	 * 
+	 * @param bitmap
+	 */
+	public static void printBitboardToConsole(long bitmap) {
+		String board = BitOperations.toBinaryString(bitmap);
+		for (int i = 0; i < 64; i += 8) {
+			for (int j = i + 7; j >= i; j--)
+				System.out.print(board.charAt(j));
+			System.out.println();
+		}
+		System.out.println();
+	}
+	/**Prints an array representing a chess board position to the console in a human-readable form, aligned like a chess board with 
+	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
+	public static void printOffsetBoardToConsole(int[] offsetBoard) {
+		for (int i = 7; i >= 0; i--) {
+			for (int j = 0; j < 8; j++)
+				System.out.format("%3d", offsetBoard[i*8 + j]);
+			System.out.println();
+		}
+		System.out.println();
+	}
+	/**Prints a chess board to the console. Pieces are represented according to the FEN notation.*/
+	public static void printFancyBoardToConsole(int[] offsetBoard) {
+		for (int i = 16; i >= 0; i--) {
+			if (i%2 == 0) {
+				System.out.print("  ");
+				for (int j = 0; j < 17; j++) {
+					if (j%2 == 0)
+						System.out.print("+");
+					else
+						System.out.print("---");
+				}
+			}
+			else {
+				System.out.print((i + 1)/2 + " ");
+				for (int j = 0; j < 17; j++) {
+					if (j%2 == 0)
+						System.out.print("|");
+					else
+						System.out.print(" " + Piece.fenNotation(offsetBoard[(i - 1)*4 + j/2]) + " ");
+				}
+			}
+			System.out.println();
+		}
+		System.out.print("  ");
+		for (int i = 0; i < 8; i++) {
+			System.out.print("  " + (char)('A' + i) + " ");
+		}
+		System.out.println();
 	}
 }
