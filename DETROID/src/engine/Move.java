@@ -13,8 +13,6 @@ public enum Move {
 	
 	FROM 			(0,  63),				//denotes the index of the origin square
 	TO				(6,  63),				//denotes the index of the destination square
-	MOVED_PIECE 	(12, 15),				//denotes the type of the moved piece according to Board.Piece
-	CAPTURED_PIECE 	(16, 15),				//denotes the type of the captured piece according to Board.Piece, 0 means no piece has been captured
 	TYPE			(20, 7),				//denotes the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
 	VALUE			(23, Long.MAX_VALUE);
 	
@@ -31,11 +29,9 @@ public enum Move {
 	 * @return
 	 */
 	public static String pseudoAlgebraicNotation(long move) {
-		String alg, movedPiece, capture, originFile, originRank, destFile, destRank;
+		String alg, originFile, originRank, destFile, destRank;
 		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
 		int to	 			= (int)((move >>> Move.TO.shift) 			  & Move.TO.mask);
-		int moved			= (int)((move >>> Move.MOVED_PIECE.shift) 	  & Move.MOVED_PIECE.mask);
-		int captured	 	= (int)((move >>> Move.CAPTURED_PIECE.shift)  & Move.CAPTURED_PIECE.mask);
 		int type			= (int)((move >>> Move.TYPE.shift)  		  & Move.TYPE.mask);
 		if (type == 1)
 			return "0-0";
@@ -45,32 +41,8 @@ public enum Move {
 		originFile	= Character.toString((char)(from%8 + 'a'));
 		destRank	= Integer.toString(to/8 + 1);
 		destFile	= Character.toString((char)(to%8 + 'a'));
-		if (moved > 6)
-			moved -= 6;
-		switch (moved) {
-			case 1:
-				movedPiece = "K";
-			break;
-			case 2:
-				movedPiece = "Q";
-			break;
-			case 3:
-				movedPiece = "R";
-			break;
-			case 4:
-				movedPiece = "B";
-			break;
-			case 5:
-				movedPiece = "N";
-			break;
-			default:
-				movedPiece = "";
-		}
-		if (captured == 0)
-			capture = "";
-		else
-			capture = "x";
-		alg = movedPiece + originFile + originRank + capture + destFile + destRank;
+		
+		alg = originFile + originRank + destFile + destRank;
 		switch (type) {
 			case 3:
 				return alg + "e.p.";

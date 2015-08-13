@@ -11,7 +11,7 @@ import engine.Board.*;
  */
 public class SliderAttackSetCalculator {
 	
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction north of multiple sliding pieces at the same time. The generator
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north of multiple sliding pieces at the same time. The generator
 	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
 	 * 
 	 * @param generator - piece squares
@@ -26,7 +26,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  << 32) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction south of multiple sliding pieces at the same time. The generator
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction south of multiple sliding pieces at the same time. The generator
 	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
 	 * 
 	 * @param generator - piece squares
@@ -41,7 +41,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  >>> 32) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction west of multiple sliding pieces at the same time. The generator
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction west of multiple sliding pieces at the same time. The generator
 	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
 	 * @param generator - piece squares
@@ -57,7 +57,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  >>> 4) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction east of multiple sliding pieces at the same time. The generator
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction east of multiple sliding pieces at the same time. The generator
 	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
 	 * @param generator - piece squares
@@ -73,7 +73,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  << 4) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction north-west of multiple sliding pieces at the same time. The
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north-west of multiple sliding pieces at the same time. The
 	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
 	 * @param generator - piece squares
@@ -89,7 +89,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  << 28) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction north-east of multiple sliding pieces at the same time. The
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north-east of multiple sliding pieces at the same time. The
 	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
 	 * @param generator - piece squares
@@ -105,7 +105,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  << 36) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction south-west of multiple sliding pieces at the same time. The
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction south-west of multiple sliding pieces at the same time. The
 	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
 	 * @param generator - piece squares
@@ -121,7 +121,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  >>> 36) & propagator;
 		return generator;
 	}
-	/**A parallel prefix occluded fill algorithm that returns the attack sets in direction south-east of multiple sliding pieces at the same time. The
+	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction south-east of multiple sliding pieces at the same time. The
 	 * generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is handled by the method.
 	 * 
 	 * @param generator - piece squares
@@ -143,7 +143,7 @@ public class SliderAttackSetCalculator {
 	 * @param empty
 	 * @return
 	 */
-	public static long multiRookAttackSet(long rooks, long empty) {
+	public static long multiRookMoveSet(long rooks, long empty) {
 		return northFill(rooks, empty) | southFill(rooks, empty) | westFill(rooks, empty) | eastFill(rooks, empty);
 	}
 	/**A bit parallel method that returns the combined attack sets of multiple rooks simultaneously.
@@ -152,7 +152,7 @@ public class SliderAttackSetCalculator {
 	 * @param empty
 	 * @return
 	 */
-	public static long multiBishopAttackSet(long bishops, long empty) {
+	public static long multiBishopMoveSet(long bishops, long empty) {
 		return northWestFill(bishops, empty) | southWestFill(bishops, empty) | northEastFill(bishops, empty) | southEastFill(bishops, empty);
 	}
 	/**Returns the rank-wise attack set for the relevant occupancy from the defined square.
@@ -161,7 +161,7 @@ public class SliderAttackSetCalculator {
 	 * @param relevantOccupancy - the relevant occupancy of the rank on which the square is (all occupied AND rank [minus the perimeter squares, as they make no difference])
 	 * @return
 	 */
-	public static long rankAttacks(Square sqr, long relevantOccupancy) {
+	public static long rankAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long rank = Rank.getBySquareIndex(sqrInd);
 		long forward, reverse;
@@ -178,7 +178,7 @@ public class SliderAttackSetCalculator {
 	 * @param relevantOccupancy - the relevant occupancy of the file on which the square is (all occupied AND file [minus the perimeter squares, as they make no difference])
 	 * @return
 	 */
-	public static long fileAttacks(Square sqr, long relevantOccupancy) {
+	public static long fileAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long file = File.getBySquareIndex(sqrInd);
 		long forward, reverse;
@@ -195,7 +195,7 @@ public class SliderAttackSetCalculator {
 	 * @param relevantOccupancy - the relevant occupancy of the diagonal on which the square is (all occupied AND diagonal [minus the perimeter squares, as they make no difference])
 	 * @return
 	 */
-	public static long diagonalAttacks(Square sqr, long relevantOccupancy) {
+	public static long diagonalAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long diagonal = Diagonal.getBySquareIndex(sqrInd);
 		long forward, reverse;
@@ -212,7 +212,7 @@ public class SliderAttackSetCalculator {
 	 * @param relevantOccupancy - the relevant occupancy of the anti-diagonal on which the square is (all occupied AND anti-diagonal [minus the perimeter squares, as they make no difference])
 	 * @return
 	 */
-	public static long antiDiagonalAttacks(Square sqr, long relevantOccupancy) {
+	public static long antiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
 		long antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
 		long forward, reverse;
@@ -231,7 +231,7 @@ public class SliderAttackSetCalculator {
 	 * @return
 	 */
 	public static long rookAttackSet(Square sqr, long occupancy) {
-		return rankAttacks(sqr, occupancy) | fileAttacks(sqr, occupancy);
+		return rankAttackSet(sqr, occupancy) | fileAttackSet(sqr, occupancy);
 	}
 	/**Returns a bishop's attack set from the defined square with the given occupancy.
 	 * 
@@ -241,7 +241,7 @@ public class SliderAttackSetCalculator {
 	 * @return
 	 */
 	public static long bishopAttackSet(Square sqr, long occupancy) {
-		return diagonalAttacks(sqr, occupancy) | antiDiagonalAttacks(sqr, occupancy);
+		return diagonalAttackSet(sqr, occupancy) | antiDiagonalAttackSet(sqr, occupancy);
 	}
 	/**Returns a rook's attack set variations from the given square for all occupancy variations specified.
 	 * 

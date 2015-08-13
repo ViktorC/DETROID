@@ -648,8 +648,8 @@ public class Position {
 				this.check = true;
 		}
 	}
-	private void setKeys() {
-		this.zobristKey = keyGen.updateKey(this);
+	private void setKeys(int moved) {
+		this.zobristKey = keyGen.updateKey(this, moved);
 		this.zobristKeyHistory[this.plyIndex] = this.zobristKey;
 	}
 	private void extendKeyHistory() {
@@ -661,9 +661,10 @@ public class Position {
 				this.zobristKeyHistory[i] = temp[i];
 		}
 	}
-	private void setPositionInfo() {
+	private void setPositionInfo(int captured) {
 		long positionInfo, checker2;
-		positionInfo = this.whiteCastlingRights |
+		positionInfo = captured |
+					   (this.whiteCastlingRights << PositionRegister.CAPTURED_PIECE.shift) |
 		 			   (this.blackCastlingRights << PositionRegister.BLACK_CASTLING_RIGHTS.shift) |
 		 			   (this.enPassantRights << PositionRegister.EN_PASSANT_RIGHTS.shift) |
 		 			   (this.fiftyMoveRuleClock << PositionRegister.FIFTY_MOVE_RULE_CLOCK.shift) |
@@ -939,11 +940,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - this.whiteKing) << 1)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -955,16 +955,14 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - this.whiteKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 6) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(this.allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
@@ -980,42 +978,40 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - this.whiteKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 6) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						if (this.enPassantRights != 8) {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 40 + this.enPassantRights)) & attRayMask.diagonalPos)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 								else if (to >= 56) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 						else {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.diagonalPos))) != 0) {
 								if (to >= 56) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 					}
@@ -1028,42 +1024,40 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - this.whiteKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 6) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						if (this.enPassantRights != 8) {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((this.allBlackPieces | (1L << (enPassantDestination = 40 + this.enPassantRights)) & attRayMask.antiDiagonalPos)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 								else if (to >= 56) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 						else {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(this.allBlackPieces & attRayMask.antiDiagonalPos))) != 0) {
 								if (to >= 56) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 					}
@@ -1076,11 +1070,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((this.whiteKing - pinnerBit)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1092,16 +1085,14 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((this.whiteKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 6) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(this.allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
@@ -1117,11 +1108,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((this.whiteKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1133,11 +1123,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((this.whiteKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1154,11 +1143,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - this.blackKing) << 1)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1170,16 +1158,14 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - this.blackKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 12) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(this.allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
@@ -1195,11 +1181,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - this.blackKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1211,11 +1196,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - this.blackKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1227,11 +1211,10 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize((this.blackKing - pinnerBit)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 				}
@@ -1243,16 +1226,14 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((this.blackKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 12) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(this.allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
@@ -1268,42 +1249,40 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((this.blackKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 12) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						if (this.enPassantRights != 8) {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((this.allWhitePieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.diagonalNeg)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 								else if (to < 8) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 						else {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces & attRayMask.diagonalNeg))) != 0) {
 								if (to < 8) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 					}
@@ -1316,42 +1295,40 @@ public class Position {
 					pinnedPiece		 = this.offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						pinnedPieceMoves = BitOperations.serialize(((this.blackKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+							moves.add(pinnedPieceMove | (to << Move.TO.shift));
 						}
 					}
 					else if (pinnedPiece == 12) {
 						pinnedPieceMove  =  pinnedPieceInd;
-						pinnedPieceMove |= (pinnedPiece << Move.MOVED_PIECE.shift);
 						if (this.enPassantRights != 8) {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((this.allWhitePieces | (1L << (enPassantDestination = 16 + this.enPassantRights)) & attRayMask.antiDiagonalNeg)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (3L << Move.TYPE.shift));
 								else if (to < 8) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 						else {
 							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(this.allWhitePieces & attRayMask.antiDiagonalNeg))) != 0) {
 								if (to < 8) {
-									promotion = pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+									promotion = pinnedPieceMove | (to << Move.TO.shift);
 									moves.add(promotion | (4L << Move.TYPE.shift));
 									moves.add(promotion | (5L << Move.TYPE.shift));
 									moves.add(promotion | (6L << Move.TYPE.shift));
 									moves.add(promotion | (7L << Move.TYPE.shift));
 								}
 								else
-									moves.add(pinnedPieceMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+									moves.add(pinnedPieceMove | (to << Move.TO.shift));
 							}
 						}
 					}
@@ -1368,13 +1345,12 @@ public class Position {
 		if (this.whitesTurn) {
 			king  = BitOperations.indexOfBit(this.whiteKing);
 			move  = king;
-			move |= (1L << Move.MOVED_PIECE.shift);
 			moveSet	  = MoveDatabase.getByIndex(king).getWhiteKingMoves(this.allNonWhiteOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, false))
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 			}
 			if ((this.whiteCastlingRights & 2) != 0) {
 				if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & this.allOccupied) == 0) {
@@ -1394,12 +1370,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (2L << Move.MOVED_PIECE.shift);
 				moveSet = MoveDatabase.getByIndex(piece).getWhiteQueenMoves(this.allNonWhiteOccupied, this.allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.whiteRooks & movablePieces;
@@ -1407,12 +1382,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (3L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.whiteBishops & movablePieces;
@@ -1420,12 +1394,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (4L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.whiteKnights & movablePieces;
@@ -1433,12 +1406,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (5L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getWhiteKnightMoves(this.allNonWhiteOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.whitePawns & movablePieces;
@@ -1446,26 +1418,25 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (6L << Move.MOVED_PIECE.shift);
 				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnMoves(this.allBlackPieces, this.allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to > 55) {
-						promotion = move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+						promotion = move | (to << Move.TO.shift);
 						moves.add(promotion | (4L << Move.TYPE.shift));
 						moves.add(promotion | (5L << Move.TYPE.shift));
 						moves.add(promotion | (6L << Move.TYPE.shift));
 						moves.add(promotion | (7L << Move.TYPE.shift));
 					}
 					else
-						moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			if (this.enPassantRights != 8) {
 				if ((pieceSet = MoveDatabase.getByIndex(to = 40 + this.enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
-					move = (to << Move.TO.shift) | (6L << Move.MOVED_PIECE.shift) | (12L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift);
+					move = (to << Move.TO.shift) | (3L << Move.TYPE.shift);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
 						enPassAttBits = ((1L << piece) | (1L << to));
@@ -1483,13 +1454,12 @@ public class Position {
 		else {
 			king  = BitOperations.indexOfBit(this.blackKing);
 			move  = king;
-			move |= (7L << Move.MOVED_PIECE.shift);
 			moveSet	= MoveDatabase.getByIndex(king).getBlackKingMoves(this.allNonBlackOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, true))
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 			}
 			if ((this.blackCastlingRights & 1) != 0) {
 				if (((Square.F8.bitmap | Square.G8.bitmap) & this.allOccupied) == 0) {
@@ -1509,12 +1479,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (8L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getBlackQueenMoves(this.allNonBlackOccupied, this.allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.blackRooks & movablePieces;
@@ -1522,12 +1491,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (9L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.blackBishops & movablePieces;
@@ -1535,12 +1503,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (10L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.blackKnights & movablePieces;
@@ -1548,12 +1515,11 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (11L << Move.MOVED_PIECE.shift);
 				moveSet	= MoveDatabase.getByIndex(piece).getBlackKnightMoves(this.allNonBlackOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+					moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			pieceSet = this.blackPawns & movablePieces;
@@ -1561,26 +1527,25 @@ public class Position {
 			while (pieces.hasNext()) {
 				piece = pieces.next();
 				move  = piece;
-				move |= (12L << Move.MOVED_PIECE.shift);
 				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnMoves(this.allWhitePieces, this.allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to < 8) {
-						promotion = move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift);
+						promotion = move | (to << Move.TO.shift);
 						moves.add(promotion | (4L << Move.TYPE.shift));
 						moves.add(promotion | (5L << Move.TYPE.shift));
 						moves.add(promotion | (6L << Move.TYPE.shift));
 						moves.add(promotion | (7L << Move.TYPE.shift));
 					}
 					else
-						moves.add(move | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						moves.add(move | (to << Move.TO.shift));
 				}
 			}
 			if (this.enPassantRights != 8) {
 				if ((pieceSet = MoveDatabase.getByIndex(to = 16 + this.enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
-					move = (to << Move.TO.shift) | (12L << Move.MOVED_PIECE.shift) | (6L << Move.CAPTURED_PIECE.shift) | (3L << Move.TYPE.shift);
+					move = (to << Move.TO.shift) | (3L << Move.TYPE.shift);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
 						enPassAttBits = ((1L << piece) | (1L << to));
@@ -1606,7 +1571,7 @@ public class Position {
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.whitesTurn) {
 			king 			 = BitOperations.indexOfBit(this.whiteKing);
-			kingMove 		 = king | (1L << Move.MOVED_PIECE.shift);
+			kingMove 		 = king;
 			pinnedPieces 	 = this.getPinnedPieces(true);
 			movablePieces	 = ~pinnedPieces;
 			kingDb			 = MoveDatabase.getByIndex(king);
@@ -1621,8 +1586,8 @@ public class Position {
 				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
-					move = checkerAttackerSquare | ((piece = this.offsetBoard[checkerAttackerSquare]) << Move.MOVED_PIECE.shift) | (checkerPiece1 << Move.CAPTURED_PIECE.shift);
-					if (piece == 6) {
+					move = checkerAttackerSquare;
+					if (this.offsetBoard[checkerAttackerSquare] == 6) {
 						if (promotionOnAttackPossible) {
 							promotion = move | (checker1 << Move.TO.shift);
 							moves.add(promotion | (4L << Move.TYPE.shift));
@@ -1655,8 +1620,8 @@ public class Position {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift) | (this.offsetBoard[checkerBlockerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[squareOfIntervention] << Move.CAPTURED_PIECE.shift);
-								if (promotionOnBlockPossible && (move >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 6) {
+								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift);
+								if (promotionOnBlockPossible && this.offsetBoard[checkerBlockerSquare] == 6) {
 									moves.add(move | (4L << Move.TYPE.shift));
 									moves.add(move | (5L << Move.TYPE.shift));
 									moves.add(move | (6L << Move.TYPE.shift));
@@ -1680,8 +1645,8 @@ public class Position {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift) | (this.offsetBoard[checkerBlockerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[squareOfIntervention] << Move.CAPTURED_PIECE.shift);
-								if (promotionOnBlockPossible && (move >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 6) {
+								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift);
+								if (promotionOnBlockPossible && this.offsetBoard[checkerBlockerSquare] == 6) {
 									moves.add(move | (4L << Move.TYPE.shift));
 									moves.add(move | (5L << Move.TYPE.shift));
 									moves.add(move | (6L << Move.TYPE.shift));
@@ -1703,8 +1668,8 @@ public class Position {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift) | (this.offsetBoard[checkerBlockerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[squareOfIntervention] << Move.CAPTURED_PIECE.shift);
-								if (promotionOnBlockPossible && (move >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 6) {
+								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift);
+								if (promotionOnBlockPossible && this.offsetBoard[checkerBlockerSquare] == 6) {
 									moves.add(move | (4L << Move.TYPE.shift));
 									moves.add(move | (5L << Move.TYPE.shift));
 									moves.add(move | (6L << Move.TYPE.shift));
@@ -1721,7 +1686,7 @@ public class Position {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						moves.add(kingMove | (to << Move.TO.shift));
 				}
 			}
 			else {
@@ -1761,13 +1726,13 @@ public class Position {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						moves.add(kingMove | (to << Move.TO.shift));
 				}
 			}
 		}
 		else {
 			king 	  		= BitOperations.indexOfBit(this.blackKing);
-			kingMove	    = king | (7L << Move.MOVED_PIECE.shift);
+			kingMove	    = king;
 			pinnedPieces  	= this.getPinnedPieces(false);
 			movablePieces 	= ~pinnedPieces;
 			kingDb	 		= MoveDatabase.getByIndex(king);
@@ -1782,8 +1747,8 @@ public class Position {
 				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
-					move = checkerAttackerSquare | ((piece = this.offsetBoard[checkerAttackerSquare]) << Move.MOVED_PIECE.shift) | (checkerPiece1 << Move.CAPTURED_PIECE.shift);
-					if (piece == 12) {
+					move = checkerAttackerSquare;
+					if (this.offsetBoard[checkerAttackerSquare] == 12) {
 						if (promotionOnAttackPossible) {
 							promotion = move | (checker1 << Move.TO.shift);
 							moves.add(promotion | (4L << Move.TYPE.shift));
@@ -1815,8 +1780,8 @@ public class Position {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift) | (this.offsetBoard[checkerBlockerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[squareOfIntervention] << Move.CAPTURED_PIECE.shift);
-								if (promotionOnBlockPossible && (move >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 12) {
+								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift);
+								if (promotionOnBlockPossible && this.offsetBoard[checkerBlockerSquare] == 12) {
 									moves.add(move | (4L << Move.TYPE.shift));
 									moves.add(move | (5L << Move.TYPE.shift));
 									moves.add(move | (6L << Move.TYPE.shift));
@@ -1840,8 +1805,8 @@ public class Position {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift) | (this.offsetBoard[checkerBlockerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[squareOfIntervention] << Move.CAPTURED_PIECE.shift);
-								if (promotionOnBlockPossible && (move >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 12) {
+								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift);
+								if (promotionOnBlockPossible && this.offsetBoard[checkerBlockerSquare] == 12) {
 									moves.add(move | (4L << Move.TYPE.shift));
 									moves.add(move | (5L << Move.TYPE.shift));
 									moves.add(move | (6L << Move.TYPE.shift));
@@ -1863,8 +1828,8 @@ public class Position {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift) | (this.offsetBoard[checkerBlockerSquare] << Move.MOVED_PIECE.shift) | (this.offsetBoard[squareOfIntervention] << Move.CAPTURED_PIECE.shift);
-								if (promotionOnBlockPossible && (move >>> Move.MOVED_PIECE.shift & Move.MOVED_PIECE.mask) == 12) {
+								move = checkerBlockerSquare | (squareOfIntervention << Move.TO.shift);
+								if (promotionOnBlockPossible && this.offsetBoard[checkerBlockerSquare] == 12) {
 									moves.add(move | (4L << Move.TYPE.shift));
 									moves.add(move | (5L << Move.TYPE.shift));
 									moves.add(move | (6L << Move.TYPE.shift));
@@ -1881,7 +1846,7 @@ public class Position {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						moves.add(kingMove | (to << Move.TO.shift));
 				}
 			}
 			else {
@@ -1921,7 +1886,7 @@ public class Position {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(kingMove | (to << Move.TO.shift) | (this.offsetBoard[to] << Move.CAPTURED_PIECE.shift));
+						moves.add(kingMove | (to << Move.TO.shift));
 				}
 			}
 		}
@@ -1942,62 +1907,74 @@ public class Position {
 	 * @param move
 	 */
 	public void makeMove(long move) {
-		int from 			= (int)((move >>> Move.FROM.shift)		 	  & Move.FROM.mask);
-		int to	 			= (int)((move >>> Move.TO.shift) 			  & Move.TO.mask);
-		int moved			= (int)((move >>> Move.MOVED_PIECE.shift) 	  & Move.MOVED_PIECE.mask);
-		int captured	 	= (int)((move >>> Move.CAPTURED_PIECE.shift)  & Move.CAPTURED_PIECE.mask);
-		int type			= (int)((move >>> Move.TYPE.shift)  		  & Move.TYPE.mask);
+		int moved, captured;
+		int from 	 = (int)((move >>> Move.FROM.shift)	& Move.FROM.mask);
+		int to	 	 = (int)((move >>> Move.TO.shift) 	& Move.TO.mask);
+		int type	 = (int)((move >>> Move.TYPE.shift) & Move.TYPE.mask);
 		long fromBit = Square.getBitmapByIndex(from);
 		long toBit	 = Square.getBitmapByIndex(to);
 		int enPassantVictimSquare;
 		long enPassantVictimSquareBit;
-		this.setPositionInfo();
 		switch (type) {
 			case 0: {
+				moved = this.offsetBoard[from];
 				this.offsetBoard[from]  = 0;
+				captured = this.offsetBoard[to];
 				this.offsetBoard[to]	= moved;
 				this.setBitboards(moved, captured, fromBit, toBit);
 			}
 			break;
 			case 1: {
-				this.offsetBoard[from]   = 0;
-				this.offsetBoard[to]	 = moved;
-				this.setBitboards(moved, 0, fromBit, toBit);
 				if (this.whitesTurn) {
+					moved = 1;
 					this.offsetBoard[7]	 = 0;
 					this.offsetBoard[5]	 = 3;
 					this.setBitboards(3, 0, Square.getBitmapByIndex(7), Square.getBitmapByIndex(5));
 				}
 				else {
+					moved = 7;
 					this.offsetBoard[63] = 0;
 					this.offsetBoard[61] = 9;
 					this.setBitboards(9, 0, Square.getBitmapByIndex(63), Square.getBitmapByIndex(61));
 				}
+				captured = 0;
+				this.offsetBoard[from] = 0;
+				this.offsetBoard[to] = moved;
+				this.setBitboards(moved, 0, fromBit, toBit);
 			}
 			break;
 			case 2: {
-				this.offsetBoard[from]   = 0;
-				this.offsetBoard[to]	 = moved;
-				this.setBitboards(moved, 0, fromBit, toBit);
 				if (this.whitesTurn) {
+					moved = 1;
 					this.offsetBoard[0]	 = 0;
 					this.offsetBoard[3]	 = 3;
 					this.setBitboards(3, 0, Square.getBitmapByIndex(0), Square.getBitmapByIndex(3));
 				}
 				else {
+					moved = 7;
 					this.offsetBoard[56] = 0;
 					this.offsetBoard[59] = 9;
 					this.setBitboards(9, 0, Square.getBitmapByIndex(56), Square.getBitmapByIndex(59));
 				}
+				captured = 0;
+				this.offsetBoard[from] = 0;
+				this.offsetBoard[to] = moved;
+				this.setBitboards(moved, 0, fromBit, toBit);
 			}
 			break;
 			case 3: {
+				if (this.whitesTurn) {
+					moved = 6;
+					captured = 12;
+					enPassantVictimSquare = to - 8;
+				}
+				else {
+					moved = 12;
+					captured = 6;
+					enPassantVictimSquare = to + 8;
+				}
 				this.offsetBoard[from]   = 0;
 				this.offsetBoard[to]	 = moved;
-				if (this.whitesTurn)
-					enPassantVictimSquare = to - 8;
-				else
-					enPassantVictimSquare = to + 8;
 				this.offsetBoard[enPassantVictimSquare] = 0;
 				enPassantVictimSquareBit = Square.getBitmapByIndex(enPassantVictimSquare);
 				this.setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
@@ -2005,74 +1982,92 @@ public class Position {
 			}
 			break;
 			case 4: {
-				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, 0, fromBit, 0);
+				captured = this.offsetBoard[to];
 				if (this.whitesTurn) {
+					moved = 6;
 					this.offsetBoard[to] = 2;
 					this.setBitboards(2, captured, 0, toBit);
 				}
 				else {
+					moved = 12;
 					this.offsetBoard[to] = 8;
 					this.setBitboards(8, captured, 0, toBit);
 				}
+				this.offsetBoard[from] = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
 			}
 			break;
 			case 5: {
-				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, 0, fromBit, 0);
+				captured = this.offsetBoard[to];
 				if (this.whitesTurn) {
+					moved = 6;
 					this.offsetBoard[to] = 3;
 					this.setBitboards(3, captured, 0, toBit);
 				}
 				else {
+					moved = 12;
 					this.offsetBoard[to] = 9;
 					this.setBitboards(9, captured, 0, toBit);
 				}
+				this.offsetBoard[from] = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
 			}
 			break;
 			case 6: {
-				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, 0, fromBit, 0);
+				captured = this.offsetBoard[to];
 				if (this.whitesTurn) {
+					moved = 6;
 					this.offsetBoard[to] = 4;
 					this.setBitboards(4, captured, 0, toBit);
 				}
 				else {
+					moved = 12;
 					this.offsetBoard[to] = 10;
 					this.setBitboards(10, captured, 0, toBit);
 				}
+				this.offsetBoard[from] = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
 			}
 			break;
 			case 7: {
-				this.offsetBoard[from]   = 0;
-				this.setBitboards(moved, 0, fromBit, 0);
+				captured = this.offsetBoard[to];
 				if (this.whitesTurn) {
+					moved = 6;
 					this.offsetBoard[to] = 5;
 					this.setBitboards(5, captured, 0, toBit);
 				}
 				else {
+					moved = 12;
 					this.offsetBoard[to] = 11;
 					this.setBitboards(11, captured, 0, toBit);
 				}
+				this.offsetBoard[from] = 0;
+				this.setBitboards(moved, 0, fromBit, 0);
+			}
+			break;
+			default: {
+				moved = -1;
+				captured = -1;
 			}
 		}
 		this.moveList.add(move);
+		this.setPositionInfo(captured);
 		this.setTurn();
 		this.setCastlingRights();
 		this.setEnPassantRights(from, to, moved);
 		this.setCheck();
 		this.setMoveIndices(moved, captured);
-		this.setKeys();
+		this.setKeys(moved);
 		this.setRepetitions();
 	}
 	/**Reverts the state of the instance to that before the last move made in every aspect necessary for the traversal of the game tree. Used within the engine.*/
 	public void unMakeMove() {
 		long positionInfo = this.positionInfoHistory.pop(), move = this.moveList.pop();
-		int from					= (int)((move >>> Move.FROM.shift)		 	  					& Move.FROM.mask);
-		int to						= (int)((move >>> Move.TO.shift) 			  					& Move.TO.mask);
-		int moved					= (int)((move >>> Move.MOVED_PIECE.shift) 	 					& Move.MOVED_PIECE.mask);
-		int captured				= (int)((move >>> Move.CAPTURED_PIECE.shift)  					& Move.CAPTURED_PIECE.mask);
-		int type					= (int)((move >>> Move.TYPE.shift)  							& Move.TYPE.mask);
+		int from	 = (int)((move >>> Move.FROM.shift)		 	  					& Move.FROM.mask);
+		int to		 = (int)((move >>> Move.TO.shift) 			  					& Move.TO.mask);
+		int type	 = (int)((move >>> Move.TYPE.shift)  							& Move.TYPE.mask);
+		int moved 	 = this.offsetBoard[to];
+		int captured = (int)(positionInfo & PositionRegister.CAPTURED_PIECE.mask);
 		int enPassantVictimSquare;
 		long fromBit = Square.getBitmapByIndex(from);
 		long toBit	 = Square.getBitmapByIndex(to);

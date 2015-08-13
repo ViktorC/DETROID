@@ -13,14 +13,15 @@ import engine.Board.*;
  */
 public enum PositionRegister {
 	
-	WHITE_CASTLING_RIGHTS (0,  3),
-	BLACK_CASTLING_RIGHTS (2,  3),
-	EN_PASSANT_RIGHTS     (4,  15),
-	FIFTY_MOVE_RULE_CLOCK (8,  255),
-	REPETITIONS 		  (16, 7),
-	CHECK				  (19, 3),
-	CHECKER1  			  (21, 127),
-	CHECKER2 			  (28, 127);
+	CAPTURED_PIECE 		  (0,  15),
+	WHITE_CASTLING_RIGHTS (4,  3),
+	BLACK_CASTLING_RIGHTS (6,  3),
+	EN_PASSANT_RIGHTS     (8,  15),
+	FIFTY_MOVE_RULE_CLOCK (12, 255),
+	REPETITIONS 		  (20, 7),
+	CHECK				  (23, 3),
+	CHECKER1  			  (25, 127),
+	CHECKER2 			  (32, 127);
 	
 	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
 	public final long mask;			//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
