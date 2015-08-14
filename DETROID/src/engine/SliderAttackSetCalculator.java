@@ -137,7 +137,7 @@ public class SliderAttackSetCalculator {
 		generator  |= (generator  >>> 28) & propagator;
 		return generator;
 	}
-	/**A bit parallel method that returns the combined attack sets of multiple rooks simultaneously.
+	/**A bit parallel method that returns the combined move (non-attack) sets of multiple rooks simultaneously.
 	 * 
 	 * @param rooks
 	 * @param empty
@@ -146,7 +146,7 @@ public class SliderAttackSetCalculator {
 	public static long multiRookMoveSet(long rooks, long empty) {
 		return northFill(rooks, empty) | southFill(rooks, empty) | westFill(rooks, empty) | eastFill(rooks, empty);
 	}
-	/**A bit parallel method that returns the combined attack sets of multiple rooks simultaneously.
+	/**A bit parallel method that returns the combined move (non-attack) sets of multiple rooks simultaneously.
 	 * 
 	 * @param bishops
 	 * @param empty
@@ -154,6 +154,44 @@ public class SliderAttackSetCalculator {
 	 */
 	public static long multiBishopMoveSet(long bishops, long empty) {
 		return northWestFill(bishops, empty) | southWestFill(bishops, empty) | northEastFill(bishops, empty) | southEastFill(bishops, empty);
+	}
+	/**A bit parallel method that returns the combined attack sets of multiple rooks simultaneously.
+	 * 
+	 * @param rooks
+	 * @param empty
+	 * @param enemyOccupied
+	 * @return
+	 */
+	public static long multiRookAttackSet(long rooks, long empty, long enemyOccupied) {
+		long gen, attackSet = 0;
+		gen = northFill(rooks, empty);
+		attackSet |= gen | ((gen << 8) & enemyOccupied);
+		gen = southFill(rooks, empty);
+		attackSet |= gen | ((gen >>> 8) & enemyOccupied);
+		gen = westFill(rooks, empty);
+		attackSet |= gen | ((gen >>> 1) & enemyOccupied);
+		gen = eastFill(rooks, empty);
+		attackSet |= gen | ((gen << 1) & enemyOccupied);
+		return attackSet;
+	}
+	/**A bit parallel method that returns the combined attack sets of multiple bishops simultaneously.
+	 * 
+	 * @param bishops
+	 * @param empty
+	 * @param enemyOccupied
+	 * @return
+	 */
+	public static long multiBishopAttackSet(long bishops, long empty, long enemyOccupied) {
+		long gen, attackSet = 0;
+		gen = northWestFill(bishops, empty);
+		attackSet |= gen | ((gen << 7) & enemyOccupied);
+		gen = southWestFill(bishops, empty);
+		attackSet |= gen | ((gen >>> 9) & enemyOccupied);
+		gen = northEastFill(bishops, empty);
+		attackSet |= gen | ((gen << 9) & enemyOccupied);
+		gen = southEastFill(bishops, empty);
+		attackSet |= gen | ((gen >>> 7) & enemyOccupied);
+		return attackSet;
 	}
 	/**Returns the rank-wise attack set for the relevant occupancy from the defined square.
 	 * 

@@ -11,22 +11,23 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public enum PositionRegister {
+public enum UnmakeRegister {
 	
-	CAPTURED_PIECE 		  (0,  15),
-	WHITE_CASTLING_RIGHTS (4,  3),
-	BLACK_CASTLING_RIGHTS (6,  3),
-	EN_PASSANT_RIGHTS     (8,  15),
-	FIFTY_MOVE_RULE_CLOCK (12, 255),
-	REPETITIONS 		  (20, 7),
-	CHECK				  (23, 3),
-	CHECKER1  			  (25, 127),
-	CHECKER2 			  (32, 127);
+	MOVED_PIECE 		  (0,  15),
+	CAPTURED_PIECE		  (4,  15),
+	WHITE_CASTLING_RIGHTS (8,  3),
+	BLACK_CASTLING_RIGHTS (10, 3),
+	EN_PASSANT_RIGHTS     (12, 15),
+	FIFTY_MOVE_RULE_CLOCK (16, 255),
+	REPETITIONS 		  (24, 7),
+	CHECK				  (27, 3),
+	CHECKER1  			  (29, 127),
+	CHECKER2 			  (36, 127);
 	
 	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
 	public final long mask;			//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
 
-	private PositionRegister(int shift, long mask) {
+	private UnmakeRegister(int shift, long mask) {
 		this.shift = (byte) shift;
 		this.mask = mask;
 	}
@@ -38,18 +39,20 @@ public enum PositionRegister {
 	public static String toString(long positionInfo) {
 		String rep = "";
 		long whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions;
-		fiftyMoveRuleClock		= (positionInfo >>> PositionRegister.FIFTY_MOVE_RULE_CLOCK.shift)	& PositionRegister.FIFTY_MOVE_RULE_CLOCK.mask;
-		enPassantRights 		= (positionInfo >>> PositionRegister.EN_PASSANT_RIGHTS.shift)		& PositionRegister.EN_PASSANT_RIGHTS.mask;
-		whiteCastlingRights 	= (positionInfo >>> PositionRegister.WHITE_CASTLING_RIGHTS.shift)	& PositionRegister.WHITE_CASTLING_RIGHTS.mask;
-		blackCastlingRights 	= (positionInfo >>> PositionRegister.BLACK_CASTLING_RIGHTS.shift)	& PositionRegister.BLACK_CASTLING_RIGHTS.mask;
-		repetitions				= (positionInfo >>> PositionRegister.REPETITIONS.shift)				& PositionRegister.REPETITIONS.mask;
-		switch ((int)((positionInfo >>> PositionRegister.CHECK.shift) & PositionRegister.CHECK.mask)) {
+		fiftyMoveRuleClock		= (positionInfo >>> UnmakeRegister.FIFTY_MOVE_RULE_CLOCK.shift)	& UnmakeRegister.FIFTY_MOVE_RULE_CLOCK.mask;
+		enPassantRights 		= (positionInfo >>> UnmakeRegister.EN_PASSANT_RIGHTS.shift)		& UnmakeRegister.EN_PASSANT_RIGHTS.mask;
+		whiteCastlingRights 	= (positionInfo >>> UnmakeRegister.WHITE_CASTLING_RIGHTS.shift)	& UnmakeRegister.WHITE_CASTLING_RIGHTS.mask;
+		blackCastlingRights 	= (positionInfo >>> UnmakeRegister.BLACK_CASTLING_RIGHTS.shift)	& UnmakeRegister.BLACK_CASTLING_RIGHTS.mask;
+		repetitions				= (positionInfo >>> UnmakeRegister.REPETITIONS.shift)			& UnmakeRegister.REPETITIONS.mask;
+		rep += "Moved piece: " + ((positionInfo >>> UnmakeRegister.MOVED_PIECE.shift)			& UnmakeRegister.MOVED_PIECE.mask) + "\n";
+		rep += "Captured piece: " + ((positionInfo >>> UnmakeRegister.CAPTURED_PIECE.shift)		& UnmakeRegister.CAPTURED_PIECE.mask) + "\n";
+		switch ((int)((positionInfo >>> UnmakeRegister.CHECK.shift) & UnmakeRegister.CHECK.mask)) {
 			case 1:
-				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> PositionRegister.CHECKER1.shift) & PositionRegister.CHECKER1.mask)) + "\n", "Checker:");
+				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> UnmakeRegister.CHECKER1.shift) & UnmakeRegister.CHECKER1.mask)) + "\n", "Checker:");
 			break;
 			case 2:
-				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> PositionRegister.CHECKER1.shift) & PositionRegister.CHECKER1.mask)) + ", " +
-												Square.toString((int)((positionInfo >>> PositionRegister.CHECKER2.shift) & PositionRegister.CHECKER2.mask)) + "\n", "Checker:");
+				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> UnmakeRegister.CHECKER1.shift) & UnmakeRegister.CHECKER1.mask)) + ", " +
+												Square.toString((int)((positionInfo >>> UnmakeRegister.CHECKER2.shift) & UnmakeRegister.CHECKER2.mask)) + "\n", "Checker:");
 		}
 		rep += String.format("%-23s ", "Castling rights:");
 		if ((whiteCastlingRights & 1) != 0)

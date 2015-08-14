@@ -69,14 +69,15 @@ public class ZobristKeyGenerator {
 	 * @param board
 	 * @return
 	 */
-	public long updateKey(Position board, int moved) {
+	public long updateKey(Position board) {
 		long key	 	 = board.getZobristKey();
 		long move	 	 = board.getLastMove();
-		long prevPosInfo = board.getPreviousPositionInfo();
-		int from		 = (int)((move >>> Move.FROM.shift)  			& Move.FROM.mask);
-		int to			 = (int)((move >>> Move.TO.shift) 				& Move.TO.mask);
-		int captured	 = (int)(prevPosInfo 	& PositionRegister.CAPTURED_PIECE.mask);
-		int type		 = (int)((move >>> Move.TYPE.shift) 				& Move.TYPE.mask);
+		long unmakeReg 	 = board.getUnmakeRegister();
+		int from		 = (int)((move 		>>> Move.FROM.shift)  						& Move.FROM.mask);
+		int to			 = (int)((move 		>>> Move.TO.shift) 							& Move.TO.mask);
+		int moved 	 	 = (int) (unmakeReg 											& UnmakeRegister.MOVED_PIECE.mask);
+		int captured 	 = (int)((unmakeReg >>> UnmakeRegister.CAPTURED_PIECE.shift) 	& UnmakeRegister.CAPTURED_PIECE.mask);
+		int type		 = (int)((move 		>>> Move.TYPE.shift) 						& Move.TYPE.mask);
 		switch (type) {
 			case 0: {
 				key ^= this.board[moved][from];
@@ -168,9 +169,9 @@ public class ZobristKeyGenerator {
 			}
 		}
 		key ^= this.turn;
-		key ^= this.whiteCastlingRights[(int)((prevPosInfo >>> PositionRegister.WHITE_CASTLING_RIGHTS.shift) & PositionRegister.WHITE_CASTLING_RIGHTS.mask)];
-		key ^= this.blackCastlingRights[(int)((prevPosInfo >>> PositionRegister.BLACK_CASTLING_RIGHTS.shift) & PositionRegister.BLACK_CASTLING_RIGHTS.mask)];
-		key ^= this.enPassantRights[(int)((prevPosInfo >>> PositionRegister.EN_PASSANT_RIGHTS.shift) & PositionRegister.EN_PASSANT_RIGHTS.mask)];
+		key ^= this.whiteCastlingRights[(int)((unmakeReg >>> UnmakeRegister.WHITE_CASTLING_RIGHTS.shift) & UnmakeRegister.WHITE_CASTLING_RIGHTS.mask)];
+		key ^= this.blackCastlingRights[(int)((unmakeReg >>> UnmakeRegister.BLACK_CASTLING_RIGHTS.shift) & UnmakeRegister.BLACK_CASTLING_RIGHTS.mask)];
+		key ^= this.enPassantRights[(int)((unmakeReg >>> UnmakeRegister.EN_PASSANT_RIGHTS.shift) & UnmakeRegister.EN_PASSANT_RIGHTS.mask)];
 		key ^= this.whiteCastlingRights[board.getWhiteCastlingRights()];
 		key ^= this.blackCastlingRights[board.getBlackCastlingRights()];
 		key ^= this.enPassantRights[board.getEnPassantRights()];
