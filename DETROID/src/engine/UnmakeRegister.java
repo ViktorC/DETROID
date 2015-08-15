@@ -1,58 +1,49 @@
 package engine;
 
-import util.LongList;
-import engine.Board.*;
+import util.*;
+import engine.Board.Square;
 
-/**Some position information--such as castling and en passant rights, fifty-move rule clock, repetitions and the square indices of checkers--is stored
- * in longs so as to make reverting to the previous position when unmaking a move faster. This enum type contains the ranges of the different bits of
- * information held within the long that can be extracted using simple bit-shifts by the specified numbers contained in the 'shift' field and then
- * AND-ing the shifted values with the numbers contained in the 'mask' field.
+/**Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers, and the
+ * moved and captured pieces--is stored in this unencapsulated class' instances so as to make reverting back to the previous position when unmaking a move faster.
  * 
  * @author Viktor
  *
  */
-public enum UnmakeRegister {
-	
-	MOVED_PIECE 		  (0,  15),
-	CAPTURED_PIECE		  (4,  15),
-	WHITE_CASTLING_RIGHTS (8,  3),
-	BLACK_CASTLING_RIGHTS (10, 3),
-	EN_PASSANT_RIGHTS     (12, 15),
-	FIFTY_MOVE_RULE_CLOCK (16, 255),
-	REPETITIONS 		  (24, 7),
-	CHECK				  (27, 3),
-	CHECKER1  			  (29, 127),
-	CHECKER2 			  (36, 127);
-	
-	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
-	public final long mask;			//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value
+public class UnmakeRegister {
 
-	private UnmakeRegister(int shift, long mask) {
-		this.shift = (byte) shift;
-		this.mask = mask;
+	int movedPiece;
+	int capturedPiece;
+	int whiteCastlingRights;
+	int blackCastlingRights;
+	int enPassantRights;
+	int fiftyMoveRuleClock;
+	int repetitions;
+	long checkers;
+	
+	public UnmakeRegister(int movedPiece, int capturedPiece, int whiteCastlingRights, int blackCastlingRights, int enPassantRights, int fiftyMoveRuleClock, int repetitions, long checkers) {
+		this.movedPiece = movedPiece;
+		this.capturedPiece = capturedPiece;
+		this.whiteCastlingRights = whiteCastlingRights;
+		this.blackCastlingRights = blackCastlingRights;
+		this.enPassantRights = enPassantRights;
+		this.fiftyMoveRuleClock = fiftyMoveRuleClock;
+		this.repetitions = repetitions;
+		this.checkers = checkers;
 	}
 	/**Returns a human-readable String representation of the position information stored in the long.
 	 * 
 	 * @param positionInfo
 	 * @return
 	 */
-	public static String toString(long positionInfo) {
+	public String toString() {
+		long checker;
 		String rep = "";
-		long whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions;
-		fiftyMoveRuleClock		= (positionInfo >>> UnmakeRegister.FIFTY_MOVE_RULE_CLOCK.shift)	& UnmakeRegister.FIFTY_MOVE_RULE_CLOCK.mask;
-		enPassantRights 		= (positionInfo >>> UnmakeRegister.EN_PASSANT_RIGHTS.shift)		& UnmakeRegister.EN_PASSANT_RIGHTS.mask;
-		whiteCastlingRights 	= (positionInfo >>> UnmakeRegister.WHITE_CASTLING_RIGHTS.shift)	& UnmakeRegister.WHITE_CASTLING_RIGHTS.mask;
-		blackCastlingRights 	= (positionInfo >>> UnmakeRegister.BLACK_CASTLING_RIGHTS.shift)	& UnmakeRegister.BLACK_CASTLING_RIGHTS.mask;
-		repetitions				= (positionInfo >>> UnmakeRegister.REPETITIONS.shift)			& UnmakeRegister.REPETITIONS.mask;
-		rep += "Moved piece: " + ((positionInfo >>> UnmakeRegister.MOVED_PIECE.shift)			& UnmakeRegister.MOVED_PIECE.mask) + "\n";
-		rep += "Captured piece: " + ((positionInfo >>> UnmakeRegister.CAPTURED_PIECE.shift)		& UnmakeRegister.CAPTURED_PIECE.mask) + "\n";
-		switch ((int)((positionInfo >>> UnmakeRegister.CHECK.shift) & UnmakeRegister.CHECK.mask)) {
-			case 1:
-				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> UnmakeRegister.CHECKER1.shift) & UnmakeRegister.CHECKER1.mask)) + "\n", "Checker:");
-			break;
-			case 2:
-				rep += String.format("%-23s " + Square.toString((int)((positionInfo >>> UnmakeRegister.CHECKER1.shift) & UnmakeRegister.CHECKER1.mask)) + ", " +
-												Square.toString((int)((positionInfo >>> UnmakeRegister.CHECKER2.shift) & UnmakeRegister.CHECKER2.mask)) + "\n", "Checker:");
+		rep += "Moved piece: " + movedPiece + "\n";
+		rep += "Captured piece: " + capturedPiece + "\n";
+		if ((checker = BitOperations.getLSBit(checkers)) != 0) {
+			rep += String.format("%-23s " + Square.toString(BitOperations.indexOfBit(checker)), "Checker(s):");
+			if ((checker = BitOperations.getLSBit(checkers^checker)) != 0)
+				rep += ", " + Square.toString(BitOperations.indexOfBit(checker));
 		}
 		rep += String.format("%-23s ", "Castling rights:");
 		if ((whiteCastlingRights & 1) != 0)
@@ -79,20 +70,20 @@ public enum UnmakeRegister {
 	 * 
 	 * @param moves
 	 */
-	public static void printPositionInfoToConsole(LongList positionInfoHistory) {
+	public static void printPositionInfoToConsole(List<UnmakeRegister> positionInfoHistory) {
 		System.out.println();
 		while (positionInfoHistory.hasNext())
-			System.out.println(toString(positionInfoHistory.next()));
+			System.out.println(positionInfoHistory.next());
 		System.out.println();
 	}
 	/**Prints all position information longs contained in the input parameter to the console.
 	 * 
 	 * @param moves
 	 */
-	public static void printPositionInfoToConsole(long[] positionInfoHistory) {
+	public static void printPositionInfoToConsole(UnmakeRegister[] positionInfoHistory) {
 		System.out.println();
 		for (int i = 0; i < positionInfoHistory.length; i++)
-			System.out.println(toString(positionInfoHistory[i]));
+			System.out.println(positionInfoHistory[i]);
 		System.out.println();
 	}
 }

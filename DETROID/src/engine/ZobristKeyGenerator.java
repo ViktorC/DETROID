@@ -70,26 +70,21 @@ public class ZobristKeyGenerator {
 	 * @return
 	 */
 	public long updateKey(Position board) {
-		long key	 	 = board.getZobristKey();
-		long move	 	 = board.getLastMove();
-		long unmakeReg 	 = board.getUnmakeRegister();
-		int from		 = (int)((move 		>>> Move.FROM.shift)  						& Move.FROM.mask);
-		int to			 = (int)((move 		>>> Move.TO.shift) 							& Move.TO.mask);
-		int moved 	 	 = (int) (unmakeReg 											& UnmakeRegister.MOVED_PIECE.mask);
-		int captured 	 = (int)((unmakeReg >>> UnmakeRegister.CAPTURED_PIECE.shift) 	& UnmakeRegister.CAPTURED_PIECE.mask);
-		int type		 = (int)((move 		>>> Move.TYPE.shift) 						& Move.TYPE.mask);
-		switch (type) {
+		long key	 	 			= board.getZobristKey();
+		Move move	 	 			= board.getLastMove();
+		UnmakeRegister unmakeReg	= board.getUnmakeRegister();
+		switch (move.type) {
 			case 0: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				key ^= this.board[moved][to];
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				key ^= this.board[unmakeReg.movedPiece][move.to];
 			}
 			break;
 			case 1: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				key ^= this.board[moved][to];
-				if (moved == 1) {
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				key ^= this.board[unmakeReg.movedPiece][move.to];
+				if (unmakeReg.movedPiece == 1) {
 					key ^= this.board[3][7];
 					key ^= this.board[3][5];
 				}
@@ -100,10 +95,10 @@ public class ZobristKeyGenerator {
 			}
 			break;
 			case 2: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				key ^= this.board[moved][to];
-				if (moved == 1) {
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				key ^= this.board[unmakeReg.movedPiece][move.to];
+				if (unmakeReg.movedPiece == 1) {
 					key ^= this.board[3][0];
 					key ^= this.board[3][3];
 				}
@@ -114,64 +109,64 @@ public class ZobristKeyGenerator {
 			}
 			break;
 			case 3: {
-				key ^= this.board[moved][from];
-				key ^= this.board[moved][to];
-				if (moved == 6) {
-					key ^= this.board[12][to - 8];
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.movedPiece][move.to];
+				if (unmakeReg.movedPiece == 6) {
+					key ^= this.board[12][move.to - 8];
 				}
 				else {
-					key ^= this.board[6][to + 8];
+					key ^= this.board[6][move.to + 8];
 				}
 			}
 			break;
 			case 4: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				if (moved == 6) {
-					key ^= this.board[2][to];
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				if (unmakeReg.movedPiece == 6) {
+					key ^= this.board[2][move.to];
 				}
 				else {
-					key ^= this.board[8][to];
+					key ^= this.board[8][move.to];
 				}
 			}
 			break;
 			case 5: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				if (moved == 6) {
-					key ^= this.board[3][to];
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				if (unmakeReg.movedPiece == 6) {
+					key ^= this.board[3][move.to];
 				}
 				else {
-					key ^= this.board[9][to];
+					key ^= this.board[9][move.to];
 				}
 			}
 			break;
 			case 6: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				if (moved == 6) {
-					key ^= this.board[4][to];
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				if (unmakeReg.movedPiece == 6) {
+					key ^= this.board[4][move.to];
 				}
 				else {
-					key ^= this.board[10][to];
+					key ^= this.board[10][move.to];
 				}
 			}
 			break;
 			case 7: {
-				key ^= this.board[moved][from];
-				key ^= this.board[captured][to];
-				if (moved == 6) {
-					key ^= this.board[5][to];
+				key ^= this.board[unmakeReg.movedPiece][move.from];
+				key ^= this.board[unmakeReg.capturedPiece][move.to];
+				if (unmakeReg.movedPiece == 6) {
+					key ^= this.board[5][move.to];
 				}
 				else {
-					key ^= this.board[11][to];
+					key ^= this.board[11][move.to];
 				}
 			}
 		}
 		key ^= this.turn;
-		key ^= this.whiteCastlingRights[(int)((unmakeReg >>> UnmakeRegister.WHITE_CASTLING_RIGHTS.shift) & UnmakeRegister.WHITE_CASTLING_RIGHTS.mask)];
-		key ^= this.blackCastlingRights[(int)((unmakeReg >>> UnmakeRegister.BLACK_CASTLING_RIGHTS.shift) & UnmakeRegister.BLACK_CASTLING_RIGHTS.mask)];
-		key ^= this.enPassantRights[(int)((unmakeReg >>> UnmakeRegister.EN_PASSANT_RIGHTS.shift) & UnmakeRegister.EN_PASSANT_RIGHTS.mask)];
+		key ^= this.whiteCastlingRights[unmakeReg.whiteCastlingRights];
+		key ^= this.blackCastlingRights[unmakeReg.blackCastlingRights];
+		key ^= this.enPassantRights[unmakeReg.enPassantRights];
 		key ^= this.whiteCastlingRights[board.getWhiteCastlingRights()];
 		key ^= this.blackCastlingRights[board.getBlackCastlingRights()];
 		key ^= this.enPassantRights[board.getEnPassantRights()];
