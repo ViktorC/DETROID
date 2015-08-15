@@ -16,7 +16,10 @@ public class Move {
 	int value;	//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to
 	
 	public Move() {
-		
+		value = Game.LOSS;
+	}
+	public Move(int score) {
+		value = score;
 	}
 	public Move(int from, int to) {
 		this.from = from;

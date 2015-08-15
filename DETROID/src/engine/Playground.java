@@ -4,9 +4,10 @@ package engine;
 public class Playground {
 
 	public static void main(String[] args) {
-		Position b = new Position();
+		Position p = new Position();
 		long start = System.currentTimeMillis();
-		System.out.println(b.perft(6));
+		Search s = new Search(p, 8);
+		System.out.println(s.bestMove);
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}
