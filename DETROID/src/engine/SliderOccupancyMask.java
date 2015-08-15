@@ -1,5 +1,6 @@
 package engine;
 
+import util.BitOperations;
 import engine.Board.*;
 
 /**An enum type that holds the rank, file, diagonal, and anti-diagonal that cross the square for each square as bitmaps. The square itself and the perimeter squares are excluded as their occupancies do not affect the attack set variations.

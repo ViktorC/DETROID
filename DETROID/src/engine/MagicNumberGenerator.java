@@ -1,6 +1,8 @@
 package engine;
 
 import java.util.Random;
+
+import util.BitOperations;
 import engine.Board.*;
 
 /**A class that generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move database by multiplying the intersection

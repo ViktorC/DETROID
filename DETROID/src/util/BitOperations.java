@@ -1,6 +1,5 @@
-package engine;
+package util;
 
-import util.IntStack;
 
 /**A static class exclusively for bitwise operations. Some of them are implemented in the Java API, but to have a clear idea about
  * the costs and to understand the logic, they are re-implemented and provided here.

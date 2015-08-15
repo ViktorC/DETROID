@@ -12,10 +12,10 @@ import util.*;
  */
 public enum Move {
 	
-	VALUE			(0,  0b10000000000000001111111111111111),	//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to; it's the first 'field' in the int and it owns the last bit so it can store negative values
-	FROM 			(16, 63),									//denotes the index of the origin square
-	TO				(22, 63),									//denotes the index of the destination square
-	TYPE			(28, 7);									//denotes the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
+	VALUE			(0,  131071),	//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to; it's the first 'field' in the int and it owns the last bit so it can store negative values
+	FROM 			(17, 63),		//denotes the index of the origin square
+	TO				(23, 63),		//denotes the index of the destination square
+	TYPE			(29, 7);		//denotes the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
 	
 	public final byte shift;		//the bit-index at which the interval designated for the information described by this enum constant is supposed to begin in a move long
 	public final int  mask;			//the mask with which the information described by this enum constant can be obtained when AND-ed with a move a long right-shifted by the same enum constants 'shift' value

@@ -1,5 +1,7 @@
 package engine;
 
+import util.BitOperations;
+
 /**A class that generates possible occupancy variations for rooks and bishops. It either generates a one-dimensional array
  * of variations for either of the two pieces for the specified square index or a two-dimensional array for all squares.
  * 

@@ -1,5 +1,6 @@
 package engine;
 
+import util.BitOperations;
 import engine.Board.*;
 
 /**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given occupancy or array of

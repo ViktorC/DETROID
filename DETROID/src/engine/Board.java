@@ -1,5 +1,7 @@
 package engine;
 
+import util.BitOperations;
+
 /*A class to group together objects/enums exclusive to the chess board itself such as the squares, files, and ranks.
  * 
  * @author Viktor
