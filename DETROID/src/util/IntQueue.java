@@ -19,13 +19,19 @@ public class IntQueue extends IntList {
 		this.iterator = head;
 		length++;
 	}
-	/**Returns the data held in the last element of the list. If the list is empty, it returns 0.*/
+	/**Returns the data held in the last element of the list. If the list is empty, it returns 0.
+	 * 
+	 * @return
+	 */
 	public int getTail() {
 		if (this.tail != null)
 			return this.tail.data;
 		return 0;
 	}
-	/**Returns the number of nodes in the list.*/
+	/**Returns the number of nodes in the list.
+	 * 
+	 * @return
+	 */
 	public int length() {
 		return this.length;
 	}
@@ -50,5 +56,18 @@ public class IntQueue extends IntList {
 		if (length == 0)
 			this.tail = null;
 		return super.pop();
+	}
+	/**Copies the data stored in the nodes of the queue into an array in order, and returns the array.
+	 * 
+	 * @return
+	 */
+	public int[] toArray() {
+		int[] arr = new int[this.length];
+		int i = 0;
+		while (this.hasNext()) {
+			arr[i] = this.next();
+			i++;
+		}
+		return arr;
 	}
 }

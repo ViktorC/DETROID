@@ -1,6 +1,7 @@
 package engine;
 
-import util.*;
+import util.List;
+import util.Comparable;
 import engine.Board.Square;
 
 /**A simple unencapsulated class that provides objects for storing information about moves necessary for making them.
@@ -8,7 +9,7 @@ import engine.Board.Square;
  * @author Viktor
  *
  */
-public class Move {
+public class Move implements Comparable<Move> {
 
 	int from;	//denotes the index of the origin square
 	int to;		//denotes the index of the destination square
@@ -29,6 +30,18 @@ public class Move {
 		this.from = from;
 		this.to = to;
 		this.type = type;
+	}
+	/**Returns the difference of the owner and the parameter Move instances' value fields.*/
+	public int compareTo(Move m) throws NullPointerException {
+		return this.value - m.value;
+	}
+	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
+	public boolean greaterThan(Move m) throws NullPointerException {
+		return (this.value > m.value);
+	}
+	/**Returns whether the owner Move instance's value field holds a smaller number than the parameter Move instance's.*/
+	public boolean smallerThan(Move m) throws NullPointerException {
+		return (this.value < m.value);
 	}
 	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.
 	 * 

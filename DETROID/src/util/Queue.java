@@ -4,6 +4,7 @@ package util;
  * 
  * @author Viktor
  *
+ * @param <Data>
  */
 public class Queue<Data> extends List<Data> {
 
@@ -19,13 +20,19 @@ public class Queue<Data> extends List<Data> {
 		this.iterator = head;
 		length++;
 	}
-	/**Returns the data held in the last element of the list. If the list is empty, it returns null.*/
+	/**Returns the data held in the last element of the list. If the list is empty, it returns null.
+	 * 
+	 * @return
+	 */
 	public Data getTail() {
 		if (this.tail != null)
 			return this.tail.data;
 		return null;
 	}
-	/**Returns the number of nodes in the list.*/
+	/**Returns the number of nodes in the list.
+	 * 
+	 * @return
+	 */
 	public int length() {
 		return this.length;
 	}
@@ -50,5 +57,19 @@ public class Queue<Data> extends List<Data> {
 		if (length == 0)
 			this.tail = null;
 		return super.pop();
+	}
+	/**Copies references to the nodes of the queue into an array in order, and returns the array.
+	 * 
+	 * @return
+	 */
+	public Data[] toArray() {
+		@SuppressWarnings({"unchecked"})
+		Data[] arr = (Data[])new Object[this.length];
+		int i = 0;
+		while (this.hasNext()) {
+			arr[i] = this.next();
+			i++;
+		}
+		return arr;
 	}
 }
