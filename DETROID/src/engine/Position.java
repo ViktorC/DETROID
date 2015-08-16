@@ -633,20 +633,8 @@ public class Position {
 		}
 	}
 	private void setCheck() {
-		if (this.whitesTurn) {
-			this.checkers = getAttackers(BitOperations.indexOfBit(this.whiteKing), false);
-			if (this.checkers == 0)
-				this.check = false;
-			else
-				this.check = true;
-		}
-		else {
-			this.checkers = getAttackers(BitOperations.indexOfBit(this.blackKing), true);
-			if (this.checkers == 0)
-				this.check = false;
-			else
-				this.check = true;
-		}
+		this.checkers = getCheckers();
+		this.check = (this.checkers != 0) ? true : false;
 	}
 	private void setKeys() {
 		this.zobristKey = keyGen.updateKey(this);
@@ -736,7 +724,7 @@ public class Position {
 		}
 		return false;
 	}
-	/**Returns a long representing all the squares on which the pieces are of the color defined by byWhite and in the current position could legally be moved to the supposedly enemy occupied square specified by sqrInd.
+	/**Returns a bitmap representing all the squares on which the pieces are of the color defined by byWhite and in the current position could legally be moved to the supposedly enemy occupied square specified by sqrInd.
 	 * 
 	 * @param sqrInd
 	 * @param byWhite
@@ -798,6 +786,32 @@ public class Position {
 				blockerCandidates |=  this.blackPawns & dB.getCrudeWhitePawnCaptures();
 		}
 		return blockerCandidates;
+	}
+	/**Returns a bitmap representing the attackers of the color to move's king.
+	 * 
+	 * @return
+	 */
+	public long getCheckers() {
+		long attackers = 0;
+		int sqrInd;
+		MoveDatabase dB;
+		if (this.whitesTurn) {
+			sqrInd = BitOperations.indexOfBit(this.whiteKing);
+			dB = MoveDatabase.getByIndex(sqrInd);
+			attackers  =  this.blackKnights						& dB.getCrudeKnightMoves();
+			attackers |=  this.blackPawns 						& dB.getCrudeWhitePawnCaptures();
+			attackers |= (this.blackQueens | this.blackRooks)	& dB.getWhiteRookMoves(this.allNonWhiteOccupied, this.allOccupied);
+			attackers |= (this.blackQueens | this.blackBishops) & dB.getWhiteBishopMoves(this.allNonWhiteOccupied, this.allOccupied);
+		}
+		else {
+			sqrInd = BitOperations.indexOfBit(this.blackKing);
+			dB = MoveDatabase.getByIndex(sqrInd);
+			attackers  =  this.whiteKnights						& dB.getCrudeKnightMoves();
+			attackers |=  this.whitePawns 						& dB.getCrudeBlackPawnCaptures();
+			attackers |= (this.whiteQueens | this.whiteRooks)	& dB.getBlackRookMoves(this.allNonBlackOccupied, this.allOccupied);
+			attackers |= (this.whiteQueens | this.whiteBishops) & dB.getBlackBishopMoves(this.allNonBlackOccupied, this.allOccupied);
+		}
+		return attackers;
 	}
 	/**Returns a long representing all the squares on which there are pinned pieces of the color defined by forWhite in the current position. A pinned piece is one that when moved would expose its king to a check.
 	 * 
@@ -2032,7 +2046,7 @@ public class Position {
 		this.enPassantRights 		= positionInfo.enPassantRights;
 		this.fiftyMoveRuleClock		= positionInfo.fiftyMoveRuleClock;
 		this.repetitions			= positionInfo.repetitions;
-		this.checkers = positionInfo.checkers;
+		this.checkers 				= positionInfo.checkers;
 		if (this.checkers != 0)
 			this.check = true;
 		else
