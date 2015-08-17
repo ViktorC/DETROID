@@ -10,6 +10,10 @@ import engine.Board.Square;
  *
  */
 public class Move implements Comparable<Move> {
+	
+	private static byte SHIFT_TO = 6;
+	private static byte SHIFT_TYPE = 12;
+	private static byte MASK_FROM_TO = 63;
 
 	int from;	//denotes the index of the origin square
 	int to;		//denotes the index of the destination square
@@ -17,7 +21,6 @@ public class Move implements Comparable<Move> {
 	int value;	//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to
 	
 	public Move() {
-		value = Game.LOSS;
 	}
 	public Move(int score) {
 		value = score;
@@ -31,21 +34,26 @@ public class Move implements Comparable<Move> {
 		this.to = to;
 		this.type = type;
 	}
+	/**Parses a move encoded in a 16 bit integer.*/
+	public Move(short move) {
+		from = move & MASK_FROM_TO;
+		to = (move >>> SHIFT_TO) & MASK_FROM_TO;
+		type = move >>> SHIFT_TYPE;
+	}
 	/**Returns the difference of the owner and the parameter Move instances' value fields.*/
 	public int compareTo(Move m) throws NullPointerException {
-		return this.value - m.value;
+		return value - m.value;
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
 	public boolean greaterThan(Move m) throws NullPointerException {
-		return (this.value > m.value);
+		return (value > m.value);
 	}
 	/**Returns whether the owner Move instance's value field holds a smaller number than the parameter Move instance's.*/
 	public boolean smallerThan(Move m) throws NullPointerException {
-		return (this.value < m.value);
+		return (value < m.value);
 	}
 	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.
-	 * 
-	 * @param move
+	 *
 	 * @return
 	 */
 	public String toString() {
@@ -69,6 +77,14 @@ public class Move implements Comparable<Move> {
 			default:
 				return alg;
 		}
+	}
+	/**Returns a move as a 16 bit integer with information on the state of the object stored in designated bits,
+	 * except for the score. Useful in memory sensitive applications like the transposition table.
+	 *
+	 * @return
+	 */
+	public short toShort() {
+		return (short)(from | (to << SHIFT_TO) | (type << SHIFT_TYPE));
 	}
 	/**Prints all moves contained in the input parameter to the console.
 	 * 

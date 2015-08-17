@@ -11,14 +11,42 @@ public class Stack<Data> extends List<Data> {
 
 	}
 	public Stack(Data data) {
-		this.head.data = data;
-		this.iterator = head;
+		head.data = data;
+		iterator = head;
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
 	public void add(Data data) {
-		IntListItem temp = this.head;
-		this.head = new IntListItem(data);
-		this.head.next = temp;
-		this.reset();
+		IntListItem temp = head;
+		head = new IntListItem(data);
+		head.next = temp;
+		reset();
+	}
+	/**Returns the data held in the last element of the list. If the list is empty, it returns null.
+	 *
+	 * This stack holds no incrementally updated reference to the last node, thus this operation
+	 * requires the method to loop over all the nodes which makes it quite expensive.
+	 *
+	 * @return
+	 */
+	public Data getTail() {
+		Data out = null;
+		while (hasNext())
+			out = next();
+		return out;
+	}
+	/**Returns the number of nodes in the list.
+	 * 
+	 * This stack has no incrementally updated 'length' field, thus this operation requires
+	 * the method to loop over all the nodes and count them, which makes it quite expensive.
+	 *
+	 * @return
+	 */
+	public int length() {
+		int c = 0;
+		while (hasNext()) {
+			next();
+			c++;
+		}
+		return c;
 	}
 }

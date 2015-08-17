@@ -15,9 +15,9 @@ public class Queue<Data> extends List<Data> {
 
 	}
 	public Queue(Data data) {
-		this.head = new IntListItem(data);
-		this.tail = head;
-		this.iterator = head;
+		head = new IntListItem(data);
+		tail = head;
+		iterator = head;
 		length++;
 	}
 	/**Returns the data held in the last element of the list. If the list is empty, it returns null.
@@ -25,8 +25,8 @@ public class Queue<Data> extends List<Data> {
 	 * @return
 	 */
 	public Data getTail() {
-		if (this.tail != null)
-			return this.tail.data;
+		if (tail != null)
+			return tail.data;
 		return null;
 	}
 	/**Returns the number of nodes in the list.
@@ -34,18 +34,18 @@ public class Queue<Data> extends List<Data> {
 	 * @return
 	 */
 	public int length() {
-		return this.length;
+		return length;
 	}
 	/**Enqueues a new node storing the input parameter data.*/
 	public void add(Data data) {
-		if (this.head == null) {
-			this.head = new IntListItem(data);
-			this.tail = head;
-			this.iterator = head;
+		if (head == null) {
+			head = new IntListItem(data);
+			tail = head;
+			iterator = head;
 		}
 		else {
-			this.tail.next = new IntListItem(data);
-			this.tail = tail.next;
+			tail.next = new IntListItem(data);
+			tail = tail.next;
 		}
 		length++;
 	}
@@ -55,21 +55,7 @@ public class Queue<Data> extends List<Data> {
 	public Data pop() {
 		length--;
 		if (length == 0)
-			this.tail = null;
+			tail = null;
 		return super.pop();
-	}
-	/**Copies references to the nodes of the queue into an array in order, and returns the array.
-	 * 
-	 * @return
-	 */
-	public Data[] toArray() {
-		@SuppressWarnings({"unchecked"})
-		Data[] arr = (Data[])new Object[this.length];
-		int i = 0;
-		while (this.hasNext()) {
-			arr[i] = this.next();
-			i++;
-		}
-		return arr;
 	}
 }

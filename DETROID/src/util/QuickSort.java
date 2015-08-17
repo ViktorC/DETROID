@@ -12,18 +12,18 @@ public class QuickSort<Entry extends Comparable<Entry>> {
 	
 	public QuickSort(Entry[] array) {
 		this.array = array;
-		this.sort();
+		sort();
 	}
-	public QuickSort(Queue<Entry> container) {
-		this.array = container.toArray();
-		this.sort();
+	public QuickSort(List<Entry> container) {
+		array = container.toArray();
+		sort();
 	}
 	/**Returns the sorted container as an array.
 	 * 
 	 * @return
 	 */
 	public Entry[] getArray() {
-		return this.array;
+		return array;
 	}
 	/**Returns the sorted container as a queue.
 	 * 
@@ -31,13 +31,13 @@ public class QuickSort<Entry extends Comparable<Entry>> {
 	 */
 	public Queue<Entry> getQueue() {
 		Queue<Entry> q = new Queue<Entry>();
-		for (Entry e : this.array)
+		for (Entry e : array)
 			q.add(e);
 		return q;
 	}
 	private void sort() {
 		int left = 0;
-		int right = this.array.length - 1;
+		int right = array.length - 1;
 		this.quickSort(left, right);
 	}
 	private void quickSort(int left, int right) {
@@ -48,17 +48,17 @@ public class QuickSort<Entry extends Comparable<Entry>> {
 			quickSort(index, right);
 	}
 	private int partition(int left, int right) {
-		Entry pivot = this.array[(left + right)/2];
+		Entry pivot = array[(left + right)/2];
 		Entry temp;
 		while (left <= right) {
-			while (this.array[left].greaterThan(pivot))
+			while (array[left].greaterThan(pivot))
 				left++;
-			while (this.array[right].smallerThan(pivot))
+			while (array[right].smallerThan(pivot))
 				right--;
 			if (left <= right) {
-				temp = this.array[left];
-				this.array[left] = this.array[right];
-				this.array[right] = temp;
+				temp = array[left];
+				array[left] = array[right];
+				array[right] = temp;
 				left++;
 				right--;
 			}

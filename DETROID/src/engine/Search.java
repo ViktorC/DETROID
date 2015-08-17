@@ -15,7 +15,7 @@ public class Search {
 	}
 	private Move negaMax(int depth, int alpha, int beta) {
 		int score;
-		Move move, temp, bestMove = new Move();
+		Move move, temp, bestMove = new Move(Game.LOSS);
 		Queue<Move> moves = pos.generateMoves();
 		if (moves.length() == 0)
 			return new Move();

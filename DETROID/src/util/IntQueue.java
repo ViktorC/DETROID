@@ -14,9 +14,9 @@ public class IntQueue extends IntList {
 
 	}
 	public IntQueue(int data) {
-		this.head = new IntListItem(data);
-		this.tail = head;
-		this.iterator = head;
+		head = new IntListItem(data);
+		tail = head;
+		iterator = head;
 		length++;
 	}
 	/**Returns the data held in the last element of the list. If the list is empty, it returns 0.
@@ -24,8 +24,8 @@ public class IntQueue extends IntList {
 	 * @return
 	 */
 	public int getTail() {
-		if (this.tail != null)
-			return this.tail.data;
+		if (tail != null)
+			return tail.data;
 		return 0;
 	}
 	/**Returns the number of nodes in the list.
@@ -33,18 +33,18 @@ public class IntQueue extends IntList {
 	 * @return
 	 */
 	public int length() {
-		return this.length;
+		return length;
 	}
 	/**Enqueues a new node storing the input parameter data.*/
 	public void add(int data) {
-		if (this.head == null) {
-			this.head = new IntListItem(data);
-			this.tail = head;
-			this.iterator = head;
+		if (head == null) {
+			head = new IntListItem(data);
+			tail = head;
+			iterator = head;
 		}
 		else {
-			this.tail.next = new IntListItem(data);
-			this.tail = tail.next;
+			tail.next = new IntListItem(data);
+			tail = tail.next;
 		}
 		length++;
 	}
@@ -54,20 +54,7 @@ public class IntQueue extends IntList {
 	public int pop() {
 		length--;
 		if (length == 0)
-			this.tail = null;
+			tail = null;
 		return super.pop();
-	}
-	/**Copies the data stored in the nodes of the queue into an array in order, and returns the array.
-	 * 
-	 * @return
-	 */
-	public int[] toArray() {
-		int[] arr = new int[this.length];
-		int i = 0;
-		while (this.hasNext()) {
-			arr[i] = this.next();
-			i++;
-		}
-		return arr;
 	}
 }

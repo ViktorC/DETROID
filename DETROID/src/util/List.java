@@ -31,11 +31,16 @@ public abstract class List<Data> {
 	 * @return
 	 */
 	public Data getHead() {
-		if (this.head != null)
-			return this.head.data;
+		if (head != null)
+			return head.data;
 		return null;
 	}
-	/**The addition method that differs for different types of list data structures thus needs to be implemented by subclasses.
+	/**Returns the data held in the last element of the list. If the list is empty, it returns null.
+	 *
+	 * @return
+	 */
+	public abstract Data getTail();
+	/**Creates a node for the input data and adds it to the list.
 	 * 
 	 * @param data
 	 */
@@ -46,8 +51,8 @@ public abstract class List<Data> {
 	 * @return
 	 */
 	public boolean hasNext() {
-		if (this.iterator == null) {
-			this.reset();
+		if (iterator == null) {
+			reset();
 			return false;
 		}
 		return true;
@@ -57,13 +62,13 @@ public abstract class List<Data> {
 	 * @return
 	 */
 	public Data next() {
-		Data next = this.iterator.data;
-		this.iterator = this.iterator.next;
+		Data next = iterator.data;
+		iterator = iterator.next;
 		return next;
 	}
 	/**Resets the iterator to the head.*/
 	public void reset() {
-		this.iterator = this.head;
+		iterator = head;
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 *  
@@ -72,15 +77,34 @@ public abstract class List<Data> {
 	 * @return
 	 */
 	public Data pop() {
-		if (this.head != null) {
-			Data data = this.head.data;
-			if (this.head.next != null)
-				this.head = this.head.next;
+		if (head != null) {
+			Data data = head.data;
+			if (head.next != null)
+				head = head.next;
 			else
-				this.head = null;
-			this.reset();
+				head = null;
+			reset();
 			return data;
 		}
 		return null;
+	}
+	/**Returns the number of nodes in the list.
+	 * 
+	 * @return
+	 */
+	public abstract int length();
+	/**Copies references to the nodes of the list into an array in order, and returns the array.
+	 *
+	 * @return
+	 */
+	public Data[] toArray() {
+		int i = 0;
+		@SuppressWarnings({"unchecked"})
+		Data[] arr = (Data[])new Object[length()];
+		while (hasNext()) {
+			arr[i] = next();
+			i++;
+		}
+		return arr;
 	}
 }
