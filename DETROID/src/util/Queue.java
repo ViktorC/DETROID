@@ -1,6 +1,7 @@
 package util;
 
-/**A generic queue that keeps a node count and a reference to its last node.
+/**A generic singly-linked queue that keeps an incrementally updated node count and a reference to its last node. All of its methods are executed in constant
+ * time except {@link #toArray() toArray} which is still relatively fast and has a low O(n) complexity, near half of that of my stacks.
  * 
  * @author Viktor
  *

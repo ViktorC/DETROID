@@ -1,6 +1,7 @@
 package util;
 
-/**A primitive type queue data structure for 32-bit integers.
+/**A primitive type singly-linked queue data structure for 32 bit integers that holds an incrementally updated node count and a reference to the last node.
+ * All of its methods are executed in constant time except {@link #toArray() toArray} which is still relatively fast and has a low O(n) complexity.
  * 
  * @author Viktor
  *

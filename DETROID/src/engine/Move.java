@@ -35,10 +35,12 @@ public class Move implements Comparable<Move> {
 		this.type = type;
 	}
 	/**Parses a move encoded in a 16 bit integer.*/
-	public Move(short move) {
-		from = move & MASK_FROM_TO;
-		to = (move >>> SHIFT_TO) & MASK_FROM_TO;
-		type = move >>> SHIFT_TYPE;
+	public static Move toMove(short move) {
+		Move m = new Move();
+		m.from = move & MASK_FROM_TO;
+		m.to = (move >>> SHIFT_TO) & MASK_FROM_TO;
+		m.type = move >>> SHIFT_TYPE;
+		return m;
 	}
 	/**Returns the difference of the owner and the parameter Move instances' value fields.*/
 	public int compareTo(Move m) throws NullPointerException {

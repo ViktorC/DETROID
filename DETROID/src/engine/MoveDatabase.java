@@ -1,21 +1,92 @@
 package engine;
+
 import engine.Board.*;
 
+/**A preinitialized move database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains a so called
+ * fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the desired move sets
+ * can be retrieved by simply invoking one of this database's functions and feeding it an occupancy bitmap or two. Beside the sliding pieces' attack sets,
+ * all the other pieces masks have been preinitialized too, for the sake of simplicity.
+ * 
+ * @author Viktor
+ *
+ */
 public enum MoveDatabase {
 	
-	A1, B1, C1, D1, E1, F1, G1, H1,
-	A2, B2, C2, D2, E2, F2, G2, H2,
-	A3, B3, C3, D3, E3, F3, G3, H3,
-	A4, B4, C4, D4, E4, F4, G4, H4,
-	A5, B5, C5, D5, E5, F5, G5, H5,
-	A6, B6, C6, D6, E6, F6, G6, H6,
-	A7, B7, C7, D7, E7, F7, G7, H7,
-	A8, B8, C8, D8, E8, F8, G8, H8;
+	A1 (0b1001000010000000000000000001001000100000010000000000000010000001L, 0b0000000000000010000100000000000100001000000000001000000010000000L, 52, 58),
+	B1 (0b0000000011000000000100000000001001100000000000000100000000000000L, 0b1010000000010001000100000000000110000010100100001000000001000100L, 53, 59),
+	C1 (0b0000000010000000000010010010000000000000100000000101000000000100L, 0b0100000000000100000010000000000010000001000000010000000000010000L, 53, 59),
+	D1 (0b0000000010000000000100000000000001000100100000000000100000000000L, 0b0000100000100100010000010000000000100000000100110000000001000011L, 53, 59),
+	E1 (0b0000000010000000000000100000010000000000000010000000000010000000L, 0b0000000000000100000001010010000000000001001001001000000010000000L, 53, 59),
+	F1 (0b0010000010000000000001000000000000100001000001100000000010000000L, 0b0000000000000010000000101000001000100000001000000100000000000000L, 53, 59),
+	G1 (0b0110010000000000000011000000000010000001000000100011000000001000L, 0b1001000000000100000000010000010000000110101000000010000000000000L, 53, 59),
+	H1 (0b0000001010000000000000100100010000100101000000000000000010000000L, 0b0000100000000001000001001000001000000000101000000000010001000000L, 52, 58),
+	A2 (0b0000000001010000100000000000000010000000001000000100000000010100L, 0b1000011010000000000010000101100100001000000010000000000011001000L, 53, 59),
+	B2 (0b1000000000010000010000000000000000100000000100000000000001000100L, 0b0000000000000010001000000000000100000010001000001000001100000000L, 54, 59),
+	C2 (0b0000000000000110000000000100000001010110000000001000000001100000L, 0b0000000010000001100111100010001000000100000010010000000110000000L, 54, 59),
+	D2 (0b0001100000000001000000000011000000000000001000110000001000001000L, 0b0110100000001101100001000100000001000000100010000000000001000000L, 54, 59),
+	E2 (0b0000000000000000100000000000100000000011100000000000010000000000L, 0b0001001000100001000001000000010000100000110000100000000000000000L, 54, 59),
+	F2 (0b0011000000000010000000000000100000000100000100000000101000000000L, 0b0000000000001010000000010011000000001000001000000000000000001000L, 54, 59),
+	G2 (0b0001000100100001000000000000000100000000000001100000000010000100L, 0b0000010100100000001000100000100100000001001000000001001000100000L, 54, 59),
+	H2 (0b0001000101000010000000000000010010000000010011000000001100010010L, 0b0010000000010000100000100000000100100000100010000000010000000000L, 53, 59),
+	A3 (0b0101000100000011000000010000000000100010100000000000000001000000L, 0b0000000010000100000100000000100000010000000001000000100000000000L, 53, 59),
+	B3 (0b0000000100110000000001000100000000000000010010001010000000000000L, 0b0100000010100110000010000010000001010100000000110000001000000000L, 54, 59),
+	C3 (0b0000000001001010100000001000000001010000000000000010000000000001L, 0b0010000001001000000110100000010000001000000000001010000010011000L, 54, 57),
+	D3 (0b0100000100000011100000011000000000001000000000000011000000000100L, 0b1000000000010100000000100000100000000100100100011001000000000000L, 54, 57),
+	E3 (0b0000000100001110000000100000000000001000101000000001000000000100L, 0b0000001000001001000000010100100000100000000010000000010101000100L, 54, 57),
+	F3 (0b0010010000100001000000010000000000000100000000001000100001000010L, 0b1011000000000010000000000000110000100000100101000010000000000000L, 54, 57),
+	G3 (0b0000000010000000000001000000000000011000000100000000000110001010L, 0b0000000000000001010000000000001100011000000000100001000000000000L, 54, 59),
+	H3 (0b0000100100000101000000100000000000010001000000001000000001010100L, 0b0001100001000001010000000100000100000001010010000000010000000000L, 53, 59),
+	A4 (0b0000000001000000100000000010000010000000000000000100000000000000L, 0b1000010000010000010000000100000001000100000001000000010000000101L, 53, 59),
+	B4 (0b1000000001000010100000010000000100000000001000000100000000001001L, 0b0011100000000100000011000001001000100000101010000000010010000000L, 54, 59),
+	C4 (0b0000010000000100010000000011000100000000001000000000000100000001L, 0b0000000000010000111010000000100000100100000100000100010000000000L, 54, 57),
+	D4 (0b0000000000000100011000010000000100000000000100000000000000001000L, 0b0100100000001100000000010000000010000000001000000000100010000000L, 54, 55),
+	E4 (0b0001000001000000000110000000000010000000000001000000000010000000L, 0b0000001000001101000000000100000000101100000001000100000000000000L, 54, 55),
+	F4 (0b1001000000001010000000000000101000000000010010001001000000000100L, 0b0100011010001000000010100000010000000000110000000100001000000010L, 54, 57),
+	G4 (0b0000000000010000000000110000010000000000010100100100100000010000L, 0b0100000000001000000000100000000000000100100100100000000100000000L, 54, 59),
+	H4 (0b1100010110000001100000000000110010000000000010000100100100000000L, 0b0001000000000000110000010000000000101000100001000001000100010100L, 53, 59),
+	A5 (0b0000010000000000100000000100000000001100100000000000100000100000L, 0b0100000000010001001000000010000000100000000110000000100001001000L, 53, 59),
+	B5 (0b0010000000010000000000000010000000010100110000000000000001000110L, 0b0000000000000000100100000001000000000000000101000000010000110000L, 54, 59),
+	C5 (0b0000000000001100100000100001000000000000100000000010000000000000L, 0b0100000000000010000000100000101000000001000000010000100000000000L, 54, 57),
+	D5 (0b0000000000001010000000000100000000010010000000000010000000101000L, 0b0000000100000001001000000010000000100000000010000000000010000000L, 54, 55),
+	E5 (0b0000010000001000000000011000000000001000100000000000010000000000L, 0b0100000000010000000000100000000010000000000000000101000000000101L, 54, 55),
+	F5 (0b1000000000001000000010100000000010000000100000000000010000000000L, 0b0000000000100010000000001000001000000100000000010000000001000000L, 54, 57),
+	G5 (0b0000010100100001110000010000100000110100000000000001000000100010L, 0b0000000000001000000000001010010000001110010100010000000100000000L, 54, 59),
+	H5 (0b0000000001001010011000000100010000001010000000000000001110100001L, 0b0000000000000100000000001000000000111000000001100000000100000000L, 53, 59),
+	A6 (0b1000001010000000000000000100000100100000000001000100000000000011L, 0b0000010000000100000001000000010001000000000000000000010100000000L, 53, 59),
+	B6 (0b0000000000110000000000000100110110100000000000010100000000000000L, 0b0000000000000010000000001001000000000100000001000000100010000000L, 54, 59),
+	C6 (0b0000000000010000000000000010000000000001100000001000000000011000L, 0b0000001000000110000000001000001000100000100000000000010000001100L, 54, 57),
+	D6 (0b0100010000010101000000001000101000110000000000010000000000100000L, 0b0000000010010000010000000100001000000000100000101000100000000000L, 54, 57),
+	E6 (0b0000010000001000000011000000000000001000000000001000000010000000L, 0b0000000000000000010010000000000100000100000000010001000001000010L, 54, 57),
+	F6 (0b0000000000000010000000010000010000001000001000100000000000110000L, 0b0000100000000100000100000000000010100010000000000001000100001000L, 54, 57),
+	G6 (0b1010000100000100000100100010000100001000000001000000000000010000L, 0b1000000000100100010010000001111010000101000010000001010000000000L, 54, 59),
+	H6 (0b0000010000000001000000000011000001000010100010010000000000000010L, 0b0000001000001001000010000000001000010000010101000010001010000000L, 53, 59),
+	A7 (0b1000000000000000100010100000000100000100001000000100001000000000L, 0b0000000000010010000000010000000110001000010000000000100000001000L, 53, 59),
+	B7 (0b0100000000000010010000000000000010000000001000000000010010000000L, 0b0100000001000010000000110000001100001001001100000000000010000000L, 54, 59),
+	C7 (0b0100001000000001010000000011001000000101101000001000001000000000L, 0b0100000001000000001001100000000100010100000001100000100000100000L, 54, 59),
+	D7 (0b1000000000010000000000010000000000010000011001001010100100000000L, 0b0000000000000000100000000001101001000110000010000000000001000000L, 54, 59),
+	E7 (0b0000000000010100000010000000000010000000100001000000000110000000L, 0b0001011001000000011000000000110000000101000001000000110000100100L, 54, 59),
+	F7 (0b1000000001101000000000100000000010000000100001000000000010000000L, 0b0000010000000000011000000000110000010000100000001000001000000000L, 54, 59),
+	G7 (0b0000000100000001000000000100001000000000010001000000000100000000L, 0b0010000001100010101001000001000000000110100000010000000010010000L, 54, 59),
+	H7 (0b0000010000010011000000000000011000000000010100001000000100000000L, 0b0001010001100000010010000000001000000000110000000100100000001000L, 53, 59),
+	A8 (0b0100000000001110000000000010000010000000010000010101010100000010L, 0b0000000000000000010000100000000001000100001000000010010000000000L, 52, 58),
+	B8 (0b0010000100010000100001000100000100000010000000000010010000010010L, 0b1000000000001001000000001100000001000110000100000001000000000010L, 53, 59),
+	C8 (0b0000001010000010100000000100000100001010010100100000000000100010L, 0b0000100000000000000000001001101000000000100001000000010000000000L, 53, 59),
+	D8 (0b0000010000000000000010000101000000000001000000000010000000110101L, 0b0000000100000000000000000000010001000000010000100000001000000100L, 53, 59),
+	E8 (0b1000000000000010000000000010010100001000101000000001000000010010L, 0b0010000000000000000000001000000000010000000000100000001000000000L, 53, 59),
+	F8 (0b0000000000010001000000000000001010000100000000000000100000000001L, 0b0000000000000000000000010010010010011000100100000000000100000010L, 53, 59),
+	G8 (0b1000010000000000001000001000000100010000000010000000001000000100L, 0b0010001000000100000010010010000001011000001000001000100100000000L, 53, 59),
+	H8 (0b1000001000000000000000010000010000001110001000001000010101000010L, 0b0100000000000100110010000000000010001000000100100000000001000100L, 52, 58);
 	
-	final byte sqrInd;
+	private final byte sqrInd;
 	
-	SliderOccupancyMask occupancy;
-	Magics magics;
+	private final long rookOccupancyMask;
+	private final long bishopOccupancyMask;
+	
+	private final byte rookMagicShift;
+	private final byte bishopMagicShift;
+	
+	private final long rookMagicNumber;
+	private final long bishopMagicNumber;
 	
 	private final long[] rook;
 	private final long[] bishop;
@@ -26,112 +97,238 @@ public enum MoveDatabase {
 	private final long pawnBlackAdvance;
 	private final long pawnBlackCapture;
 	
-	private MoveDatabase() {
-		this.sqrInd = (byte)this.ordinal();
-		Square sqr = Square.getByIndex(this.sqrInd);
-		this.magics = Magics.getByIndex(this.sqrInd);
-		this.occupancy = SliderOccupancyMask.getByIndex(this.sqrInd);
-		long[] rookOccVar 	= SliderOccupancyVariationGenerator.generateRookOccupancyVariations(this.sqrInd);
-		long[] bishopOccVar = SliderOccupancyVariationGenerator.generateBishopOccupancyVariations(this.sqrInd);
-		int rookNumOfVar 	= rookOccVar.length;
-		int bishopNumOfVar 	= bishopOccVar.length;
-		this.rook 	= new long[rookNumOfVar];
-		this.bishop = new long[bishopNumOfVar];
-		long[] rookAttVar 	= SliderAttackSetCalculator.rookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = SliderAttackSetCalculator.bishopAttackSetVariations(sqr, bishopOccVar);
+	/**Requires magic numbers which can be generated and printed to the console externally, using the {@link #engine.MagicNumberGenerator MagicNumberGenerator}.
+	 * 
+	 * @param rookMagicNumber
+	 * @param bishopMagicNumber
+	 */
+	private MoveDatabase(long rookMagicNumber, long bishopMagicNumber, int rookMagicShift, int bishopMagicShift) {
 		int index;
-		for (int i = 0; i < rookNumOfVar; i++) {
-			index = (int)((rookOccVar[i]*this.magics.rookMagicNumber) >>> this.magics.rookShift);
-			this.rook[index] = rookAttVar[i];
+		this.rookMagicNumber = rookMagicNumber;
+		this.bishopMagicNumber = bishopMagicNumber;
+		this.rookMagicShift = (byte)rookMagicShift;
+		this.bishopMagicShift = (byte)bishopMagicShift;
+		sqrInd = (byte)ordinal();
+		rook = new long[1 << (64 - rookMagicShift)];
+		bishop = new long[1 << (64 - bishopMagicShift)];
+		Square sqr = Square.getByIndex(sqrInd);
+		rookOccupancyMask = MaskGenerator.rookOccupancyMask(sqr);
+		bishopOccupancyMask = MaskGenerator.bishopOccupancyMask(sqr);
+		long[] rookOccVar = SliderOccupancyVariationGenerator.occupancyVariations(rookOccupancyMask);
+		long[] bishopOccVar = SliderOccupancyVariationGenerator.occupancyVariations(bishopOccupancyMask);
+		long[] rookAttVar = SliderAttackSetCalculator.rookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = SliderAttackSetCalculator.bishopAttackSetVariations(sqr, bishopOccVar);
+		for (int i = 0; i < rookOccVar.length; i++) {
+			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
+			rook[index] = rookAttVar[i];
 		}
-		for (int i = 0; i < bishopNumOfVar; i++) {
-			index = (int)((bishopOccVar[i]*this.magics.bishopMagicNumber) >>> this.magics.bishopShift);
-			this.bishop[index] = bishopAttVar[i];
+		for (int i = 0; i < bishopOccVar.length; i++) {
+			index = (int)((bishopOccVar[i]*bishopMagicNumber) >>> bishopMagicShift);
+			bishop[index] = bishopAttVar[i];
 		}
-		this.king 				= MoveMaskGenerator.generateKingsMoveMask(sqr);
-		this.knight 			= MoveMaskGenerator.generateKnightMasks(sqr);
-		this.pawnWhiteAdvance 	= MoveMaskGenerator.generateWhitePawnsAdvanceMasks(sqr);
-		this.pawnWhiteCapture 	= MoveMaskGenerator.generateWhitePawnsCaptureMasks(sqr);
-		this.pawnBlackAdvance 	= MoveMaskGenerator.generateBlackPawnsAdvanceMasks(sqr);
-		this.pawnBlackCapture 	= MoveMaskGenerator.generateBlackPawnsCaptureMasks(sqr);
+		king 				= MaskGenerator.kingMoveMask(sqr);
+		knight 				= MaskGenerator.knightMoveMasks(sqr);
+		pawnWhiteAdvance 	= MaskGenerator.whitePawnAdvanceMasks(sqr);
+		pawnWhiteCapture 	= MaskGenerator.whitePawnCaptureMasks(sqr);
+		pawnBlackAdvance 	= MaskGenerator.blackPawnAdvanceMasks(sqr);
+		pawnBlackCapture 	= MaskGenerator.blackPawnCaptureMasks(sqr);
 	}
+	/**Returns a simple king move mask bitmap.
+	 * 
+	 * @return
+	 */
 	public long getCrudeKingMoves() {
-		return this.king;
+		return king;
 	}
+	/**Returns a simple knight move mask bitmap.
+	 * 
+	 * @return
+	 */
 	public long getCrudeKnightMoves() {
-		return this.knight;
+		return knight;
 	}
+	/**Returns a white pawn's capture-only mask bitmap.
+	 * 
+	 * @return
+	 */
 	public long getCrudeWhitePawnCaptures() {
-		return this.pawnWhiteCapture;
+		return pawnWhiteCapture;
 	}
+	/**Returns a black pawn's capture-only mask bitmap.
+	 * 
+	 * @return
+	 */
 	public long getCrudeBlackPawnCaptures() {
-		return this.pawnBlackCapture;
+		return pawnBlackCapture;
 	}
+	/**Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.
+	 * 
+	 * @return
+	 */
 	public long getCrudeRookMoves() {
-		return this.rook[0];
+		return rook[0];
 	}
+	/**Returns a simple bishop move mask, i.e. the diagonal and anti-diagonal that cross each other on the square indexed by this enum instance.
+	 * 
+	 * @return
+	 */
 	public long getCrudeBishopMoves() {
-		return this.bishop[0];
+		return bishop[0];
 	}
+	/**Returns a simple queen move mask, i.e. the file, rank, diagonal, and anti-diagonal that cross each other on the square indexed by this enum instance.
+	 * 
+	 * @return
+	 */
 	public long getCrudeQueenMoves() {
-		return this.rook[0] | this.bishop[0];
+		return rook[0] | bishop[0];
 	}
+	/**Returns a white king's pseudo-legal move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getWhiteKingMoves(long allNonWhiteOccupied) {
-		return this.king & allNonWhiteOccupied;
+		return king & allNonWhiteOccupied;
 	}
+	/**Returns a black king's pseudo-legal move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getBlackKingMoves(long allNonBlackOccupied) {
-		return this.king & allNonBlackOccupied;
+		return king & allNonBlackOccupied;
 	}
+	/**Returns a white knight's pseudo-legal move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getWhiteKnightMoves(long allNonWhiteOccupied) {
-		return this.knight & allNonWhiteOccupied;
+		return knight & allNonWhiteOccupied;
 	}
+	/**Returns a black knight's pseudo-legal move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getBlackKnightMoves(long allNonBlackOccupied) {
-		return this.knight & allNonBlackOccupied;
+		return knight & allNonBlackOccupied;
 	}
+	/**Returns a white pawn's pseudo-legal attack set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getWhitePawnCaptures(long allBlackPieces) {
-		return this.pawnWhiteCapture & allBlackPieces;
+		return pawnWhiteCapture & allBlackPieces;
 	}
+	/**Returns a black pawn's pseudo-legal attack set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getBlackPawnCaptures(long allWhitePieces) {
-		return this.pawnBlackCapture & allWhitePieces;
+		return pawnBlackCapture & allWhitePieces;
 	}
+	/**Returns a white pawn's pseudo-legal quiet move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getWhitePawnAdvances(long allEmpty) {
-		if (this.sqrInd > 15)
-			return this.pawnWhiteAdvance & allEmpty;
-		long adv = this.pawnWhiteAdvance & allEmpty;
+		if (sqrInd > 15)
+			return pawnWhiteAdvance & allEmpty;
+		long adv = pawnWhiteAdvance & allEmpty;
 		return adv | ((adv << 8) & allEmpty);
 	}
+	/**Returns a black pawn's pseudo-legal quiet move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getBlackPawnAdvances(long allEmpty) {
-		if (this.sqrInd < 48)
-			return this.pawnBlackAdvance & allEmpty;
-		long adv = this.pawnBlackAdvance & allEmpty;
+		if (sqrInd < 48)
+			return pawnBlackAdvance & allEmpty;
+		long adv = pawnBlackAdvance & allEmpty;
 		return adv | ((adv >>> 8) & allEmpty);
 	}
+	/**Returns a white pawn's pseudo-legal complete move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getWhitePawnMoves(long allBlackPieces, long allEmpty) {
-		return this.getWhitePawnAdvances(allEmpty) | this.getWhitePawnCaptures(allBlackPieces);
+		return getWhitePawnAdvances(allEmpty) | getWhitePawnCaptures(allBlackPieces);
 	}
+	/**Returns a black pawn's pseudo-legal complete move set.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @return
+	 */
 	public long getBlackPawnMoves(long allWhitePieces, long allEmpty) {
-		return this.getBlackPawnAdvances(allEmpty) | this.getBlackPawnCaptures(allWhitePieces);
+		return getBlackPawnAdvances(allEmpty) | getBlackPawnCaptures(allWhitePieces);
 	}
+	/**Returns a white rook's pseudo-legal move set given the occupancies fed to the method.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @param allOccupied
+	 * @return
+	 */
 	public long getWhiteRookMoves(long allNonWhiteOccupied, long allOccupied) {
-		return this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] & allNonWhiteOccupied;
+		return rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonWhiteOccupied;
 	}
+	/**Returns a black rook's pseudo-legal move set given the occupancies fed to the method.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @param allOccupied
+	 * @return
+	 */
 	public long getBlackRookMoves(long allNonBlackOccupied, long allOccupied) {
-		return this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] & allNonBlackOccupied;
+		return rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonBlackOccupied;
 	}
+	/**Returns a white bishop's pseudo-legal move set given the occupancies fed to the method.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @param allOccupied
+	 * @return
+	 */
 	public long getWhiteBishopMoves(long allNonWhiteOccupied, long allOccupied) {
-		return this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)] & allNonWhiteOccupied;
+		return bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonWhiteOccupied;
 	}
+	/**Returns a black bishop's pseudo-legal move set given the occupancies fed to the method.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @param allOccupied
+	 * @return
+	 */
 	public long getBlackBishopMoves(long allNonBlackOccupied, long allOccupied) {
-		return this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)] & allNonBlackOccupied;
+		return bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonBlackOccupied;
 	}
+	/**Returns a white queen's pseudo-legal move set given the occupancies fed to the method.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @param allOccupied
+	 * @return
+	 */
 	public long getWhiteQueenMoves(long allNonWhiteOccupied, long allOccupied) {
-		return (this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] |
-			    this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)]) & allNonWhiteOccupied;
+		return (rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
+			    bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonWhiteOccupied;
 	}
+	/**Returns a black queen's pseudo-legal move set given the occupancies fed to the method.
+	 * 
+	 * @param allNonWhiteOccupied
+	 * @param allOccupied
+	 * @return
+	 */
 	public long getBlackQueenMoves(long allNonBlackOccupied, long allOccupied) {
-		return (this.rook[(int)(((this.occupancy.rookOccupancyMask & allOccupied)*magics.rookMagicNumber) >>> magics.rookShift)] |
-			    this.bishop[(int)(((this.occupancy.bishopOccupancyMask & allOccupied)*magics.bishopMagicNumber) >>> magics.bishopShift)]) & allNonBlackOccupied;
+		return (rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
+			    bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonBlackOccupied;
 	}
+	/**Returns a MoveDatabase enum instance that holds the preinitialized move sets for the square specified by the given square index, sqrInd.
+	 * 
+	 * @param sqrInd
+	 * @return
+	 */
 	public static MoveDatabase getByIndex(int sqrInd) {
 		switch(sqrInd) {
 			case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;

@@ -43,6 +43,11 @@ public enum RayMask {
 		this.antiDiagonalPos = antiDiagonal & ~((sqrBit << 1) - 1);
 		this.antiDiagonalNeg = antiDiagonal & (sqrBit - 1);
 	}
+	/**Returns a RayMask enum instance that holds the ray masks for the square specified by the given square index, sqrInd.
+	 * 
+	 * @param sqrInd
+	 * @return
+	 */
 	public static RayMask getByIndex(int sqrInd) {
 		switch(sqrInd) {
 			case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;

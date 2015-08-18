@@ -3,9 +3,9 @@ package engine;
 import util.BitOperations;
 import engine.Board.*;
 
-/**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given occupancy or array of
- * occupancy variations. It can also generate the attack sets for all possible occupancy variations on all squares either for the rook
- * or for the bishop. It uses ray-wise parallel-prefix algorithms to determine the attack sets.
+/**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given relevant occupancy or array of occupancy variations,
+ * or for multiple rooks or bishops based on the occupancy bitmap. It can also generate the attack sets for all possible occupancy variations on all squares
+ * either for the rook or for the bishop. It uses ray-wise parallel-prefix algorithms to determine the attack sets.
  * 
  * @author Viktor
  *

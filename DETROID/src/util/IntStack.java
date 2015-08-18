@@ -1,6 +1,9 @@
 package util;
 
-/**A primitive type stack data structure for 32-bit integers.
+/**A primitive type singly linked stack for 32 bit integers. It is very simple and is designed for simple applications. For the target use, it is
+ * very fast and efficient. It does not hold incrementally updated references to the last element neither does it have a 'length' field, thus its
+ * {@link #getTail() getTail}, {@link #length() length}, and {@link #toArray() toArray} methods have O(n) time-complexity and are not intended to
+ * be used in performance sensitive applications.
  * 
  * @author Viktor
  *
