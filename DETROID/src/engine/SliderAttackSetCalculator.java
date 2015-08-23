@@ -202,14 +202,14 @@ public class SliderAttackSetCalculator {
 	 */
 	public static long rankAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
-		long rank = Rank.getBySquareIndex(sqrInd);
+		Rank rank = Rank.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = rank & relevantOccupancy;
+		forward  = rank.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverse(relevantOccupancy);
 		forward -= 2*sqr.bitmap;
 		reverse -= 2*BitOperations.reverse(sqr.bitmap);
 		forward ^= BitOperations.reverse(reverse);
-		return forward & rank;
+		return forward & rank.bitmap;
 	}
 	/**Returns the file-wise attack set for the relevant occupancy from the defined square.
 	 * 
@@ -219,14 +219,14 @@ public class SliderAttackSetCalculator {
 	 */
 	public static long fileAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
-		long file = File.getBySquareIndex(sqrInd);
+		File file = File.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = file & relevantOccupancy;
+		forward  = file.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
 		forward -= sqr.bitmap;
 		reverse -= BitOperations.reverseBytes(sqr.bitmap);
 		forward ^= BitOperations.reverseBytes(reverse);
-		return forward & file;
+		return forward & file.bitmap;
 	}
 	/**Returns the diagonal-wise attack set for the relevant occupancy from the defined square.
 	 * 
@@ -236,14 +236,14 @@ public class SliderAttackSetCalculator {
 	 */
 	public static long diagonalAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
-		long diagonal = Diagonal.getBySquareIndex(sqrInd);
+		Diagonal diagonal = Diagonal.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = diagonal & relevantOccupancy;
+		forward  = diagonal.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
 		forward -= sqr.bitmap;
 		reverse -= BitOperations.reverseBytes(sqr.bitmap);
 		forward ^= BitOperations.reverseBytes(reverse);
-		return forward & diagonal;
+		return forward & diagonal.bitmap;
 	}
 	/**Returns the anti-diagonal-wise attack set for the relevant occupancy from the defined square.
 	 * 
@@ -253,14 +253,14 @@ public class SliderAttackSetCalculator {
 	 */
 	public static long antiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
 		int sqrInd = sqr.ordinal();
-		long antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
+		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
 		long forward, reverse;
-		forward  = antiDiagonal & relevantOccupancy;
+		forward  = antiDiagonal.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
 		forward -= sqr.bitmap;
 		reverse -= BitOperations.reverseBytes(sqr.bitmap);
 		forward ^= BitOperations.reverseBytes(reverse);
-		return forward & antiDiagonal;
+		return forward & antiDiagonal.bitmap;
 	}
 	/**Returns a rook's attack set from the defined square with the given occupancy.
 	 * 

@@ -29,19 +29,19 @@ public enum RayMask {
 	
 	private RayMask( ) {
 		int sqrInd = this.ordinal();
-		long sqrBit = Square.getBitmapByIndex(sqrInd);
-		long rank = Rank.getBySquareIndex(sqrInd);
-		long file = File.getBySquareIndex(sqrInd);
-		long diagonal = Diagonal.getBySquareIndex(sqrInd);
-		long antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
-		this.rankPos = rank & ~((sqrBit << 1) - 1);
-		this.rankNeg = rank & (sqrBit - 1);
-		this.filePos = file & ~((sqrBit << 1) - 1);
-		this.fileNeg = file & (sqrBit - 1);
-		this.diagonalPos = diagonal & ~((sqrBit << 1) - 1);
-		this.diagonalNeg = diagonal & (sqrBit - 1);
-		this.antiDiagonalPos = antiDiagonal & ~((sqrBit << 1) - 1);
-		this.antiDiagonalNeg = antiDiagonal & (sqrBit - 1);
+		long sqrBit = Square.getByIndex(sqrInd).bitmap;
+		Rank rank = Rank.getBySquareIndex(sqrInd);
+		File file = File.getBySquareIndex(sqrInd);
+		Diagonal diagonal = Diagonal.getBySquareIndex(sqrInd);
+		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
+		this.rankPos = rank.bitmap & ~((sqrBit << 1) - 1);
+		this.rankNeg = rank.bitmap & (sqrBit - 1);
+		this.filePos = file.bitmap & ~((sqrBit << 1) - 1);
+		this.fileNeg = file.bitmap & (sqrBit - 1);
+		this.diagonalPos = diagonal.bitmap & ~((sqrBit << 1) - 1);
+		this.diagonalNeg = diagonal.bitmap & (sqrBit - 1);
+		this.antiDiagonalPos = antiDiagonal.bitmap & ~((sqrBit << 1) - 1);
+		this.antiDiagonalNeg = antiDiagonal.bitmap & (sqrBit - 1);
 	}
 	/**Returns a RayMask enum instance that holds the ray masks for the square specified by the given square index, sqrInd.
 	 * 

@@ -134,62 +134,62 @@ public class Position {
 					switch (piece) {
 						case 'K': {
 							offsetBoard[index] = 1;
-							whiteKing = Square.getBitmapByIndex(index);
+							whiteKing = Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'Q': {
 							offsetBoard[index] = 2;
-							whiteQueens	|= Square.getBitmapByIndex(index);
+							whiteQueens	|= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'R': {
 							offsetBoard[index] = 3;
-							whiteRooks |= Square.getBitmapByIndex(index);
+							whiteRooks |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'B': {
 							offsetBoard[index] = 4;
-							whiteBishops |= Square.getBitmapByIndex(index);
+							whiteBishops |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'N': {
 							offsetBoard[index] = 5;
-							whiteKnights |= Square.getBitmapByIndex(index);
+							whiteKnights |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'P': {
 							offsetBoard[index] = 6;
-							whitePawns |= Square.getBitmapByIndex(index);
+							whitePawns |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'k': {
 							offsetBoard[index] = 7;
-							blackKing = Square.getBitmapByIndex(index);
+							blackKing = Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'q': {
 							offsetBoard[index] = 8;
-							blackQueens |= Square.getBitmapByIndex(index);
+							blackQueens |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'r': {
 							offsetBoard[index] = 9;
-							blackRooks |= Square.getBitmapByIndex(index);
+							blackRooks |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'b': {
 							offsetBoard[index] = 10;
-							blackBishops |= Square.getBitmapByIndex(index);
+							blackBishops |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'n': {
 							offsetBoard[index] = 11;
-							blackKnights |= Square.getBitmapByIndex(index);
+							blackKnights |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'p': {
 							offsetBoard[index] = 12;
-							blackPawns |= Square.getBitmapByIndex(index);
+							blackPawns |= Square.getByIndex(index).bitmap;
 						}
 					}
 					index++;
@@ -680,7 +680,7 @@ public class Position {
 			if (((whiteQueens | whiteBishops) 	& dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied)) != 0)
 				return true;
 			if (offsetBoard[sqrInd] == 12 && enPassantRights != 8 && sqrInd == 32 + enPassantRights) {
-				if ((whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4)) != 0)
+				if ((whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap) != 0)
 					return true;
 			}
 		}
@@ -696,7 +696,7 @@ public class Position {
 			if (((blackQueens | blackBishops) 	& dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied)) != 0)
 				return true;
 			if (offsetBoard[sqrInd] == 6 && enPassantRights != 8 && sqrInd == 24 + enPassantRights) {
-				if ((blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3)) != 0)
+				if ((blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap) != 0)
 					return true;
 			}
 		}
@@ -740,7 +740,7 @@ public class Position {
 			attackers |= (whiteQueens | whiteRooks)		& dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
 			attackers |= (whiteQueens | whiteBishops) 	& dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
 			if (offsetBoard[sqrInd] == 12 && enPassantRights != 8 && sqrInd == 32 + enPassantRights)
-				attackers |=  whitePawns & dB.getCrudeKingMoves() & Rank.getByIndex(4);
+				attackers |=  whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap;
 		}
 		else {
 			attackers  =  blackKing						& dB.getCrudeKingMoves();
@@ -749,7 +749,7 @@ public class Position {
 			attackers |= (blackQueens | blackRooks)		& dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
 			attackers |= (blackQueens | blackBishops) 	& dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
 			if (offsetBoard[sqrInd] == 6 && enPassantRights != 8 && sqrInd == 24 + enPassantRights)
-				attackers |=  blackPawns & dB.getCrudeKingMoves() & Rank.getByIndex(3);
+				attackers |=  blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap;
 		}
 		return attackers;
 	}
@@ -761,28 +761,28 @@ public class Position {
 	 */
 	public long getBlockerCandidates(int sqrInd, boolean byWhite) {
 		long blockerCandidates = 0;
-		long sqrBit = Square.getBitmapByIndex(sqrInd);
+		long sqrBit = Square.getByIndex(sqrInd).bitmap;
 		long blackPawnAdvance = (sqrBit >>> 8), whitePawnAdvance = (sqrBit << 8);
 		if (byWhite) {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			blockerCandidates |=  whiteKnights					& dB.getCrudeKnightMoves();
 			blockerCandidates |=  whitePawns 					& blackPawnAdvance;
-			if ((sqrBit & Rank.getByIndex(3)) != 0 && (allEmpty & blackPawnAdvance) != 0)
+			if ((sqrBit & Rank.R4.bitmap) != 0 && (allEmpty & blackPawnAdvance) != 0)
 				blockerCandidates |= whitePawns 				& (blackPawnAdvance >>> 8);
 			blockerCandidates |= (whiteQueens | whiteRooks)		& dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
 			blockerCandidates |= (whiteQueens | whiteBishops) 	& dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
-			if (enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(5)) != 0)
+			if (enPassantRights == sqrInd%8 && (sqrBit & Rank.R6.bitmap) != 0)
 				blockerCandidates |=  whitePawns & dB.getCrudeBlackPawnCaptures();
 		}
 		else {
 			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
 			blockerCandidates |=  blackKnights					& dB.getCrudeKnightMoves();
 			blockerCandidates |=  blackPawns 					& whitePawnAdvance;
-			if ((sqrBit & Rank.getByIndex(4)) != 0 && (allEmpty & whitePawnAdvance) != 0)
+			if ((sqrBit & Rank.R5.bitmap) != 0 && (allEmpty & whitePawnAdvance) != 0)
 				blockerCandidates |= blackPawns 				& (whitePawnAdvance << 8);
 			blockerCandidates |= (blackQueens | blackRooks)		& dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
 			blockerCandidates |= (blackQueens | blackBishops) 	& dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
-			if (enPassantRights == sqrInd%8 && (sqrBit & Rank.getByIndex(2)) != 0)
+			if (enPassantRights == sqrInd%8 && (sqrBit & Rank.R3.bitmap) != 0)
 				blockerCandidates |=  blackPawns & dB.getCrudeWhitePawnCaptures();
 		}
 		return blockerCandidates;
@@ -1470,7 +1470,7 @@ public class Position {
 				checker1  		 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 	 = this.offsetBoard[checker1];
 				dB				 = MoveDatabase.getByIndex(checker1);
-				if ((checkers & Rank.getByIndex(7)) != 0)
+				if ((checkers & Rank.R8.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~whiteKing;
 				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
@@ -1493,9 +1493,9 @@ public class Position {
 				}
 				switch (checkerPiece1) {
 					case 8: {
-						if ((File.getBySquareIndex(king) & checkers) != 0 || (Rank.getBySquareIndex(king) & checkers) != 0) {
+						if ((File.getBySquareIndex(king).bitmap & checkers) != 0 || (Rank.getBySquareIndex(king).bitmap & checkers) != 0) {
 							squaresOfInterventionSet = (dB.getBlackRookMoves(allNonBlackOccupied, allOccupied) & kingDb.getWhiteRookMoves(allNonWhiteOccupied, allOccupied));
-							if (promotionOnAttackPossible && (whiteKing & Rank.getByIndex(7)) != 0)
+							if (promotionOnAttackPossible && (whiteKing & Rank.R8.bitmap) != 0)
 								promotionOnBlockPossible = true;
 						}
 						else
@@ -1521,7 +1521,7 @@ public class Position {
 					}
 					break;
 					case 9: {
-						if (promotionOnAttackPossible && (whiteKing & Rank.getByIndex(7)) != 0)
+						if (promotionOnAttackPossible && (whiteKing & Rank.R8.bitmap) != 0)
 							promotionOnBlockPossible = true;
 						squaresOfInterventionSet = (dB.getBlackRookMoves(allNonBlackOccupied, allOccupied) & kingDb.getWhiteRookMoves(allNonWhiteOccupied, allOccupied));
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
@@ -1623,7 +1623,7 @@ public class Position {
 				checker1  		= BitOperations.indexOfBit(checkers);
 				checkerPiece1	= offsetBoard[checker1];
 				dB				= MoveDatabase.getByIndex(checker1);
-				if ((checkers & Rank.getByIndex(0)) != 0)
+				if ((checkers & Rank.R1.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~blackKing;
 				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
@@ -1646,9 +1646,9 @@ public class Position {
 				}
 				switch (checkerPiece1) {
 					case 2: {
-						if ((File.getBySquareIndex(king) & checkers) != 0 || (Rank.getBySquareIndex(king) & checkers) != 0) {
+						if ((File.getBySquareIndex(king).bitmap & checkers) != 0 || (Rank.getBySquareIndex(king).bitmap & checkers) != 0) {
 							squaresOfInterventionSet = (dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied) & kingDb.getBlackRookMoves(allNonBlackOccupied, allOccupied));
-							if (promotionOnAttackPossible && (blackKing & Rank.getByIndex(0)) != 0)
+							if (promotionOnAttackPossible && (blackKing & Rank.R1.bitmap) != 0)
 								promotionOnBlockPossible = true;
 						}
 						else
@@ -1674,7 +1674,7 @@ public class Position {
 					}
 					break;
 					case 3: {
-						if (promotionOnAttackPossible && (blackKing & Rank.getByIndex(0)) != 0)
+						if (promotionOnAttackPossible && (blackKing & Rank.R1.bitmap) != 0)
 							promotionOnBlockPossible = true;
 						squaresOfInterventionSet = (dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied) & kingDb.getBlackRookMoves(allNonBlackOccupied, allOccupied));
 						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
@@ -1785,8 +1785,8 @@ public class Position {
 	 */
 	public void makeMove(Move move) {
 		int moved, captured;
-		long fromBit = Square.getBitmapByIndex(move.from);
-		long toBit	 = Square.getBitmapByIndex(move.to);
+		long fromBit = Square.getByIndex(move.from).bitmap;
+		long toBit	 = Square.getByIndex(move.to).bitmap;
 		int enPassantVictimSquare;
 		long enPassantVictimSquareBit;
 		switch (move.type) {
@@ -1803,13 +1803,13 @@ public class Position {
 					moved = 1;
 					offsetBoard[7]	 = 0;
 					offsetBoard[5]	 = 3;
-					setBitboards(3, 0, Square.getBitmapByIndex(7), Square.getBitmapByIndex(5));
+					setBitboards(3, 0, Square.H1.bitmap, Square.F1.bitmap);
 				}
 				else {
 					moved = 7;
 					offsetBoard[63] = 0;
 					offsetBoard[61] = 9;
-					setBitboards(9, 0, Square.getBitmapByIndex(63), Square.getBitmapByIndex(61));
+					setBitboards(9, 0, Square.H8.bitmap, Square.F8.bitmap);
 				}
 				captured = 0;
 				offsetBoard[move.from] = 0;
@@ -1822,13 +1822,13 @@ public class Position {
 					moved = 1;
 					offsetBoard[0]	 = 0;
 					offsetBoard[3]	 = 3;
-					setBitboards(3, 0, Square.getBitmapByIndex(0), Square.getBitmapByIndex(3));
+					setBitboards(3, 0, Square.A1.bitmap, Square.D1.bitmap);
 				}
 				else {
 					moved = 7;
 					offsetBoard[56] = 0;
 					offsetBoard[59] = 9;
-					setBitboards(9, 0, Square.getBitmapByIndex(56), Square.getBitmapByIndex(59));
+					setBitboards(9, 0, Square.A8.bitmap, Square.D8.bitmap);
 				}
 				captured = 0;
 				offsetBoard[move.from] = 0;
@@ -1850,7 +1850,7 @@ public class Position {
 				offsetBoard[move.from] = 0;
 				offsetBoard[move.to] = moved;
 				offsetBoard[enPassantVictimSquare] = 0;
-				enPassantVictimSquareBit = Square.getBitmapByIndex(enPassantVictimSquare);
+				enPassantVictimSquareBit = Square.getByIndex(enPassantVictimSquare).bitmap;
 				setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
 				setBitboards(moved, 0, enPassantVictimSquareBit, toBit);
 			}
@@ -1941,8 +1941,8 @@ public class Position {
 		int moved 	 = positionInfo.movedPiece;
 		int captured = positionInfo.capturedPiece;
 		int enPassantVictimSquare;
-		long fromBit = Square.getBitmapByIndex(move.from);
-		long toBit	 = Square.getBitmapByIndex(move.to);
+		long fromBit = Square.getByIndex(move.from).bitmap;
+		long toBit	 = Square.getByIndex(move.to).bitmap;
 		setTurn();
 		switch (move.type) {
 			case 0: {
@@ -1958,12 +1958,12 @@ public class Position {
 				if (whitesTurn) {
 					offsetBoard[7] = 3;
 					offsetBoard[5] = 0;
-					setBitboards(3, 0, Square.getBitmapByIndex(5), Square.getBitmapByIndex(7));
+					setBitboards(3, 0, Square.F1.bitmap, Square.H1.bitmap);
 				}
 				else {
 					offsetBoard[63] = 9;
 					offsetBoard[61] = 0;
-					setBitboards(9, 0, Square.getBitmapByIndex(61), Square.getBitmapByIndex(63));
+					setBitboards(3, 0, Square.F8.bitmap, Square.H8.bitmap);
 				}
 			}
 			break;
@@ -1974,12 +1974,12 @@ public class Position {
 				if (whitesTurn) {
 					offsetBoard[0] = 3;
 					offsetBoard[3] = 0;
-					setBitboards(3, 0, Square.getBitmapByIndex(3), Square.getBitmapByIndex(0));
+					setBitboards(3, 0, Square.D1.bitmap, Square.A1.bitmap);
 				}
 				else {
 					offsetBoard[56] = 9;
 					offsetBoard[59] = 0;
-					setBitboards(9, 0, Square.getBitmapByIndex(59), Square.getBitmapByIndex(56));
+					setBitboards(3, 0, Square.D8.bitmap, Square.A8.bitmap);
 				}
 			}
 			break;
@@ -1992,7 +1992,7 @@ public class Position {
 				else
 					enPassantVictimSquare = move.to + 8;
 				offsetBoard[enPassantVictimSquare] = captured;
-				setBitboards(0, captured, 0, Square.getBitmapByIndex(enPassantVictimSquare));
+				setBitboards(0, captured, 0, Square.getByIndex(enPassantVictimSquare).bitmap);
 			}
 			break;
 			case 4: {

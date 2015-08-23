@@ -119,7 +119,7 @@ public class MaskGenerator {
 	 * @return
 	 */
 	public final static long rookRankMoveMask(Square sqr) {
-		return Rank.getBySquare(sqr)^sqr.bitmap;
+		return Rank.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
 	/**Generates a bitmap of the basic rook's file-wise/vertical move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
@@ -127,7 +127,7 @@ public class MaskGenerator {
 	 * @return
 	 */
 	public final static long rookFileMoveMask(Square sqr) {
-		return File.getBySquare(sqr)^sqr.bitmap;
+		return File.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
 	/**Generates a bitmap of the basic bishop's diagonal move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
@@ -135,7 +135,7 @@ public class MaskGenerator {
 	 * @return
 	 */
 	public final static long bishopDiagonalMoveMask(Square sqr) {
-		return Diagonal.getBySquare(sqr)^sqr.bitmap;
+		return Diagonal.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
 	/**Generates a bitmap of the basic bishop's anti-diagonal move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
@@ -143,7 +143,7 @@ public class MaskGenerator {
 	 * @return
 	 */
 	public final static long bishopAntiDiagonalMoveMask(Square sqr) {
-		return AntiDiagonal.getBySquare(sqr)^sqr.bitmap;
+		return AntiDiagonal.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
 	/**Generates a bitmap of the relevant occupancy mask for a rook on the square specified by 'sqr'.
 	 * 
