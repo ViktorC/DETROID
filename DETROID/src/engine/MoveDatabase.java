@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**A preinitialized move database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains a so called
  * fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the desired move sets

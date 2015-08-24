@@ -2,7 +2,7 @@ package engine;
 
 import util.List;
 import util.Comparable;
-import engine.Board.Square;
+import engine.Bitboard.Square;
 
 /**A simple unencapsulated class that provides objects for storing information about moves necessary for making them.
  * 

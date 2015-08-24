@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**An enum type that holds all the attack rays for each direction from each square on the board as bitmaps.
  * 

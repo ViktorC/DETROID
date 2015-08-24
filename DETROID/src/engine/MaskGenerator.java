@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**A static class that generates the basic move masks for each piece type. It does not include special moves  occupancy considerations.
  * 

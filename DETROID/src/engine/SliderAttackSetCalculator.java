@@ -1,7 +1,7 @@
 package engine;
 
 import util.BitOperations;
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given relevant occupancy or array of occupancy variations,
  * or for multiple rooks or bishops based on the occupancy bitmap. It can also generate the attack sets for all possible occupancy variations on all squares

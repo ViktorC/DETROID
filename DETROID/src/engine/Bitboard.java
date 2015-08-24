@@ -2,12 +2,16 @@ package engine;
 
 import util.BitOperations;
 
-/*A class to group together objects/enums exclusive to the chess board itself such as the squares, files, and ranks.
+/**A class that defines features of the chess board such as {@link #Square Square}, {@link #File File}, and {@link #Rank Rank}; and whose instances hold
+ * the bitmaps that define the bitboard, the most fundamental data-structure of top tier chess engines for storing chess board positions.
+ * 
+ * Its most important method is {@link #makeMove(int, int, Square, Square) makeMove} that changes the bitmaps held within the instance according to the
+ * chess-board-move specified by the input parameters.
  * 
  * @author Viktor
  *
  */
-public class Board {
+public class Bitboard {
 	
 	/**An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
 	 * the respective square's index set.
@@ -24,12 +28,16 @@ public class Board {
 		A5, B5, C5, D5, E5, F5, G5, H5,
 		A6, B6, C6, D6, E6, F6, G6, H6,
 		A7, B7, C7, D7, E7, F7, G7, H7,
-		A8, B8, C8, D8, E8, F8, G8, H8;
+		A8, B8, C8, D8, E8, F8, G8, H8,
+		NULL(true);
 
 		public final long bitmap;
 
 		private Square() {
 			bitmap = 1L << ordinal();
+		}
+		private Square(boolean flag) {
+			bitmap = 0;
 		}
 		/**Returns a String representation of the square.*/
 		public String toString() {
@@ -68,7 +76,7 @@ public class Board {
 				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
 				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
 				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
-				default: throw new IllegalArgumentException("Invalid square index.");
+				default: return NULL;
 			}
 		}
 	}
@@ -274,55 +282,302 @@ public class Board {
 		}
 	}
 	
+	//bitmaps for each piece type
+	long whiteKing;
+	long whiteQueens;
+	long whiteRooks;
+	long whiteBishops;
+	long whiteKnights;
+	long whitePawns;
+		
+	long blackKing;
+	long blackQueens;
+	long blackRooks;
+	long blackBishops;
+	long blackKnights;
+	long blackPawns;
+		
+	//bitmap unions maintained to avoid having to execute the same bitwise logical operations multiple times in the same cycles
+	long allWhitePieces;
+	long allBlackPieces;
+		
+	long allNonWhiteOccupied;
+	long allNonBlackOccupied;
+		
+	long allOccupied;
+	long allEmpty;
+	
+	/**Sets up a bitboard with the pieces in their initial positions.*/
+	public Bitboard() {
+		whiteKing		=  Piece.WHITE_KING.initPosBitmap;
+		whiteQueens 	=  Piece.WHITE_QUEEN.initPosBitmap;
+		whiteRooks		=  Piece.WHITE_ROOK.initPosBitmap;
+		whiteBishops	=  Piece.WHITE_BISHOP.initPosBitmap;
+		whiteKnights	=  Piece.WHITE_KNIGHT.initPosBitmap;
+		whitePawns		=  Piece.WHITE_PAWN.initPosBitmap;
+		
+		blackKing		=  Piece.BLACK_KING.initPosBitmap;
+		blackQueens 	=  Piece.BLACK_QUEEN.initPosBitmap;
+		blackRooks		=  Piece.BLACK_ROOK.initPosBitmap;
+		blackBishops	=  Piece.BLACK_BISHOP.initPosBitmap;
+		blackKnights	=  Piece.BLACK_KNIGHT.initPosBitmap;
+		blackPawns		=  Piece.BLACK_PAWN.initPosBitmap;
+		setCollections();
+	}
+	/**Sets up a bitboard according to a FEN position's board notation.
+	 * 
+	 * @param fen_boardRanks
+	 */
+	public Bitboard(String fen_board) {
+		int pieceNum, index = 0;
+		String rank;
+		String[] ranks;
+		char piece;
+		ranks = fen_board.split("/");
+		if (ranks.length != 8)
+			throw new IllegalArgumentException("The board position representation does not have eight ranks.");
+		for (int i = 7; i >= 0; i--) {
+			rank = ranks[i];
+			for (int j = 0; j < rank.length(); j++) {
+				piece = rank.charAt(j);
+				pieceNum = piece - '0';
+				if (pieceNum >= 0 && pieceNum <= 8)
+					index += pieceNum;
+				else {
+					switch (piece) {
+						case 'K':
+							whiteKing = Square.getByIndex(index).bitmap;
+						break;
+						case 'Q':
+							whiteQueens	|= Square.getByIndex(index).bitmap;
+						break;
+						case 'R':
+							whiteRooks |= Square.getByIndex(index).bitmap;
+						break;
+						case 'B':
+							whiteBishops |= Square.getByIndex(index).bitmap;
+						break;
+						case 'N': 
+							whiteKnights |= Square.getByIndex(index).bitmap;
+						break;
+						case 'P':
+							whitePawns |= Square.getByIndex(index).bitmap;
+						break;
+						case 'k':
+							blackKing = Square.getByIndex(index).bitmap;
+						break;
+						case 'q':
+							blackQueens |= Square.getByIndex(index).bitmap;
+						break;
+						case 'r':
+							blackRooks |= Square.getByIndex(index).bitmap;
+						break;
+						case 'b':
+							blackBishops |= Square.getByIndex(index).bitmap;
+						break;
+						case 'n':
+							blackKnights |= Square.getByIndex(index).bitmap;
+						break;
+						case 'p':
+							blackPawns |= Square.getByIndex(index).bitmap;
+					}
+					index++;
+				}
+			}
+		}
+		setCollections();
+	}
+	/**Performs the unions and negations required to initialize the bitmap collections.*/
+	private void setCollections() {
+		allWhitePieces		 =  whiteKing | whiteQueens | whiteRooks | whiteBishops | whiteKnights | whitePawns;
+		allBlackPieces		 =  blackKing | blackQueens | blackRooks | blackBishops | blackKnights | blackPawns;
+		allNonWhiteOccupied  = ~allWhitePieces;
+		allNonBlackOccupied  = ~allBlackPieces;
+		allOccupied		     =  allWhitePieces | allBlackPieces;
+		allEmpty			 = ~allOccupied;
+	}
+	/**Changes the bitmaps according to the move instructions of the input parameters.
+	 * 
+	 * @param whitesMove
+	 * @param movedPiece
+	 * @param capturedPiece
+	 * @param from
+	 * @param to
+	 */
+	void makeMove(int movedPiece, int capturedPiece, Square from, Square to) {
+		switch (movedPiece) {
+			case 1: {
+				whiteKing 			^=  from.bitmap;
+				whiteKing 			^=  to.bitmap;
+				allWhitePieces  	^=  from.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 2: {
+				whiteQueens			^=  from.bitmap;
+				whiteQueens 		^=  to.bitmap;
+				allWhitePieces 		^=  from.bitmap;
+				allWhitePieces 		^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 3: {
+				whiteRooks 		 	^=  from.bitmap;
+				whiteRooks 			^=  to.bitmap;
+				allWhitePieces 	 	^=  from.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 4: {
+				whiteBishops 		^=  from.bitmap;
+				whiteBishops 		^=  to.bitmap;
+				allWhitePieces 	 	^=  from.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 5: {
+				whiteKnights 		^=  from.bitmap;
+				whiteKnights 		^=  to.bitmap;
+				allWhitePieces 	 	^=  from.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 6: {
+				whitePawns 		 	^=  from.bitmap;
+				whitePawns 		 	^=  to.bitmap;
+				allWhitePieces 	 	^=  from.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 7: {
+				blackKing 			^=  from.bitmap;
+				blackKing 			^=  to.bitmap;
+				allBlackPieces 	 	^=  from.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 8: {
+				blackQueens		 	^=  from.bitmap;
+				blackQueens 		^=  to.bitmap;
+				allBlackPieces 	 	^=  from.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 9: {
+				blackRooks 		 	^=  from.bitmap;
+				blackRooks 		 	^=  to.bitmap;
+				allBlackPieces 	 	^=  from.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 10: {
+				blackBishops 		^=  from.bitmap;
+				blackBishops 		^=  to.bitmap;
+				allBlackPieces 	 	^=  from.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 11: {
+				blackKnights 		^=  from.bitmap;
+				blackKnights 		^=  to.bitmap;
+				allBlackPieces 	 	^=  from.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 12: {
+				blackPawns 		 	^=  from.bitmap;
+				blackPawns 		 	^=  to.bitmap;
+				allBlackPieces 	 	^=  from.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+		}
+		switch (capturedPiece) {
+			case 0:
+			break;
+			case 2: {
+				whiteQueens 		^=  to.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 3: {
+				whiteRooks 		 	^=  to.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 4: {
+				whiteBishops 		^=  to.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 5: {
+				whiteKnights 		^=  to.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 6: {
+				whitePawns 		 	^=  to.bitmap;
+				allWhitePieces 	 	^=  to.bitmap;
+				allNonWhiteOccupied  = ~allWhitePieces;
+			}
+			break;
+			case 8: {
+				blackQueens 		^=  to.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 9: {
+				blackRooks 		 	^=  to.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 10: {
+				blackBishops 		^=  to.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 11: {
+				blackKnights 		^=  to.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+			break;
+			case 12: {
+				blackPawns 		 	^=  to.bitmap;
+				allBlackPieces 	 	^=  to.bitmap;
+				allNonBlackOccupied  = ~allBlackPieces;
+			}
+		}
+		allOccupied =  allWhitePieces | allBlackPieces;
+		allEmpty	= ~allOccupied;
+	}
 	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.
 	 * 
 	 * @param bitmap
 	 */
-	public static void printBitboardToConsole(long bitmap) {
+	public static void printBitmapToConsole(long bitmap) {
 		String board = BitOperations.toBinaryString(bitmap);
 		for (int i = 0; i < 64; i += 8) {
 			for (int j = i + 7; j >= i; j--)
 				System.out.print(board.charAt(j));
 			System.out.println();
-		}
-		System.out.println();
-	}
-	/**Prints an array representing a chess board position to the console in a human-readable form, aligned like a chess board with 
-	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
-	public static void printOffsetBoardToConsole(int[] offsetBoard) {
-		for (int i = 7; i >= 0; i--) {
-			for (int j = 0; j < 8; j++)
-				System.out.format("%3d", offsetBoard[i*8 + j]);
-			System.out.println();
-		}
-		System.out.println();
-	}
-	/**Prints a chess board to the console. Pieces are represented according to the FEN notation.*/
-	public static void printFancyBoardToConsole(int[] offsetBoard) {
-		for (int i = 16; i >= 0; i--) {
-			if (i%2 == 0) {
-				System.out.print("  ");
-				for (int j = 0; j < 17; j++) {
-					if (j%2 == 0)
-						System.out.print("+");
-					else
-						System.out.print("---");
-				}
-			}
-			else {
-				System.out.print((i + 1)/2 + " ");
-				for (int j = 0; j < 17; j++) {
-					if (j%2 == 0)
-						System.out.print("|");
-					else
-						System.out.print(" " + Piece.fenNotation(offsetBoard[(i - 1)*4 + j/2]) + " ");
-				}
-			}
-			System.out.println();
-		}
-		System.out.print("  ");
-		for (int i = 0; i < 8; i++) {
-			System.out.print("  " + (char)('A' + i) + " ");
 		}
 		System.out.println();
 	}

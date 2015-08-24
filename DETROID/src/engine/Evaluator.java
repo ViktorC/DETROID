@@ -4,7 +4,8 @@ import util.*;
 
 public class Evaluator {
 	
-	public int score(Position pos) {
+	
+	/*public int score(Position pos) {
 		int score = 0;
 		score += BitOperations.getCardinality(pos.getWhiteQueens())*900;
 		score += BitOperations.getCardinality(pos.getWhiteRooks())*500;
@@ -19,5 +20,5 @@ public class Evaluator {
 		if (!pos.getTurn())
 			score *= -1;
 		return score; 
-	}
+	}*/
 }
