@@ -8,7 +8,7 @@ public class Search {
 	Evaluator eval;
 	Move bestMove;
 	
-	/*public Search(Position pos, int depth) {
+	public Search(Position pos, int depth) {
 		this.pos = pos;
 		eval = new Evaluator();
 		bestMove = negaMax(depth, Game.LOSS, Game.WIN);
@@ -41,5 +41,5 @@ public class Search {
 				break;
 		}
 		return bestMove;
-	}*/
+	}
 }

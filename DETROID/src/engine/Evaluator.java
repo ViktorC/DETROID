@@ -5,20 +5,20 @@ import util.*;
 public class Evaluator {
 	
 	
-	/*public int score(Position pos) {
+	public int score(Position pos) {
 		int score = 0;
-		score += BitOperations.getCardinality(pos.getWhiteQueens())*900;
-		score += BitOperations.getCardinality(pos.getWhiteRooks())*500;
-		score += BitOperations.getCardinality(pos.getWhiteBishops())*300;
-		score += BitOperations.getCardinality(pos.getWhiteKnights())*300;
-		score += BitOperations.getCardinality(pos.getWhitePawns())*100;
-		score -= BitOperations.getCardinality(pos.getBlackQueens())*900;
-		score -= BitOperations.getCardinality(pos.getBlackRooks())*500;
-		score -= BitOperations.getCardinality(pos.getBlackBishops())*300;
-		score -= BitOperations.getCardinality(pos.getBlackKnights())*300;
-		score -= BitOperations.getCardinality(pos.getBlackPawns())*100;
-		if (!pos.getTurn())
+		score += BitOperations.getCardinality(pos.whiteQueens)*900;
+		score += BitOperations.getCardinality(pos.whiteRooks)*500;
+		score += BitOperations.getCardinality(pos.whiteBishops)*300;
+		score += BitOperations.getCardinality(pos.whiteKnights)*300;
+		score += BitOperations.getCardinality(pos.whitePawns)*100;
+		score -= BitOperations.getCardinality(pos.blackQueens)*900;
+		score -= BitOperations.getCardinality(pos.blackRooks)*500;
+		score -= BitOperations.getCardinality(pos.blackBishops)*300;
+		score -= BitOperations.getCardinality(pos.blackKnights)*300;
+		score -= BitOperations.getCardinality(pos.blackPawns)*100;
+		if (!pos.whitesTurn)
 			score *= -1;
 		return score; 
-	}*/
+	}
 }

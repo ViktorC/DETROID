@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Bitboard.Square;
+import engine.Board.Square;
 import util.BitOperations;
 
 /**A class that generates occupancy variations for rooks and bishops. It either generates a one-dimensional array

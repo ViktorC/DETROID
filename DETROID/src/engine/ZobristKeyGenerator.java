@@ -54,14 +54,14 @@ public class ZobristKeyGenerator {
 	public long hash(Position p) {
 		int[] board64 = p.getOffsetBoard();
 		long key = 0;
-		if (!p.getTurn())
+		if (!p.whitesTurn)
 			key ^= turn;
 		for (int i = 0; i < 64; i++) {
 			key ^= board[board64[i]][i];
 		}
-		key ^= whiteCastlingRights[p.getWhiteCastlingRights()];
-		key ^= blackCastlingRights[p.getBlackCastlingRights()];
-		key ^= enPassantRights[p.getEnPassantRights()];
+		key ^= whiteCastlingRights[p.whiteCastlingRights];
+		key ^= blackCastlingRights[p.blackCastlingRights];
+		key ^= enPassantRights[p.enPassantRights];
 		return key;
 	}
 	/**Modifies a Board object's Zobrist key by XOR-ing it with the Zobrist object's respective instance fields for the fields of the Board
@@ -112,65 +112,55 @@ public class ZobristKeyGenerator {
 			case 3: {
 				key ^= board[unmakeReg.movedPiece][move.from];
 				key ^= board[unmakeReg.movedPiece][move.to];
-				if (unmakeReg.movedPiece == 6) {
+				if (unmakeReg.movedPiece == 6)
 					key ^= board[12][move.to - 8];
-				}
-				else {
+				else
 					key ^= board[6][move.to + 8];
-				}
 			}
 			break;
 			case 4: {
 				key ^= board[unmakeReg.movedPiece][move.from];
 				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6) {
+				if (unmakeReg.movedPiece == 6)
 					key ^= board[2][move.to];
-				}
-				else {
+				else
 					key ^= board[8][move.to];
-				}
 			}
 			break;
 			case 5: {
 				key ^= board[unmakeReg.movedPiece][move.from];
 				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6) {
+				if (unmakeReg.movedPiece == 6)
 					key ^= board[3][move.to];
-				}
-				else {
+				else
 					key ^= board[9][move.to];
-				}
 			}
 			break;
 			case 6: {
 				key ^= board[unmakeReg.movedPiece][move.from];
 				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6) {
+				if (unmakeReg.movedPiece == 6)
 					key ^= board[4][move.to];
-				}
-				else {
+				else
 					key ^= board[10][move.to];
-				}
 			}
 			break;
 			case 7: {
 				key ^= board[unmakeReg.movedPiece][move.from];
 				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6) {
+				if (unmakeReg.movedPiece == 6)
 					key ^= board[5][move.to];
-				}
-				else {
+				else
 					key ^= board[11][move.to];
-				}
 			}
 		}
 		key ^= turn;
 		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];
 		key ^= blackCastlingRights[unmakeReg.blackCastlingRights];
 		key ^= enPassantRights[unmakeReg.enPassantRights];
-		key ^= whiteCastlingRights[p.getWhiteCastlingRights()];
-		key ^= blackCastlingRights[p.getBlackCastlingRights()];
-		key ^= enPassantRights[p.getEnPassantRights()];
+		key ^= whiteCastlingRights[p.whiteCastlingRights];
+		key ^= blackCastlingRights[p.blackCastlingRights];
+		key ^= enPassantRights[p.enPassantRights];
 		return key;
 	}
 }
