@@ -1963,7 +1963,7 @@ public class Position {
 				else {
 					offsetBoard[63] = 9;
 					offsetBoard[61] = 0;
-					setBitboards(3, 0, Square.F8.bitmap, Square.H8.bitmap);
+					setBitboards(9, 0, Square.F8.bitmap, Square.H8.bitmap);
 				}
 			}
 			break;
@@ -1979,7 +1979,7 @@ public class Position {
 				else {
 					offsetBoard[56] = 9;
 					offsetBoard[59] = 0;
-					setBitboards(3, 0, Square.D8.bitmap, Square.A8.bitmap);
+					setBitboards(9, 0, Square.D8.bitmap, Square.A8.bitmap);
 				}
 			}
 			break;
