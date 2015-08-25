@@ -48,10 +48,10 @@ public class Position {
 	
 	private int[] offsetBoard;															//a complimentary board data-structure to the bitboards to efficiently detect pieces on specific squares
 	
-	boolean whitesTurn = true;
+	boolean whitesTurn = true;															//denotes whether it is white's turn to make a move, or not, i.e. it is black's
 	
-	private long checkers = 0;															//a bitboard of all the pieces that attack the color to move's king
-	private boolean check = false;
+	private long checkers = 0;															//a bitmap of all the pieces that attack the color to move's king
+	private boolean check = false;														//denotes whether the color to move's king is in check or not
 	
 	private int halfMoveIndex = 0;														//the count of the current ply/half-move
 	private int fiftyMoveRuleClock = 0;													//the number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
@@ -73,7 +73,7 @@ public class Position {
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Position() {
-		initializeBitBoards();
+		initializeBitboards();
 		initializeOffsetBoard();
 		initializeZobristKeys();
 	}
@@ -196,7 +196,7 @@ public class Position {
 				}
 			}
 		}
-		this.initializeCollections();
+		this.updateAllCollections();
 		if (turn.toLowerCase().compareTo("w") == 0)
 			whitesTurn = true;
 		else
@@ -218,15 +218,7 @@ public class Position {
 		setCheck();
 		initializeZobristKeys();
 	}
-	private void initializeCollections() {
-		allWhitePieces		 =  whiteKing | whiteQueens | whiteRooks | whiteBishops | whiteKnights | whitePawns;
-		allBlackPieces		 =  blackKing | blackQueens | blackRooks | blackBishops | blackKnights | blackPawns;
-		allNonWhiteOccupied  = ~allWhitePieces;
-		allNonBlackOccupied  = ~allBlackPieces;
-		allOccupied		     =  allWhitePieces | allBlackPieces;
-		allEmpty			 = ~allOccupied;
-	}
-	private void initializeBitBoards() {
+	private void initializeBitboards() {
 		whiteKing		=  Piece.WHITE_KING.initPosBitmap;
 		whiteQueens 	=  Piece.WHITE_QUEEN.initPosBitmap;
 		whiteRooks		=  Piece.WHITE_ROOK.initPosBitmap;
@@ -240,7 +232,15 @@ public class Position {
 		blackBishops	=  Piece.BLACK_BISHOP.initPosBitmap;
 		blackKnights	=  Piece.BLACK_KNIGHT.initPosBitmap;
 		blackPawns		=  Piece.BLACK_PAWN.initPosBitmap;
-		initializeCollections();
+		updateAllCollections();
+	}
+	private void updateAllCollections() {
+		allWhitePieces		 =  whiteKing | whiteQueens | whiteRooks | whiteBishops | whiteKnights | whitePawns;
+		allBlackPieces		 =  blackKing | blackQueens | blackRooks | blackBishops | blackKnights | blackPawns;
+		allNonWhiteOccupied  = ~allWhitePieces;
+		allNonBlackOccupied  = ~allBlackPieces;
+		allOccupied		     =  allWhitePieces | allBlackPieces;
+		allEmpty			 = ~allOccupied;
 	}
 	private void initializeOffsetBoard() {
 		offsetBoard = new int[64];
@@ -271,54 +271,6 @@ public class Position {
 		zobristKeyHistory = new long[237];
 		zobristKey = keyGen.hash(this);
 		zobristKeyHistory[0] = this.zobristKey;
-	}
-	/**Returns a bitmap representing the white king's position.*/
-	public long getWhiteKing() {
-		return whiteKing;
-	}
-	/**Returns a bitmap representing the white queens' position.*/
-	public long getWhiteQueens() {
-		return whiteQueens;
-	}
-	/**Returns a bitmap representing the white rooks' position.*/
-	public long getWhiteRooks() {
-		return whiteRooks;
-	}
-	/**Returns a bitmap representing the white bishops' position.*/
-	public long getWhiteBishops() {
-		return whiteBishops;
-	}
-	/**Returns a bitmap representing the white knights' position.*/
-	public long getWhiteKnights() {
-		return whiteKnights;
-	}
-	/**Returns a bitmap representing the white pawns' position.*/
-	public long getWhitePawns() {
-		return whitePawns;
-	}
-	/**Returns a bitmap representing the black king's position.*/
-	public long getBlackKing() {
-		return blackKing;
-	}
-	/**Returns a bitmap representing the black queens' position.*/
-	public long getBlackQueens() {
-		return blackQueens;
-	}
-	/**Returns a bitmap representing the black rooks' position.*/
-	public long getBlackRooks() {
-		return blackRooks;
-	}
-	/**Returns a bitmap representing the black bishops' position.*/
-	public long getBlackBishops() {
-		return blackBishops;
-	}
-	/**Returns a bitmap representing the black knights' position.*/
-	public long getBlackKnights() {
-		return blackKnights;
-	}
-	/**Returns a bitmap representing the black pawns' position.*/
-	public long getBlackPawns() {
-		return blackPawns;
 	}
 	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.*/
 	public int[] getOffsetBoard() {
@@ -1963,7 +1915,7 @@ public class Position {
 				else {
 					offsetBoard[63] = 9;
 					offsetBoard[61] = 0;
-					setBitboards(9, 0, Square.F8.bitmap, Square.H8.bitmap);
+					setBitboards(3, 0, Square.F8.bitmap, Square.H8.bitmap);
 				}
 			}
 			break;
@@ -1979,7 +1931,7 @@ public class Position {
 				else {
 					offsetBoard[56] = 9;
 					offsetBoard[59] = 0;
-					setBitboards(9, 0, Square.D8.bitmap, Square.A8.bitmap);
+					setBitboards(3, 0, Square.D8.bitmap, Square.A8.bitmap);
 				}
 			}
 			break;

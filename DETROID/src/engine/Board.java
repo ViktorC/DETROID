@@ -31,6 +31,9 @@ public class Board {
 		private Square() {
 			bitmap = 1L << ordinal();
 		}
+		private Square(boolean flag) {
+			bitmap = 0;
+		}
 		/**Returns a String representation of the square.*/
 		public String toString() {
 			return toString(ordinal());
