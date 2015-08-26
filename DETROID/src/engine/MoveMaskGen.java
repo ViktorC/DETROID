@@ -7,7 +7,7 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class MaskGenerator {
+public class MoveMaskGen {
 	
 	private static long ANTIFRAME_VERTICAL;
 	private static long ANTIFRAME_HORIZONTAL;

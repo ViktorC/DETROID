@@ -16,7 +16,7 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class MagicGenerator {
+public class MagicGen {
 	
 	/**A simple unencapsulated class for returning both the magic number and the magic shift value.
 	 * 
@@ -50,10 +50,10 @@ public class MagicGenerator {
 	private static long[][] bishopAttackSetVariations;
 	
 	static {
-		rookOccupancyVariations = SliderOccupancyVariationGenerator.rookOccupancyVariations();
-		bishopOccupancyVariations = SliderOccupancyVariationGenerator.bishopOccupancyVariations();
-		rookAttackSetVariations = SliderAttackSetCalculator.rookAttackSetVariations(rookOccupancyVariations);
-		bishopAttackSetVariations = SliderAttackSetCalculator.bishopAttackSetVariations(bishopOccupancyVariations);
+		rookOccupancyVariations = SliderOccVarGen.rookOccupancyVariations();
+		bishopOccupancyVariations = SliderOccVarGen.bishopOccupancyVariations();
+		rookAttackSetVariations = SliderAttSetComp.rookAttackSetVariations(rookOccupancyVariations);
+		bishopAttackSetVariations = SliderAttSetComp.bishopAttackSetVariations(bishopOccupancyVariations);
 	}
 	/**Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
 	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right shifted by one more

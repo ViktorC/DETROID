@@ -1,5 +1,7 @@
 package util;
 
+import java.lang.reflect.Array;
+
 /**A generic abstract class for providing the basics for list data structures such as stacks and queues.
  * 
  * @author Viktor
@@ -95,12 +97,14 @@ public abstract class List<Data> {
 	public abstract int length();
 	/**Copies references to the nodes of the list into an array in order, and returns the array.
 	 *
+	 * If the list is empty, it throws a NullPointerException.
+	 *
 	 * @return
 	 */
-	public Data[] toArray() {
+	public Data[] toArray() throws NullPointerException {
 		int i = 0;
 		@SuppressWarnings({"unchecked"})
-		Data[] arr = (Data[])new Object[length()];
+		Data[] arr = (Data[])Array.newInstance(head.data.getClass(), length());
 		while (hasNext()) {
 			arr[i] = next();
 			i++;

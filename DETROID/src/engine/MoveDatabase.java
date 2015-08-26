@@ -112,12 +112,12 @@ public enum MoveDatabase {
 		rook = new long[1 << (64 - rookMagicShift)];
 		bishop = new long[1 << (64 - bishopMagicShift)];
 		Square sqr = Square.getByIndex(sqrInd);
-		rookOccupancyMask = MaskGenerator.rookOccupancyMask(sqr);
-		bishopOccupancyMask = MaskGenerator.bishopOccupancyMask(sqr);
-		long[] rookOccVar = SliderOccupancyVariationGenerator.occupancyVariations(rookOccupancyMask);
-		long[] bishopOccVar = SliderOccupancyVariationGenerator.occupancyVariations(bishopOccupancyMask);
-		long[] rookAttVar = SliderAttackSetCalculator.rookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = SliderAttackSetCalculator.bishopAttackSetVariations(sqr, bishopOccVar);
+		rookOccupancyMask = MoveMaskGen.rookOccupancyMask(sqr);
+		bishopOccupancyMask = MoveMaskGen.bishopOccupancyMask(sqr);
+		long[] rookOccVar = SliderOccVarGen.occupancyVariations(rookOccupancyMask);
+		long[] bishopOccVar = SliderOccVarGen.occupancyVariations(bishopOccupancyMask);
+		long[] rookAttVar = SliderAttSetComp.rookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = SliderAttSetComp.bishopAttackSetVariations(sqr, bishopOccVar);
 		for (int i = 0; i < rookOccVar.length; i++) {
 			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
 			rook[index] = rookAttVar[i];
@@ -126,12 +126,12 @@ public enum MoveDatabase {
 			index = (int)((bishopOccVar[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishop[index] = bishopAttVar[i];
 		}
-		king 				= MaskGenerator.kingMoveMask(sqr);
-		knight 				= MaskGenerator.knightMoveMasks(sqr);
-		pawnWhiteAdvance 	= MaskGenerator.whitePawnAdvanceMasks(sqr);
-		pawnWhiteCapture 	= MaskGenerator.whitePawnCaptureMasks(sqr);
-		pawnBlackAdvance 	= MaskGenerator.blackPawnAdvanceMasks(sqr);
-		pawnBlackCapture 	= MaskGenerator.blackPawnCaptureMasks(sqr);
+		king 				= MoveMaskGen.kingMoveMask(sqr);
+		knight 				= MoveMaskGen.knightMoveMasks(sqr);
+		pawnWhiteAdvance 	= MoveMaskGen.whitePawnAdvanceMasks(sqr);
+		pawnWhiteCapture 	= MoveMaskGen.whitePawnCaptureMasks(sqr);
+		pawnBlackAdvance 	= MoveMaskGen.blackPawnAdvanceMasks(sqr);
+		pawnBlackCapture 	= MoveMaskGen.blackPawnCaptureMasks(sqr);
 	}
 	/**Returns a simple king move mask bitmap.
 	 * 

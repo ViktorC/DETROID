@@ -11,8 +11,6 @@ import engine.Board.Square;
  */
 public class UnmakeRegister {
 
-	int movedPiece;
-	int capturedPiece;
 	int whiteCastlingRights;
 	int blackCastlingRights;
 	int enPassantRights;
@@ -20,9 +18,7 @@ public class UnmakeRegister {
 	int repetitions;
 	long checkers;
 	
-	public UnmakeRegister(int movedPiece, int capturedPiece, int whiteCastlingRights, int blackCastlingRights, int enPassantRights, int fiftyMoveRuleClock, int repetitions, long checkers) {
-		this.movedPiece = movedPiece;
-		this.capturedPiece = capturedPiece;
+	public UnmakeRegister(int whiteCastlingRights, int blackCastlingRights, int enPassantRights, int fiftyMoveRuleClock, int repetitions, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;
 		this.enPassantRights = enPassantRights;
@@ -38,8 +34,6 @@ public class UnmakeRegister {
 	public String toString() {
 		long checker;
 		String rep = "";
-		rep += "Moved piece: " + movedPiece + "\n";
-		rep += "Captured piece: " + capturedPiece + "\n";
 		if ((checker = BitOperations.getLSBit(checkers)) != 0) {
 			rep += String.format("%-23s " + Square.toString(BitOperations.indexOfBit(checker)), "Checker(s):");
 			if ((checker = BitOperations.getLSBit(checkers^checker)) != 0)

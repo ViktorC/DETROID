@@ -15,24 +15,25 @@ public class Move implements Comparable<Move> {
 	private static byte SHIFT_TYPE = 12;
 	private static byte MASK_FROM_TO = 63;
 
-	int from;	//denotes the index of the origin square
-	int to;		//denotes the index of the destination square
-	int type;	//denotes the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
-	int value;	//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to
+	int from;			//the index of the origin square
+	int to;				//the index of the destination square
+	int movedPiece;		//the numeric notation of the type of piece moved
+	int capturedPiece;	//the numeric notation of the type of piece captured; if none, 0
+	int type;			//the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
+	int value;			//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to
 	
 	public Move() {
 	}
 	public Move(int score) {
 		value = score;
 	}
-	public Move(int from, int to) {
+	public Move(int from, int to, int movedPiece, int capturedPiece, int type) {
 		this.from = from;
 		this.to = to;
-	}
-	public Move(int from, int to, int type) {
-		this.from = from;
-		this.to = to;
+		this.movedPiece = movedPiece;
+		this.capturedPiece = capturedPiece;
 		this.type = type;
+		this.value = (capturedPiece == 0) ? 0 : Piece.getByNumericNotation(capturedPiece).standardValue - Piece.getByNumericNotation(movedPiece).standardValue;
 	}
 	/**Parses a move encoded in a 16 bit integer.*/
 	public static Move toMove(short move) {
@@ -41,10 +42,6 @@ public class Move implements Comparable<Move> {
 		m.to = (move >>> SHIFT_TO) & MASK_FROM_TO;
 		m.type = move >>> SHIFT_TYPE;
 		return m;
-	}
-	/**Returns the difference of the owner and the parameter Move instances' value fields.*/
-	public int compareTo(Move m) throws NullPointerException {
-		return value - m.value;
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
 	public boolean greaterThan(Move m) throws NullPointerException {

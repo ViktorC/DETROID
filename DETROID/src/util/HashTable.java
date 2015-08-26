@@ -20,7 +20,7 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 		
 	}
 	
-	private final static int DEFAULT_SIZE = 1 << 6;
+	public final static int DEFAULT_SIZE = 1 << 6;
 	
 	private final static long HASH_MASK1 = (1 << 32) - 1;
 	private final static long HASH_MASK2 = -1^HASH_MASK1;
@@ -31,12 +31,12 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 	/**Instantiates a HashTable with a default size of 64.*/
 	@SuppressWarnings({"unchecked"})
 	public HashTable() {
-		table = (E[])new Object[DEFAULT_SIZE];
+		table = (E[])new Entry[DEFAULT_SIZE];
 		vacancies = DEFAULT_SIZE/2;
 	}
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int size) {
-		table = (E[])new Object[size];
+		table = (E[])new Entry[size];
 		vacancies = size/2;
 	}
 	/**Returns the size of the hash table.

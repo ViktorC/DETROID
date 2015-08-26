@@ -15,7 +15,7 @@ public class Search {
 	}
 	private Move negaMax(int depth, int alpha, int beta) {
 		int score;
-		Move move, temp, bestMove = new Move(Game.LOSS);
+		Move temp, bestMove = new Move(Game.LOSS);
 		Queue<Move> moves = pos.generateMoves();
 		if (moves.length() == 0)
 			return new Move();
@@ -23,8 +23,8 @@ public class Search {
 			return new Move(Game.TIE);
 		if (depth == 0)
 			return new Move(eval.score(pos));
-		while (moves.hasNext()) {
-			move = moves.next();
+		for (Move move : (new QuickSort<Move>(moves)).getArray()) {
+			move.value = 0;
 			pos.makeMove(move);
 			temp = negaMax(depth - 1, -beta, -alpha);
 			score = -temp.value;

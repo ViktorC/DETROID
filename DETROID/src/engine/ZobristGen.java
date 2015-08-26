@@ -18,7 +18,7 @@ import java.util.Random;
  * @author Viktor
  *
  */
-public class ZobristKeyGenerator {
+public class ZobristGen {
 	
 	private long turn;
 	private long[][] board = new long[13][64];
@@ -26,7 +26,7 @@ public class ZobristKeyGenerator {
 	private long[] blackCastlingRights = new long[4];
 	private long[] enPassantRights = new long[9];
 	
-	public ZobristKeyGenerator() {
+	public ZobristGen() {
 		this.pseudorandNumGen();
 	}
 	/**Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.*/
@@ -76,16 +76,16 @@ public class ZobristKeyGenerator {
 		UnmakeRegister unmakeReg	= p.getUnmakeRegister();
 		switch (move.type) {
 			case 0: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				key ^= board[unmakeReg.movedPiece][move.to];
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				key ^= board[move.movedPiece][move.to];
 			}
 			break;
 			case 1: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				key ^= board[unmakeReg.movedPiece][move.to];
-				if (unmakeReg.movedPiece == 1) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == 1) {
 					key ^= board[3][7];
 					key ^= board[3][5];
 				}
@@ -96,10 +96,10 @@ public class ZobristKeyGenerator {
 			}
 			break;
 			case 2: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				key ^= board[unmakeReg.movedPiece][move.to];
-				if (unmakeReg.movedPiece == 1) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == 1) {
 					key ^= board[3][0];
 					key ^= board[3][3];
 				}
@@ -110,45 +110,45 @@ public class ZobristKeyGenerator {
 			}
 			break;
 			case 3: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.movedPiece][move.to];
-				if (unmakeReg.movedPiece == 6)
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == 6)
 					key ^= board[12][move.to - 8];
 				else
 					key ^= board[6][move.to + 8];
 			}
 			break;
 			case 4: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6)
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == 6)
 					key ^= board[2][move.to];
 				else
 					key ^= board[8][move.to];
 			}
 			break;
 			case 5: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6)
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == 6)
 					key ^= board[3][move.to];
 				else
 					key ^= board[9][move.to];
 			}
 			break;
 			case 6: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6)
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == 6)
 					key ^= board[4][move.to];
 				else
 					key ^= board[10][move.to];
 			}
 			break;
 			case 7: {
-				key ^= board[unmakeReg.movedPiece][move.from];
-				key ^= board[unmakeReg.capturedPiece][move.to];
-				if (unmakeReg.movedPiece == 6)
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == 6)
 					key ^= board[5][move.to];
 				else
 					key ^= board[11][move.to];

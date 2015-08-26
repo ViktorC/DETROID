@@ -4,17 +4,17 @@ package util;
  * 
  * @author Viktor
  *
- * @param <Entry>
+ * @param <T>
  */
-public class QuickSort<Entry extends Comparable<Entry>> {
+public class QuickSort<T extends Comparable<T>> {
 
-	private Entry[] array;
+	private T[] array;
 	
-	public QuickSort(Entry[] array) {
+	public QuickSort(T[] array) {
 		this.array = array;
 		sort();
 	}
-	public QuickSort(List<Entry> container) {
+	public QuickSort(List<T> container) {
 		array = container.toArray();
 		sort();
 	}
@@ -22,16 +22,16 @@ public class QuickSort<Entry extends Comparable<Entry>> {
 	 * 
 	 * @return
 	 */
-	public Entry[] getArray() {
+	public T[] getArray() {
 		return array;
 	}
 	/**Returns the sorted container as a queue.
 	 * 
 	 * @return
 	 */
-	public Queue<Entry> getQueue() {
-		Queue<Entry> q = new Queue<Entry>();
-		for (Entry e : array)
+	public Queue<T> getQueue() {
+		Queue<T> q = new Queue<T>();
+		for (T e : array)
 			q.add(e);
 		return q;
 	}
@@ -48,8 +48,8 @@ public class QuickSort<Entry extends Comparable<Entry>> {
 			quickSort(index, right);
 	}
 	private int partition(int left, int right) {
-		Entry pivot = array[(left + right)/2];
-		Entry temp;
+		T pivot = array[(left + right)/2];
+		T temp;
 		while (left <= right) {
 			while (array[left].greaterThan(pivot))
 				left++;

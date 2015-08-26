@@ -9,7 +9,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public class SliderOccupancyVariationGenerator {
+public class SliderOccVarGen {
 
 	/**Generates all the variations for the occupancy mask fed to it.
 	 * 
@@ -36,7 +36,7 @@ public class SliderOccupancyVariationGenerator {
 	public static long[][] rookOccupancyVariations() {
 		long[][] rookOccVar = new long[64][];
 		for (Square sqr : Square.values())
-			rookOccVar[sqr.ordinal()] = occupancyVariations(MaskGenerator.rookOccupancyMask(sqr));
+			rookOccVar[sqr.ordinal()] = occupancyVariations(MoveMaskGen.rookOccupancyMask(sqr));
 		return rookOccVar;
 	}
 	/**For each square it generates all the relevant occupancy variations for a bishop.
@@ -46,7 +46,7 @@ public class SliderOccupancyVariationGenerator {
 	public static long[][] bishopOccupancyVariations() {
 		long[][] bishopOccVar = new long[64][];
 		for (Square sqr : Square.values())
-			bishopOccVar[sqr.ordinal()] = occupancyVariations(MaskGenerator.bishopOccupancyMask(sqr));
+			bishopOccVar[sqr.ordinal()] = occupancyVariations(MoveMaskGen.bishopOccupancyMask(sqr));
 		return bishopOccVar;
 	}
 }

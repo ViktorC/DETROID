@@ -10,7 +10,7 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class SliderAttackSetCalculator {
+public class SliderAttSetComp {
 	
 	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north of multiple sliding pieces at the same time. The generator
 	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
