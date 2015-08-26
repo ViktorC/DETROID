@@ -33,7 +33,6 @@ public class Move implements Comparable<Move> {
 		this.movedPiece = movedPiece;
 		this.capturedPiece = capturedPiece;
 		this.type = type;
-		this.value = (capturedPiece == 0) ? 0 : Piece.getByNumericNotation(capturedPiece).standardValue - Piece.getByNumericNotation(movedPiece).standardValue;
 	}
 	/**Parses a move encoded in a 16 bit integer.*/
 	public static Move toMove(short move) {
@@ -84,6 +83,24 @@ public class Move implements Comparable<Move> {
 	 */
 	public short toShort() {
 		return (short)(from | (to << SHIFT_TO) | (type << SHIFT_TYPE));
+	}
+	/**Returns whether this move is equal to the input parameter move.
+	 * 
+	 * @param m
+	 * @return
+	 */
+	public boolean equals(Move m) {
+		if (from == m.from && to == m.to && type == m.type)
+			return true;
+		return false;
+	}
+	/**Returns whether this move is equal to the input parameter move.
+	 * 
+	 * @param move
+	 * @return
+	 */
+	public boolean equls(short move) {
+		return equals(toMove(move));
 	}
 	/**Prints all moves contained in the input parameter to the console.
 	 * 

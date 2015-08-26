@@ -22,6 +22,14 @@ public class TTEntry extends HashTable.Entry implements Comparable<TTEntry> {
 	short bestMove;
 	byte  age;
 
+	public TTEntry(long key, int depth, byte type, int score, short bestMove, byte age) {
+		this.key = key;
+		this.depth = (short)depth;
+		this.type = type;
+		this.score = (short)score;
+		this.bestMove = bestMove;
+		this.age = age;
+	}
 	/**Returns whether this entry is more valuable for storing than the input parameter entry.*/
 	public boolean greaterThan(TTEntry e) {
 		if (age <= e.age && depth >= e.depth && (type == TYPE_EXACT || type == e.type))

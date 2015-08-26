@@ -66,7 +66,7 @@ public class Position {
 	
 	private ZobristGen keyGen = new ZobristGen(); 											//a Zobrist key generator for hashing the board
 	
-	private long zobristKey;															//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
+	long zobristKey;															//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
 	private long[] zobristKeyHistory;													//all the positions that have occured so far represented in Zobrist keys.
 	
 	private int repetitions = 0;														//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
