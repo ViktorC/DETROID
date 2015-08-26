@@ -16,7 +16,6 @@ public class TTEntry extends HashTable.Entry implements Comparable<TTEntry> {
 	public final static byte TYPE_FAIL_HIGH = 1;
 	public final static byte TYPE_FAIL_LOW = 2;
 	
-	long  key;
 	short depth;
 	byte  type;
 	short score;
