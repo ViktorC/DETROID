@@ -12,11 +12,13 @@ public class QuickSort<T extends Comparable<T>> {
 	
 	public QuickSort(T[] array) {
 		this.array = array;
-		sort();
+		if (array.length != 0)
+			sort();
 	}
 	public QuickSort(List<T> container) {
 		array = container.toArray();
-		sort();
+		if (array.length != 0)
+			sort();
 	}
 	/**Returns the sorted container as an array.
 	 * 

@@ -107,9 +107,11 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 	private void rehash(int newSize) {
 		E[] oldTable = table;
 		vacancies = newSize/2 - load();
-		table = (E[])new Object[newSize];
-		for (E e : oldTable)
-			insert(e);
+		table = (E[])new Entry[newSize];
+		for (E e : oldTable) {
+			if (e != null)
+				insert(e);
+		}
 	}
 	private int hash1(long key) {
 		return (int)((key & HASH_MASK1)%table.length);
