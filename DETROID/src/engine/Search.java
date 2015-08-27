@@ -15,7 +15,7 @@ public class Search {
 		this.pos = pos;
 		eval = new Evaluator();
 		pV = new Move[depth];
-		for (short i = 1; i < depth; i++) {
+		for (short i = 1; i <= depth; i++) {
 			ply = i;
 			pVsearch(i, Game.LOSS, Game.WIN);
 			extractPv();
@@ -25,7 +25,8 @@ public class Search {
 	private int pVsearch(int depth, int alpha, int beta) {
 		int score, origAlpha = alpha, val;
 		Move bestMove, move;
-		Move[] moves;
+		Queue<Move> moveQ;
+		Move[] moveArr;
 		TTEntry e = tT.lookUp(pos.zobristKey);
 		if (e != null && e.depth >= depth) {
 			if (e.type == TTEntry.TYPE_EXACT)
@@ -42,8 +43,8 @@ public class Search {
 		}
 		if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 			return Game.TIE;
-		moves = orderMoves(pos.generateMoves(), depth);
-		if (moves.length == 0) {
+		moveQ = pos.generateMoves();
+		if (moveQ.length() == 0) {
 			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Game.LOSS, (short)0, tTage));
 			return Game.LOSS;
 		}
@@ -52,9 +53,10 @@ public class Search {
 			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, score, (short)0, tTage));
 			return score;
 		}
+		moveArr = orderMoves(moveQ, depth);
 		bestMove = new Move(Game.LOSS);
-		for (int i = 0; i < moves.length; i++) {
-			move = moves[i];
+		for (int i = 0; i < moveArr.length; i++) {
+			move = moveArr[i];
 			pos.makeMove(move);
 			if (i == 0)
 				val = -pVsearch(depth - 1, -beta, -alpha);

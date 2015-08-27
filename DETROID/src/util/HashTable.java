@@ -122,7 +122,7 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 	/**Replaces the current table with a new, empty hash table of the same size.*/
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
-		table = (E[])new Object[table.length];
+		table = (E[])new Entry[table.length];
 		vacancies = table.length/2;
 	}
 }
