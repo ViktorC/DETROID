@@ -6,7 +6,7 @@ public class Search {
 	
 	Position pos;
 	Evaluator eval;
-	Stack<Move> pV;
+	Move[] pV;
 	short ply;
 	static HashTable<TTEntry> tT = new HashTable<>(1 << 16);
 	static byte tTage = 0;
@@ -14,9 +14,11 @@ public class Search {
 	public Search(Position pos, int depth) {
 		this.pos = pos;
 		eval = new Evaluator();
+		pV = new Move[depth];
 		for (short i = 1; i < depth; i++) {
 			ply = i;
 			pVsearch(i, Game.LOSS, Game.WIN);
+			extractPv();
 		}
 		tTage++;
 	}
@@ -40,7 +42,7 @@ public class Search {
 		}
 		if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 			return Game.TIE;
-		moves = pos.generateMoves().toArray();
+		moves = orderMoves(pos.generateMoves(), depth);
 		if (moves.length == 0) {
 			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Game.LOSS, (short)0, tTage));
 			return Game.LOSS;
@@ -79,17 +81,47 @@ public class Search {
 			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toShort(), tTage));
 		return bestMove.value;
 	}
-	private Move[] orderMoves(List<Move> moves) {
+	private Move[] orderMoves(List<Move> moves, int depth) {
+		boolean thereIsPvMove = false, thereIsRefutMove = false;
+		Move pVmove, refutMove = null;
+		if ((pVmove = pV[ply - depth]) != null)
+			thereIsPvMove = true;
 		TTEntry e = tT.lookUp(pos.zobristKey);
+		if (e != null && e.bestMove != 0) {
+			refutMove = Move.toMove(e.bestMove);
+			thereIsRefutMove = true;
+		}
 		Move[] arr = new Move[moves.length()];
 		Move move;
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
 			move.value = (move.capturedPiece == 0) ? 0 : Piece.getByNumericNotation(move.capturedPiece).standardValue - Piece.getByNumericNotation(move.movedPiece).standardValue;
+			if (thereIsPvMove && move.equals(pVmove)) {
+				move.value += (ply - 1 - depth)*250;
+				thereIsPvMove = false;
+			}
+			if (thereIsRefutMove && move.equals(refutMove)) {
+				move.value += e.depth*250;
+				thereIsRefutMove = false;
+			}
+			arr[i] = move;
+			i++;
 		}
-	}
-	private Stack<Move> extractPv() {
+		return new QuickSort<Move>(arr).getArray();
 		
+	}
+	private void extractPv() {
+		TTEntry e;
+		Move bestMove;
+		int i = 0;
+		while ((e = tT.lookUp(pos.zobristKey)) != null && e.bestMove != 0) {
+			bestMove = Move.toMove(e.bestMove);
+			pos.makeMove(bestMove);
+			pV[i] = bestMove;
+			i++;
+		}
+		for (int j = 0; j < i; j++)
+			pos.unmakeMove();
 	}
 }

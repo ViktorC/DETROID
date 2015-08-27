@@ -22,8 +22,8 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 	
 	public final static int DEFAULT_SIZE = 1 << 6;
 	
-	private final static long HASH_MASK1 = (1 << 32) - 1;
-	private final static long HASH_MASK2 = -1^HASH_MASK1;
+	private final static long HASH_MASK1 = (1L << 63) - 1;
+	private final static long HASH_MASK2 = HASH_MASK1^((1L << 32) - 1);
 	
 	private E[] table;
 	private int vacancies;
@@ -97,9 +97,9 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 	 */
 	public E lookUp(long key) {
 		E e = table[hash1(key)];
-		if (e.key == key)
+		if (e != null && e.key == key)
 			return e;
-		else if ((e = table[hash2(key)]).key == key)
+		else if ((e = table[hash2(key)]) != null && e.key == key)
 			return e;
 		return null;
 	}
@@ -112,10 +112,10 @@ public class HashTable<E extends HashTable.Entry & Comparable<E>> {
 			insert(e);
 	}
 	private int hash1(long key) {
-		return (int)(key & HASH_MASK1)%table.length;
+		return (int)((key & HASH_MASK1)%table.length);
 	}
 	private int hash2(long key) {
-		return (int)(key & HASH_MASK2)%table.length;
+		return (int)((key & HASH_MASK2)%table.length);
 	}
 	/**Replaces the current table with a new, empty hash table of the same size.*/
 	@SuppressWarnings({"unchecked"})
