@@ -4,7 +4,6 @@ import util.*;
 
 public class Evaluator {
 	
-	
 	public int score(Position pos) {
 		int score = 0;
 		score += BitOperations.getCardinality(pos.whiteQueens)*Piece.WHITE_QUEEN.standardValue;

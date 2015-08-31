@@ -2,7 +2,6 @@ package engine;
 
 import util.List;
 import util.Comparable;
-import engine.Board.Square;
 
 /**A simple unencapsulated class that provides objects for storing information about moves necessary for making them.
  * 
@@ -12,8 +11,11 @@ import engine.Board.Square;
 public class Move implements Comparable<Move> {
 	
 	private static byte SHIFT_TO = 6;
-	private static byte SHIFT_TYPE = 12;
+	private static byte SHIFT_MOVED_PIECE = 12;
+	private static byte SHIFT_CAPTURED_PIECE = 16;
+	private static byte SHIFT_TYPE = 20;
 	private static byte MASK_FROM_TO = 63;
+	private static byte MASK_MOVED_CAPTURED = 15;
 
 	int from;			//the index of the origin square
 	int to;				//the index of the destination square
@@ -34,11 +36,13 @@ public class Move implements Comparable<Move> {
 		this.capturedPiece = capturedPiece;
 		this.type = type;
 	}
-	/**Parses a move encoded in a 16 bit integer.*/
-	public static Move toMove(short move) {
+	/**Parses a move encoded in a 32 bit integer.*/
+	public static Move toMove(int move) {
 		Move m = new Move();
 		m.from = move & MASK_FROM_TO;
 		m.to = (move >>> SHIFT_TO) & MASK_FROM_TO;
+		m.movedPiece = (move >>> SHIFT_MOVED_PIECE) & MASK_MOVED_CAPTURED;
+		m.capturedPiece = (move >>> SHIFT_CAPTURED_PIECE) & MASK_MOVED_CAPTURED;
 		m.type = move >>> SHIFT_TYPE;
 		return m;
 	}
@@ -55,12 +59,21 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public String toString() {
-		String alg;
+		String alg, movedPiece, capture, originFile, originRank, destFile, destRank;
 		if (type == 1)
 			return "0-0";
 		else if (type == 2)
 			return "0-0-0";
-		alg = Square.toString(from).toLowerCase() + Square.toString(to).toLowerCase();
+		originRank	= Integer.toString(from/8 + 1);
+		originFile	= Character.toString((char)(from%8 + 'a'));
+		destRank	= Integer.toString(to/8 + 1);
+		destFile	= Character.toString((char)(to%8 + 'a'));
+		movedPiece  = "" + Piece.fenNotation(this.movedPiece);
+		if (this.capturedPiece == 0)
+			capture = "";
+		else
+			capture = "x";
+		alg = movedPiece + originFile + originRank + capture + destFile + destRank;
 		switch (type) {
 			case 3:
 				return alg + "e.p.";
@@ -76,13 +89,13 @@ public class Move implements Comparable<Move> {
 				return alg;
 		}
 	}
-	/**Returns a move as a 16 bit integer with information on the state of the object stored in designated bits,
-	 * except for the score. Useful in memory sensitive applications like the transposition table.
+	/**Returns a move as a 32 bit integer with information on the state of the object stored in designated bits, except for the score.
+	 * Useful in memory sensitive applications like the transposition table as it identifies a 30 byte Move object in merely 4 bytes.
 	 *
 	 * @return
 	 */
-	public short toShort() {
-		return (short)(from | (to << SHIFT_TO) | (type << SHIFT_TYPE));
+	public int toInt() {
+		return (from | (to << SHIFT_TO) | (movedPiece << SHIFT_MOVED_PIECE) | (capturedPiece << SHIFT_CAPTURED_PIECE) | (type << SHIFT_TYPE));
 	}
 	/**Returns whether this move is equal to the input parameter move.
 	 * 

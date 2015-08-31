@@ -8,7 +8,7 @@ public class Search {
 	Evaluator eval;
 	Move[] pV;
 	short ply;
-	static HashTable<TTEntry> tT = new HashTable<>(1 << 16);
+	HashTable<TTEntry> tT = new HashTable<>();
 	static byte tTage = 0;
 	
 	public Search(Position pos, int depth) {
@@ -76,11 +76,11 @@ public class Search {
 				break;
 		}
 		if (bestMove.value <= origAlpha) 
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_LOW, bestMove.value, bestMove.toShort(), tTage));
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_LOW, bestMove.value, bestMove.toInt(), tTage));
 		else if (bestMove.value >= beta)
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_HIGH, bestMove.value, bestMove.toShort(), tTage));
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_HIGH, bestMove.value, bestMove.toInt(), tTage));
 		else
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toShort(), tTage));
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toInt(), tTage));
 		return bestMove.value;
 	}
 	private Move[] orderMoves(List<Move> moves, int depth) {

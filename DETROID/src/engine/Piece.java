@@ -50,6 +50,8 @@ public enum Piece {
 	 */
 	public static int numericNotation(char piece) {
 		switch (piece) {
+			case '\u0000':
+				return 0;
 			case 'K':
 				return 1;
 			case 'Q':

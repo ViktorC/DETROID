@@ -64,12 +64,14 @@ public class Position {
 	private Stack<Move> moveList = new Stack<Move>();									//a stack of all the moves made so far
 	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 	
-	private ZobristGen keyGen = new ZobristGen(); 											//a Zobrist key generator for hashing the board
+	private ZobristGen keyGen = new ZobristGen(); 										//a Zobrist key generator for hashing the board
 	
-	long zobristKey;															//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
+	long zobristKey;																	//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
 	private long[] zobristKeyHistory;													//all the positions that have occured so far represented in Zobrist keys.
 	
 	private int repetitions = 0;														//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
+	
+	static HashTable<TTEntry> tT = new HashTable<>();
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Position() {
