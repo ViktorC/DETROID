@@ -71,8 +71,6 @@ public class Position {
 	
 	private int repetitions = 0;														//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
 	
-	static HashTable<TTEntry> tT = new HashTable<>();
-	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Position() {
 		initializeBitboards();
