@@ -2,6 +2,11 @@ package engine;
 
 import util.*;
 
+/**PRE-MATURE; FOR TESTING ONLY
+ * 
+ * @author Viktor
+ *
+ */
 public class Evaluator {
 	
 	public int score(Position pos) {

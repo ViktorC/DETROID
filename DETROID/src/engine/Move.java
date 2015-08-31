@@ -10,12 +10,12 @@ import util.Comparable;
  */
 public class Move implements Comparable<Move> {
 	
-	private static byte SHIFT_TO = 6;
-	private static byte SHIFT_MOVED_PIECE = 12;
-	private static byte SHIFT_CAPTURED_PIECE = 16;
-	private static byte SHIFT_TYPE = 20;
-	private static byte MASK_FROM_TO = 63;
-	private static byte MASK_MOVED_CAPTURED = 15;
+	private final static byte SHIFT_TO = 6;
+	private final static byte SHIFT_MOVED_PIECE = 12;
+	private final static byte SHIFT_CAPTURED_PIECE = 16;
+	private final static byte SHIFT_TYPE = 20;
+	private final static byte MASK_FROM_TO = 63;
+	private final static byte MASK_MOVED_CAPTURED = 15;
 
 	int from;			//the index of the origin square
 	int to;				//the index of the destination square

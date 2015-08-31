@@ -20,17 +20,17 @@ import java.util.Random;
  */
 public class ZobristGen {
 	
-	private long turn;
-	private long[][] board = new long[13][64];
-	private long[] whiteCastlingRights = new long[4];
-	private long[] blackCastlingRights = new long[4];
-	private long[] enPassantRights = new long[9];
+	private static long turn;
+	private static long[][] board = new long[13][64];
+	private static long[] whiteCastlingRights = new long[4];
+	private static long[] blackCastlingRights = new long[4];
+	private static long[] enPassantRights = new long[9];
 	
-	public ZobristGen() {
-		this.pseudorandNumGen();
+	static {
+		pseudorandNumGen();
 	}
 	/**Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.*/
-	private void pseudorandNumGen() {
+	private static void pseudorandNumGen() {
 		Random random = new Random();
 		turn = random.nextLong();
 		for (int i = 0; i < 64; i++)

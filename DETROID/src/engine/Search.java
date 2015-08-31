@@ -2,13 +2,19 @@ package engine;
 
 import util.*;
 
+/**A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It uses
+ * principal variation search with a transposition table and MVV-LVA and history heuristics based move ordering within an iterative deepening framework.
+ * 
+ * @author Viktor
+ *
+ */
 public class Search {
 	
 	Position pos;
 	Evaluator eval;
 	Move[] pV;
 	short ply;
-	HashTable<TTEntry> tT = new HashTable<>();
+	static HashTable<TTEntry> tT = new HashTable<>();
 	static byte tTage = 0;
 	
 	public Search(Position pos, int depth) {
@@ -21,7 +27,17 @@ public class Search {
 			extractPv();
 		}
 		tTage++;
+		if (tTage == 4)
+			tT.clear();
 	}
+	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
+	 * variation can be extracted from the transposition table after a search has been run.
+	 * 
+	 * @param depth
+	 * @param alpha
+	 * @param beta
+	 * @return
+	 */
 	private int pVsearch(int depth, int alpha, int beta) {
 		int score, origAlpha = alpha, val;
 		Move bestMove, move;
@@ -83,6 +99,12 @@ public class Search {
 			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toInt(), tTage));
 		return bestMove.value;
 	}
+	/**Orders a list of moves according to the PV node of the given depth, history heuristics, and the MVV-LVA principle; and returns it as an array.
+	 * 
+	 * @param moves
+	 * @param depth
+	 * @return
+	 */
 	private Move[] orderMoves(List<Move> moves, int depth) {
 		boolean thereIsPvMove = false, thereIsRefutMove = false;
 		Move pVmove, refutMove = null;
@@ -113,6 +135,7 @@ public class Search {
 		return new QuickSort<Move>(arr).getArray();
 		
 	}
+	/**Sets the instance field pV according to the line of best play extracted form the transposition table.*/
 	private void extractPv() {
 		TTEntry e;
 		Move bestMove;

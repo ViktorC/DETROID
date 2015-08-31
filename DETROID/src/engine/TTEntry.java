@@ -15,11 +15,11 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 	public final static byte TYPE_FAIL_HIGH = 1;
 	public final static byte TYPE_FAIL_LOW = 2;
 	
-	short depth;
-	byte  type;
-	short score;
-	int   bestMove;
-	byte  age;
+	short depth;	//how deep the position has been searched
+	byte  type;		//the type of the returned score
+	short score;	//the returned score
+	int   bestMove;	//the best move compressed into a short
+	byte  age;		//the age of the entry
 
 	public TTEntry(long key, int depth, byte type, int score, int bestMove, byte age) {
 		this.key = key;
@@ -31,13 +31,13 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 	}
 	/**Returns whether this entry is more valuable for storing than the input parameter entry.*/
 	public boolean greaterThan(TTEntry e) {
-		if (age <= e.age && depth >= e.depth && (type == TYPE_EXACT || type == e.type))
+		if (age <= e.age + 2 && depth >= e.depth && (type == TYPE_EXACT || type == e.type))
 			return true;
 		return false;
 	}
 	/**Returns whether this entry is less valuable for storing than the input parameter entry.*/
 	public boolean smallerThan(TTEntry e) {
-		if (age > e.age || depth < e.depth || (e.type == TYPE_EXACT && type != TYPE_EXACT))
+		if (age > e.age + 1 || depth < e.depth || (e.type == TYPE_EXACT && type != TYPE_EXACT))
 			return true;
 		return false;
 	}

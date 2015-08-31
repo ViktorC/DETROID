@@ -7,6 +7,8 @@ public class Playground {
 		long start = System.currentTimeMillis();
 		Search s = new Search(p, 8);
 		long end = System.currentTimeMillis();
-		System.out.println("size: " + s.tT.size() + " load: " + s.tT.load() + " time: " + (end - start));
+		Move.printMovesToConsole(s.pV);
+		System.out.println(Search.tT.size() + "\n" + Search.tT.load());
+		System.out.println(end - start);
 	}
 }

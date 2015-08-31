@@ -1,7 +1,17 @@
 package util;
 
-/**A generic, so far non-thread-safe hash table utilizing cuckoo hashing with constant look-up time. Entries of the hash table are required to extend
- * {@link #HashTable.Entry Entry} and thus implicitly implement {@link #Comparable Comparable}.
+/**A generic, so far non-thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
+ * the hash table are required to extend {@link #HashTable.Entry Entry} and implicitly implement {@link #Comparable Comparable}.
+ * 
+ * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash functions.
+ * All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's size]; it applies no randomization
+ * whatsoever either. The average load factor is around 65%, but it can be as high as 92%. Due to the uneven table sizes, look up is biased towards the
+ * foremost tables. The odds of a look up terminating after checking the first two tables is 60%. It is reasonable compromise between memory and time
+ * efficiency. I have determined the loop iteration limit and the factor of resizing rather through trial and error than mathematics using rudimentary
+ * and probably inaccurate tuning methods. The framework itself was also more of intuition than research, but it works way better than any others I have
+ * tried.
+ * 
+ * The default length of the hash table (the sum of the four tables' lengths) is 1024 and it never gets smaller than that.
  * 
  * @author Viktor
  *
@@ -14,10 +24,14 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * @author Viktor
 	 *
 	 */
-	public static abstract class Entry<E> implements Comparable<E> {
+	public static abstract class Entry<E> implements Comparable<E>, Hashable {
 		
 		protected long key; //a 64 bit integer key that is hashed onto an index
 		
+		/**Returns a 64 bit hash code that can be used for the identification of the object, however its uniqueness is not quaranteed.*/
+		public long key() {
+			return key;
+		}
 	}
 	
 	public final static int DEFAULT_SIZE = 1 << 10;
@@ -27,7 +41,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	private final static float T3_SHARE = 0.225F;
 	private final static float T4_SHARE = 0.175F;
 	
-	private final static float EPSILON = 1.163F;
+	private final static float EPSILON = 1.57F;
 	
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
 	
@@ -100,7 +114,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 			}
 			return;
 		}
-		for (int i = 0; i <= 5*(Math.log(size()/4)/Math.log(2.25)); i++) {
+		for (int i = 0; i <= 5*(Math.log(size())/Math.log(1 + EPSILON)); i++) {
 			if ((slot = t1[(ind = hash1(e.key))]) == null) {
 				t1[ind] = e;
 				load++;
@@ -150,17 +164,40 @@ public class HashTable<E extends HashTable.Entry<E>> {
 			return e;
 		return null;
 	}
+	/**Deletes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table; returns
+	 * false otherwise.
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public boolean delete(long key) {
+		int ind;
+		E e;
+		if ((e = t1[(ind = hash1(key))]) != null && e.key == key) {
+			t1[ind] = null;
+			return true;
+		}
+		if ((e = t2[(ind = hash2(key))]) != null && e.key == key) {
+			t2[ind] = null;
+			return true;
+		}
+		if ((e = t3[(ind = hash3(key))]) != null && e.key == key) {
+			t3[ind] = null;
+			return true;
+		}
+		if ((e = t4[(ind = hash4(key))]) != null && e.key == key) {
+			t4[ind] = null;
+			return true;
+		}
+		return false;
+	}
 	@SuppressWarnings({"unchecked"})
 	private void rehash() {
-		int size;
 		E[] oldTable1 = t1;
 		E[] oldTable2 = t2;
 		E[] oldTable3 = t3;
 		E[] oldTable4 = t4;
-		if (size() < EPSILON*load)
-			size = 2*size();
-		else
-			size = (int)(2.25*load);
+		int size = (int)((1 + EPSILON)*load) + DEFAULT_SIZE;
 		load = 0;
 		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
 		t2 = (E[])new Entry[(int)(T2_SHARE*size)];

@@ -13,12 +13,12 @@ public interface Comparable<T> {
 	 * @param t
 	 * @return
 	 */
-	public boolean greaterThan(T t);
+	boolean greaterThan(T t);
 	/**Returns whether the object that invoked the method is 'smaller' than the parameter object.
 	 * 
 	 * @param t
 	 * @return
 	 */
-	public boolean smallerThan(T t);
+	boolean smallerThan(T t);
 	
 }
