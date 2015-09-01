@@ -1,9 +1,9 @@
 package engine;
 
 import util.*;
-import engine.Board.*;
 
-/**PRE-MATURE; FOR TESTING ONLY
+/**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
+ * kept incrementally updated after moves made using {@link #score score}.
  * 
  * @author Viktor
  *
@@ -19,12 +19,21 @@ public class Evaluator {
 	public Evaluator(Position pos) {
 		this.pos = pos;
 	}
+	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
+	 * 
+	 * @return
+	 */
 	public int score() {
 		int score = 0;
 		Move move;
+		IntList gloriaSquares;
 		List<Move> moves = pos.generateMoves();
-		if (moves.length() == 0)
-			return LOSS;
+		if (moves.length() == 0) {
+			if (pos.getCheck())
+				return LOSS;
+			else
+				return TIE;
+		}
 		score += BitOperations.getCardinality(pos.whiteQueens)*Piece.WHITE_QUEEN.standardValue;
 		score += BitOperations.getCardinality(pos.whiteRooks)*Piece.WHITE_ROOK.standardValue;
 		score += BitOperations.getCardinality(pos.whiteBishops)*Piece.WHITE_BISHOP.standardValue;
@@ -35,25 +44,45 @@ public class Evaluator {
 		score -= BitOperations.getCardinality(pos.blackBishops)*Piece.BLACK_BISHOP.standardValue;
 		score -= BitOperations.getCardinality(pos.blackKnights)*Piece.BLACK_KNIGHT.standardValue;
 		score -= BitOperations.getCardinality(pos.blackPawns)*Piece.BLACK_PAWN.standardValue;
+		gloriaSquares = BitOperations.serialize(MoveDatabase.getByIndex(BitOperations.indexOfBit(pos.whiteKing)).getCrudeKingMoves());
+		while (gloriaSquares.hasNext())
+			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
+		while (gloriaSquares.hasNext())
+			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
+		gloriaSquares = BitOperations.serialize(MoveDatabase.getByIndex(BitOperations.indexOfBit(pos.blackKing)).getCrudeKingMoves());
+		while (gloriaSquares.hasNext())
+			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
+		while (gloriaSquares.hasNext())
+			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
+		if (pos.whiteCastlingRights != 0)
+			score += 25;
+		if (pos.blackCastlingRights != 0)
+			score -= 25;
 		if (!pos.whitesTurn)
 			score *= -1;
+		if (pos.getLastMove().type == 1 || pos.getLastMove().type == 2)
+			score += 50;
 		while (moves.hasNext()) {
 			move = moves.next();
 			if (move.movedPiece == 1 || move.movedPiece == 7)
-				score += 27;
+				score += 10;
 			else
 				score += Piece.getByNumericNotation(move.movedPiece).standardValue/100;
 			score += Piece.getByNumericNotation(move.capturedPiece).standardValue/20;
+			if (move.type > 3)
+				score += 40;
 		}
 		pos.whitesTurn = !pos.whitesTurn;
 		moves = pos.generateMoves();
 		while (moves.hasNext()) {
 			move = moves.next();
 			if (move.movedPiece == 1 || move.movedPiece == 7)
-				score -= 27;
+				score -= 10;
 			else
 				score -= Piece.getByNumericNotation(move.movedPiece).standardValue/100;
 			score -= Piece.getByNumericNotation(move.capturedPiece).standardValue/20;
+			if (move.type > 3)
+				score -= 40;
 		}
 		pos.whitesTurn = !pos.whitesTurn;
 		return score;

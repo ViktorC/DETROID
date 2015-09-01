@@ -69,7 +69,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		t3 = (E[])new Entry[(int)(T3_SHARE*size)];
 		t4 = (E[])new Entry[(int)(T4_SHARE*size)];
 	}
-	/**Returns the size of the hash table.
+	/**Returns the length of the hash table.
 	 * 
 	 * @return
 	 */

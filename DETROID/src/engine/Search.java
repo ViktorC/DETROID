@@ -64,8 +64,14 @@ public class Search {
 		}
 		moveQ = pos.generateMoves();
 		if (moveQ.length() == 0) {
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.LOSS, (short)0, tTage));
-			return Evaluator.LOSS;
+			if (pos.getCheck()) {
+				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.LOSS, (short)0, tTage));
+				return Evaluator.LOSS;
+			}
+			else {
+				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.TIE, (short)0, tTage));
+				return Evaluator.TIE;
+			}
 		}
 		if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 			return Evaluator.TIE;
