@@ -291,17 +291,17 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		TestEntry e;
 		long totalSize = 0, totalLoad = 0, totalTime = 0, totalScore = 0, start, end, time;
 		long[] keys;
-		for (int i = 5; i < 25; i++) {
+		for (int i = 6; i < 18; i++) {
 			DEFAULT_SIZE = 1 << i;
-			for (int j = 0; j < 25; j++) {
+			for (int j = 1; j < 27; j += 5) {
 				start = System.currentTimeMillis();
 				HashTable<TestEntry> hT = new HashTable<>();
-				keys = new long[j*1000000];
-				for (int k = 0; k < j*1000000; k++) {
+				keys = new long[j*50000];
+				for (int k = 0; k < j*50000; k++) {
 					hT.insert(e = new TestEntry());
 					keys[k] = e.key;
 				}
-				for (int k = 0; k < j*250000; k++) {
+				for (int k = 0; k < j*15000; k++) {
 					hT.lookUp(keys[(int)(Math.random()*keys.length)]);
 				}
 				end = System.currentTimeMillis();
