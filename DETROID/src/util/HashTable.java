@@ -309,7 +309,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 				totalTime += time;
 				totalSize += hT.size();
 				totalLoad += hT.load;
-				totalScore += (1 - (hT.load/hT.size()))*time;
+				totalScore += (1 - (hT.load/hT.size()))*time*time;
 			}
 		}
 		return (totalScore + ((totalLoad/totalSize)*totalTime*totalTime))/2;

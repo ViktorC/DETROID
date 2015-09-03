@@ -5,7 +5,7 @@ import util.*;
 public class HashTableTuning {
 
 	public static void main(String[] args) {
-		epsil_Tuning(1.2F, 1.7F, 0.1F);
+		epsilNmaxL_Tuning(0.2F, 2.5F, 0.1F, 1, 11, 1);
 	}
 	public static float epsil_Tuning(float elipLower, float elipUpper, float elipIncrement) {
 		long bestVal = Long.MAX_VALUE, val;
