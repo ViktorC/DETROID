@@ -1,5 +1,7 @@
 package util;
 
+import java.util.Random;
+
 /**A generic, so far non-thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
  * the hash table are required to extend {@link #HashTable.Entry Entry} and implicitly implement {@link #Comparable Comparable}.
  * 
@@ -17,7 +19,7 @@ package util;
  *
  * @param <E>
  */
-public class HashTable<E extends HashTable.Entry<E>> {
+public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 	
 	/**An abstract base class for hash table entries the defines the long variable 'key' upon what the entry objects are hashed onto an index of the hash table.
 	 * 
@@ -34,14 +36,15 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		}
 	}
 	
-	public final static int DEFAULT_SIZE = 1 << 10;
+	public static int DEFAULT_SIZE = 1 << 10;
 	
-	private final static float T1_SHARE = 0.325F;
-	private final static float T2_SHARE = 0.275F;
-	private final static float T3_SHARE = 0.225F;
-	private final static float T4_SHARE = 0.175F;
+	private static float T1_SHARE = 0.325F;
+	private static float T2_SHARE = 0.275F;
+	private static float T3_SHARE = 0.225F;
+	private static float T4_SHARE = 0.175F;
 	
-	private final static float EPSILON = 1.57F;
+	private static float EPSILON = 1.57F;
+	private static int MAX_LOOP_CONST = 5;
 	
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
 	
@@ -114,7 +117,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 			}
 			return;
 		}
-		for (int i = 0; i <= 5*(Math.log(size())/Math.log(1 + EPSILON)); i++) {
+		for (int i = 0; i <= MAX_LOOP_CONST*(Math.log(size())/Math.log(1 + EPSILON)); i++) {
 			if ((slot = t1[(ind = hash1(e.key))]) == null) {
 				t1[ind] = e;
 				load++;
@@ -263,5 +266,86 @@ public class HashTable<E extends HashTable.Entry<E>> {
 			if (e != null)
 				System.out.println(e);
 		}
+	}
+	
+	private static class TestEntry extends Entry<TestEntry> {
+		
+		static Random rand = new Random();
+		
+		TestEntry() {
+			this.key = rand.nextLong()^rand.nextLong()^rand.nextLong();
+		}
+		public boolean greaterThan(TestEntry e) {
+			if (rand.nextInt() > 0)
+				return true;
+			return false;
+		}
+		public boolean smallerThan(TestEntry e) {
+			if (rand.nextInt() < 0)
+				return true;
+			return false;
+		}
+	}
+	
+	private static long tune() {
+		TestEntry e;
+		long totalSize = 0, totalLoad = 0, totalTime = 0, totalScore = 0, start, end, time;
+		long[] keys;
+		for (int i = 5; i < 25; i++) {
+			DEFAULT_SIZE = 1 << i;
+			for (int j = 0; j < 25; j++) {
+				start = System.currentTimeMillis();
+				HashTable<TestEntry> hT = new HashTable<>();
+				keys = new long[j*1000000];
+				for (int k = 0; k < j*1000000; k++) {
+					hT.insert(e = new TestEntry());
+					keys[k] = e.key;
+				}
+				for (int k = 0; k < j*250000; k++) {
+					hT.lookUp(keys[(int)(Math.random()*keys.length)]);
+				}
+				end = System.currentTimeMillis();
+				time = end - start;
+				totalTime += time;
+				totalSize += hT.size();
+				totalLoad += hT.load;
+				totalScore += (1 - (hT.load/hT.size()))*time;
+			}
+		}
+		return (totalScore + ((totalLoad/totalSize)*totalTime*totalTime))/2;
+	}
+	public static long tune(String... args) throws NumberFormatException {
+		switch (args.length) {
+			case 1: {
+				EPSILON  = Float.parseFloat(args[0]);
+				MAX_LOOP_CONST = 1;
+			}
+			break;
+			case 2: {
+				EPSILON  = Float.parseFloat(args[0]);
+				MAX_LOOP_CONST = Integer.parseInt(args[1]);
+			}
+			break;
+			case 4: {
+				T1_SHARE = Float.parseFloat(args[0]);
+				T2_SHARE = Float.parseFloat(args[1]);
+				T3_SHARE = Float.parseFloat(args[2]);
+				T4_SHARE = Float.parseFloat(args[3]);
+			}
+			break;
+			case 6: {
+				EPSILON  = Float.parseFloat(args[0]);
+				MAX_LOOP_CONST = Integer.parseInt(args[1]);
+				T1_SHARE = Float.parseFloat(args[2]);
+				T2_SHARE = Float.parseFloat(args[3]);
+				T3_SHARE = Float.parseFloat(args[4]);
+				T4_SHARE = Float.parseFloat(args[5]);
+			}
+			break;
+			default: {
+				throw new IllegalArgumentException();
+			}
+		}
+		return tune();
 	}
 }
