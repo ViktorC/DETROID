@@ -14,16 +14,11 @@ public class Evaluator {
 	final static short TIE  = 0;
 	final static short LOSS = Short.MIN_VALUE + 1;
 	
-	private Position pos;
-	
-	public Evaluator(Position pos) {
-		this.pos = pos;
-	}
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @return
 	 */
-	public int score() {
+	public static int score(Position pos) {
 		int score = 0;
 		Move move;
 		IntList gloriaSquares;
@@ -60,7 +55,7 @@ public class Evaluator {
 			score -= 25;
 		if (!pos.whitesTurn)
 			score *= -1;
-		if (pos.getLastMove() != null && (pos.getLastMove().type == 1 || pos.getLastMove().type == 2))
+		if (pos.getLastMove().type == 1 || pos.getLastMove().type == 2)
 			score += 50;
 		while (moves.hasNext()) {
 			move = moves.next();

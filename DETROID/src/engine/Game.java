@@ -38,6 +38,7 @@ public class Game implements Runnable {
 		Position pos = new Position();
 		Search s = new Search(pos, diff*5000);
 		Move move;
+		String userMove;
 		Thread t;
 		while (true) {
 			if (playersTurn) {
@@ -47,14 +48,19 @@ public class Game implements Runnable {
 					s.setPondering(true);
 					t = new Thread(s);
 					t.start();
-					pos.makeMove(in.nextLine());
+					userMove = in.nextLine();
 					t.interrupt();
+					try {
+						t.join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					pos.makeMove(userMove);
 				}
 				else
 					pos.makeMove(in.nextLine());
 			}
 			else {
-				s.setPondering(false);
 				t = new Thread(s);
 				t.start();
 				try {

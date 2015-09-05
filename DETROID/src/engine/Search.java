@@ -8,29 +8,26 @@ import util.*;
  * @author Viktor
  *
  */
-public class Search implements Runnable {
+public class Search extends Thread {
 	
 	public final static int MAX_SEARCH_DEPTH = 128;
 	
 	private Position pos;
-	private Evaluator eval;
 	private Move bestMove;
-	private short ply;
+	private int ply;
 	private Move[] pV;
 	private HashTable<TTEntry> tT = new HashTable<>();
-	private byte tTage = 0;
+	private byte tTgen = 0;
 	private boolean pondering = false;
 	private long searchTime;
 	private long deadLine;
 	
 	public Search(Position pos) {
 		this.pos = pos;
-		eval = new Evaluator(pos);
 		searchTime = 0;
 	}
 	public Search(Position pos, long searchTimeInMillis) {
 		this.pos = pos;
-		eval = new Evaluator(pos);
 		searchTime = searchTimeInMillis - 5;
 	}
 	/**Returns the best move from the position if it has already been searched; else it returns null.
@@ -85,18 +82,22 @@ public class Search implements Runnable {
 	public void run() {
 		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
 		pV = new Move[MAX_SEARCH_DEPTH];
-		for (short i = 2; i <= MAX_SEARCH_DEPTH; i++) {
+		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
 			pVsearch(pos.copy(), ply, Evaluator.LOSS, Evaluator.WIN);
 			extractPv();
 			bestMove = pV[0];
-			if (System.currentTimeMillis() >= deadLine)
+			if (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
-		if (!pondering && ++tTage >= 3) {
-			tT.clear();
-			tTage = 0;
+		if (!pondering) {
+			if (++tTgen >= 3) {
+				tT.clear();
+				tTgen = 0;
+			}
 		}
+		else
+			pondering = false;
 	}
 	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
 	 * variation can be extracted from the transposition table after a search has been run.
@@ -126,18 +127,18 @@ public class Search implements Runnable {
 				return e.score;
 		}
 		if (depth == 0) {
-			score = eval.score();
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, score, (short)0, tTage));
+			score = Evaluator.score(pos);
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, score, (short)0, tTgen));
 			return score;
 		}
 		moveQ = pos.generateMoves();
 		if (moveQ.length() == 0) {
 			if (pos.getCheck()) {
-				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.LOSS, (short)0, tTage));
+				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.LOSS, (short)0, tTgen));
 				return Evaluator.LOSS;
 			}
 			else {
-				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.TIE, (short)0, tTage));
+				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.TIE, (short)0, tTgen));
 				return Evaluator.TIE;
 			}
 		}
@@ -155,7 +156,7 @@ public class Search implements Runnable {
 				if (val > alpha && val < beta)
 					val = -pVsearch(pos, depth - 1, -beta, -val);
 			}
-			if (System.currentTimeMillis() >= deadLine)
+			if (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 			pos.unmakeMove();
 			if (val > bestMove.value) {
@@ -168,11 +169,11 @@ public class Search implements Runnable {
 				break;
 		}
 		if (bestMove.value <= origAlpha) 
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_LOW, bestMove.value, bestMove.toInt(), tTage));
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_LOW, bestMove.value, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_HIGH, bestMove.value, bestMove.toInt(), tTage));
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_HIGH, bestMove.value, bestMove.toInt(), tTgen));
 		else
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toInt(), tTage));
+			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toInt(), tTgen));
 		return bestMove.value;
 	}
 	/**Orders a list of moves according to the PV node of the given depth, history heuristics, and the MVV-LVA principle; and returns it as an array.
