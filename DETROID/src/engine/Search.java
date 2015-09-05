@@ -8,27 +8,95 @@ import util.*;
  * @author Viktor
  *
  */
-public class Search {
+public class Search implements Runnable {
 	
-	Position pos;
-	Evaluator eval;
-	Move[] pV;
-	short ply;
-	static HashTable<TTEntry> tT = new HashTable<>();
-	static byte tTage = 0;
+	public final static int MAX_SEARCH_DEPTH = 128;
 	
-	public Search(Position pos, int depth) {
+	private Position pos;
+	private Evaluator eval;
+	private Move bestMove;
+	private short ply;
+	private Move[] pV;
+	private HashTable<TTEntry> tT = new HashTable<>();
+	private byte tTage = 0;
+	private boolean pondering = false;
+	private long searchTime;
+	private long deadLine;
+	
+	public Search(Position pos) {
 		this.pos = pos;
 		eval = new Evaluator(pos);
-		pV = new Move[depth];
-		for (short i = 1; i <= depth; i++) {
+		searchTime = 0;
+	}
+	public Search(Position pos, long searchTimeInMillis) {
+		this.pos = pos;
+		eval = new Evaluator(pos);
+		searchTime = searchTimeInMillis - 5;
+	}
+	/**Returns the best move from the position if it has already been searched; else it returns null.
+	 * 
+	 * @return
+	 */
+	public Move getBestMove() {
+		return bestMove;
+	}
+	/**Returns the best line of play from the position if it has already been searched; else it returns null.
+	 * 
+	 * @return
+	 */
+	public Queue<Move> getPv() {
+		Queue<Move> pV = new Queue<>();
+		int i = 0;
+		while (this.pV[i] != null)
+			pV.add(this.pV[i++]);
+		return pV;
+	}
+	/**Returns whether pondering mode is active.
+	 * 
+	 * @return
+	 */
+	public boolean isPonderingOn() {
+		return pondering;
+	}
+	/**Sets pondering. With pondering on, there is no time limit for the search and the transposition table is never cleared.
+	 * 
+	 * @param pondering
+	 */
+	public void setPondering(boolean pondering) {
+		this.pondering = pondering;
+	}
+	/**Returns the allocated search time in milliseconds.
+	 * 
+	 * @return
+	 */
+	public long getSearchTime() {
+		return searchTime;
+	}
+	/**Sets the allocated search time.
+	 * 
+	 * @param searchTimeInMillis
+	 */
+	public void setSearchTime(long searchTimeInMillis) {
+		if (searchTimeInMillis >= 0)
+			searchTime = searchTimeInMillis;
+	}
+	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
+	 * depth, 128 has been reached.*/
+	public void run() {
+		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
+		pV = new Move[MAX_SEARCH_DEPTH];
+		for (short i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			pVsearch(i, Evaluator.LOSS, Evaluator.WIN);
+			pVsearch(pos.copy(), ply, Evaluator.LOSS, Evaluator.WIN);
 			extractPv();
+			bestMove = pV[0];
+			if (System.currentTimeMillis() >= deadLine)
+				break;
 		}
-		tTage++;
-		if (tTage == 4)
+		if (!pondering && ++tTage >= 3) {
 			tT.clear();
+			tTage = 0;
+		}
 	}
 	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
 	 * variation can be extracted from the transposition table after a search has been run.
@@ -38,7 +106,7 @@ public class Search {
 	 * @param beta
 	 * @return
 	 */
-	private int pVsearch(int depth, int alpha, int beta) {
+	private int pVsearch(Position pos, int depth, int alpha, int beta) {
 		int score, origAlpha = alpha, val;
 		Move bestMove, move;
 		Queue<Move> moveQ;
@@ -81,12 +149,14 @@ public class Search {
 			move = moveArr[i];
 			pos.makeMove(move);
 			if (i == 0)
-				val = -pVsearch(depth - 1, -beta, -alpha);
+				val = -pVsearch(pos, depth - 1, -beta, -alpha);
 			else {
-				val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+				val = -pVsearch(pos, depth - 1, -alpha - 1, -alpha);
 				if (val > alpha && val < beta)
-					val = -pVsearch(depth - 1, -beta, -val);
+					val = -pVsearch(pos, depth - 1, -beta, -val);
 			}
+			if (System.currentTimeMillis() >= deadLine)
+				break;
 			pos.unmakeMove();
 			if (val > bestMove.value) {
 				bestMove = move;

@@ -7,7 +7,7 @@ import java.util.Random;
  * 
  * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash functions.
  * All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's size]; it applies no randomization
- * whatsoever either. The average load factor is around 65%, but it can be as high as 92%. Due to the uneven table sizes, look up is biased towards the
+ * whatsoever either. The average load factor is around 60%, but it can be as high as 92%. Due to the uneven table sizes, look up is biased towards the
  * foremost tables. The odds of a look up terminating after checking the first two tables is 60%. It is reasonable compromise between memory and time
  * efficiency. I have determined the loop iteration limit and the factor of resizing rather through trial and error than mathematics using rudimentary
  * and probably inaccurate tuning methods. The framework itself was also more of intuition than research, but it works way better than any others I have
@@ -44,7 +44,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 	private static float T4_SHARE = 0.175F;
 	
 	private static float EPSILON = 1.57F;
-	private static int MAX_LOOP_CONST = 5;
+	private static int MAX_LOOP = 5;
 	
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
 	
@@ -117,7 +117,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 			}
 			return;
 		}
-		for (int i = 0; i <= MAX_LOOP_CONST*(Math.log(size())/Math.log(1 + EPSILON)); i++) {
+		for (int i = 0; i <= MAX_LOOP*(Math.log(size())/Math.log(1 + EPSILON)); i++) {
 			if ((slot = t1[(ind = hash1(e.key))]) == null) {
 				t1[ind] = e;
 				load++;
@@ -268,6 +268,11 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		}
 	}
 	
+	/**A test hash table entry solely for the purpose of tuning constant parameters.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	private static class TestEntry extends Entry<TestEntry> {
 		
 		static Random rand = new Random();
@@ -287,6 +292,11 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		}
 	}
 	
+	/**Runs a micro-benchmark like test cycle timing insertion and look-up and recording load factors to evaluate the performance of the set-up which
+	 * it then returns as a long.
+	 * 
+	 * @return
+	 */
 	private static long tune() {
 		TestEntry e;
 		long totalSize = 0, totalLoad = 0, totalTime = 0, totalScore = 0, start, end, time;
@@ -314,16 +324,21 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		}
 		return (totalScore + ((totalLoad/totalSize)*totalTime*totalTime))/2;
 	}
+	/**Runs a micro-benchmark like test cycle depending on the number of input parameters, timing insertion and look-up and recording load factors
+	 * to evaluate the performance of the set-up with the given parameters which then it returns as a long.
+	 * 
+	 * @return
+	 */
 	public static long tune(String... args) throws NumberFormatException {
 		switch (args.length) {
 			case 1: {
 				EPSILON  = Float.parseFloat(args[0]);
-				MAX_LOOP_CONST = 1;
+				MAX_LOOP = 1;
 			}
 			break;
 			case 2: {
 				EPSILON  = Float.parseFloat(args[0]);
-				MAX_LOOP_CONST = Integer.parseInt(args[1]);
+				MAX_LOOP = Integer.parseInt(args[1]);
 			}
 			break;
 			case 4: {
@@ -335,7 +350,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 			break;
 			case 6: {
 				EPSILON  = Float.parseFloat(args[0]);
-				MAX_LOOP_CONST = Integer.parseInt(args[1]);
+				MAX_LOOP = Integer.parseInt(args[1]);
 				T1_SHARE = Float.parseFloat(args[2]);
 				T2_SHARE = Float.parseFloat(args[3]);
 				T3_SHARE = Float.parseFloat(args[4]);

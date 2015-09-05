@@ -612,6 +612,19 @@ public class Position {
 		else
 			repetitions = 0;
 	}
+	/**Returns a copy of the position.
+	 * 
+	 * @return
+	 */
+	public Position copy() {
+		Position copy = new Position();
+		Stack<Move> reverse = new Stack<>();
+		while (moveList.hasNext())
+			reverse.add(moveList.next());
+		while (reverse.hasNext())
+			copy.makeMove(reverse.next());
+		return copy;
+	}
 	/**Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the supposedly enemy occupied square specified by sqrInd.
 	 * 
 	 * @param sqrInd

@@ -60,7 +60,7 @@ public class Evaluator {
 			score -= 25;
 		if (!pos.whitesTurn)
 			score *= -1;
-		if (pos.getLastMove().type == 1 || pos.getLastMove().type == 2)
+		if (pos.getLastMove() != null && (pos.getLastMove().type == 1 || pos.getLastMove().type == 2))
 			score += 50;
 		while (moves.hasNext()) {
 			move = moves.next();
