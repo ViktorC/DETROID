@@ -64,8 +64,6 @@ public class Position {
 	private Stack<Move> moveList = new Stack<Move>();									//a stack of all the moves made so far
 	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 	
-	private ZobristGen keyGen = new ZobristGen(); 										//a Zobrist key generator for hashing the board
-	
 	long zobristKey;																	//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
 	private long[] zobristKeyHistory;													//all the positions that have occured so far represented in Zobrist keys.
 	
@@ -269,8 +267,22 @@ public class Position {
 	private void initializeZobristKeys() {
 		//"The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves." - half of that is used as the initial length of the history array
 		zobristKeyHistory = new long[237];
-		zobristKey = keyGen.hash(this);
+		zobristKey = Zobrist.hash(this);
 		zobristKeyHistory[0] = this.zobristKey;
+	}
+	/**Returns a copy of the position.
+	 * 
+	 * @return
+	 */
+	public Position copy() {
+		Position copy = new Position();
+		copy.zobristKeyHistory = new long[zobristKeyHistory.length];
+		Stack<Move> reverse = new Stack<>();
+		while (moveList.hasNext())
+			reverse.add(moveList.next());
+		while (reverse.hasNext())
+			copy.makeMove(reverse.next());
+		return copy;
 	}
 	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.*/
 	public int[] getOffsetBoard() {
@@ -589,7 +601,7 @@ public class Position {
 		check = (checkers != 0) ? true : false;
 	}
 	private void setKeys() {
-		zobristKey = keyGen.updateKey(this);
+		zobristKey = Zobrist.updateKey(this);
 		zobristKeyHistory[halfMoveIndex] = zobristKey;
 	}
 	private void extendKeyHistory() {
@@ -611,19 +623,6 @@ public class Position {
 		}
 		else
 			repetitions = 0;
-	}
-	/**Returns a copy of the position.
-	 * 
-	 * @return
-	 */
-	public Position copy() {
-		Position copy = new Position();
-		Stack<Move> reverse = new Stack<>();
-		while (moveList.hasNext())
-			reverse.add(moveList.next());
-		while (reverse.hasNext())
-			copy.makeMove(reverse.next());
-		return copy;
 	}
 	/**Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the supposedly enemy occupied square specified by sqrInd.
 	 * 

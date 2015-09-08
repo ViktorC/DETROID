@@ -9,12 +9,12 @@ package util;
 public interface Tunable {
 	
 	/**Takes an arbitrary number of String arguments which it assigns to the respective variables to be tuned then evaluates the performance and returns
-	 * it in a quantified form as a long.
+	 * it in a quantified form as a double.
 	 * 
 	 * @param args
 	 * @return
 	 */
-	static long tune(String... args) {
+	static double tune(String... args) {
 		return -1;
 	}
 	

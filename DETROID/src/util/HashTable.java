@@ -13,7 +13,7 @@ import java.util.Random;
  * and probably inaccurate tuning methods. The framework itself was also more of intuition than research, but it works way better than any others I have
  * tried.
  * 
- * The default length of the hash table (the sum of the four tables' lengths) is 1024 and it never gets smaller than that.
+ * The default length of the hash table (the sum of the four tables' lengths) is 1022 and it never gets smaller than that.
  * 
  * @author Viktor
  *
@@ -36,6 +36,8 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		}
 	}
 	
+	private final static long UNSIGNED_LONG = (1L << 63) - 1;
+	
 	public static int DEFAULT_SIZE = 1 << 10;
 	
 	private static float T1_SHARE = 0.325F;
@@ -43,10 +45,8 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 	private static float T3_SHARE = 0.225F;
 	private static float T4_SHARE = 0.175F;
 	
-	private static float EPSILON = 1.57F;
-	private static int MAX_LOOP = 5;
-	
-	private final static long UNSIGNED_LONG = (1L << 63) - 1;
+	private static float EPSILON = 1.3F;
+	private static float OMLF = 3.0F;		//1/MINIMUM LOAD FACTOR
 	
 	private E[] t1;
 	private E[] t2;
@@ -117,7 +117,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 			}
 			return;
 		}
-		for (int i = 0; i <= MAX_LOOP*(Math.log(size())/Math.log(1 + EPSILON)); i++) {
+		for (int i = 0; i <= 3*(Math.log(size())/Math.log(EPSILON)); i++) {
 			if ((slot = t1[(ind = hash1(e.key))]) == null) {
 				t1[ind] = e;
 				load++;
@@ -200,7 +200,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		E[] oldTable2 = t2;
 		E[] oldTable3 = t3;
 		E[] oldTable4 = t4;
-		int size = (int)((1 + EPSILON)*load) + DEFAULT_SIZE;
+		int size = (int)(OMLF*load) + DEFAULT_SIZE;
 		load = 0;
 		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
 		t2 = (E[])new Entry[(int)(T2_SHARE*size)];
@@ -297,7 +297,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 	 * 
 	 * @return
 	 */
-	private static long tune() {
+	private static double tune() {
 		TestEntry e;
 		long totalSize = 0, totalLoad = 0, totalTime = 0, totalScore = 0, start, end, time;
 		long[] keys;
@@ -319,26 +319,26 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 				totalTime += time;
 				totalSize += hT.size();
 				totalLoad += hT.load;
-				totalScore += (1 - (hT.load/hT.size()))*time*time;
+				totalScore += (1 - (hT.load/hT.size()))*(1 - (hT.load/hT.size()))*time;
 			}
 		}
-		return (totalScore + ((totalLoad/totalSize)*totalTime*totalTime))/2;
+		return (totalScore + ((1 - (totalLoad/totalSize))*(1 - (totalLoad/totalSize))*totalTime))/2;
 	}
 	/**Runs a micro-benchmark like test cycle depending on the number of input parameters, timing insertion and look-up and recording load factors
 	 * to evaluate the performance of the set-up with the given parameters which then it returns as a long.
 	 * 
 	 * @return
 	 */
-	public static long tune(String... args) throws NumberFormatException {
+	public static double tune(String... args) throws NumberFormatException {
 		switch (args.length) {
 			case 1: {
-				EPSILON  = Float.parseFloat(args[0]);
-				MAX_LOOP = 1;
+				EPSILON = Float.parseFloat(args[0]);
+				OMLF = 3;
 			}
 			break;
 			case 2: {
-				EPSILON  = Float.parseFloat(args[0]);
-				MAX_LOOP = Integer.parseInt(args[1]);
+				EPSILON = Float.parseFloat(args[0]);
+				OMLF = Float.parseFloat(args[1]);
 			}
 			break;
 			case 4: {
@@ -349,8 +349,8 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 			}
 			break;
 			case 6: {
-				EPSILON  = Float.parseFloat(args[0]);
-				MAX_LOOP = Integer.parseInt(args[1]);
+				EPSILON = Float.parseFloat(args[0]);
+				OMLF = Float.parseFloat(args[1]);
 				T1_SHARE = Float.parseFloat(args[2]);
 				T2_SHARE = Float.parseFloat(args[3]);
 				T3_SHARE = Float.parseFloat(args[4]);

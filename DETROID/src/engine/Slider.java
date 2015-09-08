@@ -1,16 +1,18 @@
 package engine;
 
 import util.BitOperations;
+import util.IntList;
+import engine.Board.Square;
 import engine.Board.*;
 
-/**A class that generates the attack set(s) for a rook or a bishop on the specified square for the given relevant occupancy or array of occupancy variations,
- * or for multiple rooks or bishops based on the occupancy bitmap. It can also generate the attack sets for all possible occupancy variations on all squares
- * either for the rook or for the bishop. It uses ray-wise parallel-prefix algorithms to determine the attack sets.
+/**A class for generating occupancy variations and the attack set(s) for a rook or a bishop on the specified square for the given relevant occupancy or array
+ * of occupancy variations, or for multiple rooks or bishops based on the occupancy bitmap. It can also generate the attack sets for all possible occupancy
+ * variations on all squares either for the rook or for the bishop. It uses ray-wise parallel-prefix algorithms to determine the attack sets.
  * 
  * @author Viktor
  *
  */
-public class SliderAttSetComp {
+public class Slider {
 	
 	/**A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north of multiple sliding pieces at the same time. The generator
 	 * is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
@@ -288,6 +290,47 @@ public class SliderAttSetComp {
 	 * @param rookOccupancyVariations - the occupancy variations within the rook's occupancy mask
 	 * @return
 	 */
+	/**Generates all the variations for the occupancy mask fed to it.
+	 * 
+	 * @param sqrInd
+	 * @return
+	 */
+	public static long[] occupancyVariations(long occupancyMask) {
+		int numOfBitsInMask = BitOperations.getCardinality(occupancyMask);
+		int[] occMaskBitIndArr = BitOperations.serialize(occupancyMask, numOfBitsInMask);
+		IntList occVarBitIndList;
+		int numOfVar = 1 << numOfBitsInMask;
+		long[] occVarArr = new long[numOfVar];
+		long occVar;
+		for (int i = 0; i < numOfVar; i++) {
+			occVarBitIndList = BitOperations.serialize(i);
+			occVar = 0L;
+			while (occVarBitIndList.hasNext())
+				occVar |= (1L << occMaskBitIndArr[occVarBitIndList.next()]);
+			occVarArr[i] = occVar;
+		}
+		return occVarArr;
+	}
+	/**For each square it generates all the relevant occupancy variations for a rook.
+	 * 
+	 * @return
+	 */
+	public static long[][] rookOccupancyVariations() {
+		long[][] rookOccVar = new long[64][];
+		for (Square sqr : Square.values())
+			rookOccVar[sqr.ordinal()] = occupancyVariations(MoveMask.rookOccupancyMask(sqr));
+		return rookOccVar;
+	}
+	/**For each square it generates all the relevant occupancy variations for a bishop.
+	 * 
+	 * @return
+	 */
+	public static long[][] bishopOccupancyVariations() {
+		long[][] bishopOccVar = new long[64][];
+		for (Square sqr : Square.values())
+			bishopOccVar[sqr.ordinal()] = Slider.occupancyVariations(MoveMask.bishopOccupancyMask(sqr));
+		return bishopOccVar;
+	}
 	public static long[] rookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
 		long[] rookAttVar = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < rookAttVar.length; i++)

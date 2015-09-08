@@ -112,12 +112,12 @@ public enum MoveDatabase {
 		rook = new long[1 << (64 - rookMagicShift)];
 		bishop = new long[1 << (64 - bishopMagicShift)];
 		Square sqr = Square.getByIndex(sqrInd);
-		rookOccupancyMask = MoveMaskGen.rookOccupancyMask(sqr);
-		bishopOccupancyMask = MoveMaskGen.bishopOccupancyMask(sqr);
-		long[] rookOccVar = SliderOccVarGen.occupancyVariations(rookOccupancyMask);
-		long[] bishopOccVar = SliderOccVarGen.occupancyVariations(bishopOccupancyMask);
-		long[] rookAttVar = SliderAttSetComp.rookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = SliderAttSetComp.bishopAttackSetVariations(sqr, bishopOccVar);
+		rookOccupancyMask = MoveMask.rookOccupancyMask(sqr);
+		bishopOccupancyMask = MoveMask.bishopOccupancyMask(sqr);
+		long[] rookOccVar = Slider.occupancyVariations(rookOccupancyMask);
+		long[] bishopOccVar = Slider.occupancyVariations(bishopOccupancyMask);
+		long[] rookAttVar = Slider.rookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = Slider.bishopAttackSetVariations(sqr, bishopOccVar);
 		for (int i = 0; i < rookOccVar.length; i++) {
 			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
 			rook[index] = rookAttVar[i];
@@ -126,12 +126,12 @@ public enum MoveDatabase {
 			index = (int)((bishopOccVar[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishop[index] = bishopAttVar[i];
 		}
-		king 				= MoveMaskGen.kingMoveMask(sqr);
-		knight 				= MoveMaskGen.knightMoveMasks(sqr);
-		pawnWhiteAdvance 	= MoveMaskGen.whitePawnAdvanceMasks(sqr);
-		pawnWhiteCapture 	= MoveMaskGen.whitePawnCaptureMasks(sqr);
-		pawnBlackAdvance 	= MoveMaskGen.blackPawnAdvanceMasks(sqr);
-		pawnBlackCapture 	= MoveMaskGen.blackPawnCaptureMasks(sqr);
+		king 				= MoveMask.kingMoveMask(sqr);
+		knight 				= MoveMask.knightMoveMask(sqr);
+		pawnWhiteAdvance 	= MoveMask.whitePawnAdvanceMask(sqr);
+		pawnWhiteCapture 	= MoveMask.whitePawnCaptureMask(sqr);
+		pawnBlackAdvance 	= MoveMask.blackPawnAdvanceMask(sqr);
+		pawnBlackCapture 	= MoveMask.blackPawnCaptureMask(sqr);
 	}
 	/**Returns a simple king move mask bitmap.
 	 * 

@@ -18,7 +18,7 @@ import java.util.Random;
  * @author Viktor
  *
  */
-public class ZobristGen {
+public class Zobrist {
 	
 	private static long turn;
 	private static long[][] board = new long[13][64];
@@ -51,7 +51,7 @@ public class ZobristGen {
 	 * @param board
 	 * @return
 	 */
-	public long hash(Position p) {
+	public static long hash(Position p) {
 		int[] board64 = p.getOffsetBoard();
 		long key = 0;
 		if (!p.whitesTurn)
@@ -70,7 +70,7 @@ public class ZobristGen {
 	 * @param p
 	 * @return
 	 */
-	public long updateKey(Position p) {
+	public static long updateKey(Position p) {
 		long key	 	 			= p.zobristKey;
 		Move move	 	 			= p.getLastMove();
 		UnmakeRegister unmakeReg	= p.getUnmakeRegister();

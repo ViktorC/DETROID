@@ -11,20 +11,20 @@ import util.*;
 public class HashTableTuning {
 
 	public static void main(String[] args) {
-		epsilNmaxL_Tuning(0.4F, 2.2F, 0.1F, 1, 11, 1);
+		epsilon_Tuning(1.1F, 2.63F, 0.1F);
 	}
 	/**Returns the best value for the constant parameter EPSILON, disregarding everything else.
 	 * 
-	 * @param elipLower
-	 * @param elipUpper
-	 * @param elipIncrement
+	 * @param epsilLower
+	 * @param epsilUpper
+	 * @param epsilIncrement
 	 * @return
 	 */
-	public static float epsil_Tuning(float elipLower, float elipUpper, float elipIncrement) {
-		long bestVal = Long.MAX_VALUE, val;
+	public static float epsilon_Tuning(float epsilLower, float epsilUpper, float epsilIncrement) {
+		double val, bestVal = Long.MAX_VALUE;
 		float bestPar = 0;
 		long start = System.currentTimeMillis();
-		for (float epsil = elipLower; epsil < elipUpper; epsil += elipIncrement) {
+		for (float epsil = epsilLower; epsil <= epsilUpper; epsil += epsilIncrement) {
 			if ((val = HashTable.tune("" + epsil)) < bestVal) {
 				bestVal = val;
 				bestPar = epsil;
@@ -35,21 +35,21 @@ public class HashTableTuning {
 	}
 	/**Returns the best value pair for the constant parameter EPSILON and MAX_LOOP.
 	 * 
-	 * @param elipLower
-	 * @param elipUpper
-	 * @param elipIncrement
+	 * @param epsilLower
+	 * @param epsilUpper
+	 * @param epsilIncrement
 	 * @param maxLlower
 	 * @param maxLupper
 	 * @param maxLincrement
 	 * @return
 	 */
-	public static String[] epsilNmaxL_Tuning(float elipLower, float elipUpper, float elipIncrement, int maxLlower, int maxLupper, int maxLincrement) {
+	public static String[] epsilonAnd1PMLF_Tuning(float epsilLower, float epsilUpper, float epsilIncrement, int maxLlower, int maxLupper, int maxLincrement) {
 		String[] par;
-		long bestVal = Long.MAX_VALUE, val;
+		double val, bestVal = Long.MAX_VALUE;
 		String[] bestPar = null;
 		long start = System.currentTimeMillis();
-		for (float epsil = elipLower; epsil < elipUpper; epsil += elipIncrement) {
-			for (int maxL = maxLlower; maxL < maxLupper; maxL += maxLincrement) {
+		for (float epsil = epsilLower; epsil <= epsilUpper; epsil += epsilIncrement) {
+			for (int maxL = maxLlower; maxL <= maxLupper; maxL += maxLincrement) {
 				par = new String[]{"" + epsil, "" + maxL};
 				if ((val = HashTable.tune(par)) < bestVal){
 					bestVal = val;

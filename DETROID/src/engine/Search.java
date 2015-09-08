@@ -10,13 +10,13 @@ import util.*;
  */
 public class Search extends Thread {
 	
-	public final static int MAX_SEARCH_DEPTH = 128;
+	public final static int MAX_SEARCH_DEPTH = 8;
 	
 	private Position pos;
 	private Move bestMove;
 	private int ply;
 	private Move[] pV;
-	private HashTable<TTEntry> tT = new HashTable<>();
+	HashTable<TTEntry> tT = new HashTable<>();
 	private byte tTgen = 0;
 	private boolean pondering = false;
 	private long searchTime;
@@ -28,7 +28,10 @@ public class Search extends Thread {
 	}
 	public Search(Position pos, long searchTimeInMillis) {
 		this.pos = pos;
-		searchTime = searchTimeInMillis - 5;
+		if (searchTime > 0)
+			searchTime = searchTimeInMillis;
+		else
+			searchTime = 0;
 	}
 	/**Returns the best move from the position if it has already been searched; else it returns null.
 	 * 
@@ -80,14 +83,14 @@ public class Search extends Thread {
 	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth, 128 has been reached.*/
 	public void run() {
-		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
+		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime - 5);
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			pVsearch(pos.copy(), ply, Evaluator.LOSS, Evaluator.WIN);
+			pVsearch(ply, Evaluator.LOSS, Evaluator.WIN);
 			extractPv();
 			bestMove = pV[0];
-			if (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
 		if (!pondering) {
@@ -107,7 +110,7 @@ public class Search extends Thread {
 	 * @param beta
 	 * @return
 	 */
-	private int pVsearch(Position pos, int depth, int alpha, int beta) {
+	private int pVsearch(int depth, int alpha, int beta) {
 		int score, origAlpha = alpha, val;
 		Move bestMove, move;
 		Queue<Move> moveQ;
@@ -150,14 +153,12 @@ public class Search extends Thread {
 			move = moveArr[i];
 			pos.makeMove(move);
 			if (i == 0)
-				val = -pVsearch(pos, depth - 1, -beta, -alpha);
+				val = -pVsearch(depth - 1, -beta, -alpha);
 			else {
-				val = -pVsearch(pos, depth - 1, -alpha - 1, -alpha);
+				val = -pVsearch(depth - 1, -alpha - 1, -alpha);
 				if (val > alpha && val < beta)
-					val = -pVsearch(pos, depth - 1, -beta, -val);
+					val = -pVsearch(depth - 1, -beta, -val);
 			}
-			if (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
-				break;
 			pos.unmakeMove();
 			if (val > bestMove.value) {
 				bestMove = move;
@@ -166,6 +167,8 @@ public class Search extends Thread {
 					alpha = val;
 			}
 			if (alpha >= beta)
+				break;
+			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
 		if (bestMove.value <= origAlpha) 

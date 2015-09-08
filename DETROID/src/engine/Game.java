@@ -42,8 +42,7 @@ public class Game implements Runnable {
 		Thread t;
 		while (true) {
 			if (playersTurn) {
-				pos.printStateToConsole();
-				System.out.print("MOVE: ");
+				System.out.print("YOUR MOVE: ");
 				if (diff >= 5) {
 					s.setPondering(true);
 					t = new Thread(s);
@@ -53,6 +52,7 @@ public class Game implements Runnable {
 					try {
 						t.join();
 					} catch (InterruptedException e) {
+						//Not gonna happen
 						e.printStackTrace();
 					}
 					pos.makeMove(userMove);
@@ -66,11 +66,12 @@ public class Game implements Runnable {
 				try {
 					t.join();
 				} catch (InterruptedException e) {
+					//Not gonna happen
 					e.printStackTrace();
 				}
 				move = s.getBestMove();
 				pos.makeMove(move);
-				System.out.println(move);
+				System.out.println("COMPUTER'S MOVE: " + move);
 			}
 			playersTurn = !playersTurn;
 		}

@@ -7,7 +7,7 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class MoveMaskGen {
+public class MoveMask {
 	
 	private static long ANTIFRAME_VERTICAL;
 	private static long ANTIFRAME_HORIZONTAL;
@@ -40,7 +40,7 @@ public class MoveMaskGen {
 	 * @param sqr
 	 * @return
 	 */
-	public final static long knightMoveMasks(Square sqr) {
+	public final static long knightMoveMask(Square sqr) {
 		long mask;
 		int sqrInd = sqr.ordinal();
 		mask =		 	(sqr.bitmap << 15)	| (sqr.bitmap << 17) |
@@ -62,7 +62,7 @@ public class MoveMaskGen {
 	 * @param sqr
 	 * @return
 	 */
-	public final static long whitePawnCaptureMasks(Square sqr) {
+	public final static long whitePawnCaptureMask(Square sqr) {
 		long mask;
 		int sqrInd = sqr.ordinal();
 		if (sqrInd > 55)
@@ -79,7 +79,7 @@ public class MoveMaskGen {
 	 * @param sqr
 	 * @return
 	 */
-	public final static long blackPawnCaptureMasks(Square sqr) {
+	public final static long blackPawnCaptureMask(Square sqr) {
 		long mask;
 		int sqrInd = sqr.ordinal();
 		if (sqrInd < 8)
@@ -96,7 +96,7 @@ public class MoveMaskGen {
 	 * @param sqr
 	 * @return
 	 */
-	public final static long whitePawnAdvanceMasks(Square sqr) {
+	public final static long whitePawnAdvanceMask(Square sqr) {
 		int sqrInd = sqr.ordinal();
 		if (sqrInd < 8 || sqrInd > 55)
 			return 0;
@@ -107,7 +107,7 @@ public class MoveMaskGen {
 	 * @param sqr
 	 * @return
 	 */
-	public final static long blackPawnAdvanceMasks(Square sqr) {
+	public final static long blackPawnAdvanceMask(Square sqr) {
 		int sqrInd = sqr.ordinal();
 		if (sqrInd < 8 || sqrInd > 55)
 			return 0;
