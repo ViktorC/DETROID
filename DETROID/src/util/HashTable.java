@@ -1,25 +1,23 @@
 package util;
 
-import java.util.Random;
-
 /**A generic, so far non-thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
  * the hash table are required to extend {@link #HashTable.Entry Entry} and implicitly implement {@link #Comparable Comparable}.
  * 
  * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash functions.
  * All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's size]; it applies no randomization
- * whatsoever either. The average load factor is around 60%, but it can be as high as 92%. Due to the uneven table sizes, look up is biased towards the
- * foremost tables. The odds of a look up terminating after checking the first two tables is 60%. It is reasonable compromise between memory and time
- * efficiency. I have determined the loop iteration limit and the factor of resizing rather through trial and error than mathematics using rudimentary
- * and probably inaccurate tuning methods. The framework itself was also more of intuition than research, but it works way better than any others I have
+ * whatsoever either. The average load factor is around 60%, but it can be as high as 92% and it never goes below 33%. Due to the uneven table sizes,
+ * look up is biased towards the foremost tables. The odds of a look up terminating after checking the first two tables is 60%. It is reasonable
+ * compromise between memory and time efficiency. I have determined epsilon and the optimal minimum load factor rather through brute-force tuning
+ * methods than mathematics. The framework itself was also more of the fruit of intuition than research, but it works way better than any others I have
  * tried.
  * 
- * The default length of the hash table (the sum of the four tables' lengths) is 1022 and it never gets smaller than that.
+ * The default length of the hash table (the sum of the four tables' lengths) is 1022.
  * 
  * @author Viktor
  *
  * @param <E>
  */
-public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
+public class HashTable<E extends HashTable.Entry<E>> {
 	
 	/**An abstract base class for hash table entries the defines the long variable 'key' upon what the entry objects are hashed onto an index of the hash table.
 	 * 
@@ -38,15 +36,16 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 	
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
 	
-	public static int DEFAULT_SIZE = 1 << 10;
+	public final static int DEFAULT_SIZE = 1 << 10;
 	
-	private static float T1_SHARE = 0.325F;
-	private static float T2_SHARE = 0.275F;
-	private static float T3_SHARE = 0.225F;
-	private static float T4_SHARE = 0.175F;
+	private final static float T1_SHARE = 0.325F;
+	private final static float T2_SHARE = 0.275F;
+	private final static float T3_SHARE = 0.225F;
+	private final static float T4_SHARE = 0.175F;
 	
-	private static float EPSILON = 1.3F;
-	private static float OMLF = 3.0F;		//1/MINIMUM LOAD FACTOR
+	private final static float MINIMUM_LOAD_FACTOR = 1/3F;
+	
+	private final static float EPSILON = 1.36F;
 	
 	private E[] t1;
 	private E[] t2;
@@ -55,7 +54,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 	
 	private int load = 0;
 	
-	/**Instantiates a HashTable with a default size of 64.*/
+	/**Instantiates a HashTable with a default length of 1022.*/
 	@SuppressWarnings({"unchecked"})
 	public HashTable() {
 		t1 = (E[])new Entry[(int)(T1_SHARE*DEFAULT_SIZE)];
@@ -63,9 +62,13 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		t3 = (E[])new Entry[(int)(T3_SHARE*DEFAULT_SIZE)];
 		t4 = (E[])new Entry[(int)(T4_SHARE*DEFAULT_SIZE)];
 	}
+	/**Instantiates a HashTable with the specified length.
+	 * 
+	 * @param size > 0
+	 */
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int size) {
-		if (size < DEFAULT_SIZE)
+		if (size <= 0)
 			size = DEFAULT_SIZE;
 		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
 		t2 = (E[])new Entry[(int)(T2_SHARE*size)];
@@ -94,30 +97,26 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		int ind;
 		E slot;
 		if ((slot = t1[(ind = hash1(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot)) {
+			if (e.greaterThan(slot))
 				t1[ind] = e;
-			}
 			return;
 		}
 		if ((slot = t2[(ind = hash2(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot)) {
+			if (e.greaterThan(slot))
 				t2[ind] = e;
-			}
 			return;
 		}
 		if ((slot = t3[(ind = hash3(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot)) {
+			if (e.greaterThan(slot))
 				t3[ind] = e;
-			}
 			return;
 		}
 		if ((slot = t4[(ind = hash4(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot)) {
+			if (e.greaterThan(slot))
 				t4[ind] = e;
-			}
 			return;
 		}
-		for (int i = 0; i <= 3*(Math.log(size())/Math.log(EPSILON)); i++) {
+		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
 			if ((slot = t1[(ind = hash1(e.key))]) == null) {
 				t1[ind] = e;
 				load++;
@@ -200,7 +199,7 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 		E[] oldTable2 = t2;
 		E[] oldTable3 = t3;
 		E[] oldTable4 = t4;
-		int size = (int)(OMLF*load) + DEFAULT_SIZE;
+		int size = (int)(load/MINIMUM_LOAD_FACTOR);
 		load = 0;
 		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
 		t2 = (E[])new Entry[(int)(T2_SHARE*size)];
@@ -266,101 +265,5 @@ public class HashTable<E extends HashTable.Entry<E>> implements Tunable {
 			if (e != null)
 				System.out.println(e);
 		}
-	}
-	
-	/**A test hash table entry solely for the purpose of tuning constant parameters.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	private static class TestEntry extends Entry<TestEntry> {
-		
-		static Random rand = new Random();
-		
-		TestEntry() {
-			this.key = rand.nextLong()^rand.nextLong()^rand.nextLong();
-		}
-		public boolean greaterThan(TestEntry e) {
-			if (rand.nextInt() > 0)
-				return true;
-			return false;
-		}
-		public boolean smallerThan(TestEntry e) {
-			if (rand.nextInt() < 0)
-				return true;
-			return false;
-		}
-	}
-	
-	/**Runs a micro-benchmark like test cycle timing insertion and look-up and recording load factors to evaluate the performance of the set-up which
-	 * it then returns as a long.
-	 * 
-	 * @return
-	 */
-	private static double tune() {
-		TestEntry e;
-		long totalSize = 0, totalLoad = 0, totalTime = 0, totalScore = 0, start, end, time;
-		long[] keys;
-		for (int i = 6; i < 18; i++) {
-			DEFAULT_SIZE = 1 << i;
-			for (int j = 1; j < 27; j += 5) {
-				start = System.currentTimeMillis();
-				HashTable<TestEntry> hT = new HashTable<>();
-				keys = new long[j*50000];
-				for (int k = 0; k < j*50000; k++) {
-					hT.insert(e = new TestEntry());
-					keys[k] = e.key;
-				}
-				for (int k = 0; k < j*15000; k++) {
-					hT.lookUp(keys[(int)(Math.random()*keys.length)]);
-				}
-				end = System.currentTimeMillis();
-				time = end - start;
-				totalTime += time;
-				totalSize += hT.size();
-				totalLoad += hT.load;
-				totalScore += (1 - (hT.load/hT.size()))*(1 - (hT.load/hT.size()))*time;
-			}
-		}
-		return (totalScore + ((1 - (totalLoad/totalSize))*(1 - (totalLoad/totalSize))*totalTime))/2;
-	}
-	/**Runs a micro-benchmark like test cycle depending on the number of input parameters, timing insertion and look-up and recording load factors
-	 * to evaluate the performance of the set-up with the given parameters which then it returns as a long.
-	 * 
-	 * @return
-	 */
-	public static double tune(String... args) throws NumberFormatException {
-		switch (args.length) {
-			case 1: {
-				EPSILON = Float.parseFloat(args[0]);
-				OMLF = 3;
-			}
-			break;
-			case 2: {
-				EPSILON = Float.parseFloat(args[0]);
-				OMLF = Float.parseFloat(args[1]);
-			}
-			break;
-			case 4: {
-				T1_SHARE = Float.parseFloat(args[0]);
-				T2_SHARE = Float.parseFloat(args[1]);
-				T3_SHARE = Float.parseFloat(args[2]);
-				T4_SHARE = Float.parseFloat(args[3]);
-			}
-			break;
-			case 6: {
-				EPSILON = Float.parseFloat(args[0]);
-				OMLF = Float.parseFloat(args[1]);
-				T1_SHARE = Float.parseFloat(args[2]);
-				T2_SHARE = Float.parseFloat(args[3]);
-				T3_SHARE = Float.parseFloat(args[4]);
-				T4_SHARE = Float.parseFloat(args[5]);
-			}
-			break;
-			default: {
-				throw new IllegalArgumentException();
-			}
-		}
-		return tune();
 	}
 }
