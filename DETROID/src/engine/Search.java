@@ -28,7 +28,7 @@ public class Search extends Thread {
 	}
 	public Search(Position pos, long searchTimeInMillis) {
 		this.pos = pos;
-		if (searchTime > 0)
+		if (searchTimeInMillis > 0)
 			searchTime = searchTimeInMillis;
 		else
 			searchTime = 0;
