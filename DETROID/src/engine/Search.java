@@ -10,13 +10,13 @@ import util.*;
  */
 public class Search extends Thread {
 	
-	public final static int MAX_SEARCH_DEPTH = 8;
+	public final static int MAX_SEARCH_DEPTH = 64;
 	
 	private Position pos;
 	private Move bestMove;
 	private int ply;
 	private Move[] pV;
-	HashTable<TTEntry> tT = new HashTable<>();
+	private HashTable<TTEntry> tT = new HashTable<>();
 	private byte tTgen = 0;
 	private boolean pondering = false;
 	private long searchTime;
@@ -79,6 +79,13 @@ public class Search extends Thread {
 	public void setSearchTime(long searchTimeInMillis) {
 		if (searchTimeInMillis >= 0)
 			searchTime = searchTimeInMillis;
+	}
+	/**Returns a reference to the transposition table for checking its size, load factor, and contents.
+	 * 
+	 * @return
+	 */
+	public HashTable<TTEntry> getTranspositionTable() {
+		return tT;
 	}
 	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth, 128 has been reached.*/
@@ -166,9 +173,9 @@ public class Search extends Thread {
 				if (val > alpha)
 					alpha = val;
 			}
-			if (alpha >= beta)
-				break;
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+				break;
+			if (alpha >= beta)
 				break;
 		}
 		if (bestMove.value <= origAlpha) 

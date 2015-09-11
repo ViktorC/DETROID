@@ -9,7 +9,7 @@ public class Playground {
 		s.run();
 		long end = System.currentTimeMillis();
 		Move.printMovesToConsole(s.getPv());
-		System.out.println(s.tT.size() + "\n" + s.tT.load());
+		System.out.println(s.getTranspositionTable().size() + "\n" + s.getTranspositionTable().load());
 		System.out.println(end - start);
 	}
 }
