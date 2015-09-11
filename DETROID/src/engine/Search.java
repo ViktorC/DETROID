@@ -10,6 +10,24 @@ import util.*;
  */
 public class Search extends Thread {
 	
+	/**A simple enum for game tree node types based on their values' relation to alpha and beta.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public enum NodeType {
+		
+		EXACT		((byte)0),
+		FAIL_HIGH	((byte)1),
+		FAIL_LOW	((byte)2);
+		
+		public final byte num;
+		
+		private NodeType(byte num) {
+			this.num = num;
+		}
+	}
+	
 	public final static int MAX_SEARCH_DEPTH = 64;
 	
 	private Position pos;
@@ -94,7 +112,7 @@ public class Search extends Thread {
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			pVsearch(ply, Evaluator.LOSS, Evaluator.WIN);
+			pVsearch(ply, Game.State.LOSS.score, Game.State.WIN.score);
 			extractPv();
 			bestMove = pV[0];
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
@@ -124,9 +142,9 @@ public class Search extends Thread {
 		Move[] moveArr;
 		TTEntry e = tT.lookUp(pos.zobristKey);
 		if (e != null && e.depth >= depth) {
-			if (e.type == TTEntry.TYPE_EXACT)
+			if (e.type == NodeType.EXACT.num)
 				return e.score;
-			else if (e.type == TTEntry.TYPE_FAIL_HIGH) {
+			else if (e.type == NodeType.FAIL_HIGH.num) {
 				if (e.score > alpha)
 					alpha = e.score;
 			}
@@ -138,24 +156,24 @@ public class Search extends Thread {
 		}
 		if (depth == 0) {
 			score = Evaluator.score(pos);
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, score, (short)0, tTgen));
+			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, score, (short)0, tTgen));
 			return score;
 		}
 		moveQ = pos.generateMoves();
 		if (moveQ.length() == 0) {
 			if (pos.getCheck()) {
-				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.LOSS, (short)0, tTgen));
-				return Evaluator.LOSS;
+				tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, Game.State.LOSS.score, (short)0, tTgen));
+				return Game.State.LOSS.score;
 			}
 			else {
-				tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, Evaluator.TIE, (short)0, tTgen));
-				return Evaluator.TIE;
+				tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, Game.State.TIE.score, (short)0, tTgen));
+				return Game.State.TIE.score;
 			}
 		}
 		if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
-			return Evaluator.TIE;
+			return Game.State.TIE.score;
 		moveArr = orderMoves(moveQ, depth);
-		bestMove = new Move(Evaluator.LOSS);
+		bestMove = new Move(Game.State.LOSS.score);
 		for (int i = 0; i < moveArr.length; i++) {
 			move = moveArr[i];
 			pos.makeMove(move);
@@ -179,11 +197,11 @@ public class Search extends Thread {
 				break;
 		}
 		if (bestMove.value <= origAlpha) 
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_LOW, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.FAIL_LOW.num, bestMove.value, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_FAIL_HIGH, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.FAIL_HIGH.num, bestMove.value, bestMove.toInt(), tTgen));
 		else
-			tT.insert(new TTEntry(pos.zobristKey, depth, TTEntry.TYPE_EXACT, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, bestMove.value, bestMove.toInt(), tTgen));
 		return bestMove.value;
 	}
 	/**Orders a list of moves according to the PV node of the given depth, history heuristics, and the MVV-LVA principle; and returns it as an array.

@@ -15,18 +15,18 @@ public abstract class List<Data> {
 	 * @author Viktor
 	 *
 	 */
-	protected class IntListItem {
+	protected class ListItem {
 		
 		protected Data data;
-		protected IntListItem next;
+		protected ListItem next;
 		
-		IntListItem(Data data) {
+		ListItem(Data data) {
 			this.data = data;
 		}
 	}
 	
-	protected IntListItem head;
-	protected IntListItem iterator;			//used for keeping track of the current node while iterating over the list
+	protected ListItem head;
+	protected ListItem pointer;			//used for keeping track of the current node while iterating over the list
 	
 	/**Returns the data held in the first element of the list. If the list is empty, it returns null.
 	 * 
@@ -47,30 +47,30 @@ public abstract class List<Data> {
 	 * @param data
 	 */
 	public abstract void add(Data data);
-	/**Returns whether the iterator has more nodes to process or has already reached the end of the list. Once the iterator has no more nodes no to
-	 * process, the method will return 'false' and the iterator will be reset.
+	/**Returns whether the pointer/iterator has more nodes to process or has already reached the end of the list. Once the iterator has no more
+	 * nodes no to process, the method will return 'false' and the iterator will be reset.
 	 * 
 	 * @return
 	 */
 	public boolean hasNext() {
-		if (iterator == null) {
+		if (pointer == null) {
 			reset();
 			return false;
 		}
 		return true;
 	}
-	/**Returns the data held in the iterator and increments the iterator.
+	/**Returns the data held in the pointer and sets it to the next element.
 	 * 
 	 * @return
 	 */
 	public Data next() {
-		Data next = iterator.data;
-		iterator = iterator.next;
+		Data next = pointer.data;
+		pointer = pointer.next;
 		return next;
 	}
-	/**Resets the iterator to the head.*/
+	/**Resets the pointer to the head.*/
 	public void reset() {
-		iterator = head;
+		pointer = head;
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 *  

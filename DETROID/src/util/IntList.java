@@ -23,7 +23,7 @@ public abstract class IntList {
 	}
 	
 	protected IntListItem head;
-	protected IntListItem iterator;			//used for keeping track of the current node while iterating over the list
+	protected IntListItem pointer;			//used for keeping track of the current node while iterating over the list
 	
 	/**Returns the data held in the first element of the list. If the list is empty, it returns 0.
 	 * 
@@ -44,30 +44,30 @@ public abstract class IntList {
 	 * @param data
 	 */
 	public abstract void add(int data);
-	/**Returns whether the iterator has more nodes to process or has already reached the end of the list. Once the iterator has no more nodes no to
-	 * process, the method will return 'false' and the iterator will be reset.
+	/**Returns whether the pointer/iterator has more nodes to process or has already reached the end of the list. Once the iterator has no more
+	 * nodes no to process, the method will return 'false' and the iterator will be reset.
 	 * 
 	 * @return
 	 */
 	public boolean hasNext() {
-		if (iterator == null) {
+		if (pointer == null) {
 			reset();
 			return false;
 		}
 		return true;
 	}
-	/**Returns the data held in the iterator and increments the iterator.
+	/**Returns the data held in the pointer and sets it to the next element.
 	 * 
 	 * @return
 	 */
 	public int next() {
-		int next = iterator.data;
-		iterator = iterator.next;
+		int next = pointer.data;
+		pointer = pointer.next;
 		return next;
 	}
-	/**Resets the iterator to the head.*/
+	/**Resets the pointer to the head.*/
 	public void reset() {
-		iterator = head;
+		pointer = head;
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 * 

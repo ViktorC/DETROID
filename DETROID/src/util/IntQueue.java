@@ -17,7 +17,7 @@ public class IntQueue extends IntList {
 	public IntQueue(int data) {
 		head = new IntListItem(data);
 		tail = head;
-		iterator = head;
+		pointer = head;
 		length++;
 	}
 	/**Returns the data held in the last element of the list. If the list is empty, it returns 0.
@@ -41,7 +41,7 @@ public class IntQueue extends IntList {
 		if (head == null) {
 			head = new IntListItem(data);
 			tail = head;
-			iterator = head;
+			pointer = head;
 		}
 		else {
 			tail.next = new IntListItem(data);

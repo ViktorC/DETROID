@@ -15,12 +15,12 @@ public class Stack<Data> extends List<Data> {
 	}
 	public Stack(Data data) {
 		head.data = data;
-		iterator = head;
+		pointer = head;
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
 	public void add(Data data) {
-		IntListItem temp = head;
-		head = new IntListItem(data);
+		ListItem temp = head;
+		head = new ListItem(data);
 		head.next = temp;
 		reset();
 	}

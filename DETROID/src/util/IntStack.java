@@ -15,7 +15,7 @@ public class IntStack extends IntList {
 	}
 	public IntStack(int data) {
 		head.data = data;
-		iterator = head;
+		pointer = head;
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
 	public void add(int data) {

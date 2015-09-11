@@ -9,6 +9,24 @@ import java.util.Scanner;
  */
 public class Game implements Runnable {
 	
+	/**A simple enum for game outcome types and their assigned scores.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public enum State {
+		
+		WIN	 (Short.MAX_VALUE),
+		TIE	 ((short)0),
+		LOSS ((short)(Short.MIN_VALUE + 1));
+		
+		public final short score;
+		
+		private State(short score) {
+			this.score = score;
+		}
+	}
+	
 	Scanner in = new Scanner(System.in);
 	Position pos;
 	boolean playersTurn;

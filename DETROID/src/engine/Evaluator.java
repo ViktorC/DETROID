@@ -1,6 +1,7 @@
 package engine;
 
 import util.*;
+import engine.Game.State;
 
 /**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
  * kept incrementally updated after moves made using {@link #score score}.
@@ -9,10 +10,6 @@ import util.*;
  *
  */
 public class Evaluator {
-	
-	final static short WIN  = Short.MAX_VALUE;
-	final static short TIE  = 0;
-	final static short LOSS = Short.MIN_VALUE + 1;
 	
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
@@ -25,9 +22,9 @@ public class Evaluator {
 		List<Move> moves = pos.generateMoves();
 		if (moves.length() == 0) {
 			if (pos.getCheck())
-				return LOSS;
+				return State.LOSS.score;
 			else
-				return TIE;
+				return State.TIE.score;
 		}
 		score += BitOperations.getCardinality(pos.whiteQueens)*Piece.WHITE_QUEEN.standardValue;
 		score += BitOperations.getCardinality(pos.whiteRooks)*Piece.WHITE_ROOK.standardValue;

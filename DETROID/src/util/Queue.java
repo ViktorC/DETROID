@@ -9,16 +9,16 @@ package util;
  */
 public class Queue<Data> extends List<Data> {
 
-	private IntListItem tail;		//a reference to the last node of the queue; for faster addition
+	private ListItem tail;		//a reference to the last node of the queue; for faster addition
 	private int length = 0;			//the number of nodes contained in the list
 
 	public Queue() {
 
 	}
 	public Queue(Data data) {
-		head = new IntListItem(data);
+		head = new ListItem(data);
 		tail = head;
-		iterator = head;
+		pointer = head;
 		length++;
 	}
 	/**Returns the data held in the last element of the list. If the list is empty, it returns null.
@@ -40,12 +40,12 @@ public class Queue<Data> extends List<Data> {
 	/**Enqueues a new node storing the input parameter data.*/
 	public void add(Data data) {
 		if (head == null) {
-			head = new IntListItem(data);
+			head = new ListItem(data);
 			tail = head;
-			iterator = head;
+			pointer = head;
 		}
 		else {
-			tail.next = new IntListItem(data);
+			tail.next = new ListItem(data);
 			tail = tail.next;
 		}
 		length++;
