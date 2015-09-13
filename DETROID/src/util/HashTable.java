@@ -200,6 +200,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * @param condition
 	 */
 	public void remove(Predicate<E> condition) {
+		System.out.println("BEEN CALLED.");
 		E e;
 		for (int i = 0; i < t1.length; i++) {
 			e = t1[i];

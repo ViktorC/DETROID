@@ -9,7 +9,7 @@ import java.util.Scanner;
  */
 public class Game implements Runnable {
 	
-	/**A simple enum for game outcome types and their assigned scores.
+	/**A simple enum for game state types and their assigned value scores.
 	 * 
 	 * @author Viktor
 	 *
@@ -54,21 +54,19 @@ public class Game implements Runnable {
 	}
 	public void run() {
 		Position pos = new Position();
-		Search s = new Search(pos, diff*5000);
+		Search s;
 		Move move;
 		String userMove;
-		Thread t;
 		while (true) {
 			if (playersTurn) {
 				System.out.print("YOUR MOVE: ");
 				if (diff >= 5) {
-					s.setPondering(true);
-					t = new Thread(s);
-					t.start();
+					s = new Search(pos.copy());
+					s.start();
 					userMove = in.nextLine();
-					t.interrupt();
+					s.interrupt();
 					try {
-						t.join();
+						s.join();
 					} catch (InterruptedException e) {
 						//Not gonna happen
 						e.printStackTrace();
@@ -79,10 +77,10 @@ public class Game implements Runnable {
 					pos.makeMove(in.nextLine());
 			}
 			else {
-				t = new Thread(s);
-				t.start();
+				s = new Search(pos.copy(), diff*5000);
+				s.start();
 				try {
-					t.join();
+					s.join();
 				} catch (InterruptedException e) {
 					//Not gonna happen
 					e.printStackTrace();

@@ -15,7 +15,7 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 	short depth;		//how deep the position has been searched
 	byte  type;			//the type of the returned score
 	short score;		//the returned score
-	int   bestMove;		//the best move compressed into a short
+	int   bestMove;		//the best move compressed into an int
 	byte  generation;	//the age of the entry
 
 	public TTEntry(long key, int depth, byte type, int score, int bestMove, byte age) {

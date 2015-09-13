@@ -28,7 +28,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_SEARCH_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.6);
+	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.8);
 	private final static int MAX_SEARCH_DEPTH = 64;
 	
 	private int numOfCores;
@@ -37,16 +37,25 @@ public class Search extends Thread {
 	private Move bestMove;
 	private int ply;
 	private Move[] pV;
-	private HashTable<TTEntry> tT = new HashTable<>();
-	private byte tTgen = 0;
+	private static HashTable<TTEntry> tT = new HashTable<>();
+	private static byte tTgen = 0;
 	private boolean pondering = false;
 	private long searchTime;
 	private long deadLine;
 	
+	/**Instantiates a search thread for pondering on a position.
+	 * 
+	 * @param pos: The position to ponder on.
+	 */
 	public Search(Position pos) {
 		this.pos = pos;
-		searchTime = 0;
+		this.pondering = true;
 	}
+	/**Instantiates a search thread for searching a position for the specified amount of time.
+	 * 
+	 * @param pos: The position to search.
+	 * @param searchTimeInMillis: The time allocated for the search.
+	 */
 	public Search(Position pos, long searchTimeInMillis) {
 		this.pos = pos;
 		if (searchTimeInMillis > 0)
@@ -54,16 +63,23 @@ public class Search extends Thread {
 		else
 			searchTime = 0;
 	}
-	/**Returns the best move from the position if it has already been searched; else it returns null.
+	/**Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found (either due to a
+	 * search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
 	 * 
-	 * @return
+	 * @return The best move according to the results of the search; if such a thing does not exist, a pseudo-random legal move.
 	 */
 	public Move getBestMove() {
-		return bestMove;
+		Move[] moveList;
+		if (bestMove != null)
+			return bestMove;
+		else {
+			moveList = pos.generateMoves().toArray();
+			return moveList[(int)Math.random()*moveList.length];
+		}
 	}
 	/**Returns the best line of play from the position if it has already been searched; else it returns null.
 	 * 
-	 * @return
+	 * @return The principal variation according to the results of the search.
 	 */
 	public Queue<Move> getPv() {
 		Queue<Move> pV = new Queue<>();
@@ -74,32 +90,17 @@ public class Search extends Thread {
 	}
 	/**Returns whether pondering mode is active.
 	 * 
-	 * @return
+	 * @return Whether pondering is on.
 	 */
 	public boolean isPonderingOn() {
 		return pondering;
 	}
-	/**Sets pondering. With pondering on, there is no time limit for the search and the transposition table is never cleared.
-	 * 
-	 * @param pondering
-	 */
-	public void setPondering(boolean pondering) {
-		this.pondering = pondering;
-	}
 	/**Returns the allocated search time in milliseconds.
 	 * 
-	 * @return
+	 * @return The allocated search time in milliseconds.
 	 */
 	public long getSearchTime() {
 		return searchTime;
-	}
-	/**Sets the allocated search time.
-	 * 
-	 * @param searchTimeInMillis
-	 */
-	public void setSearchTime(long searchTimeInMillis) {
-		if (searchTimeInMillis >= 0)
-			searchTime = searchTimeInMillis;
 	}
 	/**Returns a reference to the transposition table for checking its size, load factor, and contents.
 	 * 
@@ -125,18 +126,15 @@ public class Search extends Thread {
 				break;
 		}
 		if (!pondering) {
-			if (++tTgen >= 4) {
-				if (tTgen == 127) {
-					tT.clear();
-					tTgen = 0;
-				}
-				else {
-					tT.remove(e -> e.generation < tTgen - 3);
-				}
+			if (tTgen == 127) {
+				tT.clear();
+				tTgen = 0;
 			}
+			else {
+				tT.remove(e -> e.generation < tTgen - 2);
+			}
+			tTgen++;
 		}
-		else
-			pondering = false;
 	}
 	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
 	 * variation can be extracted from the transposition table after a search has been run.
@@ -186,8 +184,10 @@ public class Search extends Thread {
 		moveArr = orderMoves(moveQ, depth);
 		bestMove = new Move(Game.State.LOSS.score);
 		for (int i = 0; i < moveArr.length; i++) {
-			if (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_SEARCH_MEMORY)
-				tT.remove(entry -> entry.depth < ply - 1 || entry.generation < tTgen - 1);
+			if (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
+				tT.remove(entry -> entry.depth < 2);
+				System.gc();
+			}
 			move = moveArr[i];
 			pos.makeMove(move);
 			if (i == 0)
