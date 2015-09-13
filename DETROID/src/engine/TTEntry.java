@@ -27,13 +27,13 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 		this.generation = age;
 	}
 	/**Returns whether this entry is more valuable for storing than the input parameter entry.*/
-	public boolean greaterThan(TTEntry e) {
+	public boolean betterThan(TTEntry e) {
 		if (generation >= e.generation && depth >= e.depth && (type == NodeType.EXACT.num || e.type != NodeType.EXACT.num))
 			return true;
 		return false;
 	}
 	/**Returns whether this entry is less valuable for storing than the input parameter entry.*/
-	public boolean smallerThan(TTEntry e) {
+	public boolean worseThan(TTEntry e) {
 		if (generation < e.generation - 2 || depth < e.depth || (e.type == NodeType.EXACT.num && type != NodeType.EXACT.num))
 			return true;
 		return false;
@@ -44,13 +44,13 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 		String type = "";
 		switch (this.type) {
 			case 0:
-				type = "EXACT";
+				type = NodeType.EXACT.toString();
 			break;
 			case 1:
-				type = "FAIL_HIGH";
+				type = NodeType.FAIL_HIGH.toString();
 			break;
 			case 2:
-				type = "FAIL_LOW";
+				type = NodeType.FAIL_LOW.toString();
 		}
 		return String.format("%-17s %2d %-9s %7d  %10s %2d",Long.toHexString(key), depth, type, score, move, generation);
 	}

@@ -47,11 +47,11 @@ public class Move implements Comparable<Move> {
 		return m;
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
-	public boolean greaterThan(Move m) throws NullPointerException {
+	public boolean betterThan(Move m) throws NullPointerException {
 		return (value > m.value);
 	}
 	/**Returns whether the owner Move instance's value field holds a smaller number than the parameter Move instance's.*/
-	public boolean smallerThan(Move m) throws NullPointerException {
+	public boolean worseThan(Move m) throws NullPointerException {
 		return (value < m.value);
 	}
 	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.

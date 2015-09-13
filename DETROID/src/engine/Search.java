@@ -28,7 +28,10 @@ public class Search extends Thread {
 		}
 	}
 	
-	public final static int MAX_SEARCH_DEPTH = 64;
+	private final static int MAX_SEARCH_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.6);
+	private final static int MAX_SEARCH_DEPTH = 64;
+	
+	private int numOfCores;
 	
 	private Position pos;
 	private Move bestMove;
@@ -108,20 +111,28 @@ public class Search extends Thread {
 	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth, 128 has been reached.*/
 	public void run() {
-		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime - 5);
+		numOfCores = Runtime.getRuntime().availableProcessors();
+		if (numOfCores <= 1 && pondering)
+			return;
+		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
 			pVsearch(ply, Game.State.LOSS.score, Game.State.WIN.score);
-			extractPv();
+			pV = extractPv();
 			bestMove = pV[0];
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
 		if (!pondering) {
-			if (++tTgen >= 3) {
-				tT.clear();
-				tTgen = 0;
+			if (++tTgen >= 4) {
+				if (tTgen == 127) {
+					tT.clear();
+					tTgen = 0;
+				}
+				else {
+					tT.remove(e -> e.generation < tTgen - 3);
+				}
 			}
 		}
 		else
@@ -133,7 +144,7 @@ public class Search extends Thread {
 	 * @param depth
 	 * @param alpha
 	 * @param beta
-	 * @return
+	 * @return The score of the position searched.
 	 */
 	private int pVsearch(int depth, int alpha, int beta) {
 		int score, origAlpha = alpha, val;
@@ -175,6 +186,8 @@ public class Search extends Thread {
 		moveArr = orderMoves(moveQ, depth);
 		bestMove = new Move(Game.State.LOSS.score);
 		for (int i = 0; i < moveArr.length; i++) {
+			if (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_SEARCH_MEMORY)
+				tT.remove(entry -> entry.depth < ply - 1 || entry.generation < tTgen - 1);
 			move = moveArr[i];
 			pos.makeMove(move);
 			if (i == 0)
@@ -208,7 +221,7 @@ public class Search extends Thread {
 	 * 
 	 * @param moves
 	 * @param depth
-	 * @return
+	 * @return The ordered move list.
 	 */
 	private Move[] orderMoves(List<Move> moves, int depth) {
 		boolean thereIsPvMove = false, thereIsRefutMove = false;
@@ -240,8 +253,12 @@ public class Search extends Thread {
 		return new QuickSort<Move>(arr).getArray();
 		
 	}
-	/**Sets the instance field pV according to the line of best play extracted form the transposition table.*/
-	private void extractPv() {
+	/**Returns an array of Move objects according to the best line of play extracted form the transposition table.
+	 * 
+	 * @return An array of Move objects according to the best line of play.
+	 */
+	private Move[] extractPv() {
+		Move[] pV = new Move[MAX_SEARCH_DEPTH];
 		TTEntry e;
 		Move bestMove;
 		int i = 0;
@@ -253,5 +270,6 @@ public class Search extends Thread {
 		}
 		for (int j = 0; j < i; j++)
 			pos.unmakeMove();
+		return pV;
 	}
 }

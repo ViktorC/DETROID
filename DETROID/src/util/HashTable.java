@@ -1,5 +1,7 @@
 package util;
 
+import java.util.function.Predicate;
+
 /**A generic, so far non-thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
  * the hash table are required to extend {@link #HashTable.Entry Entry} and implicitly implement {@link #Comparable Comparable}.
  * 
@@ -26,9 +28,9 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public static abstract class Entry<E> implements Comparable<E>, Hashable {
 		
-		protected long key; //a 64 bit integer key that is hashed onto an index
+		protected long key;	//a 64 bit integer key that is hashed onto an index
 		
-		/**Returns a 64 bit hash code that can be used for the identification of the object, however its uniqueness is not quaranteed.*/
+		/**Returns a 64 bit hash code that can be used for the identification of the object, however its uniqueness is not guaranteed.*/
 		public long key() {
 			return key;
 		}
@@ -97,22 +99,22 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		int ind;
 		E slot;
 		if ((slot = t1[(ind = hash1(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot))
+			if (e.betterThan(slot))
 				t1[ind] = e;
 			return;
 		}
 		if ((slot = t2[(ind = hash2(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot))
+			if (e.betterThan(slot))
 				t2[ind] = e;
 			return;
 		}
 		if ((slot = t3[(ind = hash3(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot))
+			if (e.betterThan(slot))
 				t3[ind] = e;
 			return;
 		}
 		if ((slot = t4[(ind = hash4(e.key))]) != null && e.key == slot.key) {
-			if (e.greaterThan(slot))
+			if (e.betterThan(slot))
 				t4[ind] = e;
 			return;
 		}
@@ -166,13 +168,13 @@ public class HashTable<E extends HashTable.Entry<E>> {
 			return e;
 		return null;
 	}
-	/**Deletes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table; returns
+	/**Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table; returns
 	 * false otherwise.
 	 * 
 	 * @param key
 	 * @return
 	 */
-	public boolean delete(long key) {
+	public boolean remove(long key) {
 		int ind;
 		E e;
 		if ((e = t1[(ind = hash1(key))]) != null && e.key == key) {
@@ -193,13 +195,41 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		}
 		return false;
 	}
+	/**Removes all the entries that match the condition specified in the argument.
+	 * 
+	 * @param condition
+	 */
+	public void remove(Predicate<E> condition) {
+		E e;
+		for (int i = 0; i < t1.length; i++) {
+			e = t1[i];
+			if (e != null && condition.test(e))
+				t1[i] = null;
+		}
+		for (int i = 0; i < t2.length; i++) {
+			e = t2[i];
+			if (e != null && condition.test(e))
+				t2[i] = null;
+		}
+		for (int i = 0; i < t3.length; i++) {
+			e = t3[i];
+			if (e != null && condition.test(e))
+				t3[i] = null;
+		}
+		for (int i = 0; i < t4.length; i++) {
+			e = t4[i];
+			if (e != null && condition.test(e))
+				t4[i] = null;
+		}
+		rehash();
+	}
 	@SuppressWarnings({"unchecked"})
 	private void rehash() {
 		E[] oldTable1 = t1;
 		E[] oldTable2 = t2;
 		E[] oldTable3 = t3;
 		E[] oldTable4 = t4;
-		int size = (int)(load/MINIMUM_LOAD_FACTOR);
+		float size = load/MINIMUM_LOAD_FACTOR;
 		load = 0;
 		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
 		t2 = (E[])new Entry[(int)(T2_SHARE*size)];
@@ -222,19 +252,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 				insert(e);
 		}
 	}
-	private int hash1(long key) {
-		return (int)((key & UNSIGNED_LONG)%t1.length);
-	}
-	private int hash2(long key) {
-		return (int)((key & UNSIGNED_LONG)%t2.length);
-	}
-	private int hash3(long key) {
-		return (int)((key & UNSIGNED_LONG)%t3.length);
-	}
-	private int hash4(long key) {
-		return (int)((key & UNSIGNED_LONG)%t4.length);
-	}
-	/**Replaces the current table with a new, empty hash table of the same size.*/
+	/**Replaces the current tables with new, empty hash tables of the same sizes.*/
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
 		load = 0;
@@ -265,5 +283,17 @@ public class HashTable<E extends HashTable.Entry<E>> {
 			if (e != null)
 				System.out.println(e);
 		}
+	}
+	private int hash1(long key) {
+		return (int)((key & UNSIGNED_LONG)%t1.length);
+	}
+	private int hash2(long key) {
+		return (int)((key & UNSIGNED_LONG)%t2.length);
+	}
+	private int hash3(long key) {
+		return (int)((key & UNSIGNED_LONG)%t3.length);
+	}
+	private int hash4(long key) {
+		return (int)((key & UNSIGNED_LONG)%t4.length);
 	}
 }

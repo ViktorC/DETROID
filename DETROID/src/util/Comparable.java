@@ -8,17 +8,17 @@ package util;
  */
 public interface Comparable<T> {
 
-	/**Returns whether the object that invoked the method is 'greater' than the parameter object.
+	/**Returns whether the object that invoked the method is more valuable than the parameter object.
 	 * 
 	 * @param t
 	 * @return
 	 */
-	boolean greaterThan(T t);
-	/**Returns whether the object that invoked the method is 'smaller' than the parameter object.
+	boolean betterThan(T t);
+	/**Returns whether the object that invoked the method is less valuable than the parameter object.
 	 * 
 	 * @param t
 	 * @return
 	 */
-	boolean smallerThan(T t);
+	boolean worseThan(T t);
 	
 }

@@ -53,9 +53,9 @@ public class QuickSort<T extends Comparable<T>> {
 		T pivot = array[(left + right)/2];
 		T temp;
 		while (left <= right) {
-			while (array[left].greaterThan(pivot))
+			while (array[left].betterThan(pivot))
 				left++;
-			while (array[right].smallerThan(pivot))
+			while (array[right].worseThan(pivot))
 				right--;
 			if (left <= right) {
 				temp = array[left];
