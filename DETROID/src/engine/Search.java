@@ -127,8 +127,8 @@ public class Search extends Thread {
 		}
 		if (!pondering) {
 			if (tTgen == 127) {
-				tT.clear();
-				tTgen = 0;
+				tT.remove(e -> (e.generation -= 125) < 0);
+				tTgen = 2;
 			}
 			else {
 				tT.remove(e -> e.generation < tTgen - 2);

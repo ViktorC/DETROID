@@ -56,14 +56,15 @@ public class Game implements Runnable {
 		Position pos = new Position();
 		Search s;
 		Move move;
-		String userMove;
 		while (true) {
+			pos.printStateToConsole();
 			if (playersTurn) {
 				System.out.print("YOUR MOVE: ");
 				if (diff >= 5) {
 					s = new Search(pos.copy());
 					s.start();
-					userMove = in.nextLine();
+					while (!pos.makeMove(in.nextLine()))
+						System.out.println("ILLEGAL MOVE.");
 					s.interrupt();
 					try {
 						s.join();
@@ -71,10 +72,11 @@ public class Game implements Runnable {
 						//Not gonna happen
 						e.printStackTrace();
 					}
-					pos.makeMove(userMove);
 				}
-				else
-					pos.makeMove(in.nextLine());
+				else {
+					while (!pos.makeMove(in.nextLine()))
+						System.out.println("ILLEGAL MOVE.");
+				}
 			}
 			else {
 				s = new Search(pos.copy(), diff*5000);
