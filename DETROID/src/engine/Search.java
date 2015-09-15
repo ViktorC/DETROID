@@ -28,7 +28,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.8);
+	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
 	private final static int MAX_SEARCH_DEPTH = 64;
 	
 	private int numOfCores;
@@ -43,25 +43,31 @@ public class Search extends Thread {
 	private long searchTime;
 	private long deadLine;
 	
-	/**Instantiates a search thread for pondering on a position.
-	 * 
-	 * @param pos: The position to ponder on.
-	 */
-	public Search(Position pos) {
+	private Search(Position pos, long searchTimeInMilliSeconds) {
 		this.pos = pos;
-		this.pondering = true;
-	}
-	/**Instantiates a search thread for searching a position for the specified amount of time.
-	 * 
-	 * @param pos: The position to search.
-	 * @param searchTimeInMillis: The time allocated for the search.
-	 */
-	public Search(Position pos, long searchTimeInMillis) {
-		this.pos = pos;
-		if (searchTimeInMillis > 0)
-			searchTime = searchTimeInMillis;
+		if (searchTimeInMilliSeconds > 0)
+			searchTime = searchTimeInMilliSeconds;
 		else
-			searchTime = 0;
+			pondering = true;
+	}
+	/**Returns a new Search thread instance instead for pondering on the argument position which once started, will not stop until the thread is
+	 * interrupted.
+	 *
+	 * @param pos
+	 * @return A new Search instance for pondering.
+	 */
+	public static Search getInstance(Position pos) {
+		return new Search(pos.copy(), 0);
+	}
+	/**Returns a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder on the
+	 * position once the search thread is started, and will not stop until it is interrupted.
+	 *
+	 * @param pos
+	 * @param searchTimeInMilliSeconds
+	 * @return A new Search instance.
+	 */
+	public static Search getInstance(Position pos, long searchTimeInMilliSeconds) {
+		return new Search(pos.copy(), searchTimeInMilliSeconds);
 	}
 	/**Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found (either due to a
 	 * search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
@@ -102,12 +108,12 @@ public class Search extends Thread {
 	public long getSearchTime() {
 		return searchTime;
 	}
-	/**Returns a reference to the transposition table for checking its size, load factor, and contents.
+	/**Returns a string containing basic statistics about the transposition table.
 	 * 
-	 * @return
+	 * @return A string of the total size and load of the transposition table.
 	 */
-	public HashTable<TTEntry> getTranspositionTable() {
-		return tT;
+	public String getTranspositionTableStats() {
+		return tT.size() + "\n" + tT.load();
 	}
 	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth, 128 has been reached.*/
@@ -115,7 +121,7 @@ public class Search extends Thread {
 		numOfCores = Runtime.getRuntime().availableProcessors();
 		if (numOfCores <= 1 && pondering)
 			return;
-		deadLine = (searchTime == 0 || pondering) ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
+		deadLine = pondering ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
@@ -204,9 +210,9 @@ public class Search extends Thread {
 				if (val > alpha)
 					alpha = val;
 			}
-			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
-				break;
 			if (alpha >= beta)
+				break;
+			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
 		if (bestMove.value <= origAlpha) 

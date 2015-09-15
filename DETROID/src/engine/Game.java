@@ -61,7 +61,7 @@ public class Game implements Runnable {
 			if (playersTurn) {
 				System.out.print("YOUR MOVE: ");
 				if (diff >= 5) {
-					s = new Search(pos.copy());
+					s = Search.getInstance(pos);
 					s.start();
 					while (!pos.makeMove(in.nextLine()))
 						System.out.println("ILLEGAL MOVE.");
@@ -79,7 +79,7 @@ public class Game implements Runnable {
 				}
 			}
 			else {
-				s = new Search(pos.copy(), diff*5000);
+				s = Search.getInstance(pos, diff*5000);
 				s.start();
 				try {
 					s.join();
