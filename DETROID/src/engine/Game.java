@@ -16,14 +16,14 @@ public class Game implements Runnable {
 	 */
 	public enum State {
 		
-		WIN	 (Short.MAX_VALUE),
-		TIE	 ((short)0),
-		LOSS ((short)(Short.MIN_VALUE + 1));
+		WIN	(Short.MAX_VALUE),
+		TIE	(0),
+		LOSS(Short.MIN_VALUE + 1);
 		
 		public final short score;
 		
-		private State(short score) {
-			this.score = score;
+		private State(int score) {
+			this.score = (short)score;
 		}
 	}
 	

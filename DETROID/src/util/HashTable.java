@@ -54,7 +54,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	private E[] t3;
 	private E[] t4;
 	
-	private int load = 0;
+	private volatile int load = 0;
 	
 	/**Instantiates a HashTable with a default length of 1022.*/
 	@SuppressWarnings({"unchecked"})

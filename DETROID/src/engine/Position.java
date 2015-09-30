@@ -19,7 +19,7 @@ import java.util.Scanner;
  * @author Viktor
  *
  */
-public class Position {
+public class Position implements Hashable {
 	
 	//bitboards for each piece type
 	long whiteKing;
@@ -64,8 +64,8 @@ public class Position {
 	private Stack<Move> moveList = new Stack<Move>();									//a stack of all the moves made so far
 	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 	
-	long zobristKey;																	//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
-	private long[] zobristKeyHistory;													//all the positions that have occured so far represented in Zobrist keys.
+	long key;																			//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
+	private long[] keyHistory;															//all the positions that have occured so far represented in Zobrist keys.
 	
 	private int repetitions = 0;														//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
 	
@@ -266,9 +266,9 @@ public class Position {
 	}
 	private void initializeZobristKeys() {
 		//"The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves." - half of that is used as the initial length of the history array
-		zobristKeyHistory = new long[237];
-		zobristKey = Zobrist.hash(this);
-		zobristKeyHistory[0] = this.zobristKey;
+		keyHistory = new long[237];
+		key = Zobrist.hash(this);
+		keyHistory[0] = this.key;
 	}
 	/**Returns a copy of the position.
 	 * 
@@ -276,7 +276,7 @@ public class Position {
 	 */
 	public Position copy() {
 		Position copy = new Position();
-		copy.zobristKeyHistory = new long[zobristKeyHistory.length];
+		copy.keyHistory = new long[keyHistory.length];
 		Stack<Move> reverse = new Stack<>();
 		while (moveList.hasNext())
 			reverse.add(moveList.next());
@@ -333,8 +333,8 @@ public class Position {
 		return repetitions;
 	}
 	/**Returns the 64-bit Zobrist key of the current position. A Zobrist key is used to almost uniquely hash a chess position to an integer.*/
-	public long getZobristKey() {
-		return zobristKey;
+	public long key() {
+		return key;
 	}
 	/**Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.*/
 	public Move getLastMove() {
@@ -601,23 +601,23 @@ public class Position {
 		check = (checkers != 0) ? true : false;
 	}
 	private void setKeys() {
-		zobristKey = Zobrist.updateKey(this);
-		zobristKeyHistory[halfMoveIndex] = zobristKey;
+		key = Zobrist.updateKey(this);
+		keyHistory[halfMoveIndex] = key;
 	}
 	private void extendKeyHistory() {
 		long[] temp;
-		if (zobristKeyHistory.length - halfMoveIndex <= 75) {
-			temp = zobristKeyHistory;
-			zobristKeyHistory = new long[zobristKeyHistory.length + 25];
+		if (keyHistory.length - halfMoveIndex <= 75) {
+			temp = keyHistory;
+			keyHistory = new long[keyHistory.length + 25];
 			for (int i = 0; i < temp.length; i++)
-				zobristKeyHistory[i] = temp[i];
+				keyHistory[i] = temp[i];
 		}
 	}
 	/**Should be used before resetMoveIndices().*/
 	private void setRepetitions() {
 		if (fiftyMoveRuleClock >= 4) {
 			for (int i = halfMoveIndex; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
-				if (zobristKeyHistory[i] == zobristKey)
+				if (keyHistory[i] == key)
 					repetitions++;
 			}
 		}
@@ -2076,8 +2076,8 @@ public class Position {
 			check = true;
 		else
 			check = false;
-		zobristKeyHistory[halfMoveIndex] = 0;
-		zobristKey = zobristKeyHistory[--halfMoveIndex];
+		keyHistory[halfMoveIndex] = 0;
+		key = keyHistory[--halfMoveIndex];
 	}
 	/**Makes a move specified by user input. If it is legal and the command is valid ([origin square + destination square] as e.g.: b1a3 without any spaces; in case of promotion,
 	 * the FEN notation of the piece the pawn is wished to be promoted to should be appended to the command as in c7c8q; the parser is not case sensitive), it returns true, else
@@ -2273,7 +2273,7 @@ public class Position {
 			System.out.println((char)('a' + enPassantRights));
 		System.out.printf("%-23s " + halfMoveIndex + "\n", "Half-move index:");
 		System.out.printf("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
-		System.out.printf("%-23s " + Long.toHexString(zobristKey) + "\n", "Hash key:");
+		System.out.printf("%-23s " + Long.toHexString(key) + "\n", "Hash key:");
 		System.out.printf("%-23s ", "Move history:");
 		printMoveHistoryToConsole();
 		System.out.println();

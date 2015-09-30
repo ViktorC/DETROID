@@ -17,14 +17,14 @@ public class Search extends Thread {
 	 */
 	public enum NodeType {
 		
-		EXACT		((byte)0),
-		FAIL_HIGH	((byte)1),
-		FAIL_LOW	((byte)2);
+		EXACT	 (0),
+		FAIL_HIGH(1),
+		FAIL_LOW (2);
 		
-		public final byte num;
+		public final byte numeric;
 		
-		private NodeType(byte num) {
-			this.num = num;
+		private NodeType(int numeric) {
+			this.numeric = (byte)numeric;
 		}
 	}
 	
@@ -155,11 +155,11 @@ public class Search extends Thread {
 		Move bestMove, move;
 		Queue<Move> moveQ;
 		Move[] moveArr;
-		TTEntry e = tT.lookUp(pos.zobristKey);
+		TTEntry e = tT.lookUp(pos.key);
 		if (e != null && e.depth >= depth) {
-			if (e.type == NodeType.EXACT.num)
+			if (e.type == NodeType.EXACT.numeric)
 				return e.score;
-			else if (e.type == NodeType.FAIL_HIGH.num) {
+			else if (e.type == NodeType.FAIL_HIGH.numeric) {
 				if (e.score > alpha)
 					alpha = e.score;
 			}
@@ -171,17 +171,17 @@ public class Search extends Thread {
 		}
 		if (depth == 0) {
 			score = Evaluator.score(pos);
-			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, score, (short)0, tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, score, (short)0, tTgen));
 			return score;
 		}
 		moveQ = pos.generateMoves();
 		if (moveQ.length() == 0) {
 			if (pos.getCheck()) {
-				tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, Game.State.LOSS.score, (short)0, tTgen));
+				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.LOSS.score, (short)0, tTgen));
 				return Game.State.LOSS.score;
 			}
 			else {
-				tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, Game.State.TIE.score, (short)0, tTgen));
+				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.TIE.score, (short)0, tTgen));
 				return Game.State.TIE.score;
 			}
 		}
@@ -216,11 +216,11 @@ public class Search extends Thread {
 				break;
 		}
 		if (bestMove.value <= origAlpha) 
-			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.FAIL_LOW.num, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.numeric, bestMove.value, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
-			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.FAIL_HIGH.num, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.numeric, bestMove.value, bestMove.toInt(), tTgen));
 		else
-			tT.insert(new TTEntry(pos.zobristKey, depth, NodeType.EXACT.num, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, bestMove.value, bestMove.toInt(), tTgen));
 		return bestMove.value;
 	}
 	/**Orders a list of moves according to the PV node of the given depth, history heuristics, and the MVV-LVA principle; and returns it as an array.
@@ -234,7 +234,7 @@ public class Search extends Thread {
 		Move pVmove, refutMove = null;
 		if ((pVmove = pV[ply - depth]) != null)
 			thereIsPvMove = true;
-		TTEntry e = tT.lookUp(pos.zobristKey);
+		TTEntry e = tT.lookUp(pos.key);
 		if (e != null && e.bestMove != 0) {
 			refutMove = Move.toMove(e.bestMove);
 			thereIsRefutMove = true;
@@ -268,7 +268,7 @@ public class Search extends Thread {
 		TTEntry e;
 		Move bestMove;
 		int i = 0;
-		while ((e = tT.lookUp(pos.zobristKey)) != null && e.bestMove != 0) {
+		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0) {
 			bestMove = Move.toMove(e.bestMove);
 			pos.makeMove(bestMove);
 			pV[i] = bestMove;

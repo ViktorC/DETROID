@@ -71,7 +71,7 @@ public class Zobrist {
 	 * @return
 	 */
 	public static long updateKey(Position p) {
-		long key	 	 			= p.zobristKey;
+		long key	 	 			= p.key;
 		Move move	 	 			= p.getLastMove();
 		UnmakeRegister unmakeReg	= p.getUnmakeRegister();
 		switch (move.type) {

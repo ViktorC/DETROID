@@ -10,12 +10,27 @@ import util.Comparable;
  */
 public class Move implements Comparable<Move> {
 	
-	private final static byte SHIFT_TO = 6;
-	private final static byte SHIFT_MOVED_PIECE = 12;
-	private final static byte SHIFT_CAPTURED_PIECE = 16;
-	private final static byte SHIFT_TYPE = 20;
-	private final static byte MASK_FROM_TO = 63;
-	private final static byte MASK_MOVED_CAPTURED = 15;
+	/**Mask and shift values for encoding contents of a Move object into an int; and vica versa.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	private enum ToInt {
+		
+		SHIFT_TO 			(6),
+		SHIFT_MOVED_PIECE	(12),
+		SHIFT_CAPTURED_PIECE(16),
+		SHIFT_TYPE			(20),
+		MASK_FROM_TO		(63),
+		MASK_MOVED_CAPTURED	(15);
+		
+		final byte value;
+		
+		private ToInt(int value) {
+			this.value = (byte)value;
+		}
+	}
+	
 
 	int from;			//the index of the origin square
 	int to;				//the index of the destination square
@@ -39,11 +54,11 @@ public class Move implements Comparable<Move> {
 	/**Parses a move encoded in a 32 bit integer.*/
 	public static Move toMove(int move) {
 		Move m = new Move();
-		m.from = move & MASK_FROM_TO;
-		m.to = (move >>> SHIFT_TO) & MASK_FROM_TO;
-		m.movedPiece = (move >>> SHIFT_MOVED_PIECE) & MASK_MOVED_CAPTURED;
-		m.capturedPiece = (move >>> SHIFT_CAPTURED_PIECE) & MASK_MOVED_CAPTURED;
-		m.type = move >>> SHIFT_TYPE;
+		m.from = move & ToInt.MASK_FROM_TO.value;
+		m.to = (move >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM_TO.value;
+		m.movedPiece = (move >>> ToInt.SHIFT_MOVED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value;
+		m.capturedPiece = (move >>> ToInt.SHIFT_CAPTURED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value;
+		m.type = move >>> ToInt.SHIFT_TYPE.value;
 		return m;
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
@@ -95,7 +110,8 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public int toInt() {
-		return (from | (to << SHIFT_TO) | (movedPiece << SHIFT_MOVED_PIECE) | (capturedPiece << SHIFT_CAPTURED_PIECE) | (type << SHIFT_TYPE));
+		return (from | (to << ToInt.SHIFT_TO.value) | (movedPiece << ToInt.SHIFT_MOVED_PIECE.value) |
+			   (capturedPiece << ToInt.SHIFT_CAPTURED_PIECE.value) | (type << ToInt.SHIFT_TYPE.value));
 	}
 	/**Returns whether this move is equal to the input parameter move.
 	 * 
