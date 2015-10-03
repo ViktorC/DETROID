@@ -891,12 +891,12 @@ public class Position implements Hashable {
 		if (this.whitesTurn) {
 			straightSliders = blackQueens | blackRooks;
 			diagonalSliders = blackQueens | blackBishops;
-			attRayMask 		= RayMask.getByIndex(BitOperations.indexOfBit(whiteKing));
+			attRayMask = RayMask.getByIndex(BitOperations.indexOfBit(whiteKing));
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - whiteKing) << 1)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -908,9 +908,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.filePos & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.filePos & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -929,9 +929,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.diagonalPos & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.diagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -971,9 +971,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.antiDiagonalPos & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.antiDiagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1013,9 +1013,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.rankNeg & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.rankNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMoves = BitOperations.serialize((whiteKing - pinnerBit)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1027,9 +1027,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 3) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1048,9 +1048,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.diagonalNeg & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.diagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1062,9 +1062,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.antiDiagonalNeg & allOccupied) & allWhitePieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.antiDiagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 2 || pinnedPiece == 4) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1078,12 +1078,12 @@ public class Position implements Hashable {
 		else {
 			straightSliders = whiteQueens | whiteRooks;
 			diagonalSliders = whiteQueens | whiteBishops;
-			attRayMask 		= RayMask.getByIndex(BitOperations.indexOfBit(blackKing));
+			attRayMask = RayMask.getByIndex(BitOperations.indexOfBit(blackKing));
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - blackKing) << 1)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1095,9 +1095,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.filePos & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.filePos & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1116,9 +1116,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.diagonalPos & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.diagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1130,9 +1130,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.antiDiagonalPos & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getLSBit((attRayMask.antiDiagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1144,9 +1144,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.rankNeg & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.rankNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMoves = BitOperations.serialize((blackKing - pinnerBit)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1158,9 +1158,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 9) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1179,9 +1179,9 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.diagonalNeg & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.diagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1221,9 +1221,694 @@ public class Position implements Hashable {
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.antiDiagonalNeg & allOccupied) & allBlackPieces) != 0) {
 				if ((pinnerBit = BitOperations.getMSBit((attRayMask.antiDiagonalNeg & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
-					pinnedPieces	|= pinnedPieceBit;
-					pinnedPieceInd	 = BitOperations.indexOfBit(pinnedPieceBit);
-					pinnedPiece		 = offsetBoard[pinnedPieceInd];
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 12) {
+						if (enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((allWhitePieces | (1L << (enPassantDestination = 16 + enPassantRights)) & attRayMask.antiDiagonalNeg)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
+								else if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(allWhitePieces & attRayMask.antiDiagonalNeg))) != 0) {
+								if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+		}
+		return pinnedPieces;
+	}
+	private long addTacticalPinnedPieceMoves(List<Move> moves) {
+		long straightSliders, diagonalSliders, pinnedPieceBit, pinnerBit, pinnedPieces = 0, enPassantDestination = 0;
+		int pinnedPieceInd, pinnedPiece, to;
+		RayMask attRayMask;
+		if (this.whitesTurn) {
+			straightSliders = blackQueens | blackRooks;
+			diagonalSliders = blackQueens | blackBishops;
+			attRayMask = RayMask.getByIndex(BitOperations.indexOfBit(whiteKing));
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.filePos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.filePos & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.diagonalPos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.diagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+					else if (pinnedPiece == 6) {
+						if (enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((allBlackPieces | (1L << (enPassantDestination = 40 + enPassantRights)) & attRayMask.diagonalPos)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
+								else if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(allBlackPieces & attRayMask.diagonalPos))) != 0) {
+								if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.antiDiagonalPos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.antiDiagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+					else if (pinnedPiece == 6) {
+						if (enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((allBlackPieces | (1L << (enPassantDestination = 40 + enPassantRights)) & attRayMask.antiDiagonalPos)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
+								else if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(allBlackPieces & attRayMask.antiDiagonalPos))) != 0) {
+								if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.rankNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.rankNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.diagonalNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.diagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.antiDiagonalNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.antiDiagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+		}
+		else {
+			straightSliders = whiteQueens | whiteRooks;
+			diagonalSliders = whiteQueens | whiteBishops;
+			attRayMask = RayMask.getByIndex(BitOperations.indexOfBit(blackKing));
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.filePos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.filePos & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.diagonalPos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.diagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.antiDiagonalPos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.antiDiagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.rankNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.rankNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.diagonalNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.diagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+					else if (pinnedPiece == 12) {
+						if (this.enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((allWhitePieces | (1L << (enPassantDestination = 16 + enPassantRights)) & attRayMask.diagonalNeg)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
+								else if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(allWhitePieces & attRayMask.diagonalNeg))) != 0) {
+								if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.antiDiagonalNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.antiDiagonalNeg & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						to = BitOperations.indexOfBit(pinnerBit);
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+					}
+					else if (pinnedPiece == 12) {
+						if (enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((allWhitePieces | (1L << (enPassantDestination = 16 + enPassantRights)) & attRayMask.antiDiagonalNeg)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
+								else if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(allWhitePieces & attRayMask.antiDiagonalNeg))) != 0) {
+								if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+		}
+		return pinnedPieces;
+	}
+	private long addQuietPinnedPieceMoves(List<Move> moves) {
+		long straightSliders, diagonalSliders, pinnedPieceBit, pinnerBit, pinnedPieces = 0, enPassantDestination = 0;
+		int pinnedPieceInd, pinnedPiece, to;
+		IntStack pinnedPieceMoves;
+		RayMask attRayMask;
+		if (this.whitesTurn) {
+			straightSliders = blackQueens | blackRooks;
+			diagonalSliders = blackQueens | blackBishops;
+			attRayMask = RayMask.getByIndex(BitOperations.indexOfBit(whiteKing));
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - whiteKing) << 1)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.filePos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.filePos & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 6) {
+						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.diagonalPos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.diagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 6) {
+						if (enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((allBlackPieces | (1L << (enPassantDestination = 40 + enPassantRights)) & attRayMask.diagonalPos)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
+								else if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(allBlackPieces & attRayMask.diagonalPos))) != 0) {
+								if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.antiDiagonalPos & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.antiDiagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 6) {
+						if (enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures((allBlackPieces | (1L << (enPassantDestination = 40 + enPassantRights)) & attRayMask.antiDiagonalPos)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
+								else if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnCaptures(allBlackPieces & attRayMask.antiDiagonalPos))) != 0) {
+								if (to >= 56) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.rankNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.rankNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						pinnedPieceMoves = BitOperations.serialize((whiteKing - pinnerBit)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 3) {
+						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 6) {
+						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.diagonalNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.diagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.antiDiagonalNeg & allOccupied) & allWhitePieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.antiDiagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 2 || pinnedPiece == 4) {
+						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+		}
+		else {
+			straightSliders = whiteQueens | whiteRooks;
+			diagonalSliders = whiteQueens | whiteBishops;
+			attRayMask = RayMask.getByIndex(BitOperations.indexOfBit(blackKing));
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.rankPos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.rankPos & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - blackKing) << 1)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.filePos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.filePos & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 12) {
+						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.diagonalPos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.diagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getLSBit(attRayMask.antiDiagonalPos & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getLSBit((attRayMask.antiDiagonalPos & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.rankNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.rankNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						pinnedPieceMoves = BitOperations.serialize((blackKing - pinnerBit)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 9) {
+						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 12) {
+						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.diagonalNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.diagonalNeg & allOccupied)^pinnedPieceBit)  & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
+					if (pinnedPiece == 8 || pinnedPiece == 10) {
+						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
+						while (pinnedPieceMoves.hasNext()) {
+							to = pinnedPieceMoves.next();
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						}
+					}
+					else if (pinnedPiece == 12) {
+						if (this.enPassantRights != 8) {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures((allWhitePieces | (1L << (enPassantDestination = 16 + enPassantRights)) & attRayMask.diagonalNeg)))) != 0) {
+								if (to == enPassantDestination)
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
+								else if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+						else {
+							if ((to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnCaptures(allWhitePieces & attRayMask.diagonalNeg))) != 0) {
+								if (to < 8) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								}
+								else
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							}
+						}
+					}
+				}
+			}
+			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.antiDiagonalNeg & allOccupied) & allBlackPieces) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.antiDiagonalNeg & allOccupied)^pinnedPieceBit) & diagonalSliders) != 0) {
+					pinnedPieces |= pinnedPieceBit;
+					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
+					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == 8 || pinnedPiece == 10) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
@@ -1830,8 +2515,8 @@ public class Position implements Hashable {
 			case 1: {
 				if (whitesTurn) {
 					moved = 1;
-					offsetBoard[7]	 = 0;
-					offsetBoard[5]	 = 3;
+					offsetBoard[7] = 0;
+					offsetBoard[5] = 3;
 					setBitboards(3, 0, Square.H1.bitmap, Square.F1.bitmap);
 				}
 				else {
@@ -1849,8 +2534,8 @@ public class Position implements Hashable {
 			case 2: {
 				if (whitesTurn) {
 					moved = 1;
-					offsetBoard[0]	 = 0;
-					offsetBoard[3]	 = 3;
+					offsetBoard[0] = 0;
+					offsetBoard[3] = 3;
 					setBitboards(3, 0, Square.A1.bitmap, Square.D1.bitmap);
 				}
 				else {
