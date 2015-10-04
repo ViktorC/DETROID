@@ -79,7 +79,7 @@ public class Search extends Thread {
 		if (bestMove != null)
 			return bestMove;
 		else {
-			moveList = pos.generateMoves().toArray();
+			moveList = pos.generateAllMoves().toArray();
 			return moveList[(int)Math.random()*moveList.length];
 		}
 	}
@@ -174,7 +174,7 @@ public class Search extends Thread {
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, score, (short)0, tTgen));
 			return score;
 		}
-		moveQ = pos.generateMoves();
+		moveQ = pos.generateAllMoves();
 		if (moveQ.length() == 0) {
 			if (pos.getCheck()) {
 				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.LOSS.score, (short)0, tTgen));

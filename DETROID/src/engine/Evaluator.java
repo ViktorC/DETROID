@@ -19,7 +19,7 @@ public class Evaluator {
 		int score = 0;
 		Move move;
 		IntList gloriaSquares;
-		List<Move> moves = pos.generateMoves();
+		List<Move> moves = pos.generateAllMoves();
 		if (moves.length() == 0) {
 			if (pos.getCheck())
 				return State.LOSS.score;
@@ -65,7 +65,7 @@ public class Evaluator {
 				score += 40;
 		}
 		pos.whitesTurn = !pos.whitesTurn;
-		moves = pos.generateMoves();
+		moves = pos.generateAllMoves();
 		while (moves.hasNext()) {
 			move = moves.next();
 			if (move.movedPiece == 1 || move.movedPiece == 7)
