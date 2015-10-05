@@ -2311,7 +2311,7 @@ public class Position implements Hashable {
 	 */
 	private Queue<Move> generateAllNormalMoves() {
 		long movablePieces, pieceSet, moveSet, enPassAttBits, enPassBits;
-		int king, piece, to;
+		int king, piece, to, victim;
 		IntStack pieces, moveList;
 		Move move;
 		Queue<Move> moves = new Queue<Move>();
@@ -2390,10 +2390,11 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to > 55) {
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 4));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 5));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 6));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 7));
+						victim = offsetBoard[to];
+						moves.add(new Move(piece, to, 6, victim, 4));
+						moves.add(new Move(piece, to, 6, victim, 5));
+						moves.add(new Move(piece, to, 6, victim, 6));
+						moves.add(new Move(piece, to, 6, victim, 7));
 					}
 					else
 						moves.add(new Move(piece, to, 6, offsetBoard[to], 0));
@@ -2491,10 +2492,11 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to < 8) {
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 4));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 5));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 6));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 7));
+						victim = offsetBoard[to];
+						moves.add(new Move(piece, to, 12, victim, 4));
+						moves.add(new Move(piece, to, 12, victim, 5));
+						moves.add(new Move(piece, to, 12, victim, 6));
+						moves.add(new Move(piece, to, 12, victim, 7));
 					}
 					else
 						moves.add(new Move(piece, to, 12, offsetBoard[to], 0));
@@ -2527,7 +2529,7 @@ public class Position implements Hashable {
 		long movablePieces, pieceSet, moveSet, enPassAttBits, enPassBits;
 		long queenCheckSquares, rookCheckSquares, bishopCheckSquares, knightCheckSquares, pawnCheckSquares;
 		long[] checkSquares;
-		int king, piece, to;
+		int king, piece, to, victim;
 		IntStack pieces, moveList;
 		Queue<Move> moves = new Queue<Move>();
 		if (whitesTurn) {
@@ -2598,14 +2600,15 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
+					victim = offsetBoard[to];
 					if (to > 55) {
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 4));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 5));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 6));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 7));
+						moves.add(new Move(piece, to, 6, victim, 4));
+						moves.add(new Move(piece, to, 6, victim, 5));
+						moves.add(new Move(piece, to, 6, victim, 6));
+						moves.add(new Move(piece, to, 6, victim, 7));
 					}
-					else if (to != piece + 8 || ((1L << to) & pawnCheckSquares) != 0)
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 0));
+					else if (victim != 0 || ((1L << to) & pawnCheckSquares) != 0)
+						moves.add(new Move(piece, to, 6, victim, 0));
 				}
 			}
 			if (enPassantRights != 8) {
@@ -2693,14 +2696,15 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
+					victim = offsetBoard[to];
 					if (to < 8) {
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 4));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 5));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 6));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 7));
+						moves.add(new Move(piece, to, 12, victim, 4));
+						moves.add(new Move(piece, to, 12, victim, 5));
+						moves.add(new Move(piece, to, 12, victim, 6));
+						moves.add(new Move(piece, to, 12, victim, 7));
 					}
-					else if (to != piece - 8 || ((1L << to) & pawnCheckSquares) != 0)
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 0));
+					else if (victim != 0 || ((1L << to) & pawnCheckSquares) != 0)
+						moves.add(new Move(piece, to, 12, victim, 0));
 				}
 			}
 			if (enPassantRights != 8) {
@@ -2728,7 +2732,7 @@ public class Position implements Hashable {
 	 */
 	private Queue<Move> generateTacticalNormalMoves() {
 		long movablePieces, pieceSet, moveSet, enPassAttBits, enPassBits;
-		int king, piece, to;
+		int king, piece, to, victim;
 		IntStack pieces, moveList;
 		Queue<Move> moves = new Queue<Move>();
 		if (whitesTurn) {
@@ -2793,14 +2797,15 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
+					victim = offsetBoard[to];
 					if (to > 55) {
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 4));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 5));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 6));
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 7));
+						moves.add(new Move(piece, to, 6, victim, 4));
+						moves.add(new Move(piece, to, 6, victim, 5));
+						moves.add(new Move(piece, to, 6, victim, 6));
+						moves.add(new Move(piece, to, 6, victim, 7));
 					}
-					else if (to != piece + 8)
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 0));
+					else if (victim != 0)
+						moves.add(new Move(piece, to, 6, victim, 0));
 				}
 			}
 			if (enPassantRights != 8) {
@@ -2882,14 +2887,15 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
+					victim = offsetBoard[to];
 					if (to < 8) {
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 4));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 5));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 6));
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 7));
+						moves.add(new Move(piece, to, 12, victim, 4));
+						moves.add(new Move(piece, to, 12, victim, 5));
+						moves.add(new Move(piece, to, 12, victim, 6));
+						moves.add(new Move(piece, to, 12, victim, 7));
 					}
-					else if (to != piece - 8)
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 0));
+					else if (victim != 0)
+						moves.add(new Move(piece, to, 12, victim, 0));
 				}
 			}
 			if (enPassantRights != 8) {
@@ -2973,7 +2979,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 4, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, 4, 0, 0));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -2991,14 +2997,11 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnMoves(0, allEmpty);
+				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnAdvances(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					if (to > 55) {
-						continue;
-					}
-					else
+					if (to <= 55)
 						moves.add(new Move(piece, to, 6, 0, 0));
 				}
 			}
@@ -3073,14 +3076,11 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnMoves(0, allEmpty);
+				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnAdvances(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					if (to < 8) {
-						break;
-					}
-					else
+					if (to >= 8)
 						moves.add(new Move(piece, to, 12, 0, 0));
 				}
 			}
@@ -4188,10 +4188,7 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (promotionOnBlockPossible && movedPiece == 6) {
-									break;
-								}
-								else
+								if (!promotionOnBlockPossible || movedPiece != 6)
 									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
 							}
 						}
@@ -4210,10 +4207,7 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (promotionOnBlockPossible && movedPiece == 6) {
-									break;
-								}
-								else
+								if (!promotionOnBlockPossible || movedPiece != 6)
 									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
 							}
 						}
@@ -4311,10 +4305,7 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (promotionOnBlockPossible && movedPiece == 12) {
-									break;
-								}
-								else
+								if (!promotionOnBlockPossible || movedPiece != 12)
 									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
 							}
 						}
@@ -4333,10 +4324,7 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (promotionOnBlockPossible && movedPiece == 12) {
-									break;
-								}
-								else
+								if (!promotionOnBlockPossible || movedPiece != 12)
 									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
 							}
 						}
