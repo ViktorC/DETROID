@@ -126,12 +126,12 @@ public enum MoveDatabase {
 			index = (int)((bishopOccVar[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishop[index] = bishopAttVar[i];
 		}
-		king 				= MoveMask.kingMoveMask(sqr);
-		knight 				= MoveMask.knightMoveMask(sqr);
-		pawnWhiteAdvance 	= MoveMask.whitePawnAdvanceMask(sqr);
-		pawnWhiteCapture 	= MoveMask.whitePawnCaptureMask(sqr);
-		pawnBlackAdvance 	= MoveMask.blackPawnAdvanceMask(sqr);
-		pawnBlackCapture 	= MoveMask.blackPawnCaptureMask(sqr);
+		king = MoveMask.kingMoveMask(sqr);
+		knight = MoveMask.knightMoveMask(sqr);
+		pawnWhiteAdvance = MoveMask.whitePawnAdvanceMask(sqr);
+		pawnWhiteCapture = MoveMask.whitePawnCaptureMask(sqr);
+		pawnBlackAdvance = MoveMask.blackPawnAdvanceMask(sqr);
+		pawnBlackCapture = MoveMask.blackPawnCaptureMask(sqr);
 	}
 	/**Returns a simple king move mask bitmap.
 	 * 
