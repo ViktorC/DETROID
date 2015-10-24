@@ -123,13 +123,16 @@ public class Move implements Comparable<Move> {
 			return true;
 		return false;
 	}
-	/**Returns whether this move is equal to the input parameter move.
+	/**Returns whether this move is equal to the input parameter 'compressed' move.
 	 * 
-	 * @param move
+	 * @param m
 	 * @return
 	 */
-	public boolean equls(short move) {
-		return equals(toMove(move));
+	public boolean equals(int m) {
+		if (from == (m & ToInt.MASK_FROM_TO.value) && to == ((m >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM_TO.value) &&
+			type == (m >>> ToInt.SHIFT_TYPE.value))
+			return true;
+		return false;
 	}
 	/**Prints all moves contained in the input parameter to the console.
 	 * 

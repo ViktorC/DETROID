@@ -3,7 +3,7 @@ package engine;
 import java.util.Random;
 
 import util.BitOperations;
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**A class that generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move database by multiplying the intersection
  * of the occupancy bitmap and the occupancy mask by the magic number, then right shifting the product by the magic shift value specific to the given square--calculated by extracting
@@ -50,10 +50,10 @@ public class Magics {
 	private static long[][] bishopAttackSetVariations;
 	
 	static {
-		rookOccupancyVariations = Slider.rookOccupancyVariations();
-		bishopOccupancyVariations = Slider.bishopOccupancyVariations();
-		rookAttackSetVariations = Slider.rookAttackSetVariations(rookOccupancyVariations);
-		bishopAttackSetVariations = Slider.bishopAttackSetVariations(bishopOccupancyVariations);
+		rookOccupancyVariations = SliderAttack.rookOccupancyVariations();
+		bishopOccupancyVariations = SliderAttack.bishopOccupancyVariations();
+		rookAttackSetVariations = SliderAttack.rookAttackSetVariations(rookOccupancyVariations);
+		bishopAttackSetVariations = SliderAttack.bishopAttackSetVariations(bishopOccupancyVariations);
 	}
 	/**Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
 	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right shifted by one more

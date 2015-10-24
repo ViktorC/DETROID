@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**A preinitialized move database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains a so called
  * fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the desired move sets
@@ -114,10 +114,10 @@ public enum MoveDatabase {
 		Square sqr = Square.getByIndex(sqrInd);
 		rookOccupancyMask = MoveMask.rookOccupancyMask(sqr);
 		bishopOccupancyMask = MoveMask.bishopOccupancyMask(sqr);
-		long[] rookOccVar = Slider.occupancyVariations(rookOccupancyMask);
-		long[] bishopOccVar = Slider.occupancyVariations(bishopOccupancyMask);
-		long[] rookAttVar = Slider.rookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = Slider.bishopAttackSetVariations(sqr, bishopOccVar);
+		long[] rookOccVar = SliderAttack.occupancyVariations(rookOccupancyMask);
+		long[] bishopOccVar = SliderAttack.occupancyVariations(bishopOccupancyMask);
+		long[] rookAttVar = SliderAttack.rookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = SliderAttack.bishopAttackSetVariations(sqr, bishopOccVar);
 		for (int i = 0; i < rookOccVar.length; i++) {
 			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
 			rook[index] = rookAttVar[i];

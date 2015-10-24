@@ -116,7 +116,7 @@ public class Search extends Thread {
 		return tT.size() + "\n" + tT.load();
 	}
 	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
-	 * depth, 128 has been reached.*/
+	 * depth has been reached.*/
 	public void run() {
 		numOfCores = Runtime.getRuntime().availableProcessors();
 		if (numOfCores <= 1 && pondering)
