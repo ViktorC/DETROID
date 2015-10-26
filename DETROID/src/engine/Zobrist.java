@@ -2,6 +2,11 @@ package engine;
 
 import java.util.Random;
 
+import engine.Board.Square;
+import engine.Move.MoveType;
+import engine.Position.CastlingRights;
+import engine.Position.EnPassantRights;
+
 /**A class whose object encodes the most important pieces of information stored in a Board class into a long by XOR-operations.
  * Two Board objects with identical states will always have the same Zobrist keys within one runtime and two Board objects with
  * different values for the concerned instance fields will almost always have different Zobrist keys.
@@ -21,10 +26,10 @@ import java.util.Random;
 public class Zobrist {
 	
 	private static long turn;
-	private static long[][] board = new long[13][64];
-	private static long[] whiteCastlingRights = new long[4];
-	private static long[] blackCastlingRights = new long[4];
-	private static long[] enPassantRights = new long[9];
+	private static long[][] board = new long[Piece.values().length][Square.values().length];
+	private static long[] whiteCastlingRights = new long[CastlingRights.values().length];
+	private static long[] blackCastlingRights = new long[CastlingRights.values().length];
+	private static long[] enPassantRights = new long[EnPassantRights.values().length];
 	
 	static {
 		pseudorandNumGen();
@@ -33,17 +38,17 @@ public class Zobrist {
 	private static void pseudorandNumGen() {
 		Random random = new Random();
 		turn = random.nextLong();
-		for (int i = 0; i < 64; i++)
+		for (int i = 0; i < board[0].length; i++)
 			board[0][i] = 0;
-		for (int i = 1; i < 13; i++) {
-			for (int j = 0; j < 64; j++)
+		for (int i = 1; i < board.length; i++) {
+			for (int j = 0; j < board[0].length; j++)
 				board[i][j] = random.nextLong();
 		}
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < whiteCastlingRights.length; i++)
 			whiteCastlingRights[i] = random.nextLong();
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < blackCastlingRights.length; i++)
 			blackCastlingRights[i] = random.nextLong();
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < enPassantRights.length; i++)
 			enPassantRights[i] = random.nextLong();
 	}
 	/**Encodes a Board objects and returns the 64-bit key.
@@ -56,7 +61,7 @@ public class Zobrist {
 		long key = 0;
 		if (!p.whitesTurn)
 			key ^= turn;
-		for (int i = 0; i < 64; i++) {
+		for (int i = 0; i < board64.length; i++) {
 			key ^= board[board64[i]][i];
 		}
 		key ^= whiteCastlingRights[p.whiteCastlingRights];
@@ -71,88 +76,79 @@ public class Zobrist {
 	 * @return
 	 */
 	public static long updateKey(Position p) {
-		long key	 	 			= p.key;
-		Move move	 	 			= p.getLastMove();
-		UnmakeRegister unmakeReg	= p.getUnmakeRegister();
-		switch (move.type) {
-			case 0: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				key ^= board[move.movedPiece][move.to];
+		long key = p.key;
+		Move move = p.getLastMove();
+		UnmakeRegister unmakeReg = p.getUnmakeRegister();
+		if (move.type == MoveType.NORMAL.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			key ^= board[move.movedPiece][move.to];
+		}
+		else if (move.type == MoveType.SHORT_CASTLING.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			key ^= board[move.movedPiece][move.to];
+			if (move.movedPiece == Piece.W_KING.ind) {
+				key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
+				key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
 			}
-			break;
-			case 1: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				key ^= board[move.movedPiece][move.to];
-				if (move.movedPiece == 1) {
-					key ^= board[3][7];
-					key ^= board[3][5];
-				}
-				else {
-					key ^= board[9][63];
-					key ^= board[9][61];
-				}
+			else {
+				key ^= board[Piece.B_ROOK.ind][Square.H8.ind];
+				key ^= board[Piece.B_ROOK.ind][Square.F8.ind];
 			}
-			break;
-			case 2: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				key ^= board[move.movedPiece][move.to];
-				if (move.movedPiece == 1) {
-					key ^= board[3][0];
-					key ^= board[3][3];
-				}
-				else {
-					key ^= board[9][56];
-					key ^= board[9][59];
-				}
+		}
+		else if (move.type == MoveType.LONG_CASTLING.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			key ^= board[move.movedPiece][move.to];
+			if (move.movedPiece == Piece.W_KING.ind) {
+				key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
+				key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
 			}
-			break;
-			case 3: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.movedPiece][move.to];
-				if (move.movedPiece == 6)
-					key ^= board[12][move.to - 8];
-				else
-					key ^= board[6][move.to + 8];
+			else {
+				key ^= board[Piece.B_ROOK.ind][Square.A8.ind];
+				key ^= board[Piece.B_ROOK.ind][Square.D8.ind];
 			}
-			break;
-			case 4: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == 6)
-					key ^= board[2][move.to];
-				else
-					key ^= board[8][move.to];
-			}
-			break;
-			case 5: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == 6)
-					key ^= board[3][move.to];
-				else
-					key ^= board[9][move.to];
-			}
-			break;
-			case 6: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == 6)
-					key ^= board[4][move.to];
-				else
-					key ^= board[10][move.to];
-			}
-			break;
-			case 7: {
-				key ^= board[move.movedPiece][move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == 6)
-					key ^= board[5][move.to];
-				else
-					key ^= board[11][move.to];
-			}
+		}
+		else if (move.type == MoveType.EN_PASSANT.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.movedPiece][move.to];
+			if (move.movedPiece == Piece.W_PAWN.ind)
+				key ^= board[Piece.B_PAWN.ind][move.to - 8];
+			else
+				key ^= board[Piece.W_PAWN.ind][move.to + 8];
+		}
+		else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			if (move.movedPiece == Piece.W_PAWN.ind)
+				key ^= board[Piece.W_QUEEN.ind][move.to];
+			else
+				key ^= board[Piece.B_QUEEN.ind][move.to];
+		}
+		else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			if (move.movedPiece == Piece.W_PAWN.ind)
+				key ^= board[Piece.W_ROOK.ind][move.to];
+			else
+				key ^= board[Piece.B_ROOK.ind][move.to];
+		}
+		else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			if (move.movedPiece == Piece.W_PAWN.ind)
+				key ^= board[Piece.W_BISHOP.ind][move.to];
+			else
+				key ^= board[Piece.B_BISHOP.ind][move.to];
+		}
+		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
+			key ^= board[move.movedPiece][move.from];
+			key ^= board[move.capturedPiece][move.to];
+			if (move.movedPiece == Piece.W_PAWN.ind)
+				key ^= board[Piece.W_KNIGHT.ind][move.to];
+			else
+				key ^= board[Piece.B_KNIGHT.ind][move.to];
 		}
 		key ^= turn;
 		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];

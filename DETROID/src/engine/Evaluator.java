@@ -2,6 +2,7 @@ package engine;
 
 import util.*;
 import engine.Game.State;
+import engine.Position.CastlingRights;
 
 /**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
  * kept incrementally updated after moves made using {@link #score score}.
@@ -26,16 +27,16 @@ public class Evaluator {
 			else
 				return State.TIE.score;
 		}
-		score += BitOperations.getCardinality(pos.whiteQueens)*Piece.WHITE_QUEEN.standardValue;
-		score += BitOperations.getCardinality(pos.whiteRooks)*Piece.WHITE_ROOK.standardValue;
-		score += BitOperations.getCardinality(pos.whiteBishops)*Piece.WHITE_BISHOP.standardValue;
-		score += BitOperations.getCardinality(pos.whiteKnights)*Piece.WHITE_KNIGHT.standardValue;
-		score += BitOperations.getCardinality(pos.whitePawns)*Piece.WHITE_PAWN.standardValue;
-		score -= BitOperations.getCardinality(pos.blackQueens)*Piece.BLACK_QUEEN.standardValue;
-		score -= BitOperations.getCardinality(pos.blackRooks)*Piece.BLACK_ROOK.standardValue;
-		score -= BitOperations.getCardinality(pos.blackBishops)*Piece.BLACK_BISHOP.standardValue;
-		score -= BitOperations.getCardinality(pos.blackKnights)*Piece.BLACK_KNIGHT.standardValue;
-		score -= BitOperations.getCardinality(pos.blackPawns)*Piece.BLACK_PAWN.standardValue;
+		score += BitOperations.getCardinality(pos.whiteQueens)*Piece.W_QUEEN.standardValue;
+		score += BitOperations.getCardinality(pos.whiteRooks)*Piece.W_ROOK.standardValue;
+		score += BitOperations.getCardinality(pos.whiteBishops)*Piece.W_BISHOP.standardValue;
+		score += BitOperations.getCardinality(pos.whiteKnights)*Piece.W_KNIGHT.standardValue;
+		score += BitOperations.getCardinality(pos.whitePawns)*Piece.W_PAWN.standardValue;
+		score -= BitOperations.getCardinality(pos.blackQueens)*Piece.B_QUEEN.standardValue;
+		score -= BitOperations.getCardinality(pos.blackRooks)*Piece.B_ROOK.standardValue;
+		score -= BitOperations.getCardinality(pos.blackBishops)*Piece.B_BISHOP.standardValue;
+		score -= BitOperations.getCardinality(pos.blackKnights)*Piece.B_KNIGHT.standardValue;
+		score -= BitOperations.getCardinality(pos.blackPawns)*Piece.B_PAWN.standardValue;
 		gloriaSquares = BitOperations.serialize(MoveDatabase.getByIndex(BitOperations.indexOfBit(pos.whiteKing)).getCrudeKingMoves());
 		while (gloriaSquares.hasNext())
 			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
@@ -46,9 +47,9 @@ public class Evaluator {
 			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
 		while (gloriaSquares.hasNext())
 			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
-		if (pos.whiteCastlingRights != 0)
+		if (pos.whiteCastlingRights != CastlingRights.NONE.ind)
 			score += 25;
-		if (pos.blackCastlingRights != 0)
+		if (pos.blackCastlingRights != CastlingRights.NONE.ind)
 			score -= 25;
 		if (!pos.whitesTurn)
 			score *= -1;

@@ -7,7 +7,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public class Bitboard {
+public class Board {
 	
 	/**An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
 	 * the respective square's index set.
@@ -26,17 +26,16 @@ public class Bitboard {
 		A7, B7, C7, D7, E7, F7, G7, H7,
 		A8, B8, C8, D8, E8, F8, G8, H8;
 
+		public final byte ind;
 		public final long bitmap;
 
 		private Square() {
-			bitmap = 1L << ordinal();
-		}
-		private Square(boolean flag) {
-			bitmap = 0;
+			ind = (byte)ordinal();
+			bitmap = 1L << ind;
 		}
 		/**Returns a String representation of the square.*/
 		public String toString() {
-			return toString(ordinal());
+			return toString(ind);
 		}
 		/**Returns a String representation of the square that is easily readable for humans.
 		 * 
@@ -111,7 +110,7 @@ public class Bitboard {
 		 * 
 		 * @param sqr a Square enum*/
 		public static File getBySquare(Square sqr) {
-			return getByIndex(sqr.ordinal() & 7);
+			return getByIndex(sqr.ind & 7);
 		}
 		/**Returns the file of the chess board on which the input parameter square lies.
 		 * 
@@ -156,7 +155,7 @@ public class Bitboard {
 		 * 
 		 * @param sqr a Square enum*/
 		public static Rank getBySquare(Square sqr) {
-			return getByIndex(sqr.ordinal() >>> 3);
+			return getByIndex(sqr.ind >>> 3);
 		}
 		/**Returns the rank of the chess board on which the input parameter square lies.
 		 * 
@@ -211,8 +210,7 @@ public class Bitboard {
 		 * 
 		 * @param sqr a Square enum*/
 		public static Diagonal getBySquare(Square sqr) {
-			int sqrInd = sqr.ordinal();
-			return getByIndex((sqrInd & 7) + (sqrInd >>> 3));
+			return getByIndex((sqr.ind & 7) + (sqr.ind >>> 3));
 		}
 		/**Returns the diagonal of the chess board on which the input parameter square lies.
 		 * 
@@ -266,8 +264,7 @@ public class Bitboard {
 		 * 
 		 * @param sqr a Square enum*/
 		public static AntiDiagonal getBySquare(Square sqr) {
-			int sqrInd = sqr.ordinal();
-			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
+			return getByIndex((sqr.ind & 7) + (7 - (sqr.ind >>> 3)));
 		}
 		/**Returns the anti-diagonal of the chess board on which the input parameter square lies.
 		 * 

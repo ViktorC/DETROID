@@ -1,7 +1,8 @@
 package engine;
 
 import util.*;
-import engine.Bitboard.*;
+import engine.Board.*;
+import engine.Move.*;
 
 import java.util.Scanner;
 
@@ -18,8 +19,162 @@ import java.util.Scanner;
  *  
  * @author Viktor
  *
+ * FIX ME!
+ * 	- Design a new access mechanism for the bitboards; perhaps redefine them in a separate class; See if it can be done without reducing
+ * 	  speed
  */
 public class Position implements Hashable {
+	
+	/**A simple enum type for the representation of a side's castling rights in a position.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static enum CastlingRights {
+		
+		NONE,
+		SHORT,
+		LONG,
+		ALL;
+		
+		public final byte ind;	//numeric representation of the the castling rights
+		
+		private CastlingRights() {
+			ind = (byte)ordinal();
+		}
+		/**Returns a CastlingRights type based on the argument numeral.
+		 * 
+		 * @param num
+		 * @return
+		 */
+		public static CastlingRights getByIndex(int num) {
+			switch (num) {
+			case 0: return NONE; case 1: return SHORT; case 2: return LONG; case 3: return ALL;
+			default: throw new IllegalArgumentException();
+		}
+		}
+		/**Parses a string in FEN notation and returns an array of two containing white's and black's castling rights respectively.
+		 * 
+		 * @param fen
+		 * @return
+		 */
+		public static CastlingRights[] getInstancesFromFen(String fen) {
+			if (fen == null)
+				return new CastlingRights[] { null, null };
+			if (fen.equals("-"))
+				return new CastlingRights[] { CastlingRights.NONE, CastlingRights.NONE };
+			CastlingRights whiteCastlingRights, blackCastlingRights;
+			whiteCastlingRights = CastlingRights.NONE;
+			if (fen.contains("K")) {
+				if (fen.contains("Q"))
+					whiteCastlingRights = CastlingRights.ALL;
+				else
+					whiteCastlingRights = CastlingRights.SHORT;
+			}
+			else if (fen.contains("Q"))
+				whiteCastlingRights = CastlingRights.LONG;
+			blackCastlingRights = CastlingRights.NONE;
+			if (fen.contains("k")) {
+				if (fen.contains("q"))
+					blackCastlingRights = CastlingRights.ALL;
+				else
+					blackCastlingRights = CastlingRights.SHORT;
+			}
+			else if (fen.contains("q"))
+				blackCastlingRights = CastlingRights.LONG;
+			return new CastlingRights[] { whiteCastlingRights, blackCastlingRights };
+		}
+		/**Returns a string representation in FEN notation of two castling right enum types for white and black respectively.
+		 * 
+		 * @param white
+		 * @param black
+		 * @return
+		 */
+		public static String toFen(CastlingRights white, CastlingRights black) {
+			if (white == null || black == null)
+				return null;
+			String out = "";
+			switch (white) {
+				case NONE:
+				break;
+				case SHORT:
+					out += "K";
+				break;
+				case LONG:
+					out += "Q";
+				break;
+				case ALL:
+					out += "KQ";
+			}
+			switch (white) {
+				case NONE:
+				break;
+				case SHORT:
+					out += "k";
+				break;
+				case LONG:
+					out += "q";
+				break;
+				case ALL:
+					out += "kq";
+			}
+			if (out.equals(""))
+				return "-";
+			return out;
+		}
+	}
+	
+	/**A simple enum type for the representation of a side's en passant rights in a position.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static enum EnPassantRights {
+		
+		A, B, C, D, E, F, G, H,
+		NONE;
+		
+		public final byte ind;										//numeric representation of the the en passant rights
+		public final static byte TO_W_DEST_SQR_IND = Square.A6.ind;	//the difference between the en passant right index and the square index of the destination of en passant for white
+		public final static byte TO_W_VICT_SQR_IND = Square.A5.ind;	//the difference between the en passant right index and the square index of the possible vicim of en passant for white
+		public final static byte TO_B_DEST_SQR_IND = Square.A3.ind;	//the difference between the en passant right index and the square index of the destination of en passant for black
+		public final static byte TO_B_VICT_SQR_IND = Square.A4.ind;	//the difference between the en passant right index and the square index of the possible vicim of en passant for black
+		
+		private EnPassantRights() {
+			ind = (byte)ordinal();
+		}
+		/**Returns a EnPassantRights type based on the argument numeral.
+		 * 
+		 * @param num
+		 * @return
+		 */
+		public static EnPassantRights getByIndex(int num) {
+			switch (num) {
+				case 0: return A; case 1: return B; case 2: return C; case 3: return D; case 4: return E;
+				case 5: return F; case 6: return G; case 7: return H; case 8: return NONE;
+				default: throw new IllegalArgumentException();
+			}
+		}
+		/**Parses a string in FEN notation and returns an EnPassantRights type.
+		 * 
+		 * @param fen
+		 * @return
+		 */
+		public static EnPassantRights getByFen(String fen) {
+			if (fen == null || fen.length() < 2)
+				return null;
+			if (fen.equals("-"))
+				return NONE;
+			return values()[fen.toLowerCase().charAt(0) - 'a'];
+		}
+		/**Returns a string representation.*/
+		public String toString() {
+			if (this == NONE)
+				return "-";
+			else
+				return super.toString().toLowerCase();
+		}
+	}
 	
 	//bitboards for each piece type
 	long whiteKing;
@@ -56,10 +211,10 @@ public class Position implements Hashable {
 	private int halfMoveIndex = 0;														//the count of the current ply/half-move
 	private int fiftyMoveRuleClock = 0;													//the number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
 	
-	int enPassantRights = 8;															//denotes the file on which en passant is possible; 8 means no en passant rights
+	int enPassantRights = EnPassantRights.NONE.ind;									//denotes the file on which en passant is possible; 8 means no en passant rights
 	
-	int whiteCastlingRights = 3;														//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
-	int blackCastlingRights = 3;														//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
+	int whiteCastlingRights = CastlingRights.ALL.ind;								//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
+	int blackCastlingRights = CastlingRights.ALL.ind;								//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
 	
 	private Stack<Move> moveList = new Stack<Move>();									//a stack of all the moves made so far
 	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
@@ -85,6 +240,8 @@ public class Position implements Hashable {
 		String board, turn, castling, enPassant, rank;
 		char piece;
 		int pieceNum, index = 0, fiftyMoveRuleClock, moveIndex;
+		CastlingRights[] castlingRights;
+		EnPassantRights enPassantRights;
 		if (fenFields.length == 6) {
 			try {
 				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
@@ -118,9 +275,9 @@ public class Position implements Hashable {
 		ranks = board.split("/");
 		if (ranks.length != 8)
 			throw new IllegalArgumentException("The board position representation does not have eight ranks.");
-		offsetBoard = new int[64];
-		for (int i = 0; i < 64; i++)
-			offsetBoard[i] = 0;
+		offsetBoard = new int[Square.values().length];
+		for (int i = Square.A1.ind; i < Square.H8.ind + 1; i++)
+			offsetBoard[i] = Piece.NULL.ind;
 		for (int i = 7; i >= 0; i--) {
 			rank = ranks[i];
 			for (int j = 0; j < rank.length(); j++) {
@@ -129,64 +286,53 @@ public class Position implements Hashable {
 				if (pieceNum >= 0 && pieceNum <= 8)
 					index += pieceNum;
 				else {
+					offsetBoard[index] = Piece.getByFenNotation(piece).ind;
 					switch (piece) {
 						case 'K': {
-							offsetBoard[index] = 1;
 							whiteKing = Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'Q': {
-							offsetBoard[index] = 2;
 							whiteQueens	|= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'R': {
-							offsetBoard[index] = 3;
 							whiteRooks |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'B': {
-							offsetBoard[index] = 4;
 							whiteBishops |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'N': {
-							offsetBoard[index] = 5;
 							whiteKnights |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'P': {
-							offsetBoard[index] = 6;
 							whitePawns |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'k': {
-							offsetBoard[index] = 7;
 							blackKing = Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'q': {
-							offsetBoard[index] = 8;
 							blackQueens |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'r': {
-							offsetBoard[index] = 9;
 							blackRooks |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'b': {
-							offsetBoard[index] = 10;
 							blackBishops |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'n': {
-							offsetBoard[index] = 11;
 							blackKnights |= Square.getByIndex(index).bitmap;
 						}
 						break;
 						case 'p': {
-							offsetBoard[index] = 12;
 							blackPawns |= Square.getByIndex(index).bitmap;
 						}
 					}
@@ -199,37 +345,27 @@ public class Position implements Hashable {
 			whitesTurn = true;
 		else
 			whitesTurn = false;
-		whiteCastlingRights = 0;
-		if (castling.contains("K"))
-			whiteCastlingRights += 1;
-		if (castling.contains("Q"))
-			whiteCastlingRights += 2;
-		blackCastlingRights = 0;
-		if (castling.contains("k"))
-			blackCastlingRights += 1;
-		if (castling.contains("q"))
-			blackCastlingRights += 2;
-		if (enPassant.compareTo("-") == 0)
-			enPassantRights = 8;
-		else
-			enPassantRights = enPassant.toLowerCase().charAt(0) - 'a';
+		castlingRights = CastlingRights.getInstancesFromFen(castling);
+		whiteCastlingRights = castlingRights[0] != null ? castlingRights[0].ind : whiteCastlingRights;
+		blackCastlingRights = castlingRights[1] != null ? castlingRights[1].ind : blackCastlingRights;
+		enPassantRights = EnPassantRights.getByFen(enPassant);
+		this.enPassantRights = enPassantRights != null ? enPassantRights.ind : this.enPassantRights;
 		setCheck();
 		initializeZobristKeys();
 	}
 	private void initializeBitboards() {
-		whiteKing = Piece.WHITE_KING.initPosBitmap;
-		whiteQueens = Piece.WHITE_QUEEN.initPosBitmap;
-		whiteRooks = Piece.WHITE_ROOK.initPosBitmap;
-		whiteBishops = Piece.WHITE_BISHOP.initPosBitmap;
-		whiteKnights = Piece.WHITE_KNIGHT.initPosBitmap;
-		whitePawns = Piece.WHITE_PAWN.initPosBitmap;
-		
-		blackKing = Piece.BLACK_KING.initPosBitmap;
-		blackQueens = Piece.BLACK_QUEEN.initPosBitmap;
-		blackRooks = Piece.BLACK_ROOK.initPosBitmap;
-		blackBishops = Piece.BLACK_BISHOP.initPosBitmap;
-		blackKnights = Piece.BLACK_KNIGHT.initPosBitmap;
-		blackPawns = Piece.BLACK_PAWN.initPosBitmap;
+		whiteKing = 0b0000000000000000000000000000000000000000000000000000000000010000L;
+		whiteQueens = 0b0000000000000000000000000000000000000000000000000000000000001000L;
+		whiteRooks = 0b0000000000000000000000000000000000000000000000000000000010000001L;
+		whiteBishops = 0b0000000000000000000000000000000000000000000000000000000000100100L;
+		whiteKnights = 0b0000000000000000000000000000000000000000000000000000000001000010L;
+		whitePawns = 0b0000000000000000000000000000000000000000000000001111111100000000L;
+		blackKing = 0b0001000000000000000000000000000000000000000000000000000000000000L;
+		blackQueens = 0b0000100000000000000000000000000000000000000000000000000000000000L;
+		blackRooks = 0b1000000100000000000000000000000000000000000000000000000000000000L;
+		blackBishops = 0b0010010000000000000000000000000000000000000000000000000000000000L;
+		blackKnights = 0b0100001000000000000000000000000000000000000000000000000000000000L;
+		blackPawns = 0b0000000011111111000000000000000000000000000000000000000000000000L;
 		updateAllCollections();
 	}
 	private void updateAllCollections() {
@@ -241,28 +377,29 @@ public class Position implements Hashable {
 		allEmpty = ~allOccupied;
 	}
 	private void initializeOffsetBoard() {
-		offsetBoard = new int[64];
-		offsetBoard[0] = Piece.WHITE_ROOK.numericNotation;
-		offsetBoard[1] = Piece.WHITE_KNIGHT.numericNotation;
-		offsetBoard[2] = Piece.WHITE_BISHOP.numericNotation;
-		offsetBoard[3] = Piece.WHITE_QUEEN.numericNotation;
-		offsetBoard[4] = Piece.WHITE_KING.numericNotation;
-		offsetBoard[5] = Piece.WHITE_BISHOP.numericNotation;
-		offsetBoard[6] = Piece.WHITE_KNIGHT.numericNotation;
-		offsetBoard[7] = Piece.WHITE_ROOK.numericNotation;
-		for (int i = 8; i < 16; i++)
-			offsetBoard[i] = Piece.WHITE_PAWN.numericNotation;
-		
-		for (int i = 48; i < 56; i++)
-			offsetBoard[i] = Piece.BLACK_PAWN.numericNotation;
-		offsetBoard[56] = Piece.BLACK_ROOK.numericNotation;
-		offsetBoard[57] = Piece.BLACK_KNIGHT.numericNotation;
-		offsetBoard[58] = Piece.BLACK_BISHOP.numericNotation;
-		offsetBoard[59] = Piece.BLACK_QUEEN.numericNotation;
-		offsetBoard[60] = Piece.BLACK_KING.numericNotation;
-		offsetBoard[61] = Piece.BLACK_BISHOP.numericNotation;
-		offsetBoard[62] = Piece.BLACK_KNIGHT.numericNotation;
-		offsetBoard[63] = Piece.BLACK_ROOK.numericNotation;
+		offsetBoard = new int[Square.values().length];
+		offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
+		offsetBoard[Square.B1.ind] = Piece.W_KNIGHT.ind;
+		offsetBoard[Square.C1.ind] = Piece.W_BISHOP.ind;
+		offsetBoard[Square.D1.ind] = Piece.W_QUEEN.ind;
+		offsetBoard[Square.E1.ind] = Piece.W_KING.ind;
+		offsetBoard[Square.F1.ind] = Piece.W_BISHOP.ind;
+		offsetBoard[Square.G1.ind] = Piece.W_KNIGHT.ind;
+		offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
+		for (int i = Square.A2.ind; i < Square.A3.ind; i++)
+			offsetBoard[i] = Piece.W_PAWN.ind;
+		for (int i = Square.A3.ind; i < Square.A7.ind; i++)
+			offsetBoard[i] = Piece.NULL.ind;
+		for (int i = Square.A7.ind; i < Square.A8.ind; i++)
+			offsetBoard[i] = Piece.B_PAWN.ind;
+		offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
+		offsetBoard[Square.B8.ind] = Piece.B_KNIGHT.ind;
+		offsetBoard[Square.C8.ind] = Piece.B_BISHOP.ind;
+		offsetBoard[Square.D8.ind] = Piece.B_QUEEN.ind;
+		offsetBoard[Square.E8.ind] = Piece.B_KING.ind;
+		offsetBoard[Square.F8.ind] = Piece.B_BISHOP.ind;
+		offsetBoard[Square.G8.ind] = Piece.B_KNIGHT.ind;
+		offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
 	}
 	private void initializeZobristKeys() {
 		//"The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves." - half of that is used as the initial length of the history array
@@ -304,27 +441,15 @@ public class Position implements Hashable {
 	public long getFiftyMoveRuleClock() {
 		return fiftyMoveRuleClock;
 	}
-	/**Returns a number denoting white's castling rights.
-	 * 0 - no castling rights
-	 * 1 - king-side castling only
-	 * 2 - queen-side castling only
-	 * 3 - all castling rights
-	 */
+	/**Returns a number denoting white's castling rights according to the {@link #engine.Position.CastlingRights CastlingRights} definition.*/
 	public int getWhiteCastlingRights() {
 		return whiteCastlingRights;
 	}
-	/**Returns a number denoting black's castling rights.
-	 * 0 - no castling rights
-	 * 1 - king-side castling only
-	 * 2 - queen-side castling only
-	 * 3 - all castling rights
-	 */
+	/**Returns a number denoting black's castling rights according to the {@link #engine.Position.CastlingRights CastlingRights} definition.*/
 	public int getBlackCastlingRights() {
 		return blackCastlingRights;
 	}
-	/**Returns a number denoting the file on which in the current position en passant is possible.
-	 * 0 - a; 1 - b; ...; 7 - h; 8 - no en passant rights
-	 */
+	/**Returns a number denoting  the en passant rights of the current position according to the {@link #engine.Position.EnPassantRights EnPassantRights} definition.*/
 	public int getEnPassantRights() {
 		return enPassantRights;
 	}
@@ -346,173 +471,99 @@ public class Position implements Hashable {
 	}
 	private void setBitboards(int moved, int captured, long fromBit, long toBit) {
 		if (whitesTurn) {
-			switch (moved) {
-				case 1: {
+			PseudoSwitch1: {
+				if (moved == Piece.W_KING.ind) {
 					whiteKing ^= fromBit;
 					whiteKing ^= toBit;
-					allWhiteOccupied ^= fromBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
-				break;
-				case 2: {
+				else if (moved == Piece.W_QUEEN.ind) {
 					whiteQueens ^= fromBit;
 					whiteQueens ^= toBit;
-					allWhiteOccupied ^= fromBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
-				break;
-				case 3: {
+				else if (moved == Piece.W_ROOK.ind) {
 					whiteRooks ^= fromBit;
 					whiteRooks ^= toBit;
-					allWhiteOccupied ^= fromBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
-				break;
-				case 4: {
+				else if (moved == Piece.W_BISHOP.ind) {
 					whiteBishops ^= fromBit;
 					whiteBishops ^= toBit;
-					allWhiteOccupied ^= fromBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
-				break;
-				case 5: {
+				else if (moved == Piece.W_KNIGHT.ind) {
 					whiteKnights ^= fromBit;
 					whiteKnights ^= toBit;
-					allWhiteOccupied ^= fromBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
-				break;
-				case 6: {
+				else if (moved == Piece.W_PAWN.ind) {
 					whitePawns ^= fromBit;
 					whitePawns ^= toBit;
-					allWhiteOccupied ^= fromBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
+				else break PseudoSwitch1;
+				allWhiteOccupied ^= fromBit;
+				allWhiteOccupied ^= toBit;
+				allNonWhiteOccupied = ~allWhiteOccupied;
 			}
-			switch (captured) {
-				case 0:
-				break;
-				case 8: {
+			PseudoSwitch2: {
+				if (captured == Piece.NULL.ind) break PseudoSwitch2;
+				else if (captured == Piece.B_QUEEN.ind)
 					blackQueens ^= toBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
-				}
-				break;
-				case 9: {
+				else if (captured == Piece.B_ROOK.ind)
 					blackRooks ^= toBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
-				}
-				break;
-				case 10: {
+				else if (captured == Piece.B_BISHOP.ind)
 					blackBishops ^= toBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
-				}
-				break;
-				case 11: {
+				else if (captured == Piece.B_KNIGHT.ind)
 					blackKnights ^= toBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
-				}
-				break;
-				case 12: {
+				else if (captured == Piece.B_PAWN.ind)
 					blackPawns ^= toBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
-				}
+				allBlackOccupied ^= toBit;
+				allNonBlackOccupied = ~allBlackOccupied;
 			}
 			allOccupied = allWhiteOccupied | allBlackOccupied;
 			allEmpty = ~allOccupied;
 		}
 		else {
-			switch (moved) {
-				case 7: {
+			PseudoSwitch1: {
+				if (moved == Piece.B_KING.ind) {
 					blackKing ^= fromBit;
 					blackKing ^= toBit;
-					allBlackOccupied ^= fromBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
 				}
-				break;
-				case 8: {
+				else if (moved == Piece.B_QUEEN.ind) {
 					blackQueens ^= fromBit;
 					blackQueens ^= toBit;
-					allBlackOccupied ^= fromBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
 				}
-				break;
-				case 9: {
+				else if (moved == Piece.B_ROOK.ind) {
 					blackRooks ^= fromBit;
 					blackRooks ^= toBit;
-					allBlackOccupied ^= fromBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
 				}
-				break;
-				case 10: {
+				else if (moved == Piece.B_BISHOP.ind) {
 					blackBishops ^= fromBit;
 					blackBishops ^= toBit;
-					allBlackOccupied ^= fromBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
 				}
-				break;
-				case 11: {
+				else if (moved == Piece.B_KNIGHT.ind) {
 					blackKnights ^= fromBit;
 					blackKnights ^= toBit;
-					allBlackOccupied ^= fromBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
 				}
-				break;
-				case 12: {
+				else if (moved == Piece.B_PAWN.ind) {
 					blackPawns ^= fromBit;
 					blackPawns ^= toBit;
-					allBlackOccupied ^= fromBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
 				}
+				else break PseudoSwitch1;
+				allBlackOccupied ^= fromBit;
+				allBlackOccupied ^= toBit;
+				allNonBlackOccupied = ~allBlackOccupied;
 			}
-			switch (captured) {
-				case 0:
-				break;
-				case 2: {
+			PseudoSwitch2: {
+				if (captured == Piece.NULL.ind) break PseudoSwitch2;
+				else if (captured == Piece.W_QUEEN.ind)
 					whiteQueens ^= toBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
-				}
-				break;
-				case 3: {
+				else if (captured == Piece.W_ROOK.ind)
 					whiteRooks ^= toBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
-				}
-				break;
-				case 4: {
+				else if (captured == Piece.W_BISHOP.ind)
 					whiteBishops ^= toBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
-				}
-				break;
-				case 5: {
+				else if (captured == Piece.W_KNIGHT.ind)
 					whiteKnights ^= toBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
-				}
-				break;
-				case 6: {
+				else if (captured == Piece.W_PAWN.ind)
 					whitePawns ^= toBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
-				}
+				allWhiteOccupied ^= toBit;
+				allNonWhiteOccupied = ~allWhiteOccupied;
 			}
 			allOccupied = allWhiteOccupied | allBlackOccupied;
 			allEmpty = ~allOccupied;
@@ -523,19 +574,19 @@ public class Position implements Hashable {
 	}
 	private void setMoveIndices(int moved, int captured) {
 		halfMoveIndex++;
-		if (captured != 0 || moved == 6 || moved == 12)
+		if (captured != Piece.NULL.ind || moved == Piece.W_PAWN.ind || moved == Piece.B_PAWN.ind)
 			fiftyMoveRuleClock = 0;
 		else
 			fiftyMoveRuleClock++;
 	}
 	private void setEnPassantRights(int from, int to, int movedPiece) {
-		if (movedPiece == 6) {
+		if (movedPiece == Piece.W_PAWN.ind) {
 			if (to - from == 16) {
 				enPassantRights = to%8;
 				return;
 			}
 		}
-		else if (movedPiece == 12) {
+		else if (movedPiece == Piece.B_PAWN.ind) {
 			if (from - to == 16) {
 				enPassantRights = to%8;
 				return;
@@ -545,54 +596,43 @@ public class Position implements Hashable {
 	}
 	private void setCastlingRights() {
 		if (whitesTurn) {
-			switch (whiteCastlingRights) {
-				case 0: return;
-				case 1: {
-					if (offsetBoard[4] != 1 || offsetBoard[7] != 3)
-						whiteCastlingRights = 0;
+			if (whiteCastlingRights == CastlingRights.SHORT.ind) {
+				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (whiteCastlingRights == CastlingRights.LONG.ind) {
+				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (whiteCastlingRights == CastlingRights.ALL.ind) {
+				if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
+					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.LONG.ind;
+					if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.SHORT.ind;
 				}
-				break;
-				case 2: {
-					if (offsetBoard[4] != 1 || offsetBoard[0] != 3)
-						whiteCastlingRights = 0;
-				}
-				break;
-				case 3: {
-					if (offsetBoard[4] == 1) {
-						if (offsetBoard[7] != 3)
-							whiteCastlingRights -= 1;
-						if (offsetBoard[0] != 3)
-							whiteCastlingRights -= 2;
-					}
-					else
-						whiteCastlingRights = 0;
-				}
+				else
+					whiteCastlingRights = CastlingRights.NONE.ind;
 			}
 		}
 		else {
-			switch (blackCastlingRights) {
-				case 0:
-					return;
-				case 1: {
-					if (offsetBoard[60] != 7 || offsetBoard[63] != 9)
-						blackCastlingRights = 0;
+			if (blackCastlingRights == CastlingRights.SHORT.ind) {
+				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (blackCastlingRights == CastlingRights.LONG.ind) {
+				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (blackCastlingRights == CastlingRights.ALL.ind) {
+				if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
+					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.LONG.ind;
+					if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.SHORT.ind;
 				}
-				break;
-				case 2: {
-					if (offsetBoard[60] != 7 || offsetBoard[56] != 9)
-						blackCastlingRights = 0;
-				}
-				break;
-				case 3: {
-					if (offsetBoard[60] == 7) {
-						if (offsetBoard[63] != 9)
-							blackCastlingRights -= 1;
-						if (offsetBoard[56] != 9)
-							blackCastlingRights -= 2;
-					}
-					else
-						blackCastlingRights = 0;
-				}
+				else
+					blackCastlingRights = CastlingRights.NONE.ind;
 			}
 		}
 	}
@@ -643,7 +683,7 @@ public class Position implements Hashable {
 				return true;
 			if (((whiteQueens | whiteBishops) & dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied)) != 0)
 				return true;
-			if (offsetBoard[sqrInd] == 12 && enPassantRights != 8 && sqrInd == 32 + enPassantRights) {
+			if (offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights) {
 				if ((whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap) != 0)
 					return true;
 			}
@@ -659,7 +699,7 @@ public class Position implements Hashable {
 				return true;
 			if (((blackQueens | blackBishops) & dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied)) != 0)
 				return true;
-			if (offsetBoard[sqrInd] == 6 && enPassantRights != 8 && sqrInd == 24 + enPassantRights) {
+			if (offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights) {
 				if ((blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap) != 0)
 					return true;
 			}
@@ -703,7 +743,7 @@ public class Position implements Hashable {
 			attackers |= whitePawns & dB.getCrudeBlackPawnCaptures();
 			attackers |= (whiteQueens | whiteRooks) & dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
 			attackers |= (whiteQueens | whiteBishops) & dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
-			if (offsetBoard[sqrInd] == 12 && enPassantRights != 8 && sqrInd == 32 + enPassantRights)
+			if (offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
 				attackers |=  whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap;
 		}
 		else {
@@ -712,7 +752,7 @@ public class Position implements Hashable {
 			attackers |= blackPawns & dB.getCrudeWhitePawnCaptures();
 			attackers |= (blackQueens | blackRooks) & dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
 			attackers |= (blackQueens | blackBishops) & dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
-			if (offsetBoard[sqrInd] == 6 && enPassantRights != 8 && sqrInd == 24 + enPassantRights)
+			if (offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
 				attackers |=  blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap;
 		}
 		return attackers;
@@ -992,11 +1032,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - whiteKing) << 1)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1006,18 +1046,18 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1027,38 +1067,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd + 7)) & (pinnerBit | (1L << (enPassantDestination = 40 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd + 7)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
-								else if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd + 7) == pinnerBit) {
-								if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1069,38 +1109,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd + 9)) & (pinnerBit | (1L << (enPassantDestination = 40 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd + 9)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
-								else if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd + 9) == pinnerBit) {
-								if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1111,11 +1151,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((whiteKing - pinnerBit)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1125,18 +1165,18 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1146,11 +1186,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1160,11 +1200,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1179,11 +1219,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - blackKing) << 1)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1193,18 +1233,18 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1214,7 +1254,7 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
@@ -1228,7 +1268,7 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
@@ -1242,32 +1282,32 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((blackKing - pinnerBit)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
 			}
 			if ((pinnedPieceBit = BitOperations.getMSBit(attRayMask.fileNeg & allOccupied) & allBlackOccupied) != 0) {
-				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit)  & straightSliders) != 0) {
+				if ((pinnerBit = BitOperations.getMSBit((attRayMask.fileNeg & allOccupied)^pinnedPieceBit) & straightSliders) != 0) {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1277,38 +1317,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
-						if (this.enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd - 7)) & (pinnerBit | (1L << (enPassantDestination = 16 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
+						if (this.enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd - 7)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
-								else if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd - 7) == pinnerBit) {
-								if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1319,38 +1359,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd - 9)) & (pinnerBit | (1L << (enPassantDestination = 16 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd - 9)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
-								else if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd - 9) == pinnerBit) {
-								if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1382,11 +1422,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - whiteKing) << 1) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1396,16 +1436,16 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.filePos) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnCheckSquares);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1414,38 +1454,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.diagonalPos) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd + 7)) & (pinnerBit | (1L << (enPassantDestination = 40 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd + 7)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
-								else if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd + 7) == pinnerBit) {
-								if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1456,38 +1496,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - whiteKing) << 1) & attRayMask.antiDiagonalPos) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd + 9)) & (pinnerBit | (1L << (enPassantDestination = 40 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd + 9)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
-								else if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd + 9) == pinnerBit) {
-								if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1498,11 +1538,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((whiteKing - pinnerBit) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1512,16 +1552,16 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.fileNeg) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnCheckSquares);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1530,11 +1570,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.diagonalNeg) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1544,11 +1584,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - pinnerBit) & attRayMask.antiDiagonalNeg) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1563,11 +1603,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - blackKing) << 1) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1577,16 +1617,16 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.filePos) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnCheckSquares);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1595,11 +1635,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.diagonalPos) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1609,11 +1649,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - blackKing) << 1) & attRayMask.antiDiagonalPos) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1623,11 +1663,11 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((blackKing - pinnerBit) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
 				}
@@ -1637,16 +1677,16 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.fileNeg) & (pinnerBit | rookCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnCheckSquares);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1655,38 +1695,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.diagonalNeg) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
-						if (this.enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd - 7)) & (pinnerBit | (1L << (enPassantDestination = 16 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
+						if (this.enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd - 7)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
-								else if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd - 7) == pinnerBit) {
-								if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1697,38 +1737,38 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - pinnerBit) & attRayMask.antiDiagonalNeg) & (pinnerBit | bishopCheckSquares));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
-							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 						}
 					}
-					else if (pinnedPiece == 12) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd - 9)) & (pinnerBit | (1L << (enPassantDestination = 16 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd - 9)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
-								else if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd - 9) == pinnerBit) {
-								if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -1760,10 +1800,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1))^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1772,15 +1812,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - (whiteKing << 1)) & attRayMask.filePos)^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1789,10 +1829,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - (whiteKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1801,10 +1841,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - (whiteKing << 1)) & attRayMask.antiDiagonalPos)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1813,10 +1853,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1))^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1825,15 +1865,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((whiteKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1842,10 +1882,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((whiteKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1854,10 +1894,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((whiteKing - (pinnerBit << 1)) & attRayMask.antiDiagonalNeg)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1871,10 +1911,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1))^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1883,15 +1923,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - (blackKing << 1)) & attRayMask.filePos)^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1900,10 +1940,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - (blackKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1912,10 +1952,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((pinnerBit - (blackKing << 1)) & attRayMask.antiDiagonalPos)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1924,10 +1964,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1))^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1936,15 +1976,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((blackKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit) & rookNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1953,10 +1993,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((blackKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1965,10 +2005,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize((((blackKing - (pinnerBit << 1)) & attRayMask.antiDiagonalNeg)^pinnedPieceBit) & bishopNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -1994,9 +2034,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2005,9 +2045,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2016,35 +2056,35 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 6) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd + 7)) & (pinnerBit | (1L << (enPassantDestination = 40 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd + 7)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
-								else if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd + 7) == pinnerBit) {
-								if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -2055,35 +2095,35 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 6) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd + 9)) & (pinnerBit | (1L << (enPassantDestination = 40 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd + 9)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 12, 3));
-								else if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd + 9) == pinnerBit) {
-								if (to >= 56) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to >= Square.A8.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -2094,9 +2134,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2105,9 +2145,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2116,9 +2156,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2127,9 +2167,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2143,9 +2183,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2154,9 +2194,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2165,9 +2205,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2176,9 +2216,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2187,9 +2227,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2198,9 +2238,9 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2209,35 +2249,35 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 12) {
-						if (this.enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd - 7)) & (pinnerBit | (1L << (enPassantDestination = 16 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
+						if (this.enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd - 7)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
-								else if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd - 7) == pinnerBit) {
-								if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -2248,35 +2288,35 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						to = BitOperations.indexOfBit(pinnerBit);
-						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 12) {
-						if (enPassantRights != 8) {
-							if (((1L << (to = pinnedPieceInd - 9)) & (pinnerBit | (1L << (enPassantDestination = 16 + enPassantRights)))) != 0) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
+						if (enPassantRights != EnPassantRights.NONE.ind) {
+							if (((1L << (to = pinnedPieceInd - 9)) & (pinnerBit | (1L << (enPassantDestination = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)))) != 0) {
 								if (to == enPassantDestination)
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, 6, 3));
-								else if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
+								else if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 						else {
 							if (1L << (to = pinnedPieceInd - 9) == pinnerBit) {
-								if (to < 8) {
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 4));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 5));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 6));
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 7));
+								if (to < Square.A2.ind) {
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
 								else
-									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], 0));
+									moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 							}
 						}
 					}
@@ -2305,10 +2345,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((pinnerBit - (whiteKing << 1))^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2317,15 +2357,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1)) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2334,10 +2374,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2346,10 +2386,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1)) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2358,10 +2398,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((whiteKing - (pinnerBit << 1))^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2370,15 +2410,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 3) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 6) {
+					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, 0));
 					}
 				}
 			}
@@ -2387,10 +2427,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2399,10 +2439,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 2 || pinnedPiece == 4) {
+					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1)) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2416,10 +2456,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((pinnerBit - (blackKing << 1))^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2428,15 +2468,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1)) & attRayMask.filePos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2445,10 +2485,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2457,10 +2497,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1)) & attRayMask.antiDiagonalPos)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2469,10 +2509,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize((blackKing - (pinnerBit << 1))^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2481,15 +2521,15 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 9) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
-					else if (pinnedPiece == 12) {
+					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2498,10 +2538,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2510,10 +2550,10 @@ public class Position implements Hashable {
 					pinnedPieces |= pinnedPieceBit;
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
-					if (pinnedPiece == 8 || pinnedPiece == 10) {
+					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
 						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1)) & attRayMask.antiDiagonalNeg)^pinnedPieceBit);
 						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, 0, 0));
+							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 				}
 			}
@@ -2537,18 +2577,18 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
-			if ((whiteCastlingRights & 2) != 0) {
+			if (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
-					if ((move = moves.getTail()) != null && move.to == 3 && !isAttacked(2, false))
-						moves.add(new Move(king, 2, 1, 0, 2));
+					if ((move = moves.getTail()) != null && move.to == Square.D1.ind && !isAttacked(Square.C1.ind, false))
+						moves.add(new Move(king, Square.C1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.numeral));
 				}
 			}
-			if ((whiteCastlingRights & 1) != 0) {
+			if (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
-					if (!isAttacked(5, false) && !isAttacked(6, false))
-						moves.add(new Move(king, 6, 1, 0, 1));
+					if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+						moves.add(new Move(king, Square.G1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.numeral));
 				}
 			}
 			movablePieces = ~addAllPinnedPieceMoves(moves);
@@ -2560,7 +2600,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 2, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteRooks & movablePieces;
@@ -2571,7 +2611,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 3, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteBishops & movablePieces;
@@ -2582,7 +2622,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 4, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -2593,7 +2633,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 5, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whitePawns & movablePieces;
@@ -2604,19 +2644,19 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					if (to > 55) {
+					if (to >= Square.A8.ind) {
 						victim = offsetBoard[to];
-						moves.add(new Move(piece, to, 6, victim, 4));
-						moves.add(new Move(piece, to, 6, victim, 5));
-						moves.add(new Move(piece, to, 6, victim, 6));
-						moves.add(new Move(piece, to, 6, victim, 7));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
 					else
-						moves.add(new Move(piece, to, 6, offsetBoard[to], 0));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
-			if (enPassantRights != 8) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = 40 + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
+			if (enPassantRights != EnPassantRights.NONE.ind) {
+				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2625,7 +2665,7 @@ public class Position implements Hashable {
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 						if (!isAttackedBySliders(king, false))
-							moves.add(new Move(piece, to, 6, 12, 3));
+							moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 					}
@@ -2639,18 +2679,18 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
-			if ((blackCastlingRights & 1) != 0) {
+			if (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
-					if ((move = moves.getHead()) != null && move.to == 61 && !isAttacked(62, true))
-						moves.add(new Move(king, 62, 7, 0, 1));
+					if ((move = moves.getHead()) != null && move.to == Square.F8.ind && !isAttacked(Square.G8.ind, true))
+						moves.add(new Move(king, Square.G8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.numeral));
 				}
 			}
-			if ((blackCastlingRights & 2) != 0) {
+			if (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
-					if (!isAttacked(58, true) && !isAttacked(59, true))
-						moves.add(new Move(king, 58, 7, 0, 2));
+					if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+						moves.add(new Move(king, Square.C8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.numeral));
 				}
 			}
 			movablePieces = ~addAllPinnedPieceMoves(moves);
@@ -2662,7 +2702,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 8, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackRooks & movablePieces;
@@ -2673,7 +2713,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 9, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackBishops & movablePieces;
@@ -2684,7 +2724,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 10, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackKnights & movablePieces;
@@ -2695,7 +2735,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 11, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackPawns & movablePieces;
@@ -2706,19 +2746,19 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					if (to < 8) {
+					if (to < Square.A2.ind) {
 						victim = offsetBoard[to];
-						moves.add(new Move(piece, to, 12, victim, 4));
-						moves.add(new Move(piece, to, 12, victim, 5));
-						moves.add(new Move(piece, to, 12, victim, 6));
-						moves.add(new Move(piece, to, 12, victim, 7));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
 					else
-						moves.add(new Move(piece, to, 12, offsetBoard[to], 0));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
-			if (enPassantRights != 8) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = 16 + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
+			if (enPassantRights != EnPassantRights.NONE.ind) {
+				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2727,7 +2767,7 @@ public class Position implements Hashable {
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 						if (!isAttackedBySliders(king, true))
-							moves.add(new Move(piece, to, 12, 6, 3));
+							moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 					}
@@ -2759,7 +2799,7 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 			movablePieces = ~addTacticalPinnedPieceMoves(moves, rookCheckSquares, bishopCheckSquares, pawnCheckSquares);
 			pieceSet = whiteQueens & movablePieces;
@@ -2770,7 +2810,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 2, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteRooks & movablePieces;
@@ -2781,7 +2821,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 3, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteBishops & movablePieces;
@@ -2792,7 +2832,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 4, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -2803,7 +2843,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 5, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whitePawns & movablePieces;
@@ -2815,18 +2855,18 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					victim = offsetBoard[to];
-					if (to > 55) {
-						moves.add(new Move(piece, to, 6, victim, 4));
-						moves.add(new Move(piece, to, 6, victim, 5));
-						moves.add(new Move(piece, to, 6, victim, 6));
-						moves.add(new Move(piece, to, 6, victim, 7));
+					if (to >= Square.A8.ind) {
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
 					else if (victim != 0 || ((1L << to) & pawnCheckSquares) != 0)
-						moves.add(new Move(piece, to, 6, victim, 0));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.NORMAL.numeral));
 				}
 			}
-			if (enPassantRights != 8) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = 40 + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
+			if (enPassantRights != EnPassantRights.NONE.ind) {
+				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2835,7 +2875,7 @@ public class Position implements Hashable {
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 						if (!isAttackedBySliders(king, false))
-							moves.add(new Move(piece, to, 6, 12, 3));
+							moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 					}
@@ -2849,7 +2889,7 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 			movablePieces = ~addTacticalPinnedPieceMoves(moves, rookCheckSquares, bishopCheckSquares, pawnCheckSquares);
 			pieceSet = blackQueens & movablePieces;
@@ -2860,7 +2900,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 8, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackRooks & movablePieces;
@@ -2871,7 +2911,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 9, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackBishops & movablePieces;
@@ -2882,7 +2922,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 10, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackKnights & movablePieces;
@@ -2893,7 +2933,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 11, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackPawns & movablePieces;
@@ -2905,18 +2945,18 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					victim = offsetBoard[to];
-					if (to < 8) {
-						moves.add(new Move(piece, to, 12, victim, 4));
-						moves.add(new Move(piece, to, 12, victim, 5));
-						moves.add(new Move(piece, to, 12, victim, 6));
-						moves.add(new Move(piece, to, 12, victim, 7));
+					if (to < Square.A2.ind) {
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
 					else if (victim != 0 || ((1L << to) & pawnCheckSquares) != 0)
-						moves.add(new Move(piece, to, 12, victim, 0));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.NORMAL.numeral));
 				}
 			}
-			if (enPassantRights != 8) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = 16 + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
+			if (enPassantRights != EnPassantRights.NONE.ind) {
+				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2925,7 +2965,7 @@ public class Position implements Hashable {
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 						if (!isAttackedBySliders(king, true))
-							moves.add(new Move(piece, to, 12, 6, 3));
+							moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 					}
@@ -2958,18 +2998,18 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, 0, 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 			}
-			if ((whiteCastlingRights & 2) != 0) {
+			if (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
-					if ((move = moves.getTail()) != null && move.to == 3 && !isAttacked(2, false))
-						moves.add(new Move(king, 2, 1, 0, 2));
+					if ((move = moves.getTail()) != null && move.to == Square.D1.ind && !isAttacked(Square.C1.ind, false))
+						moves.add(new Move(king, Square.C1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.numeral));
 				}
 			}
-			if ((whiteCastlingRights & 1) != 0) {
+			if (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
-					if (!isAttacked(5, false) && !isAttacked(6, false))
-						moves.add(new Move(king, 6, 1, 0, 1));
+					if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+						moves.add(new Move(king, Square.G1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.numeral));
 				}
 			}
 			movablePieces = ~addQuietPinnedPieceMoves(moves, checkSquares[1], checkSquares[2], checkSquares[3]);
@@ -2981,7 +3021,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 2, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteRooks & movablePieces;
@@ -2992,7 +3032,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 3, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteBishops & movablePieces;
@@ -3003,7 +3043,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 4, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -3014,7 +3054,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 5, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whitePawns & movablePieces;
@@ -3026,7 +3066,7 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to <= 55)
-						moves.add(new Move(piece, to, 6, 0, 0));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -3037,18 +3077,18 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, 0, 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 			}
-			if ((blackCastlingRights & 1) != 0) {
+			if (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
-					if ((move = moves.getHead()) != null && move.to == 61 && !isAttacked(62, true))
-						moves.add(new Move(king, 62, 7, 0, 1));
+					if ((move = moves.getHead()) != null && move.to == Square.F8.ind && !isAttacked(Square.G8.ind, true))
+						moves.add(new Move(king, Square.G8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.numeral));
 				}
 			}
-			if ((blackCastlingRights & 2) != 0) {
+			if (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
-					if (!isAttacked(58, true) && !isAttacked(59, true))
-						moves.add(new Move(king, 58, 7, 0, 2));
+					if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+						moves.add(new Move(king, Square.C8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.numeral));
 				}
 			}
 			movablePieces = ~addQuietPinnedPieceMoves(moves, checkSquares[1], checkSquares[2], checkSquares[3]);
@@ -3060,7 +3100,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 8, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackRooks & movablePieces;
@@ -3071,7 +3111,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 9, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackBishops & movablePieces;
@@ -3082,7 +3122,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 10, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackKnights & movablePieces;
@@ -3093,7 +3133,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 11, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackPawns & movablePieces;
@@ -3105,7 +3145,7 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to >= 8)
-						moves.add(new Move(piece, to, 12, 0, 0));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -3128,7 +3168,7 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 			movablePieces = ~addMaterialPinnedPieceMoves(moves);
 			pieceSet = whiteQueens & movablePieces;
@@ -3139,7 +3179,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 2, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteRooks & movablePieces;
@@ -3150,7 +3190,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 3, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteBishops & movablePieces;
@@ -3161,7 +3201,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 4, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -3172,7 +3212,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 5, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whitePawns & movablePieces;
@@ -3184,18 +3224,18 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					victim = offsetBoard[to];
-					if (to > 55) {
-						moves.add(new Move(piece, to, 6, victim, 4));
-						moves.add(new Move(piece, to, 6, victim, 5));
-						moves.add(new Move(piece, to, 6, victim, 6));
-						moves.add(new Move(piece, to, 6, victim, 7));
+					if (to >= Square.A8.ind) {
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
 					else if (victim != 0)
-						moves.add(new Move(piece, to, 6, victim, 0));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.NORMAL.numeral));
 				}
 			}
-			if (enPassantRights != 8) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = 40 + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
+			if (enPassantRights != EnPassantRights.NONE.ind) {
+				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -3204,7 +3244,7 @@ public class Position implements Hashable {
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 						if (!isAttackedBySliders(king, false))
-							moves.add(new Move(piece, to, 6, 12, 3));
+							moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 					}
@@ -3218,7 +3258,7 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 			movablePieces = ~addMaterialPinnedPieceMoves(moves);
 			pieceSet = blackQueens & movablePieces;
@@ -3229,7 +3269,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 8, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackRooks & movablePieces;
@@ -3240,7 +3280,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 9, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackBishops & movablePieces;
@@ -3251,7 +3291,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 10, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackKnights & movablePieces;
@@ -3262,7 +3302,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 11, offsetBoard[to], 0));
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackPawns & movablePieces;
@@ -3274,18 +3314,18 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					victim = offsetBoard[to];
-					if (to < 8) {
-						moves.add(new Move(piece, to, 12, victim, 4));
-						moves.add(new Move(piece, to, 12, victim, 5));
-						moves.add(new Move(piece, to, 12, victim, 6));
-						moves.add(new Move(piece, to, 12, victim, 7));
+					if (to < Square.A2.ind) {
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
 					else if (victim != 0)
-						moves.add(new Move(piece, to, 12, victim, 0));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.NORMAL.numeral));
 				}
 			}
-			if (enPassantRights != 8) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = 16 + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
+			if (enPassantRights != EnPassantRights.NONE.ind) {
+				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -3294,7 +3334,7 @@ public class Position implements Hashable {
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 						if (!isAttackedBySliders(king, true))
-							moves.add(new Move(piece, to, 12, 6, 3));
+							moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
 					}
@@ -3321,18 +3361,18 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, 0, 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 			}
-			if ((whiteCastlingRights & 2) != 0) {
+			if (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
-					if ((move = moves.getTail()) != null && move.to == 3 && !isAttacked(2, false))
-						moves.add(new Move(king, 2, 1, 0, 2));
+					if ((move = moves.getTail()) != null && move.to == Square.D1.ind && !isAttacked(Square.C1.ind, false))
+						moves.add(new Move(king, Square.C1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.numeral));
 				}
 			}
-			if ((whiteCastlingRights & 1) != 0) {
+			if (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
-					if (!isAttacked(5, false) && !isAttacked(6, false))
-						moves.add(new Move(king, 6, 1, 0, 1));
+					if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+						moves.add(new Move(king, Square.G1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.numeral));
 				}
 			}
 			movablePieces = ~addNonMaterialPinnedPieceMoves(moves);
@@ -3344,7 +3384,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 2, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteRooks & movablePieces;
@@ -3355,7 +3395,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 3, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteBishops & movablePieces;
@@ -3366,7 +3406,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 4, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -3377,7 +3417,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 5, 0, 0));
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = whitePawns & movablePieces;
@@ -3389,7 +3429,7 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to <= 55)
-						moves.add(new Move(piece, to, 6, 0, 0));
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -3400,18 +3440,18 @@ public class Position implements Hashable {
 			while (moveList.hasNext()) {
 				to = moveList.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, 0, 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 			}
-			if ((blackCastlingRights & 1) != 0) {
+			if (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
-					if ((move = moves.getHead()) != null && move.to == 61 && !isAttacked(62, true))
-						moves.add(new Move(king, 62, 7, 0, 1));
+					if ((move = moves.getHead()) != null && move.to == Square.F8.ind && !isAttacked(Square.G8.ind, true))
+						moves.add(new Move(king, Square.G8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.numeral));
 				}
 			}
-			if ((blackCastlingRights & 2) != 0) {
+			if (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 				if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
-					if (!isAttacked(58, true) && !isAttacked(59, true))
-						moves.add(new Move(king, 58, 7, 0, 2));
+					if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+						moves.add(new Move(king, Square.C8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.numeral));
 				}
 			}
 			movablePieces = ~addNonMaterialPinnedPieceMoves(moves);
@@ -3423,7 +3463,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 8, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackRooks & movablePieces;
@@ -3434,7 +3474,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 9, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackBishops & movablePieces;
@@ -3445,7 +3485,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 10, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackKnights & movablePieces;
@@ -3456,7 +3496,7 @@ public class Position implements Hashable {
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, 11, 0, 0));
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			pieceSet = blackPawns & movablePieces;
@@ -3468,7 +3508,7 @@ public class Position implements Hashable {
 				while (moveList.hasNext()) {
 					to = moveList.next();
 					if (to >= 8)
-						moves.add(new Move(piece, to, 12, 0, 0));
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -3502,20 +3542,20 @@ public class Position implements Hashable {
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
 					movedPiece = offsetBoard[checkerAttackerSquare];
-					if (movedPiece == 6) {
+					if (movedPiece == Piece.W_PAWN.ind) {
 						if (promotionOnAttackPossible) {
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 4));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 5));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 6));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 7));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_QUEEN.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_ROOK.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.numeral));
 						}
-						else if (enPassantRights != 8 && checker1 == 32 + enPassantRights)
-							moves.add(new Move(checkerAttackerSquare, checker1 + 8, movedPiece, checkerPiece1, 3));
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
+							moves.add(new Move(checkerAttackerSquare, checker1 + 8, movedPiece, checkerPiece1, MoveType.EN_PASSANT.numeral));
 						else
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 					}
 					else
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 				}
 				switch (checkerPiece1) {
 					case 8: {
@@ -3534,20 +3574,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 6) {
+								if (movedPiece == Piece.W_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -3565,20 +3605,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 6) {
+								if (movedPiece == Piece.W_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3594,14 +3634,14 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 6) {
-									if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+								if (movedPiece == Piece.W_PAWN.ind) {
+									if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -3611,7 +3651,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -3651,7 +3691,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -3671,20 +3711,20 @@ public class Position implements Hashable {
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
 					movedPiece = offsetBoard[checkerAttackerSquare];
-					if (movedPiece == 12) {
+					if (movedPiece == Piece.B_PAWN.ind) {
 						if (promotionOnAttackPossible) {
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 4));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 5));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 6));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 7));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_QUEEN.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_ROOK.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.numeral));
 						}
-						else if (enPassantRights != 8 && checker1 == 24 + enPassantRights)
-							moves.add(new Move(checkerAttackerSquare, checker1 - 8, movedPiece, checkerPiece1, 3));
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
+							moves.add(new Move(checkerAttackerSquare, checker1 - 8, movedPiece, checkerPiece1, MoveType.EN_PASSANT.numeral));
 						else
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 					}
 					else
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 				}
 				switch (checkerPiece1) {
 					case 2: {
@@ -3703,20 +3743,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 12) {
+								if (movedPiece == Piece.B_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -3734,20 +3774,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 12) {
+								if (movedPiece == Piece.B_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, 0));
 								}
 								else
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, 0));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3763,14 +3803,14 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 12) {
-									if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+								if (movedPiece == Piece.B_PAWN.ind) {
+									if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -3780,7 +3820,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -3820,7 +3860,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -3862,20 +3902,20 @@ public class Position implements Hashable {
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
 					movedPiece = offsetBoard[checkerAttackerSquare];
-					if (movedPiece == 6) {
+					if (movedPiece == Piece.W_PAWN.ind) {
 						if (promotionOnAttackPossible) {
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 4));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 5));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 6));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 7));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_QUEEN.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_ROOK.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.numeral));
 						}
-						else if (enPassantRights != 8 && checker1 == 32 + enPassantRights)
-							moves.add(new Move(checkerAttackerSquare, checker1 + 8, movedPiece, checkerPiece1, 3));
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
+							moves.add(new Move(checkerAttackerSquare, checker1 + 8, movedPiece, checkerPiece1, MoveType.EN_PASSANT.numeral));
 						else
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 					}
 					else
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 				}
 				switch (checkerPiece1) {
 					case 8: {
@@ -3896,20 +3936,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 6) {
+								if (movedPiece == Piece.W_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else if ((squareOfInterventionBit & pawnCheckSquares) != 0)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else if ((checkSquares[movedPiece - 2] & squareOfInterventionBit) != 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -3929,20 +3969,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 6) {
+								if (movedPiece == Piece.W_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else if ((squareOfInterventionBit & pawnCheckSquares) != 0)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else if ((checkSquares[movedPiece - 2] & squareOfInterventionBit) != 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -3960,14 +4000,14 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 6) {
-									if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+								if (movedPiece == Piece.W_PAWN.ind) {
+									if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else if ((squareOfInterventionBit & pawnCheckSquares) != 0)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else if ((checkSquares[movedPiece - 2] & squareOfInterventionBit) != 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -3977,7 +4017,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -4017,7 +4057,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -4037,20 +4077,20 @@ public class Position implements Hashable {
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
 					movedPiece = offsetBoard[checkerAttackerSquare];
-					if (movedPiece == 12) {
+					if (movedPiece == Piece.B_PAWN.ind) {
 						if (promotionOnAttackPossible) {
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 4));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 5));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 6));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 7));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_QUEEN.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_ROOK.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.numeral));
 						}
-						else if (enPassantRights != 8 && checker1 == 24 + enPassantRights)
-							moves.add(new Move(checkerAttackerSquare, checker1 - 8, movedPiece, checkerPiece1, 3));
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
+							moves.add(new Move(checkerAttackerSquare, checker1 - 8, movedPiece, checkerPiece1, MoveType.EN_PASSANT.numeral));
 						else
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 					}
 					else
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 				}
 				switch (checkerPiece1) {
 					case 2: {
@@ -4071,20 +4111,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 12) {
+								if (movedPiece == Piece.B_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else if ((squareOfInterventionBit & pawnCheckSquares) != 0)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else if ((checkSquares[movedPiece - 8] & squareOfInterventionBit) != 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4104,20 +4144,20 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 12) {
+								if (movedPiece == Piece.B_PAWN.ind) {
 									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 									}
-									else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+									else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else if ((squareOfInterventionBit & pawnCheckSquares) != 0)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else if ((checkSquares[movedPiece - 8] & squareOfInterventionBit) != 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -4135,14 +4175,14 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == 12) {
-									if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+								if (movedPiece == Piece.B_PAWN.ind) {
+									if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 									else if ((squareOfInterventionBit & pawnCheckSquares) != 0)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 								}
 								else if ((checkSquares[movedPiece - 8] & squareOfInterventionBit) != 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -4152,7 +4192,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -4192,7 +4232,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -4239,8 +4279,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if ((!promotionOnBlockPossible || movedPiece != 6) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if ((!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4258,8 +4298,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if ((!promotionOnBlockPossible || movedPiece != 6) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if ((!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -4276,7 +4316,7 @@ public class Position implements Hashable {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
 								if ((squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -4286,7 +4326,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, 0, 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -4326,7 +4366,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, 0, 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -4358,8 +4398,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if ((!promotionOnBlockPossible || movedPiece != 12) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if ((!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4377,8 +4417,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if ((!promotionOnBlockPossible || movedPiece != 12) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if ((!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind) && (squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -4395,7 +4435,7 @@ public class Position implements Hashable {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
 								if ((squareOfIntervention & checkSquares[movedPiece - 2]) == 0)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -4405,7 +4445,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, 0, 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -4445,7 +4485,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, 0, 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -4481,20 +4521,20 @@ public class Position implements Hashable {
 				while (checkerAttackers.hasNext()) {
 					checkerAttackerSquare = checkerAttackers.next();
 					movedPiece = offsetBoard[checkerAttackerSquare];
-					if (movedPiece == 6) {
+					if (movedPiece == Piece.W_PAWN.ind) {
 						if (promotionOnAttackPossible) {
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 4));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 5));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 6));
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 7));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_QUEEN.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_ROOK.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.numeral));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.numeral));
 						}
-						else if (enPassantRights != 8 && checker1 == 32 + enPassantRights)
-							moves.add(new Move(checkerAttackerSquare, checker1 + 8, movedPiece, checkerPiece1, 3));
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
+							moves.add(new Move(checkerAttackerSquare, checker1 + 8, movedPiece, checkerPiece1, MoveType.EN_PASSANT.numeral));
 						else
-							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 					}
 					else
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 				}
 				switch (checkerPiece1) {
 				case 8: {
@@ -4513,15 +4553,15 @@ public class Position implements Hashable {
 						while (checkerBlockers.hasNext()) {
 							checkerBlockerSquare = checkerBlockers.next();
 							movedPiece = offsetBoard[checkerBlockerSquare];
-							if (movedPiece == 6) {
+							if (movedPiece == Piece.W_PAWN.ind) {
 								if (promotionOnBlockPossible) {
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
-								else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+								else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 							}
 						}
 					}
@@ -4540,15 +4580,15 @@ public class Position implements Hashable {
 						while (checkerBlockers.hasNext()) {
 							checkerBlockerSquare = checkerBlockers.next();
 							movedPiece = offsetBoard[checkerBlockerSquare];
-							if (movedPiece == 6) {
+							if (movedPiece == Piece.W_PAWN.ind) {
 								if (promotionOnBlockPossible) {
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
-								else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+								else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 							}
 						}
 					}
@@ -4565,9 +4605,9 @@ public class Position implements Hashable {
 						while (checkerBlockers.hasNext()) {
 							checkerBlockerSquare = checkerBlockers.next();
 							movedPiece = offsetBoard[checkerBlockerSquare];
-							if (movedPiece == 6) {
-								if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 40)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 12, 3));
+							if (movedPiece == Piece.W_PAWN.ind) {
+								if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.B_PAWN.ind, MoveType.EN_PASSANT.numeral));
 							}
 						}
 					}
@@ -4578,7 +4618,7 @@ public class Position implements Hashable {
 			while (kingMoves.hasNext()) {
 				to = kingMoves.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 		}
 		else {
@@ -4618,7 +4658,7 @@ public class Position implements Hashable {
 			while (kingMoves.hasNext()) {
 				to = kingMoves.next();
 				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, 1, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 		}
 	}
@@ -4638,20 +4678,20 @@ public class Position implements Hashable {
 			while (checkerAttackers.hasNext()) {
 				checkerAttackerSquare = checkerAttackers.next();
 				movedPiece = offsetBoard[checkerAttackerSquare];
-				if (movedPiece == 12) {
+				if (movedPiece == Piece.B_PAWN.ind) {
 					if (promotionOnAttackPossible) {
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 4));
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 5));
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 6));
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 7));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_QUEEN.numeral));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_ROOK.numeral));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.numeral));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.numeral));
 					}
-					else if (enPassantRights != 8 && checker1 == 24 + enPassantRights)
-						moves.add(new Move(checkerAttackerSquare, checker1 - 8, movedPiece, checkerPiece1, 3));
+					else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
+						moves.add(new Move(checkerAttackerSquare, checker1 - 8, movedPiece, checkerPiece1, MoveType.EN_PASSANT.numeral));
 					else
-						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 				}
 				else
-					moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, 0));
+					moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.numeral));
 			}
 			switch (checkerPiece1) {
 				case 2: {
@@ -4670,15 +4710,15 @@ public class Position implements Hashable {
 						while (checkerBlockers.hasNext()) {
 							checkerBlockerSquare = checkerBlockers.next();
 							movedPiece = offsetBoard[checkerBlockerSquare];
-							if (movedPiece == 12) {
+							if (movedPiece == Piece.B_PAWN.ind) {
 								if (promotionOnBlockPossible) {
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
-								else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+								else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, MoveType.EN_PASSANT.numeral));
 							}
 						}
 					}
@@ -4697,15 +4737,15 @@ public class Position implements Hashable {
 						while (checkerBlockers.hasNext()) {
 							checkerBlockerSquare = checkerBlockers.next();
 							movedPiece = offsetBoard[checkerBlockerSquare];
-							if (movedPiece == 12) {
+							if (movedPiece == Piece.B_PAWN.ind) {
 								if (promotionOnBlockPossible) {
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 4));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 5));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 6));
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 7));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.numeral));
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.numeral));
 								}
-								else if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+								else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, MoveType.EN_PASSANT.numeral));
 							}
 						}
 					}
@@ -4722,9 +4762,9 @@ public class Position implements Hashable {
 						while (checkerBlockers.hasNext()) {
 							checkerBlockerSquare = checkerBlockers.next();
 							movedPiece = offsetBoard[checkerBlockerSquare];
-							if (movedPiece == 12) {
-								if (enPassantRights != 8 && squareOfIntervention == enPassantRights + 16)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 6, 3));
+							if (movedPiece == Piece.B_PAWN.ind) {
+								if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.W_PAWN.ind, MoveType.EN_PASSANT.numeral));
 							}
 						}
 					}
@@ -4735,7 +4775,7 @@ public class Position implements Hashable {
 			while (kingMoves.hasNext()) {
 				to = kingMoves.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 		}
 		else {
@@ -4775,7 +4815,7 @@ public class Position implements Hashable {
 			while (kingMoves.hasNext()) {
 				to = kingMoves.next();
 				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, 7, offsetBoard[to], 0));
+					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.numeral));
 			}
 		}
 	}
@@ -4822,8 +4862,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != 6)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4841,8 +4881,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != 6)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -4857,7 +4897,7 @@ public class Position implements Hashable {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare], 0, 0));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare], Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -4867,7 +4907,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, 0, 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -4907,7 +4947,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, false))
-						moves.add(new Move(king, to, 1, 0, 0));
+						moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -4939,8 +4979,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != 12)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4958,8 +4998,8 @@ public class Position implements Hashable {
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
 								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != 12)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, 0, 0));
+								if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
+									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeRookMoves();
@@ -4974,7 +5014,7 @@ public class Position implements Hashable {
 							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
 							while (checkerBlockers.hasNext()) {
 								checkerBlockerSquare = checkerBlockers.next();
-								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare], 0, 0));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare], Piece.NULL.ind, MoveType.NORMAL.numeral));
 							}
 						}
 						kingMoveSet &= ~dB.getCrudeBishopMoves();
@@ -4984,7 +5024,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, 0, 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 			else {
@@ -5024,7 +5064,7 @@ public class Position implements Hashable {
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
 					if (!isAttacked(to, true))
-						moves.add(new Move(king, to, 7, 0, 0));
+						moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.numeral));
 				}
 			}
 		}
@@ -5104,140 +5144,130 @@ public class Position implements Hashable {
 		long toBit = Square.getByIndex(move.to).bitmap;
 		int enPassantVictimSquare;
 		long enPassantVictimSquareBit;
-		switch (move.type) {
-			case 0: {
-				moved = offsetBoard[move.from];
-				offsetBoard[move.from] = 0;
-				captured = offsetBoard[move.to];
-				offsetBoard[move.to] = moved;
-				setBitboards(moved, captured, fromBit, toBit);
+		if (move.type == MoveType.NORMAL.numeral) {
+			moved = offsetBoard[move.from];
+			offsetBoard[move.from] = Piece.NULL.ind;
+			captured = offsetBoard[move.to];
+			offsetBoard[move.to] = moved;
+			setBitboards(moved, captured, fromBit, toBit);
+		}
+		else if (move.type == MoveType.SHORT_CASTLING.numeral) {
+			if (whitesTurn) {
+				moved = Piece.W_KING.ind;
+				offsetBoard[Square.H1.ind] = Piece.NULL.ind;
+				offsetBoard[Square.F1.ind] = Piece.W_ROOK.ind;
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.H1.bitmap, Square.F1.bitmap);
 			}
-			break;
-			case 1: {
-				if (whitesTurn) {
-					moved = 1;
-					offsetBoard[7] = 0;
-					offsetBoard[5] = 3;
-					setBitboards(3, 0, Square.H1.bitmap, Square.F1.bitmap);
-				}
-				else {
-					moved = 7;
-					offsetBoard[63] = 0;
-					offsetBoard[61] = 9;
-					setBitboards(9, 0, Square.H8.bitmap, Square.F8.bitmap);
-				}
-				captured = 0;
-				offsetBoard[move.from] = 0;
-				offsetBoard[move.to] = moved;
-				setBitboards(moved, 0, fromBit, toBit);
+			else {
+				moved = Piece.B_KING.ind;
+				offsetBoard[Square.H8.ind] = Piece.NULL.ind;
+				offsetBoard[Square.F8.ind] = Piece.B_ROOK.ind;
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.H8.bitmap, Square.F8.bitmap);
 			}
-			break;
-			case 2: {
-				if (whitesTurn) {
-					moved = 1;
-					offsetBoard[0] = 0;
-					offsetBoard[3] = 3;
-					setBitboards(3, 0, Square.A1.bitmap, Square.D1.bitmap);
-				}
-				else {
-					moved = 7;
-					offsetBoard[56] = 0;
-					offsetBoard[59] = 9;
-					setBitboards(9, 0, Square.A8.bitmap, Square.D8.bitmap);
-				}
-				captured = 0;
-				offsetBoard[move.from] = 0;
-				offsetBoard[move.to] = moved;
-				setBitboards(moved, 0, fromBit, toBit);
+			captured = Piece.NULL.ind;
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = moved;
+			setBitboards(moved, Piece.NULL.ind, fromBit, toBit);
+		}
+		else if (move.type == MoveType.LONG_CASTLING.numeral) {
+			if (whitesTurn) {
+				moved = Piece.W_KING.ind;
+				offsetBoard[Square.A1.ind] = Piece.NULL.ind;
+				offsetBoard[Square.D1.ind] = Piece.W_ROOK.ind;
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.A1.bitmap, Square.D1.bitmap);
 			}
-			break;
-			case 3: {
-				if (whitesTurn) {
-					moved = 6;
-					captured = 12;
-					enPassantVictimSquare = move.to - 8;
-				}
-				else {
-					moved = 12;
-					captured = 6;
-					enPassantVictimSquare = move.to + 8;
-				}
-				offsetBoard[move.from] = 0;
-				offsetBoard[move.to] = moved;
-				offsetBoard[enPassantVictimSquare] = 0;
-				enPassantVictimSquareBit = Square.getByIndex(enPassantVictimSquare).bitmap;
-				setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
-				setBitboards(moved, 0, enPassantVictimSquareBit, toBit);
+			else {
+				moved = Piece.B_KING.ind;
+				offsetBoard[Square.A8.ind] = Piece.NULL.ind;
+				offsetBoard[Square.D8.ind] = Piece.B_ROOK.ind;
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.A8.bitmap, Square.D8.bitmap);
 			}
-			break;
-			case 4: {
-				captured = offsetBoard[move.to];
-				if (whitesTurn) {
-					moved = 6;
-					offsetBoard[move.to] = 2;
-					setBitboards(2, captured, 0, toBit);
-				}
-				else {
-					moved = 12;
-					offsetBoard[move.to] = 8;
-					setBitboards(8, captured, 0, toBit);
-				}
-				offsetBoard[move.from] = 0;
-				setBitboards(moved, 0, fromBit, 0);
+			captured = Piece.NULL.ind;
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = moved;
+			setBitboards(moved, Piece.NULL.ind, fromBit, toBit);
+		}
+		else if (move.type == MoveType.EN_PASSANT.numeral) {
+			if (whitesTurn) {
+				moved = Piece.W_PAWN.ind;
+				captured = Piece.B_PAWN.ind;
+				enPassantVictimSquare = move.to - 8;
 			}
-			break;
-			case 5: {
-				captured = offsetBoard[move.to];
-				if (whitesTurn) {
-					moved = 6;
-					offsetBoard[move.to] = 3;
-					setBitboards(3, captured, 0, toBit);
-				}
-				else {
-					moved = 12;
-					offsetBoard[move.to] = 9;
-					setBitboards(9, captured, 0, toBit);
-				}
-				offsetBoard[move.from] = 0;
-				setBitboards(moved, 0, fromBit, 0);
+			else {
+				moved = Piece.B_PAWN.ind;
+				captured = Piece.W_PAWN.ind;
+				enPassantVictimSquare = move.to + 8;
 			}
-			break;
-			case 6: {
-				captured = offsetBoard[move.to];
-				if (whitesTurn) {
-					moved = 6;
-					offsetBoard[move.to] = 4;
-					setBitboards(4, captured, 0, toBit);
-				}
-				else {
-					moved = 12;
-					offsetBoard[move.to] = 10;
-					setBitboards(10, captured, 0, toBit);
-				}
-				offsetBoard[move.from] = 0;
-				setBitboards(moved, 0, fromBit, 0);
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = moved;
+			offsetBoard[enPassantVictimSquare] = Piece.NULL.ind;
+			enPassantVictimSquareBit = Square.getByIndex(enPassantVictimSquare).bitmap;
+			setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
+			setBitboards(moved, Piece.NULL.ind, enPassantVictimSquareBit, toBit);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
+			captured = offsetBoard[move.to];
+			if (whitesTurn) {
+				moved = Piece.W_PAWN.ind;
+				offsetBoard[move.to] = Piece.W_QUEEN.ind;
+				setBitboards(Piece.W_QUEEN.ind, captured, Piece.NULL.ind, toBit);
 			}
-			break;
-			case 7: {
-				captured = offsetBoard[move.to];
-				if (whitesTurn) {
-					moved = 6;
-					offsetBoard[move.to] = 5;
-					setBitboards(5, captured, 0, toBit);
-				}
-				else {
-					moved = 12;
-					offsetBoard[move.to] = 11;
-					setBitboards(11, captured, 0, toBit);
-				}
-				offsetBoard[move.from] = 0;
-				setBitboards(moved, 0, fromBit, 0);
+			else {
+				moved = Piece.B_PAWN.ind;
+				offsetBoard[move.to] = Piece.W_QUEEN.ind;
+				setBitboards(Piece.W_QUEEN.ind, captured, Piece.NULL.ind, toBit);
 			}
-			break;
-			default: {
-				moved = -1;
-				captured = -1;
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
+			captured = offsetBoard[move.to];
+			if (whitesTurn) {
+				moved = Piece.W_PAWN.ind;
+				offsetBoard[move.to] = Piece.W_ROOK.ind;
+				setBitboards(Piece.W_ROOK.ind, captured, 0, toBit);
 			}
+			else {
+				moved = Piece.B_PAWN.ind;
+				offsetBoard[move.to] = Piece.B_ROOK.ind;
+				setBitboards(Piece.B_ROOK.ind, captured, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
+			captured = offsetBoard[move.to];
+			if (whitesTurn) {
+				moved = Piece.W_PAWN.ind;
+				offsetBoard[move.to] = Piece.W_BISHOP.ind;
+				setBitboards(Piece.W_BISHOP.ind, captured, 0, toBit);
+			}
+			else {
+				moved = Piece.B_PAWN.ind;
+				offsetBoard[move.to] = Piece.B_BISHOP.ind;
+				setBitboards(Piece.B_BISHOP.ind, captured, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
+			captured = offsetBoard[move.to];
+			if (whitesTurn) {
+				moved = Piece.W_PAWN.ind;
+				offsetBoard[move.to] = Piece.W_KNIGHT.ind;
+				setBitboards(Piece.W_KNIGHT.ind, captured, 0, toBit);
+			}
+			else {
+				moved = Piece.B_PAWN.ind;
+				offsetBoard[move.to] = Piece.B_KNIGHT.ind;
+				setBitboards(Piece.B_KNIGHT.ind, captured, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
+		}
+		else {
+			moved = Piece.NULL.ind;
+			captured = Piece.NULL.ind;
 		}
 		moveList.add(move);
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions, checkers));
@@ -5259,100 +5289,91 @@ public class Position implements Hashable {
 		if (move != null) {
 			long fromBit = Square.getByIndex(move.from).bitmap;
 			long toBit = Square.getByIndex(move.to).bitmap;
-			switch (move.type) {
-				case 0: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = move.capturedPiece;
-					setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
+			if (move.type == MoveType.NORMAL.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
+			}
+			else if (move.type == MoveType.SHORT_CASTLING.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+				if (whitesTurn) {
+					offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
+					offsetBoard[Square.F1.ind] = Piece.NULL.ind;
+					setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.F1.bitmap, Square.H1.bitmap);
 				}
-				break;
-				case 1: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = 0;
-					setBitboards(move.movedPiece, 0, fromBit, toBit);
-					if (whitesTurn) {
-						offsetBoard[7] = 3;
-						offsetBoard[5] = 0;
-						setBitboards(3, 0, Square.F1.bitmap, Square.H1.bitmap);
-					}
-					else {
-						offsetBoard[63] = 9;
-						offsetBoard[61] = 0;
-						setBitboards(9, 0, Square.F8.bitmap, Square.H8.bitmap);
-					}
+				else {
+					offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
+					offsetBoard[Square.F8.ind] = Piece.NULL.ind;
+					setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.F8.bitmap, Square.H8.bitmap);
 				}
-				break;
-				case 2: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = 0;
-					setBitboards(move.movedPiece, 0, fromBit, toBit);
-					if (whitesTurn) {
-						offsetBoard[0] = 3;
-						offsetBoard[3] = 0;
-						setBitboards(3, 0, Square.D1.bitmap, Square.A1.bitmap);
-					}
-					else {
-						offsetBoard[56] = 9;
-						offsetBoard[59] = 0;
-						setBitboards(9, 0, Square.D8.bitmap, Square.A8.bitmap);
-					}
+			}
+			else if (move.type == MoveType.LONG_CASTLING.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+				if (whitesTurn) {
+					offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
+					offsetBoard[Square.D1.ind] = Piece.NULL.ind;
+					setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.D1.bitmap, Square.A1.bitmap);
 				}
-				break;
-				case 3: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = 0;
-					setBitboards(move.movedPiece, 0, fromBit, toBit);
-					if (whitesTurn)
-						enPassantVictimSquare = move.to - 8;
-					else
-						enPassantVictimSquare = move.to + 8;
-					offsetBoard[enPassantVictimSquare] = move.capturedPiece;
-					setBitboards(0, move.capturedPiece, 0, Square.getByIndex(enPassantVictimSquare).bitmap);
+				else {
+					offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
+					offsetBoard[Square.D8.ind] = Piece.NULL.ind;
+					setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.D8.bitmap, Square.A8.bitmap);
 				}
-				break;
-				case 4: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = move.capturedPiece;
-					setBitboards(move.movedPiece, 0, fromBit, 0);
-					if (whitesTurn)
-						setBitboards(2, 0, toBit, 0);
-					else
-						setBitboards(8, 0, toBit, 0);
-					setBitboards(0, move.capturedPiece, 0, toBit);
-				}
-				break;
-				case 5: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = move.capturedPiece;
-					setBitboards(move.movedPiece, 0, fromBit, 0);
-					if (whitesTurn)
-						setBitboards(3, 0, toBit, 0);
-					else
-						setBitboards(9, 0, toBit, 0);
-					setBitboards(0, move.capturedPiece, 0, toBit);
-				}
-				break;
-				case 6: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = move.capturedPiece;
-					setBitboards(move.movedPiece, 0, fromBit, 0);
-					if (whitesTurn)
-						setBitboards(4, 0, toBit, 0);
-					else
-						setBitboards(10, 0, toBit, 0);
-					setBitboards(0, move.capturedPiece, 0, toBit);
-				}
-				break;
-				case 7: {
-					offsetBoard[move.from] = move.movedPiece;
-					offsetBoard[move.to] = move.capturedPiece;
-					setBitboards(move.movedPiece, 0, fromBit, 0);
-					if (whitesTurn)
-						setBitboards(5, 0, toBit, 0);
-					else
-						setBitboards(11, 0, toBit, 0);
-					setBitboards(0, move.capturedPiece, 0, toBit);
-				}
+			}
+			else if (move.type == MoveType.EN_PASSANT.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+				if (whitesTurn)
+					enPassantVictimSquare = move.to - 8;
+				else
+					enPassantVictimSquare = move.to + 8;
+				offsetBoard[enPassantVictimSquare] = move.capturedPiece;
+				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, Square.getByIndex(enPassantVictimSquare).bitmap);
+			}
+			else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+				if (whitesTurn)
+					setBitboards(Piece.W_QUEEN.ind, Piece.NULL.ind, toBit, 0);
+				else
+					setBitboards(Piece.B_QUEEN.ind, Piece.NULL.ind, toBit, 0);
+				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+			}
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+				if (whitesTurn)
+					setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, toBit, 0);
+				else
+					setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, toBit, 0);
+				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+			}
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+				if (whitesTurn)
+					setBitboards(Piece.W_BISHOP.ind, Piece.NULL.ind, toBit, 0);
+				else
+					setBitboards(Piece.B_BISHOP.ind, Piece.NULL.ind, toBit, 0);
+				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+			}
+			else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+				if (whitesTurn)
+					setBitboards(Piece.W_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
+				else
+					setBitboards(Piece.B_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
+				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
 			}
 		}
 		UnmakeRegister positionInfo = unmakeRegisterHistory.pop();
@@ -5459,7 +5480,7 @@ public class Position implements Hashable {
 					if (emptyCount != 0)
 						fen += emptyCount;
 					emptyCount = 0;
-					fen += Piece.fenNotation(piece);
+					fen += Piece.getByNumericNotation(piece).fen;
 				}
 			}
 			if (emptyCount != 0)
@@ -5473,25 +5494,10 @@ public class Position implements Hashable {
 		else
 			fen += 'b';
 		fen += ' ';
-		if (whiteCastlingRights != 0) {
-			if ((whiteCastlingRights & 1) != 0)
-				fen += 'K';
-			if ((whiteCastlingRights & 2) != 0)
-				fen += 'Q';
-		}
-		if (blackCastlingRights != 0) {
-			if ((blackCastlingRights & 1) != 0)
-				fen += 'k';
-			if ((blackCastlingRights & 2) != 0)
-				fen += 'q';
-		}
-		if (whiteCastlingRights == 0 && blackCastlingRights == 0)
-			fen += '-';
+		fen += CastlingRights.toFen(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights));
 		fen += ' ';
-		if (enPassantRights == 8)
-			fen += '-';
-		else {
-			fen += (char)(enPassantRights + 'a');
+		fen += EnPassantRights.getByIndex(enPassantRights).toString();
+		if (enPassantRights != EnPassantRights.NONE.ind) {
 			if (whitesTurn)
 				fen += 6;
 			else
@@ -5518,7 +5524,7 @@ public class Position implements Hashable {
 	/**Prints a bitboard representing all the occupied squares of the Position object's board position to the console in a human-readable form,
 	 * aligned like a chess board.*/
 	public void printBitboardToConsole() {
-		Bitboard.printBitboardToConsole(allOccupied);
+		Board.printBitboardToConsole(allOccupied);
 	}
 	/**Prints the array representing the Position object's board position to the console in a human-readable form, aligned like a chess board with 
 	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
@@ -5548,7 +5554,7 @@ public class Position implements Hashable {
 					if (j%2 == 0)
 						System.out.print("|");
 					else
-						System.out.print(" " + Piece.fenNotation(offsetBoard[(i - 1)*4 + j/2]) + " ");
+						System.out.print(" " + Piece.getByNumericNotation(offsetBoard[(i - 1)*4 + j/2]).fen + " ");
 				}
 			}
 			System.out.println();
@@ -5577,22 +5583,10 @@ public class Position implements Hashable {
 			System.out.println();
 		}
 		System.out.printf("%-23s ", "Castling rights:");
-		if ((whiteCastlingRights & 1) != 0)
-			System.out.print("K");
-		if ((whiteCastlingRights & 2) != 0)
-			System.out.print("Q");
-		if ((blackCastlingRights & 1) != 0)
-			System.out.print("k");
-		if ((blackCastlingRights & 2) != 0)
-			System.out.print("q");
-		if (whiteCastlingRights == 0 && blackCastlingRights == 0)
-			System.out.print("-");
+		System.out.print(CastlingRights.toFen(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights)));
 		System.out.println();
 		System.out.printf("%-23s ", "En passant rights:");
-		if (enPassantRights == 8)
-			System.out.println("-");
-		else
-			System.out.println((char)('a' + enPassantRights));
+		System.out.println(EnPassantRights.getByIndex(enPassantRights).toString());
 		System.out.printf("%-23s " + halfMoveIndex + "\n", "Half-move index:");
 		System.out.printf("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
 		System.out.printf("%-23s " + Long.toHexString(key) + "\n", "Hash key:");

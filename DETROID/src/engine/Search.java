@@ -171,17 +171,17 @@ public class Search extends Thread {
 		}
 		if (depth == 0) {
 			score = Evaluator.score(pos);
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, score, (short)0, tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, score, 0, tTgen));
 			return score;
 		}
 		moveQ = pos.generateAllMoves();
 		if (moveQ.length() == 0) {
 			if (pos.getCheck()) {
-				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.LOSS.score, (short)0, tTgen));
+				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.LOSS.score, 0, tTgen));
 				return Game.State.LOSS.score;
 			}
 			else {
-				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.TIE.score, (short)0, tTgen));
+				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.TIE.score, 0, tTgen));
 				return Game.State.TIE.score;
 			}
 		}

@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Bitboard.*;
+import engine.Board.*;
 
 /**A static class that generates the basic move masks for each piece type. It does not include special moves  occupancy considerations.
  * 
@@ -25,13 +25,12 @@ public class MoveMask {
 	 */
 	public final static long kingMoveMask(Square sqr) {
 		long mask;
-		int sqrInd = sqr.ordinal();
 		mask =	(sqr.bitmap << 7)  | (sqr.bitmap << 8)  | (sqr.bitmap << 9)  |
 				(sqr.bitmap << 1)    			    	| (sqr.bitmap >>> 1) |
 				(sqr.bitmap >>> 9) | (sqr.bitmap >>> 8) | (sqr.bitmap >>> 7) ;
-		if (sqrInd%8 == 0)
+		if (sqr.ind%8 == 0)
 			mask &= ~File.H.bitmap;
-		else if ((sqrInd + 1)%8 == 0)
+		else if ((sqr.ind + 1)%8 == 0)
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
@@ -42,18 +41,17 @@ public class MoveMask {
 	 */
 	public final static long knightMoveMask(Square sqr) {
 		long mask;
-		int sqrInd = sqr.ordinal();
 		mask =		 	(sqr.bitmap << 15)	| (sqr.bitmap << 17) |
 				(sqr.bitmap << 6)			| 		  (sqr.bitmap << 10)   |
 				(sqr.bitmap >>> 10)			|		  (sqr.bitmap >>> 6)   |
 						(sqr.bitmap >>> 17)	| (sqr.bitmap >>> 15);
-		if (sqrInd%8 == 0)
+		if (sqr.ind%8 == 0)
 			mask &= ~(File.H.bitmap | File.G.bitmap);
-		else if ((sqrInd - 1)%8 == 0)
+		else if ((sqr.ind - 1)%8 == 0)
 			mask &= ~File.H.bitmap;
-		else if ((sqrInd + 1)%8 == 0)
+		else if ((sqr.ind + 1)%8 == 0)
 			mask &= ~(File.A.bitmap | File.B.bitmap);
-		else if ((sqrInd + 2)%8 == 0)
+		else if ((sqr.ind + 2)%8 == 0)
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
@@ -64,13 +62,12 @@ public class MoveMask {
 	 */
 	public final static long whitePawnCaptureMask(Square sqr) {
 		long mask;
-		int sqrInd = sqr.ordinal();
-		if (sqrInd > 55)
+		if (sqr.ind > 55)
 				return 0;
 		mask = (sqr.bitmap << 7) | (sqr.bitmap << 9);
-		if (sqrInd%8 == 0)
+		if (sqr.ind%8 == 0)
 			mask &= ~File.H.bitmap;
-		else if ((sqrInd + 1)%8 == 0)
+		else if ((sqr.ind + 1)%8 == 0)
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
@@ -81,13 +78,12 @@ public class MoveMask {
 	 */
 	public final static long blackPawnCaptureMask(Square sqr) {
 		long mask;
-		int sqrInd = sqr.ordinal();
-		if (sqrInd < 8)
+		if (sqr.ind < 8)
 				return 0;
 		mask = (sqr.bitmap >>> 9) | (sqr.bitmap >>> 7);
-		if (sqrInd%8 == 0)
+		if (sqr.ind%8 == 0)
 			mask &= ~File.H.bitmap;
-		else if ((sqrInd + 1)%8 == 0)
+		else if ((sqr.ind + 1)%8 == 0)
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
@@ -97,8 +93,7 @@ public class MoveMask {
 	 * @return
 	 */
 	public final static long whitePawnAdvanceMask(Square sqr) {
-		int sqrInd = sqr.ordinal();
-		if (sqrInd < 8 || sqrInd > 55)
+		if (sqr.ind < 8 || sqr.ind > 55)
 			return 0;
 		return sqr.bitmap << 8;
 	}
@@ -108,8 +103,7 @@ public class MoveMask {
 	 * @return
 	 */
 	public final static long blackPawnAdvanceMask(Square sqr) {
-		int sqrInd = sqr.ordinal();
-		if (sqrInd < 8 || sqrInd > 55)
+		if (sqr.ind < 8 || sqr.ind > 55)
 			return 0;
 		return sqr.bitmap >>> 8;
 	}

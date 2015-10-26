@@ -2,8 +2,8 @@ package engine;
 
 import util.BitOperations;
 import util.IntList;
-import engine.Bitboard.Square;
-import engine.Bitboard.*;
+import engine.Board.Square;
+import engine.Board.*;
 
 /**A class for generating occupancy variations and the attack set(s) for a rook or a bishop on the specified square for the given relevant occupancy or array
  * of occupancy variations. It can also generate the attack sets for all possible occupancy variations on all squares either for the rook or for the bishop.
@@ -21,8 +21,7 @@ public class SliderAttack {
 	 * @return
 	 */
 	public static long rankAttackSet(Square sqr, long relevantOccupancy) {
-		int sqrInd = sqr.ordinal();
-		Rank rank = Rank.getBySquareIndex(sqrInd);
+		Rank rank = Rank.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = rank.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverse(relevantOccupancy);
@@ -38,8 +37,7 @@ public class SliderAttack {
 	 * @return
 	 */
 	public static long fileAttackSet(Square sqr, long relevantOccupancy) {
-		int sqrInd = sqr.ordinal();
-		File file = File.getBySquareIndex(sqrInd);
+		File file = File.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = file.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
@@ -55,8 +53,7 @@ public class SliderAttack {
 	 * @return
 	 */
 	public static long diagonalAttackSet(Square sqr, long relevantOccupancy) {
-		int sqrInd = sqr.ordinal();
-		Diagonal diagonal = Diagonal.getBySquareIndex(sqrInd);
+		Diagonal diagonal = Diagonal.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = diagonal.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
@@ -72,8 +69,7 @@ public class SliderAttack {
 	 * @return
 	 */
 	public static long antiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
-		int sqrInd = sqr.ordinal();
-		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
+		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = antiDiagonal.bitmap & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
@@ -173,12 +169,9 @@ public class SliderAttack {
 	 * @return
 	 */
 	public static long[][] rookAttackSetVariations(long[][] rookOccupancyVariations) {
-		int sqrInd;
 		long[][] rookAttVar = new long[64][];
-		for (Square sqr : Square.values()) {
-			sqrInd = sqr.ordinal();
-			rookAttVar[sqrInd] = rookAttackSetVariations(sqr, rookOccupancyVariations[sqrInd]);
-		}
+		for (Square sqr : Square.values())
+			rookAttVar[sqr.ind] = rookAttackSetVariations(sqr, rookOccupancyVariations[sqr.ind]);
 		return rookAttVar;
 	}
 	/**Returns a bishop's attack set variations from each square for all occupancy variations specified.
@@ -187,12 +180,9 @@ public class SliderAttack {
 	 * @return
 	 */
 	public static long[][] bishopAttackSetVariations(long[][] bishopOccupancyVariations) {
-		int sqrInd;
 		long[][] bishopAttVar = new long[64][];
-		for (Square sqr : Square.values()) {
-			sqrInd = sqr.ordinal();
-			bishopAttVar[sqrInd] = bishopAttackSetVariations(sqr, bishopOccupancyVariations[sqrInd]);
-		}
+		for (Square sqr : Square.values())
+			bishopAttVar[sqr.ind] = bishopAttackSetVariations(sqr, bishopOccupancyVariations[sqr.ind]);
 		return bishopAttVar;
 	}
 }

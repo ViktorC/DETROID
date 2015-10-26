@@ -10,6 +10,29 @@ import util.Comparable;
  */
 public class Move implements Comparable<Move> {
 	
+	/**An enum type defining the seven move types the engine handles differently.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static enum MoveType {
+		
+		NORMAL,
+		SHORT_CASTLING,
+		LONG_CASTLING,
+		EN_PASSANT,
+		PROMOTION_TO_QUEEN,
+		PROMOTION_TO_ROOK,
+		PROMOTION_TO_BISHOP,
+		PROMOTION_TO_KNIGHT;
+		
+		public final int numeral;	//a numeric representation of the move type; to avoid the overhead of calling the ordinal function
+		
+		private MoveType() {
+			numeral = ordinal();
+		}
+	}
+	
 	/**Mask and shift values for encoding contents of a Move object into an int; and vica versa.
 	 * 
 	 * @author Viktor
@@ -83,7 +106,7 @@ public class Move implements Comparable<Move> {
 		originFile	= Character.toString((char)(from%8 + 'a'));
 		destRank	= Integer.toString(to/8 + 1);
 		destFile	= Character.toString((char)(to%8 + 'a'));
-		movedPiece  = "" + Piece.fenNotation(this.movedPiece);
+		movedPiece  = "" + Piece.getByNumericNotation(this.movedPiece).fen;
 		if (this.capturedPiece == 0)
 			capture = "";
 		else
