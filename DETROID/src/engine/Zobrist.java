@@ -26,7 +26,7 @@ import engine.Position.EnPassantRights;
 public class Zobrist {
 	
 	private static long turn;
-	private static long[][] board = new long[Piece.values().length][Square.values().length];
+	private static long[][] board = new long[Piece.values().length][64];
 	private static long[] whiteCastlingRights = new long[CastlingRights.values().length];
 	private static long[] blackCastlingRights = new long[CastlingRights.values().length];
 	private static long[] enPassantRights = new long[EnPassantRights.values().length];

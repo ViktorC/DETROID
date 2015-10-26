@@ -25,6 +25,9 @@ import java.util.Scanner;
  */
 public class Position implements Hashable {
 	
+	/**A FEN string for the starting chess position.*/
+	public final static String INITIAL_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	
 	/**A simple enum type for the representation of a side's castling rights in a position.
 	 * 
 	 * @author Viktor
@@ -226,9 +229,7 @@ public class Position implements Hashable {
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Position() {
-		initializeBitboards();
-		initializeOffsetBoard();
-		initializeZobristKeys();
+		this(INITIAL_POSITION_FEN);
 	}
 	/**It parses a FEN-String and sets the instance fields accordingly.
 	 * Beside standard six-field FEN-Strings, it also accepts four-field Strings without the fifty-move rule clock and the move index.
@@ -275,8 +276,8 @@ public class Position implements Hashable {
 		ranks = board.split("/");
 		if (ranks.length != 8)
 			throw new IllegalArgumentException("The board position representation does not have eight ranks.");
-		offsetBoard = new int[Square.values().length];
-		for (int i = Square.A1.ind; i < Square.H8.ind + 1; i++)
+		offsetBoard = new int[64];
+		for (int i = 0; i < 64; i++)
 			offsetBoard[i] = Piece.NULL.ind;
 		for (int i = 7; i >= 0; i--) {
 			rank = ranks[i];
@@ -340,7 +341,12 @@ public class Position implements Hashable {
 				}
 			}
 		}
-		this.updateAllCollections();
+		allWhiteOccupied = whiteKing | whiteQueens | whiteRooks | whiteBishops | whiteKnights | whitePawns;
+		allBlackOccupied = blackKing | blackQueens | blackRooks | blackBishops | blackKnights | blackPawns;
+		allNonWhiteOccupied = ~allWhiteOccupied;
+		allNonBlackOccupied = ~allBlackOccupied;
+		allOccupied	=  allWhiteOccupied | allBlackOccupied;
+		allEmpty = ~allOccupied;
 		if (turn.toLowerCase().compareTo("w") == 0)
 			whitesTurn = true;
 		else
@@ -351,57 +357,6 @@ public class Position implements Hashable {
 		enPassantRights = EnPassantRights.getByFen(enPassant);
 		this.enPassantRights = enPassantRights != null ? enPassantRights.ind : this.enPassantRights;
 		setCheck();
-		initializeZobristKeys();
-	}
-	private void initializeBitboards() {
-		whiteKing = 0b0000000000000000000000000000000000000000000000000000000000010000L;
-		whiteQueens = 0b0000000000000000000000000000000000000000000000000000000000001000L;
-		whiteRooks = 0b0000000000000000000000000000000000000000000000000000000010000001L;
-		whiteBishops = 0b0000000000000000000000000000000000000000000000000000000000100100L;
-		whiteKnights = 0b0000000000000000000000000000000000000000000000000000000001000010L;
-		whitePawns = 0b0000000000000000000000000000000000000000000000001111111100000000L;
-		blackKing = 0b0001000000000000000000000000000000000000000000000000000000000000L;
-		blackQueens = 0b0000100000000000000000000000000000000000000000000000000000000000L;
-		blackRooks = 0b1000000100000000000000000000000000000000000000000000000000000000L;
-		blackBishops = 0b0010010000000000000000000000000000000000000000000000000000000000L;
-		blackKnights = 0b0100001000000000000000000000000000000000000000000000000000000000L;
-		blackPawns = 0b0000000011111111000000000000000000000000000000000000000000000000L;
-		updateAllCollections();
-	}
-	private void updateAllCollections() {
-		allWhiteOccupied = whiteKing | whiteQueens | whiteRooks | whiteBishops | whiteKnights | whitePawns;
-		allBlackOccupied = blackKing | blackQueens | blackRooks | blackBishops | blackKnights | blackPawns;
-		allNonWhiteOccupied = ~allWhiteOccupied;
-		allNonBlackOccupied = ~allBlackOccupied;
-		allOccupied	=  allWhiteOccupied | allBlackOccupied;
-		allEmpty = ~allOccupied;
-	}
-	private void initializeOffsetBoard() {
-		offsetBoard = new int[Square.values().length];
-		offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
-		offsetBoard[Square.B1.ind] = Piece.W_KNIGHT.ind;
-		offsetBoard[Square.C1.ind] = Piece.W_BISHOP.ind;
-		offsetBoard[Square.D1.ind] = Piece.W_QUEEN.ind;
-		offsetBoard[Square.E1.ind] = Piece.W_KING.ind;
-		offsetBoard[Square.F1.ind] = Piece.W_BISHOP.ind;
-		offsetBoard[Square.G1.ind] = Piece.W_KNIGHT.ind;
-		offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
-		for (int i = Square.A2.ind; i < Square.A3.ind; i++)
-			offsetBoard[i] = Piece.W_PAWN.ind;
-		for (int i = Square.A3.ind; i < Square.A7.ind; i++)
-			offsetBoard[i] = Piece.NULL.ind;
-		for (int i = Square.A7.ind; i < Square.A8.ind; i++)
-			offsetBoard[i] = Piece.B_PAWN.ind;
-		offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
-		offsetBoard[Square.B8.ind] = Piece.B_KNIGHT.ind;
-		offsetBoard[Square.C8.ind] = Piece.B_BISHOP.ind;
-		offsetBoard[Square.D8.ind] = Piece.B_QUEEN.ind;
-		offsetBoard[Square.E8.ind] = Piece.B_KING.ind;
-		offsetBoard[Square.F8.ind] = Piece.B_BISHOP.ind;
-		offsetBoard[Square.G8.ind] = Piece.B_KNIGHT.ind;
-		offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
-	}
-	private void initializeZobristKeys() {
 		//"The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves." - half of that is used as the initial length of the history array
 		keyHistory = new long[237];
 		key = Zobrist.hash(this);

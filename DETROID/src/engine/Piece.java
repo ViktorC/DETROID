@@ -8,7 +8,7 @@ package engine;
  */
 public enum Piece {
 	
-	NULL		('\u0000', 0),
+	NULL	('\u0000', 0),
 	
 	W_KING	('K', 0),
 	W_QUEEN	('Q', 900),
