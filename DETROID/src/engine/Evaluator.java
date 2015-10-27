@@ -37,12 +37,12 @@ public class Evaluator {
 		score -= BitOperations.getCardinality(pos.blackBishops)*Piece.B_BISHOP.standardValue;
 		score -= BitOperations.getCardinality(pos.blackKnights)*Piece.B_KNIGHT.standardValue;
 		score -= BitOperations.getCardinality(pos.blackPawns)*Piece.B_PAWN.standardValue;
-		gloriaSquares = BitOperations.serialize(MoveDatabase.getByIndex(BitOperations.indexOfBit(pos.whiteKing)).getCrudeKingMoves());
+		gloriaSquares = BitOperations.serialize(MoveTable.getByIndex(BitOperations.indexOfBit(pos.whiteKing)).getCrudeKingMoves());
 		while (gloriaSquares.hasNext())
 			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
 		while (gloriaSquares.hasNext())
 			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
-		gloriaSquares = BitOperations.serialize(MoveDatabase.getByIndex(BitOperations.indexOfBit(pos.blackKing)).getCrudeKingMoves());
+		gloriaSquares = BitOperations.serialize(MoveTable.getByIndex(BitOperations.indexOfBit(pos.blackKing)).getCrudeKingMoves());
 		while (gloriaSquares.hasNext())
 			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
 		while (gloriaSquares.hasNext())

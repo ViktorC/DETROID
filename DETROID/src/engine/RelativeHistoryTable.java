@@ -7,5 +7,6 @@ public class RelativeHistoryTable {
 	
 	public RelativeHistoryTable() {
 		historyT = new int[Piece.values().length][64];
+		butterflyT = new int[Piece.values().length][64];
 	}
 }

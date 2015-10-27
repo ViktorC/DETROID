@@ -67,7 +67,6 @@ public class Position implements Hashable {
 			if (fen.equals("-"))
 				return new CastlingRights[] { CastlingRights.NONE, CastlingRights.NONE };
 			CastlingRights whiteCastlingRights, blackCastlingRights;
-			whiteCastlingRights = CastlingRights.NONE;
 			if (fen.contains("K")) {
 				if (fen.contains("Q"))
 					whiteCastlingRights = CastlingRights.ALL;
@@ -76,7 +75,8 @@ public class Position implements Hashable {
 			}
 			else if (fen.contains("Q"))
 				whiteCastlingRights = CastlingRights.LONG;
-			blackCastlingRights = CastlingRights.NONE;
+			else
+				whiteCastlingRights = CastlingRights.NONE;
 			if (fen.contains("k")) {
 				if (fen.contains("q"))
 					blackCastlingRights = CastlingRights.ALL;
@@ -85,6 +85,8 @@ public class Position implements Hashable {
 			}
 			else if (fen.contains("q"))
 				blackCastlingRights = CastlingRights.LONG;
+			else
+				blackCastlingRights = CastlingRights.NONE;
 			return new CastlingRights[] { whiteCastlingRights, blackCastlingRights };
 		}
 		/**Returns a string representation in FEN notation of two castling right enum types for white and black respectively.
@@ -551,6 +553,7 @@ public class Position implements Hashable {
 	}
 	private void setCastlingRights() {
 		if (whitesTurn) {
+			if (whiteCastlingRights == CastlingRights.NONE.ind) return;
 			if (whiteCastlingRights == CastlingRights.SHORT.ind) {
 				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
 					whiteCastlingRights = CastlingRights.NONE.ind;
@@ -559,11 +562,15 @@ public class Position implements Hashable {
 				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
 					whiteCastlingRights = CastlingRights.NONE.ind;
 			}
-			else if (whiteCastlingRights == CastlingRights.ALL.ind) {
+			else {
 				if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
-					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.LONG.ind;
-					if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
+						if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+							whiteCastlingRights = CastlingRights.NONE.ind;
+						else
+							whiteCastlingRights = CastlingRights.LONG.ind;
+					}
+					else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
 						whiteCastlingRights = CastlingRights.SHORT.ind;
 				}
 				else
@@ -571,6 +578,7 @@ public class Position implements Hashable {
 			}
 		}
 		else {
+			if (blackCastlingRights == CastlingRights.NONE.ind) return;
 			if (blackCastlingRights == CastlingRights.SHORT.ind) {
 				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
 					blackCastlingRights = CastlingRights.NONE.ind;
@@ -579,11 +587,15 @@ public class Position implements Hashable {
 				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
 					blackCastlingRights = CastlingRights.NONE.ind;
 			}
-			else if (blackCastlingRights == CastlingRights.ALL.ind) {
+			else {
 				if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
-					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.LONG.ind;
-					if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
+						if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+							blackCastlingRights = CastlingRights.NONE.ind;
+						else
+							blackCastlingRights = CastlingRights.LONG.ind;
+					}
+					else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
 						blackCastlingRights = CastlingRights.SHORT.ind;
 				}
 				else
@@ -626,7 +638,7 @@ public class Position implements Hashable {
 	 * @return
 	 */
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
-		MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+		MoveTable dB = MoveTable.getByIndex(sqrInd);
 		if (byWhite) {
 			if ((whiteKing & dB.getCrudeKingMoves()) != 0)
 				return true;
@@ -668,7 +680,7 @@ public class Position implements Hashable {
 	 * @return
 	 */
 	public boolean isAttackedBySliders(int sqrInd, boolean byWhite) {
-		MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+		MoveTable dB = MoveTable.getByIndex(sqrInd);
 		if (byWhite) {
 			if (((whiteQueens | whiteRooks) & dB.getBlackRookMoves(allNonBlackOccupied, allOccupied)) != 0)
 				return true;
@@ -691,14 +703,14 @@ public class Position implements Hashable {
 	 */
 	public long getAttackers(int sqrInd, boolean byWhite) {
 		long attackers = 0;
-		MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+		MoveTable dB = MoveTable.getByIndex(sqrInd);
 		if (byWhite) {
 			attackers = whiteKing & dB.getCrudeKingMoves();
 			attackers |= whiteKnights & dB.getCrudeKnightMoves();
 			attackers |= whitePawns & dB.getCrudeBlackPawnCaptures();
 			attackers |= (whiteQueens | whiteRooks) & dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
 			attackers |= (whiteQueens | whiteBishops) & dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
-			if (offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
+			if (enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
 				attackers |=  whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap;
 		}
 		else {
@@ -707,7 +719,7 @@ public class Position implements Hashable {
 			attackers |= blackPawns & dB.getCrudeWhitePawnCaptures();
 			attackers |= (blackQueens | blackRooks) & dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
 			attackers |= (blackQueens | blackBishops) & dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
-			if (offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
+			if (enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
 				attackers |=  blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap;
 		}
 		return attackers;
@@ -723,7 +735,7 @@ public class Position implements Hashable {
 		long sqrBit = 1L << sqrInd;
 		long blackPawnAdvance = (sqrBit >>> 8), whitePawnAdvance = (sqrBit << 8);
 		if (byWhite) {
-			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+			MoveTable dB = MoveTable.getByIndex(sqrInd);
 			blockerCandidates |= whiteKnights & dB.getCrudeKnightMoves();
 			blockerCandidates |= whitePawns & blackPawnAdvance;
 			if ((sqrBit & Rank.R4.bitmap) != 0 && (allEmpty & blackPawnAdvance) != 0)
@@ -734,7 +746,7 @@ public class Position implements Hashable {
 				blockerCandidates |=  whitePawns & dB.getCrudeBlackPawnCaptures();
 		}
 		else {
-			MoveDatabase dB = MoveDatabase.getByIndex(sqrInd);
+			MoveTable dB = MoveTable.getByIndex(sqrInd);
 			blockerCandidates |= blackKnights & dB.getCrudeKnightMoves();
 			blockerCandidates |= blackPawns & whitePawnAdvance;
 			if ((sqrBit & Rank.R5.bitmap) != 0 && (allEmpty & whitePawnAdvance) != 0)
@@ -753,10 +765,10 @@ public class Position implements Hashable {
 	public long getCheckers() {
 		long attackers = 0;
 		int sqrInd;
-		MoveDatabase dB;
+		MoveTable dB;
 		if (this.whitesTurn) {
 			sqrInd = BitOperations.indexOfBit(whiteKing);
-			dB = MoveDatabase.getByIndex(sqrInd);
+			dB = MoveTable.getByIndex(sqrInd);
 			attackers = blackKnights & dB.getCrudeKnightMoves();
 			attackers |= blackPawns & dB.getCrudeWhitePawnCaptures();
 			attackers |= (blackQueens | blackRooks) & dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
@@ -764,7 +776,7 @@ public class Position implements Hashable {
 		}
 		else {
 			sqrInd = BitOperations.indexOfBit(blackKing);
-			dB = MoveDatabase.getByIndex(sqrInd);
+			dB = MoveTable.getByIndex(sqrInd);
 			attackers = whiteKnights & dB.getCrudeKnightMoves();
 			attackers |= whitePawns & dB.getCrudeBlackPawnCaptures();
 			attackers |= (whiteQueens | whiteRooks) & dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
@@ -879,11 +891,11 @@ public class Position implements Hashable {
 	 * @return Whether the move would give check or not in this position.
 	 */
 	public boolean givesCheck(Move move) {
-		MoveDatabase db;
+		MoveTable db;
 		long toBit = 1L << move.to;
 		boolean givesCheck = false;
 		if (whitesTurn) {
-			db = MoveDatabase.getByIndex(BitOperations.indexOfBit(blackKing));
+			db = MoveTable.getByIndex(BitOperations.indexOfBit(blackKing));
 			switch (move.movedPiece) {
 				case 2: {
 					if ((db.getWhiteQueenMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0)
@@ -912,7 +924,7 @@ public class Position implements Hashable {
 			}
 		}
 		else {
-			db = MoveDatabase.getByIndex(BitOperations.indexOfBit(whiteKing));
+			db = MoveTable.getByIndex(BitOperations.indexOfBit(whiteKing));
 			switch (move.movedPiece) {
 				case 8: {
 					if ((db.getBlackQueenMoves(allNonBlackOccupied, allOccupied) & toBit) != 0)
@@ -948,10 +960,10 @@ public class Position implements Hashable {
 	 * @return An array of bitboards of squares from where the king can be checked  for each piece type for the side to move.
 	 */
 	public long[] squaresToCheckFrom() {
-		MoveDatabase kingDB;
+		MoveTable kingDB;
 		long[] threatSquares = new long[5];
 		if (whitesTurn) {
-			kingDB = MoveDatabase.getByIndex(BitOperations.indexOfBit(blackKing));
+			kingDB = MoveTable.getByIndex(BitOperations.indexOfBit(blackKing));
 			threatSquares[0] = kingDB.getWhiteQueenMoves(allNonWhiteOccupied, allOccupied);
 			threatSquares[1] = kingDB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
 			threatSquares[2] = kingDB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
@@ -959,7 +971,7 @@ public class Position implements Hashable {
 			threatSquares[4] = kingDB.getCrudeBlackPawnCaptures();
 		}
 		else {
-			kingDB = MoveDatabase.getByIndex(BitOperations.indexOfBit(whiteKing));
+			kingDB = MoveTable.getByIndex(BitOperations.indexOfBit(whiteKing));
 			threatSquares[0] = kingDB.getBlackQueenMoves(allNonBlackOccupied, allOccupied);
 			threatSquares[1] = kingDB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
 			threatSquares[2] = kingDB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
@@ -1009,7 +1021,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
 							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
@@ -1128,7 +1140,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
 							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
@@ -1196,7 +1208,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
 							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
@@ -1259,7 +1271,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext()) {
 							to = pinnedPieceMoves.next();
 							moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
@@ -1399,7 +1411,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnCheckSquares);
+						to = BitOperations.indexOfBit(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnCheckSquares);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
@@ -1515,7 +1527,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnCheckSquares);
+						to = BitOperations.indexOfBit(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnCheckSquares);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
@@ -1580,7 +1592,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnCheckSquares);
+						to = BitOperations.indexOfBit(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnCheckSquares);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
@@ -1640,7 +1652,7 @@ public class Position implements Hashable {
 						}
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						to = BitOperations.indexOfBit(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnCheckSquares);
+						to = BitOperations.indexOfBit(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnCheckSquares);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.numeral));
 					}
 				}
@@ -1773,7 +1785,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares);
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -1826,7 +1838,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares);
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -1884,7 +1896,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares);
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -1937,7 +1949,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares);
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares);
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -2318,7 +2330,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -2371,7 +2383,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getWhitePawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, 0));
 					}
@@ -2429,7 +2441,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -2482,7 +2494,7 @@ public class Position implements Hashable {
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
+						pinnedPieceMoves = BitOperations.serialize(MoveTable.getByIndex(pinnedPieceInd).getBlackPawnAdvances(allEmpty));
 						while (pinnedPieceMoves.hasNext())
 							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.numeral));
 					}
@@ -2527,7 +2539,7 @@ public class Position implements Hashable {
 		Queue<Move> moves = new Queue<Move>();
 		if (whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveDatabase.getByIndex(king).getWhiteKingMoves(allNonWhiteOccupied);
+			moveSet  = MoveTable.getByIndex(king).getWhiteKingMoves(allNonWhiteOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -2551,7 +2563,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhiteQueenMoves(allNonWhiteOccupied, allOccupied);
+				moveSet = MoveTable.getByIndex(piece).getWhiteQueenMoves(allNonWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2562,7 +2574,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2573,7 +2585,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2584,7 +2596,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteKnightMoves(allNonWhiteOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteKnightMoves(allNonWhiteOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2595,7 +2607,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnMoves(allBlackOccupied, allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getWhitePawnMoves(allBlackOccupied, allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2611,7 +2623,7 @@ public class Position implements Hashable {
 				}
 			}
 			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
+				if ((pieceSet = MoveTable.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2629,7 +2641,7 @@ public class Position implements Hashable {
 		}
 		else {
 			king  = BitOperations.indexOfBit(blackKing);
-			moveSet	= MoveDatabase.getByIndex(king).getBlackKingMoves(allNonBlackOccupied);
+			moveSet	= MoveTable.getByIndex(king).getBlackKingMoves(allNonBlackOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -2653,7 +2665,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackQueenMoves(allNonBlackOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackQueenMoves(allNonBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2664,7 +2676,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackRookMoves(allNonBlackOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackRookMoves(allNonBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2675,7 +2687,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackBishopMoves(allNonBlackOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackBishopMoves(allNonBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2686,7 +2698,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackKnightMoves(allNonBlackOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackKnightMoves(allNonBlackOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2697,7 +2709,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnMoves(allWhiteOccupied, allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getBlackPawnMoves(allWhiteOccupied, allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2713,7 +2725,7 @@ public class Position implements Hashable {
 				}
 			}
 			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
+				if ((pieceSet = MoveTable.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2749,7 +2761,7 @@ public class Position implements Hashable {
 		pawnCheckSquares = checkSquares[4];
 		if (whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveDatabase.getByIndex(king).getWhiteKingMoves(allBlackOccupied);
+			moveSet  = MoveTable.getByIndex(king).getWhiteKingMoves(allBlackOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -2761,7 +2773,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhiteQueenMoves(allBlackOccupied | queenCheckSquares, allOccupied);
+				moveSet = MoveTable.getByIndex(piece).getWhiteQueenMoves(allBlackOccupied | queenCheckSquares, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2772,7 +2784,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteRookMoves(allBlackOccupied | rookCheckSquares, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteRookMoves(allBlackOccupied | rookCheckSquares, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2783,7 +2795,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteBishopMoves(allBlackOccupied | bishopCheckSquares, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteBishopMoves(allBlackOccupied | bishopCheckSquares, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2794,7 +2806,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteKnightMoves(allBlackOccupied | knightCheckSquares);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteKnightMoves(allBlackOccupied | knightCheckSquares);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2805,7 +2817,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnMoves(allBlackOccupied, allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getWhitePawnMoves(allBlackOccupied, allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2821,7 +2833,7 @@ public class Position implements Hashable {
 				}
 			}
 			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
+				if ((pieceSet = MoveTable.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2839,7 +2851,7 @@ public class Position implements Hashable {
 		}
 		else {
 			king  = BitOperations.indexOfBit(blackKing);
-			moveSet	= MoveDatabase.getByIndex(king).getBlackKingMoves(allWhiteOccupied);
+			moveSet	= MoveTable.getByIndex(king).getBlackKingMoves(allWhiteOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -2851,7 +2863,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackQueenMoves(allWhiteOccupied | queenCheckSquares, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackQueenMoves(allWhiteOccupied | queenCheckSquares, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2862,7 +2874,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackRookMoves(allWhiteOccupied | rookCheckSquares, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackRookMoves(allWhiteOccupied | rookCheckSquares, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2873,7 +2885,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackBishopMoves(allWhiteOccupied | bishopCheckSquares, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackBishopMoves(allWhiteOccupied | bishopCheckSquares, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2884,7 +2896,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackKnightMoves(allWhiteOccupied | knightCheckSquares);
+				moveSet	= MoveTable.getByIndex(piece).getBlackKnightMoves(allWhiteOccupied | knightCheckSquares);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2895,7 +2907,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnMoves(allWhiteOccupied, allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getBlackPawnMoves(allWhiteOccupied, allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2911,7 +2923,7 @@ public class Position implements Hashable {
 				}
 			}
 			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
+				if ((pieceSet = MoveTable.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -2948,7 +2960,7 @@ public class Position implements Hashable {
 		pawnNonCheckSquares = ~checkSquares[4];
 		if (whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveDatabase.getByIndex(king).getWhiteKingMoves(allEmpty);
+			moveSet  = MoveTable.getByIndex(king).getWhiteKingMoves(allEmpty);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -2972,7 +2984,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhiteQueenMoves(allEmpty, allOccupied) & queenNonCheckSquares;
+				moveSet = MoveTable.getByIndex(piece).getWhiteQueenMoves(allEmpty, allOccupied) & queenNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2983,7 +2995,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteRookMoves(allEmpty, allOccupied) & rookNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getWhiteRookMoves(allEmpty, allOccupied) & rookNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -2994,7 +3006,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteBishopMoves(allEmpty, allOccupied) & bishopNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getWhiteBishopMoves(allEmpty, allOccupied) & bishopNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3005,7 +3017,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteKnightMoves(allEmpty) & knightNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getWhiteKnightMoves(allEmpty) & knightNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3016,7 +3028,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares;
+				moveSet = MoveTable.getByIndex(piece).getWhitePawnAdvances(allEmpty) & pawnNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3027,7 +3039,7 @@ public class Position implements Hashable {
 		}
 		else {
 			king  = BitOperations.indexOfBit(blackKing);
-			moveSet	= MoveDatabase.getByIndex(king).getBlackKingMoves(allEmpty);
+			moveSet	= MoveTable.getByIndex(king).getBlackKingMoves(allEmpty);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -3051,7 +3063,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackQueenMoves(allEmpty, allOccupied) & queenNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getBlackQueenMoves(allEmpty, allOccupied) & queenNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3062,7 +3074,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackRookMoves(allEmpty, allOccupied) & rookNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getBlackRookMoves(allEmpty, allOccupied) & rookNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3073,7 +3085,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackBishopMoves(allEmpty, allOccupied) & bishopNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getBlackBishopMoves(allEmpty, allOccupied) & bishopNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3084,7 +3096,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackKnightMoves(allEmpty) & knightNonCheckSquares;
+				moveSet	= MoveTable.getByIndex(piece).getBlackKnightMoves(allEmpty) & knightNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3095,7 +3107,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares;
+				moveSet = MoveTable.getByIndex(piece).getBlackPawnAdvances(allEmpty) & pawnNonCheckSquares;
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3118,7 +3130,7 @@ public class Position implements Hashable {
 		Queue<Move> moves = new Queue<Move>();
 		if (whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveDatabase.getByIndex(king).getWhiteKingMoves(allBlackOccupied);
+			moveSet  = MoveTable.getByIndex(king).getWhiteKingMoves(allBlackOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -3130,7 +3142,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhiteQueenMoves(allBlackOccupied, allOccupied);
+				moveSet = MoveTable.getByIndex(piece).getWhiteQueenMoves(allBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3141,7 +3153,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteRookMoves(allBlackOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteRookMoves(allBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3152,7 +3164,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteBishopMoves(allBlackOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteBishopMoves(allBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3163,7 +3175,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteKnightMoves(allBlackOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteKnightMoves(allBlackOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3174,7 +3186,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnMoves(allBlackOccupied, allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getWhitePawnMoves(allBlackOccupied, allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3190,7 +3202,7 @@ public class Position implements Hashable {
 				}
 			}
 			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
+				if ((pieceSet = MoveTable.getByIndex(to = EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights).getBlackPawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -3208,7 +3220,7 @@ public class Position implements Hashable {
 		}
 		else {
 			king  = BitOperations.indexOfBit(blackKing);
-			moveSet	= MoveDatabase.getByIndex(king).getBlackKingMoves(allWhiteOccupied);
+			moveSet	= MoveTable.getByIndex(king).getBlackKingMoves(allWhiteOccupied);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -3220,7 +3232,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackQueenMoves(allWhiteOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackQueenMoves(allWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3231,7 +3243,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackRookMoves(allWhiteOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackRookMoves(allWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3242,7 +3254,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackBishopMoves(allWhiteOccupied, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackBishopMoves(allWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3253,7 +3265,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackKnightMoves(allWhiteOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackKnightMoves(allWhiteOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3264,7 +3276,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnMoves(allWhiteOccupied, allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getBlackPawnMoves(allWhiteOccupied, allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3280,7 +3292,7 @@ public class Position implements Hashable {
 				}
 			}
 			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveDatabase.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
+				if ((pieceSet = MoveTable.getByIndex(to = EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights).getWhitePawnCaptures(pieceSet)) != 0) {
 					pieces = BitOperations.serialize(pieceSet);
 					while (pieces.hasNext()) {
 						piece = pieces.next();
@@ -3311,7 +3323,7 @@ public class Position implements Hashable {
 		Queue<Move> moves = new Queue<Move>();
 		if (whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveDatabase.getByIndex(king).getWhiteKingMoves(allEmpty);
+			moveSet  = MoveTable.getByIndex(king).getWhiteKingMoves(allEmpty);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -3335,7 +3347,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhiteQueenMoves(allEmpty, allOccupied);
+				moveSet = MoveTable.getByIndex(piece).getWhiteQueenMoves(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3346,7 +3358,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteRookMoves(allEmpty, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteRookMoves(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3357,7 +3369,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteBishopMoves(allEmpty, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteBishopMoves(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3368,7 +3380,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getWhiteKnightMoves(allEmpty);
+				moveSet	= MoveTable.getByIndex(piece).getWhiteKnightMoves(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3379,7 +3391,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getWhitePawnAdvances(allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getWhitePawnAdvances(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3390,7 +3402,7 @@ public class Position implements Hashable {
 		}
 		else {
 			king  = BitOperations.indexOfBit(blackKing);
-			moveSet	= MoveDatabase.getByIndex(king).getBlackKingMoves(allEmpty);
+			moveSet	= MoveTable.getByIndex(king).getBlackKingMoves(allEmpty);
 			moveList = BitOperations.serialize(moveSet);
 			while (moveList.hasNext()) {
 				to = moveList.next();
@@ -3414,7 +3426,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackQueenMoves(allEmpty, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackQueenMoves(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3425,7 +3437,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackRookMoves(allEmpty, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackRookMoves(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3436,7 +3448,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackBishopMoves(allEmpty, allOccupied);
+				moveSet	= MoveTable.getByIndex(piece).getBlackBishopMoves(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3447,7 +3459,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveDatabase.getByIndex(piece).getBlackKnightMoves(allEmpty);
+				moveSet	= MoveTable.getByIndex(piece).getBlackKnightMoves(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3458,7 +3470,7 @@ public class Position implements Hashable {
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveDatabase.getByIndex(piece).getBlackPawnAdvances(allEmpty);
+				moveSet = MoveTable.getByIndex(piece).getBlackPawnAdvances(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
@@ -3479,17 +3491,17 @@ public class Position implements Hashable {
 			checkerBlockerSquare, king, to, movedPiece;
 		IntStack kingMoves, squaresOfIntervention, checkerAttackers, checkerBlockers;
 		Queue<Move> moves = new Queue<Move>();
-		MoveDatabase dB, kingDb;
+		MoveTable dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
 			movablePieces = ~getPinnedPieces(true);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getWhiteKingMoves(allNonWhiteOccupied);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R8.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~whiteKing;
@@ -3614,7 +3626,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -3628,7 +3640,7 @@ public class Position implements Hashable {
 					case 11:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -3653,12 +3665,12 @@ public class Position implements Hashable {
 		else {
 			king = BitOperations.indexOfBit(blackKing);
 			movablePieces = ~getPinnedPieces(false);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getBlackKingMoves(allNonBlackOccupied);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R1.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~blackKing;
@@ -3783,7 +3795,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = this.offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -3797,7 +3809,7 @@ public class Position implements Hashable {
 					case 5:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -3834,7 +3846,7 @@ public class Position implements Hashable {
 			checkerBlockerSquare, king, to, movedPiece;
 		IntStack kingMoves, squaresOfIntervention, checkerAttackers, checkerBlockers;
 		Queue<Move> moves = new Queue<Move>();
-		MoveDatabase dB, kingDb;
+		MoveTable dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		queenCheckSquares = checkSquares[0];
 		rookCheckSquares = checkSquares[1];
@@ -3844,12 +3856,12 @@ public class Position implements Hashable {
 		if (this.whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
 			movablePieces = ~getPinnedPieces(true);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getWhiteKingMoves(allBlackOccupied);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R8.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~whiteKing;
@@ -3980,7 +3992,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -3994,7 +4006,7 @@ public class Position implements Hashable {
 					case 11:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4019,12 +4031,12 @@ public class Position implements Hashable {
 		else {
 			king = BitOperations.indexOfBit(blackKing);
 			movablePieces = ~getPinnedPieces(false);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getBlackKingMoves(allWhiteOccupied);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R1.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~blackKing;
@@ -4155,7 +4167,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = this.offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4169,7 +4181,7 @@ public class Position implements Hashable {
 					case 5:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4204,17 +4216,17 @@ public class Position implements Hashable {
 			checkerBlockerSquare, king, to, movedPiece;
 		IntStack kingMoves, squaresOfIntervention, checkerBlockers;
 		Queue<Move> moves = new Queue<Move>();
-		MoveDatabase dB, kingDb;
+		MoveTable dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
 			movablePieces = ~getPinnedPieces(true);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getWhiteKingMoves(allEmpty);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R8.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				switch (checkerPiece1) {
@@ -4289,7 +4301,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4303,7 +4315,7 @@ public class Position implements Hashable {
 					case 11:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4328,12 +4340,12 @@ public class Position implements Hashable {
 		else {
 			king = BitOperations.indexOfBit(blackKing);
 			movablePieces = ~getPinnedPieces(false);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getBlackKingMoves(allEmpty);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R1.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				switch (checkerPiece1) {
@@ -4408,7 +4420,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = this.offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4422,7 +4434,7 @@ public class Position implements Hashable {
 					case 5:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4458,17 +4470,17 @@ public class Position implements Hashable {
 			checkerBlockerSquare, king, to, movedPiece;
 		IntStack kingMoves, squaresOfIntervention, checkerAttackers, checkerBlockers;
 		Queue<Move> moves = new Queue<Move>();
-		MoveDatabase dB, kingDb;
+		MoveTable dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
 			movablePieces = ~getPinnedPieces(true);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getWhiteKingMoves(allBlackOccupied);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R8.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~whiteKing;
@@ -4581,7 +4593,7 @@ public class Position implements Hashable {
 			checkerPiece1 = offsetBoard[checker1];
 			checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 			checkerPiece2 = offsetBoard[checker2];
-			dB = MoveDatabase.getByIndex(checker1);
+			dB = MoveTable.getByIndex(checker1);
 			switch (checkerPiece1) {
 				case 8:
 					kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4595,7 +4607,7 @@ public class Position implements Hashable {
 				case 11:
 					kingMoveSet &= ~dB.getCrudeKnightMoves();
 			}
-			dB = MoveDatabase.getByIndex(checker2);
+			dB = MoveTable.getByIndex(checker2);
 			switch (checkerPiece2) {
 				case 8:
 					kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4620,12 +4632,12 @@ public class Position implements Hashable {
 	else {
 		king = BitOperations.indexOfBit(blackKing);
 		movablePieces = ~getPinnedPieces(false);
-		kingDb = MoveDatabase.getByIndex(king);
+		kingDb = MoveTable.getByIndex(king);
 		kingMoveSet = kingDb.getBlackKingMoves(allWhiteOccupied);
 		if (BitOperations.resetLSBit(checkers) == 0) {
 			checker1 = BitOperations.indexOfBit(checkers);
 			checkerPiece1 = offsetBoard[checker1];
-			dB = MoveDatabase.getByIndex(checker1);
+			dB = MoveTable.getByIndex(checker1);
 			if ((checkers & Rank.R1.bitmap) != 0)
 				promotionOnAttackPossible = true;
 			checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~blackKing;
@@ -4738,7 +4750,7 @@ public class Position implements Hashable {
 			checkerPiece1 = offsetBoard[checker1];
 			checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 			checkerPiece2 = this.offsetBoard[checker2];
-			dB = MoveDatabase.getByIndex(checker1);
+			dB = MoveTable.getByIndex(checker1);
 			switch (checkerPiece1) {
 				case 2:
 					kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4752,7 +4764,7 @@ public class Position implements Hashable {
 				case 5:
 					kingMoveSet &= ~dB.getCrudeKnightMoves();
 			}
-			dB = MoveDatabase.getByIndex(checker2);
+			dB = MoveTable.getByIndex(checker2);
 			switch (checkerPiece2) {
 				case 2:
 					kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -4787,17 +4799,17 @@ public class Position implements Hashable {
 			checkerBlockerSquare, king, to, movedPiece;
 		IntStack kingMoves, squaresOfIntervention, checkerBlockers;
 		Queue<Move> moves = new Queue<Move>();
-		MoveDatabase dB, kingDb;
+		MoveTable dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.whitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
 			movablePieces = ~getPinnedPieces(true);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getWhiteKingMoves(allEmpty);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R8.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				switch (checkerPiece1) {
@@ -4870,7 +4882,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4884,7 +4896,7 @@ public class Position implements Hashable {
 					case 11:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 8:
 						kingMoveSet &= ~dB.getWhiteQueenMoves(allNonWhiteOccupied, (allOccupied^whiteKing));
@@ -4909,12 +4921,12 @@ public class Position implements Hashable {
 		else {
 			king = BitOperations.indexOfBit(blackKing);
 			movablePieces = ~getPinnedPieces(false);
-			kingDb = MoveDatabase.getByIndex(king);
+			kingDb = MoveTable.getByIndex(king);
 			kingMoveSet = kingDb.getBlackKingMoves(allEmpty);
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				if ((checkers & Rank.R1.bitmap) != 0)
 					promotionOnAttackPossible = true;
 				switch (checkerPiece1) {
@@ -4987,7 +4999,7 @@ public class Position implements Hashable {
 				checkerPiece1 = offsetBoard[checker1];
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = this.offsetBoard[checker2];
-				dB = MoveDatabase.getByIndex(checker1);
+				dB = MoveTable.getByIndex(checker1);
 				switch (checkerPiece1) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -5001,7 +5013,7 @@ public class Position implements Hashable {
 					case 5:
 						kingMoveSet &= ~dB.getCrudeKnightMoves();
 				}
-				dB = MoveDatabase.getByIndex(checker2);
+				dB = MoveTable.getByIndex(checker2);
 				switch (checkerPiece2) {
 					case 2:
 						kingMoveSet &= ~dB.getBlackQueenMoves(allNonBlackOccupied, (allOccupied^blackKing));
@@ -5079,6 +5091,115 @@ public class Position implements Hashable {
 		else
 			return generateNonMaterialNormalMoves();
 	}
+	/**Returns whether a move is legal or not in the current position. It expects the move to be possibly legal in some position at least, and it
+	 * checks if it still is in this one. That means, it does not check for inconsistency, such as a castling move with a capture, or an en passant
+	 * with a moved piece other than pawn, etc.
+	 * 
+	 * @param move
+	 * @return
+	 */
+	public boolean isLegal(Move move) {
+		MoveTable dB;
+		long checkers;
+		long moveSet = 0;
+		long toBit = (1L << move.to);
+		if (offsetBoard[move.from] == move.movedPiece) {
+			dB = MoveTable.getByIndex(move.to);
+			if (whitesTurn) {
+				if (move.movedPiece == Piece.W_KING.ind) {
+					if (move.type == MoveType.SHORT_CASTLING.numeral) {
+						if (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+							if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
+								if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+									return true;
+							}
+						}
+					}
+					else if (move.type == MoveType.LONG_CASTLING.numeral) {
+						if (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+							if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
+								if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
+									return true;
+							}
+						}
+					}
+					else {
+						moveSet = dB.getWhiteKingMoves(allNonWhiteOccupied);
+						if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
+							return true;
+					}
+					return false;
+				}
+				else if (move.movedPiece == Piece.W_QUEEN.ind)
+					moveSet = dB.getWhiteQueenMoves(allNonWhiteOccupied, allOccupied);
+				else if (move.movedPiece == Piece.W_ROOK.ind)
+					moveSet = dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
+				else if (move.movedPiece == Piece.W_BISHOP.ind)
+					moveSet = dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
+				else if (move.movedPiece == Piece.W_KNIGHT.ind)
+					moveSet = dB.getWhiteKnightMoves(allNonWhiteOccupied);
+				else if (move.movedPiece == Piece.W_PAWN.ind) {
+					moveSet = dB.getWhitePawnMoves(allBlackOccupied, allEmpty);
+					if (enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)
+						moveSet |= toBit;
+				}
+				else return false;
+				if ((moveSet & toBit) != 0) {
+					makeMoveOnBoard(move);
+					checkers = getCheckers();
+					unmakeMoveOnBoard(move);
+					if (checkers == 0) return true;
+				}
+			}
+			else {
+				if (move.movedPiece == Piece.B_KING.ind) {
+					if (move.type == MoveType.SHORT_CASTLING.numeral) {
+						if (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+							if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
+								if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
+									return true;
+							}
+						}
+					}
+					else if (move.type == MoveType.LONG_CASTLING.numeral) {
+						if (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+							if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
+								if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+									return true;
+							}
+						}
+					}
+					else {
+						moveSet = dB.getBlackKingMoves(allNonBlackOccupied);
+						if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
+							return true;
+					}
+					return false;
+				}
+				else if (move.movedPiece == Piece.B_QUEEN.ind)
+					moveSet = dB.getBlackQueenMoves(allNonBlackOccupied, allOccupied);
+				else if (move.movedPiece == Piece.B_ROOK.ind)
+					moveSet = dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
+				else if (move.movedPiece == Piece.B_BISHOP.ind)
+					moveSet = dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
+				else if (move.movedPiece == Piece.B_KNIGHT.ind)
+					moveSet = dB.getBlackKnightMoves(allNonBlackOccupied);
+				else if (move.movedPiece == Piece.B_PAWN.ind) {
+					moveSet = dB.getBlackPawnMoves(allWhiteOccupied, allEmpty);
+					if (enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)
+						moveSet |= toBit;
+				}
+				else return false;
+				if ((moveSet & toBit) != 0) {
+					makeMoveOnBoard(move);
+					checkers = getCheckers();
+					unmakeMoveOnBoard(move);
+					if (checkers == 0) return true;
+				}
+			}
+		}
+		return false;
+	}
 	/**Makes a null move that can be taken back without breaking the game.
 	 * 
 	 */
@@ -5086,151 +5207,227 @@ public class Position implements Hashable {
 		moveList.add(null);
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions, checkers));
 		setTurn();
-		setMoveIndices(0, 0);
+		setMoveIndices(Piece.NULL.ind, Piece.NULL.ind);
 		setKeys();
+	}
+	/**Makes a move only on the chess board representations of this Position object.
+	 * 
+	 * @param move
+	 */
+	private void makeMoveOnBoard(Move move) {
+		int enPassantVictimSquare;
+		long enPassantVictimSquareBit;
+		long fromBit = Square.getByIndex(move.from).bitmap;
+		long toBit = Square.getByIndex(move.to).bitmap;
+		if (move.type == MoveType.NORMAL.numeral) {
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = move.movedPiece;
+			setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
+		}
+		else if (move.type == MoveType.SHORT_CASTLING.numeral) {
+			if (whitesTurn) {
+				move.movedPiece = Piece.W_KING.ind;
+				offsetBoard[Square.H1.ind] = Piece.NULL.ind;
+				offsetBoard[Square.F1.ind] = Piece.W_ROOK.ind;
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.H1.bitmap, Square.F1.bitmap);
+			}
+			else {
+				move.movedPiece = Piece.B_KING.ind;
+				offsetBoard[Square.H8.ind] = Piece.NULL.ind;
+				offsetBoard[Square.F8.ind] = Piece.B_ROOK.ind;
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.H8.bitmap, Square.F8.bitmap);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = move.movedPiece;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+		}
+		else if (move.type == MoveType.LONG_CASTLING.numeral) {
+			if (whitesTurn) {
+				move.movedPiece = Piece.W_KING.ind;
+				offsetBoard[Square.A1.ind] = Piece.NULL.ind;
+				offsetBoard[Square.D1.ind] = Piece.W_ROOK.ind;
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.A1.bitmap, Square.D1.bitmap);
+			}
+			else {
+				move.movedPiece = Piece.B_KING.ind;
+				offsetBoard[Square.A8.ind] = Piece.NULL.ind;
+				offsetBoard[Square.D8.ind] = Piece.B_ROOK.ind;
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.A8.bitmap, Square.D8.bitmap);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = move.movedPiece;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+		}
+		else if (move.type == MoveType.EN_PASSANT.numeral) {
+			if (whitesTurn)
+				enPassantVictimSquare = move.to - 8;
+			else
+				enPassantVictimSquare = move.to + 8;
+			offsetBoard[move.from] = Piece.NULL.ind;
+			offsetBoard[move.to] = move.movedPiece;
+			offsetBoard[enPassantVictimSquare] = Piece.NULL.ind;
+			enPassantVictimSquareBit = Square.getByIndex(enPassantVictimSquare).bitmap;
+			setBitboards(move.movedPiece, move.capturedPiece, fromBit, enPassantVictimSquareBit);
+			setBitboards(move.movedPiece, Piece.NULL.ind, enPassantVictimSquareBit, toBit);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
+			if (whitesTurn) {
+				offsetBoard[move.to] = Piece.W_QUEEN.ind;
+				setBitboards(Piece.W_QUEEN.ind, move.capturedPiece, 0, toBit);
+			}
+			else {
+				offsetBoard[move.to] = Piece.B_QUEEN.ind;
+				setBitboards(Piece.B_QUEEN.ind, move.capturedPiece, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
+			if (whitesTurn) {
+				offsetBoard[move.to] = Piece.W_ROOK.ind;
+				setBitboards(Piece.W_ROOK.ind, move.capturedPiece, 0, toBit);
+			}
+			else {
+				offsetBoard[move.to] = Piece.B_ROOK.ind;
+				setBitboards(Piece.B_ROOK.ind, move.capturedPiece, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
+			if (whitesTurn) {
+				offsetBoard[move.to] = Piece.W_BISHOP.ind;
+				setBitboards(Piece.W_BISHOP.ind, move.capturedPiece, 0, toBit);
+			}
+			else {
+				offsetBoard[move.to] = Piece.B_BISHOP.ind;
+				setBitboards(Piece.B_BISHOP.ind, move.capturedPiece, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
+			if (whitesTurn) {
+				move.movedPiece = Piece.W_PAWN.ind;
+				offsetBoard[move.to] = Piece.W_KNIGHT.ind;
+				setBitboards(Piece.W_KNIGHT.ind, move.capturedPiece, 0, toBit);
+			}
+			else {
+				offsetBoard[move.to] = Piece.B_KNIGHT.ind;
+				setBitboards(Piece.B_KNIGHT.ind, move.capturedPiece, 0, toBit);
+			}
+			offsetBoard[move.from] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+		}
+	}
+	/**Unmakes a move only on the chess board representations of this Position object.
+	 * 
+	 * @param move
+	 */
+	private void unmakeMoveOnBoard(Move move) {
+		int enPassantVictimSquare;
+		long fromBit = Square.getByIndex(move.from).bitmap;
+		long toBit = Square.getByIndex(move.to).bitmap;
+		if (move.type == MoveType.NORMAL.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = move.capturedPiece;
+			setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
+		}
+		else if (move.type == MoveType.SHORT_CASTLING.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+			if (whitesTurn) {
+				offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
+				offsetBoard[Square.F1.ind] = Piece.NULL.ind;
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.F1.bitmap, Square.H1.bitmap);
+			}
+			else {
+				offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
+				offsetBoard[Square.F8.ind] = Piece.NULL.ind;
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.F8.bitmap, Square.H8.bitmap);
+			}
+		}
+		else if (move.type == MoveType.LONG_CASTLING.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+			if (whitesTurn) {
+				offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
+				offsetBoard[Square.D1.ind] = Piece.NULL.ind;
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.D1.bitmap, Square.A1.bitmap);
+			}
+			else {
+				offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
+				offsetBoard[Square.D8.ind] = Piece.NULL.ind;
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.D8.bitmap, Square.A8.bitmap);
+			}
+		}
+		else if (move.type == MoveType.EN_PASSANT.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = Piece.NULL.ind;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
+			if (whitesTurn)
+				enPassantVictimSquare = move.to - 8;
+			else
+				enPassantVictimSquare = move.to + 8;
+			offsetBoard[enPassantVictimSquare] = move.capturedPiece;
+			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, Square.getByIndex(enPassantVictimSquare).bitmap);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = move.capturedPiece;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+			if (whitesTurn)
+				setBitboards(Piece.W_QUEEN.ind, Piece.NULL.ind, toBit, 0);
+			else
+				setBitboards(Piece.B_QUEEN.ind, Piece.NULL.ind, toBit, 0);
+			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = move.capturedPiece;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+			if (whitesTurn)
+				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, toBit, 0);
+			else
+				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, toBit, 0);
+			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = move.capturedPiece;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+			if (whitesTurn)
+				setBitboards(Piece.W_BISHOP.ind, Piece.NULL.ind, toBit, 0);
+			else
+				setBitboards(Piece.B_BISHOP.ind, Piece.NULL.ind, toBit, 0);
+			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+		}
+		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
+			offsetBoard[move.from] = move.movedPiece;
+			offsetBoard[move.to] = move.capturedPiece;
+			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
+			if (whitesTurn)
+				setBitboards(Piece.W_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
+			else
+				setBitboards(Piece.B_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
+			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
+		}
 	}
 	/**Makes a single move from a LongQueue generated by generateMoves.
 	 * 
 	 * @param move A Move object that is going to be made in the position.
 	 */
 	public void makeMove(Move move) {
-		int moved, captured;
-		long fromBit = Square.getByIndex(move.from).bitmap;
-		long toBit = Square.getByIndex(move.to).bitmap;
-		int enPassantVictimSquare;
-		long enPassantVictimSquareBit;
-		if (move.type == MoveType.NORMAL.numeral) {
-			moved = offsetBoard[move.from];
-			offsetBoard[move.from] = Piece.NULL.ind;
-			captured = offsetBoard[move.to];
-			offsetBoard[move.to] = moved;
-			setBitboards(moved, captured, fromBit, toBit);
-		}
-		else if (move.type == MoveType.SHORT_CASTLING.numeral) {
-			if (whitesTurn) {
-				moved = Piece.W_KING.ind;
-				offsetBoard[Square.H1.ind] = Piece.NULL.ind;
-				offsetBoard[Square.F1.ind] = Piece.W_ROOK.ind;
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.H1.bitmap, Square.F1.bitmap);
-			}
-			else {
-				moved = Piece.B_KING.ind;
-				offsetBoard[Square.H8.ind] = Piece.NULL.ind;
-				offsetBoard[Square.F8.ind] = Piece.B_ROOK.ind;
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.H8.bitmap, Square.F8.bitmap);
-			}
-			captured = Piece.NULL.ind;
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = moved;
-			setBitboards(moved, Piece.NULL.ind, fromBit, toBit);
-		}
-		else if (move.type == MoveType.LONG_CASTLING.numeral) {
-			if (whitesTurn) {
-				moved = Piece.W_KING.ind;
-				offsetBoard[Square.A1.ind] = Piece.NULL.ind;
-				offsetBoard[Square.D1.ind] = Piece.W_ROOK.ind;
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.A1.bitmap, Square.D1.bitmap);
-			}
-			else {
-				moved = Piece.B_KING.ind;
-				offsetBoard[Square.A8.ind] = Piece.NULL.ind;
-				offsetBoard[Square.D8.ind] = Piece.B_ROOK.ind;
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.A8.bitmap, Square.D8.bitmap);
-			}
-			captured = Piece.NULL.ind;
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = moved;
-			setBitboards(moved, Piece.NULL.ind, fromBit, toBit);
-		}
-		else if (move.type == MoveType.EN_PASSANT.numeral) {
-			if (whitesTurn) {
-				moved = Piece.W_PAWN.ind;
-				captured = Piece.B_PAWN.ind;
-				enPassantVictimSquare = move.to - 8;
-			}
-			else {
-				moved = Piece.B_PAWN.ind;
-				captured = Piece.W_PAWN.ind;
-				enPassantVictimSquare = move.to + 8;
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = moved;
-			offsetBoard[enPassantVictimSquare] = Piece.NULL.ind;
-			enPassantVictimSquareBit = Square.getByIndex(enPassantVictimSquare).bitmap;
-			setBitboards(moved, captured, fromBit, enPassantVictimSquareBit);
-			setBitboards(moved, Piece.NULL.ind, enPassantVictimSquareBit, toBit);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
-			captured = offsetBoard[move.to];
-			if (whitesTurn) {
-				moved = Piece.W_PAWN.ind;
-				offsetBoard[move.to] = Piece.W_QUEEN.ind;
-				setBitboards(Piece.W_QUEEN.ind, captured, Piece.NULL.ind, toBit);
-			}
-			else {
-				moved = Piece.B_PAWN.ind;
-				offsetBoard[move.to] = Piece.W_QUEEN.ind;
-				setBitboards(Piece.W_QUEEN.ind, captured, Piece.NULL.ind, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
-			captured = offsetBoard[move.to];
-			if (whitesTurn) {
-				moved = Piece.W_PAWN.ind;
-				offsetBoard[move.to] = Piece.W_ROOK.ind;
-				setBitboards(Piece.W_ROOK.ind, captured, 0, toBit);
-			}
-			else {
-				moved = Piece.B_PAWN.ind;
-				offsetBoard[move.to] = Piece.B_ROOK.ind;
-				setBitboards(Piece.B_ROOK.ind, captured, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
-			captured = offsetBoard[move.to];
-			if (whitesTurn) {
-				moved = Piece.W_PAWN.ind;
-				offsetBoard[move.to] = Piece.W_BISHOP.ind;
-				setBitboards(Piece.W_BISHOP.ind, captured, 0, toBit);
-			}
-			else {
-				moved = Piece.B_PAWN.ind;
-				offsetBoard[move.to] = Piece.B_BISHOP.ind;
-				setBitboards(Piece.B_BISHOP.ind, captured, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
-			captured = offsetBoard[move.to];
-			if (whitesTurn) {
-				moved = Piece.W_PAWN.ind;
-				offsetBoard[move.to] = Piece.W_KNIGHT.ind;
-				setBitboards(Piece.W_KNIGHT.ind, captured, 0, toBit);
-			}
-			else {
-				moved = Piece.B_PAWN.ind;
-				offsetBoard[move.to] = Piece.B_KNIGHT.ind;
-				setBitboards(Piece.B_KNIGHT.ind, captured, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(moved, Piece.NULL.ind, fromBit, 0);
-		}
-		else {
-			moved = Piece.NULL.ind;
-			captured = Piece.NULL.ind;
-		}
+		makeMoveOnBoard(move);
 		moveList.add(move);
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions, checkers));
 		setTurn();
 		setCastlingRights();
-		setEnPassantRights(move.from, move.to, moved);
+		setEnPassantRights(move.from, move.to, move.movedPiece);
 		setCheck();
-		setMoveIndices(moved, captured);
+		setMoveIndices(move.movedPiece, move.capturedPiece);
 		setKeys();
 		setRepetitions();
 	}
@@ -5239,98 +5436,8 @@ public class Position implements Hashable {
 	 */
 	public void unmakeMove() {
 		Move move = moveList.pop();
-		int enPassantVictimSquare;
 		setTurn();
-		if (move != null) {
-			long fromBit = Square.getByIndex(move.from).bitmap;
-			long toBit = Square.getByIndex(move.to).bitmap;
-			if (move.type == MoveType.NORMAL.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
-			}
-			else if (move.type == MoveType.SHORT_CASTLING.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = Piece.NULL.ind;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-				if (whitesTurn) {
-					offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
-					offsetBoard[Square.F1.ind] = Piece.NULL.ind;
-					setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.F1.bitmap, Square.H1.bitmap);
-				}
-				else {
-					offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
-					offsetBoard[Square.F8.ind] = Piece.NULL.ind;
-					setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.F8.bitmap, Square.H8.bitmap);
-				}
-			}
-			else if (move.type == MoveType.LONG_CASTLING.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = Piece.NULL.ind;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-				if (whitesTurn) {
-					offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
-					offsetBoard[Square.D1.ind] = Piece.NULL.ind;
-					setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.D1.bitmap, Square.A1.bitmap);
-				}
-				else {
-					offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
-					offsetBoard[Square.D8.ind] = Piece.NULL.ind;
-					setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.D8.bitmap, Square.A8.bitmap);
-				}
-			}
-			else if (move.type == MoveType.EN_PASSANT.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = Piece.NULL.ind;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-				if (whitesTurn)
-					enPassantVictimSquare = move.to - 8;
-				else
-					enPassantVictimSquare = move.to + 8;
-				offsetBoard[enPassantVictimSquare] = move.capturedPiece;
-				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, Square.getByIndex(enPassantVictimSquare).bitmap);
-			}
-			else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-				if (whitesTurn)
-					setBitboards(Piece.W_QUEEN.ind, Piece.NULL.ind, toBit, 0);
-				else
-					setBitboards(Piece.B_QUEEN.ind, Piece.NULL.ind, toBit, 0);
-				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-			}
-			else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-				if (whitesTurn)
-					setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, toBit, 0);
-				else
-					setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, toBit, 0);
-				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-			}
-			else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-				if (whitesTurn)
-					setBitboards(Piece.W_BISHOP.ind, Piece.NULL.ind, toBit, 0);
-				else
-					setBitboards(Piece.B_BISHOP.ind, Piece.NULL.ind, toBit, 0);
-				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-			}
-			else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-				if (whitesTurn)
-					setBitboards(Piece.W_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
-				else
-					setBitboards(Piece.B_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
-				setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-			}
-		}
+		if (move != null) unmakeMoveOnBoard(move);
 		UnmakeRegister positionInfo = unmakeRegisterHistory.pop();
 		whiteCastlingRights = positionInfo.whiteCastlingRights;
 		blackCastlingRights = positionInfo.blackCastlingRights;
