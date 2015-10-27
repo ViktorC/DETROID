@@ -5105,97 +5105,99 @@ public class Position implements Hashable {
 		long toBit = (1L << move.to);
 		if (offsetBoard[move.from] == move.movedPiece) {
 			dB = MoveTable.getByIndex(move.to);
-			if (whitesTurn) {
-				if (move.movedPiece == Piece.W_KING.ind) {
-					if (move.type == MoveType.SHORT_CASTLING.numeral) {
-						if (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-							if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
-								if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
-									return true;
+			PseudoSwitch: {
+				if (whitesTurn) {
+					if (move.movedPiece == Piece.W_KING.ind) {
+						if (move.type == MoveType.SHORT_CASTLING.numeral) {
+							if (!check && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+										return true;
+								}
 							}
 						}
-					}
-					else if (move.type == MoveType.LONG_CASTLING.numeral) {
-						if (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-							if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
-								if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
-									return true;
+						else if (move.type == MoveType.LONG_CASTLING.numeral) {
+							if (!check && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
+										return true;
+								}
 							}
 						}
+						else {
+							moveSet = dB.getWhiteKingMoves(allNonWhiteOccupied);
+							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
+								return true;
+						}
+						return false;
 					}
-					else {
-						moveSet = dB.getWhiteKingMoves(allNonWhiteOccupied);
-						if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
-							return true;
+					else if (move.movedPiece == Piece.W_QUEEN.ind)
+						moveSet = dB.getWhiteQueenMoves(allNonWhiteOccupied, allOccupied);
+					else if (move.movedPiece == Piece.W_ROOK.ind)
+						moveSet = dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
+					else if (move.movedPiece == Piece.W_BISHOP.ind)
+						moveSet = dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
+					else if (move.movedPiece == Piece.W_KNIGHT.ind)
+						moveSet = dB.getWhiteKnightMoves(allNonWhiteOccupied);
+					else if (move.movedPiece == Piece.W_PAWN.ind) {
+						moveSet = dB.getWhitePawnMoves(allBlackOccupied, allEmpty);
+						if (move.type == MoveType.EN_PASSANT.numeral && enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights) {
+							moveSet |= toBit;
+							break PseudoSwitch;
+						}
 					}
+					else return false;
+				}
+				else {
+					if (move.movedPiece == Piece.B_KING.ind) {
+						if (move.type == MoveType.SHORT_CASTLING.numeral) {
+							if (!check && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
+										return true;
+								}
+							}
+						}
+						else if (move.type == MoveType.LONG_CASTLING.numeral) {
+							if (!check && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+										return true;
+								}
+							}
+						}
+						else {
+							moveSet = dB.getBlackKingMoves(allNonBlackOccupied);
+							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
+								return true;
+						}
+						return false;
+					}
+					else if (move.movedPiece == Piece.B_QUEEN.ind)
+						moveSet = dB.getBlackQueenMoves(allNonBlackOccupied, allOccupied);
+					else if (move.movedPiece == Piece.B_ROOK.ind)
+						moveSet = dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
+					else if (move.movedPiece == Piece.B_BISHOP.ind)
+						moveSet = dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
+					else if (move.movedPiece == Piece.B_KNIGHT.ind)
+						moveSet = dB.getBlackKnightMoves(allNonBlackOccupied);
+					else if (move.movedPiece == Piece.B_PAWN.ind) {
+						moveSet = dB.getBlackPawnMoves(allWhiteOccupied, allEmpty);
+						if (move.type == MoveType.EN_PASSANT.numeral && enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights) {
+							moveSet |= toBit;
+							break PseudoSwitch;
+						}
+					}
+					else return false;
+				}
+				if (offsetBoard[move.to] != move.capturedPiece)
 					return false;
-				}
-				else if (move.movedPiece == Piece.W_QUEEN.ind)
-					moveSet = dB.getWhiteQueenMoves(allNonWhiteOccupied, allOccupied);
-				else if (move.movedPiece == Piece.W_ROOK.ind)
-					moveSet = dB.getWhiteRookMoves(allNonWhiteOccupied, allOccupied);
-				else if (move.movedPiece == Piece.W_BISHOP.ind)
-					moveSet = dB.getWhiteBishopMoves(allNonWhiteOccupied, allOccupied);
-				else if (move.movedPiece == Piece.W_KNIGHT.ind)
-					moveSet = dB.getWhiteKnightMoves(allNonWhiteOccupied);
-				else if (move.movedPiece == Piece.W_PAWN.ind) {
-					moveSet = dB.getWhitePawnMoves(allBlackOccupied, allEmpty);
-					if (enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)
-						moveSet |= toBit;
-				}
-				else return false;
-				if ((moveSet & toBit) != 0) {
-					makeMoveOnBoard(move);
-					checkers = getCheckers();
-					unmakeMoveOnBoard(move);
-					if (checkers == 0) return true;
-				}
 			}
-			else {
-				if (move.movedPiece == Piece.B_KING.ind) {
-					if (move.type == MoveType.SHORT_CASTLING.numeral) {
-						if (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-							if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
-								if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
-									return true;
-							}
-						}
-					}
-					else if (move.type == MoveType.LONG_CASTLING.numeral) {
-						if (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-							if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
-								if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
-									return true;
-							}
-						}
-					}
-					else {
-						moveSet = dB.getBlackKingMoves(allNonBlackOccupied);
-						if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
-							return true;
-					}
-					return false;
-				}
-				else if (move.movedPiece == Piece.B_QUEEN.ind)
-					moveSet = dB.getBlackQueenMoves(allNonBlackOccupied, allOccupied);
-				else if (move.movedPiece == Piece.B_ROOK.ind)
-					moveSet = dB.getBlackRookMoves(allNonBlackOccupied, allOccupied);
-				else if (move.movedPiece == Piece.B_BISHOP.ind)
-					moveSet = dB.getBlackBishopMoves(allNonBlackOccupied, allOccupied);
-				else if (move.movedPiece == Piece.B_KNIGHT.ind)
-					moveSet = dB.getBlackKnightMoves(allNonBlackOccupied);
-				else if (move.movedPiece == Piece.B_PAWN.ind) {
-					moveSet = dB.getBlackPawnMoves(allWhiteOccupied, allEmpty);
-					if (enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)
-						moveSet |= toBit;
-				}
-				else return false;
-				if ((moveSet & toBit) != 0) {
-					makeMoveOnBoard(move);
-					checkers = getCheckers();
-					unmakeMoveOnBoard(move);
-					if (checkers == 0) return true;
-				}
+			if ((moveSet & toBit) != 0) {
+				makeMoveOnBoard(move);
+				checkers = getCheckers();
+				unmakeMoveOnBoard(move);
+				if (checkers == 0) return true;
 			}
 		}
 		return false;
