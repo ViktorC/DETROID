@@ -26,10 +26,10 @@ public class Move implements Comparable<Move> {
 		PROMOTION_TO_BISHOP,
 		PROMOTION_TO_KNIGHT;
 		
-		public final int numeral;	//a numeric representation of the move type; to avoid the overhead of calling the ordinal function
+		public final int ind;	//a numeric representation of the move type; to avoid the overhead of calling the ordinal function
 		
 		private MoveType() {
-			numeral = ordinal();
+			ind = ordinal();
 		}
 	}
 	

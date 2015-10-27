@@ -79,12 +79,12 @@ public class Zobrist {
 		long key = p.key;
 		Move move = p.getLastMove();
 		UnmakeRegister unmakeReg = p.getUnmakeRegister();
-		if (move.type == MoveType.NORMAL.numeral) {
+		if (move.type == MoveType.NORMAL.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			key ^= board[move.movedPiece][move.to];
 		}
-		else if (move.type == MoveType.SHORT_CASTLING.numeral) {
+		else if (move.type == MoveType.SHORT_CASTLING.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			key ^= board[move.movedPiece][move.to];
@@ -97,7 +97,7 @@ public class Zobrist {
 				key ^= board[Piece.B_ROOK.ind][Square.F8.ind];
 			}
 		}
-		else if (move.type == MoveType.LONG_CASTLING.numeral) {
+		else if (move.type == MoveType.LONG_CASTLING.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			key ^= board[move.movedPiece][move.to];
@@ -110,7 +110,7 @@ public class Zobrist {
 				key ^= board[Piece.B_ROOK.ind][Square.D8.ind];
 			}
 		}
-		else if (move.type == MoveType.EN_PASSANT.numeral) {
+		else if (move.type == MoveType.EN_PASSANT.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.movedPiece][move.to];
 			if (move.movedPiece == Piece.W_PAWN.ind)
@@ -118,7 +118,7 @@ public class Zobrist {
 			else
 				key ^= board[Piece.W_PAWN.ind][move.to + 8];
 		}
-		else if (move.type == MoveType.PROMOTION_TO_QUEEN.numeral) {
+		else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			if (move.movedPiece == Piece.W_PAWN.ind)
@@ -126,7 +126,7 @@ public class Zobrist {
 			else
 				key ^= board[Piece.B_QUEEN.ind][move.to];
 		}
-		else if (move.type == MoveType.PROMOTION_TO_ROOK.numeral) {
+		else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			if (move.movedPiece == Piece.W_PAWN.ind)
@@ -134,7 +134,7 @@ public class Zobrist {
 			else
 				key ^= board[Piece.B_ROOK.ind][move.to];
 		}
-		else if (move.type == MoveType.PROMOTION_TO_BISHOP.numeral) {
+		else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			if (move.movedPiece == Piece.W_PAWN.ind)
@@ -142,7 +142,7 @@ public class Zobrist {
 			else
 				key ^= board[Piece.B_BISHOP.ind][move.to];
 		}
-		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.numeral) {
+		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
 			key ^= board[move.movedPiece][move.from];
 			key ^= board[move.capturedPiece][move.to];
 			if (move.movedPiece == Piece.W_PAWN.ind)
