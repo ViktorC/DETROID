@@ -28,13 +28,13 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 	}
 	/**Returns whether this entry is more valuable for storing than the input parameter entry.*/
 	public boolean betterThan(TTEntry e) {
-		if (generation >= e.generation && depth >= e.depth && (type == NodeType.EXACT.numeric || e.type != NodeType.EXACT.numeric))
+		if (generation >= e.generation && depth >= e.depth && (type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind))
 			return true;
 		return false;
 	}
 	/**Returns whether this entry is less valuable for storing than the input parameter entry.*/
 	public boolean worseThan(TTEntry e) {
-		if (generation < e.generation - 2 || depth < e.depth || (e.type == NodeType.EXACT.numeric && type != NodeType.EXACT.numeric))
+		if (generation < e.generation - 2 || depth < e.depth || (e.type == NodeType.EXACT.ind && type != NodeType.EXACT.ind))
 			return true;
 		return false;
 	}

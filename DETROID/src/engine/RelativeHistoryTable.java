@@ -1,8 +1,10 @@
 package engine;
 
+import engine.Evaluator.MaterialScore;
+
 public class RelativeHistoryTable {
 
-	private final static int MAX_SCORE = 2*(Piece.B_QUEEN.standardValue - Piece.W_PAWN.standardValue);
+	private final static int MAX_SCORE = 2*(MaterialScore.QUEEN.value - MaterialScore.PAWN.value);
 	private final static int DECREMENT_FACTOR = 4;
 	
 	private int[][] historyT;	//an [origin square][destination square] table for the history heuristic
@@ -44,6 +46,10 @@ public class RelativeHistoryTable {
 	 * tables.
 	 */
 	public int score(Move m) {
-		return historyT[m.from][m.to]/butterflyT[m.from][m.to];
+		int bTscore = butterflyT[m.from][m.to];
+		if (bTscore != 0)
+			return historyT[m.from][m.to]/butterflyT[m.from][m.to];
+		else
+			return 0;
 	}
 }

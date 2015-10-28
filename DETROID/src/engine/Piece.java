@@ -1,37 +1,35 @@
 package engine;
 
-/**An enum type for the different chess pieces. Each piece has an id number by which it is represented in the array of the auxiliary offset board, a FEN notation
- * character, and a standard value.
+/**An enum type for the different chess pieces. Each piece has an id number by which it is represented in the array of the auxiliary offset board, and
+ * a FEN notation character.
  * 
  * @author Viktor
  *
  */
 public enum Piece {
 	
-	NULL	('\u0000', 0),
+	NULL	('\u0000'),
 	
-	W_KING	('K', 0),
-	W_QUEEN	('Q', 900),
-	W_ROOK	('R', 500),
-	W_BISHOP('B', 300),
-	W_KNIGHT('N', 300),
-	W_PAWN	('P', 100),
+	W_KING	('K'),
+	W_QUEEN	('Q'),
+	W_ROOK	('R'),
+	W_BISHOP('B'),
+	W_KNIGHT('N'),
+	W_PAWN	('P'),
 	
-	B_KING	('k', 0),
-	B_QUEEN	('q', 900),
-	B_ROOK	('r', 500),
-	B_BISHOP('b', 300),
-	B_KNIGHT('n', 300),
-	B_PAWN	('p', 100);
+	B_KING	('k'),
+	B_QUEEN	('q'),
+	B_ROOK	('r'),
+	B_BISHOP('b'),
+	B_KNIGHT('n'),
+	B_PAWN	('p');
 	
-	public final int  ind;			//a number that generally represents the respective piece, among others, for example on the offset board
-	public final char fen;				//a character denoting the piece-type in FEN notation
-	public final int  standardValue;	//an integer representing the piece's standard evaluation score in centipawns
+	public final int  ind;	//a number that generally represents the respective piece, among others, for example on the offset board
+	public final char fen;	//a character denoting the piece-type in FEN notation
 	
-	private Piece(char fen, int standardValue) {
+	private Piece(char fen) {
 		this.ind = ordinal();
 		this.fen = fen;
-		this.standardValue = standardValue;
 	}
 	/**Returns the piece defined by the FEN piece notation input parameter's numeric equivalent according to {@link #engine.Piece Piece}.
 	 * 

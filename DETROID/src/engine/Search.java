@@ -1,5 +1,7 @@
 package engine;
 
+import engine.Evaluator.MaterialScore;
+import engine.KillerTable.KillerTableEntry;
 import util.*;
 
 /**A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It uses
@@ -17,19 +19,19 @@ public class Search extends Thread {
 	 */
 	public enum NodeType {
 		
-		EXACT	 (0),
-		FAIL_HIGH(1),
-		FAIL_LOW (2);
+		EXACT,
+		FAIL_HIGH,
+		FAIL_LOW;
 		
-		public final byte numeric;
+		public final byte ind;
 		
-		private NodeType(int numeric) {
-			this.numeric = (byte)numeric;
+		private NodeType() {
+			this.ind = (byte)ordinal();
 		}
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 64;
+	private final static int MAX_SEARCH_DEPTH = 8;
 	
 	private int numOfCores;
 	
@@ -38,6 +40,8 @@ public class Search extends Thread {
 	private int ply;
 	private Move[] pV;
 	private static HashTable<TTEntry> tT = new HashTable<>();
+	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
+	private static RelativeHistoryTable hT = new RelativeHistoryTable();
 	private static byte tTgen = 0;
 	private boolean pondering = false;
 	private long searchTime;
@@ -140,6 +144,7 @@ public class Search extends Thread {
 				tT.remove(e -> e.generation < tTgen - 2);
 			}
 			tTgen++;
+			hT.decrementCurrentValues();
 		}
 	}
 	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
@@ -152,14 +157,17 @@ public class Search extends Thread {
 	 */
 	private int pVsearch(int depth, int alpha, int beta) {
 		int score, origAlpha = alpha, val;
-		Move bestMove, move;
-		Queue<Move> moveQ;
-		Move[] moveArr;
+		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
+		KillerTableEntry kE;
+		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false,
+				thereIsKillerMove1 = false, thereIsKillerMove2 = false;
+		Queue<Move> matMoves, nonMatMoves = null;
+		Move[] matMovesArr, nonMatMovesArr;
 		TTEntry e = tT.lookUp(pos.key);
 		if (e != null && e.depth >= depth) {
-			if (e.type == NodeType.EXACT.numeric)
+			if (e.type == NodeType.EXACT.ind)
 				return e.score;
-			else if (e.type == NodeType.FAIL_HIGH.numeric) {
+			else if (e.type == NodeType.FAIL_HIGH.ind) {
 				if (e.score > alpha)
 					alpha = e.score;
 			}
@@ -171,93 +179,223 @@ public class Search extends Thread {
 		}
 		if (depth == 0) {
 			score = Evaluator.score(pos);
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, score, 0, tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 			return score;
 		}
-		moveQ = pos.generateAllMoves();
-		if (moveQ.length() == 0) {
-			if (pos.getCheck()) {
-				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.LOSS.score, 0, tTgen));
-				return Game.State.LOSS.score;
-			}
-			else {
-				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, Game.State.TIE.score, 0, tTgen));
-				return Game.State.TIE.score;
-			}
-		}
-		if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
-			return Game.State.TIE.score;
-		moveArr = orderMoves(moveQ, depth);
-		bestMove = new Move(Game.State.LOSS.score);
-		for (int i = 0; i < moveArr.length; i++) {
-			if (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
-				tT.remove(entry -> entry.depth < 2);
-				System.gc();
-			}
-			move = moveArr[i];
-			pos.makeMove(move);
-			if (i == 0)
+		Search: {
+			bestMove = new Move(Game.State.LOSS.score);
+			if (e != null && e.bestMove != 0)
+				pVmove = Move.toMove(e.bestMove);
+			else
+				pVmove = pV[ply - depth];
+			if (pVmove != null) {
+				thereIsPvMove = true;
+				pos.makeMove(pVmove);
 				val = -pVsearch(depth - 1, -beta, -alpha);
-			else {
-				val = -pVsearch(depth - 1, -alpha - 1, -alpha);
-				if (val > alpha && val < beta)
-					val = -pVsearch(depth - 1, -beta, -val);
+				pos.unmakeMove();
+				if (val > bestMove.value) {
+					bestMove = pVmove;
+					bestMove.value = val;
+					if (val > alpha)
+						alpha = val;
+				}
+				if (alpha >= beta)
+					break Search;
+				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+					break Search;
 			}
-			pos.unmakeMove();
-			if (val > bestMove.value) {
-				bestMove = move;
-				bestMove.value = val;
-				if (val > alpha)
-					alpha = val;
+			matMoves = pos.generateMaterialMoves();
+			if (matMoves.length() == 0) {
+				nonMatMoves = pos.generateNonMaterialMoves();
+				if (nonMatMoves.length() == 0) {
+					if (pos.getCheck()) {
+						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.LOSS.score, 0, tTgen));
+						return Game.State.LOSS.score;
+					}
+					else {
+						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.TIE.score, 0, tTgen));
+						return Game.State.TIE.score;
+					}
+				}
 			}
-			if (alpha >= beta)
-				break;
-			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
-				break;
+			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
+				return Game.State.TIE.score;
+			matMovesArr = orderMaterialMoves(matMoves);
+			for (int i = 0; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
+				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
+					tT.remove(entry -> entry.depth < 2);
+					System.gc();
+				}
+				move = matMovesArr[i];
+				if (thereIsPvMove) {
+					if (move.equals(pVmove))
+						continue;
+				}
+				if (!killersChecked && move.value < 0) {
+					kE = kT.retrieve(depth);
+					if (kE.move1 != 0) {
+						killerMove1 = Move.toMove(kE.move1);
+						if (pos.isLegal(killerMove1)) {
+							thereIsKillerMove1 = true;
+							pos.makeMove(killerMove1);
+							if (!thereIsPvMove && i == 0)
+								val = -pVsearch(depth - 1, -beta, -alpha);
+							else {
+								val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+								if (val > alpha && val < beta)
+									val = -pVsearch(depth - 1, -beta, -val);
+							}
+							pos.unmakeMove();
+							if (val > bestMove.value) {
+								bestMove = killerMove1;
+								bestMove.value = val;
+								if (val > alpha)
+									alpha = val;
+							}
+							if (alpha >= beta)
+								break Search;
+							if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+								break Search;
+						}
+					}
+					if (kE.move2 != 0) {
+						killerMove2 = Move.toMove(kE.move2);
+						if (pos.isLegal(killerMove2)) {
+							thereIsKillerMove2 = true;
+							pos.makeMove(killerMove2);
+							if (!thereIsPvMove && !thereIsKillerMove1 && i == 0)
+								val = -pVsearch(depth - 1, -beta, -alpha);
+							else {
+								val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+								if (val > alpha && val < beta)
+									val = -pVsearch(depth - 1, -beta, -val);
+							}
+							pos.unmakeMove();
+							if (val > bestMove.value) {
+								bestMove = killerMove2;
+								bestMove.value = val;
+								if (val > alpha)
+									alpha = val;
+							}
+							if (alpha >= beta)
+								break Search;
+							if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+								break Search;
+						}
+					}
+					killersChecked = true;
+				}
+				pos.makeMove(move);
+				if (!thereIsPvMove && i == 0)
+					val = -pVsearch(depth - 1, -beta, -alpha);
+				else {
+					val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+					if (val > alpha && val < beta)
+						val = -pVsearch(depth - 1, -beta, -val);
+				}
+				pos.unmakeMove();
+				if (val > bestMove.value) {
+					bestMove = move;
+					bestMove.value = val;
+					if (val > alpha)
+						alpha = val;
+				}
+				if (alpha >= beta)
+					break Search;
+				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+					break Search;
+			}
+			if (nonMatMoves == null)
+				nonMatMoves = pos.generateNonMaterialMoves();
+			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
+			for (int i = 0; i < nonMatMovesArr.length; i++, checkMemory = !checkMemory) {
+				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
+					tT.remove(entry -> entry.depth < 2);
+					System.gc();
+				}
+				move = nonMatMovesArr[i];
+				if (thereIsPvMove) {
+					if (move.equals(pVmove))
+						continue;
+				}
+				if (thereIsKillerMove1) {
+					if (move.equals(killerMove1))
+						continue;
+				}
+				if (thereIsKillerMove2) {
+					if (move.equals(killerMove2))
+						continue;
+				}
+				pos.makeMove(move);
+				if (!thereIsPvMove && matMoves.length() == 0 && i == 0)
+					val = -pVsearch(depth - 1, -beta, -alpha);
+				else {
+					val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+					if (val > alpha && val < beta)
+						val = -pVsearch(depth - 1, -beta, -val);
+				}
+				pos.unmakeMove();
+				if (val > bestMove.value) {
+					bestMove = move;
+					bestMove.value = val;
+					if (val > alpha)
+						alpha = val;
+				}
+				if (alpha >= beta) {
+					kT.add(depth, move);
+					hT.recordSuccessfulMove(move);
+					break Search;
+				}
+				else
+					hT.recordUnsuccessfulMove(move);
+				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+					break Search;
+			}
 		}
 		if (bestMove.value <= origAlpha) 
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.numeric, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.numeric, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.numeric, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, bestMove.value, bestMove.toInt(), tTgen));
 		return bestMove.value;
 	}
-	/**Orders a list of moves according to the PV node of the given depth, history heuristics, and the MVV-LVA principle; and returns it as an array.
+	/**Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.
 	 * 
 	 * @param moves
-	 * @param depth
-	 * @return The ordered move list.
+	 * @return
 	 */
-	private Move[] orderMoves(List<Move> moves, int depth) {
-		boolean thereIsPvMove = false, thereIsRefutMove = false;
-		Move pVmove, refutMove = null;
-		if ((pVmove = pV[ply - depth]) != null)
-			thereIsPvMove = true;
-		TTEntry e = tT.lookUp(pos.key);
-		if (e != null && e.bestMove != 0) {
-			refutMove = Move.toMove(e.bestMove);
-			thereIsRefutMove = true;
-		}
+	private Move[] orderMaterialMoves(List<Move> moves) {
 		Move[] arr = new Move[moves.length()];
 		Move move;
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
-			move.value = (move.capturedPiece == 0) ? 0 : Piece.getByNumericNotation(move.capturedPiece).standardValue - Piece.getByNumericNotation(move.movedPiece).standardValue;
-			if (thereIsPvMove && move.equals(pVmove)) {
-				move.value += (ply - 1 - depth)*250;
-				thereIsPvMove = false;
-			}
-			if (thereIsRefutMove && move.equals(refutMove)) {
-				move.value += e.depth*250;
-				thereIsRefutMove = false;
+			move.value = MaterialScore.getValueByPieceInd(move.capturedPiece) - MaterialScore.getValueByPieceInd(move.movedPiece);
+			if (move.type > 3) {
+				move.value += MaterialScore.QUEEN.value;
 			}
 			arr[i] = move;
 			i++;
 		}
 		return new QuickSort<Move>(arr).getArray();
-		
+	}
+	/**Orders non-material moves according to the relative history heuristic.
+	 * 
+	 * @param moves
+	 * @return
+	 */
+	private Move[] orderNonMaterialMoves(List<Move> moves) {
+		Move[] arr = new Move[moves.length()];
+		Move move;
+		int i = 0;
+		while (moves.hasNext()) {
+			move = moves.next();
+			move.value = hT.score(move);
+			arr[i] = move;
+			i++;
+		}
+		return new QuickSort<Move>(arr).getArray();
 	}
 	/**Returns an array of Move objects according to the best line of play extracted form the transposition table.
 	 * 

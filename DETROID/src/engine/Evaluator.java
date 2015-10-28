@@ -12,6 +12,46 @@ import engine.Position.CastlingRights;
  */
 public class Evaluator {
 	
+	/**An enum type defining the standard values of different piece types.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static enum MaterialScore {
+		
+		KING	(400),
+		QUEEN	(900),
+		ROOK	(500),
+		BISHOP	(300),
+		KNIGHT	(300),
+		PAWN	(100);
+		
+		public final int value;	//the standard worth of the piece type
+		
+		private MaterialScore(int value) {
+			this.value = value;
+		}
+		/**Returns the value score of a piece type defined by a piece index according to {@link #engine.Piece Piece}.
+		 * 
+		 * @param pieceInd A piece index according to {@link #engine.Piece Piece}.
+		 * @return The score of the piece type.
+		 */
+		public static int getValueByPieceInd(int pieceInd) {
+			if (pieceInd == Piece.W_KING.ind) return KING.value;
+			else if (pieceInd == Piece.W_QUEEN.ind) return QUEEN.value;
+			else if (pieceInd == Piece.W_ROOK.ind) return ROOK.value;
+			else if (pieceInd == Piece.W_BISHOP.ind) return BISHOP.value;
+			else if (pieceInd == Piece.W_KNIGHT.ind) return KNIGHT.value;
+			else if (pieceInd == Piece.W_PAWN.ind) return PAWN.value;
+			else if (pieceInd == Piece.B_KING.ind) return KING.value;
+			else if (pieceInd == Piece.B_QUEEN.ind) return QUEEN.value;
+			else if (pieceInd == Piece.B_ROOK.ind) return ROOK.value;
+			else if (pieceInd == Piece.B_BISHOP.ind) return BISHOP.value;
+			else if (pieceInd == Piece.B_KNIGHT.ind) return KNIGHT.value;
+			else if (pieceInd == Piece.B_PAWN.ind) return PAWN.value;
+			else return 0;
+		}
+	}
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @return
@@ -27,16 +67,16 @@ public class Evaluator {
 			else
 				return State.TIE.score;
 		}
-		score += BitOperations.getCardinality(pos.whiteQueens)*Piece.W_QUEEN.standardValue;
-		score += BitOperations.getCardinality(pos.whiteRooks)*Piece.W_ROOK.standardValue;
-		score += BitOperations.getCardinality(pos.whiteBishops)*Piece.W_BISHOP.standardValue;
-		score += BitOperations.getCardinality(pos.whiteKnights)*Piece.W_KNIGHT.standardValue;
-		score += BitOperations.getCardinality(pos.whitePawns)*Piece.W_PAWN.standardValue;
-		score -= BitOperations.getCardinality(pos.blackQueens)*Piece.B_QUEEN.standardValue;
-		score -= BitOperations.getCardinality(pos.blackRooks)*Piece.B_ROOK.standardValue;
-		score -= BitOperations.getCardinality(pos.blackBishops)*Piece.B_BISHOP.standardValue;
-		score -= BitOperations.getCardinality(pos.blackKnights)*Piece.B_KNIGHT.standardValue;
-		score -= BitOperations.getCardinality(pos.blackPawns)*Piece.B_PAWN.standardValue;
+		score += BitOperations.getCardinality(pos.whiteQueens)*MaterialScore.QUEEN.value;
+		score += BitOperations.getCardinality(pos.whiteRooks)*MaterialScore.ROOK.value;
+		score += BitOperations.getCardinality(pos.whiteBishops)*MaterialScore.BISHOP.value;
+		score += BitOperations.getCardinality(pos.whiteKnights)*MaterialScore.KNIGHT.value;
+		score += BitOperations.getCardinality(pos.whitePawns)*MaterialScore.PAWN.value;
+		score -= BitOperations.getCardinality(pos.blackQueens)*MaterialScore.QUEEN.value;
+		score -= BitOperations.getCardinality(pos.blackRooks)*MaterialScore.ROOK.value;
+		score -= BitOperations.getCardinality(pos.blackBishops)*MaterialScore.BISHOP.value;
+		score -= BitOperations.getCardinality(pos.blackKnights)*MaterialScore.KNIGHT.value;
+		score -= BitOperations.getCardinality(pos.blackPawns)*MaterialScore.PAWN.value;
 		gloriaSquares = BitOperations.serialize(MoveTable.getByIndex(BitOperations.indexOfBit(pos.whiteKing)).getCrudeKingMoves());
 		while (gloriaSquares.hasNext())
 			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
@@ -60,8 +100,8 @@ public class Evaluator {
 			if (move.movedPiece == 1 || move.movedPiece == 7)
 				score += 10;
 			else
-				score += Piece.getByNumericNotation(move.movedPiece).standardValue/100;
-			score += Piece.getByNumericNotation(move.capturedPiece).standardValue/20;
+				score += MaterialScore.getValueByPieceInd(move.movedPiece)/100;
+			score += MaterialScore.getValueByPieceInd(move.capturedPiece)/20;
 			if (move.type > 3)
 				score += 40;
 		}
@@ -72,8 +112,8 @@ public class Evaluator {
 			if (move.movedPiece == 1 || move.movedPiece == 7)
 				score -= 10;
 			else
-				score -= Piece.getByNumericNotation(move.movedPiece).standardValue/100;
-			score -= Piece.getByNumericNotation(move.capturedPiece).standardValue/20;
+				score += MaterialScore.getValueByPieceInd(move.movedPiece)/100;
+			score += MaterialScore.getValueByPieceInd(move.capturedPiece)/20;
 			if (move.type > 3)
 				score -= 40;
 		}
