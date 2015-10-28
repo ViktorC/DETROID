@@ -6,8 +6,9 @@ public class Playground {
 		Position p = new Position();
 		Search s = Search.getInstance(p);
 		long start = System.currentTimeMillis();
-		s.start();
+		s.run();
 		Move.printMovesToConsole(s.getPv());
+		System.out.println(s.getPv().next().capturedPiece);
 		System.out.println(s.getTranspositionTableStats());
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);

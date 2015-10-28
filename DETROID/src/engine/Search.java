@@ -94,7 +94,7 @@ public class Search extends Thread {
 	public Queue<Move> getPv() {
 		Queue<Move> pV = new Queue<>();
 		int i = 0;
-		while (this.pV[i] != null)
+		while (i < this.pV.length && this.pV[i] != null)
 			pV.add(this.pV[i++]);
 		return pV;
 	}

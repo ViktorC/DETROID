@@ -23,9 +23,9 @@ public class KillerTable {
 	
 	private KillerTableEntry[] t;
 	
-	/**Creates a killer table of the given size. Should be not more than the maximum allowed search depth.
+	/**Creates a killer table of the given size.
 	 * 
-	 * @param size The length of the table.
+	 * @param size The length of the table. Should be the maximum allowed search depth.
 	 */
 	public KillerTable(int size) {
 		t = new KillerTableEntry[size];
