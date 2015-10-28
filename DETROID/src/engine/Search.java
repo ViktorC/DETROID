@@ -31,7 +31,7 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 8;
+	private final static int MAX_SEARCH_DEPTH = 9;
 	
 	private int numOfCores;
 	
@@ -232,7 +232,7 @@ public class Search extends Thread {
 						continue;
 				}
 				if (!killersChecked && move.value < 0) {
-					kE = kT.retrieve(depth);
+					kE = kT.retrieve(ply - depth);
 					if (kE.move1 != 0) {
 						killerMove1 = Move.toMove(kE.move1);
 						if (pos.isLegal(killerMove1)) {
@@ -342,7 +342,7 @@ public class Search extends Thread {
 						alpha = val;
 				}
 				if (alpha >= beta) {
-					kT.add(depth, move);
+					kT.add(ply - depth, move);
 					hT.recordSuccessfulMove(move);
 					break Search;
 				}
