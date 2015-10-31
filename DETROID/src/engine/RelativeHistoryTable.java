@@ -48,7 +48,7 @@ public class RelativeHistoryTable {
 	public int score(Move m) {
 		int bTscore = butterflyT[m.from][m.to];
 		if (bTscore != 0)
-			return historyT[m.from][m.to]/butterflyT[m.from][m.to];
+			return historyT[m.from][m.to]/bTscore;
 		else
 			return 0;
 	}

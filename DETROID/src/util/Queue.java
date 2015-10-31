@@ -10,7 +10,7 @@ package util;
 public class Queue<Data> extends List<Data> {
 
 	private ListItem tail;		//a reference to the last node of the queue; for faster addition
-	private int length = 0;			//the number of nodes contained in the list
+	private int length = 0;		//the number of nodes contained in the list
 
 	public Queue() {
 

@@ -97,12 +97,14 @@ public abstract class List<Data> {
 	public abstract int length();
 	/**Copies references to the nodes of the list into an array in order, and returns the array.
 	 *
-	 * If the list is empty, it throws a NullPointerException.
+	 * If the list is empty, it returns null.
 	 *
 	 * @return
 	 */
-	public Data[] toArray() throws NullPointerException {
+	public Data[] toArray() {
 		int i = 0;
+		if (head == null)
+			return null;
 		@SuppressWarnings({"unchecked"})
 		Data[] arr = (Data[])Array.newInstance(head.data.getClass(), length());
 		while (hasNext()) {

@@ -3,13 +3,9 @@ package engine;
 public class Playground {
 
 	public static void main(String[] args) {
-		Position p = new Position();
-		Search s = Search.getInstance(p);
+		Position p = new Position("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
 		long start = System.currentTimeMillis();
-		s.run();
-		Move.printMovesToConsole(s.getPv());
-		System.out.println(s.getPv().next().capturedPiece);
-		System.out.println(s.getTranspositionTableStats());
+		System.out.println(p.tacticalStagedQuickPerft(6));
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}

@@ -227,10 +227,8 @@ public class Search extends Thread {
 					System.gc();
 				}
 				move = matMovesArr[i];
-				if (thereIsPvMove) {
-					if (move.equals(pVmove))
-						continue;
-				}
+				if (thereIsPvMove && move.equals(pVmove))
+					continue;
 				if (!killersChecked && move.value < 0) {
 					kE = kT.retrieve(ply - depth);
 					if (kE.move1 != 0) {
@@ -314,20 +312,20 @@ public class Search extends Thread {
 					System.gc();
 				}
 				move = nonMatMovesArr[i];
-				if (thereIsPvMove) {
-					if (move.equals(pVmove))
-						continue;
+				if (thereIsPvMove && move.equals(pVmove)) {
+					thereIsPvMove = false;
+					continue;
 				}
-				if (thereIsKillerMove1) {
-					if (move.equals(killerMove1))
-						continue;
+				if (thereIsKillerMove1 && move.equals(killerMove1)) {
+					thereIsKillerMove1 = false;
+					continue;
 				}
-				if (thereIsKillerMove2) {
-					if (move.equals(killerMove2))
-						continue;
+				if (thereIsKillerMove2 && move.equals(killerMove2)) {
+					thereIsKillerMove2 = false;
+					continue;
 				}
 				pos.makeMove(move);
-				if (!thereIsPvMove && matMoves.length() == 0 && i == 0)
+				if (!thereIsPvMove && i == 0 && matMoves.length() == 0)
 					val = -pVsearch(depth - 1, -beta, -alpha);
 				else {
 					val = -pVsearch(depth - 1, -alpha - 1, -alpha);
