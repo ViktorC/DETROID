@@ -79,77 +79,6 @@ public class Zobrist {
 		long key = p.key;
 		Move move = p.getLastMove();
 		UnmakeRegister unmakeReg = p.getUnmakeRegister();
-		if (move.type == MoveType.NORMAL.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			key ^= board[move.movedPiece][move.to];
-		}
-		else if (move.type == MoveType.SHORT_CASTLING.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			key ^= board[move.movedPiece][move.to];
-			if (move.movedPiece == Piece.W_KING.ind) {
-				key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
-				key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
-			}
-			else {
-				key ^= board[Piece.B_ROOK.ind][Square.H8.ind];
-				key ^= board[Piece.B_ROOK.ind][Square.F8.ind];
-			}
-		}
-		else if (move.type == MoveType.LONG_CASTLING.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			key ^= board[move.movedPiece][move.to];
-			if (move.movedPiece == Piece.W_KING.ind) {
-				key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
-				key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
-			}
-			else {
-				key ^= board[Piece.B_ROOK.ind][Square.A8.ind];
-				key ^= board[Piece.B_ROOK.ind][Square.D8.ind];
-			}
-		}
-		else if (move.type == MoveType.EN_PASSANT.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.movedPiece][move.to];
-			if (move.movedPiece == Piece.W_PAWN.ind)
-				key ^= board[Piece.B_PAWN.ind][move.to - 8];
-			else
-				key ^= board[Piece.W_PAWN.ind][move.to + 8];
-		}
-		else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			if (move.movedPiece == Piece.W_PAWN.ind)
-				key ^= board[Piece.W_QUEEN.ind][move.to];
-			else
-				key ^= board[Piece.B_QUEEN.ind][move.to];
-		}
-		else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			if (move.movedPiece == Piece.W_PAWN.ind)
-				key ^= board[Piece.W_ROOK.ind][move.to];
-			else
-				key ^= board[Piece.B_ROOK.ind][move.to];
-		}
-		else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			if (move.movedPiece == Piece.W_PAWN.ind)
-				key ^= board[Piece.W_BISHOP.ind][move.to];
-			else
-				key ^= board[Piece.B_BISHOP.ind][move.to];
-		}
-		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
-			key ^= board[move.movedPiece][move.from];
-			key ^= board[move.capturedPiece][move.to];
-			if (move.movedPiece == Piece.W_PAWN.ind)
-				key ^= board[Piece.W_KNIGHT.ind][move.to];
-			else
-				key ^= board[Piece.B_KNIGHT.ind][move.to];
-		}
 		key ^= turn;
 		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];
 		key ^= blackCastlingRights[unmakeReg.blackCastlingRights];
@@ -157,6 +86,79 @@ public class Zobrist {
 		key ^= whiteCastlingRights[p.whiteCastlingRights];
 		key ^= blackCastlingRights[p.blackCastlingRights];
 		key ^= enPassantRights[p.enPassantRights];
+		if (move != null) {
+			if (move.type == MoveType.NORMAL.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				key ^= board[move.movedPiece][move.to];
+			}
+			else if (move.type == MoveType.SHORT_CASTLING.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == Piece.W_KING.ind) {
+					key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
+					key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
+				}
+				else {
+					key ^= board[Piece.B_ROOK.ind][Square.H8.ind];
+					key ^= board[Piece.B_ROOK.ind][Square.F8.ind];
+				}
+			}
+			else if (move.type == MoveType.LONG_CASTLING.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == Piece.W_KING.ind) {
+					key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
+					key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
+				}
+				else {
+					key ^= board[Piece.B_ROOK.ind][Square.A8.ind];
+					key ^= board[Piece.B_ROOK.ind][Square.D8.ind];
+				}
+			}
+			else if (move.type == MoveType.EN_PASSANT.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == Piece.W_PAWN.ind)
+					key ^= board[Piece.B_PAWN.ind][move.to - 8];
+				else
+					key ^= board[Piece.W_PAWN.ind][move.to + 8];
+			}
+			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == Piece.W_PAWN.ind)
+					key ^= board[Piece.W_QUEEN.ind][move.to];
+				else
+					key ^= board[Piece.B_QUEEN.ind][move.to];
+			}
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == Piece.W_PAWN.ind)
+					key ^= board[Piece.W_ROOK.ind][move.to];
+				else
+					key ^= board[Piece.B_ROOK.ind][move.to];
+			}
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == Piece.W_PAWN.ind)
+					key ^= board[Piece.W_BISHOP.ind][move.to];
+				else
+					key ^= board[Piece.B_BISHOP.ind][move.to];
+			}
+			else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
+				key ^= board[move.movedPiece][move.from];
+				key ^= board[move.capturedPiece][move.to];
+				if (move.movedPiece == Piece.W_PAWN.ind)
+					key ^= board[Piece.W_KNIGHT.ind][move.to];
+				else
+					key ^= board[Piece.B_KNIGHT.ind][move.to];
+			}
+		}
 		return key;
 	}
 }
