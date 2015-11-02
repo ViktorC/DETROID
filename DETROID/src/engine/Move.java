@@ -55,12 +55,12 @@ public class Move implements Comparable<Move> {
 	}
 	
 
-	int from;			//the index of the origin square
-	int to;				//the index of the destination square
-	int movedPiece;		//the numeric notation of the type of piece moved
-	int capturedPiece;	//the numeric notation of the type of piece captured; if none, 0
-	int type;			//the type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight
-	int value;			//the value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to
+	int from;			// The index of the origin square.
+	int to;				// The index of the destination square.
+	int movedPiece;		// The numeric notation of the type of piece moved.
+	int capturedPiece;	// The numeric notation of the type of piece captured; if none, 0.
+	int type;			// The type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight.
+	int value;			// The value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to.
 	
 	public Move() {
 	}

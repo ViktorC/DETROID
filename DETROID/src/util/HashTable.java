@@ -28,7 +28,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public static abstract class Entry<E> implements Comparable<E>, Hashable {
 		
-		protected long key;	//a 64 bit integer key that is hashed onto an index
+		protected long key;	// A 64 bit integer key that is hashed onto an index:
 		
 		/**Returns a 64 bit hash code that can be used for the identification of the object, however its uniqueness is not guaranteed.*/
 		public long key() {

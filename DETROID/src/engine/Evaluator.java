@@ -26,7 +26,7 @@ public class Evaluator {
 		KNIGHT	(300),
 		PAWN	(100);
 		
-		public final int value;	//the standard worth of the piece type
+		public final int value;	// The standard worth of the piece type.
 		
 		private MaterialScore(int value) {
 			this.value = value;

@@ -12,11 +12,11 @@ import engine.Search.NodeType;
  */
 public class TTEntry extends HashTable.Entry<TTEntry> {
 	
-	short depth;		//how deep the position has been searched
-	byte  type;			//the type of the returned score
-	short score;		//the returned score
-	int   bestMove;		//the best move compressed into an int
-	byte  generation;	//the age of the entry
+	short depth;		// How deep the position has been searched.
+	byte  type;			// The type of the returned score.
+	short score;		// The returned score.
+	int   bestMove;		// The best move compressed into an int.
+	byte  generation;	// The age of the entry.
 
 	public TTEntry(long key, int depth, byte type, int score, int bestMove, byte age) {
 		this.key = key;

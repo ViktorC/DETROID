@@ -31,7 +31,7 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 9;
+	private final static int MAX_SEARCH_DEPTH = 64;
 	
 	private int numOfCores;
 	
@@ -159,10 +159,10 @@ public class Search extends Thread {
 		int score, origAlpha = alpha, val;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		KillerTableEntry kE;
-		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false,
-				thereIsKillerMove1 = false, thereIsKillerMove2 = false;
+		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
 		Queue<Move> matMoves, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
+		// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 		TTEntry e = tT.lookUp(pos.key);
 		if (e != null && e.depth >= depth) {
 			if (e.type == NodeType.EXACT.ind)
@@ -177,18 +177,18 @@ public class Search extends Thread {
 			if (beta <= alpha)
 				return e.score;
 		}
+		// Return the evaluation score in case a leaf node has been reached.
 		if (depth == 0) {
 			score = Evaluator.score(pos);
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 			return score;
 		}
+		// Search the node.
 		Search: {
 			bestMove = new Move(Game.State.LOSS.score);
-			if (e != null && e.bestMove != 0)
-				pVmove = Move.toMove(e.bestMove);
-			else
-				pVmove = pV[ply - depth];
-			if (pVmove != null) {
+			pVmove = pV[ply - depth];
+			// First try the principal variation move for the ply if there is one and if it is applicable for this node.
+			if (pVmove != null && pos.isLegal(pVmove)) {
 				thereIsPvMove = true;
 				pos.makeMove(pVmove);
 				val = -pVsearch(depth - 1, -beta, -alpha);
@@ -204,7 +204,10 @@ public class Search extends Thread {
 				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 					break Search;
 			}
+			// Generate first only captures and promotions; i.e. moves that change the material balance.
 			matMoves = pos.generateMaterialMoves();
+			/* If there are no material moves, generate the non-material moves to determine if the node is terminal and return the right
+			 * values if it is.*/
 			if (matMoves.length() == 0) {
 				nonMatMoves = pos.generateNonMaterialMoves();
 				if (nonMatMoves.length() == 0) {
@@ -218,8 +221,10 @@ public class Search extends Thread {
 					}
 				}
 			}
+			// Check for the repetition and fifty-move rules; return a tie score if they apply.
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 				return Game.State.TIE.score;
+			// Order and search the material moves.
 			matMovesArr = orderMaterialMoves(matMoves);
 			for (int i = 0; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
 				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
@@ -227,13 +232,15 @@ public class Search extends Thread {
 					System.gc();
 				}
 				move = matMovesArr[i];
+				// If this move was the PV-move, skip it.
 				if (thereIsPvMove && move.equals(pVmove))
 					continue;
+				// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
 				if (!killersChecked && move.value < 0) {
 					kE = kT.retrieve(ply - depth);
-					if (kE.move1 != 0) {
+					if (kE.move1 != 0) {	// Killer move no. 1.
 						killerMove1 = Move.toMove(kE.move1);
-						if (pos.isLegal(killerMove1)) {
+						if (pos.isLegal(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
 							thereIsKillerMove1 = true;
 							pos.makeMove(killerMove1);
 							if (!thereIsPvMove && i == 0)
@@ -256,9 +263,9 @@ public class Search extends Thread {
 								break Search;
 						}
 					}
-					if (kE.move2 != 0) {
+					if (kE.move2 != 0) {	// Killer move no. 2.
 						killerMove2 = Move.toMove(kE.move2);
-						if (pos.isLegal(killerMove2)) {
+						if (pos.isLegal(killerMove2) && (!thereIsPvMove || !killerMove2.equals(pVmove))) {
 							thereIsKillerMove2 = true;
 							pos.makeMove(killerMove2);
 							if (!thereIsPvMove && !thereIsKillerMove1 && i == 0)
@@ -282,7 +289,7 @@ public class Search extends Thread {
 						}
 					}
 					killersChecked = true;
-				}
+				}	// Killer move check ending.
 				pos.makeMove(move);
 				if (!thereIsPvMove && i == 0)
 					val = -pVsearch(depth - 1, -beta, -alpha);
@@ -303,23 +310,27 @@ public class Search extends Thread {
 				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 					break Search;
 			}
+			// Generate the non-material legal moves if they are not generated yet.
 			if (nonMatMoves == null)
 				nonMatMoves = pos.generateNonMaterialMoves();
-			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
+			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);	// Order and search the non-material moves.
 			for (int i = 0; i < nonMatMovesArr.length; i++, checkMemory = !checkMemory) {
 				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
 					tT.remove(entry -> entry.depth < 2);
 					System.gc();
 				}
 				move = nonMatMovesArr[i];
+				// If this move was the PV-move, skip it.
 				if (thereIsPvMove && move.equals(pVmove)) {
 					thereIsPvMove = false;
 					continue;
 				}
+				// If this move was the first killer move, skip it.
 				if (thereIsKillerMove1 && move.equals(killerMove1)) {
 					thereIsKillerMove1 = false;
 					continue;
 				}
+				// If this move was the second killer move, skip it.
 				if (thereIsKillerMove2 && move.equals(killerMove2)) {
 					thereIsKillerMove2 = false;
 					continue;
@@ -339,23 +350,25 @@ public class Search extends Thread {
 					if (val > alpha)
 						alpha = val;
 				}
-				if (alpha >= beta) {
-					kT.add(ply - depth, move);
-					hT.recordSuccessfulMove(move);
+				if (alpha >= beta) {	// Cutoff from a non-material move.
+					kT.add(ply - depth, move);	// Add to killer moves.
+					hT.recordSuccessfulMove(move);	// Record success in the relative history table.
 					break Search;
 				}
 				else
-					hT.recordUnsuccessfulMove(move);
+					hT.recordUnsuccessfulMove(move);	// Record failure in the relative history table.
 				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 					break Search;
 			}
 		}
-		if (bestMove.value <= origAlpha) 
+		//	Add new entry to the transposition table.
+		if (bestMove.value <= origAlpha)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, bestMove.value, bestMove.toInt(), tTgen));
+		// Return score.
 		return bestMove.value;
 	}
 	/**Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.

@@ -24,8 +24,8 @@ public enum Piece {
 	B_KNIGHT('n'),
 	B_PAWN	('p');
 	
-	public final int  ind;	//a number that generally represents the respective piece, among others, for example on the offset board
-	public final char fen;	//a character denoting the piece-type in FEN notation
+	public final int  ind;	// A number that generally represents the respective piece, among others, for example on the offset board.
+	public final char fen;	// A character denoting the piece-type in FEN notation.
 	
 	private Piece(char fen) {
 		this.ind = ordinal();

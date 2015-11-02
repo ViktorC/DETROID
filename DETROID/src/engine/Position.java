@@ -37,7 +37,7 @@ public class Position implements Hashable {
 		LONG,
 		ALL;
 		
-		public final byte ind;	//numeric representation of the the castling rights
+		public final byte ind;	// Numeric representation of the the castling rights.
 		
 		private CastlingRights() {
 			ind = (byte)ordinal();
@@ -136,11 +136,11 @@ public class Position implements Hashable {
 		A, B, C, D, E, F, G, H,
 		NONE;
 		
-		public final byte ind;										//numeric representation of the the en passant rights
-		public final static byte TO_W_DEST_SQR_IND = Square.A6.ind;	//the difference between the en passant right index and the square index of the destination of en passant for white
-		public final static byte TO_W_VICT_SQR_IND = Square.A5.ind;	//the difference between the en passant right index and the square index of the possible vicim of en passant for white
-		public final static byte TO_B_DEST_SQR_IND = Square.A3.ind;	//the difference between the en passant right index and the square index of the destination of en passant for black
-		public final static byte TO_B_VICT_SQR_IND = Square.A4.ind;	//the difference between the en passant right index and the square index of the possible vicim of en passant for black
+		public final byte ind;										// Numeric representation of the the en passant rights.
+		public final static byte TO_W_DEST_SQR_IND = Square.A6.ind;	// The difference between the en passant right index and the square index of the destination of en passant for white.
+		public final static byte TO_W_VICT_SQR_IND = Square.A5.ind;	// The difference between the en passant right index and the square index of the possible vicim of en passant for white.
+		public final static byte TO_B_DEST_SQR_IND = Square.A3.ind;	// The difference between the en passant right index and the square index of the destination of en passant for black.
+		public final static byte TO_B_VICT_SQR_IND = Square.A4.ind;	// The difference between the en passant right index and the square index of the possible vicim of en passant for black.
 		
 		private EnPassantRights() {
 			ind = (byte)ordinal();
@@ -178,7 +178,7 @@ public class Position implements Hashable {
 		}
 	}
 	
-	//bitboards for each piece type
+	// Bitboards for each piece type.
 	long whiteKing;
 	long whiteQueens;
 	long whiteRooks;
@@ -193,7 +193,7 @@ public class Position implements Hashable {
 	long blackKnights;
 	long blackPawns;
 	
-	//bitboard unions maintained for faster processing of positions
+	// Bitboard unions maintained for faster processing of positions.
 	private long allWhiteOccupied;
 	private long allBlackOccupied;
 	
@@ -203,28 +203,28 @@ public class Position implements Hashable {
 	private long allOccupied;
 	private long allEmpty;
 	
-	private int[] offsetBoard;															//a complimentary board data-structure to the bitboards to efficiently detect pieces on specific squares
+	private int[] offsetBoard;															// A complimentary board data-structure to the bitboards to efficiently detect pieces on specific squares.
 	
-	boolean whitesTurn = true;															//denotes whether it is white's turn to make a move, or not, i.e. it is black's
+	boolean whitesTurn = true;															// Denotes whether it is white's turn to make a move, or not, i.e. it is black's.
 	
-	private long checkers = 0;															//a bitmap of all the pieces that attack the color to move's king
-	private boolean check = false;														//denotes whether the color to move's king is in check or not
+	private long checkers = 0;															// A bitmap of all the pieces that attack the color to move's king.
+	private boolean check = false;														// Denotes whether the color to move's king is in check or not.
 	
-	private int halfMoveIndex = 0;														//the count of the current ply/half-move
-	private int fiftyMoveRuleClock = 0;													//the number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
+	private int halfMoveIndex = 0;														// The count of the current ply/half-move.
+	private int fiftyMoveRuleClock = 0;													// The number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
 	
-	int enPassantRights = EnPassantRights.NONE.ind;									//denotes the file on which en passant is possible; 8 means no en passant rights
+	int enPassantRights = EnPassantRights.NONE.ind;										// Denotes the file on which en passant is possible; 8 means no en passant rights.
 	
-	int whiteCastlingRights = CastlingRights.ALL.ind;								//denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position
-	int blackCastlingRights = CastlingRights.ALL.ind;								//0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights
+	int whiteCastlingRights = CastlingRights.ALL.ind;									// Denotes to what extent it would still be possible to castle regardless of whether it is actually legally executable in the current position.
+	int blackCastlingRights = CastlingRights.ALL.ind;									// 0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights.
 	
-	private Stack<Move> moveList = new Stack<Move>();									//a stack of all the moves made so far
-	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	//a stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
+	private Stack<Move> moveList = new Stack<Move>();									// A stack of all the moves made so far.
+	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	// A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 	
-	long key;																			//the Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number
-	private long[] keyHistory;															//all the positions that have occured so far represented in Zobrist keys.
+	long key;																			// The Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number.
+	private long[] keyHistory;															// All the positions that have occured so far represented in Zobrist keys.
 	
-	private int repetitions = 0;														//the number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer
+	private int repetitions = 0;														// The number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Position() {
@@ -356,7 +356,8 @@ public class Position implements Hashable {
 		enPassantRights = EnPassantRights.getByFen(enPassant);
 		this.enPassantRights = enPassantRights != null ? enPassantRights.ind : this.enPassantRights;
 		setCheck();
-		//"The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves." - half of that is used as the initial length of the history array
+		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
+		 * - half of that is used as the initial length of the history array.*/
 		keyHistory = new long[237];
 		key = Zobrist.hash(this);
 		keyHistory[0] = this.key;
@@ -366,13 +367,19 @@ public class Position implements Hashable {
 	 * @return
 	 */
 	public Position copy() {
-		Position copy = new Position();
+		Position copy;
+		Stack<Move> reverse;
+		while (moveList.hasNext())
+			unmakeMove();
+		copy = new Position(toString());
 		copy.keyHistory = new long[keyHistory.length];
-		Stack<Move> reverse = new Stack<>();
+		reverse = new Stack<>();
 		while (moveList.hasNext())
 			reverse.add(moveList.next());
-		while (reverse.hasNext())
+		while (reverse.hasNext()) {
+			makeMove(reverse.next());
 			copy.makeMove(reverse.next());
+		}
 		return copy;
 	}
 	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.*/
