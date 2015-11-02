@@ -179,18 +179,22 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		E e;
 		if ((e = t1[(ind = hash1(key))]) != null && e.key == key) {
 			t1[ind] = null;
+			load--;
 			return true;
 		}
 		if ((e = t2[(ind = hash2(key))]) != null && e.key == key) {
 			t2[ind] = null;
+			load--;
 			return true;
 		}
 		if ((e = t3[(ind = hash3(key))]) != null && e.key == key) {
 			t3[ind] = null;
+			load--;
 			return true;
 		}
 		if ((e = t4[(ind = hash4(key))]) != null && e.key == key) {
 			t4[ind] = null;
+			load--;
 			return true;
 		}
 		return false;
@@ -203,25 +207,32 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		E e;
 		for (int i = 0; i < t1.length; i++) {
 			e = t1[i];
-			if (e != null && condition.test(e))
+			if (e != null && condition.test(e)) {
 				t1[i] = null;
+				load--;
+			}
 		}
 		for (int i = 0; i < t2.length; i++) {
 			e = t2[i];
-			if (e != null && condition.test(e))
+			if (e != null && condition.test(e)) {
 				t2[i] = null;
+				load--;
+			}
 		}
 		for (int i = 0; i < t3.length; i++) {
 			e = t3[i];
-			if (e != null && condition.test(e))
+			if (e != null && condition.test(e)) {
 				t3[i] = null;
+				load--;
+			}
 		}
 		for (int i = 0; i < t4.length; i++) {
 			e = t4[i];
-			if (e != null && condition.test(e))
+			if (e != null && condition.test(e)) {
 				t4[i] = null;
+				load--;
+			}
 		}
-		rehash();
 	}
 	@SuppressWarnings({"unchecked"})
 	private void rehash() {
