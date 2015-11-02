@@ -31,18 +31,24 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 64;
+	private final static int MAX_SEARCH_DEPTH = 10;
 	
 	private int numOfCores;
 	
 	private Position pos;
-	private Move bestMove;
+	
 	private int ply;
+	private boolean nullMovePruningAllowed = true;
+	private static int R = 2;
+	
 	private Move[] pV;
-	private static HashTable<TTEntry> tT = new HashTable<>();
+	private Move bestMove;
+	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();
+	private static HashTable<TTEntry> tT = new HashTable<>();
 	private static byte tTgen = 0;
+	
 	private boolean pondering = false;
 	private long searchTime;
 	private long deadLine;
@@ -156,11 +162,11 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int pVsearch(int depth, int alpha, int beta) {
-		int score, origAlpha = alpha, val;
+		int score, origAlpha = alpha, val, reduction;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		KillerTableEntry kE;
 		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
-		Queue<Move> matMoves, nonMatMoves = null;
+		Queue<Move> matMoves = null, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
 		// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 		TTEntry e = tT.lookUp(pos.key);
@@ -174,7 +180,7 @@ public class Search extends Thread {
 			else
 				if (e.score < beta)
 					beta = e.score;
-			if (beta <= alpha)
+			if (alpha >= beta)
 				return e.score;
 		}
 		// Return the evaluation score in case a leaf node has been reached.
@@ -204,26 +210,44 @@ public class Search extends Thread {
 				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 					break Search;
 			}
-			// Generate first only captures and promotions; i.e. moves that change the material balance.
-			matMoves = pos.generateMaterialMoves();
-			/* If there are no material moves, generate the non-material moves to determine if the node is terminal and return the right
-			 * values if it is.*/
-			if (matMoves.length() == 0) {
-				nonMatMoves = pos.generateNonMaterialMoves();
-				if (nonMatMoves.length() == 0) {
-					if (pos.getCheck()) {
-						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.LOSS.score, 0, tTgen));
-						return Game.State.LOSS.score;
-					}
-					else {
-						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.TIE.score, 0, tTgen));
-						return Game.State.TIE.score;
+			// If there is no PV-move for this ply, or the one we have is not legal from this position, perform mate check.
+			if (!thereIsPvMove) {
+				matMoves = pos.generateMaterialMoves();
+				if (matMoves.length() == 0) {
+					nonMatMoves = pos.generateNonMaterialMoves();
+					if (nonMatMoves.length() == 0) {
+						if (pos.getCheck()) {
+							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.LOSS.score, 0, tTgen));
+							return Game.State.LOSS.score;
+						}
+						else {
+							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.TIE.score, 0, tTgen));
+							return Game.State.TIE.score;
+						}
 					}
 				}
 			}
 			// Check for the repetition and fifty-move rules; return a tie score if they apply.
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 				return Game.State.TIE.score;
+			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
+			if (nullMovePruningAllowed && depth >= 2) {
+				if (!pos.getCheck()) {
+					pos.makeNullMove();
+					if (depth == 2)
+						reduction = 1;
+					else
+						reduction = R;
+					val = -pVsearch(depth - reduction - 1, -beta, -beta + 1);
+					pos.unmakeMove();
+					if (val >= beta)
+						break Search;
+				}
+				nullMovePruningAllowed = !nullMovePruningAllowed;	// In 2 plies, null move pruning can possibly be performed again.
+			}
+			// If the PV-move was searched first, the material moves have not been generated yet.
+			if (thereIsPvMove)
+				matMoves = pos.generateMaterialMoves();
 			// Order and search the material moves.
 			matMovesArr = orderMaterialMoves(matMoves);
 			for (int i = 0; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
