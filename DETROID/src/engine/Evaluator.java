@@ -2,7 +2,7 @@ package engine;
 
 import util.*;
 import engine.Game.State;
-import engine.Position.CastlingRights;
+import engine.Move.MoveType;
 
 /**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
  * kept incrementally updated after moves made using {@link #score score}.
@@ -58,7 +58,7 @@ public class Evaluator {
 	 */
 	public static int score(Position pos) {
 		int score = 0;
-		Move move;
+		Move move, lastMove;
 		IntList gloriaSquares;
 		List<Move> moves = pos.generateAllMoves();
 		if (moves.length() == 0) {
@@ -87,13 +87,9 @@ public class Evaluator {
 			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
 		while (gloriaSquares.hasNext())
 			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
-		if (pos.whiteCastlingRights != CastlingRights.NONE.ind)
-			score += 25;
-		if (pos.blackCastlingRights != CastlingRights.NONE.ind)
-			score -= 25;
 		if (!pos.whitesTurn)
 			score *= -1;
-		if (pos.getLastMove().type == 1 || pos.getLastMove().type == 2)
+		if ((lastMove = pos.getLastMove()) != null && (lastMove.type == MoveType.SHORT_CASTLING.ind || lastMove.type == MoveType.LONG_CASTLING.ind))
 			score += 50;
 		while (moves.hasNext()) {
 			move = moves.next();
