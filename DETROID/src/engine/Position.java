@@ -5215,13 +5215,13 @@ public class Position implements Hashable {
 		}
 		return false;
 	}
-	/**Makes a null move that can be taken back without breaking the game.
-	 * 
-	 */
+	/**Makes a null move that can be taken back without breaking the game.*/
 	public void makeNullMove() {
 		moveList.add(null);
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock, repetitions, checkers));
 		setTurn();
+		enPassantRights = EnPassantRights.NONE.ind;
+		setCastlingRights();
 		setMoveIndices(Piece.NULL.ind, Piece.NULL.ind);
 		setKeys();
 	}
