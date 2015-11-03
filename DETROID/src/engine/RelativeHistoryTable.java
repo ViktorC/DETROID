@@ -4,7 +4,7 @@ import engine.Evaluator.MaterialScore;
 
 public class RelativeHistoryTable {
 
-	private final static int MAX_SCORE = 2*(MaterialScore.QUEEN.value - MaterialScore.PAWN.value);
+	public final static int MAX_SCORE = 2*(MaterialScore.QUEEN.value - MaterialScore.PAWN.value);
 	private final static int DECREMENT_FACTOR = 4;
 	
 	private int[][] historyT;	// An [origin square][destination square] table for the history heuristic.

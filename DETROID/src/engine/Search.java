@@ -38,8 +38,8 @@ public class Search extends Thread {
 	private Position pos;
 	
 	private int ply;
-	private boolean nullMovePruningAllowed = true;
-	private static int R = 2;
+	private static int NMR = 2;
+	private static int LMR = 1;
 	
 	private Move[] pV;
 	private Move bestMove;
@@ -135,7 +135,7 @@ public class Search extends Thread {
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			pVsearch(ply, Game.State.LOSS.score, Game.State.WIN.score);
+			search(ply, Game.State.LOSS.score, Game.State.WIN.score, true);
 			pV = extractPv();
 			bestMove = pV[0];
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
@@ -159,10 +159,11 @@ public class Search extends Thread {
 	 * @param depth
 	 * @param alpha
 	 * @param beta
+	 * @param nullMoveAllowed
 	 * @return The score of the position searched.
 	 */
-	private int pVsearch(int depth, int alpha, int beta) {
-		int score, origAlpha = alpha, val, reduction;
+	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
+		int score, origAlpha = alpha, val, nullMoveReduction, searchedMoves = 0;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		KillerTableEntry kE;
 		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
@@ -197,8 +198,9 @@ public class Search extends Thread {
 			if (pVmove != null && pos.isLegal(pVmove)) {
 				thereIsPvMove = true;
 				pos.makeMove(pVmove);
-				val = -pVsearch(depth - 1, -beta, -alpha);
+				val = -search(depth - 1, -beta, -alpha, true);
 				pos.unmakeMove();
+				searchedMoves++;
 				if (val > bestMove.value) {
 					bestMove = pVmove;
 					bestMove.value = val;
@@ -231,19 +233,20 @@ public class Search extends Thread {
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 				return Game.State.TIE.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMovePruningAllowed && depth >= 2) {
+			if (nullMoveAllowed && depth >= 2) {
 				if (!pos.getCheck()) {
 					pos.makeNullMove();
 					if (depth == 2)
-						reduction = 1;
+						nullMoveReduction = 1;
 					else
-						reduction = R;
-					val = -pVsearch(depth - reduction - 1, -beta, -beta + 1);
+						nullMoveReduction = NMR;
+					val = -search(depth - nullMoveReduction - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
 					pos.unmakeMove();
-					if (val >= beta)
+					if (val >= beta) {
+						bestMove.value = val;	// Store the score that caused the cutoff for insertion into the transposition table.
 						break Search;
+					}
 				}
-				nullMovePruningAllowed = !nullMovePruningAllowed;	// In 2 plies, null move pruning can possibly be performed again.
 			}
 			// If the PV-move was searched first, the material moves have not been generated yet.
 			if (thereIsPvMove)
@@ -268,13 +271,14 @@ public class Search extends Thread {
 							thereIsKillerMove1 = true;
 							pos.makeMove(killerMove1);
 							if (!thereIsPvMove && i == 0)
-								val = -pVsearch(depth - 1, -beta, -alpha);
+								val = -search(depth - 1, -beta, -alpha, true);
 							else {
-								val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+								val = -search(depth - 1, -alpha - 1, -alpha, true);
 								if (val > alpha && val < beta)
-									val = -pVsearch(depth - 1, -beta, -val);
+									val = -search(depth - 1, -beta, -val, true);
 							}
 							pos.unmakeMove();
+							searchedMoves++;
 							if (val > bestMove.value) {
 								bestMove = killerMove1;
 								bestMove.value = val;
@@ -293,13 +297,14 @@ public class Search extends Thread {
 							thereIsKillerMove2 = true;
 							pos.makeMove(killerMove2);
 							if (!thereIsPvMove && !thereIsKillerMove1 && i == 0)
-								val = -pVsearch(depth - 1, -beta, -alpha);
+								val = -search(depth - 1, -beta, -alpha, true);
 							else {
-								val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+								val = -search(depth - 1, -alpha - 1, -alpha, true);
 								if (val > alpha && val < beta)
-									val = -pVsearch(depth - 1, -beta, -val);
+									val = -search(depth - 1, -beta, -val, true);
 							}
 							pos.unmakeMove();
+							searchedMoves++;
 							if (val > bestMove.value) {
 								bestMove = killerMove2;
 								bestMove.value = val;
@@ -315,14 +320,16 @@ public class Search extends Thread {
 					killersChecked = true;
 				}	// Killer move check ending.
 				pos.makeMove(move);
+				// PVS.
 				if (!thereIsPvMove && i == 0)
-					val = -pVsearch(depth - 1, -beta, -alpha);
+					val = -search(depth - 1, -beta, -alpha, true);
 				else {
-					val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+					val = -search(depth - 1, -alpha - 1, -alpha, true);
 					if (val > alpha && val < beta)
-						val = -pVsearch(depth - 1, -beta, -val);
+						val = -search(depth - 1, -beta, -val, true);
 				}
 				pos.unmakeMove();
+				searchedMoves++;
 				if (val > bestMove.value) {
 					bestMove = move;
 					bestMove.value = val;
@@ -360,14 +367,23 @@ public class Search extends Thread {
 					continue;
 				}
 				pos.makeMove(move);
-				if (!thereIsPvMove && i == 0 && matMoves.length() == 0)
-					val = -pVsearch(depth - 1, -beta, -alpha);
+				// Try late move reduction.
+				if (depth > 2 && searchedMoves >= 4 && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0) {
+					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true);
+					// If it does not fail low, research with full window.
+					if (val > alpha)
+						val = -search(depth - 1, -beta, -alpha, true);
+				}
+				// Else PVS.
+				else if (!thereIsPvMove && i == 0 && matMoves.length() == 0)
+					val = -search(depth - 1, -beta, -alpha, true);
 				else {
-					val = -pVsearch(depth - 1, -alpha - 1, -alpha);
+					val = -search(depth - 1, -alpha - 1, -alpha, true);
 					if (val > alpha && val < beta)
-						val = -pVsearch(depth - 1, -beta, -val);
+						val = -search(depth - 1, -beta, -val, true);
 				}
 				pos.unmakeMove();
+				searchedMoves++;
 				if (val > bestMove.value) {
 					bestMove = move;
 					bestMove.value = val;
@@ -406,10 +422,13 @@ public class Search extends Thread {
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
-			move.value = MaterialScore.getValueByPieceInd(move.capturedPiece) - MaterialScore.getValueByPieceInd(move.movedPiece);
 			if (move.type > 3) {
-				move.value += MaterialScore.QUEEN.value;
+				move.value = MaterialScore.QUEEN.value;
+				if (move.capturedPiece != Piece.NULL.ind)
+					move.value += MaterialScore.getValueByPieceInd(move.capturedPiece) - MaterialScore.getValueByPieceInd(move.movedPiece);
 			}
+			else
+				move.value = MaterialScore.getValueByPieceInd(move.capturedPiece) - MaterialScore.getValueByPieceInd(move.movedPiece);
 			arr[i] = move;
 			i++;
 		}
