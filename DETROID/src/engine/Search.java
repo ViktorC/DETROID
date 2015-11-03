@@ -163,7 +163,7 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
-		int score, origAlpha = alpha, val, nullMoveReduction, searchedMoves = 0;
+		int score, origAlpha = alpha, val, searchedMoves = 0;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		KillerTableEntry kE;
 		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
@@ -233,19 +233,16 @@ public class Search extends Thread {
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 				return Game.State.TIE.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && depth >= 2) {
-				if (!pos.getCheck()) {
-					pos.makeNullMove();
-					if (depth == 2)
-						nullMoveReduction = 1;
-					else
-						nullMoveReduction = NMR;
-					val = -search(depth - nullMoveReduction - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
-					pos.unmakeMove();
-					if (val >= beta) {
-						bestMove.value = val;	// Store the score that caused the cutoff for insertion into the transposition table.
-						break Search;
-					}
+			if (nullMoveAllowed && depth >= 2 && !pos.getCheck()) {
+				pos.makeNullMove();
+				if (depth == 2)
+					val = -search(depth - (NMR - 1) - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
+				else
+					val = -search(depth - NMR - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
+				pos.unmakeMove();
+				if (val >= beta) {
+					bestMove = new Move(val);
+					break Search;
 				}
 			}
 			// If the PV-move was searched first, the material moves have not been generated yet.
@@ -368,7 +365,8 @@ public class Search extends Thread {
 				}
 				pos.makeMove(move);
 				// Try late move reduction.
-				if (depth > 2 && searchedMoves >= 4 && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0) {
+				if (depth > 2 && bestMove.value <= origAlpha && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0
+					&& searchedMoves > 4 && hT.score(move) <= RelativeHistoryTable.MAX_SCORE/(matMovesArr.length + nonMatMovesArr.length)) {
 					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
 					if (val > alpha)
