@@ -367,18 +367,19 @@ public class Position implements Hashable {
 	 * @return
 	 */
 	public Position copy() {
+		Move move;
 		Position copy;
-		Stack<Move> reverse;
-		while (moveList.hasNext())
+		Stack<Move> reverse = new Stack<>();
+		while (moveList.hasNext()) {
+			reverse.add(moveList.next());
 			unmakeMove();
+		}
 		copy = new Position(toString());
 		copy.keyHistory = new long[keyHistory.length];
-		reverse = new Stack<>();
-		while (moveList.hasNext())
-			reverse.add(moveList.next());
 		while (reverse.hasNext()) {
-			makeMove(reverse.next());
-			copy.makeMove(reverse.next());
+			move = reverse.next();
+			makeMove(move);
+			copy.makeMove(move);
 		}
 		return copy;
 	}
