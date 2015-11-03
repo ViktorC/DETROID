@@ -58,15 +58,18 @@ public class Evaluator {
 	 */
 	public static int score(Position pos) {
 		int score = 0;
-		Move move, lastMove;
-		IntList gloriaSquares;
-		List<Move> moves = pos.generateAllMoves();
+		List<Move> oppMoves, moves = pos.generateAllMoves();
 		if (moves.length() == 0) {
 			if (pos.getCheck())
 				return State.LOSS.score;
 			else
 				return State.TIE.score;
 		}
+		pos.makeNullMove();
+		oppMoves = pos.generateAllMoves();
+		pos.unmakeMove();
+		score += moves.length()*10;
+		score -= oppMoves.length()*10;
 		score += BitOperations.getCardinality(pos.whiteQueens)*MaterialScore.QUEEN.value;
 		score += BitOperations.getCardinality(pos.whiteRooks)*MaterialScore.ROOK.value;
 		score += BitOperations.getCardinality(pos.whiteBishops)*MaterialScore.BISHOP.value;
@@ -77,43 +80,8 @@ public class Evaluator {
 		score -= BitOperations.getCardinality(pos.blackBishops)*MaterialScore.BISHOP.value;
 		score -= BitOperations.getCardinality(pos.blackKnights)*MaterialScore.KNIGHT.value;
 		score -= BitOperations.getCardinality(pos.blackPawns)*MaterialScore.PAWN.value;
-		gloriaSquares = BitOperations.serialize(MoveTable.getByIndex(BitOperations.indexOfBit(pos.whiteKing)).getCrudeKingMoves());
-		while (gloriaSquares.hasNext())
-			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
-		while (gloriaSquares.hasNext())
-			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
-		gloriaSquares = BitOperations.serialize(MoveTable.getByIndex(BitOperations.indexOfBit(pos.blackKing)).getCrudeKingMoves());
-		while (gloriaSquares.hasNext())
-			score += BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), true))*5;
-		while (gloriaSquares.hasNext())
-			score -= BitOperations.getCardinality(pos.getAttackers(gloriaSquares.next(), false))*5;
 		if (!pos.whitesTurn)
 			score *= -1;
-		if ((lastMove = pos.getLastMove()) != null && (lastMove.type == MoveType.SHORT_CASTLING.ind || lastMove.type == MoveType.LONG_CASTLING.ind))
-			score += 50;
-		while (moves.hasNext()) {
-			move = moves.next();
-			if (move.movedPiece == 1 || move.movedPiece == 7)
-				score += 10;
-			else
-				score += MaterialScore.getValueByPieceInd(move.movedPiece)/100;
-			score += MaterialScore.getValueByPieceInd(move.capturedPiece)/20;
-			if (move.type > 3)
-				score += 40;
-		}
-		pos.whitesTurn = !pos.whitesTurn;
-		moves = pos.generateAllMoves();
-		while (moves.hasNext()) {
-			move = moves.next();
-			if (move.movedPiece == 1 || move.movedPiece == 7)
-				score -= 10;
-			else
-				score += MaterialScore.getValueByPieceInd(move.movedPiece)/100;
-			score += MaterialScore.getValueByPieceInd(move.capturedPiece)/20;
-			if (move.type > 3)
-				score -= 40;
-		}
-		pos.whitesTurn = !pos.whitesTurn;
 		return score;
 	}
 }
