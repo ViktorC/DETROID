@@ -2,6 +2,13 @@ package engine;
 
 import engine.Evaluator.MaterialScore;
 
+/**A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only incremented upon a cutoff and a
+ * butterfly table that is incremented upon every searched move no matter what. Using these two tables' respective values for the same move, a
+ * relative score can be retrieved based upon the frequency of success in the past on making that move.
+ * 
+ * @author Viktor
+ *
+ */
 public class RelativeHistoryTable {
 
 	public final static int MAX_SCORE = 2*(MaterialScore.QUEEN.value - MaterialScore.PAWN.value);
@@ -19,19 +26,27 @@ public class RelativeHistoryTable {
 	 * @param m The move that caused the cut-off.
 	 */
 	public void recordSuccessfulMove(Move m) {
-		historyT[m.from][m.to] += MAX_SCORE;
-		butterflyT[m.from][m.to]++;
+		int[] row;
+		synchronized (row = historyT[m.from]) {
+			row[m.to] += MAX_SCORE;
+		}
+		synchronized (row = butterflyT[m.from]) {
+			row[m.to]++;
+		}
 	}
 	/**If a move does not cause a cut-off, this method updates the relative history table accordingly.
 	 * 
 	 * @param m The move that did not cause a cut-off.
 	 */
 	public void recordUnsuccessfulMove(Move m) {
-		butterflyT[m.from][m.to]++;
+		int[] row;
+		synchronized (row = butterflyT[m.from]) {
+			row[m.to]++;
+		}
 	}
 	/**Decrements the current values in the tables by a certain factor for when a new search is started allowing for more significance associated with
 	 * the new values than with the old ones.*/
-	public void decrementCurrentValues() {
+	public synchronized void decrementCurrentValues() {
 		for (int i = 0; i < 64; i++) {
 			for (int j = 0; j < 64; j++) {
 				historyT[i][j] /= DECREMENT_FACTOR;
