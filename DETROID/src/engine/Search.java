@@ -166,7 +166,8 @@ public class Search extends Thread {
 		int score, origAlpha = alpha, val, searchedMoves = 0;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		KillerTableEntry kE;
-		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
+		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false,
+				bestMoveSearchReduced = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
 		// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
@@ -233,12 +234,9 @@ public class Search extends Thread {
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 				return Game.State.TIE.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && depth >= 2 && !pos.getCheck()) {
+			if (nullMoveAllowed && depth > NMR + 2 && !pos.getCheck()) {	// Search null moves to a minimum depth of 2.
 				pos.makeNullMove();
-				if (depth == 2)
-					val = -search(depth - (NMR - 1) - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
-				else
-					val = -search(depth - NMR - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
+				val = -search(depth - NMR - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
 				pos.unmakeMove();
 				if (val >= beta) {
 					bestMove = new Move(val);
@@ -369,8 +367,17 @@ public class Search extends Thread {
 					&& searchedMoves > 4 && hT.score(move) <= RelativeHistoryTable.MAX_SCORE/(matMovesArr.length + nonMatMovesArr.length)) {
 					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
-					if (val > alpha)
+					if (val > origAlpha)
 						val = -search(depth - 1, -beta, -alpha, true);
+					// If it does, check if it improves on the best move so far.
+					else {
+						if (val > bestMove.value) {
+							bestMove = move;
+							bestMove.value = val;
+							bestMoveSearchReduced = true;
+						}
+						continue;
+					}
 				}
 				// Else PVS.
 				else if (!thereIsPvMove && i == 0 && matMoves.length() == 0)
@@ -385,6 +392,7 @@ public class Search extends Thread {
 				if (val > bestMove.value) {
 					bestMove = move;
 					bestMove.value = val;
+					bestMoveSearchReduced = false;
 					if (val > alpha)
 						alpha = val;
 				}
@@ -400,8 +408,12 @@ public class Search extends Thread {
 			}
 		}
 		//	Add new entry to the transposition table.
-		if (bestMove.value <= origAlpha)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
+		if (bestMove.value <= origAlpha) {
+			if (bestMoveSearchReduced)	// If the best move was a late move, hash it with the actual reduced depth.
+				tT.insert(new TTEntry(pos.key, depth - LMR, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
+			else
+				tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
+		}
 		else if (bestMove.value >= beta)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else
