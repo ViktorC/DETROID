@@ -31,7 +31,7 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 64;
+	private final static int MAX_SEARCH_DEPTH = 10;
 	
 	private int numOfCores;
 	
@@ -166,8 +166,7 @@ public class Search extends Thread {
 		int score, origAlpha = alpha, val, searchedMoves = 0;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		KillerTableEntry kE;
-		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false,
-				bestMoveSearchReduced = false;
+		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
 		// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
@@ -369,15 +368,6 @@ public class Search extends Thread {
 					// If it does not fail low, research with full window.
 					if (val > origAlpha)
 						val = -search(depth - 1, -beta, -alpha, true);
-					// If it does, check if it improves on the best move so far.
-					else {
-						if (val > bestMove.value) {
-							bestMove = move;
-							bestMove.value = val;
-							bestMoveSearchReduced = true;
-						}
-						continue;
-					}
 				}
 				// Else PVS.
 				else if (!thereIsPvMove && i == 0 && matMoves.length() == 0)
@@ -392,7 +382,6 @@ public class Search extends Thread {
 				if (val > bestMove.value) {
 					bestMove = move;
 					bestMove.value = val;
-					bestMoveSearchReduced = false;
 					if (val > alpha)
 						alpha = val;
 				}
@@ -408,12 +397,8 @@ public class Search extends Thread {
 			}
 		}
 		//	Add new entry to the transposition table.
-		if (bestMove.value <= origAlpha) {
-			if (bestMoveSearchReduced)	// If the best move was a late move, hash it with the actual reduced depth.
-				tT.insert(new TTEntry(pos.key, depth - LMR, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
-			else
-				tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
-		}
+		if (bestMove.value <= origAlpha)
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, bestMove.value, bestMove.toInt(), tTgen));
 		else
