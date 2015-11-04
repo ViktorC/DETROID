@@ -9,7 +9,7 @@ import java.util.function.Predicate;
  *
  * @param <T> The type of the expected command.
  */
-public class CommandHandler<T> {
+public class CommandDelegate<T> {
 
 	private Predicate<T> predicate;	// The conditions for execution.
 	private Procedure procedure;	// The functionality of the command.
@@ -19,7 +19,7 @@ public class CommandHandler<T> {
 	 * @param predicate The conditions for execution.
 	 * @param procedure The functionality of the command.
 	 */
-	public CommandHandler(Predicate<T> predicate, Procedure procedure) {
+	public CommandDelegate(Predicate<T> predicate, Procedure procedure) {
 		this.predicate = predicate;
 		this.procedure = procedure;
 	}

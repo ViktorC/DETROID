@@ -2,7 +2,7 @@ package engine;
 
 import java.util.Scanner;
 
-import util.CommandHandler;
+import util.CommandDelegate;
 import util.List;
 import util.Queue;
 
@@ -33,7 +33,7 @@ public class Game implements Runnable {
 	}
 	
 	static Scanner in;
-	static List<CommandHandler<String>> commandList;
+	static List<CommandDelegate<String>> commandList;
 	Position pos;
 	boolean playersTurn;
 	int diff;
