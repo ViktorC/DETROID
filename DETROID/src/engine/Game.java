@@ -2,12 +2,17 @@ package engine;
 
 import java.util.Scanner;
 
+import util.CommandHandler;
+import util.List;
+import util.Queue;
+
 /**PRE-MATURE; FOR TESTING ONLY
  * 
  * @author Viktor
  *
  */
 public class Game implements Runnable {
+	
 	
 	/**A simple enum for game state types and their assigned value scores.
 	 * 
@@ -27,10 +32,16 @@ public class Game implements Runnable {
 		}
 	}
 	
-	Scanner in = new Scanner(System.in);
+	static Scanner in;
+	static List<CommandHandler<String>> commandList;
 	Position pos;
 	boolean playersTurn;
 	int diff;
+	
+	static {
+		in = new Scanner(System.in);
+		commandList = new Queue<>();
+	}
 
 	public Game(boolean playerStarts) {
 		this.pos = new Position();
