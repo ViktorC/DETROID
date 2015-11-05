@@ -2,9 +2,10 @@ package engine;
 
 import java.util.Scanner;
 
-import util.CommandDelegate;
+import util.Command;
 import util.List;
 import util.Queue;
+import util.IllegalCommandArgumentException;
 
 /**PRE-MATURE; FOR TESTING ONLY
  * 
@@ -32,15 +33,19 @@ public class Game implements Runnable {
 		}
 	}
 	
-	static Scanner in;
-	static List<CommandDelegate<String>> commandList;
+	static Scanner in = new Scanner(System.in);
+	List<Command<String>> commandList;
 	Position pos;
 	boolean playersTurn;
 	int diff;
 	
-	static {
-		in = new Scanner(System.in);
+	{
 		commandList = new Queue<>();
+		commandList.add(new Command<String>(p -> p.matches("^setboard"),
+											p -> { try { pos = new Position(p.replaceFirst("^setboard", "")); }
+											catch (IllegalArgumentException e) { throw new IllegalCommandArgumentException(e); }}));
+		commandList.add(new Command<String>(p -> p.matches("^([a-hA-H][1-8]){2}[qQrRbBkK]?$"),
+											p -> { if (!pos.makeMove(p)) throw new IllegalCommandArgumentException("Illegal move."); }));
 	}
 
 	public Game(boolean playerStarts) {
