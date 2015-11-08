@@ -8,6 +8,6 @@ package util;
 public interface Hashable {
 
 	/**Returns a long integer hash code.*/
-	long key();
+	long hashKey();
 	
 }

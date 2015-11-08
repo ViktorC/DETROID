@@ -41,8 +41,8 @@ public class Game implements Runnable {
 	
 	{
 		commandList = new Queue<>();
-		commandList.add(new Command<String>(p -> p.matches("^setboard"),
-											p -> { try { pos = new Position(p.replaceFirst("^setboard", "")); }
+		commandList.add(new Command<String>(p -> p.startsWith("position"),
+											p -> { try { pos = new Position(p.replaceFirst("position", "")); }
 											catch (IllegalArgumentException e) { throw new IllegalCommandArgumentException(e); }}));
 		commandList.add(new Command<String>(p -> p.matches("^([a-hA-H][1-8]){2}[qQrRbBkK]?$"),
 											p -> { if (!pos.makeMove(p)) throw new IllegalCommandArgumentException("Illegal move."); }));

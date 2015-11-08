@@ -1,4 +1,5 @@
 package engine;
+import java.util.concurrent.locks.*;
 
 /**A thread-safe table implementation for the killer heuristic.
  * 
@@ -14,9 +15,17 @@ public class KillerTable {
 	 */
 	public static class KillerTableEntry {
 		
+		private Lock readLock;
+		private Lock writeLock;
+		
 		int move1;
 		int move2;
 		
+		public KillerTableEntry() {
+			ReadWriteLock lock = new ReentrantReadWriteLock();
+			readLock = lock.readLock();
+			writeLock = lock.writeLock();
+		}
 		public int getMove1() { return move1; }
 		public int getMove2() { return move2; }
 	}
@@ -41,20 +50,47 @@ public class KillerTable {
 	public void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
 		int compM = m.toInt();
-		if (e.move1 != compM) {
-			synchronized (e) {
+		try {
+			e.writeLock.lock();
+			if (e.move1 != compM) {
 				e.move2 = e.move1;
 				e.move1 = compM;
 			}
 		}
+		finally {
+			e.writeLock.unlock();
+		}
 	}
-	/**Retrieves the killer table entry for the given ply.
+	/**Retrieves the first move, i.e. the one that caused the last cutoff, from the killer table entry for the given ply.
 	 * 
 	 * @param ply The ply for which the killer moves are sought.
-	 * @return The killer table entry for the ply.
+	 * @return The first killer move from the table entry for the ply.
 	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
 	 */
-	public KillerTableEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
-		return t[ply];
+	public int retrieveMove1(int ply) throws ArrayIndexOutOfBoundsException {
+		KillerTableEntry e = t[ply];
+		try {
+			e.readLock.lock();
+			return e.move1;
+		}
+		finally {
+			e.readLock.unlock();
+		}
+	}
+	/**Retrieves the second move from the killer table entry for the given ply.
+	 * 
+	 * @param ply The ply for which the killer moves are sought.
+	 * @return The second killer move from the table entry for the ply.
+	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
+	 */
+	public int retrieveMove2(int ply) throws ArrayIndexOutOfBoundsException {
+		KillerTableEntry e = t[ply];
+		try {
+			e.readLock.lock();
+			return e.move2;
+		}
+		finally {
+			e.readLock.unlock();
+		}
 	}
 }

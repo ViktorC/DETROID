@@ -39,8 +39,8 @@ public class RelativeHistoryTable {
 	 * @param m The move that did not cause a cut-off.
 	 */
 	public void recordUnsuccessfulMove(Move m) {
-		int[] row;
-		synchronized (row = butterflyT[m.from]) {
+		int[] row = butterflyT[m.from];
+		synchronized (row) {
 			row[m.to]++;
 		}
 	}

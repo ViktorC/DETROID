@@ -163,9 +163,8 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
-		int score, origAlpha = alpha, val, searchedMoves = 0;
+		int score, origAlpha = alpha, val, searchedMoves = 0, killerMoveComp;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
-		KillerTableEntry kE;
 		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
@@ -258,9 +257,9 @@ public class Search extends Thread {
 					continue;
 				// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
 				if (!killersChecked && move.value < 0) {
-					kE = kT.retrieve(ply - depth);
-					if (kE.move1 != 0) {	// Killer move no. 1.
-						killerMove1 = Move.toMove(kE.move1);
+					killerMoveComp = kT.retrieveMove1(ply - depth);
+					if (killerMoveComp != 0) {	// Killer move no. 1.
+						killerMove1 = Move.toMove(killerMoveComp);
 						if (pos.isLegal(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
 							thereIsKillerMove1 = true;
 							pos.makeMove(killerMove1);
@@ -285,8 +284,9 @@ public class Search extends Thread {
 								break Search;
 						}
 					}
-					if (kE.move2 != 0) {	// Killer move no. 2.
-						killerMove2 = Move.toMove(kE.move2);
+					killerMoveComp = kT.retrieveMove2(ply - depth);
+					if (killerMoveComp != 0) {	// Killer move no. 2.
+						killerMove2 = Move.toMove(killerMoveComp);
 						if (pos.isLegal(killerMove2) && (!thereIsPvMove || !killerMove2.equals(pVmove))) {
 							thereIsKillerMove2 = true;
 							pos.makeMove(killerMove2);

@@ -10,8 +10,9 @@ import engine.Search.NodeType;
  * @author Viktor
  *
  */
-public class TTEntry extends HashTable.Entry<TTEntry> {
+public class TTEntry implements HashTable.Entry<TTEntry> {
 	
+	long key;			// The 64-bit position hash key.
 	short depth;		// How deep the position has been searched.
 	byte  type;			// The type of the returned score.
 	short score;		// The returned score.
@@ -37,6 +38,10 @@ public class TTEntry extends HashTable.Entry<TTEntry> {
 		if (generation < e.generation - 2 || depth < e.depth || (e.type == NodeType.EXACT.ind && type != NodeType.EXACT.ind))
 			return true;
 		return false;
+	}
+	/**Returns a 64-bit hash code identifying this object.*/
+	public long hashKey() {
+		return key;
 	}
 	/**Returns a String representation of the object state.*/
 	public String toString() {

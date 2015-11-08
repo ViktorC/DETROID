@@ -420,7 +420,7 @@ public class Position implements Hashable {
 		return repetitions;
 	}
 	/**Returns the 64-bit Zobrist key of the current position. A Zobrist key is used to almost uniquely hash a chess position to an integer.*/
-	public long key() {
+	public long hashKey() {
 		return key;
 	}
 	/**Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.*/

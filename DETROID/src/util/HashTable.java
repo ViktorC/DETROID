@@ -17,23 +17,18 @@ import java.util.function.Predicate;
  * 
  * @author Viktor
  *
- * @param <E>
+ * @param <E> The hash table entry type that implements the {@link #HashTable.Entry<E> Entry} interface.
  */
 public class HashTable<E extends HashTable.Entry<E>> {
 	
-	/**An abstract base class for hash table entries the defines the long variable 'key' upon what the entry objects are hashed onto an index of the hash table.
+	/**An interface for hash table entries that extends the {@link #Comparable<E> Comparable} and {@link #Hashable Hashable} interfaces.
 	 * 
 	 * @author Viktor
 	 *
+	 * @param <E> The type of the hash table entry that implements this interface.
 	 */
-	public static abstract class Entry<E> implements Comparable<E>, Hashable {
+	public static interface Entry<E> extends Comparable<E>, Hashable {
 		
-		protected long key;	// A 64 bit integer key that is hashed onto an index:
-		
-		/**Returns a 64 bit hash code that can be used for the identification of the object, however its uniqueness is not guaranteed.*/
-		public long key() {
-			return key;
-		}
 	}
 	
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
@@ -54,7 +49,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	private E[] t3;
 	private E[] t4;
 	
-	private volatile int load = 0;
+	private int load = 0;
 	
 	/**Instantiates a HashTable with a default length of 1022.*/
 	@SuppressWarnings({"unchecked"})
@@ -98,49 +93,50 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	public void insert(E e) {
 		int ind;
 		E slot;
-		if ((slot = t1[(ind = hash1(e.key))]) != null && e.key == slot.key) {
+		long key = e.hashKey();
+		if ((slot = t1[(ind = hash1(key))]) != null && key == slot.hashKey()) {
 			if (e.betterThan(slot))
 				t1[ind] = e;
 			return;
 		}
-		if ((slot = t2[(ind = hash2(e.key))]) != null && e.key == slot.key) {
+		if ((slot = t2[(ind = hash2(key))]) != null && key == slot.hashKey()) {
 			if (e.betterThan(slot))
 				t2[ind] = e;
 			return;
 		}
-		if ((slot = t3[(ind = hash3(e.key))]) != null && e.key == slot.key) {
+		if ((slot = t3[(ind = hash3(key))]) != null && key == slot.hashKey()) {
 			if (e.betterThan(slot))
 				t3[ind] = e;
 			return;
 		}
-		if ((slot = t4[(ind = hash4(e.key))]) != null && e.key == slot.key) {
+		if ((slot = t4[(ind = hash4(key))]) != null && key == slot.hashKey()) {
 			if (e.betterThan(slot))
 				t4[ind] = e;
 			return;
 		}
 		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
-			if ((slot = t1[(ind = hash1(e.key))]) == null) {
+			if ((slot = t1[(ind = hash1(key))]) == null) {
 				t1[ind] = e;
 				load++;
 				return;
 			}
 			t1[ind] = e;
 			e = slot;
-			if ((slot = t2[(ind = hash2(e.key))]) == null) {
+			if ((slot = t2[(ind = hash2(e.hashKey()))]) == null) {
 				t2[ind] = e;
 				load++;
 				return;
 			}
 			t2[ind] = e;
 			e = slot;
-			if ((slot = t3[(ind = hash3(e.key))]) == null) {
+			if ((slot = t3[(ind = hash3(e.hashKey()))]) == null) {
 				t3[ind] = e;
 				load++;
 				return;
 			}
 			t3[ind] = e;
 			e = slot;
-			if ((slot = t4[(ind = hash4(e.key))]) == null) {
+			if ((slot = t4[(ind = hash4(e.hashKey()))]) == null) {
 				t4[ind] = e;
 				load++;
 				return;
@@ -158,13 +154,13 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public E lookUp(long key) {
 		E e;
-		if ((e = t1[hash1(key)]) != null && e.key == key)
+		if ((e = t1[hash1(key)]) != null && e.hashKey() == key)
 			return e;
-		if ((e = t2[hash2(key)]) != null && e.key == key)
+		if ((e = t2[hash2(key)]) != null && e.hashKey() == key)
 			return e;
-		if ((e = t3[hash3(key)]) != null && e.key == key)
+		if ((e = t3[hash3(key)]) != null && e.hashKey() == key)
 			return e;
-		if ((e = t4[hash4(key)]) != null && e.key == key)
+		if ((e = t4[hash4(key)]) != null && e.hashKey() == key)
 			return e;
 		return null;
 	}
@@ -177,22 +173,22 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	public boolean remove(long key) {
 		int ind;
 		E e;
-		if ((e = t1[(ind = hash1(key))]) != null && e.key == key) {
+		if ((e = t1[(ind = hash1(key))]) != null && e.hashKey() == key) {
 			t1[ind] = null;
 			load--;
 			return true;
 		}
-		if ((e = t2[(ind = hash2(key))]) != null && e.key == key) {
+		if ((e = t2[(ind = hash2(key))]) != null && e.hashKey() == key) {
 			t2[ind] = null;
 			load--;
 			return true;
 		}
-		if ((e = t3[(ind = hash3(key))]) != null && e.key == key) {
+		if ((e = t3[(ind = hash3(key))]) != null && e.hashKey() == key) {
 			t3[ind] = null;
 			load--;
 			return true;
 		}
-		if ((e = t4[(ind = hash4(key))]) != null && e.key == key) {
+		if ((e = t4[(ind = hash4(key))]) != null && e.hashKey() == key) {
 			t4[ind] = null;
 			load--;
 			return true;
