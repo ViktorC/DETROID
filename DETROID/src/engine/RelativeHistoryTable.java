@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.concurrent.locks.*;
 import engine.Evaluator.MaterialScore;
 
 /**A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only incremented upon a cutoff and a
@@ -14,24 +15,34 @@ public class RelativeHistoryTable {
 	public final static int MAX_SCORE = 2*(MaterialScore.QUEEN.value - MaterialScore.PAWN.value);
 	private final static int DECREMENT_FACTOR = 4;
 	
-	private int[][] historyT;	// An [origin square][destination square] table for the history heuristic.
-	private int[][] butterflyT;	// An [origin square][destination square] table for the butterfly heuristic.
+	private ReadWriteLock locks[];	// Locks for controlling thread access.
+	
+	private int[][] historyT;	// A [piece][destination square] table for the history heuristic.
+	private int[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
 	
 	public RelativeHistoryTable() {
-		historyT = new int[64][64];
-		butterflyT = new int[64][64];
+		/* The numbering of the pieces starts from one, so each table has a redundant first row to save
+		 * the expenses of always subtracting one from the moved piece numeral both on read and write. */
+		int numOfPieces = Piece.values().length;
+		locks = new ReentrantReadWriteLock[numOfPieces];
+		for (int i = 1; i < locks.length; i++)
+			locks[i] = new ReentrantReadWriteLock();
+		historyT = new int[numOfPieces][64];
+		butterflyT = new int[numOfPieces][64];
 	}
 	/**If a move causes a cut-off, this method updates the relative history table accordingly.
 	 * 
 	 * @param m The move that caused the cut-off.
 	 */
 	public void recordSuccessfulMove(Move m) {
-		int[] row;
-		synchronized (row = historyT[m.from]) {
-			row[m.to] += MAX_SCORE;
+		ReadWriteLock lock = locks[m.movedPiece];
+		try {
+			lock.writeLock().lock();
+			historyT[m.movedPiece][m.to] += MAX_SCORE;
+			butterflyT[m.movedPiece][m.to]++;
 		}
-		synchronized (row = butterflyT[m.from]) {
-			row[m.to]++;
+		finally {
+			lock.writeLock().unlock();
 		}
 	}
 	/**If a move does not cause a cut-off, this method updates the relative history table accordingly.
@@ -39,18 +50,30 @@ public class RelativeHistoryTable {
 	 * @param m The move that did not cause a cut-off.
 	 */
 	public void recordUnsuccessfulMove(Move m) {
-		int[] row = butterflyT[m.from];
-		synchronized (row) {
-			row[m.to]++;
+		ReadWriteLock lock = locks[m.movedPiece];
+		try {
+			lock.writeLock().lock();
+			butterflyT[m.movedPiece][m.to]++;
+		}
+		finally {
+			lock.writeLock().unlock();
 		}
 	}
 	/**Decrements the current values in the tables by a certain factor for when a new search is started allowing for more significance associated with
 	 * the new values than with the old ones.*/
-	public synchronized void decrementCurrentValues() {
-		for (int i = 0; i < 64; i++) {
-			for (int j = 0; j < 64; j++) {
-				historyT[i][j] /= DECREMENT_FACTOR;
-				butterflyT[i][j] /= DECREMENT_FACTOR;
+	public void decrementCurrentValues() {
+		ReadWriteLock lock;
+		for (int i = 1; i < locks.length; i++) {
+			lock = locks[i];
+			try {
+				lock.writeLock().lock();
+				for (int j = 0; j < 64; j++) {
+					historyT[i][j] /= DECREMENT_FACTOR;
+					butterflyT[i][j] /= DECREMENT_FACTOR;
+				}
+			}
+			finally {
+				lock.writeLock().unlock();
 			}
 		}
 	}
@@ -61,10 +84,18 @@ public class RelativeHistoryTable {
 	 * tables.
 	 */
 	public int score(Move m) {
-		int bTscore = butterflyT[m.from][m.to];
-		if (bTscore != 0)
-			return historyT[m.from][m.to]/bTscore;
-		else
-			return 0;
+		int bTscore;
+		ReadWriteLock lock = locks[m.movedPiece];
+		try {
+			lock.readLock().lock();
+			bTscore = butterflyT[m.movedPiece][m.to];
+			if (bTscore != 0)
+				return historyT[m.movedPiece][m.to]/bTscore;
+			else
+				return 0;
+		}
+		finally {
+			lock.readLock().unlock();
+		}
 	}
 }

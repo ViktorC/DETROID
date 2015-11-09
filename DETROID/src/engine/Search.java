@@ -163,7 +163,7 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
-		int score, origAlpha = alpha, val, searchedMoves = 0, killerMoveComp;
+		int score, origAlpha = alpha, val, searchedMoves = 0, killerMove1Comp, killerMove2Comp;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		boolean thereIsPvMove = false, checkMemory = false, killersChecked = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
@@ -232,9 +232,13 @@ public class Search extends Thread {
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
 				return Game.State.TIE.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && depth > NMR + 2 && !pos.getCheck()) {	// Search null moves to a minimum depth of 2.
+			if (nullMoveAllowed && depth >= NMR && !pos.getCheck()) {
 				pos.makeNullMove();
-				val = -search(depth - NMR - 1, -beta, -beta + 1, false);	// Do not allow consecutive null moves.
+				// Do not allow consecutive null moves.
+				if (depth == NMR)
+					val = -search(depth - NMR, -beta, -beta + 1, false);
+				else
+					val = -search(depth - NMR - 1, -beta, -beta + 1, false);
 				pos.unmakeMove();
 				if (val >= beta) {
 					bestMove = new Move(val);
@@ -257,9 +261,9 @@ public class Search extends Thread {
 					continue;
 				// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
 				if (!killersChecked && move.value < 0) {
-					killerMoveComp = kT.retrieveMove1(ply - depth);
-					if (killerMoveComp != 0) {	// Killer move no. 1.
-						killerMove1 = Move.toMove(killerMoveComp);
+					killerMove1Comp = kT.retrieveMove1(ply - depth);
+					if (killerMove1Comp != 0) {	// Killer move no. 1.
+						killerMove1 = Move.toMove(killerMove1Comp);
 						if (pos.isLegal(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
 							thereIsKillerMove1 = true;
 							pos.makeMove(killerMove1);
@@ -284,9 +288,9 @@ public class Search extends Thread {
 								break Search;
 						}
 					}
-					killerMoveComp = kT.retrieveMove2(ply - depth);
-					if (killerMoveComp != 0) {	// Killer move no. 2.
-						killerMove2 = Move.toMove(killerMoveComp);
+					killerMove2Comp = kT.retrieveMove2(ply - depth);
+					if (killerMove2Comp != 0 && killerMove2Comp != killerMove1Comp) {	// Killer move no. 2.
+						killerMove2 = Move.toMove(killerMove2Comp);
 						if (pos.isLegal(killerMove2) && (!thereIsPvMove || !killerMove2.equals(pVmove))) {
 							thereIsKillerMove2 = true;
 							pos.makeMove(killerMove2);

@@ -1,8 +1,9 @@
 package util;
 
+import java.util.concurrent.locks.*;
 import java.util.function.Predicate;
 
-/**A generic, so far non-thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
+/**A generic, thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
  * the hash table are required to extend {@link #HashTable.Entry Entry} and implicitly implement {@link #Comparable Comparable}.
  * 
  * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash functions.
@@ -14,6 +15,10 @@ import java.util.function.Predicate;
  * tried.
  * 
  * The default length of the hash table (the sum of the four tables' lengths) is 1022.
+ * 
+ * It currently uses only one reentrant read-write lock to ensure thread-safety. It used to have locks for each table and one for the load counter, but
+ * it entailed a huge overhead thus the locking system has been simplified. As this hash table is mainly targeted at average computers and at applications
+ * that mostly just read from the table, even this simple thread access control 'system' should perform relatively well up to 4-8 threads.
  * 
  * @author Viktor
  *
@@ -27,29 +32,28 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 *
 	 * @param <E> The type of the hash table entry that implements this interface.
 	 */
-	public static interface Entry<E> extends Comparable<E>, Hashable {
-		
-	}
+	public static interface Entry<E> extends Comparable<E>, Hashable {}
 	
+	// A long with which when another long is AND-ed, the result will be that other long's absolute value.
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
 	
 	public final static int DEFAULT_SIZE = 1 << 10;
 	
+	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access due to the
+	 * order of the tables tried as the probability of getting a hit in bigger tables is higher. */
 	private final static float T1_SHARE = 0.325F;
 	private final static float T2_SHARE = 0.275F;
 	private final static float T3_SHARE = 0.225F;
 	private final static float T4_SHARE = 0.175F;
 	
 	private final static float MINIMUM_LOAD_FACTOR = 1/3F;
-	
 	private final static float EPSILON = 1.36F;
 	
-	private E[] t1;
-	private E[] t2;
-	private E[] t3;
-	private E[] t4;
+	private int load = 0;	// Load counter.
 	
-	private int load = 0;
+	private E[] t1, t2, t3, t4;	// The four hash tables.
+	
+	private ReadWriteLock lock = new ReentrantReadWriteLock();	// A read-write lock for thread access control.
 	
 	/**Instantiates a HashTable with a default length of 1022.*/
 	@SuppressWarnings({"unchecked"})
@@ -77,14 +81,26 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * @return
 	 */
 	public int size() {
-		return t1.length + t2.length + t3.length + t4.length;
+		try {
+			lock.readLock().lock();
+			return t1.length + t2.length + t3.length + t4.length;
+		}
+		finally {
+			lock.readLock().unlock();
+		}
 	}
 	/**Returns the number of occupied slots in the hash table.
 	 * 
 	 * @return
 	 */
 	public int load() {
-		return load;
+		try {
+			lock.readLock().lock();
+			return load;
+		}
+		finally {
+			lock.readLock().unlock();
+		}
 	}
 	/**Inserts an entry into the hash table.
 	 * 
@@ -94,55 +110,61 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		int ind;
 		E slot;
 		long key = e.hashKey();
-		if ((slot = t1[(ind = hash1(key))]) != null && key == slot.hashKey()) {
-			if (e.betterThan(slot))
+		try {
+			lock.writeLock().lock();
+			if ((slot = t1[(ind = hash1(key))]) != null && key == slot.hashKey()) {
+				if (e.betterThan(slot))
+					t1[ind] = e;
+				return;
+			}
+			if ((slot = t2[(ind = hash2(key))]) != null && key == slot.hashKey()) {
+				if (e.betterThan(slot))
+					t2[ind] = e;
+				return;
+			}
+			if ((slot = t3[(ind = hash3(key))]) != null && key == slot.hashKey()) {
+				if (e.betterThan(slot))
+					t3[ind] = e;
+				return;
+			}
+			if ((slot = t4[(ind = hash4(key))]) != null && key == slot.hashKey()) {
+				if (e.betterThan(slot))
+					t4[ind] = e;
+				return;
+			}
+			for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
+				if ((slot = t1[(ind = hash1(key))]) == null) {
+					t1[ind] = e;
+					load++;
+					return;
+				}
 				t1[ind] = e;
-			return;
-		}
-		if ((slot = t2[(ind = hash2(key))]) != null && key == slot.hashKey()) {
-			if (e.betterThan(slot))
+				e = slot;
+				if ((slot = t2[(ind = hash2(e.hashKey()))]) == null) {
+					t2[ind] = e;
+					load++;
+					return;
+				}
 				t2[ind] = e;
-			return;
-		}
-		if ((slot = t3[(ind = hash3(key))]) != null && key == slot.hashKey()) {
-			if (e.betterThan(slot))
+				e = slot;
+				if ((slot = t3[(ind = hash3(e.hashKey()))]) == null) {
+					t3[ind] = e;
+					load++;
+					return;
+				}
 				t3[ind] = e;
-			return;
-		}
-		if ((slot = t4[(ind = hash4(key))]) != null && key == slot.hashKey()) {
-			if (e.betterThan(slot))
+				e = slot;
+				if ((slot = t4[(ind = hash4(e.hashKey()))]) == null) {
+					t4[ind] = e;
+					load++;
+					return;
+				}
 				t4[ind] = e;
-			return;
+				e = slot;
+			}
 		}
-		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
-			if ((slot = t1[(ind = hash1(key))]) == null) {
-				t1[ind] = e;
-				load++;
-				return;
-			}
-			t1[ind] = e;
-			e = slot;
-			if ((slot = t2[(ind = hash2(e.hashKey()))]) == null) {
-				t2[ind] = e;
-				load++;
-				return;
-			}
-			t2[ind] = e;
-			e = slot;
-			if ((slot = t3[(ind = hash3(e.hashKey()))]) == null) {
-				t3[ind] = e;
-				load++;
-				return;
-			}
-			t3[ind] = e;
-			e = slot;
-			if ((slot = t4[(ind = hash4(e.hashKey()))]) == null) {
-				t4[ind] = e;
-				load++;
-				return;
-			}
-			t4[ind] = e;
-			e = slot;
+		finally {
+			lock.writeLock().unlock();
 		}
 		rehash();
 		insert(e);
@@ -154,14 +176,20 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public E lookUp(long key) {
 		E e;
-		if ((e = t1[hash1(key)]) != null && e.hashKey() == key)
-			return e;
-		if ((e = t2[hash2(key)]) != null && e.hashKey() == key)
-			return e;
-		if ((e = t3[hash3(key)]) != null && e.hashKey() == key)
-			return e;
-		if ((e = t4[hash4(key)]) != null && e.hashKey() == key)
-			return e;
+		try {
+			lock.readLock().lock();
+			if ((e = t1[hash1(key)]) != null && e.hashKey() == key)
+				return e;
+			if ((e = t2[hash2(key)]) != null && e.hashKey() == key)
+				return e;
+			if ((e = t3[hash3(key)]) != null && e.hashKey() == key)
+				return e;
+			if ((e = t4[hash4(key)]) != null && e.hashKey() == key)
+				return e;
+		}
+		finally {
+			lock.readLock().unlock();
+		}
 		return null;
 	}
 	/**Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table; returns
@@ -173,25 +201,31 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	public boolean remove(long key) {
 		int ind;
 		E e;
-		if ((e = t1[(ind = hash1(key))]) != null && e.hashKey() == key) {
-			t1[ind] = null;
-			load--;
-			return true;
+		try {
+			lock.writeLock().lock();
+			if ((e = t1[(ind = hash1(key))]) != null && e.hashKey() == key) {
+				t1[ind] = null;
+				load--;
+				return true;
+			}
+			if ((e = t2[(ind = hash2(key))]) != null && e.hashKey() == key) {
+				t2[ind] = null;
+				load--;
+				return true;
+			}
+			if ((e = t3[(ind = hash3(key))]) != null && e.hashKey() == key) {
+				t3[ind] = null;
+				load--;
+				return true;
+			}
+			if ((e = t4[(ind = hash4(key))]) != null && e.hashKey() == key) {
+				t4[ind] = null;
+				load--;
+				return true;
+			}
 		}
-		if ((e = t2[(ind = hash2(key))]) != null && e.hashKey() == key) {
-			t2[ind] = null;
-			load--;
-			return true;
-		}
-		if ((e = t3[(ind = hash3(key))]) != null && e.hashKey() == key) {
-			t3[ind] = null;
-			load--;
-			return true;
-		}
-		if ((e = t4[(ind = hash4(key))]) != null && e.hashKey() == key) {
-			t4[ind] = null;
-			load--;
-			return true;
+		finally {
+			lock.writeLock().unlock();
 		}
 		return false;
 	}
@@ -201,94 +235,118 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public void remove(Predicate<E> condition) {
 		E e;
-		for (int i = 0; i < t1.length; i++) {
-			e = t1[i];
-			if (e != null && condition.test(e)) {
-				t1[i] = null;
-				load--;
+		try {
+			lock.writeLock().lock();
+			for (int i = 0; i < t1.length; i++) {
+				e = t1[i];
+				if (e != null && condition.test(e)) {
+					t1[i] = null;
+					load--;
+				}
+			}
+			for (int i = 0; i < t2.length; i++) {
+				e = t2[i];
+				if (e != null && condition.test(e)) {
+					t2[i] = null;
+					load--;
+				}
+			}
+			for (int i = 0; i < t3.length; i++) {
+				e = t3[i];
+				if (e != null && condition.test(e)) {
+					t3[i] = null;
+					load--;
+				}
+			}
+			for (int i = 0; i < t4.length; i++) {
+				e = t4[i];
+				if (e != null && condition.test(e)) {
+					t4[i] = null;
+					load--;
+				}
 			}
 		}
-		for (int i = 0; i < t2.length; i++) {
-			e = t2[i];
-			if (e != null && condition.test(e)) {
-				t2[i] = null;
-				load--;
-			}
-		}
-		for (int i = 0; i < t3.length; i++) {
-			e = t3[i];
-			if (e != null && condition.test(e)) {
-				t3[i] = null;
-				load--;
-			}
-		}
-		for (int i = 0; i < t4.length; i++) {
-			e = t4[i];
-			if (e != null && condition.test(e)) {
-				t4[i] = null;
-				load--;
-			}
+		finally {
+			lock.writeLock().unlock();
 		}
 	}
 	@SuppressWarnings({"unchecked"})
 	private void rehash() {
-		E[] oldTable1 = t1;
-		E[] oldTable2 = t2;
-		E[] oldTable3 = t3;
-		E[] oldTable4 = t4;
-		float size = load/MINIMUM_LOAD_FACTOR;
-		load = 0;
-		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
-		t2 = (E[])new Entry[(int)(T2_SHARE*size)];
-		t3 = (E[])new Entry[(int)(T3_SHARE*size)];
-		t4 = (E[])new Entry[(int)(T4_SHARE*size)];
-		for (E e : oldTable1) {
-			if (e != null)
-				insert(e);
+		try {
+			lock.writeLock().lock();
+			E[] oldTable1 = t1;
+			E[] oldTable2 = t2;
+			E[] oldTable3 = t3;
+			E[] oldTable4 = t4;
+			float size = load/MINIMUM_LOAD_FACTOR;
+			load = 0;
+			t1 = (E[])new Entry[(int)(T1_SHARE*size)];
+			t2 = (E[])new Entry[(int)(T2_SHARE*size)];
+			t3 = (E[])new Entry[(int)(T3_SHARE*size)];
+			t4 = (E[])new Entry[(int)(T4_SHARE*size)];
+			for (E e : oldTable1) {
+				if (e != null)
+					insert(e);
+			}
+			for (E e : oldTable2) {
+				if (e != null)
+					insert(e);
+			}
+			for (E e : oldTable3) {
+				if (e != null)
+					insert(e);
+			}
+			for (E e : oldTable4) {
+				if (e != null)
+					insert(e);
+			}
 		}
-		for (E e : oldTable2) {
-			if (e != null)
-				insert(e);
-		}
-		for (E e : oldTable3) {
-			if (e != null)
-				insert(e);
-		}
-		for (E e : oldTable4) {
-			if (e != null)
-				insert(e);
+		finally {
+			lock.writeLock().unlock();
 		}
 	}
 	/**Replaces the current tables with new, empty hash tables of the same sizes.*/
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
-		load = 0;
-		t1 = (E[])new Entry[t1.length];
-		t2 = (E[])new Entry[t2.length];
-		t3 = (E[])new Entry[t3.length];
-		t4 = (E[])new Entry[t4.length];
+		try {
+			lock.writeLock().lock();
+			load = 0;
+			t1 = (E[])new Entry[t1.length];
+			t2 = (E[])new Entry[t2.length];
+			t3 = (E[])new Entry[t3.length];
+			t4 = (E[])new Entry[t4.length];
+		}
+		finally {
+			lock.writeLock().unlock();
+		}
 	}
 	/**Prints all non-null entries to the console.*/
 	public void printAll() {
-		System.out.println("TABLE_1:\n");
-		for (E e : t1) {
-			if (e != null)
-				System.out.println(e);
+		try {
+			lock.readLock().lock();
+			System.out.println("TABLE_1:\n");
+			for (E e : t1) {
+				if (e != null)
+					System.out.println(e);
+			}
+			System.out.println("TABLE_2:\n");
+			for (E e : t2) {
+				if (e != null)
+					System.out.println(e);
+			}
+			System.out.println("TABLE_3:\n");
+			for (E e : t3) {
+				if (e != null)
+					System.out.println(e);
+			}
+			System.out.println("TABLE_4:\n");
+			for (E e : t4) {
+				if (e != null)
+					System.out.println(e);
+			}
 		}
-		System.out.println("TABLE_2:\n");
-		for (E e : t2) {
-			if (e != null)
-				System.out.println(e);
-		}
-		System.out.println("TABLE_3:\n");
-		for (E e : t3) {
-			if (e != null)
-				System.out.println(e);
-		}
-		System.out.println("TABLE_4:\n");
-		for (E e : t4) {
-			if (e != null)
-				System.out.println(e);
+		finally {
+			lock.readLock().unlock();
 		}
 	}
 	private int hash1(long key) {

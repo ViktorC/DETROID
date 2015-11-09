@@ -15,17 +15,11 @@ public class KillerTable {
 	 */
 	public static class KillerTableEntry {
 		
-		private Lock readLock;
-		private Lock writeLock;
+		private ReadWriteLock lock = new ReentrantReadWriteLock();
 		
 		int move1;
 		int move2;
 		
-		public KillerTableEntry() {
-			ReadWriteLock lock = new ReentrantReadWriteLock();
-			readLock = lock.readLock();
-			writeLock = lock.writeLock();
-		}
 		public int getMove1() { return move1; }
 		public int getMove2() { return move2; }
 	}
@@ -51,14 +45,14 @@ public class KillerTable {
 		KillerTableEntry e = t[ply];
 		int compM = m.toInt();
 		try {
-			e.writeLock.lock();
+			e.lock.writeLock().lock();
 			if (e.move1 != compM) {
 				e.move2 = e.move1;
 				e.move1 = compM;
 			}
 		}
 		finally {
-			e.writeLock.unlock();
+			e.lock.writeLock().unlock();
 		}
 	}
 	/**Retrieves the first move, i.e. the one that caused the last cutoff, from the killer table entry for the given ply.
@@ -70,11 +64,11 @@ public class KillerTable {
 	public int retrieveMove1(int ply) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
 		try {
-			e.readLock.lock();
+			e.lock.readLock().lock();
 			return e.move1;
 		}
 		finally {
-			e.readLock.unlock();
+			e.lock.readLock().unlock();
 		}
 	}
 	/**Retrieves the second move from the killer table entry for the given ply.
@@ -86,11 +80,11 @@ public class KillerTable {
 	public int retrieveMove2(int ply) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
 		try {
-			e.readLock.lock();
+			e.lock.readLock().lock();
 			return e.move2;
 		}
 		finally {
-			e.readLock.unlock();
+			e.lock.readLock().unlock();
 		}
 	}
 }
