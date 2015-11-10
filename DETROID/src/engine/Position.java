@@ -11,7 +11,7 @@ import java.util.Scanner;
  * possible move sets of sliding pieces on the fly.
  * 
  * The main functions include:
- * {@link #generateAllMoves() generateMoves}
+ * {@link #generateAllMoves() generateAllMoves}
  * {@link #makeMove(Move) makeMove}
  * {@link #unmakeMove() unmakeMove}
  * {@link #perft(int) perft}
@@ -20,7 +20,7 @@ import java.util.Scanner;
  * @author Viktor
  * 
  */
-public class Position implements Hashable {
+public class Position implements Hashable, Copiable<Position> {
 	
 	/**A FEN string for the starting chess position.*/
 	public final static String INITIAL_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -362,11 +362,11 @@ public class Position implements Hashable {
 		key = Zobrist.hash(this);
 		keyHistory[0] = this.key;
 	}
-	/**Returns a copy of the position.
+	/**Returns a deep copy of the position.
 	 * 
 	 * @return
 	 */
-	public Position copy() {
+	public Position deepCopy() {
 		Move move;
 		Position copy;
 		Stack<Move> reverse = new Stack<>();

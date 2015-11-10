@@ -1,5 +1,6 @@
 package engine;
-import java.util.concurrent.locks.*;
+
+import util.Copiable;
 
 /**A thread-safe table implementation for the killer heuristic.
  * 
@@ -13,15 +14,21 @@ public class KillerTable {
 	 * @author Viktor
 	 *
 	 */
-	public static class KillerTableEntry {
-		
-		private ReadWriteLock lock = new ReentrantReadWriteLock();
+	public static class KillerTableEntry implements Copiable<KillerTableEntry> {
 		
 		int move1;
 		int move2;
 		
+		public KillerTableEntry() {}
+		public KillerTableEntry(int move1, int move2) {
+			this.move1 = move1;
+			this.move2 = move2;
+		}
 		public int getMove1() { return move1; }
 		public int getMove2() { return move2; }
+		public KillerTableEntry deepCopy() {
+			return new KillerTableEntry(move1, move2);
+		}
 	}
 	
 	private KillerTableEntry[] t;
@@ -44,47 +51,23 @@ public class KillerTable {
 	public void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
 		int compM = m.toInt();
-		try {
-			e.lock.writeLock().lock();
+		synchronized(e) {
 			if (e.move1 != compM) {
 				e.move2 = e.move1;
 				e.move1 = compM;
 			}
 		}
-		finally {
-			e.lock.writeLock().unlock();
-		}
 	}
-	/**Retrieves the first move, i.e. the one that caused the last cutoff, from the killer table entry for the given ply.
+	/**Retrieves an entry containing the two (or less) killer moves from the killer table entry for the given ply.
 	 * 
 	 * @param ply The ply for which the killer moves are sought.
-	 * @return The first killer move from the table entry for the ply.
+	 * @return The killer move entry from the table entry for the ply.
 	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
 	 */
-	public int retrieveMove1(int ply) throws ArrayIndexOutOfBoundsException {
+	public KillerTableEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
-		try {
-			e.lock.readLock().lock();
-			return e.move1;
-		}
-		finally {
-			e.lock.readLock().unlock();
-		}
-	}
-	/**Retrieves the second move from the killer table entry for the given ply.
-	 * 
-	 * @param ply The ply for which the killer moves are sought.
-	 * @return The second killer move from the table entry for the ply.
-	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
-	 */
-	public int retrieveMove2(int ply) throws ArrayIndexOutOfBoundsException {
-		KillerTableEntry e = t[ply];
-		try {
-			e.lock.readLock().lock();
-			return e.move2;
-		}
-		finally {
-			e.lock.readLock().unlock();
+		synchronized(e) {
+			return e.deepCopy();
 		}
 	}
 }

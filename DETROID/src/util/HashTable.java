@@ -1,6 +1,6 @@
 package util;
 
-import java.util.concurrent.locks.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 /**A generic, thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
@@ -16,17 +16,15 @@ import java.util.function.Predicate;
  * 
  * The default length of the hash table (the sum of the four tables' lengths) is 1022.
  * 
- * It currently uses only one reentrant read-write lock to ensure thread-safety. It used to have locks for each table and one for the load counter, but
- * it entailed a huge overhead thus the locking system has been simplified. As this hash table is mainly targeted at average computers and at applications
- * that mostly just read from the table, even this simple thread access control 'system' should perform relatively well up to 4-8 threads.
+ * The target application-context, when concurrent, involves moderate contention and similar frequencies of reads and writes.
  * 
  * @author Viktor
  *
- * @param <E> The hash table entry type that implements the {@link #HashTable.Entry<E> Entry} interface.
+ * @param <E> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
 public class HashTable<E extends HashTable.Entry<E>> {
 	
-	/**An interface for hash table entries that extends the {@link #Comparable<E> Comparable} and {@link #Hashable Hashable} interfaces.
+	/**An interface for hash table entries that extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
 	 * 
 	 * @author Viktor
 	 *
@@ -49,11 +47,9 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	private final static float MINIMUM_LOAD_FACTOR = 1/3F;
 	private final static float EPSILON = 1.36F;
 	
-	private int load = 0;	// Load counter.
+	private AtomicInteger load = new AtomicInteger(0);	// Load counter.
 	
 	private E[] t1, t2, t3, t4;	// The four hash tables.
-	
-	private ReadWriteLock lock = new ReentrantReadWriteLock();	// A read-write lock for thread access control.
 	
 	/**Instantiates a HashTable with a default length of 1022.*/
 	@SuppressWarnings({"unchecked"})
@@ -81,26 +77,17 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * @return
 	 */
 	public int size() {
-		try {
-			lock.readLock().lock();
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			return t1.length + t2.length + t3.length + t4.length;
-		}
-		finally {
-			lock.readLock().unlock();
-		}
+		}}}}
+		
 	}
 	/**Returns the number of occupied slots in the hash table.
 	 * 
 	 * @return
 	 */
 	public int load() {
-		try {
-			lock.readLock().lock();
-			return load;
-		}
-		finally {
-			lock.readLock().unlock();
-		}
+		return load.get();
 	}
 	/**Inserts an entry into the hash table.
 	 * 
@@ -110,61 +97,71 @@ public class HashTable<E extends HashTable.Entry<E>> {
 		int ind;
 		E slot;
 		long key = e.hashKey();
-		try {
-			lock.writeLock().lock();
+		synchronized (t1) {
 			if ((slot = t1[(ind = hash1(key))]) != null && key == slot.hashKey()) {
 				if (e.betterThan(slot))
 					t1[ind] = e;
 				return;
 			}
+		}
+		synchronized (t2) {
 			if ((slot = t2[(ind = hash2(key))]) != null && key == slot.hashKey()) {
 				if (e.betterThan(slot))
 					t2[ind] = e;
 				return;
 			}
+		}
+		synchronized (t3) {
 			if ((slot = t3[(ind = hash3(key))]) != null && key == slot.hashKey()) {
 				if (e.betterThan(slot))
 					t3[ind] = e;
 				return;
 			}
+		}
+		synchronized (t4) {
 			if ((slot = t4[(ind = hash4(key))]) != null && key == slot.hashKey()) {
 				if (e.betterThan(slot))
 					t4[ind] = e;
 				return;
 			}
-			for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
+		}
+		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
+			synchronized (t1) {
 				if ((slot = t1[(ind = hash1(key))]) == null) {
 					t1[ind] = e;
-					load++;
+					load.incrementAndGet();
 					return;
 				}
 				t1[ind] = e;
 				e = slot;
+			}
+			synchronized (t2) {
 				if ((slot = t2[(ind = hash2(e.hashKey()))]) == null) {
 					t2[ind] = e;
-					load++;
+					load.incrementAndGet();
 					return;
 				}
 				t2[ind] = e;
 				e = slot;
+			}
+			synchronized (t3) {
 				if ((slot = t3[(ind = hash3(e.hashKey()))]) == null) {
 					t3[ind] = e;
-					load++;
+					load.incrementAndGet();
 					return;
 				}
 				t3[ind] = e;
 				e = slot;
+			}
+			synchronized (t4) {
 				if ((slot = t4[(ind = hash4(e.hashKey()))]) == null) {
 					t4[ind] = e;
-					load++;
+					load.incrementAndGet();
 					return;
 				}
 				t4[ind] = e;
 				e = slot;
 			}
-		}
-		finally {
-			lock.writeLock().unlock();
 		}
 		rehash();
 		insert(e);
@@ -176,19 +173,21 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public E lookUp(long key) {
 		E e;
-		try {
-			lock.readLock().lock();
+		synchronized (t1) {
 			if ((e = t1[hash1(key)]) != null && e.hashKey() == key)
 				return e;
+		}
+		synchronized (t2) {
 			if ((e = t2[hash2(key)]) != null && e.hashKey() == key)
 				return e;
+		}
+		synchronized (t3) {
 			if ((e = t3[hash3(key)]) != null && e.hashKey() == key)
 				return e;
+		}
+		synchronized (t4) {
 			if ((e = t4[hash4(key)]) != null && e.hashKey() == key)
 				return e;
-		}
-		finally {
-			lock.readLock().unlock();
 		}
 		return null;
 	}
@@ -201,31 +200,33 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	public boolean remove(long key) {
 		int ind;
 		E e;
-		try {
-			lock.writeLock().lock();
+		synchronized (t1) {
 			if ((e = t1[(ind = hash1(key))]) != null && e.hashKey() == key) {
 				t1[ind] = null;
-				load--;
-				return true;
-			}
-			if ((e = t2[(ind = hash2(key))]) != null && e.hashKey() == key) {
-				t2[ind] = null;
-				load--;
-				return true;
-			}
-			if ((e = t3[(ind = hash3(key))]) != null && e.hashKey() == key) {
-				t3[ind] = null;
-				load--;
-				return true;
-			}
-			if ((e = t4[(ind = hash4(key))]) != null && e.hashKey() == key) {
-				t4[ind] = null;
-				load--;
+				load.decrementAndGet();
 				return true;
 			}
 		}
-		finally {
-			lock.writeLock().unlock();
+		synchronized (t2) {
+			if ((e = t2[(ind = hash2(key))]) != null && e.hashKey() == key) {
+				t2[ind] = null;
+				load.decrementAndGet();
+				return true;
+			}
+		}
+		synchronized (t3) {
+			if ((e = t3[(ind = hash3(key))]) != null && e.hashKey() == key) {
+				t3[ind] = null;
+				load.decrementAndGet();
+				return true;
+			}
+		}
+		synchronized (t4) {
+			if ((e = t4[(ind = hash4(key))]) != null && e.hashKey() == key) {
+				t4[ind] = null;
+				load.decrementAndGet();
+				return true;
+			}
 		}
 		return false;
 	}
@@ -235,51 +236,52 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public void remove(Predicate<E> condition) {
 		E e;
-		try {
-			lock.writeLock().lock();
+		synchronized (t1) {
 			for (int i = 0; i < t1.length; i++) {
 				e = t1[i];
 				if (e != null && condition.test(e)) {
 					t1[i] = null;
-					load--;
+					load.decrementAndGet();
 				}
 			}
+		}
+		synchronized (t2) {
 			for (int i = 0; i < t2.length; i++) {
 				e = t2[i];
 				if (e != null && condition.test(e)) {
 					t2[i] = null;
-					load--;
+					load.decrementAndGet();
 				}
 			}
+		}
+		synchronized (t3) {
 			for (int i = 0; i < t3.length; i++) {
 				e = t3[i];
 				if (e != null && condition.test(e)) {
 					t3[i] = null;
-					load--;
+					load.decrementAndGet();
 				}
 			}
+		}
+		synchronized (t4) {
 			for (int i = 0; i < t4.length; i++) {
 				e = t4[i];
 				if (e != null && condition.test(e)) {
 					t4[i] = null;
-					load--;
+					load.decrementAndGet();
 				}
 			}
-		}
-		finally {
-			lock.writeLock().unlock();
 		}
 	}
 	@SuppressWarnings({"unchecked"})
 	private void rehash() {
-		try {
-			lock.writeLock().lock();
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			E[] oldTable1 = t1;
 			E[] oldTable2 = t2;
 			E[] oldTable3 = t3;
 			E[] oldTable4 = t4;
-			float size = load/MINIMUM_LOAD_FACTOR;
-			load = 0;
+			float size = load.get()/MINIMUM_LOAD_FACTOR;
+			load = new AtomicInteger(0);
 			t1 = (E[])new Entry[(int)(T1_SHARE*size)];
 			t2 = (E[])new Entry[(int)(T2_SHARE*size)];
 			t3 = (E[])new Entry[(int)(T3_SHARE*size)];
@@ -300,30 +302,22 @@ public class HashTable<E extends HashTable.Entry<E>> {
 				if (e != null)
 					insert(e);
 			}
-		}
-		finally {
-			lock.writeLock().unlock();
-		}
+		}}}}
 	}
 	/**Replaces the current tables with new, empty hash tables of the same sizes.*/
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
-		try {
-			lock.writeLock().lock();
-			load = 0;
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
+			load = new AtomicInteger(0);
 			t1 = (E[])new Entry[t1.length];
 			t2 = (E[])new Entry[t2.length];
 			t3 = (E[])new Entry[t3.length];
 			t4 = (E[])new Entry[t4.length];
-		}
-		finally {
-			lock.writeLock().unlock();
-		}
+		}}}}
 	}
 	/**Prints all non-null entries to the console.*/
 	public void printAll() {
-		try {
-			lock.readLock().lock();
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			System.out.println("TABLE_1:\n");
 			for (E e : t1) {
 				if (e != null)
@@ -344,10 +338,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 				if (e != null)
 					System.out.println(e);
 			}
-		}
-		finally {
-			lock.readLock().unlock();
-		}
+		}}}}
 	}
 	private int hash1(long key) {
 		return (int)((key & UNSIGNED_LONG)%t1.length);

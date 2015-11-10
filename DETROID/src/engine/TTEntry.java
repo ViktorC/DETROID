@@ -12,7 +12,7 @@ import engine.Search.NodeType;
  */
 public class TTEntry implements HashTable.Entry<TTEntry> {
 	
-	long key;			// The 64-bit position hash key.
+	long  key;			// The 64-bit position hash key.
 	short depth;		// How deep the position has been searched.
 	byte  type;			// The type of the returned score.
 	short score;		// The returned score.
@@ -27,23 +27,23 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 		this.bestMove = bestMove;
 		this.generation = age;
 	}
-	/**Returns whether this entry is more valuable for storing than the input parameter entry.*/
+	/**Returns whether this entry is more valuable for storing than the input parameter entry. */
 	public boolean betterThan(TTEntry e) {
 		if (generation >= e.generation && depth >= e.depth && (type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind))
 			return true;
 		return false;
 	}
-	/**Returns whether this entry is less valuable for storing than the input parameter entry.*/
+	/**Returns whether this entry is less valuable for storing than the input parameter entry. */
 	public boolean worseThan(TTEntry e) {
 		if (generation < e.generation - 2 || depth < e.depth || (e.type == NodeType.EXACT.ind && type != NodeType.EXACT.ind))
 			return true;
 		return false;
 	}
-	/**Returns a 64-bit hash code identifying this object.*/
+	/**Returns a 64-bit hash code identifying this object. */
 	public long hashKey() {
 		return key;
 	}
-	/**Returns a String representation of the object state.*/
+	/**Returns a String representation of the object state. */
 	public String toString() {
 		String move = (bestMove == 0) ? null : Move.toMove(bestMove).toString();
 		String type = "";
