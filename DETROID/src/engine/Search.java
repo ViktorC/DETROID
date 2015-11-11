@@ -472,7 +472,7 @@ public class Search extends Thread {
 			arr[i] = move;
 			i++;
 		}
-		return new QuickSort<Move>(arr).getArray();
+		return QuickSort.sort(arr);
 	}
 	/**Orders non-material moves according to the relative history heuristic.
 	 * 
@@ -489,7 +489,7 @@ public class Search extends Thread {
 			arr[i] = move;
 			i++;
 		}
-		return new QuickSort<Move>(arr).getArray();
+		return QuickSort.sort(arr);
 	}
 	/**Returns an array of Move objects according to the best line of play extracted form the transposition table.
 	 * 

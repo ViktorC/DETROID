@@ -1,70 +1,71 @@
 package util;
 
-/**A generic implementation of the quickSort algorithm to order arrays of objects.
+/**An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
+ * {@link #Comparable Comparable} interface.
  * 
  * @author Viktor
  *
- * @param <T>
  */
-public class QuickSort<T extends Comparable<T>> {
-
-	private T[] array;
+public final class QuickSort {
 	
-	public QuickSort(T[] array) {
-		this.array = array;
-		if (array.length != 0)
-			sort();
-	}
-	public QuickSort(List<T> container) {
-		array = container.toArray();
-		if (array.length != 0)
-			sort();
-	}
-	/**Returns the sorted container as an array.
+	/**Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
+	 * {@link #Comparable Comparable} interface.
 	 * 
-	 * @return
+	 * @param container The list to be sorted.
+	 * @return A sorted array.
 	 */
-	public T[] getArray() {
+	public static <T extends Comparable<T>> T[] sort(List<T> container) {
+		int left, right;
+		T[] array;
+		if (container.length() != 0) {
+			array = container.toArray();
+			left = 0;
+			right = array.length - 1;
+			quickSort(array, left, right);
+			return array;
+		}
+		return null;
+	}
+	/**Sorts and returns the array. The elements have to implement the {@link #Comparable Comparable} interface.
+	 * 
+	 * @param array The array to be sorted.
+	 * @return The sorted array.
+	 */
+	public static <T extends Comparable<T>> T[] sort(T[] array) {
+		int left, right;
+		if (array.length != 0) {
+			left = 0;
+			right = array.length - 1;
+			quickSort(array, left, right);
+		}
 		return array;
 	}
-	/**Returns the sorted container as a queue.
+	/**The quickSort algorithm.
 	 * 
-	 * @return
+	 * @param array
+	 * @param left
+	 * @param right
 	 */
-	public Queue<T> getQueue() {
-		Queue<T> q = new Queue<T>();
-		for (T e : array)
-			q.add(e);
-		return q;
-	}
-	private void sort() {
-		int left = 0;
-		int right = array.length - 1;
-		this.quickSort(left, right);
-	}
-	private void quickSort(int left, int right) {
-		int index = partition(left, right);
-		if (left < index - 1)
-			quickSort(left, index - 1);
-		if (index < right)
-			quickSort(index, right);
-	}
-	private int partition(int left, int right) {
-		T pivot = array[(left + right)/2];
-		T temp;
-		while (left <= right) {
-			while (array[left].betterThan(pivot))
-				left++;
-			while (array[right].worseThan(pivot))
-				right--;
-			if (left <= right) {
-				temp = array[left];
-				array[left] = array[right];
-				array[right] = temp;
-				left++;
-				right--;
+	private static <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
+		int index, partLeft = left, partRight = right;
+		T temp, pivot = array[(left + right)/2];
+		while (partLeft <= partRight) {
+			while (array[partLeft].betterThan(pivot))
+				partLeft++;
+			while (array[partRight].worseThan(pivot))
+				partRight--;
+			if (partLeft <= partRight) {
+				temp = array[partLeft];
+				array[partLeft] = array[partRight];
+				array[partRight] = temp;
+				partLeft++;
+				partRight--;
 			}
 		}
-		return left;
+		index = partLeft;
+		if (left < index - 1)
+			quickSort(array, left, index - 1);
+		if (index < right)
+			quickSort(array, index, right);
 	}
 }

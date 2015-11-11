@@ -3,8 +3,9 @@ package util;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
-/**A generic, thread-safe hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of
- * the hash table are required to extend {@link #HashTable.Entry Entry} and implicitly implement {@link #Comparable Comparable}.
+/**A generic, concurrent hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of the hash
+ * table are required to be immutable to guarantee thread-safety, and implement {@link #HashTable.Entry Entry} and thus implicitly implement the
+ * {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
  * 
  * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash functions.
  * All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's size]; it applies no randomization
