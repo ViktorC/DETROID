@@ -1,8 +1,6 @@
 package engine;
 
 import util.*;
-import engine.Game.State;
-import engine.Move.MoveType;
 
 /**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
  * kept incrementally updated after moves made using {@link #score score}.
@@ -52,6 +50,26 @@ public class Evaluator {
 			else return 0;
 		}
 	}
+	
+	/**An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static enum StateScore {
+		
+		CHECK_MATE				(Short.MIN_VALUE + 1),
+		STALE_MATE				(0),
+		INSUFFICIENT_MATERIAL	(0),
+		DRAW_CLAIMED			(1);
+		
+		public final short score;
+		
+		private StateScore(int score) {
+			this.score = (short)score;
+		}
+	}
+	
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @return
@@ -61,9 +79,9 @@ public class Evaluator {
 		List<Move> oppMoves, moves = pos.generateAllMoves();
 		if (moves.length() == 0) {
 			if (pos.getCheck())
-				return State.LOSS.score;
+				return StateScore.CHECK_MATE.score;
 			else
-				return State.TIE.score;
+				return StateScore.STALE_MATE.score;
 		}
 		pos.makeNullMove();
 		oppMoves = pos.generateAllMoves();

@@ -1,6 +1,7 @@
 package engine;
 
 import engine.Evaluator.MaterialScore;
+import engine.Evaluator.StateScore;
 import engine.KillerTable.KillerTableEntry;
 import util.*;
 
@@ -135,7 +136,7 @@ public class Search extends Thread {
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			search(ply, Game.State.LOSS.score, Game.State.WIN.score, true);
+			search(ply, StateScore.CHECK_MATE.score, -StateScore.CHECK_MATE.score, true);
 			pV = extractPv();
 			bestMove = pV[0];
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
@@ -163,7 +164,7 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
-		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0;
+		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, checkMateScore;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
@@ -188,12 +189,14 @@ public class Search extends Thread {
 		// Return the evaluation score in case a leaf node has been reached.
 		if (depth == 0) {
 			score = Evaluator.score(pos);
+			if (score == StateScore.CHECK_MATE.score)	// The longer the line of play is to a check mate, the better for the side getting mated.
+				score += ply - depth;
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 			return score;
 		}
 		// Search the node.
 		Search: {
-			bestMove = new Move(Game.State.LOSS.score);
+			bestMove = new Move(StateScore.CHECK_MATE.score);
 			pVmove = pV[ply - depth];
 			// First try the principal variation move for the ply if there is one and if it is applicable for this node.
 			if (pVmove != null && pos.isLegal(pVmove)) {
@@ -220,19 +223,21 @@ public class Search extends Thread {
 					nonMatMoves = pos.generateNonMaterialMoves();
 					if (nonMatMoves.length() == 0) {
 						if (pos.getCheck()) {
-							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.LOSS.score, 0, tTgen));
-							return Game.State.LOSS.score;
+							// Adjusting to the length of the line of play leading to the mate.
+							checkMateScore = StateScore.CHECK_MATE.score + ply - depth;
+							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, checkMateScore, 0, tTgen));
+							return checkMateScore;
 						}
 						else {
-							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, Game.State.TIE.score, 0, tTgen));
-							return Game.State.TIE.score;
+							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, StateScore.STALE_MATE.score, 0, tTgen));
+							return StateScore.STALE_MATE.score;
 						}
 					}
 				}
 			}
 			// Check for the repetition and fifty-move rules; return a tie score if they apply.
 			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
-				return Game.State.TIE.score;
+				return StateScore.DRAW_CLAIMED.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
 			if (nullMoveAllowed && depth >= NMR && !pos.getCheck()) {
 				pos.makeNullMove();

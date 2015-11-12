@@ -15,22 +15,15 @@ import util.IllegalCommandArgumentException;
 public class Game implements Runnable {
 	
 	
-	/**A simple enum for game state types and their assigned value scores.
+	/**A simple enum for game state types.
 	 * 
 	 * @author Viktor
 	 *
 	 */
 	public enum State {
 		
-		WIN	(Short.MAX_VALUE),
-		TIE	(0),
-		LOSS(Short.MIN_VALUE + 1);
+		WIN, TIE, LOSS;
 		
-		public final short score;
-		
-		private State(int score) {
-			this.score = (short)score;
-		}
 	}
 	
 	static Scanner in = new Scanner(System.in);
