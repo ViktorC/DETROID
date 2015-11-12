@@ -70,19 +70,22 @@ public class Evaluator {
 		}
 	}
 	
+	public static int mateScore(boolean isInCheck, int ply) {
+		if (isInCheck)
+		// The longer the line of play is to a check mate, the better for the side getting mated.
+			return StateScore.CHECK_MATE.score + ply;
+		else
+			return StateScore.STALE_MATE.score;
+	}
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @return
 	 */
-	public static int score(Position pos) {
+	public static int score(Position pos, int ply) {
 		int score = 0;
 		List<Move> oppMoves, moves = pos.generateAllMoves();
-		if (moves.length() == 0) {
-			if (pos.getCheck())
-				return StateScore.CHECK_MATE.score;
-			else
-				return StateScore.STALE_MATE.score;
-		}
+		if (moves.length() == 0)
+			return mateScore(pos.getCheck(), ply);
 		pos.makeNullMove();
 		oppMoves = pos.generateAllMoves();
 		pos.unmakeMove();

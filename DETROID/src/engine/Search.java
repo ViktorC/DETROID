@@ -164,7 +164,7 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
-		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, checkMateScore;
+		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0;
 		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
 		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
@@ -188,9 +188,7 @@ public class Search extends Thread {
 		}
 		// Return the evaluation score in case a leaf node has been reached.
 		if (depth == 0) {
-			score = Evaluator.score(pos);
-			if (score == StateScore.CHECK_MATE.score)	// The longer the line of play is to a check mate, the better for the side getting mated.
-				score += ply - depth;
+			score = Evaluator.score(pos, ply - depth);
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 			return score;
 		}
@@ -222,16 +220,9 @@ public class Search extends Thread {
 				if (matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
 					if (nonMatMoves.length() == 0) {
-						if (pos.getCheck()) {
-							// Adjusting to the length of the line of play leading to the mate.
-							checkMateScore = StateScore.CHECK_MATE.score + ply - depth;
-							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, checkMateScore, 0, tTgen));
-							return checkMateScore;
-						}
-						else {
-							tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, StateScore.STALE_MATE.score, 0, tTgen));
-							return StateScore.STALE_MATE.score;
-						}
+						score = Evaluator.mateScore(pos.getCheck(), ply - depth);
+						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
+						return score;
 					}
 				}
 			}
