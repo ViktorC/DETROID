@@ -32,7 +32,7 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 10;
+	private final static int MAX_SEARCH_DEPTH = 64;
 	
 	private int numOfCores;
 	
@@ -43,7 +43,6 @@ public class Search extends Thread {
 	private static int LMR = 1;
 	
 	private Move[] pV;
-	private Move bestMove;
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();
@@ -90,8 +89,6 @@ public class Search extends Thread {
 		TTEntry e = tT.lookUp(pos.key);
 		if (e != null && e.bestMove != 0)
 			return Move.toMove(e.bestMove);
-		else if (bestMove != null)
-			return bestMove;
 		else {
 			moveList = pos.generateAllMoves().toArray();
 			return moveList[(int)Math.random()*moveList.length];
@@ -142,7 +139,6 @@ public class Search extends Thread {
 			ply = i;
 			search(ply, StateScore.CHECK_MATE.score, -StateScore.CHECK_MATE.score, true);
 			pV = extractPv();
-			bestMove = pV[0];
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
@@ -197,8 +193,8 @@ public class Search extends Thread {
 					if (alpha >= beta)
 						return e.score;
 				}
-				// Else check for the stored move and make it the PV move.
-				else if (e.bestMove != 0) {
+				// Check for the stored move and make it the PV move.
+				if (e.bestMove != 0) {
 					thereIsPvMove = true;
 					pVmove = Move.toMove(e.bestMove);
 				}
@@ -551,11 +547,10 @@ public class Search extends Thread {
 		TTEntry e;
 		Move bestMove;
 		int i = 0;
-		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0) {
+		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < 64) {
 			bestMove = Move.toMove(e.bestMove);
 			pos.makeMove(bestMove);
-			pV[i] = bestMove;
-			i++;
+			pV[i++] = bestMove;
 		}
 		for (int j = 0; j < i; j++)
 			pos.unmakeMove();
