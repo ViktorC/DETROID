@@ -87,7 +87,10 @@ public class Search extends Thread {
 	 */
 	public Move getBestMove() {
 		Move[] moveList;
-		if (bestMove != null)
+		TTEntry e = tT.lookUp(pos.key);
+		if (e != null && e.bestMove != 0)
+			return Move.toMove(e.bestMove);
+		else if (bestMove != null)
 			return bestMove;
 		else {
 			moveList = pos.generateAllMoves().toArray();
@@ -101,6 +104,7 @@ public class Search extends Thread {
 	public Queue<Move> getPv() {
 		Queue<Move> pV = new Queue<>();
 		int i = 0;
+		this.pV = extractPv();
 		while (i < this.pV.length && this.pV[i] != null)
 			pV.add(this.pV[i++]);
 		return pV;
@@ -164,41 +168,92 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
-		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0;
-		Move pVmove, bestMove, killerMove1 = null, killerMove2 = null, move;
-		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false;
+		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly;
+		Move pVmove = null, bestMove, killerMove1 = null, killerMove2 = null, move;
+		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false, doIID = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
-		// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
-		e = tT.lookUp(pos.key);
-		if (e != null && e.depth >= depth) {
-			if (e.type == NodeType.EXACT.ind)
-				return e.score;
-			else if (e.type == NodeType.FAIL_HIGH.ind) {
-				if (e.score > alpha)
-					alpha = e.score;
-			}
-			else
-				if (e.score < beta)
-					beta = e.score;
-			if (alpha >= beta)
-				return e.score;
-		}
-		// Return the evaluation score in case a leaf node has been reached.
-		if (depth == 0) {
-			score = Evaluator.score(pos, ply - depth);
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
-			return score;
-		}
-		// Search the node.
+		bestMove = new Move(StateScore.CHECK_MATE.score);
 		Search: {
-			bestMove = new Move(StateScore.CHECK_MATE.score);
-			pVmove = pV[ply - depth];
-			// First try the principal variation move for the ply if there is one and if it is applicable for this node.
-			if (pVmove != null && pos.isLegal(pVmove)) {
-				thereIsPvMove = true;
+			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
+			e = tT.lookUp(pos.key);
+			if (e != null) {
+				/* If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
+				 * the score if the entry stored a PV node. */
+				if (e.depth >= depth) {
+					if (e.type == NodeType.EXACT.ind)
+						return e.score;
+					else if (e.type == NodeType.FAIL_HIGH.ind) {
+						if (e.score > bestMove.value) {
+							bestMove.value = e.score;
+							if (e.score > alpha)
+								alpha = e.score;
+						}
+					}
+					else if (e.score < beta)
+						beta = e.score;
+					if (alpha >= beta)
+						return e.score;
+				}
+				// Else check for the stored move and make it the PV move.
+				else if (e.bestMove != 0) {
+					thereIsPvMove = true;
+					pVmove = Move.toMove(e.bestMove);
+				}
+			}
+			// Return the evaluation score in case a leaf node has been reached.
+			if (depth == 0) {
+				score = Evaluator.score(pos, ply - depth);
+				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
+				return score;
+			}
+			// Check for the repetition rule; return a draw score if it applies.
+			if (pos.getRepetitions() >= 3)
+				return StateScore.DRAW_CLAIMED.score;
+			// In case there is no hash move...
+			if (!thereIsPvMove) {
+				// Check the PV form the last iteration.
+				pVmove = pV[ply - depth];
+				if (pVmove != null && pos.isLegal(pVmove))
+					thereIsPvMove = true;
+				// If there is no hash entry at all and the search is within the PV and close enough to the root, try IID.
+				else if (e == null && depth > 5 && beta > alpha + 1)
+					doIID = true;
+			}
+			// In case there IS a hash move...
+			else {
+				// If the hashed move was searched to a smaller depth, try the previous iteration's PV move for this ply.
+				if (e.depth < depth - 1) {
+					move = pV[ply - depth];
+					if (move != null && pos.isLegal(move)) {
+						pVmove = move;
+						thereIsPvMove = true;
+					}
+					/* If there was none or it was illegal and it is a PV node, close enough to the root with the hashed move having been
+					 * searched to a shallow depth, try IID. */
+					else if (depth > 5 && beta > alpha + 1 && e.depth < depth/2 - 1)
+							doIID = true;
+				}
+			}
+			// If set, perform internal iterative deepening.
+			if (doIID) {
+				IIDdepth = (depth > 7) ? depth/2 : depth - 2;
+				extPly = ply;
+				for (int i = 2; i <= IIDdepth; i++) {
+					ply = i;
+					search(i, alpha, beta, true);
+				}
+				ply = extPly;
+				e = tT.lookUp(pos.key);
+				if (e != null && e.bestMove != 0) {
+					pVmove = Move.toMove(e.bestMove);
+					thereIsPvMove = true;
+				}
+			}
+			// If there is a PV move, search that first.
+			if (thereIsPvMove) {
 				pos.makeMove(pVmove);
 				val = -search(depth - 1, -beta, -alpha, true);
 				pos.unmakeMove();
@@ -214,8 +269,8 @@ public class Search extends Thread {
 				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 					break Search;
 			}
-			// If there is no PV-move for this ply, or the one we have is not legal from this position, perform mate check.
-			if (!thereIsPvMove) {
+			// If there is no hash entry or PV-move for this ply, perform mate check.
+			else if (bestMove.value <= StateScore.CHECK_MATE.score + MAX_SEARCH_DEPTH && bestMove.value != StateScore.STALE_MATE.score){
 				matMoves = pos.generateMaterialMoves();
 				if (matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
@@ -226,8 +281,8 @@ public class Search extends Thread {
 					}
 				}
 			}
-			// Check for the repetition and fifty-move rules; return a tie score if they apply.
-			if (pos.getFiftyMoveRuleClock() >= 100 || pos.getRepetitions() >= 3)
+			// Check for the fifty-move rule; return a draw score if it applies.
+			if (pos.getFiftyMoveRuleClock() >= 100)
 				return StateScore.DRAW_CLAIMED.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
 			if (nullMoveAllowed && depth >= NMR && !pos.getCheck()) {
@@ -243,8 +298,8 @@ public class Search extends Thread {
 					break Search;
 				}
 			}
-			// If the PV-move was searched first, the material moves have not been generated yet.
-			if (thereIsPvMove)
+			// If the PV-move was searched first or we had a hashed non mate score, the material moves have not been generated yet.
+			if (matMoves == null)
 				matMoves = pos.generateMaterialMoves();
 			// Order the material moves.
 			matMovesArr = orderMaterialMoves(matMoves);
@@ -402,7 +457,7 @@ public class Search extends Thread {
 					continue;
 				}
 				pos.makeMove(move);
-				// Try late move reduction.
+				// Try late move reduction if not within the PV.
 				if (depth > 2 && bestMove.value <= origAlpha && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0
 					&& searchedMoves > 4 && hT.score(move) <= RelativeHistoryTable.MAX_SCORE/(matMovesArr.length + nonMatMovesArr.length)) {
 					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true);

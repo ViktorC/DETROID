@@ -90,12 +90,12 @@ public enum MoveTable {
 	
 	private final long[] rook;
 	private final long[] bishop;
-	private final long king;
-	private final long knight;
+	public final long king;
+	public final long knight;
 	private final long pawnWhiteAdvance;
 	private final long pawnWhiteCapture;
-	private final long pawnBlackAdvance;
-	private final long pawnBlackCapture;
+	public final long pawnBlackAdvance;
+	public final long pawnBlackCapture;
 	
 	/**Requires magic numbers which can be generated and printed to the console externally, using the {@link #engine.MagicNumberGenerator MagicNumberGenerator}.
 	 * 
@@ -184,35 +184,19 @@ public enum MoveTable {
 	}
 	/**Returns a white king's pseudo-legal move set.
 	 * 
-	 * @param allNonWhiteOccupied
+	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public long getWhiteKingMoves(long allNonWhiteOccupied) {
-		return king & allNonWhiteOccupied;
-	}
-	/**Returns a black king's pseudo-legal move set.
-	 * 
-	 * @param allNonWhiteOccupied
-	 * @return
-	 */
-	public long getBlackKingMoves(long allNonBlackOccupied) {
-		return king & allNonBlackOccupied;
+	public long getKingMoves(long allNonSameColorOccupied) {
+		return king & allNonSameColorOccupied;
 	}
 	/**Returns a white knight's pseudo-legal move set.
 	 * 
-	 * @param allNonWhiteOccupied
+	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public long getWhiteKnightMoves(long allNonWhiteOccupied) {
+	public long getKnightMoves(long allNonWhiteOccupied) {
 		return knight & allNonWhiteOccupied;
-	}
-	/**Returns a black knight's pseudo-legal move set.
-	 * 
-	 * @param allNonWhiteOccupied
-	 * @return
-	 */
-	public long getBlackKnightMoves(long allNonBlackOccupied) {
-		return knight & allNonBlackOccupied;
 	}
 	/**Returns a white pawn's pseudo-legal attack set.
 	 * 
@@ -270,59 +254,32 @@ public enum MoveTable {
 	}
 	/**Returns a white rook's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allNonWhiteOccupied
+	 * @param allNonSameColorOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getWhiteRookMoves(long allNonWhiteOccupied, long allOccupied) {
-		return rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonWhiteOccupied;
+	public long getRookMoves(long allNonSameColorOccupied, long allOccupied) {
+		return rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonSameColorOccupied;
 	}
-	/**Returns a black rook's pseudo-legal move set given the occupancies fed to the method.
-	 * 
-	 * @param allNonWhiteOccupied
-	 * @param allOccupied
-	 * @return
-	 */
-	public long getBlackRookMoves(long allNonBlackOccupied, long allOccupied) {
-		return rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonBlackOccupied;
-	}
+	
 	/**Returns a white bishop's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allNonWhiteOccupied
+	 * @param allNonSameColorOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getWhiteBishopMoves(long allNonWhiteOccupied, long allOccupied) {
-		return bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonWhiteOccupied;
-	}
-	/**Returns a black bishop's pseudo-legal move set given the occupancies fed to the method.
-	 * 
-	 * @param allNonWhiteOccupied
-	 * @param allOccupied
-	 * @return
-	 */
-	public long getBlackBishopMoves(long allNonBlackOccupied, long allOccupied) {
-		return bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonBlackOccupied;
+	public long getBishopMoves(long allNonSameColorOccupied, long allOccupied) {
+		return bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonSameColorOccupied;
 	}
 	/**Returns a white queen's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allNonWhiteOccupied
+	 * @param allNonSameColorOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getWhiteQueenMoves(long allNonWhiteOccupied, long allOccupied) {
+	public long getQueenMoves(long allNonSameColorOccupied, long allOccupied) {
 		return (rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
-			    bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonWhiteOccupied;
-	}
-	/**Returns a black queen's pseudo-legal move set given the occupancies fed to the method.
-	 * 
-	 * @param allNonWhiteOccupied
-	 * @param allOccupied
-	 * @return
-	 */
-	public long getBlackQueenMoves(long allNonBlackOccupied, long allOccupied) {
-		return (rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
-			    bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonBlackOccupied;
+			    bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonSameColorOccupied;
 	}
 	/**Returns a MoveDatabase enum instance that holds the preinitialized move sets for the square specified by the given square index, sqrInd.
 	 * 

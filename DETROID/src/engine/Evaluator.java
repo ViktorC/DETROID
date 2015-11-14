@@ -70,8 +70,100 @@ public class Evaluator {
 		}
 	}
 	
-	public static int mateScore(boolean isInCheck, int ply) {
-		if (isInCheck)
+	/**A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
+	 * in the quiescence search.
+	 * 
+	 * @param pos
+	 * @param move
+	 * @return
+	 */
+	public static int SEE(Position pos, Move move) {
+		int score = 0, victimVal, firstVictimVal, attackerVal, kingVictVal = 0;
+		long attackers, bpAttack, rkAttack, occupied = pos.allOccupied;
+		boolean whitesTurn;
+		MoveTable dB;
+		victimVal = MaterialScore.getValueByPieceInd(move.capturedPiece);
+		// If the capturer was a king, return the captured piece's value as capturing the king would be illegal.
+		if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.B_KING.ind)
+			return victimVal;
+		firstVictimVal = victimVal;
+		whitesTurn = pos.whitesTurn;
+		occupied &= ~(1L << move.from);
+		victimVal = MaterialScore.getValueByPieceInd(move.movedPiece);
+		dB = MoveTable.getByIndex(move.to);
+		while (true) {
+			whitesTurn = !whitesTurn;
+			attackerVal = 0;
+			if (whitesTurn) {
+				if ((attackers = dB.getBlackPawnCaptures(pos.whitePawns) & occupied) != 0)
+					attackerVal = MaterialScore.PAWN.value;
+				// Re-check could be omitted as a knight can not block any other piece's attack, but the savings would be minimal.
+				else if ((attackers = dB.getKnightMoves(pos.whiteKnights) & occupied) != 0)
+					attackerVal = MaterialScore.KNIGHT.value;
+				else if ((attackers = (bpAttack = dB.getBishopMoves(occupied, occupied)) & pos.whiteBishops) != 0)
+					attackerVal = MaterialScore.BISHOP.value;
+				else if ((attackers = (rkAttack = dB.getRookMoves(occupied, occupied)) & pos.whiteRooks) != 0)
+					attackerVal = MaterialScore.ROOK.value;
+				else if ((attackers = (bpAttack | rkAttack) & pos.whiteQueens) != 0)
+					attackerVal = MaterialScore.QUEEN.value;
+				else if ((attackers = dB.getKingMoves(pos.whiteKing)) != 0) {
+					attackerVal = MaterialScore.KING.value;
+					kingVictVal = victimVal;
+				}
+				else
+					break;
+				// If the king has attackers, the exchange is over and the king's victim's value is disregarded
+				if (victimVal == MaterialScore.KING.value) {
+					score -= kingVictVal;
+					break;
+				}
+				score += victimVal;
+			}
+			else {
+				if ((attackers = dB.getWhitePawnCaptures(pos.blackPawns) & occupied) != 0)
+					attackerVal = MaterialScore.PAWN.value;
+				else if ((attackers = dB.getKnightMoves(pos.blackKnights) & occupied) != 0)
+					attackerVal = MaterialScore.KNIGHT.value;
+				else if ((attackers = (bpAttack = dB.getBishopMoves(occupied, occupied)) & pos.blackBishops) != 0)
+					attackerVal = MaterialScore.BISHOP.value;
+				else if ((attackers = (rkAttack = dB.getRookMoves(occupied, occupied)) & pos.blackRooks) != 0)
+					attackerVal = MaterialScore.ROOK.value;
+				else if ((attackers = (bpAttack | rkAttack) & pos.blackQueens) != 0)
+					attackerVal = MaterialScore.QUEEN.value;
+				else if ((attackers = dB.getKingMoves(pos.blackKing)) != 0) {
+					attackerVal = MaterialScore.KING.value;
+					kingVictVal = victimVal;
+				}
+				else
+					break;
+				if (victimVal == MaterialScore.KING.value) {
+					score += kingVictVal;
+					break;
+				}
+				score -= victimVal;
+			}
+			victimVal = attackerVal;
+			bpAttack = 0;
+			rkAttack = 0;
+			// Simulate move.
+			occupied &= ~BitOperations.getLSBit(attackers);
+		}
+		if (pos.whitesTurn)
+			score += firstVictimVal;
+		else {
+			score -= firstVictimVal;
+			score *= -1;
+		}
+		return score;
+	}
+	/**Returns the right score for when there are no more legal move in a position.
+	 * 
+	 * @param sideToMoveInCheck
+	 * @param ply
+	 * @return
+	 */
+	public static int mateScore(boolean sideToMoveInCheck, int ply) {
+		if (sideToMoveInCheck)
 		// The longer the line of play is to a check mate, the better for the side getting mated.
 			return StateScore.CHECK_MATE.score + ply;
 		else
