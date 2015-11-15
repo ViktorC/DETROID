@@ -34,14 +34,14 @@ public enum RayMask {
 		File file = File.getBySquareIndex(sqrInd);
 		Diagonal diagonal = Diagonal.getBySquareIndex(sqrInd);
 		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
-		this.rankPos = rank.bitmap & ~((sqrBit << 1) - 1);
-		this.rankNeg = rank.bitmap & (sqrBit - 1);
-		this.filePos = file.bitmap & ~((sqrBit << 1) - 1);
-		this.fileNeg = file.bitmap & (sqrBit - 1);
-		this.diagonalPos = diagonal.bitmap & ~((sqrBit << 1) - 1);
-		this.diagonalNeg = diagonal.bitmap & (sqrBit - 1);
-		this.antiDiagonalPos = antiDiagonal.bitmap & ~((sqrBit << 1) - 1);
-		this.antiDiagonalNeg = antiDiagonal.bitmap & (sqrBit - 1);
+		rankPos = rank.bitmap & ~((sqrBit << 1) - 1);
+		rankNeg = rank.bitmap & (sqrBit - 1);
+		filePos = file.bitmap & ~((sqrBit << 1) - 1);
+		fileNeg = file.bitmap & (sqrBit - 1);
+		diagonalPos = diagonal.bitmap & ~((sqrBit << 1) - 1);
+		diagonalNeg = diagonal.bitmap & (sqrBit - 1);
+		antiDiagonalPos = antiDiagonal.bitmap & ~((sqrBit << 1) - 1);
+		antiDiagonalNeg = antiDiagonal.bitmap & (sqrBit - 1);
 	}
 	/**Returns a RayMask enum instance that holds the ray masks for the square specified by the given square index, sqrInd.
 	 * 

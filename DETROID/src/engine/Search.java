@@ -1,7 +1,8 @@
 package engine;
 
+import engine.Evaluator.GamePhase;
 import engine.Evaluator.Material;
-import engine.Evaluator.StateScore;
+import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
 import util.*;
 
@@ -32,15 +33,16 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 10;
+	private final static int MAX_SEARCH_DEPTH = 32;
 	
 	private int numOfCores;
 	
 	private Position pos;
 	
 	private int ply;
-	private static int NMR = 2;
-	private static int LMR = 1;
+	private static int NMR = 2;				// Null move pruning reduction.
+	private static int LMR = 1;				// Late move reduction.
+	private boolean nullMoveObservHolds;	// Whether heursitcs based on the null move observation such as stand-pat and NMP are applicable.
 	
 	private Move[] pV;
 	
@@ -59,6 +61,7 @@ public class Search extends Thread {
 			searchTime = searchTimeInMilliSeconds;
 		else
 			pondering = true;
+		nullMoveObservHolds = Evaluator.evaluateGamePhase(pos) == GamePhase.END_GAME ? false : true;
 	}
 	/**Returns a new Search thread instance instead for pondering on the argument position which once started, will not stop until the thread is
 	 * interrupted.
@@ -137,7 +140,7 @@ public class Search extends Thread {
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			search(ply, StateScore.CHECK_MATE.score, -StateScore.CHECK_MATE.score, true);
+			search(ply, Termination.CHECK_MATE.score, -Termination.CHECK_MATE.score, true);
 			pV = extractPv();
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
@@ -171,7 +174,7 @@ public class Search extends Thread {
 		Move[] matMovesArr, nonMatMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
-		bestMove = new Move(StateScore.CHECK_MATE.score);
+		bestMove = new Move(Termination.CHECK_MATE.score);
 		Search: {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
@@ -207,7 +210,7 @@ public class Search extends Thread {
 			}
 			// Check for the repetition rule; return a draw score if it applies.
 			if (pos.getRepetitions() >= 3)
-				return StateScore.DRAW_CLAIMED.score;
+				return Termination.DRAW_CLAIMED.score;
 			// In case there is no hash move...
 			if (!thereIsPvMove) {
 				// Check the PV form the last iteration.
@@ -266,7 +269,7 @@ public class Search extends Thread {
 					break Search;
 			}
 			// If there is no hash entry or PV-move for this ply, perform mate check.
-			else if (bestMove.value <= StateScore.CHECK_MATE.score + MAX_SEARCH_DEPTH && bestMove.value != StateScore.STALE_MATE.score){
+			else if (bestMove.value <= Termination.CHECK_MATE.score + MAX_SEARCH_DEPTH && bestMove.value != Termination.STALE_MATE.score){
 				matMoves = pos.generateMaterialMoves();
 				if (matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
@@ -279,9 +282,9 @@ public class Search extends Thread {
 			}
 			// Check for the fifty-move rule; return a draw score if it applies.
 			if (pos.getFiftyMoveRuleClock() >= 100)
-				return StateScore.DRAW_CLAIMED.score;
+				return Termination.DRAW_CLAIMED.score;
 			// If it is not a terminal node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && depth >= NMR && !pos.getCheck()) {
+			if (nullMoveAllowed && nullMoveObservHolds && depth >= NMR && !pos.getCheck()) {
 				pos.makeNullMove();
 				// Do not allow consecutive null moves.
 				if (depth == NMR)
@@ -512,10 +515,10 @@ public class Search extends Thread {
 			if (move.type > 3) {
 				move.value = Material.QUEEN.score;
 				if (move.capturedPiece != Piece.NULL.ind)
-					move.value += Material.getValueByPieceInd(move.capturedPiece) - Material.getValueByPieceInd(move.movedPiece);
+					move.value += Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
 			}
 			else
-				move.value = Material.getValueByPieceInd(move.capturedPiece) - Material.getValueByPieceInd(move.movedPiece);
+				move.value = Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
 			arr[i] = move;
 			i++;
 		}

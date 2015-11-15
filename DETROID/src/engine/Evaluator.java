@@ -24,12 +24,12 @@ public class Evaluator {
 		KNIGHT	(300, 1),
 		PAWN	(100, 0);
 		
-		public final int score;			// The standard worth of the piece type.
-		public final int phaseValue;	// A measure of the impact a certain material type has on the phase evaluation.
+		public final short score;		// The standard worth of the piece type.
+		public final short phaseWeight;	// A measure of the impact a certain material type has on the phase evaluation.
 		
-		private Material(int score, int phaseValue) {
-			this.score = score;
-			this.phaseValue = phaseValue;
+		private Material(int score, int phaseWeight) {
+			this.score = (short)score;
+			this.phaseWeight = (byte)phaseWeight;
 		}
 		/**Returns the enum for a piece type defined by a piece index according to {@link #engine.Piece Piece}.
 		 * 
@@ -58,7 +58,7 @@ public class Evaluator {
 	 * @author Viktor
 	 *
 	 */
-	public static enum StateScore {
+	public static enum Termination {
 		
 		CHECK_MATE				(Short.MIN_VALUE + 1),
 		STALE_MATE				(0),
@@ -67,16 +67,21 @@ public class Evaluator {
 		
 		public final short score;
 		
-		private StateScore(int score) {
+		private Termination(int score) {
 			this.score = (short)score;
 		}
 	}
 	
+	/**An enumration type for game phases such as opening, middle game, and end game so searches can be conducted accordingly.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	public static enum GamePhase {
 		
 		OPENING 	(0, 22),
 		MIDDLE_GAME (23, 192),
-		ENDING		(193, 256);
+		END_GAME	(193, 256);
 		
 		public final short lowerBound;
 		public final short upperBound;
@@ -85,28 +90,50 @@ public class Evaluator {
 			this.lowerBound = (short)lowerBound;
 			this.upperBound = (short)upperBound;
 		}
+		/**Returns the phase associated with the given phase score.
+		 * 
+		 * @param phaseScore
+		 * @return
+		 */
+		public static GamePhase getByPhaseScore(int phaseScore) {
+			if (phaseScore < MIDDLE_GAME.lowerBound)
+				return OPENING;
+			else if (phaseScore >= END_GAME.lowerBound)
+				return END_GAME;
+			else
+				return MIDDLE_GAME;
+		}
 	}
 	
-	private static int TOTAL_PHASE_VALUE; {
-		TOTAL_PHASE_VALUE = 4*(Material.KNIGHT.phaseValue + Material.BISHOP.phaseValue + Material.ROOK.phaseValue) + 2*Material.QUEEN.phaseValue;
+	private static int TOTAL_PHASE_WEIGHTS; {
+		TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight + Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	}
 	
-	/**Returns a score that can be used to estimate the phase in which the current game is based on the given position.
+	/**Returns a phaseScore between 0 and 256.
+	 * 
+	 * @param numOfQueens
+	 * @param numOfRooks
+	 * @param numOfBishops
+	 * @param numOfKnights
+	 * @return
+	 */
+	private static int phaseScore(int numOfQueens, int numOfRooks, int numOfBishops, int numOfKnights) {
+		int phase = TOTAL_PHASE_WEIGHTS - (numOfQueens*Material.QUEEN.phaseWeight + numOfRooks*Material.ROOK.phaseWeight
+					+ numOfBishops*Material.BISHOP.phaseWeight + numOfKnights*Material.KNIGHT.phaseWeight);
+		return (phase*256 + TOTAL_PHASE_WEIGHTS/2)/TOTAL_PHASE_WEIGHTS;
+	}
+	/**Returns an estimation of the phase in which the current game is based on the given position.
 	 * 
 	 * @param pos
 	 * @return
 	 */
-	public static int evaluateGamePhase(Position pos) {
-		int score = 0;
-		score += BitOperations.getCardinality(pos.whiteQueens)*Material.QUEEN.phaseValue;
-		score += BitOperations.getCardinality(pos.whiteRooks)*Material.ROOK.phaseValue;
-		score += BitOperations.getCardinality(pos.whiteBishops)*Material.BISHOP.phaseValue;
-		score += BitOperations.getCardinality(pos.whiteKnights)*Material.KNIGHT.phaseValue;
-		score += BitOperations.getCardinality(pos.blackQueens)*Material.QUEEN.phaseValue;
-		score += BitOperations.getCardinality(pos.blackRooks)*Material.ROOK.phaseValue;
-		score += BitOperations.getCardinality(pos.blackBishops)*Material.BISHOP.phaseValue;
-		score += BitOperations.getCardinality(pos.blackKnights)*Material.KNIGHT.phaseValue;
-		return score;
+	public static GamePhase evaluateGamePhase(Position pos) {
+		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
+		numOfQueens = BitOperations.getCardinality(pos.whiteQueens | pos.blackQueens)*Material.QUEEN.phaseWeight;
+		numOfRooks = BitOperations.getCardinality(pos.whiteRooks | pos.blackRooks)*Material.ROOK.phaseWeight;
+		numOfBishops = BitOperations.getCardinality(pos.whiteBishops | pos.blackBishops)*Material.BISHOP.phaseWeight;
+		numOfKnights = BitOperations.getCardinality(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
+		return GamePhase.getByPhaseScore(phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights));
 	}
 	/**A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
 	 * in the quiescence search.
@@ -203,16 +230,28 @@ public class Evaluator {
 	public static int mateScore(boolean sideToMoveInCheck, int ply) {
 		if (sideToMoveInCheck)
 		// The longer the line of play is to a check mate, the better for the side getting mated.
-			return StateScore.CHECK_MATE.score + ply;
+			return Termination.CHECK_MATE.score + ply;
 		else
-			return StateScore.STALE_MATE.score;
+			return Termination.STALE_MATE.score;
+	}
+	/**Returns an evaluation score according to the current phase and the evaluation scores of the same position in the context of an opening and
+	 * in the context of and end game to establish continuity.
+	 * 
+	 * @param openingEval
+	 * @param endGameEval
+	 * @param phaseScore
+	 * @return
+	 */
+	private static int taperedEvalScore(int openingEval, int endGameEval, int phaseScore) {
+		return (openingEval*(256 - phaseScore) + endGameEval*phaseScore)/256;
 	}
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @return
 	 */
 	public static int score(Position pos, int ply) {
-		int score = 0;
+		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
+			numOfBlackKnights, numOfWhitePawns, numOfBlackPawns, phase, score = 0, openingScore = 0, endGameScore = 0;
 		List<Move> oppMoves, moves = pos.generateAllMoves();
 		if (moves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
@@ -221,18 +260,34 @@ public class Evaluator {
 		pos.unmakeMove();
 		score += moves.length()*10;
 		score -= oppMoves.length()*10;
-		score += BitOperations.getCardinality(pos.whiteQueens)*Material.QUEEN.score;
-		score += BitOperations.getCardinality(pos.whiteRooks)*Material.ROOK.score;
-		score += BitOperations.getCardinality(pos.whiteBishops)*Material.BISHOP.score;
-		score += BitOperations.getCardinality(pos.whiteKnights)*Material.KNIGHT.score;
-		score += BitOperations.getCardinality(pos.whitePawns)*Material.PAWN.score;
-		score -= BitOperations.getCardinality(pos.blackQueens)*Material.QUEEN.score;
-		score -= BitOperations.getCardinality(pos.blackRooks)*Material.ROOK.score;
-		score -= BitOperations.getCardinality(pos.blackBishops)*Material.BISHOP.score;
-		score -= BitOperations.getCardinality(pos.blackKnights)*Material.KNIGHT.score;
-		score -= BitOperations.getCardinality(pos.blackPawns)*Material.PAWN.score;
+		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
+		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
+		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
+		numOfWhiteKnights = BitOperations.getCardinality(pos.whiteKnights);
+		numOfWhitePawns = BitOperations.getCardinality(pos.whitePawns);
+		numOfBlackQueens = BitOperations.getCardinality(pos.blackQueens);
+		numOfBlackRooks = BitOperations.getCardinality(pos.blackRooks);
+		numOfBlackBishops = BitOperations.getCardinality(pos.blackBishops);
+		numOfBlackKnights = BitOperations.getCardinality(pos.blackKnights);
+		numOfBlackPawns = BitOperations.getCardinality(pos.blackPawns);
+		phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
+				numOfWhiteKnights + numOfBlackKnights);
+		score += numOfWhiteQueens*Material.QUEEN.score;
+		score -= numOfBlackQueens*Material.QUEEN.score;
+		score += numOfWhiteRooks*Material.QUEEN.score;
+		score -= numOfBlackRooks*Material.QUEEN.score;
+		score += numOfWhiteBishops*Material.QUEEN.score;
+		score -= numOfBlackBishops*Material.QUEEN.score;
+		score += numOfWhiteKnights*Material.QUEEN.score;
+		score -= numOfBlackKnights*Material.QUEEN.score;
+		score += numOfWhitePawns*Material.QUEEN.score;
+		score -= numOfBlackPawns*Material.QUEEN.score;
 		if (!pos.whitesTurn)
 			score *= -1;
-		return score;
+		// Need to implement separate evaluation features for openings and end games.
+		// Pairs of piece square tables are imperative.
+		openingScore += score;
+		endGameScore += score;
+		return taperedEvalScore(openingScore, endGameScore, phase);
 	}
 }
