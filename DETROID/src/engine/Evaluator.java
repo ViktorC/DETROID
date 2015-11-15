@@ -72,6 +72,21 @@ public class Evaluator {
 		}
 	}
 	
+	public static enum GamePhase {
+		
+		OPENING 	(0, 22),
+		MIDDLE_GAME (23, 192),
+		ENDING		(193, 256);
+		
+		public final short lowerBound;
+		public final short upperBound;
+		
+		private GamePhase(int lowerBound, int upperBound) {
+			this.lowerBound = (short)lowerBound;
+			this.upperBound = (short)upperBound;
+		}
+	}
+	
 	private static int TOTAL_PHASE_VALUE; {
 		TOTAL_PHASE_VALUE = 4*(Material.KNIGHT.phaseValue + Material.BISHOP.phaseValue + Material.ROOK.phaseValue) + 2*Material.QUEEN.phaseValue;
 	}
@@ -105,14 +120,14 @@ public class Evaluator {
 		long attackers, bpAttack, rkAttack, occupied = pos.allOccupied;
 		boolean whitesTurn;
 		MoveTable dB;
-		victimVal = Material.getValueByPieceInd(move.capturedPiece);
+		victimVal = Material.getByPieceInd(move.capturedPiece).score;
 		// If the capturer was a king, return the captured piece's value as capturing the king would be illegal.
 		if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.B_KING.ind)
 			return victimVal;
 		firstVictimVal = victimVal;
 		whitesTurn = pos.whitesTurn;
 		occupied &= ~(1L << move.from);
-		victimVal = Material.getValueByPieceInd(move.movedPiece);
+		victimVal = Material.getByPieceInd(move.movedPiece).score;
 		dB = MoveTable.getByIndex(move.to);
 		while (true) {
 			whitesTurn = !whitesTurn;
