@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Evaluator.MaterialScore;
+import engine.Evaluator.Material;
 
 /**A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only incremented upon a cutoff and a
  * butterfly table that is incremented upon every searched move no matter what. Using these two tables' respective values for the same move, a
@@ -11,7 +11,7 @@ import engine.Evaluator.MaterialScore;
  */
 public class RelativeHistoryTable {
 
-	public final static int MAX_SCORE = 2*(MaterialScore.QUEEN.value - MaterialScore.PAWN.value);
+	public final static int MAX_SCORE = 2*(Material.QUEEN.score - Material.PAWN.score);
 	private final static int DECREMENT_FACTOR = 4;
 	
 	private int[][] historyT;	// A [piece][destination square] table for the history heuristic.

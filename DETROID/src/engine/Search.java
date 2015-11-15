@@ -1,6 +1,6 @@
 package engine;
 
-import engine.Evaluator.MaterialScore;
+import engine.Evaluator.Material;
 import engine.Evaluator.StateScore;
 import engine.KillerTable.KillerTableEntry;
 import util.*;
@@ -32,7 +32,7 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 64;
+	private final static int MAX_SEARCH_DEPTH = 10;
 	
 	private int numOfCores;
 	
@@ -510,12 +510,12 @@ public class Search extends Thread {
 		while (moves.hasNext()) {
 			move = moves.next();
 			if (move.type > 3) {
-				move.value = MaterialScore.QUEEN.value;
+				move.value = Material.QUEEN.score;
 				if (move.capturedPiece != Piece.NULL.ind)
-					move.value += MaterialScore.getValueByPieceInd(move.capturedPiece) - MaterialScore.getValueByPieceInd(move.movedPiece);
+					move.value += Material.getValueByPieceInd(move.capturedPiece) - Material.getValueByPieceInd(move.movedPiece);
 			}
 			else
-				move.value = MaterialScore.getValueByPieceInd(move.capturedPiece) - MaterialScore.getValueByPieceInd(move.movedPiece);
+				move.value = Material.getValueByPieceInd(move.capturedPiece) - Material.getValueByPieceInd(move.movedPiece);
 			arr[i] = move;
 			i++;
 		}

@@ -15,39 +15,41 @@ public class Evaluator {
 	 * @author Viktor
 	 *
 	 */
-	public static enum MaterialScore {
+	public static enum Material {
 		
-		KING	(400),
-		QUEEN	(900),
-		ROOK	(500),
-		BISHOP	(300),
-		KNIGHT	(300),
-		PAWN	(100);
+		KING	(400, 0),
+		QUEEN	(900, 4),
+		ROOK	(500, 2),
+		BISHOP	(300, 1),
+		KNIGHT	(300, 1),
+		PAWN	(100, 0);
 		
-		public final int value;	// The standard worth of the piece type.
+		public final int score;			// The standard worth of the piece type.
+		public final int phaseValue;	// A measure of the impact a certain material type has on the phase evaluation.
 		
-		private MaterialScore(int value) {
-			this.value = value;
+		private Material(int score, int phaseValue) {
+			this.score = score;
+			this.phaseValue = phaseValue;
 		}
-		/**Returns the value score of a piece type defined by a piece index according to {@link #engine.Piece Piece}.
+		/**Returns the enum for a piece type defined by a piece index according to {@link #engine.Piece Piece}.
 		 * 
 		 * @param pieceInd A piece index according to {@link #engine.Piece Piece}.
-		 * @return The score of the piece type.
+		 * @return The enumeration of the piece type.
 		 */
-		public static int getValueByPieceInd(int pieceInd) {
-			if (pieceInd == Piece.W_KING.ind) return KING.value;
-			else if (pieceInd == Piece.W_QUEEN.ind) return QUEEN.value;
-			else if (pieceInd == Piece.W_ROOK.ind) return ROOK.value;
-			else if (pieceInd == Piece.W_BISHOP.ind) return BISHOP.value;
-			else if (pieceInd == Piece.W_KNIGHT.ind) return KNIGHT.value;
-			else if (pieceInd == Piece.W_PAWN.ind) return PAWN.value;
-			else if (pieceInd == Piece.B_KING.ind) return KING.value;
-			else if (pieceInd == Piece.B_QUEEN.ind) return QUEEN.value;
-			else if (pieceInd == Piece.B_ROOK.ind) return ROOK.value;
-			else if (pieceInd == Piece.B_BISHOP.ind) return BISHOP.value;
-			else if (pieceInd == Piece.B_KNIGHT.ind) return KNIGHT.value;
-			else if (pieceInd == Piece.B_PAWN.ind) return PAWN.value;
-			else return 0;
+		public static Material getByPieceInd(int pieceInd) {
+			if (pieceInd == Piece.W_KING.ind) return KING;
+			else if (pieceInd == Piece.W_QUEEN.ind) return QUEEN;
+			else if (pieceInd == Piece.W_ROOK.ind) return ROOK;
+			else if (pieceInd == Piece.W_BISHOP.ind) return BISHOP;
+			else if (pieceInd == Piece.W_KNIGHT.ind) return KNIGHT;
+			else if (pieceInd == Piece.W_PAWN.ind) return PAWN;
+			else if (pieceInd == Piece.B_KING.ind) return KING;
+			else if (pieceInd == Piece.B_QUEEN.ind) return QUEEN;
+			else if (pieceInd == Piece.B_ROOK.ind) return ROOK;
+			else if (pieceInd == Piece.B_BISHOP.ind) return BISHOP;
+			else if (pieceInd == Piece.B_KNIGHT.ind) return KNIGHT;
+			else if (pieceInd == Piece.B_PAWN.ind) return PAWN;
+			else return null;
 		}
 	}
 	
@@ -70,6 +72,27 @@ public class Evaluator {
 		}
 	}
 	
+	private static int TOTAL_PHASE_VALUE; {
+		TOTAL_PHASE_VALUE = 4*(Material.KNIGHT.phaseValue + Material.BISHOP.phaseValue + Material.ROOK.phaseValue) + 2*Material.QUEEN.phaseValue;
+	}
+	
+	/**Returns a score that can be used to estimate the phase in which the current game is based on the given position.
+	 * 
+	 * @param pos
+	 * @return
+	 */
+	public static int evaluateGamePhase(Position pos) {
+		int score = 0;
+		score += BitOperations.getCardinality(pos.whiteQueens)*Material.QUEEN.phaseValue;
+		score += BitOperations.getCardinality(pos.whiteRooks)*Material.ROOK.phaseValue;
+		score += BitOperations.getCardinality(pos.whiteBishops)*Material.BISHOP.phaseValue;
+		score += BitOperations.getCardinality(pos.whiteKnights)*Material.KNIGHT.phaseValue;
+		score += BitOperations.getCardinality(pos.blackQueens)*Material.QUEEN.phaseValue;
+		score += BitOperations.getCardinality(pos.blackRooks)*Material.ROOK.phaseValue;
+		score += BitOperations.getCardinality(pos.blackBishops)*Material.BISHOP.phaseValue;
+		score += BitOperations.getCardinality(pos.blackKnights)*Material.KNIGHT.phaseValue;
+		return score;
+	}
 	/**A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
 	 * in the quiescence search.
 	 * 
@@ -82,38 +105,38 @@ public class Evaluator {
 		long attackers, bpAttack, rkAttack, occupied = pos.allOccupied;
 		boolean whitesTurn;
 		MoveTable dB;
-		victimVal = MaterialScore.getValueByPieceInd(move.capturedPiece);
+		victimVal = Material.getValueByPieceInd(move.capturedPiece);
 		// If the capturer was a king, return the captured piece's value as capturing the king would be illegal.
 		if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.B_KING.ind)
 			return victimVal;
 		firstVictimVal = victimVal;
 		whitesTurn = pos.whitesTurn;
 		occupied &= ~(1L << move.from);
-		victimVal = MaterialScore.getValueByPieceInd(move.movedPiece);
+		victimVal = Material.getValueByPieceInd(move.movedPiece);
 		dB = MoveTable.getByIndex(move.to);
 		while (true) {
 			whitesTurn = !whitesTurn;
 			attackerVal = 0;
 			if (whitesTurn) {
 				if ((attackers = dB.getBlackPawnCaptures(pos.whitePawns) & occupied) != 0)
-					attackerVal = MaterialScore.PAWN.value;
+					attackerVal = Material.PAWN.score;
 				// Re-check could be omitted as a knight can not block any other piece's attack, but the savings would be minimal.
 				else if ((attackers = dB.getKnightMoves(pos.whiteKnights) & occupied) != 0)
-					attackerVal = MaterialScore.KNIGHT.value;
+					attackerVal = Material.KNIGHT.score;
 				else if ((attackers = (bpAttack = dB.getBishopMoves(occupied, occupied)) & pos.whiteBishops) != 0)
-					attackerVal = MaterialScore.BISHOP.value;
+					attackerVal = Material.BISHOP.score;
 				else if ((attackers = (rkAttack = dB.getRookMoves(occupied, occupied)) & pos.whiteRooks) != 0)
-					attackerVal = MaterialScore.ROOK.value;
+					attackerVal = Material.ROOK.score;
 				else if ((attackers = (bpAttack | rkAttack) & pos.whiteQueens) != 0)
-					attackerVal = MaterialScore.QUEEN.value;
+					attackerVal = Material.QUEEN.score;
 				else if ((attackers = dB.getKingMoves(pos.whiteKing)) != 0) {
-					attackerVal = MaterialScore.KING.value;
+					attackerVal = Material.KING.score;
 					kingVictVal = victimVal;
 				}
 				else
 					break;
 				// If the king has attackers, the exchange is over and the king's victim's value is disregarded
-				if (victimVal == MaterialScore.KING.value) {
+				if (victimVal == Material.KING.score) {
 					score -= kingVictVal;
 					break;
 				}
@@ -121,22 +144,22 @@ public class Evaluator {
 			}
 			else {
 				if ((attackers = dB.getWhitePawnCaptures(pos.blackPawns) & occupied) != 0)
-					attackerVal = MaterialScore.PAWN.value;
+					attackerVal = Material.PAWN.score;
 				else if ((attackers = dB.getKnightMoves(pos.blackKnights) & occupied) != 0)
-					attackerVal = MaterialScore.KNIGHT.value;
+					attackerVal = Material.KNIGHT.score;
 				else if ((attackers = (bpAttack = dB.getBishopMoves(occupied, occupied)) & pos.blackBishops) != 0)
-					attackerVal = MaterialScore.BISHOP.value;
+					attackerVal = Material.BISHOP.score;
 				else if ((attackers = (rkAttack = dB.getRookMoves(occupied, occupied)) & pos.blackRooks) != 0)
-					attackerVal = MaterialScore.ROOK.value;
+					attackerVal = Material.ROOK.score;
 				else if ((attackers = (bpAttack | rkAttack) & pos.blackQueens) != 0)
-					attackerVal = MaterialScore.QUEEN.value;
+					attackerVal = Material.QUEEN.score;
 				else if ((attackers = dB.getKingMoves(pos.blackKing)) != 0) {
-					attackerVal = MaterialScore.KING.value;
+					attackerVal = Material.KING.score;
 					kingVictVal = victimVal;
 				}
 				else
 					break;
-				if (victimVal == MaterialScore.KING.value) {
+				if (victimVal == Material.KING.score) {
 					score += kingVictVal;
 					break;
 				}
@@ -183,16 +206,16 @@ public class Evaluator {
 		pos.unmakeMove();
 		score += moves.length()*10;
 		score -= oppMoves.length()*10;
-		score += BitOperations.getCardinality(pos.whiteQueens)*MaterialScore.QUEEN.value;
-		score += BitOperations.getCardinality(pos.whiteRooks)*MaterialScore.ROOK.value;
-		score += BitOperations.getCardinality(pos.whiteBishops)*MaterialScore.BISHOP.value;
-		score += BitOperations.getCardinality(pos.whiteKnights)*MaterialScore.KNIGHT.value;
-		score += BitOperations.getCardinality(pos.whitePawns)*MaterialScore.PAWN.value;
-		score -= BitOperations.getCardinality(pos.blackQueens)*MaterialScore.QUEEN.value;
-		score -= BitOperations.getCardinality(pos.blackRooks)*MaterialScore.ROOK.value;
-		score -= BitOperations.getCardinality(pos.blackBishops)*MaterialScore.BISHOP.value;
-		score -= BitOperations.getCardinality(pos.blackKnights)*MaterialScore.KNIGHT.value;
-		score -= BitOperations.getCardinality(pos.blackPawns)*MaterialScore.PAWN.value;
+		score += BitOperations.getCardinality(pos.whiteQueens)*Material.QUEEN.score;
+		score += BitOperations.getCardinality(pos.whiteRooks)*Material.ROOK.score;
+		score += BitOperations.getCardinality(pos.whiteBishops)*Material.BISHOP.score;
+		score += BitOperations.getCardinality(pos.whiteKnights)*Material.KNIGHT.score;
+		score += BitOperations.getCardinality(pos.whitePawns)*Material.PAWN.score;
+		score -= BitOperations.getCardinality(pos.blackQueens)*Material.QUEEN.score;
+		score -= BitOperations.getCardinality(pos.blackRooks)*Material.ROOK.score;
+		score -= BitOperations.getCardinality(pos.blackBishops)*Material.BISHOP.score;
+		score -= BitOperations.getCardinality(pos.blackKnights)*Material.KNIGHT.score;
+		score -= BitOperations.getCardinality(pos.blackPawns)*Material.PAWN.score;
 		if (!pos.whitesTurn)
 			score *= -1;
 		return score;
