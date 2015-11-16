@@ -504,35 +504,66 @@ public class Search extends Thread {
 	public int quiescence(int depth, int alpha, int beta) {
 		List<Move> tacticalMoves, allMoves;
 		long[] checkSquares;
+		Move[] moves;
 		int score;
-		if (depth == 0) {
-			checkSquares = pos.squaresToCheckFrom();
-			if (nullMoveObservHolds && !pos.getCheck()) {
+		if (pos.getCheck()) {
+			allMoves = pos.generateAllMoves();
+			score = Termination.CHECK_MATE.score + ply - depth;
+			if (allMoves.length() == 0)
+				return score;
+		}
+		else if (nullMoveObservHolds) {
+			if (depth > -2) {
+				checkSquares = pos.squaresToCheckFrom();
 				tacticalMoves = pos.generateTacticalMoves(checkSquares);
 				allMoves = pos.generateQuietMoves(checkSquares);
 				allMoves.addAll(tacticalMoves);
 				if (allMoves.length() == 0)
 					return Termination.STALE_MATE.score;
 				else
-					score = Evaluator.score(pos, allMoves, ply);
+					score = Evaluator.score(pos, allMoves, ply - depth);
 			}
 			else {
+				tacticalMoves = pos.generateMaterialMoves();
+				allMoves = pos.generateNonMaterialMoves();
+				allMoves.addAll(tacticalMoves);
+				if (allMoves.length() == 0)
+					return Termination.STALE_MATE.score;
+				else
+					score = Evaluator.score(pos, allMoves, ply - depth);
+			}
+		}
+		else {
+			score = Termination.CHECK_MATE.score + ply - depth;
+			if (depth > -2) {
+				checkSquares = pos.squaresToCheckFrom();
 				tacticalMoves = pos.generateTacticalMoves(checkSquares);
-				if (tacticalMoves.length() == 0) {
-					allMoves = pos.generateQuietMoves(checkSquares);
-					if (allMoves.length() == 0)
-						return Evaluator.mateScore(pos.getCheck(), ply - depth);
-					else {
-						allMoves.addAll(tacticalMoves);
-						return Evaluator.score(pos, allMoves, ply);
-					}
-						
-				}
-				score = Termination.CHECK_MATE.score + ply - depth;
+			}
+			else
+				tacticalMoves = pos.generateMaterialMoves();
 		}
-		else if (depth == 1) {
-			
+		
+	}
+	/**Orders material moves and checks, the former of which according to the SEE swap algorithm.
+	 * 
+	 * @param pos
+	 * @param moves
+	 * @return
+	 */
+	private Move[] orderTacticalMoves(Position pos, List<Move> moves) {
+		Move[] arr = new Move[moves.length()];
+		Move move;
+		int i = 0;
+		while (moves.hasNext()) {
+			move = moves.next();
+			if (move.capturedPiece == Piece.NULL.ind)	// For checks, to make sure they are evaluated worthy of searching.
+				move.value = 1;
+			else
+				move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
+			arr[i] = move;
+			i++;
 		}
+		return QuickSort.sort(arr);
 	}
 	/**Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.
 	 * 
