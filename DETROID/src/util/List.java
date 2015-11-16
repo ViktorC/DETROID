@@ -47,6 +47,14 @@ public abstract class List<Data> {
 	 * @param data
 	 */
 	public abstract void add(Data data);
+	/**Adds all nodes of another list of the same generic type to this list.
+	 * 
+	 * @param list
+	 */
+	public void addAll(List<Data> list) {
+		while (list.hasNext())
+			add(list.next());
+	}
 	/**Returns whether the pointer/iterator has more nodes to process or has already reached the end of the list. Once the iterator has no more
 	 * nodes no to process, the method will return 'false' and the iterator will be reset.
 	 * 

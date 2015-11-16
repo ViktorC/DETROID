@@ -247,18 +247,21 @@ public class Evaluator {
 	}
 	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
+	 * @param pos The position to evaluate.
+	 * @param allMoves A list of all the legal moves for the side to move.
+	 * @param ply The current level of distance from the root in the search.
 	 * @return
 	 */
-	public static int score(Position pos, int ply) {
+	public static int score(Position pos, List<Move> allMoves, int ply) {
 		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfWhitePawns, numOfBlackPawns, phase, score = 0, openingScore = 0, endGameScore = 0;
-		List<Move> oppMoves, moves = pos.generateAllMoves();
-		if (moves.length() == 0)
+		List<Move> oppMoves;
+		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
 		pos.makeNullMove();
 		oppMoves = pos.generateAllMoves();
 		pos.unmakeMove();
-		score += moves.length()*10;
+		score += allMoves.length()*10;
 		score -= oppMoves.length()*10;
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);

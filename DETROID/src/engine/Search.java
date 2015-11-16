@@ -204,7 +204,7 @@ public class Search extends Thread {
 			}
 			// Return the evaluation score in case a leaf node has been reached.
 			if (depth == 0) {
-				score = Evaluator.score(pos, ply - depth);
+				score = Evaluator.score(pos, pos.generateAllMoves(), ply - depth);
 				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 				return score;
 			}
@@ -500,6 +500,39 @@ public class Search extends Thread {
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, bestMove.value, bestMove.toInt(), tTgen));
 		// Return score.
 		return bestMove.value;
+	}
+	public int quiescence(int depth, int alpha, int beta) {
+		List<Move> tacticalMoves, allMoves;
+		long[] checkSquares;
+		int score;
+		if (depth == 0) {
+			checkSquares = pos.squaresToCheckFrom();
+			if (nullMoveObservHolds && !pos.getCheck()) {
+				tacticalMoves = pos.generateTacticalMoves(checkSquares);
+				allMoves = pos.generateQuietMoves(checkSquares);
+				allMoves.addAll(tacticalMoves);
+				if (allMoves.length() == 0)
+					return Termination.STALE_MATE.score;
+				else
+					score = Evaluator.score(pos, allMoves, ply);
+			}
+			else {
+				tacticalMoves = pos.generateTacticalMoves(checkSquares);
+				if (tacticalMoves.length() == 0) {
+					allMoves = pos.generateQuietMoves(checkSquares);
+					if (allMoves.length() == 0)
+						return Evaluator.mateScore(pos.getCheck(), ply - depth);
+					else {
+						allMoves.addAll(tacticalMoves);
+						return Evaluator.score(pos, allMoves, ply);
+					}
+						
+				}
+				score = Termination.CHECK_MATE.score + ply - depth;
+		}
+		else if (depth == 1) {
+			
+		}
 	}
 	/**Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.
 	 * 
