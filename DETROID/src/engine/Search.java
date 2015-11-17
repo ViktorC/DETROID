@@ -560,7 +560,7 @@ public class Search extends Thread {
 			moves = orderTacticalMoves(pos, tacticalMoves);
 			for (int i = 0; i < moves.length; i++) {
 				move = moves[i];
-				// If the SEE value is below 0 or below the delta-pruning limit, break the search because the rest of the moves are even worse.
+				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
 				if (move.value < 0 || move.value < alpha - DELTA)
 					break;
 				pos.makeMove(move);
@@ -647,7 +647,7 @@ public class Search extends Thread {
 		TTEntry e;
 		Move bestMove;
 		int i = 0;
-		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < 64) {
+		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < MAX_SEARCH_DEPTH) {
 			bestMove = Move.toMove(e.bestMove);
 			pos.makeMove(bestMove);
 			pV[i++] = bestMove;

@@ -268,14 +268,8 @@ public class Evaluator {
 	public static int score(Position pos, List<Move> allMoves, int ply) {
 		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfWhitePawns, numOfBlackPawns, phase, score = 0, openingScore = 0, endGameScore = 0;
-		List<Move> oppMoves;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
-		pos.makeNullMove();
-		oppMoves = pos.generateAllMoves();
-		pos.unmakeMove();
-		score += allMoves.length()*10;
-		score -= oppMoves.length()*10;
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
 		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
