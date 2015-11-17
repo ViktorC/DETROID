@@ -502,47 +502,50 @@ public class Search extends Thread {
 		return bestMove.value;
 	}
 	public int quiescence(int depth, int alpha, int beta) {
-		List<Move> tacticalMoves, allMoves;
+		List<Move> tacticalMoves, quietMoves;
 		long[] checkSquares;
 		Move[] moves;
-		int score;
-		if (pos.getCheck()) {
-			allMoves = pos.generateAllMoves();
-			score = Termination.CHECK_MATE.score + ply - depth;
-			if (allMoves.length() == 0)
-				return score;
-		}
-		else if (nullMoveObservHolds) {
-			if (depth > -2) {
-				checkSquares = pos.squaresToCheckFrom();
-				tacticalMoves = pos.generateTacticalMoves(checkSquares);
-				allMoves = pos.generateQuietMoves(checkSquares);
-				allMoves.addAll(tacticalMoves);
-				if (allMoves.length() == 0)
-					return Termination.STALE_MATE.score;
-				else
-					score = Evaluator.score(pos, allMoves, ply - depth);
-			}
-			else {
-				tacticalMoves = pos.generateMaterialMoves();
-				allMoves = pos.generateNonMaterialMoves();
-				allMoves.addAll(tacticalMoves);
-				if (allMoves.length() == 0)
-					return Termination.STALE_MATE.score;
-				else
-					score = Evaluator.score(pos, allMoves, ply - depth);
-			}
+		Move move;
+		int staticScore, searchScore;
+		boolean check = pos.getCheck();
+		if (depth > -2) {
+			checkSquares = pos.squaresToCheckFrom();
+			tacticalMoves = pos.generateTacticalMoves(checkSquares);
+			quietMoves = pos.generateQuietMoves(checkSquares);
 		}
 		else {
-			score = Termination.CHECK_MATE.score + ply - depth;
-			if (depth > -2) {
-				checkSquares = pos.squaresToCheckFrom();
-				tacticalMoves = pos.generateTacticalMoves(checkSquares);
-			}
-			else
-				tacticalMoves = pos.generateMaterialMoves();
+			tacticalMoves = pos.generateMaterialMoves();
+			quietMoves = pos.generateNonMaterialMoves();
 		}
-		
+		if (check || !nullMoveObservHolds)
+			staticScore = Termination.CHECK_MATE.score + ply - depth;
+		else {
+			quietMoves.addAll(tacticalMoves);
+			staticScore = Evaluator.score(pos, quietMoves, ply - depth);
+		}
+		if (staticScore > alpha)
+			alpha = staticScore;
+		if (alpha >= beta)
+			return alpha;
+		if (check) {
+			searchScore = -search(1, alpha, beta, false);
+			if (searchScore > alpha)
+				alpha = searchScore;
+		}
+		else {
+			moves = orderTacticalMoves(pos, tacticalMoves);
+			for (int i = 0; i < moves.length; i++) {
+				move = moves[i];
+				if (move.value < 0)
+					break;
+				searchScore = -quiescence(depth - 1, -beta, -alpha);
+				if (searchScore > alpha)
+					alpha = searchScore;
+				if (alpha >= beta)
+					break;
+			}
+		}
+		return alpha;
 	}
 	/**Orders material moves and checks, the former of which according to the SEE swap algorithm.
 	 * 
@@ -556,8 +559,8 @@ public class Search extends Thread {
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
-			if (move.capturedPiece == Piece.NULL.ind)	// For checks, to make sure they are evaluated worthy of searching.
-				move.value = 1;
+			if (move.capturedPiece == Piece.NULL.ind && move.type < 4)
+				move.value = 0;
 			else
 				move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
 			arr[i] = move;
