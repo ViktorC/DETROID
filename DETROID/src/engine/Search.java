@@ -4,6 +4,7 @@ import engine.Evaluator.GamePhase;
 import engine.Evaluator.Material;
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
+import engine.Move.MoveType;
 import util.*;
 
 /**A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It uses
@@ -33,15 +34,18 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 32;
+	private final static int MAX_SEARCH_DEPTH = 10;
 	
 	private int numOfCores;
 	
 	private Position pos;
 	
 	private int ply;
-	private static int NMR = 2;				// Null move pruning reduction.
-	private static int LMR = 1;				// Late move reduction.
+	
+	private static int NMR = 2;													// Null move pruning reduction.
+	private static int LMR = 1;													// Late move reduction.
+	private static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
+	
 	private boolean nullMoveObservHolds;	// Whether heursitcs based on the null move observation such as stand-pat and NMP are applicable.
 	
 	private Move[] pV;
@@ -140,7 +144,7 @@ public class Search extends Thread {
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
-			search(ply, Termination.CHECK_MATE.score, -Termination.CHECK_MATE.score, true);
+			search(ply, Termination.CHECK_MATE.score, -Termination.CHECK_MATE.score, true, 0);
 			pV = extractPv();
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
@@ -160,13 +164,14 @@ public class Search extends Thread {
 	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
 	 * variation can be extracted from the transposition table after a search has been run.
 	 * 
-	 * @param depth
+	 * @param depth Depth of the main search in plies.
 	 * @param alpha
 	 * @param beta
 	 * @param nullMoveAllowed
+	 * @param qDepth The depth with which quiescence search should be called.
 	 * @return The score of the position searched.
 	 */
-	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed) {
+	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
 		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly;
 		Move pVmove = null, bestMove, killerMove1 = null, killerMove2 = null, move;
 		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false, doIID = false;
@@ -202,9 +207,9 @@ public class Search extends Thread {
 					pVmove = Move.toMove(e.bestMove);
 				}
 			}
-			// Return the evaluation score in case a leaf node has been reached.
+			// Return the score from the quiescence search in case a leaf node has been reached.
 			if (depth == 0) {
-				score = Evaluator.score(pos, pos.generateAllMoves(), ply - depth);
+				score = quiescence(qDepth, alpha, beta);
 				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 				return score;
 			}
@@ -242,7 +247,7 @@ public class Search extends Thread {
 				extPly = ply;
 				for (int i = 2; i <= IIDdepth; i++) {
 					ply = i;
-					search(i, alpha, beta, true);
+					search(i, alpha, beta, true, qDepth);
 				}
 				ply = extPly;
 				e = tT.lookUp(pos.key);
@@ -254,7 +259,7 @@ public class Search extends Thread {
 			// If there is a PV move, search that first.
 			if (thereIsPvMove) {
 				pos.makeMove(pVmove);
-				val = -search(depth - 1, -beta, -alpha, true);
+				val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				pos.unmakeMove();
 				searchedMoves++;
 				if (val > bestMove.value) {
@@ -288,9 +293,9 @@ public class Search extends Thread {
 				pos.makeNullMove();
 				// Do not allow consecutive null moves.
 				if (depth == NMR)
-					val = -search(depth - NMR, -beta, -beta + 1, false);
+					val = -search(depth - NMR, -beta, -beta + 1, false, qDepth);
 				else
-					val = -search(depth - NMR - 1, -beta, -beta + 1, false);
+					val = -search(depth - NMR - 1, -beta, -beta + 1, false, qDepth);
 				pos.unmakeMove();
 				if (val >= beta) {
 					bestMove = new Move(val);
@@ -320,11 +325,11 @@ public class Search extends Thread {
 				pos.makeMove(move);
 				// PVS.
 				if (!thereIsPvMove && i == 0)
-					val = -search(depth - 1, -beta, -alpha, true);
+					val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				else {
-					val = -search(depth - 1, -alpha - 1, -alpha, true);
+					val = -search(depth - 1, -alpha - 1, -alpha, true, qDepth);
 					if (val > alpha && val < beta)
-						val = -search(depth - 1, -beta, -val, true);
+						val = -search(depth - 1, -beta, -val, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -347,11 +352,11 @@ public class Search extends Thread {
 					thereIsKillerMove1 = true;
 					pos.makeMove(killerMove1);
 					if (!thereIsPvMove && matMoveBreakInd == 0)
-						val = -search(depth - 1, -beta, -alpha, true);
+						val = -search(depth - 1, -beta, -alpha, true, qDepth);
 					else {
-						val = -search(depth - 1, -alpha - 1, -alpha, true);
+						val = -search(depth - 1, -alpha - 1, -alpha, true, qDepth);
 						if (val > alpha && val < beta)
-							val = -search(depth - 1, -beta, -val, true);
+							val = -search(depth - 1, -beta, -val, true, qDepth);
 					}
 					pos.unmakeMove();
 					searchedMoves++;
@@ -373,11 +378,11 @@ public class Search extends Thread {
 					thereIsKillerMove2 = true;
 					pos.makeMove(killerMove2);
 					if (!thereIsPvMove && !thereIsKillerMove1 && matMoveBreakInd == 0)
-						val = -search(depth - 1, -beta, -alpha, true);
+						val = -search(depth - 1, -beta, -alpha, true, qDepth);
 					else {
-						val = -search(depth - 1, -alpha - 1, -alpha, true);
+						val = -search(depth - 1, -alpha - 1, -alpha, true, qDepth);
 						if (val > alpha && val < beta)
-							val = -search(depth - 1, -beta, -val, true);
+							val = -search(depth - 1, -beta, -val, true, qDepth);
 					}
 					pos.unmakeMove();
 					searchedMoves++;
@@ -410,11 +415,11 @@ public class Search extends Thread {
 				pos.makeMove(move);
 				// PVS.
 				if (!thereIsPvMove && i == 0)
-					val = -search(depth - 1, -beta, -alpha, true);
+					val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				else {
-					val = -search(depth - 1, -alpha - 1, -alpha, true);
+					val = -search(depth - 1, -alpha - 1, -alpha, true, qDepth);
 					if (val > alpha && val < beta)
-						val = -search(depth - 1, -beta, -val, true);
+						val = -search(depth - 1, -beta, -val, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -459,18 +464,18 @@ public class Search extends Thread {
 				// Try late move reduction if not within the PV.
 				if (depth > 2 && bestMove.value <= origAlpha && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0
 					&& searchedMoves > 4 && hT.score(move) <= RelativeHistoryTable.MAX_SCORE/(matMovesArr.length + nonMatMovesArr.length)) {
-					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true);
+					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true, qDepth);
 					// If it does not fail low, research with full window.
 					if (val > origAlpha)
-						val = -search(depth - 1, -beta, -alpha, true);
+						val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				}
 				// Else PVS.
 				else if (!thereIsPvMove && i == 0 && matMoves.length() == 0)
-					val = -search(depth - 1, -beta, -alpha, true);
+					val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				else {
-					val = -search(depth - 1, -alpha - 1, -alpha, true);
+					val = -search(depth - 1, -alpha - 1, -alpha, true, qDepth);
 					if (val > alpha && val < beta)
-						val = -search(depth - 1, -beta, -val, true);
+						val = -search(depth - 1, -beta, -val, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -501,50 +506,75 @@ public class Search extends Thread {
 		// Return score.
 		return bestMove.value;
 	}
+	/**A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keep searching until
+	 * the side to move is not in check and does not have any legal winning captures according to SEE.
+	 * 
+	 * In the first two plies (unless it has been extended due to the side to move being in chess), it also searches moves that give check.
+	 * 
+	 * @param depth
+	 * @param alpha
+	 * @param beta
+	 * @return
+	 */
 	public int quiescence(int depth, int alpha, int beta) {
-		List<Move> tacticalMoves, quietMoves;
+		List<Move> tacticalMoves, allMoves;
 		long[] checkSquares;
 		Move[] moves;
 		Move move;
 		int staticScore, searchScore;
 		boolean check = pos.getCheck();
-		if (depth > -2) {
-			checkSquares = pos.squaresToCheckFrom();
-			tacticalMoves = pos.generateTacticalMoves(checkSquares);
-			quietMoves = pos.generateQuietMoves(checkSquares);
-		}
-		else {
-			tacticalMoves = pos.generateMaterialMoves();
-			quietMoves = pos.generateNonMaterialMoves();
-		}
-		if (check || !nullMoveObservHolds)
+		// If the side to move is on check or the null move observation does not apply, stand-pat does not hold.
+		if (check || !nullMoveObservHolds) {
 			staticScore = Termination.CHECK_MATE.score + ply - depth;
-		else {
-			quietMoves.addAll(tacticalMoves);
-			staticScore = Evaluator.score(pos, quietMoves, ply - depth);
+			tacticalMoves = null;
 		}
+		/* Generate tactical and quiet moves separately then combine them in the quiet move list for evaluation of the position for stand-pat
+		 * this way the ordering if the interesting moves can be restricted to only the tactical moves. */
+		else {
+			// For the first two plies, generate and search non-material moves that give check as well.
+			if (depth > -2) {
+				checkSquares = pos.squaresToCheckFrom();
+				tacticalMoves = pos.generateTacticalMoves(checkSquares);
+				allMoves = pos.generateQuietMoves(checkSquares);
+			}
+			else {
+				tacticalMoves = pos.generateMaterialMoves();
+				allMoves = pos.generateNonMaterialMoves();
+			}
+			allMoves.addAll(tacticalMoves);
+			staticScore = Evaluator.score(pos, allMoves, ply - depth);	// The static evaluation of the position that will be used as a lower limit
+		}
+		// Fail hard.
+		if (staticScore >= beta)
+			return beta;
 		if (staticScore > alpha)
 			alpha = staticScore;
-		if (alpha >= beta)
-			return alpha;
+		// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
 		if (check) {
-			searchScore = -search(1, alpha, beta, false);
+			searchScore = -search(1, alpha, beta, false, depth - 2);
 			if (searchScore > alpha)
 				alpha = searchScore;
 		}
+		// Quiescence search.
 		else {
 			moves = orderTacticalMoves(pos, tacticalMoves);
 			for (int i = 0; i < moves.length; i++) {
 				move = moves[i];
-				if (move.value < 0)
+				// If the SEE value is below 0 or below the delta-pruning limit, break the search because the rest of the moves are even worse.
+				if (move.value < 0 || move.value < alpha - DELTA)
 					break;
+				pos.makeMove(move);
 				searchScore = -quiescence(depth - 1, -beta, -alpha);
-				if (searchScore > alpha)
+				pos.unmakeMove();
+				if (searchScore > alpha) {
 					alpha = searchScore;
-				if (alpha >= beta)
-					break;
+					if (alpha >= beta)
+						break;
+				}
 			}
 		}
+		if (alpha >= beta)
+			return beta;
 		return alpha;
 	}
 	/**Orders material moves and checks, the former of which according to the SEE swap algorithm.
@@ -559,7 +589,7 @@ public class Search extends Thread {
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
-			if (move.capturedPiece == Piece.NULL.ind && move.type < 4)
+			if (move.capturedPiece == Piece.NULL.ind && move.type < MoveType.PROMOTION_TO_QUEEN.ind)
 				move.value = 0;
 			else
 				move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.

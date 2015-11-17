@@ -1,5 +1,6 @@
 package engine;
 
+import engine.Move.MoveType;
 import util.*;
 
 /**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
@@ -22,7 +23,8 @@ public class Evaluator {
 		ROOK	(500, 2),
 		BISHOP	(300, 1),
 		KNIGHT	(300, 1),
-		PAWN	(100, 0);
+		PAWN	(100, 0),
+		NULL	(0, 0);
 		
 		public final short score;		// The standard worth of the piece type.
 		public final short phaseWeight;	// A measure of the impact a certain material type has on the phase evaluation.
@@ -49,7 +51,7 @@ public class Evaluator {
 			else if (pieceInd == Piece.B_BISHOP.ind) return BISHOP;
 			else if (pieceInd == Piece.B_KNIGHT.ind) return KNIGHT;
 			else if (pieceInd == Piece.B_PAWN.ind) return PAWN;
-			else return null;
+			else return NULL;
 		}
 	}
 	
@@ -105,9 +107,8 @@ public class Evaluator {
 		}
 	}
 	
-	private static int TOTAL_PHASE_WEIGHTS; {
-		TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight + Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
-	}
+	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
+												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
 	/**Returns a phaseScore between 0 and 256.
 	 * 
@@ -145,7 +146,7 @@ public class Evaluator {
 	public static int SEE(Position pos, Move move) {
 		int score = 0, victimVal, firstVictimVal, attackerVal, kingVictVal = 0;
 		long attackers, bpAttack, rkAttack, occupied = pos.allOccupied;
-		boolean whitesTurn;
+		boolean whitesTurn, noRetaliation = true;
 		MoveTable dB;
 		victimVal = Material.getByPieceInd(move.capturedPiece).score;
 		// If the capturer was a king, return the captured piece's value as capturing the king would be illegal.
@@ -207,17 +208,29 @@ public class Evaluator {
 				}
 				score -= victimVal;
 			}
+			noRetaliation = false;
 			victimVal = attackerVal;
 			bpAttack = 0;
 			rkAttack = 0;
 			// Simulate move.
 			occupied &= ~BitOperations.getLSBit(attackers);
 		}
-		if (pos.whitesTurn)
+		if (pos.whitesTurn) {
 			score += firstVictimVal;
+		}
 		else {
 			score -= firstVictimVal;
 			score *= -1;
+		}
+		if (noRetaliation && move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
+			if (move.type == MoveType.PROMOTION_TO_QUEEN.ind)
+				score += Material.QUEEN.score - Material.PAWN.score;
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind)
+				score += Material.ROOK.score - Material.PAWN.score;
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind)
+				score += Material.BISHOP.score - Material.PAWN.score;
+			else
+				score += Material.KNIGHT.score - Material.PAWN.score;
 		}
 		return score;
 	}

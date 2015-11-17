@@ -5486,26 +5486,27 @@ public class Position implements Hashable, Copiable<Position> {
 			if (Character.toString(input.charAt(i)).matches("\\p{Graph}"))
 				command += input.charAt(i);
 		}
-		if (command.length() >= 4 && command.length() <= 5) {
+		if (command.length() == 4 || command.length() == 5) {
 			command = command.toLowerCase();
-			if (Character.toString(zero = command.charAt(0)).matches("[a-h]") && Character.toString(two = command.charAt(2)).matches("[a-h]") && Character.toString(one = command.charAt(1)).matches("[1-8]") && Character.toString(three = command.charAt(3)).matches("[1-8]")) {
+			if (Character.toString(zero = command.charAt(0)).matches("[a-h]") && Character.toString(two = command.charAt(2)).matches("[a-h]") &&
+				Character.toString(one = command.charAt(1)).matches("[1-8]") && Character.toString(three = command.charAt(3)).matches("[1-8]")) {
 				from = (zero - 'a') + (one - '1')*8;
 				to 	 = (two - 'a') + (three - '1')*8;
 				if (command.length() == 5) {
 					four = command.charAt(4);
-					if (three == 1 || three == 8) {
+					if (three == '1' || three == '8') {
 						switch (four) {
 							case 'q':
-								type = 4;
+								type = MoveType.PROMOTION_TO_QUEEN.ind;
 							break;
 							case 'r':
-								type = 5;
+								type = MoveType.PROMOTION_TO_ROOK.ind;
 							break;
 							case 'b':
-								type = 6;
+								type = MoveType.PROMOTION_TO_BISHOP.ind;
 							break;
 							case 'n':
-								type = 7;
+								type = MoveType.PROMOTION_TO_KNIGHT.ind;
 							break;
 							default:
 								return false;
@@ -5518,7 +5519,7 @@ public class Position implements Hashable, Copiable<Position> {
 				while (moves.hasNext()) {
 					move = moves.next();
 					if (move.from == from && move.to == to) {
-						if (type != 0) {
+						if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
 							if (move.type == type) {
 								makeMove(move);
 								extendKeyHistory();
