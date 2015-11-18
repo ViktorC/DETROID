@@ -46,6 +46,7 @@ public class Search extends Thread {
 	private static int LMR = 1;													// Late move reduction.
 	private static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
 	
+	private GamePhase gamePhase;			// The phase the 'game' at the root position is in.
 	private boolean nullMoveObservHolds;	// Whether heursitcs based on the null move observation such as stand-pat and NMP are applicable.
 	
 	private Move[] pV;
@@ -65,7 +66,8 @@ public class Search extends Thread {
 			searchTime = searchTimeInMilliSeconds;
 		else
 			pondering = true;
-		nullMoveObservHolds = Evaluator.evaluateGamePhase(pos) == GamePhase.END_GAME ? false : true;
+		gamePhase = Evaluator.evaluateGamePhase(pos);
+		nullMoveObservHolds = gamePhase == GamePhase.END_GAME ? false : true;
 	}
 	/**Returns a new Search thread instance instead for pondering on the argument position which once started, will not stop until the thread is
 	 * interrupted.

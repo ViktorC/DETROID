@@ -82,8 +82,8 @@ public class Evaluator {
 	public static enum GamePhase {
 		
 		OPENING 	(0, 22),
-		MIDDLE_GAME (23, 192),
-		END_GAME	(193, 256);
+		MIDDLE_GAME (23, 170),
+		END_GAME	(171, 256);	// Very early end game.
 		
 		public final short lowerBound;
 		public final short upperBound;
@@ -106,6 +106,8 @@ public class Evaluator {
 				return MIDDLE_GAME;
 		}
 	}
+	
+	private static HashTable<PTEntry> pT = new HashTable<>();	// Pawn table.
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
@@ -267,37 +269,47 @@ public class Evaluator {
 	 */
 	public static int score(Position pos, List<Move> allMoves, int ply) {
 		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
-			numOfBlackKnights, numOfWhitePawns, numOfBlackPawns, phase, score = 0, openingScore = 0, endGameScore = 0;
+			numOfBlackKnights, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
+		PTEntry e;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
+		e = pT.lookUp(pos.key);
+		if (e != null) {
+			if (e.whitesTurn)
+				pawnScore = e.score;
+			else
+				pawnScore = e.score*-1;
+		}
+		// Evaluate pawn structure.
+		else {
+			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
+			pT.insert(new PTEntry(pos.pawnKey, pos.whitesTurn, pawnScore));
+		}
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
 		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
 		numOfWhiteKnights = BitOperations.getCardinality(pos.whiteKnights);
-		numOfWhitePawns = BitOperations.getCardinality(pos.whitePawns);
 		numOfBlackQueens = BitOperations.getCardinality(pos.blackQueens);
 		numOfBlackRooks = BitOperations.getCardinality(pos.blackRooks);
 		numOfBlackBishops = BitOperations.getCardinality(pos.blackBishops);
 		numOfBlackKnights = BitOperations.getCardinality(pos.blackKnights);
-		numOfBlackPawns = BitOperations.getCardinality(pos.blackPawns);
 		phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
 				numOfWhiteKnights + numOfBlackKnights);
-		score += numOfWhiteQueens*Material.QUEEN.score;
-		score -= numOfBlackQueens*Material.QUEEN.score;
-		score += numOfWhiteRooks*Material.QUEEN.score;
-		score -= numOfBlackRooks*Material.QUEEN.score;
-		score += numOfWhiteBishops*Material.QUEEN.score;
-		score -= numOfBlackBishops*Material.QUEEN.score;
-		score += numOfWhiteKnights*Material.QUEEN.score;
-		score -= numOfBlackKnights*Material.QUEEN.score;
-		score += numOfWhitePawns*Material.QUEEN.score;
-		score -= numOfBlackPawns*Material.QUEEN.score;
+		// Check for insufficient material.
+		if (phase >= 234) {
+			
+		}
+		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
+		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
+		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
+		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
+		baseScore += pawnScore;
 		if (!pos.whitesTurn)
-			score *= -1;
+			baseScore *= -1;
 		// Need to implement separate evaluation features for openings and end games.
 		// Pairs of piece square tables are imperative.
-		openingScore += score;
-		endGameScore += score;
+		openingScore += baseScore;
+		endGameScore += baseScore;
 		return taperedEvalScore(openingScore, endGameScore, phase);
 	}
 }

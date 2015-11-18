@@ -207,11 +207,11 @@ public class Position implements Hashable, Copiable<Position> {
 	
 	boolean whitesTurn = true;															// Denotes whether it is white's turn to make a move, or not, i.e. it is black's.
 	
-	private long checkers = 0;															// A bitmap of all the pieces that attack the color to move's king.
-	private boolean check = false;														// Denotes whether the color to move's king is in check or not.
+	long checkers = 0;																	// A bitmap of all the pieces that attack the color to move's king.
+	boolean check = false;																// Denotes whether the color to move's king is in check or not.
 	
-	private int halfMoveIndex = 0;														// The count of the current ply/half-move.
-	private int fiftyMoveRuleClock = 0;													// The number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
+	int halfMoveIndex = 0;																// The count of the current ply/half-move.
+	int fiftyMoveRuleClock = 0;															// The number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
 	
 	int enPassantRights = EnPassantRights.NONE.ind;										// Denotes the file on which en passant is possible; 8 means no en passant rights.
 	
@@ -226,7 +226,7 @@ public class Position implements Hashable, Copiable<Position> {
 	private long[] keyHistory;															// All the positions that have occured so far represented in Zobrist keys.
 	private long[] pawnKeyHistory;														// All the pawn positions occured.
 	
-	private int repetitions = 0;														// The number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
+	int repetitions = 0;																// The number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
 	
 	/**Initializes an instance of Board and sets up the pieces in their initial position.*/
 	public Position() {
@@ -361,6 +361,7 @@ public class Position implements Hashable, Copiable<Position> {
 		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 		 * - half of that is used as the initial length of the history array.*/
 		keyHistory = new long[237];
+		pawnKeyHistory = new long[237];
 		Zobrist.setHashKeys(this);
 		keyHistory[0] = key;
 		pawnKeyHistory[0] = pawnKey;
@@ -5474,7 +5475,9 @@ public class Position implements Hashable, Copiable<Position> {
 		else
 			check = false;
 		keyHistory[halfMoveIndex] = 0;
+		pawnKeyHistory[halfMoveIndex] = 0;
 		key = keyHistory[--halfMoveIndex];
+		pawnKey = pawnKeyHistory[halfMoveIndex];
 	}
 	/**Makes a move specified by user input. If it is legal and the command is valid ([origin square + destination square] as e.g.: b1a3 without any spaces; in case of promotion,
 	 * the FEN notation of the piece the pawn is wished to be promoted to should be appended to the command as in c7c8q; the parser is not case sensitive), it returns true, else
