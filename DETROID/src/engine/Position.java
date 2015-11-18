@@ -221,8 +221,10 @@ public class Position implements Hashable, Copiable<Position> {
 	private Stack<Move> moveList = new Stack<Move>();									// A stack of all the moves made so far.
 	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();	// A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info.
 	
-	long key;																			// The Zobrist key that is fairly close to a unique representation of the state of the Board instance in one number.
+	long key;																			// The Zobrist key that is fairly close to a unique representation of the state of the Position instance in one number.
+	long pawnKey;																		// A Zobrist key for the pawns' position only.
 	private long[] keyHistory;															// All the positions that have occured so far represented in Zobrist keys.
+	private long[] pawnKeyHistory;														// All the pawn positions occured.
 	
 	private int repetitions = 0;														// The number of times the current position has occured before; the choice of type fell on long due to data loss when int is shifted beyond the 32nd bit in the move integer.
 	
@@ -359,8 +361,9 @@ public class Position implements Hashable, Copiable<Position> {
 		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 		 * - half of that is used as the initial length of the history array.*/
 		keyHistory = new long[237];
-		key = Zobrist.hash(this);
-		keyHistory[0] = this.key;
+		Zobrist.setHashKeys(this);
+		keyHistory[0] = key;
+		pawnKeyHistory[0] = pawnKey;
 	}
 	/**Returns a deep copy of the position.
 	 * 
@@ -613,8 +616,9 @@ public class Position implements Hashable, Copiable<Position> {
 		check = (checkers != 0) ? true : false;
 	}
 	private void setKeys() {
-		key = Zobrist.updateKey(this);
+		Zobrist.updateKeys(this);
 		keyHistory[halfMoveIndex] = key;
+		pawnKeyHistory[halfMoveIndex] = pawnKey;
 	}
 	private void extendKeyHistory() {
 		long[] temp;
@@ -623,6 +627,10 @@ public class Position implements Hashable, Copiable<Position> {
 			keyHistory = new long[keyHistory.length + 25];
 			for (int i = 0; i < temp.length; i++)
 				keyHistory[i] = temp[i];
+			temp = pawnKeyHistory;
+			pawnKeyHistory = new long[pawnKeyHistory.length + 25];
+			for (int i = 0; i < temp.length; i++)
+				pawnKeyHistory[i] = temp[i];
 		}
 	}
 	/**Should be used before resetMoveIndices().*/

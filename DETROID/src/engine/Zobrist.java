@@ -51,32 +51,33 @@ public class Zobrist {
 		for (int i = 0; i < enPassantRights.length; i++)
 			enPassantRights[i] = random.nextLong();
 	}
-	/**Encodes a Board objects and returns the 64-bit key.
+	/**Encodes a Position object's pawn and main hash keys.
 	 * 
 	 * @param board
-	 * @return
 	 */
-	public static long hash(Position p) {
+	public static void setHashKeys(Position p) {
 		int[] board64 = p.getOffsetBoard();
-		long key = 0;
+		long key = 0, pawnKey = 0;
 		if (!p.whitesTurn)
 			key ^= turn;
 		for (int i = 0; i < board64.length; i++) {
 			key ^= board[board64[i]][i];
+			if (board64[i] == Piece.W_PAWN.ind)
+				pawnKey ^= board[Piece.W_PAWN.ind][i];
+			else if (board64[i] == Piece.B_PAWN.ind)
+				pawnKey ^= board[Piece.B_PAWN.ind][i];
 		}
 		key ^= whiteCastlingRights[p.whiteCastlingRights];
 		key ^= blackCastlingRights[p.blackCastlingRights];
 		key ^= enPassantRights[p.enPassantRights];
-		return key;
 	}
-	/**Modifies a Board object's Zobrist key by XOR-ing it with the Zobrist object's respective instance fields for the fields of the Board
-	 * object changed by the last move made.
+	/**Modifies a Position object's hash keys according to the changes made by
+	 * the last move.
 	 * 
 	 * @param p
-	 * @return
 	 */
-	public static long updateKey(Position p) {
-		long key = p.key;
+	public static void updateKeys(Position p) {
+		long key = p.key, pawnKey = p.pawnKey;
 		Move move = p.getLastMove();
 		UnmakeRegister unmakeReg = p.getUnmakeRegister();
 		key ^= turn;
@@ -91,6 +92,10 @@ public class Zobrist {
 				key ^= board[move.movedPiece][move.from];
 				key ^= board[move.capturedPiece][move.to];
 				key ^= board[move.movedPiece][move.to];
+				if (move.movedPiece == Piece.W_PAWN.ind) {
+					pawnKey ^= board[move.movedPiece][move.from];
+					pawnKey ^= board[move.movedPiece][move.to];
+				}
 			}
 			else if (move.type == MoveType.SHORT_CASTLING.ind) {
 				key ^= board[move.movedPiece][move.from];

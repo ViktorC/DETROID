@@ -593,8 +593,7 @@ public class Search extends Thread {
 				move.value = 0;
 			else
 				move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
-			arr[i] = move;
-			i++;
+			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
 	}
@@ -616,8 +615,7 @@ public class Search extends Thread {
 			}
 			else
 				move.value = Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
-			arr[i] = move;
-			i++;
+			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
 	}
@@ -633,8 +631,7 @@ public class Search extends Thread {
 		while (moves.hasNext()) {
 			move = moves.next();
 			move.value = hT.score(move);
-			arr[i] = move;
-			i++;
+			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
 	}
