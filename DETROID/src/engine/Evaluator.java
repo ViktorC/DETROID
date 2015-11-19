@@ -269,22 +269,10 @@ public class Evaluator {
 	 */
 	public static int score(Position pos, List<Move> allMoves, int ply) {
 		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
-			numOfBlackKnights, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
+			numOfBlackKnights, numOfAllPieces, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
 		PTEntry e;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
-		e = pT.lookUp(pos.key);
-		if (e != null) {
-			if (e.whitesTurn)
-				pawnScore = e.score;
-			else
-				pawnScore = e.score*-1;
-		}
-		// Evaluate pawn structure.
-		else {
-			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
-			pT.insert(new PTEntry(pos.pawnKey, pos.whitesTurn, pawnScore));
-		}
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
 		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
@@ -295,9 +283,29 @@ public class Evaluator {
 		numOfBlackKnights = BitOperations.getCardinality(pos.blackKnights);
 		phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
 				numOfWhiteKnights + numOfBlackKnights);
-		// Check for insufficient material.
+		// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
 		if (phase >= 234) {
-			
+			numOfAllPieces = BitOperations.getCardinality(pos.allOccupied);
+			if (numOfAllPieces == 2 ||
+				(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
+										numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
+				(numOfAllPieces == 4 && numOfWhiteBishops == 1 && numOfBlackBishops == 1 &&
+				BitOperations.indexOfBit(pos.whiteBishops)%2 == BitOperations.indexOfBit(pos.blackBishops)%2))
+				return Termination.INSUFFICIENT_MATERIAL.score;
+		}
+		// Try for hashed pawn score.
+		e = pT.lookUp(pos.key);
+		if (e != null) {
+			if (e.whitesTurn)
+				pawnScore = e.score;
+			else
+				pawnScore = e.score*-1;
+		}
+		// Evaluate pawn structure.
+		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
+		else {
+			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
+			pT.insert(new PTEntry(pos.pawnKey, pos.whitesTurn, pawnScore));
 		}
 		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
 		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;

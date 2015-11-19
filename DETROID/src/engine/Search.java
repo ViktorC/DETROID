@@ -525,26 +525,41 @@ public class Search extends Thread {
 		Move move;
 		int staticScore, searchScore;
 		boolean check = pos.getCheck();
-		// If the side to move is on check or the null move observation does not apply, stand-pat does not hold.
-		if (check || !nullMoveObservHolds) {
-			staticScore = Termination.CHECK_MATE.score + ply - depth;
+		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
+		if (check) {
 			tacticalMoves = null;
+			staticScore = Termination.CHECK_MATE.score + ply - depth;
 		}
 		/* Generate tactical and quiet moves separately then combine them in the quiet move list for evaluation of the position for stand-pat
 		 * this way the ordering if the interesting moves can be restricted to only the tactical moves. */
 		else {
-			// For the first two plies, generate and search non-material moves that give check as well.
+			// For the first two plies, generate non-material moves that give check as well.
 			if (depth > -2) {
 				checkSquares = pos.squaresToCheckFrom();
 				tacticalMoves = pos.generateTacticalMoves(checkSquares);
-				allMoves = pos.generateQuietMoves(checkSquares);
+				// No check and the null move observation holds, thus stand-pat applies, and we can use the position's eval score as our bound.
+				if (nullMoveObservHolds) {
+					allMoves = pos.generateQuietMoves(checkSquares);
+					allMoves.addAll(tacticalMoves); // We need all the lagal moves for the side to move for mate-detection in the evaluation.
+					staticScore = Evaluator.score(pos, allMoves, ply - depth);
+				}
+				// Else no bound.
+				else
+					staticScore = Termination.CHECK_MATE.score + ply - depth;
 			}
+			// After that, only material moves.
 			else {
 				tacticalMoves = pos.generateMaterialMoves();
-				allMoves = pos.generateNonMaterialMoves();
+				// Stand-pat, evaluate position.
+				if (nullMoveObservHolds) {
+					allMoves = pos.generateNonMaterialMoves();
+					allMoves.addAll(tacticalMoves);
+					staticScore = Evaluator.score(pos, allMoves, ply - depth);
+				}
+				// No bound.
+				else
+					staticScore = Termination.CHECK_MATE.score + ply - depth;
 			}
-			allMoves.addAll(tacticalMoves);
-			staticScore = Evaluator.score(pos, allMoves, ply - depth);	// The static evaluation of the position that will be used as a lower limit
 		}
 		// Fail hard.
 		if (staticScore >= beta)

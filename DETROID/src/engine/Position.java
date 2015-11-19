@@ -359,9 +359,9 @@ public class Position implements Hashable, Copiable<Position> {
 		this.enPassantRights = enPassantRights != null ? enPassantRights.ind : this.enPassantRights;
 		setCheck();
 		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
-		 * - half of that is used as the initial length of the history array.*/
-		keyHistory = new long[237];
-		pawnKeyHistory = new long[237];
+		 * - one third of that is used as the initial length of the history array. */
+		keyHistory = new long[158];
+		pawnKeyHistory = new long[158];
 		Zobrist.setHashKeys(this);
 		keyHistory[0] = key;
 		pawnKeyHistory[0] = pawnKey;
@@ -380,6 +380,7 @@ public class Position implements Hashable, Copiable<Position> {
 		}
 		copy = new Position(toString());
 		copy.keyHistory = new long[keyHistory.length];
+		copy.pawnKeyHistory = new long[pawnKeyHistory.length];
 		while (reverse.hasNext()) {
 			move = reverse.next();
 			makeMove(move);
