@@ -80,7 +80,7 @@ public class Zobrist {
 	 */
 	public static void updateKeys(Position p) {
 		int enPassVictSqr;
-		long movedFrom, movedTo;
+		long[] movedRow;
 		long key = p.key, pawnKey = p.pawnKey;
 		Move move = p.getLastMove();
 		UnmakeRegister unmakeReg = p.getUnmakeRegister();
@@ -92,23 +92,22 @@ public class Zobrist {
 		key ^= blackCastlingRights[p.blackCastlingRights];
 		key ^= enPassantRights[p.enPassantRights];
 		if (move != null) {
-			movedFrom = board[move.movedPiece][move.from];
-			movedTo = board[move.movedPiece][move.to];
+			movedRow = board[move.movedPiece];
 			if (move.type == MoveType.NORMAL.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				key ^= movedTo;
+				key ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind || move.movedPiece == Piece.B_PAWN.ind) {
-					pawnKey ^= movedFrom;
-					pawnKey ^= movedTo;
+					pawnKey ^= movedRow[move.from];
+					pawnKey ^= movedRow[move.to];
 				}
 				if (move.capturedPiece == Piece.B_PAWN.ind || move.movedPiece == Piece.W_PAWN.ind)
 					pawnKey ^= board[move.capturedPiece][move.to];
 			}
 			else if (move.type == MoveType.SHORT_CASTLING.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				key ^= movedTo;
+				key ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_KING.ind) {
 					key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
 					key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
@@ -119,9 +118,9 @@ public class Zobrist {
 				}
 			}
 			else if (move.type == MoveType.LONG_CASTLING.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				key ^= movedTo;
+				key ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_KING.ind) {
 					key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
 					key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
@@ -132,10 +131,10 @@ public class Zobrist {
 				}
 			}
 			else if (move.type == MoveType.EN_PASSANT.ind) {
-				key ^= movedFrom;
-				key ^= movedTo;
-				pawnKey ^= movedFrom;
-				pawnKey ^= movedTo;
+				key ^= movedRow[move.from];
+				key ^= movedRow[move.to];
+				pawnKey ^= movedRow[move.from];
+				pawnKey ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					enPassVictSqr = move.to - 8;
 				else
@@ -144,9 +143,9 @@ public class Zobrist {
 				pawnKey ^= board[move.capturedPiece][enPassVictSqr];
 			}
 			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedFrom;
+				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind) {
 					key ^= board[Piece.W_QUEEN.ind][move.to];
 					if (move.capturedPiece == Piece.B_PAWN.ind)
@@ -159,9 +158,9 @@ public class Zobrist {
 				}
 			}
 			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedFrom;
+				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind) {
 					key ^= board[Piece.W_ROOK.ind][move.to];
 					if (move.capturedPiece == Piece.B_PAWN.ind)
@@ -174,9 +173,9 @@ public class Zobrist {
 				}
 			}
 			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedFrom;
+				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind) {
 					key ^= board[Piece.W_BISHOP.ind][move.to];
 					if (move.capturedPiece == Piece.B_PAWN.ind)
@@ -189,9 +188,9 @@ public class Zobrist {
 				}
 			}
 			else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
-				key ^= movedFrom;
+				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedFrom;
+				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind) {
 					key ^= board[Piece.W_KNIGHT.ind][move.to];
 					if (move.capturedPiece == Piece.B_PAWN.ind)
