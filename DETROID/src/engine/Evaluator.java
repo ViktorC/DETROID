@@ -1,6 +1,7 @@
 package engine;
 
 import engine.Move.MoveType;
+import engine.Board.Diagonal;
 import util.*;
 
 /**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
@@ -287,10 +288,11 @@ public class Evaluator {
 		if (phase >= 234) {
 			numOfAllPieces = BitOperations.getCardinality(pos.allOccupied);
 			if (numOfAllPieces == 2 ||
-				(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
-										numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
-				(numOfAllPieces == 4 && numOfWhiteBishops == 1 && numOfBlackBishops == 1 &&
-				BitOperations.indexOfBit(pos.whiteBishops)%2 == BitOperations.indexOfBit(pos.blackBishops)%2))
+			(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
+									numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
+			(numOfAllPieces == 4 && numOfWhiteBishops == 1 && numOfBlackBishops == 1 &&
+			Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.whiteBishops)).ordinal()%2 ==
+			Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
 				return Termination.INSUFFICIENT_MATERIAL.score;
 		}
 		// Try for hashed pawn score.
