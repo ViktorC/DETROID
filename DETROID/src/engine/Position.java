@@ -655,35 +655,23 @@ public class Position implements Hashable, Copiable<Position> {
 	public boolean isAttacked(int sqrInd, boolean byWhite) {
 		MoveTable dB = MoveTable.getByIndex(sqrInd);
 		if (byWhite) {
-			if ((whiteKing & dB.getCrudeKingMoves()) != 0)
-				return true;
-			if ((whiteKnights & dB.getCrudeKnightMoves()) != 0)
-				return true;
-			if ((whitePawns & dB.getCrudeBlackPawnCaptures()) != 0)
-				return true;
-			if (((whiteQueens | whiteRooks) & dB.getRookMoves(allNonBlackOccupied, allOccupied)) != 0)
-				return true;
-			if (((whiteQueens | whiteBishops) & dB.getBishopMoves(allNonBlackOccupied, allOccupied)) != 0)
-				return true;
+			if ((whiteKing & dB.getCrudeKingMoves()) != 0) return true;
+			if ((whiteKnights & dB.getCrudeKnightMoves()) != 0) return true;
+			if ((whitePawns & dB.getCrudeBlackPawnCaptures()) != 0) return true;
+			if (((whiteQueens | whiteRooks) & dB.getRookMoves(allNonBlackOccupied, allOccupied)) != 0) return true;
+			if (((whiteQueens | whiteBishops) & dB.getBishopMoves(allNonBlackOccupied, allOccupied)) != 0) return true;
 			if (offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights) {
-				if ((whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap) != 0)
-					return true;
+				if ((whitePawns & dB.getCrudeKingMoves() & Rank.R5.bitmap) != 0) return true;
 			}
 		}
 		else {
-			if ((blackKing & dB.getCrudeKingMoves()) != 0)
-				return true;
-			if ((blackKnights & dB.getCrudeKnightMoves()) != 0)
-				return true;
-			if ((blackPawns & dB.getCrudeWhitePawnCaptures()) != 0)
-				return true;
-			if (((blackQueens | blackRooks) & dB.getRookMoves(allNonWhiteOccupied, allOccupied)) != 0)
-				return true;
-			if (((blackQueens | blackBishops) & dB.getBishopMoves(allNonWhiteOccupied, allOccupied)) != 0)
-				return true;
+			if ((blackKing & dB.getCrudeKingMoves()) != 0) return true;
+			if ((blackKnights & dB.getCrudeKnightMoves()) != 0) return true;
+			if ((blackPawns & dB.getCrudeWhitePawnCaptures()) != 0) return true;
+			if (((blackQueens | blackRooks) & dB.getRookMoves(allNonWhiteOccupied, allOccupied)) != 0) return true;
+			if (((blackQueens | blackBishops) & dB.getBishopMoves(allNonWhiteOccupied, allOccupied)) != 0) return true;
 			if (offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights) {
-				if ((blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap) != 0)
-					return true;
+				if ((blackPawns & dB.getCrudeKingMoves() & Rank.R4.bitmap) != 0) return true;
 			}
 		}
 		return false;
@@ -697,16 +685,12 @@ public class Position implements Hashable, Copiable<Position> {
 	public boolean isAttackedBySliders(int sqrInd, boolean byWhite) {
 		MoveTable dB = MoveTable.getByIndex(sqrInd);
 		if (byWhite) {
-			if (((whiteQueens | whiteRooks) & dB.getRookMoves(allNonBlackOccupied, allOccupied)) != 0)
-				return true;
-			if (((whiteQueens | whiteBishops) & dB.getBishopMoves(allNonBlackOccupied, allOccupied)) != 0)
-				return true;
+			if (((whiteQueens | whiteRooks) & dB.getRookMoves(allNonBlackOccupied, allOccupied)) != 0) return true;
+			if (((whiteQueens | whiteBishops) & dB.getBishopMoves(allNonBlackOccupied, allOccupied)) != 0) return true;
 		}
 		else {
-			if (((blackQueens | blackRooks) & dB.getRookMoves(allNonWhiteOccupied, allOccupied)) != 0)
-				return true;
-			if (((blackQueens | blackBishops) & dB.getBishopMoves(allNonWhiteOccupied, allOccupied)) != 0)
-				return true;
+			if (((blackQueens | blackRooks) & dB.getRookMoves(allNonWhiteOccupied, allOccupied)) != 0) return true;
+			if (((blackQueens | blackBishops) & dB.getBishopMoves(allNonWhiteOccupied, allOccupied)) != 0) return true;
 		}
 		return false;
 	}
@@ -908,33 +892,27 @@ public class Position implements Hashable, Copiable<Position> {
 	public boolean givesCheck(Move move) {
 		MoveTable db;
 		long toBit = 1L << move.to;
-		boolean givesCheck = false;
 		if (whitesTurn) {
 			db = MoveTable.getByIndex(BitOperations.indexOfBit(blackKing));
 			switch (move.movedPiece) {
 				case 2: {
-					if ((db.getQueenMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getQueenMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 3: {
-					if ((db.getRookMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getRookMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 4: {
-					if ((db.getBishopMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getBishopMoves(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 5: {
-					if ((db.getKnightMoves(allNonWhiteOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getKnightMoves(allNonWhiteOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 6: {
-					if ((db.getCrudeBlackPawnCaptures() & toBit) != 0)
-						givesCheck = true;
+					if ((db.getCrudeBlackPawnCaptures() & toBit) != 0) return true;
 				}
 			}
 		}
@@ -942,32 +920,27 @@ public class Position implements Hashable, Copiable<Position> {
 			db = MoveTable.getByIndex(BitOperations.indexOfBit(whiteKing));
 			switch (move.movedPiece) {
 				case 8: {
-					if ((db.getQueenMoves(allNonBlackOccupied, allOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getQueenMoves(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 9: {
-					if ((db.getRookMoves(allNonBlackOccupied, allOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getRookMoves(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 10: {
-					if ((db.getBishopMoves(allNonBlackOccupied, allOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getBishopMoves(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 11: {
-					if ((db.getKnightMoves(allNonBlackOccupied) & toBit) != 0)
-						givesCheck = true;
+					if ((db.getKnightMoves(allNonBlackOccupied) & toBit) != 0) return true;
 				}
 				break;
 				case 12: {
-					if ((db.getCrudeWhitePawnCaptures() & toBit) != 0)
-						givesCheck = true;
+					if ((db.getCrudeWhitePawnCaptures() & toBit) != 0) return true;
 				}
 			}
 		}
-		return givesCheck;
+		return false;
 	}
 	/**A method that returns an array of bitmaps of the squares from which the opponent's king can be checked for each piece type for
 	 * the side to move (king obviously excluded).
