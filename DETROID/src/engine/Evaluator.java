@@ -296,7 +296,7 @@ public class Evaluator {
 				return Termination.INSUFFICIENT_MATERIAL.score;
 		}
 		/* Try for hashed pawn score.
-		e = pT.lookUp(pos.key);
+		e = pT.lookUp(pos.pawnKey);
 		if (e != null) {
 			if (e.whitesTurn)
 				pawnScore = e.score;
@@ -308,7 +308,7 @@ public class Evaluator {
 		else {
 			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
 			pT.insert(new PTEntry(pos.pawnKey, pos.whitesTurn, pawnScore));
-		}*/
+		} */
 		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
 		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
 		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
