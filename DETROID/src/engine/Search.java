@@ -33,8 +33,9 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_USED_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
+	private final static int MAX_USABLE_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
 	private final static int MAX_SEARCH_DEPTH = 10;
+	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
 	
@@ -174,7 +175,8 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
-		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly;
+		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly,
+			checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH, distFromRoot = ply - depth;
 		Move pVmove = null, bestMove, killerMove1 = null, killerMove2 = null, move;
 		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false, doIID = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
@@ -186,22 +188,29 @@ public class Search extends Thread {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
 			if (e != null) {
+				// Mate score adjustment to root distance.
+				if (e.score <= checkMateLim)
+					score = e.score + distFromRoot;
+				else if (e.score >= -checkMateLim)
+					score = e.score - distFromRoot;
+				else
+					score = e.score;
 				/* If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
 				 * the score if the entry stored a PV node. */
 				if (e.depth >= depth) {
 					if (e.type == NodeType.EXACT.ind)
-						return e.score;
+						return score;
 					else if (e.type == NodeType.FAIL_HIGH.ind) {
-						if (e.score > bestMove.value) {
-							bestMove.value = e.score;
-							if (e.score > alpha)
-								alpha = e.score;
+						if (score > bestMove.value) {
+							bestMove.value = score;
+							if (score > alpha)
+								alpha = score;
 						}
 					}
-					else if (e.score < beta)
-						beta = e.score;
+					else if (score < beta)
+						beta = score;
 					if (alpha >= beta)
-						return e.score;
+						return score;
 				}
 				// Check for the stored move and make it the PV move.
 				if (e.bestMove != 0) {
@@ -221,7 +230,7 @@ public class Search extends Thread {
 			// In case there is no hash move...
 			if (!thereIsPvMove) {
 				// Check the PV form the last iteration.
-				pVmove = pV[ply - depth];
+				pVmove = pV[distFromRoot];
 				if (pVmove != null && pos.isLegal(pVmove))
 					thereIsPvMove = true;
 				// If there is no hash entry at all and the search is within the PV and close enough to the root, try IID.
@@ -281,7 +290,7 @@ public class Search extends Thread {
 				if (matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
 					if (nonMatMoves.length() == 0) {
-						score = Evaluator.mateScore(pos.getCheck(), ply - depth);
+						score = Evaluator.mateScore(pos.getCheck(), distFromRoot);
 						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
 						return score;
 					}
@@ -311,7 +320,7 @@ public class Search extends Thread {
 			matMovesArr = orderMaterialMoves(matMoves);
 			// Search winning and equal captures.
 			for (int i = 0; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
+				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
 					tT.remove(entry -> entry.depth < 2);
 					System.gc();
 				}
@@ -347,7 +356,7 @@ public class Search extends Thread {
 					break Search;
 			}
 			// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
-			kE = kT.retrieve(ply - depth);
+			kE = kT.retrieve(distFromRoot);
 			if (kE.move1 != 0) {	// Killer move no. 1.
 				killerMove1 = Move.toMove(kE.move1);
 				if (pos.isLegal(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
@@ -402,7 +411,7 @@ public class Search extends Thread {
 			}	// Killer move check ending.
 			// Search losing captures if there are any.
 			for (int i = matMoveBreakInd; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
+				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
 					tT.remove(entry -> entry.depth < 2);
 					System.gc();
 				}
@@ -442,7 +451,7 @@ public class Search extends Thread {
 			// Order and search the non-material moves.
 			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
 			for (int i = 0; i < nonMatMovesArr.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USED_MEMORY) {
+				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
 					tT.remove(entry -> entry.depth < 2);
 					System.gc();
 				}
@@ -488,7 +497,7 @@ public class Search extends Thread {
 						alpha = val;
 				}
 				if (alpha >= beta) {	// Cutoff from a non-material move.
-					kT.add(ply - depth, move);	// Add to killer moves.
+					kT.add(distFromRoot, move);	// Add to killer moves.
 					hT.recordSuccessfulMove(move);	// Record success in the relative history table.
 					break Search;
 				}
@@ -498,14 +507,21 @@ public class Search extends Thread {
 					break Search;
 			}
 		}
+		// Adjustment of bestMove's stored score for TT insertion in case it's a check mate score.
+		if (bestMove.value <= checkMateLim)
+			score = bestMove.value - distFromRoot;
+		else if (bestMove.value >= -checkMateLim)
+			score = bestMove.value + distFromRoot;
+		else
+			score = bestMove.value;
 		//	Add new entry to the transposition table.
 		if (bestMove.value <= origAlpha)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, score, bestMove.toInt(), tTgen));
 		else if (bestMove.value >= beta)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, bestMove.value, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMove.toInt(), tTgen));
 		else
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, bestMove.value, bestMove.toInt(), tTgen));
-		// Return score.
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, bestMove.toInt(), tTgen));
+		// Return bestMove's unadjusted score.
 		return bestMove.value;
 	}
 	/**A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keep searching until
