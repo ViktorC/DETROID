@@ -298,16 +298,13 @@ public class Evaluator {
 		/* Try for hashed pawn score.
 		e = pT.lookUp(pos.pawnKey);
 		if (e != null) {
-			if (e.whitesTurn)
-				pawnScore = e.score;
-			else
-				pawnScore = e.score*-1;
+			pawnScore = e.score;
 		}
 		// Evaluate pawn structure.
 		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
 		else {
 			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
-			pT.insert(new PTEntry(pos.pawnKey, pos.whitesTurn, pawnScore));
+			pT.insert(new PTEntry(pos.pawnKey, true, pawnScore));
 		} */
 		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
 		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
