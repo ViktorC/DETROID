@@ -92,39 +92,28 @@ public class Move implements Comparable<Move> {
 	public boolean worseThan(Move m) throws NullPointerException {
 		return (value < m.value);
 	}
-	/**Returns a move as a String in pseudo-algebraic chess notation for better human-readability.
+	/**Returns a move as a String in Pure Algebraic Coordinate Notation for better human-readability.
 	 *
 	 * @return
 	 */
 	public String toString() {
-		String alg, movedPiece, capture, originFile, originRank, destFile, destRank;
-		if (type == 1)
-			return "0-0";
-		else if (type == 2)
-			return "0-0-0";
+		String lan, originFile, originRank, destFile, destRank;
 		originRank	= Integer.toString(from/8 + 1);
 		originFile	= Character.toString((char)(from%8 + 'a'));
 		destRank	= Integer.toString(to/8 + 1);
 		destFile	= Character.toString((char)(to%8 + 'a'));
-		movedPiece  = "" + Piece.getByNumericNotation(this.movedPiece).fen;
-		if (this.capturedPiece == 0)
-			capture = "";
-		else
-			capture = "x";
-		alg = movedPiece + originFile + originRank + capture + destFile + destRank;
+		lan = originFile + originRank + destFile + destRank;
 		switch (type) {
-			case 3:
-				return alg + "e.p.";
 			case 4:
-				return alg + "=Q";
+				return lan + "=Q";
 			case 5:
-				return alg + "=R";
+				return lan + "=R";
 			case 6:
-				return alg + "=B";
+				return lan + "=B";
 			case 7:
-				return alg + "=N";
+				return lan + "=N";
 			default:
-				return alg;
+				return lan;
 		}
 	}
 	/**Returns a move as a 32 bit integer with information on the state of the object stored in designated bits, except for the score.

@@ -270,7 +270,9 @@ public class Evaluator {
 	 */
 	public static int score(Position pos, List<Move> allMoves, int ply) {
 		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
-			numOfBlackKnights, numOfAllPieces, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
+			numOfBlackKnights, numOfAllPieces, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0,
+			bishopColor, bishopField, newBishopColor;
+		int[] bishopSqrArr;
 		PTEntry e;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
@@ -285,7 +287,8 @@ public class Evaluator {
 		phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
 				numOfWhiteKnights + numOfBlackKnights);
 		// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
-		if (phase >= 234) {
+		if (phase >= 234 && numOfWhiteQueens == 0 && numOfBlackQueens == 0 &&
+		numOfWhiteRooks == 0 && numOfBlackRooks == 0 && pos.whitePawns == 0 && pos.blackPawns == 0) {
 			numOfAllPieces = BitOperations.getCardinality(pos.allOccupied);
 			if (numOfAllPieces == 2 ||
 			(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
@@ -294,6 +297,16 @@ public class Evaluator {
 			Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.whiteBishops)).ordinal()%2 ==
 			Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
 				return Termination.INSUFFICIENT_MATERIAL.score;
+			if (numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
+				bishopSqrArr = BitOperations.serialize(pos.whiteBishops | pos.blackBishops, numOfWhiteBishops + numOfBlackBishops);
+				bishopColor = Diagonal.getBySquareIndex(bishopSqrArr[0]).ordinal()%2;
+				for (int i = 1; i < bishopSqrArr.length; i++) {
+					bishopField = bishopSqrArr[i];
+					if ((newBishopColor = Diagonal.getBySquareIndex(bishopField).ordinal()%2) != bishopColor)
+						return Termination.INSUFFICIENT_MATERIAL.score;
+					bishopColor = newBishopColor;
+				}
+			}
 		}
 		/* Try for hashed pawn score.
 		e = pT.lookUp(pos.pawnKey);

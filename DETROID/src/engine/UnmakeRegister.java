@@ -43,7 +43,7 @@ public class UnmakeRegister {
 				rep += ", " + Square.toString(BitOperations.indexOfBit(checker));
 		}
 		rep += String.format("%-23s ", "Castling rights:");
-		rep += CastlingRights.toFen(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights));
+		rep += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights));
 		rep += "\n";
 		rep += String.format("%-23s ", "En passant rights:");
 		rep += EnPassantRights.getByIndex(enPassantRights).toString() + "\n";

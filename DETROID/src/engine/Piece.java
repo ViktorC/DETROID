@@ -24,19 +24,19 @@ public enum Piece {
 	B_KNIGHT('n'),
 	B_PAWN	('p');
 	
-	public final int  ind;	// A number that generally represents the respective piece, among others, for example on the offset board.
-	public final char fen;	// A character denoting the piece-type in FEN notation.
+	public final int  ind;		// A number that generally represents the respective piece, among others, for example on the offset board.
+	public final char letter;	// A character denoting the piece-type in chess notation.
 	
 	private Piece(char fen) {
 		this.ind = ordinal();
-		this.fen = fen;
+		this.letter = fen;
 	}
 	/**Returns the piece defined by the FEN piece notation input parameter's numeric equivalent according to {@link #engine.Piece Piece}.
 	 * 
 	 * @param piece
 	 * @return
 	 */
-	public static Piece getByFenNotation(char piece) {
+	public static Piece getByLetterNotation(char piece) {
 		switch (piece) {
 			case '\u0000':
 				return NULL;
