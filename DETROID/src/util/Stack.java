@@ -15,7 +15,7 @@ public class Stack<Data> extends List<Data> {
 	}
 	public Stack(Data data) {
 		head.data = data;
-		pointer = head;
+		iterator = head;
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
 	public void add(Data data) {

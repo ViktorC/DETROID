@@ -26,7 +26,7 @@ public abstract class List<Data> {
 	}
 	
 	protected ListItem head;
-	protected ListItem pointer;			//used for keeping track of the current node while iterating over the list
+	protected ListItem iterator;			//used for keeping track of the current node while iterating over the list
 	
 	/**Returns the data held in the first element of the list. If the list is empty, it returns null.
 	 * 
@@ -61,7 +61,7 @@ public abstract class List<Data> {
 	 * @return
 	 */
 	public boolean hasNext() {
-		if (pointer == null) {
+		if (iterator == null) {
 			reset();
 			return false;
 		}
@@ -72,13 +72,13 @@ public abstract class List<Data> {
 	 * @return
 	 */
 	public Data next() {
-		Data next = pointer.data;
-		pointer = pointer.next;
+		Data next = iterator.data;
+		iterator = iterator.next;
 		return next;
 	}
 	/**Resets the pointer to the head.*/
 	public void reset() {
-		pointer = head;
+		iterator = head;
 	}
 	/**Removes the head node form the list and returns the data stored in it.
 	 *  

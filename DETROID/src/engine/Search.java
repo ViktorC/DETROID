@@ -33,9 +33,9 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_USABLE_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private final static int MAX_SEARCH_DEPTH = 10;
-	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
+	private static int MAX_USABLE_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
+	private static int MAX_SEARCH_DEPTH = 10;
+	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
 	

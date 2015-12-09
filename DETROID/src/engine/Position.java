@@ -388,39 +388,67 @@ public class Position implements Hashable, Copiable<Position> {
 		}
 		return copy;
 	}
-	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.*/
+	/**Returns an array of longs representing the current position with each array element denoting a square and the value in the element denoting the piece on the square.
+	 * 
+	 * @return
+	 */
 	public int[] getOffsetBoard() {
 		return offsetBoard;
 	}
-	/**Returns whether it is white's turn or not.*/
+	/**Returns whether it is white's turn or not.
+	 * 
+	 * @return
+	 */
 	public boolean getTurn() {
 		return whitesTurn;
 	}
-	/**Returns whether the color to move's king is in check.*/
+	/**Returns whether the color to move's king is in check.
+	 * 
+	 * @return
+	 */
 	public boolean getCheck() {
 		return check;
 	}
-	/**Returns the current ply/half-move index.*/
+	/**Returns the current ply/half-move index.
+	 * 
+	 * @return
+	 */
 	public int getHalfMoveIndex() {
 		return halfMoveIndex;
 	}
-	/**Returns the number of half-moves made since the last pawn-move or capture.*/
+	/**Returns the number of half-moves made since the last pawn-move or capture.
+	 * 
+	 * @return
+	 */
 	public long getFiftyMoveRuleClock() {
 		return fiftyMoveRuleClock;
 	}
-	/**Returns a number denoting white's castling rights according to the {@link #engine.Position.CastlingRights CastlingRights} definition.*/
+	/**Returns a number denoting white's castling rights according to the {@link #engine.Position.CastlingRights CastlingRights} definition.
+	 * 
+	 * @return
+	 */
 	public int getWhiteCastlingRights() {
 		return whiteCastlingRights;
 	}
-	/**Returns a number denoting black's castling rights according to the {@link #engine.Position.CastlingRights CastlingRights} definition.*/
+	/**Returns a number denoting black's castling rights according to the {@link #engine.Position.CastlingRights CastlingRights} definition.
+	 * 
+	 * @return
+	 */
 	public int getBlackCastlingRights() {
 		return blackCastlingRights;
 	}
-	/**Returns a number denoting  the en passant rights of the current position according to the {@link #engine.Position.EnPassantRights EnPassantRights} definition.*/
+	/**Returns a number denoting  the en passant rights of the current position according to the
+	 * {@link #engine.Position.EnPassantRights EnPassantRights} definition.
+	 * 
+	 * @return
+	 */
 	public int getEnPassantRights() {
 		return enPassantRights;
 	}
-	/**Returns the number of times the current position has previously occured since the initialization of the object.*/
+	/**Returns the number of times the current position has previously occured since the initialization of the object.
+	 * 
+	 * @return
+	 */
 	public long getRepetitions() {
 		return repetitions;
 	}
@@ -428,11 +456,24 @@ public class Position implements Hashable, Copiable<Position> {
 	public long hashKey() {
 		return key;
 	}
-	/**Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.*/
+	/**Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.
+	 * 
+	 * @return
+	 */
 	public Move getLastMove() {
 		return moveList.getHead();
 	}
-	/**Returns an object containing some information about the previous position.*/
+	/**Returns the move stack.
+	 * 
+	 * @return
+	 */
+	List<Move> getMoveList() {
+		return moveList;
+	}
+	/**Returns an object containing some information about the previous position.
+	 * 
+	 * @return
+	 */
 	public UnmakeRegister getUnmakeRegister() {
 		return unmakeRegisterHistory.getHead();
 	}
@@ -5206,14 +5247,14 @@ public class Position implements Hashable, Copiable<Position> {
 	 */
 	public Move parseSAN(String san) {
 		int from, to, movedPiece, capturedPiece, type;
-		long movablePieces, restriction;
+		long movablePieces, restriction, pawnAdvancer;
 		char[] chars;
 		MoveTable mT;
 		if (san == null)
 			return null;
 		chars = san.toCharArray();
 		movablePieces = ~getPinnedPieces(whitesTurn);
-		if (san.matches("^O-O$")) {
+		if (san.matches("^O-O[+#]?[//?!]{0,2}$")) {
 			if (whitesTurn) {
 				to = Square.G1.ind;
 				from = Square.E1.ind;
@@ -5228,7 +5269,7 @@ public class Position implements Hashable, Copiable<Position> {
 			type = MoveType.SHORT_CASTLING.ind;
 			restriction = -1L;
 		}
-		else if (san.matches("^O-O-O$")) {
+		else if (san.matches("^O-O-O[+#]?[//?!]{0,2}$")) {
 			if (whitesTurn) {
 				to = Square.C1.ind;
 				from = Square.E1.ind;
@@ -5243,37 +5284,41 @@ public class Position implements Hashable, Copiable<Position> {
 			type = MoveType.LONG_CASTLING.ind;
 			restriction = -1L;
 		}
-		else if (san.matches("^[a-h][1-8]$")) {
+		else if (san.matches("^[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
 				movedPiece = Piece.W_PAWN.ind;
-				from = BitOperations.indexOfBit(mT.getBlackPawnAdvances(whitePawns & movablePieces));
+				pawnAdvancer = (1L << (to - 8)) & whitePawns & movablePieces;
+				from = (pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16;
 			}
 			else {
 				movedPiece = Piece.B_PAWN.ind;
-				from = BitOperations.indexOfBit(mT.getWhitePawnAdvances(blackPawns & movablePieces));
+				pawnAdvancer = (1L << (to + 8)) & blackPawns & movablePieces;
+				from = (pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16;
 			}
 			capturedPiece = Piece.NULL.ind;
 			type = MoveType.NORMAL.ind;
 			restriction = -1L;
 		}
-		else if (san.matches("^[a-h][1-8]=[QRBN]$")) {
+		else if (san.matches("^[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
 				movedPiece = Piece.W_PAWN.ind;
-				from = BitOperations.indexOfBit(mT.getBlackPawnAdvances(whitePawns & movablePieces));
+				pawnAdvancer = (1L << (to - 8)) & whitePawns & movablePieces;
+				from = (pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16;
 			}
 			else {
 				movedPiece = Piece.B_PAWN.ind;
-				from = BitOperations.indexOfBit(mT.getWhitePawnAdvances(blackPawns & movablePieces));
+				pawnAdvancer = (1L << (to + 8)) & blackPawns & movablePieces;
+				from = (pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16;
 			}
 			capturedPiece = Piece.NULL.ind;
 			type = Piece.getByLetterNotation(chars[3]).ind + 2;
 			restriction = -1L;
 		}
-		else if (san.matches("^x[a-h][1-8]$")) {
+		else if (san.matches("^x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
@@ -5302,7 +5347,7 @@ public class Position implements Hashable, Copiable<Position> {
 			}
 			restriction = -1L;
 		}
-		else if (san.matches("^x[a-h][1-8]=[QRBN]$")) {
+		else if (san.matches("^x[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
@@ -5317,7 +5362,7 @@ public class Position implements Hashable, Copiable<Position> {
 			type = Piece.getByLetterNotation(chars[4]).ind + 2;
 			restriction = -1L;
 		}
-		else if (san.matches("^x[a-h][1-8]e.p.$")) {
+		else if (san.matches("^x[a-h][1-8]e.p.[+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
@@ -5333,13 +5378,13 @@ public class Position implements Hashable, Copiable<Position> {
 			type = MoveType.EN_PASSANT.ind;
 			restriction = -1L;
 		}
-		else if (san.matches("^[a-h]x[a-h][1-8]$")) {
+		else if (san.matches("^[a-h]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
 				movedPiece = Piece.W_PAWN.ind;
 				from = BitOperations.indexOfBit(mT.getBlackPawnCaptures(whitePawns & movablePieces)
-						& File.getByIndex((int)(chars[1] - 'a')).bitmap);
+						& File.getByIndex((int)(chars[0] - 'a')).bitmap);
 				if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND) {
 					capturedPiece = Piece.B_PAWN.ind;
 					type = MoveType.EN_PASSANT.ind;
@@ -5352,7 +5397,7 @@ public class Position implements Hashable, Copiable<Position> {
 			else {
 				movedPiece = Piece.B_PAWN.ind;
 				from = BitOperations.indexOfBit(mT.getWhitePawnCaptures(blackPawns & movablePieces)
-						& File.getByIndex((int)(chars[1] - 'a')).bitmap);
+						& File.getByIndex((int)(chars[0] - 'a')).bitmap);
 				if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND) {
 					capturedPiece = Piece.W_PAWN.ind;
 					type = MoveType.EN_PASSANT.ind;
@@ -5364,42 +5409,42 @@ public class Position implements Hashable, Copiable<Position> {
 			}
 			restriction = -1L;
 		}
-		else if (san.matches("^[a-h]x[a-h][1-8]=[QRBN]$")) {
+		else if (san.matches("^[a-h]x[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
 				movedPiece = Piece.W_PAWN.ind;
 				from = BitOperations.indexOfBit(mT.getBlackPawnCaptures(whitePawns & movablePieces)
-						& File.getByIndex((int)(chars[1] - 'a')).bitmap);
+						& File.getByIndex((int)(chars[0] - 'a')).bitmap);
 			}
 			else {
 				movedPiece = Piece.B_PAWN.ind;
 				from = BitOperations.indexOfBit(mT.getWhitePawnCaptures(blackPawns & movablePieces)
-						& File.getByIndex((int)(chars[1] - 'a')).bitmap);
+						& File.getByIndex((int)(chars[0] - 'a')).bitmap);
 			}
 			capturedPiece = offsetBoard[to];
 			type = Piece.getByLetterNotation(chars[5]).ind + 2;
 			restriction = -1L;
 		}
-		else if (san.matches("^[a-h]x[a-h][1-8]e.p.$")) {
+		else if (san.matches("^[a-h]x[a-h][1-8]e.p.[+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1);
 			mT = MoveTable.getByIndex(to);
 			if (whitesTurn) {
 				movedPiece = Piece.W_PAWN.ind;
 				from = BitOperations.indexOfBit(mT.getBlackPawnCaptures(whitePawns & movablePieces)
-						& File.getByIndex((int)(chars[1] - 'a')).bitmap);
+						& File.getByIndex((int)(chars[0] - 'a')).bitmap);
 				capturedPiece = Piece.B_PAWN.ind;
 			}
 			else {
 				movedPiece = Piece.B_PAWN.ind;
 				from = BitOperations.indexOfBit(mT.getWhitePawnCaptures(blackPawns & movablePieces)
-						& File.getByIndex((int)(chars[1] - 'a')).bitmap);
+						& File.getByIndex((int)(chars[0] - 'a')).bitmap);
 				capturedPiece = Piece.W_PAWN.ind;
 			}
 			type = MoveType.EN_PASSANT.ind;
 			restriction = -1L;
 		}
-		else if (san.matches("^[KQRBN][a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = Piece.NULL.ind;
@@ -5407,7 +5452,7 @@ public class Position implements Hashable, Copiable<Position> {
 			from = -1;
 			restriction = -1L;
 		}
-		else if (san.matches("^[KQRBN][a-h][a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][a-h][a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = Piece.NULL.ind;
@@ -5415,7 +5460,7 @@ public class Position implements Hashable, Copiable<Position> {
 			from = -1;
 			restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap;
 		}
-		else if (san.matches("^[KQRBN][1-8][a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][1-8][a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = Piece.NULL.ind;
@@ -5423,15 +5468,15 @@ public class Position implements Hashable, Copiable<Position> {
 			from = -1;
 			restriction = Rank.getByIndex((int)(chars[1] - '1')).bitmap;
 		}
-		else if (san.matches("^[KQRBN][a-h][1-8][a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][a-h][1-8][a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = Piece.NULL.ind;
 			type = MoveType.NORMAL.ind;
 			from = -1;
-			restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap & Rank.getByIndex((int)(chars[1] - '1')).bitmap;
+			restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap & Rank.getByIndex((int)(chars[2] - '1')).bitmap;
 		}
-		else if (san.matches("^[KQRBN]x[a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = offsetBoard[to];
@@ -5439,7 +5484,7 @@ public class Position implements Hashable, Copiable<Position> {
 			from = -1;
 			restriction = -1L;
 		}
-		else if (san.matches("^[KQRBN][a-h]x[a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][a-h]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = offsetBoard[to];
@@ -5447,7 +5492,7 @@ public class Position implements Hashable, Copiable<Position> {
 			from = -1;
 			restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap;
 		}
-		else if (san.matches("^[KQRBN][1-8]x[a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][1-8]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = offsetBoard[to];
@@ -5455,17 +5500,17 @@ public class Position implements Hashable, Copiable<Position> {
 			from = -1;
 			restriction = Rank.getByIndex((int)(chars[1] - '1')).bitmap;
 		}
-		else if (san.matches("^[KQRBN][a-h][1-8]x[a-h][1-8]([+#]?)$")) {
+		else if (san.matches("^[KQRBN][a-h][1-8]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 			to = (int)(chars[4] - 'a') + 8*(Integer.parseInt(Character.toString(chars[5])) - 1);
 			movedPiece = Piece.getByLetterNotation(chars[0]).ind + (whitesTurn ? 0 : Piece.W_PAWN.ind);
 			capturedPiece = offsetBoard[to];
 			type = MoveType.NORMAL.ind;
 			from = -1;
-			restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap & Rank.getByIndex((int)(chars[1] - '1')).bitmap;
+			restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap & Rank.getByIndex((int)(chars[2] - '1')).bitmap;
 		}
 		else
 			return null;
-		if (from != -1) {
+		if (from == -1) {
 			mT = MoveTable.getByIndex(to);
 			if (movedPiece == Piece.W_KING.ind)
 				from = BitOperations.indexOfBit(mT.getKingMoves(whiteKing));
@@ -5509,7 +5554,10 @@ public class Position implements Hashable, Copiable<Position> {
 		destRank = Integer.toString(move.to/8 + 1);
 		destFile = Character.toString((char)(move.to%8 + 'a'));
 		mPiece = Piece.getByNumericNotation(move.movedPiece);
-		movedPiece  = "" + Character.toString(mPiece.letter).toUpperCase();
+		if (mPiece == Piece.W_PAWN || mPiece == Piece.B_PAWN)
+			movedPiece  = "";
+		else
+			movedPiece  = Character.toString(mPiece.letter).toUpperCase();
 		capture = move.capturedPiece == 0 ? "" : "x";
 		mT = MoveTable.getByIndex(move.to);
 		switch (mPiece) {
@@ -5546,7 +5594,7 @@ public class Position implements Hashable, Copiable<Position> {
 			default:
 				possOriginSqrs = 0;
 		}
-		possOriginSqrs &= ~getPinnedPieces(move.movedPiece <= Piece.W_PAWN.ind);
+		possOriginSqrs &= ~getPinnedPieces(whitesTurn);
 		if (BitOperations.getCardinality(possOriginSqrs) == 1)
 			origin = "";
 		else {
