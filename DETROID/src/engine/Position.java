@@ -5544,7 +5544,7 @@ public class Position implements Hashable, Copiable<Position> {
 		String san, movedPiece, capture, origin, destFile, destRank;
 		Piece mPiece;
 		MoveTable mT;
-		long possOriginSqrs;
+		long possOriginSqrs, movablePieces;
 		if (move == null)
 			return null;
 		if (move.type == MoveType.SHORT_CASTLING.ind)
@@ -5558,52 +5558,102 @@ public class Position implements Hashable, Copiable<Position> {
 			movedPiece  = "";
 		else
 			movedPiece  = Character.toString(mPiece.letter).toUpperCase();
-		capture = move.capturedPiece == 0 ? "" : "x";
+		capture = move.capturedPiece == Piece.NULL.ind ? "" : "x";
 		mT = MoveTable.getByIndex(move.to);
+		movablePieces = ~getPinnedPieces(whitesTurn);
 		switch (mPiece) {
-			case W_QUEEN:
-				possOriginSqrs = mT.getQueenMoves(whiteQueens, allOccupied);
+			case W_KING: {
+				possOriginSqrs = whiteKing;
+				origin = "";
+			}
 			break;
-			case W_ROOK:
-				possOriginSqrs = mT.getRookMoves(whiteRooks, allOccupied);
+			case W_QUEEN: {
+				possOriginSqrs = mT.getQueenMoves(whiteQueens & movablePieces, allOccupied);
+				origin = null;
+			}
 			break;
-			case W_BISHOP:
-				possOriginSqrs = mT.getBishopMoves(whiteBishops, allOccupied);
+			case W_ROOK: {
+				possOriginSqrs = mT.getRookMoves(whiteRooks & movablePieces, allOccupied);
+				origin = null;
+			}
 			break;
-			case W_KNIGHT:
-				possOriginSqrs = mT.getKnightMoves(whiteKnights);
+			case W_BISHOP: {
+				possOriginSqrs = mT.getBishopMoves(whiteBishops & movablePieces, allOccupied);
+				origin = null;
+			}
 			break;
-			case W_PAWN:
-				possOriginSqrs = mT.getBlackPawnCaptures(whitePawns);
+			case W_KNIGHT: {
+				possOriginSqrs = mT.getKnightMoves(whiteKnights & movablePieces);
+				origin = null;
+			}
 			break;
-			case B_QUEEN:
-				possOriginSqrs = mT.getQueenMoves(blackQueens, allOccupied);
+			case W_PAWN: {
+				if (move.movedPiece != Piece.NULL.ind) {
+					possOriginSqrs = mT.getBlackPawnCaptures(whitePawns & movablePieces);
+					if (BitOperations.getCardinality(possOriginSqrs) == 1)
+						origin = "";
+					else
+						origin = Character.toString((char)(move.from%8 + 'a'));
+				}
+				else {
+					possOriginSqrs = 0;
+					origin = "";
+				}
+			}
 			break;
-			case B_ROOK:
-				possOriginSqrs = mT.getRookMoves(blackRooks, allOccupied);
+			case B_KING: {
+				possOriginSqrs = blackKing;
+				origin = "";
+			}
 			break;
-			case B_BISHOP:
-				possOriginSqrs = mT.getBishopMoves(blackKnights, allOccupied);
+			case B_QUEEN: {
+				possOriginSqrs = mT.getQueenMoves(blackQueens & movablePieces, allOccupied);
+				origin = null;
+			}
 			break;
-			case B_KNIGHT:
-				possOriginSqrs = mT.getKnightMoves(blackKnights);
+			case B_ROOK: {
+				possOriginSqrs = mT.getRookMoves(blackRooks & movablePieces, allOccupied);
+				origin = null;
+			}
 			break;
-			case B_PAWN:
-				possOriginSqrs = mT.getWhitePawnCaptures(blackPawns);
+			case B_BISHOP: {
+				possOriginSqrs = mT.getBishopMoves(blackBishops & movablePieces, allOccupied);
+				origin = null;
+			}
+			break;
+			case B_KNIGHT: {
+				possOriginSqrs = mT.getKnightMoves(blackKnights & movablePieces);
+				origin = null;
+			}
+			break;
+			case B_PAWN: {
+				if (move.movedPiece != Piece.NULL.ind) {
+					possOriginSqrs = mT.getWhitePawnCaptures(blackPawns & movablePieces);
+					if (BitOperations.getCardinality(possOriginSqrs) == 1)
+						origin = "";
+					else
+						origin = Character.toString((char)(move.from%8 + 'a'));
+				}
+				else {
+					possOriginSqrs = 0;
+					origin = "";
+				}
+			}
 			break;
 			default:
-				possOriginSqrs = 0;
+				return null;
 		}
-		possOriginSqrs &= ~getPinnedPieces(whitesTurn);
-		if (BitOperations.getCardinality(possOriginSqrs) == 1)
-			origin = "";
-		else {
-			if (BitOperations.getCardinality(File.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
-				origin = Character.toString((char)(move.from%8 + 'a'));
-			else if (BitOperations.getCardinality(Rank.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
-				origin = Integer.toString(move.from/8 + 1);
-			else
-				origin = Character.toString((char)(move.from%8 + 'a')) + Integer.toString(move.from/8 + 1);
+		if (origin == null) {
+			if (BitOperations.getCardinality(possOriginSqrs) == 1)
+				origin = "";
+			else {
+				if (BitOperations.getCardinality(File.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
+					origin = Character.toString((char)(move.from%8 + 'a'));
+				else if (BitOperations.getCardinality(Rank.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
+					origin = Integer.toString(move.from/8 + 1);
+				else
+					origin = Character.toString((char)(move.from%8 + 'a')) + Integer.toString(move.from/8 + 1);
+			}
 		}
 		san = movedPiece + origin + capture + destFile + destRank;
 		if (move.type == MoveType.EN_PASSANT.ind)
