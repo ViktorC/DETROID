@@ -16,21 +16,21 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class Magics {
+public class MagicGenerator {
 	
 	/**A simple unencapsulated class for returning both the magic number and the magic shift value.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class MagicData {
+	public static class Magics {
 		
 		public boolean rook;
 		public byte sqrInd;
 		public long magicNumber;
 		public byte magicShift;
 		
-		public MagicData(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
+		public Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
 			this.rook = rook;
 			this.sqrInd = sqrInd;
 			this.magicNumber = magicNumber;
@@ -64,7 +64,7 @@ public class Magics {
 	 * @param enhanced
 	 * @return
 	 */
-	public static MagicData generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+	public static Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
 		long[] magicDatabase;
 		Random random = new Random();
 		long magicNumber;
@@ -100,7 +100,7 @@ public class Magics {
 			}
 		}
 		while (collision);
-		return new MagicData(rook, (byte)sqrInd, magicNumber, (byte)shift);
+		return new Magics(rook, (byte)sqrInd, magicNumber, (byte)shift);
 	}
 	/**Generates magic numbers for each square either for a rook or a bishop depending on 'rook' and returns them in a {@link #engine.MagicNumberGenerator.Magics Magics} array.
 	 * For the squares whose indices are fed to this method, it will attempt to find enhanced magics. If print is set, it also prints all the objects in the array to the console.
@@ -109,8 +109,8 @@ public class Magics {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public static MagicData[] generateMagics(boolean rook, boolean print, int... enhancedSquares) {
-		MagicData[] allMagics = new MagicData[64];
+	public static Magics[] generateMagics(boolean rook, boolean print, int... enhancedSquares) {
+		Magics[] allMagics = new Magics[64];
 		OuterLoop: for (int i = 0; i < 64; i++) {
 			for (int sqr : enhancedSquares) {
 				if (sqr == i) {
@@ -122,7 +122,7 @@ public class Magics {
 		}
 		if (print) {
 			System.out.format("%-7s %-4s %-68s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
-			for (MagicData m : allMagics)
+			for (Magics m : allMagics)
 				System.out.println(m);
 		}
 		return allMagics;

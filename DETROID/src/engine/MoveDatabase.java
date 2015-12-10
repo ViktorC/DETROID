@@ -182,7 +182,7 @@ public enum MoveDatabase {
 	public long getCrudeQueenMoves() {
 		return rook[0] | bishop[0];
 	}
-	/**Returns a white king's pseudo-legal move set.
+	/**Returns a king's pseudo-legal move set.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @return
@@ -190,13 +190,13 @@ public enum MoveDatabase {
 	public long getKingMoves(long allNonSameColorOccupied) {
 		return king & allNonSameColorOccupied;
 	}
-	/**Returns a white knight's pseudo-legal move set.
+	/**Returns a knight's pseudo-legal move set.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public long getKnightMoves(long allNonWhiteOccupied) {
-		return knight & allNonWhiteOccupied;
+	public long getKnightMoves(long allNonSameColorOccupied) {
+		return knight & allNonSameColorOccupied;
 	}
 	/**Returns a white pawn's pseudo-legal attack set.
 	 * 
@@ -252,7 +252,7 @@ public enum MoveDatabase {
 	public long getBlackPawnMoves(long allWhiteOccupied, long allEmpty) {
 		return getBlackPawnAdvances(allEmpty) | getBlackPawnCaptures(allWhiteOccupied);
 	}
-	/**Returns a white rook's pseudo-legal move set given the occupancies fed to the method.
+	/**Returns a rook's pseudo-legal move set given the occupancies fed to the method.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @param allOccupied
@@ -262,7 +262,7 @@ public enum MoveDatabase {
 		return rook[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonSameColorOccupied;
 	}
 	
-	/**Returns a white bishop's pseudo-legal move set given the occupancies fed to the method.
+	/**Returns a bishop's pseudo-legal move set given the occupancies fed to the method.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @param allOccupied
@@ -271,7 +271,7 @@ public enum MoveDatabase {
 	public long getBishopMoves(long allNonSameColorOccupied, long allOccupied) {
 		return bishop[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonSameColorOccupied;
 	}
-	/**Returns a white queen's pseudo-legal move set given the occupancies fed to the method.
+	/**Returns a queen's pseudo-legal move set given the occupancies fed to the method.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @param allOccupied
