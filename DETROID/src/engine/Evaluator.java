@@ -150,7 +150,7 @@ public class Evaluator {
 		int score = 0, victimVal, firstVictimVal, attackerVal, kingVictVal = 0;
 		long attackers, bpAttack, rkAttack, occupied = pos.allOccupied;
 		boolean whitesTurn, noRetaliation = true;
-		MoveTable dB;
+		MoveDatabase dB;
 		victimVal = Material.getByPieceInd(move.capturedPiece).score;
 		// If the capturer was a king, return the captured piece's value as capturing the king would be illegal.
 		if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.B_KING.ind)
@@ -159,7 +159,7 @@ public class Evaluator {
 		whitesTurn = pos.whitesTurn;
 		occupied &= ~(1L << move.from);
 		victimVal = Material.getByPieceInd(move.movedPiece).score;
-		dB = MoveTable.getByIndex(move.to);
+		dB = MoveDatabase.getByIndex(move.to);
 		while (true) {
 			whitesTurn = !whitesTurn;
 			attackerVal = 0;
