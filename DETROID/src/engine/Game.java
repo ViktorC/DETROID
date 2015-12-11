@@ -12,7 +12,6 @@ import java.util.Scanner;
 import util.List;
 import util.Queue;
 import util.IllegalCommandArgumentException;
-import util.Stack;
 import util.TextCommand;
 
 /**A UI base and controller class for the engine.
@@ -224,11 +223,7 @@ public class Game implements Runnable {
 	}
 	public String toString() {
 		String pgn = "", date;
-		int roundNum = 0;
-		List<Move> moveStack;
-		List<Move> rightOrdMoveList = new Stack<>();
 		Calendar cal = Calendar.getInstance();
-		boolean printRnd = true;
 		pgn += "[Event \"" + event + "\"]\n";
 		pgn += "[Site \"" + site + "\"]\n";
 		if (this.date == null)
@@ -243,37 +238,8 @@ public class Game implements Runnable {
 		pgn += "[Black \"" + blackPlayerName + "\"]\n";
 		pgn += "[Result \"" + state.pgnNotation + "\"]\n";
 		pgn += "\n";
-		moveStack = pos.getMoveList();
-		while (moveStack.hasNext())
-			rightOrdMoveList.add(moveStack.next());
-		while (rightOrdMoveList.hasNext()) {
-			if (printRnd)
-				pgn += ++roundNum + ". ";
-			pgn += pos.toSAN(rightOrdMoveList.next()) + " ";
-			printRnd = !printRnd;
-			if (roundNum%5 == 0 && printRnd)
-				pgn += "\n";
-		}
+		pgn += pos.moveListInSAN();
 		return pgn;
-	}
-	public boolean printGame(OutputStream out) {
-		OutputStreamWriter writer = new OutputStreamWriter(out);
-		try {
-			writer.write(toString());
-			writer.close();
-			return true;
-		}
-		catch (IOException e) {
-			if (writer != null) {
-				try {
-					writer.close();
-				}
-				catch (IOException e2) {
-					return false;
-				}
-			}
-			return false;
-		}
 	}
 	public void run() {
 		Scanner in = new Scanner(inputStream);

@@ -2,7 +2,7 @@ package engine;
 
 import engine.Board.*;
 
-/**A preinitialized move database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains a so called
+/**A preinitialized move set database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains a so called
  * fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the desired move sets
  * can be retrieved by simply invoking one of this database's functions and feeding it an occupancy bitmap or two. Beside the sliding pieces' attack sets,
  * all the other pieces masks have been preinitialized too, for the sake of simplicity.
@@ -10,7 +10,7 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public enum MoveDatabase {
+public enum MoveSetDatabase {
 	
 	A1 (0b1001000010000000000000000001001000100000010000000000000010000001L, 0b0000000000000010000100000000000100001000000000001000000010000000L, 52, 58),
 	B1 (0b0000000011000000000100000000001001100000000000000100000000000000L, 0b1010000000010001000100000000000110000010100100001000000001000100L, 53, 59),
@@ -102,7 +102,7 @@ public enum MoveDatabase {
 	 * @param rookMagicNumber
 	 * @param bishopMagicNumber
 	 */
-	private MoveDatabase(long rookMagicNumber, long bishopMagicNumber, int rookMagicShift, int bishopMagicShift) {
+	private MoveSetDatabase(long rookMagicNumber, long bishopMagicNumber, int rookMagicShift, int bishopMagicShift) {
 		int index;
 		this.rookMagicNumber = rookMagicNumber;
 		this.bishopMagicNumber = bishopMagicNumber;
@@ -286,7 +286,7 @@ public enum MoveDatabase {
 	 * @param sqrInd
 	 * @return
 	 */
-	public static MoveDatabase getByIndex(int sqrInd) {
+	public static MoveSetDatabase getByIndex(int sqrInd) {
 		switch(sqrInd) {
 			case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
 			case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
