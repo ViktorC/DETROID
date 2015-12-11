@@ -274,17 +274,20 @@ public class Board {
 		}
 	}
 	
-	/**Prints a long to the console in binary form, aligned much like a chess board with one byte per row, in a human-readable way.
+	/**Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.
 	 * 
 	 * @param bitmap
+	 * @return
 	 */
-	public static void printBitboardToConsole(long bitmap) {
+	public static String drawBitboard(long bitmap) {
+		String out = "";
 		String board = BitOperations.toBinaryString(bitmap);
 		for (int i = 0; i < 64; i += 8) {
 			for (int j = i + 7; j >= i; j--)
-				System.out.print(board.charAt(j));
-			System.out.println();
+				out += board.charAt(j);
+			out += "\n";
 		}
-		System.out.println();
+		out += "\n";
+		return out;
 	}
 }

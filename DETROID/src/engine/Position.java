@@ -4,8 +4,6 @@ import util.*;
 import engine.Board.*;
 import engine.Move.*;
 
-import java.util.Scanner;
-
 /**A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
  * on castling and en passant rights, and on the player to move. It uses a pre-calculated 'magic' move database to avoid the cost of computing the
  * possible move sets of sliding pieces on the fly.
@@ -917,6 +915,117 @@ public class Position implements Hashable, Copiable<Position> {
 			}
 		}
 		return pinnedPieces;
+	}
+	/**Returns whether a move is legal or not in the current position. It expects the move to be possibly legal in some position at least, and it
+	 * checks if it still is in this one. That means, it does not check for inconsistency, such as a castling move with a capture, or an en passant
+	 * with a moved piece other than pawn, etc.
+	 * 
+	 * @param move
+	 * @return
+	 */
+	public boolean isLegal(Move move) {
+		MoveSetDatabase dB;
+		long checkers;
+		long moveSet = 0;
+		long toBit = (1L << move.to);
+		if (offsetBoard[move.from] == move.movedPiece) {
+			dB = MoveSetDatabase.getByIndex(move.to);
+			PseudoSwitch: {
+				if (whitesTurn) {
+					if (move.movedPiece == Piece.W_KING.ind) {
+						if (move.type == MoveType.SHORT_CASTLING.ind) {
+							if (!check && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+										return true;
+								}
+							}
+						}
+						else if (move.type == MoveType.LONG_CASTLING.ind) {
+							if (!check && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
+										return true;
+								}
+							}
+						}
+						else {
+							moveSet = dB.getKingMoves(allNonWhiteOccupied);
+							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
+								return true;
+						}
+						return false;
+					}
+					else if (move.movedPiece == Piece.W_QUEEN.ind)
+						moveSet = dB.getQueenMoves(allNonWhiteOccupied, allOccupied);
+					else if (move.movedPiece == Piece.W_ROOK.ind)
+						moveSet = dB.getRookMoves(allNonWhiteOccupied, allOccupied);
+					else if (move.movedPiece == Piece.W_BISHOP.ind)
+						moveSet = dB.getBishopMoves(allNonWhiteOccupied, allOccupied);
+					else if (move.movedPiece == Piece.W_KNIGHT.ind)
+						moveSet = dB.getKnightMoves(allNonWhiteOccupied);
+					else if (move.movedPiece == Piece.W_PAWN.ind) {
+						moveSet = dB.getWhitePawnMoves(allBlackOccupied, allEmpty);
+						if (move.type == MoveType.EN_PASSANT.ind && enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights) {
+							moveSet |= toBit;
+							break PseudoSwitch;
+						}
+					}
+					else return false;
+				}
+				else {
+					if (move.movedPiece == Piece.B_KING.ind) {
+						if (move.type == MoveType.SHORT_CASTLING.ind) {
+							if (!check && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
+										return true;
+								}
+							}
+						}
+						else if (move.type == MoveType.LONG_CASTLING.ind) {
+							if (!check && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+								if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
+									if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+										return true;
+								}
+							}
+						}
+						else {
+							moveSet = dB.getKingMoves(allNonBlackOccupied);
+							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
+								return true;
+						}
+						return false;
+					}
+					else if (move.movedPiece == Piece.B_QUEEN.ind)
+						moveSet = dB.getQueenMoves(allNonBlackOccupied, allOccupied);
+					else if (move.movedPiece == Piece.B_ROOK.ind)
+						moveSet = dB.getRookMoves(allNonBlackOccupied, allOccupied);
+					else if (move.movedPiece == Piece.B_BISHOP.ind)
+						moveSet = dB.getBishopMoves(allNonBlackOccupied, allOccupied);
+					else if (move.movedPiece == Piece.B_KNIGHT.ind)
+						moveSet = dB.getKnightMoves(allNonBlackOccupied);
+					else if (move.movedPiece == Piece.B_PAWN.ind) {
+						moveSet = dB.getBlackPawnMoves(allWhiteOccupied, allEmpty);
+						if (move.type == MoveType.EN_PASSANT.ind && enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights) {
+							moveSet |= toBit;
+							break PseudoSwitch;
+						}
+					}
+					else return false;
+				}
+				if (offsetBoard[move.to] != move.capturedPiece)
+					return false;
+			}
+			if ((moveSet & toBit) != 0) {
+				makeMoveOnBoard(move);
+				checkers = getCheckers();
+				unmakeMoveOnBoard(move);
+				if (checkers == 0) return true;
+			}
+		}
+		return false;
 	}
 	/**Returns whether a move would give check or not in this position.
 	 * 
@@ -5122,117 +5231,6 @@ public class Position implements Hashable, Copiable<Position> {
 		else
 			return generateNonMaterialNormalMoves();
 	}
-	/**Returns whether a move is legal or not in the current position. It expects the move to be possibly legal in some position at least, and it
-	 * checks if it still is in this one. That means, it does not check for inconsistency, such as a castling move with a capture, or an en passant
-	 * with a moved piece other than pawn, etc.
-	 * 
-	 * @param move
-	 * @return
-	 */
-	public boolean isLegal(Move move) {
-		MoveSetDatabase dB;
-		long checkers;
-		long moveSet = 0;
-		long toBit = (1L << move.to);
-		if (offsetBoard[move.from] == move.movedPiece) {
-			dB = MoveSetDatabase.getByIndex(move.to);
-			PseudoSwitch: {
-				if (whitesTurn) {
-					if (move.movedPiece == Piece.W_KING.ind) {
-						if (move.type == MoveType.SHORT_CASTLING.ind) {
-							if (!check && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
-									if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
-										return true;
-								}
-							}
-						}
-						else if (move.type == MoveType.LONG_CASTLING.ind) {
-							if (!check && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
-									if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
-										return true;
-								}
-							}
-						}
-						else {
-							moveSet = dB.getKingMoves(allNonWhiteOccupied);
-							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
-								return true;
-						}
-						return false;
-					}
-					else if (move.movedPiece == Piece.W_QUEEN.ind)
-						moveSet = dB.getQueenMoves(allNonWhiteOccupied, allOccupied);
-					else if (move.movedPiece == Piece.W_ROOK.ind)
-						moveSet = dB.getRookMoves(allNonWhiteOccupied, allOccupied);
-					else if (move.movedPiece == Piece.W_BISHOP.ind)
-						moveSet = dB.getBishopMoves(allNonWhiteOccupied, allOccupied);
-					else if (move.movedPiece == Piece.W_KNIGHT.ind)
-						moveSet = dB.getKnightMoves(allNonWhiteOccupied);
-					else if (move.movedPiece == Piece.W_PAWN.ind) {
-						moveSet = dB.getWhitePawnMoves(allBlackOccupied, allEmpty);
-						if (move.type == MoveType.EN_PASSANT.ind && enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights) {
-							moveSet |= toBit;
-							break PseudoSwitch;
-						}
-					}
-					else return false;
-				}
-				else {
-					if (move.movedPiece == Piece.B_KING.ind) {
-						if (move.type == MoveType.SHORT_CASTLING.ind) {
-							if (!check && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
-									if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
-										return true;
-								}
-							}
-						}
-						else if (move.type == MoveType.LONG_CASTLING.ind) {
-							if (!check && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
-									if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
-										return true;
-								}
-							}
-						}
-						else {
-							moveSet = dB.getKingMoves(allNonBlackOccupied);
-							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
-								return true;
-						}
-						return false;
-					}
-					else if (move.movedPiece == Piece.B_QUEEN.ind)
-						moveSet = dB.getQueenMoves(allNonBlackOccupied, allOccupied);
-					else if (move.movedPiece == Piece.B_ROOK.ind)
-						moveSet = dB.getRookMoves(allNonBlackOccupied, allOccupied);
-					else if (move.movedPiece == Piece.B_BISHOP.ind)
-						moveSet = dB.getBishopMoves(allNonBlackOccupied, allOccupied);
-					else if (move.movedPiece == Piece.B_KNIGHT.ind)
-						moveSet = dB.getKnightMoves(allNonBlackOccupied);
-					else if (move.movedPiece == Piece.B_PAWN.ind) {
-						moveSet = dB.getBlackPawnMoves(allWhiteOccupied, allEmpty);
-						if (move.type == MoveType.EN_PASSANT.ind && enPassantRights != EnPassantRights.NONE.ind && move.to == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights) {
-							moveSet |= toBit;
-							break PseudoSwitch;
-						}
-					}
-					else return false;
-				}
-				if (offsetBoard[move.to] != move.capturedPiece)
-					return false;
-			}
-			if ((moveSet & toBit) != 0) {
-				makeMoveOnBoard(move);
-				checkers = getCheckers();
-				unmakeMoveOnBoard(move);
-				if (checkers == 0) return true;
-			}
-		}
-		return false;
-	}
 	/**Parses a string describing a move in Standard Algebraic Notation and returns a Move object created based on it. The move described by the
 	 * SAN string is assumed to be legal in the position it is parsed for.
 	 * 
@@ -5933,10 +5931,7 @@ public class Position implements Hashable, Copiable<Position> {
 		fiftyMoveRuleClock = positionInfo.fiftyMoveRuleClock;
 		repetitions = positionInfo.repetitions;
 		checkers = positionInfo.checkers;
-		if (checkers != 0)
-			check = true;
-		else
-			check = false;
+		check = checkers != 0;
 		keyHistory[halfMoveIndex] = 0;
 		pawnKeyHistory[halfMoveIndex] = 0;
 		key = keyHistory[--halfMoveIndex];
@@ -6062,66 +6057,69 @@ public class Position implements Hashable, Copiable<Position> {
 		fen += 1 + halfMoveIndex/2;
 		return fen;
 	}
-	/**Prints the object's move history to the console in chronological order in pseudo-algebraic chess notation.*/
-	public void printMoveHistoryToConsole() {
-		List<Move> chronMoves = new Stack<Move>();
-		int i = 0;
-		while (moveList.hasNext())
-			chronMoves.add(moveList.next());
-		while (chronMoves.hasNext()) {
-			i++;
-			System.out.printf(i + ". %-8s ", chronMoves.next());
-		}
-		System.out.println();
+	/**Draws and returns a bitboard string representing all the occupied squares of the Position object's board position to the console in a
+	 * human-readable form, aligned like a chess board.
+	 * 
+	 * @return
+	 */
+	public String drawOccupiedBitboard() {
+		return Board.drawBitboard(allOccupied);
 	}
-	/**Prints a bitboard representing all the occupied squares of the Position object's board position to the console in a human-readable form,
-	 * aligned like a chess board.*/
-	public void printBitboardToConsole() {
-		Board.printBitboardToConsole(allOccupied);
-	}
-	/**Prints the array representing the Position object's board position to the console in a human-readable form, aligned like a chess board with 
-	 * integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the black king, etc.*/
-	public void printOffsetBoardToConsole() {
+	/**Draws and returns a string form the array representing the Position object's board position to the console in a human-readable form, aligned
+	 * like a chess board with integers denoting the pieces. 0 means an empty square, 1 is the white king, 2 is the white queen, ..., 7 is the
+	 * black king, etc.
+	 * 
+	 * @return
+	 */
+	public String drawOffsetBoard() {
+		String out = "";
 		for (int i = 7; i >= 0; i--) {
 			for (int j = 0; j < 8; j++)
-				System.out.format("%3d", offsetBoard[i*8 + j]);
-			System.out.println();
+				out += String.format("%3d", offsetBoard[i*8 + j]);
+			out += "\n";
 		}
-		System.out.println();
+		out += "\n";
+		return out;
 	}
-	/**Prints the chess board to the console. Pieces are represented according to the FEN notation.*/
-	public void printFancyBoardToConsole() {
+	/**Draws and returns a detailed String of the chess board based on the offset board. Pieces are represented according to the standard English
+	 * piece-letter notation.
+	 * 
+	 * @return
+	 */
+	public String drawFancyBoard() {
+		String out = "";
 		for (int i = 16; i >= 0; i--) {
 			if (i%2 == 0) {
-				System.out.print("  ");
+				out += "  ";
 				for (int j = 0; j < 17; j++) {
 					if (j%2 == 0)
-						System.out.print("+");
+						out += "+";
 					else
-						System.out.print("---");
+						out += "---";
 				}
 			}
 			else {
-				System.out.print((i + 1)/2 + " ");
+				out += (i + 1)/2 + " ";
 				for (int j = 0; j < 17; j++) {
 					if (j%2 == 0)
-						System.out.print("|");
+						out += "|";
 					else
-						System.out.print(" " + Piece.getByNumericNotation(offsetBoard[(i - 1)*4 + j/2]).letter + " ");
+						out += " " + Piece.getByNumericNotation(offsetBoard[(i - 1)*4 + j/2]).letter + " ";
 				}
 			}
-			System.out.println();
+			out += "\n";
 		}
-		System.out.print("  ");
+		out += "  ";
 		for (int i = 0; i < 8; i++) {
-			System.out.print("  " + (char)('A' + i) + " ");
+			out += "  " + (char)('A' + i) + " ";
 		}
-		System.out.println();
+		out += "\n";
+		return out;
 	}
 	/**Prints information that constitutes the Board instance's state to the console.*/
 	public void printStateToConsole() {
 		IntStack checkers;
-		this.printFancyBoardToConsole();
+		System.out.println(drawFancyBoard());
 		System.out.println();
 		System.out.printf("%-23s ", "To move:");
 		if (this.whitesTurn)
@@ -6143,8 +6141,7 @@ public class Position implements Hashable, Copiable<Position> {
 		System.out.printf("%-23s " + halfMoveIndex + "\n", "Half-move index:");
 		System.out.printf("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
 		System.out.printf("%-23s " + Long.toHexString(key) + "\n", "Hash key:");
-		System.out.printf("%-23s ", "Move history:");
-		printMoveHistoryToConsole();
+		System.out.printf("%-23s ", "Move history:" + moveListInSAN());
 		System.out.println();
 	}
 	/**Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had. It is used mainly for move generation and move
@@ -6305,207 +6302,6 @@ public class Position implements Hashable, Copiable<Position> {
 			unmakeMove();
 		}
 		return leafNodes;
-	}
-	/**Runs a perft test to the given depth and returns the number of leafnodes resulting from moves of the type specified by moveType.
-	 * Expected moveType values:
-	 * default:	all kinds of moves;
-	 * 1:		ordinary moves;
-	 * 2:		castling;
-	 * 3:		en passant;
-	 * 4:		promotion.
-	 * It can also print to the console either the move list or one of two kinds of representations of the board position in the leafnodes according to consoleOutputType.
-	 * Expected consoleOutputType values:
-	 * default:	no output;
-	 * 1:		the whole move list in chronological order;
-	 * 2:		a bitboard representing all the occupied squares using {@link #printBitboardToConsole() printBitboardToConsole};
-	 * 3:		a matrix of integers denoting chess pieces according to {@link #Board.Piece Piece} using {@link #printOffsetBoardToConsole() printOffsetBoardToConsole}.
-	 * 
-	 * @param depth
-	 * @param moveType
-	 * @param consoleOutputType
-	 * @return
-	 */
-	public long detailedPerft(int depth, int moveType, int consoleOutputType) {
-		Queue<Move> moves;
-		Move move, moveListHead;
-		long leafNodes = 0;
-		if (depth == 0 && (moveListHead = moveList.getHead()) != null) {
-			switch (moveType) {
-				case 1: {
-					if (moveListHead.type == 1) {
-						switch (consoleOutputType) {
-							case 1: 
-								this.printMoveHistoryToConsole();
-							break;
-							case 2:
-								this.printBitboardToConsole();
-							break;
-							case 3:
-								this.printOffsetBoardToConsole();
-						}
-						return 1;
-					}
-				}
-				break;
-				case 2: {
-					if (moveListHead.type == 2) {
-						switch (consoleOutputType) {
-							case 1: 
-								this.printMoveHistoryToConsole();
-							break;
-							case 2:
-								this.printBitboardToConsole();
-							break;
-							case 3:
-								this.printOffsetBoardToConsole();
-						}
-						return 1;
-					}
-				}
-				break;
-				case 3: {
-					if (moveListHead.type == 3) {
-						switch (consoleOutputType) {
-							case 1: 
-								this.printMoveHistoryToConsole();
-							break;
-							case 2:
-								this.printBitboardToConsole();
-							break;
-							case 3:
-								this.printOffsetBoardToConsole();
-						}
-						return 1;
-					}
-				}
-				break;
-				case 4: {
-					if (moveListHead.type > 3) {
-						switch (consoleOutputType) {
-							case 1: 
-								this.printMoveHistoryToConsole();
-							break;
-							case 2:
-								this.printBitboardToConsole();
-							break;
-							case 3:
-								this.printOffsetBoardToConsole();
-						}
-						return 1;
-					}
-				}
-				break;
-				default: {
-					switch (consoleOutputType) {
-						case 1: 
-							this.printMoveHistoryToConsole();
-						break;
-						case 2:
-							this.printBitboardToConsole();
-						break;
-						case 3:
-							this.printOffsetBoardToConsole();
-					}
-					return 1;
-				}
-			}
-			return 0;
-		}
-		moves = generateAllMoves();
-		while (moves.hasNext()) {
-			move = moves.next();
-			makeMove(move);
-			leafNodes += detailedPerft(depth - 1, moveType, consoleOutputType);
-			unmakeMove();
-		}
-		return leafNodes;
-	}
-	/**An interactive perft/divide function that runs a perft test and prints out all the legal moves at the root including the number of leafnodes in the subtrees.
-	 * Selecting the index of a move results in the move made and the divide function run again for that subtree. If an invalid index is entered or depth 0 is reached, the method exits.
-	 * A debugging tool based on comparison to correct move generators' results.
-	 * 
-	 * @param depth
-	 */
-	public void dividePerft(int depth) {
-		System.out.println("DIVIDE_START");
-		Scanner in = new Scanner(System.in);
-		int moveIndex, i;
-		IntQueue moveIndices = new IntQueue();
-		long nodes, total;
-		Queue<Move> moves, quietMoves;
-		Stack<Move> chronoHistory;
-		Move move;
-		long[] checkSquares;
-		boolean found = true;
-		while (depth > 0 && found) {
-			depth--;
-			printStateToConsole();
-			total = 0;
-			found = false;
-			i = 0;
-			chronoHistory = new Stack<Move>();
-			while (moveList.hasNext())
-				chronoHistory.add(moveList.next());
-			checkSquares = squaresToCheckFrom();
-			moves = generateTacticalMoves(checkSquares);
-			System.out.println("TACTICAL MOVES");
-			while (moves.hasNext()) {
-				while (chronoHistory.hasNext()) {
-					move = chronoHistory.next();
-					System.out.printf("%3d. %-8s ", moveIndices.next(), move);
-				}
-				moveIndices.reset();
-				i++;
-				move = moves.next();
-				makeMove(move);
-				if (depth > 0)
-					nodes = tacticalStagedQuickPerft(depth);
-				else
-					nodes = 1;
-				System.out.printf("%3d. %-8s nodes: %d\n", i, move, nodes);
-				total += nodes;
-				unmakeMove();
-			}
-			quietMoves = generateQuietMoves(checkSquares);
-			System.out.println("QUIET MOVES");
-			while (quietMoves.hasNext()) {
-				while (chronoHistory.hasNext()) {
-					move = chronoHistory.next();
-					System.out.printf("%3d. %-8s ", moveIndices.next(), move);
-				}
-				moveIndices.reset();
-				i++;
-				move = quietMoves.next();
-				makeMove(move);
-				if (depth > 0)
-					nodes = tacticalStagedQuickPerft(depth);
-				else
-					nodes = 1;
-				System.out.printf("%3d. %-8s nodes: %d\n", i, move, nodes);
-				total += nodes;
-				unmakeMove();
-			}
-			while (quietMoves.hasNext())
-				moves.add(quietMoves.next());
-			System.out.println("\nMoves: " + moves.length());
-			System.out.println("Total nodes: " + total);
-			System.out.print("Enter the index of the move to divide: ");
-			moveIndex = in.nextInt();
-			if (moveIndex >= 0 && moveIndex <= i) {
-				i = 0;
-				while (moves.hasNext()) {
-					i++;
-					move = moves.next();
-					if (i == moveIndex) {
-						makeMove(move);
-						moveIndices.add(moveIndex);
-						found = true;
-					}
-				}
-			}
-		}
-		in.close();
-		System.out.println("DIVIDE_END");
 	}
 	/**Breaks up the number perft would return into the root's subtrees. It prints to the console all the legal moves from the root position and the number of leafnodes in
 	 * the subtrees to which the moves lead.

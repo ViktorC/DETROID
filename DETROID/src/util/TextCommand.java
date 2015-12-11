@@ -12,9 +12,9 @@ import java.util.function.*;
  */
 public class TextCommand {
 
-	private Predicate<String> predicate;		// The conditions for execution.
-	private Consumer<String> consumer;			// The functionality of the command.
-	private Function<Boolean, String> response;	// The expected response message depending on the success of the execution of the command.
+	private final Predicate<String> predicate;			// The conditions for execution.
+	private final Consumer<String> consumer;			// The functionality of the command.
+	private final Function<Boolean, String> response;	// The expected response message depending on the success of the execution of the command.
 	
 	/**Initializes the command by assigning method references to it for execution conditions and command functionalities.
 	 * 
