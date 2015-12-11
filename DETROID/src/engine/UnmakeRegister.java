@@ -13,12 +13,12 @@ import engine.Position.EnPassantRights;
  */
 public class UnmakeRegister {
 
-	int whiteCastlingRights;
-	int blackCastlingRights;
-	int enPassantRights;
-	int fiftyMoveRuleClock;
-	int repetitions;
-	long checkers;
+	final int whiteCastlingRights;
+	final int blackCastlingRights;
+	final int enPassantRights;
+	final int fiftyMoveRuleClock;
+	final int repetitions;
+	final long checkers;
 	
 	public UnmakeRegister(int whiteCastlingRights, int blackCastlingRights, int enPassantRights,
 	int fiftyMoveRuleClock, int repetitions, long checkers) {
@@ -50,25 +50,5 @@ public class UnmakeRegister {
 		rep += String.format("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
 		rep += String.format("%-23s " + repetitions + "\n", "Repetitions:");
 		return rep;
-	}
-	/**Prints all position information longs contained in the input parameter to the console.
-	 * 
-	 * @param moves
-	 */
-	public static void printPositionInfoToConsole(List<UnmakeRegister> positionInfoHistory) {
-		System.out.println();
-		while (positionInfoHistory.hasNext())
-			System.out.println(positionInfoHistory.next());
-		System.out.println();
-	}
-	/**Prints all position information longs contained in the input parameter to the console.
-	 * 
-	 * @param moves
-	 */
-	public static void printPositionInfoToConsole(UnmakeRegister[] positionInfoHistory) {
-		System.out.println();
-		for (int i = 0; i < positionInfoHistory.length; i++)
-			System.out.println(positionInfoHistory[i]);
-		System.out.println();
 	}
 }
