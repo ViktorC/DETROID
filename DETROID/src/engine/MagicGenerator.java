@@ -25,10 +25,10 @@ public class MagicGenerator {
 	 */
 	public static class Magics {
 		
-		public boolean rook;
-		public byte sqrInd;
-		public long magicNumber;
-		public byte magicShift;
+		public final boolean rook;
+		public final byte sqrInd;
+		public final long magicNumber;
+		public final byte magicShift;
 		
 		public Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
 			this.rook = rook;
@@ -40,7 +40,8 @@ public class MagicGenerator {
 		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)*/
 		public String toString() {
 			String type = rook ? "ROOK" : "BISHOP";
-			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toBinaryLiteral(magicNumber) + ", %2d),", type + ":", magicShift);
+			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toBinaryLiteral(magicNumber) +
+					", %2d),", type + ":", magicShift);
 		}
 	}
 	
