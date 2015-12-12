@@ -7,7 +7,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public class Board {
+public final class Board {
 	
 	/**An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
 	 * the respective square's index set.
@@ -274,6 +274,9 @@ public class Board {
 		}
 	}
 	
+	private Board() {
+		
+	}
 	/**Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.
 	 * 
 	 * @param bitmap

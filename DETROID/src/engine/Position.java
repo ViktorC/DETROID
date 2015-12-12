@@ -647,7 +647,7 @@ public class Position implements Hashable, Copiable<Position> {
 	}
 	private void setCheck() {
 		checkers = getCheckers();
-		check = (checkers != 0) ? true : false;
+		check = checkers != 0;
 	}
 	private void setKeys() {
 		Zobrist.updateKeys(this);

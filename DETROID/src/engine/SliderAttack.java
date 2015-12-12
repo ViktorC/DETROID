@@ -12,8 +12,11 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class SliderAttack {
+public final class SliderAttack {
 	
+	private SliderAttack() {
+		
+	}
 	/**Returns the rank-wise attack set for the relevant occupancy from the defined square.
 	 * 
 	 * @param sqr - the square on which the slider is

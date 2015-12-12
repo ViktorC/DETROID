@@ -7,18 +7,18 @@ import engine.Move.MoveType;
 import engine.Position.CastlingRights;
 import engine.Position.EnPassantRights;
 
-/**A class whose object encodes the most important pieces of information stored in a Board class into a long by XOR-operations.
- * Two Board objects with identical states will always have the same Zobrist keys within one runtime and two Board objects with
+/**A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
+ * Two Position objects with identical states will always have the same Zobrist keys within one runtime and two Position objects with
  * different values for the concerned instance fields will almost always have different Zobrist keys.
  * The relevant fields are:
- * 		1. color to move
+ * 		1. side to move
  * 		2. board position
  * 		3. white's castling rights
  * 		4. black's castling rights
  * 		5. en passant rights
  * 
- * The class creates its own random values it then uses for XOR-ing on compile thus Board objects with identical states are 
- * likely to have different keys for each runtime.
+ * The class creates its own random values it then uses for XOR-ing on compile thus Position objects with identical states are 
+ * likely to have different keys for each runtime. This does not apply to PolyGlot Zobrist keys.
  * 
  * @author Viktor
  *
@@ -436,9 +436,9 @@ public final class Zobrist {
 			else pieceNote = 11;
 			key ^= polyglotRandom64[64*pieceNote + 8*i/8 + i%8];
 		}
-		if (wCastlingRights == CastlingRights.ALL.ind) key ^= polyglotRandom64[768]^polyglotRandom64[767];
+		if (wCastlingRights == CastlingRights.ALL.ind) key ^= polyglotRandom64[768]^polyglotRandom64[769];
 		else if (wCastlingRights == CastlingRights.SHORT.ind)key ^= polyglotRandom64[768];
-		else if (wCastlingRights == CastlingRights.LONG.ind) key ^= polyglotRandom64[767];
+		else if (wCastlingRights == CastlingRights.LONG.ind) key ^= polyglotRandom64[769];
 		if (bCastlingRights == CastlingRights.ALL.ind) key ^= polyglotRandom64[770]^polyglotRandom64[771];
 		else if (bCastlingRights == CastlingRights.SHORT.ind)key ^= polyglotRandom64[770];
 		else if (bCastlingRights == CastlingRights.LONG.ind) key ^= polyglotRandom64[771];

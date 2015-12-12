@@ -10,7 +10,7 @@ import util.*;
  * @author Viktor
  *
  */
-public class Evaluator {
+public final class Evaluator {
 	
 	/**An enum type defining the standard values of different piece types.
 	 * 
@@ -112,7 +112,9 @@ public class Evaluator {
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
-	
+	private Evaluator() {
+		
+	}
 	/**Returns a phaseScore between 0 and 256.
 	 * 
 	 * @param numOfQueens
