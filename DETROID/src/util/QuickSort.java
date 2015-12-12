@@ -8,6 +8,9 @@ package util;
  */
 public final class QuickSort {
 	
+	private QuickSort() {
+		
+	}
 	/**Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
 	 * {@link #Comparable Comparable} interface.
 	 * 

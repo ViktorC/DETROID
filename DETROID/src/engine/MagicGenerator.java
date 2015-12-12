@@ -16,7 +16,7 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public class MagicGenerator {
+public final class MagicGenerator {
 	
 	/**A simple unencapsulated class for returning both the magic number and the magic shift value.
 	 * 
@@ -40,7 +40,7 @@ public class MagicGenerator {
 		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)*/
 		public String toString() {
 			String type = rook ? "ROOK" : "BISHOP";
-			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toBinaryLiteral(magicNumber) +
+			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toHexLiteral(magicNumber) +
 					", %2d),", type + ":", magicShift);
 		}
 	}
@@ -55,6 +55,9 @@ public class MagicGenerator {
 		bishopOccupancyVariations = SliderAttack.bishopOccupancyVariations();
 		rookAttackSetVariations = SliderAttack.rookAttackSetVariations(rookOccupancyVariations);
 		bishopAttackSetVariations = SliderAttack.bishopAttackSetVariations(bishopOccupancyVariations);
+	}
+	private MagicGenerator() {
+		
 	}
 	/**Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
 	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right shifted by one more
@@ -110,7 +113,7 @@ public class MagicGenerator {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public static Magics[] generateMagics(boolean rook, boolean print, int... enhancedSquares) {
+	public static Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
 		Magics[] allMagics = new Magics[64];
 		OuterLoop: for (int i = 0; i < 64; i++) {
 			for (int sqr : enhancedSquares) {

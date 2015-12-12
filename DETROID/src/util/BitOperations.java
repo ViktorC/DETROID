@@ -38,6 +38,9 @@ public final class BitOperations {
 	private final static long BIT_REVERSAL_32_CONST1	=  0b1111111111111111111111111111111100000000000000000000000000000000L;
 	private final static long BIT_REVERSAL_32_CONST2	=  0b0000000000000000000000000000000011111111111111111111111111111111L;
 	
+	private BitOperations() {
+		
+	}
 	/**Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only one set bit and it is not checked,
 	 * thus this method is not safe!
 	 * 
@@ -174,7 +177,8 @@ public final class BitOperations {
 	 * @return
 	 */
 	public final static String toBinaryString(long bitmap) {
-		return ("0000000000000000000000000000000000000000000000000000000000000000" + Long.toBinaryString(bitmap)).substring(Long.toBinaryString(bitmap).length());
+		String binString = Long.toBinaryString(bitmap);
+		return ("0000000000000000000000000000000000000000000000000000000000000000" + binString).substring(binString.length());
 	}
 	/**Returns the binary literal of the input long as a String.
 	 * 
@@ -183,5 +187,14 @@ public final class BitOperations {
 	 */
 	public final static String toBinaryLiteral(long bitmap) {
 		return "0b"+ toBinaryString(bitmap) + "L";
+	}
+	/**Returns the hexadecimal literal of the input long as a String.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
+	public final static String toHexLiteral(long bitmap) {
+		String hexString = Long.toHexString(bitmap);
+		return "0x" + ("0000000000000000" + hexString).substring(hexString.length()).toUpperCase() + "L";
 	}
 }

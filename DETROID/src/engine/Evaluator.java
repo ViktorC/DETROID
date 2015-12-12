@@ -164,18 +164,18 @@ public class Evaluator {
 			whitesTurn = !whitesTurn;
 			attackerVal = 0;
 			if (whitesTurn) {
-				if ((attackers = dB.getBlackPawnCaptures(pos.whitePawns) & occupied) != 0)
+				if ((attackers = dB.getBlackPawnCaptureSet(pos.whitePawns) & occupied) != 0)
 					attackerVal = Material.PAWN.score;
 				// Re-check could be omitted as a knight can not block any other piece's attack, but the savings would be minimal.
-				else if ((attackers = dB.getKnightMoves(pos.whiteKnights) & occupied) != 0)
+				else if ((attackers = dB.getKnightMoveSet(pos.whiteKnights) & occupied) != 0)
 					attackerVal = Material.KNIGHT.score;
-				else if ((attackers = (bpAttack = dB.getBishopMoves(occupied, occupied)) & pos.whiteBishops) != 0)
+				else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.whiteBishops) != 0)
 					attackerVal = Material.BISHOP.score;
-				else if ((attackers = (rkAttack = dB.getRookMoves(occupied, occupied)) & pos.whiteRooks) != 0)
+				else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.whiteRooks) != 0)
 					attackerVal = Material.ROOK.score;
 				else if ((attackers = (bpAttack | rkAttack) & pos.whiteQueens) != 0)
 					attackerVal = Material.QUEEN.score;
-				else if ((attackers = dB.getKingMoves(pos.whiteKing)) != 0) {
+				else if ((attackers = dB.getKingMoveSet(pos.whiteKing)) != 0) {
 					attackerVal = Material.KING.score;
 					kingVictVal = victimVal;
 				}
@@ -189,17 +189,17 @@ public class Evaluator {
 				score += victimVal;
 			}
 			else {
-				if ((attackers = dB.getWhitePawnCaptures(pos.blackPawns) & occupied) != 0)
+				if ((attackers = dB.getWhitePawnCaptureSet(pos.blackPawns) & occupied) != 0)
 					attackerVal = Material.PAWN.score;
-				else if ((attackers = dB.getKnightMoves(pos.blackKnights) & occupied) != 0)
+				else if ((attackers = dB.getKnightMoveSet(pos.blackKnights) & occupied) != 0)
 					attackerVal = Material.KNIGHT.score;
-				else if ((attackers = (bpAttack = dB.getBishopMoves(occupied, occupied)) & pos.blackBishops) != 0)
+				else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.blackBishops) != 0)
 					attackerVal = Material.BISHOP.score;
-				else if ((attackers = (rkAttack = dB.getRookMoves(occupied, occupied)) & pos.blackRooks) != 0)
+				else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.blackRooks) != 0)
 					attackerVal = Material.ROOK.score;
 				else if ((attackers = (bpAttack | rkAttack) & pos.blackQueens) != 0)
 					attackerVal = Material.QUEEN.score;
-				else if ((attackers = dB.getKingMoves(pos.blackKing)) != 0) {
+				else if ((attackers = dB.getKingMoveSet(pos.blackKing)) != 0) {
 					attackerVal = Material.KING.score;
 					kingVictVal = victimVal;
 				}
