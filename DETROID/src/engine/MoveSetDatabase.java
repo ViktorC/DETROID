@@ -214,7 +214,11 @@ public enum MoveSetDatabase {
 	 * @return
 	 */
 	public long getWhitePawnMoveSet(long allBlackOccupied, long allEmpty) {
-		return getWhitePawnAdvanceSet(allEmpty) | getWhitePawnCaptureSet(allBlackOccupied);
+		long advSet, captSet = pawnWhiteCaptureMoveMask & allBlackOccupied;
+		advSet = pawnWhiteAdvanceMoveMask & allEmpty;
+		if (sqrInd < 16)
+			advSet |= ((advSet << 8) & allEmpty);
+		return advSet | captSet;
 	}
 	/**Returns a black pawn's pseudo-legal complete move set.
 	 * 
@@ -222,7 +226,11 @@ public enum MoveSetDatabase {
 	 * @return
 	 */
 	public long getBlackPawnMoveSet(long allWhiteOccupied, long allEmpty) {
-		return getBlackPawnAdvanceSet(allEmpty) | getBlackPawnCaptureSet(allWhiteOccupied);
+		long advSet, captSet = pawnBlackCaptureMoveMask & allWhiteOccupied;
+		advSet = pawnBlackAdvanceMoveMask & allEmpty;
+		if (sqrInd > 47)
+			advSet |= ((advSet >>> 8) & allEmpty);
+		return advSet | captSet;
 	}
 	/**Returns a rook's pseudo-legal move set given the occupancies fed to the method.
 	 * 
