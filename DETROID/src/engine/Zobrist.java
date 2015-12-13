@@ -18,7 +18,7 @@ import engine.Position.EnPassantRights;
  * 		5. en passant rights
  * 
  * The class creates its own random values it then uses for XOR-ing on compile thus Position objects with identical states are 
- * likely to have different keys for each runtime. This does not apply to PolyGlot Zobrist keys.
+ * likely to have different keys for each runtime. This does not apply to Polyglot Zobrist keys.
  * 
  * @author Viktor
  *
@@ -406,7 +406,7 @@ public final class Zobrist {
 		p.key = key;
 		p.pawnKey = pawnKey;
 	}
-	/**Returns the 64 bit hash key used for positions in PolyGlot opening books.
+	/**Returns the 64 bit hash key used for positions in Polyglot opening books.
 	 * 
 	 * @param p
 	 * @return
@@ -434,7 +434,7 @@ public final class Zobrist {
 			else if (i == Piece.W_QUEEN.ind) pieceNote = 9;
 			else if (i == Piece.B_KING.ind) pieceNote = 10;
 			else pieceNote = 11;
-			key ^= polyglotRandom64[64*pieceNote + 8*i/8 + i%8];
+			key ^= polyglotRandom64[64*pieceNote + 8*(i/8) + i%8];
 		}
 		if (wCastlingRights == CastlingRights.ALL.ind) key ^= polyglotRandom64[768]^polyglotRandom64[769];
 		else if (wCastlingRights == CastlingRights.SHORT.ind)key ^= polyglotRandom64[768];

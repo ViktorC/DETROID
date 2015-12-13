@@ -1,6 +1,5 @@
 package engine;
 
-import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.*;
 import java.io.*;
@@ -17,7 +16,7 @@ public class Book {
 	
 	private Book(String filePath) {
 		try {
-			bookStream = Files.newByteChannel(new File(filePath).toPath(), READ);
+			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
 			this.filePath = filePath;
 		}
 		catch (IOException e) {
