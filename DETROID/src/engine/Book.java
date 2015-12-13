@@ -11,12 +11,14 @@ public class Book {
 	
 	private final static String DEFAULT_FILE_PATH = "book.bin";
 	
+	boolean useDefaultBook;
 	private String filePath;
 	private ByteChannel bookStream;
 	
-	private Book(String filePath) {
+	private Book(String filePath, boolean useDefaultBook) {
 		try {
 			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
+			this.useDefaultBook = useDefaultBook;
 			this.filePath = filePath;
 		}
 		catch (IOException e) {
@@ -25,23 +27,14 @@ public class Book {
 	}
 	public Book getInstance() {
 		if (DEFAULT_BOOK == null)
-			DEFAULT_BOOK = new Book(DEFAULT_FILE_PATH);
+			DEFAULT_BOOK = new Book(DEFAULT_FILE_PATH, false);
 		return DEFAULT_BOOK;
 	}
 	public Book getInstance(String filePath, boolean useDefaultBook) {
-		if (ALTERNATIVE_BOOK != null && !ALTERNATIVE_BOOK.filePath.equals(filePath)) {
-			close(ALTERNATIVE_BOOK);
-			ALTERNATIVE_BOOK = new Book(filePath);
-		}
-		if (useDefaultBook) {
-			if (DEFAULT_BOOK == null)
-				DEFAULT_BOOK = new Book(DEFAULT_FILE_PATH);
-		}
-		else
-			close(DEFAULT_BOOK);
+		if (ALTERNATIVE_BOOK == null)
+			ALTERNATIVE_BOOK = new Book(filePath, useDefaultBook);
+		if (useDefaultBook && DEFAULT_BOOK == null)
+			DEFAULT_BOOK = new Book(DEFAULT_FILE_PATH, false);
 		return ALTERNATIVE_BOOK;
-	}
-	private static void close(Book b) {
-		b = null;
 	}
 }
