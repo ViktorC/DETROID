@@ -413,26 +413,27 @@ public final class Zobrist {
 	 */
 	public static long getPolyglotHashKey(Position p) {
 		long key = 0L;
-		int pieceNote;
+		int piece, pieceNote;
 		int[] offBoard = p.getOffsetBoard();
 		int wCastlingRights = p.whiteCastlingRights;
 		int bCastlingRights = p.blackCastlingRights;
 		int enPassantRights = p.enPassantRights;
 		boolean whitesTurn = p.whitesTurn;
 		MoveSetDatabase mD;
-		for (int i : offBoard) {
-			if (i == Piece.NULL.ind) continue;
-			else if (i == Piece.B_PAWN.ind) pieceNote = 0;
-			else if (i == Piece.W_PAWN.ind) pieceNote = 1;
-			else if (i == Piece.B_KNIGHT.ind) pieceNote = 2;
-			else if (i == Piece.W_KNIGHT.ind) pieceNote = 3;
-			else if (i == Piece.B_BISHOP.ind) pieceNote = 4;
-			else if (i == Piece.W_BISHOP.ind) pieceNote = 5;
-			else if (i == Piece.B_ROOK.ind) pieceNote = 6;
-			else if (i == Piece.W_ROOK.ind) pieceNote = 7;
-			else if (i == Piece.B_QUEEN.ind) pieceNote = 8;
-			else if (i == Piece.W_QUEEN.ind) pieceNote = 9;
-			else if (i == Piece.B_KING.ind) pieceNote = 10;
+		for (int i = 0; i < offBoard.length; i++) {
+			piece = offBoard[i];
+			if (piece == Piece.NULL.ind) continue;
+			else if (piece == Piece.B_PAWN.ind) pieceNote = 0;
+			else if (piece == Piece.W_PAWN.ind) pieceNote = 1;
+			else if (piece == Piece.B_KNIGHT.ind) pieceNote = 2;
+			else if (piece == Piece.W_KNIGHT.ind) pieceNote = 3;
+			else if (piece == Piece.B_BISHOP.ind) pieceNote = 4;
+			else if (piece == Piece.W_BISHOP.ind) pieceNote = 5;
+			else if (piece == Piece.B_ROOK.ind) pieceNote = 6;
+			else if (piece == Piece.W_ROOK.ind) pieceNote = 7;
+			else if (piece == Piece.B_QUEEN.ind) pieceNote = 8;
+			else if (piece == Piece.W_QUEEN.ind) pieceNote = 9;
+			else if (piece == Piece.B_KING.ind) pieceNote = 10;
 			else pieceNote = 11;
 			key ^= polyglotRandom64[64*pieceNote + 8*(i/8) + i%8];
 		}
