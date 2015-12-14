@@ -8,17 +8,17 @@ package util;
  * @author Viktor
  *
  */
-public class Stack<Data> extends List<Data> {
+public class Stack<T> extends List<T> {
 
 	public Stack() {
 
 	}
-	public Stack(Data data) {
+	public Stack(T data) {
 		head.data = data;
 		iterator = head;
 	}
 	/**Pushes a new node storing the input parameter data onto the stack.*/
-	public void add(Data data) {
+	public void add(T data) {
 		ListItem temp = head;
 		head = new ListItem(data);
 		head.next = temp;
@@ -31,8 +31,8 @@ public class Stack<Data> extends List<Data> {
 	 *
 	 * @return
 	 */
-	public Data getTail() {
-		Data out = null;
+	public T getTail() {
+		T out = null;
 		while (hasNext())
 			out = next();
 		return out;

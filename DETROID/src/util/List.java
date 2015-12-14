@@ -6,9 +6,9 @@ import java.lang.reflect.Array;
  * 
  * @author Viktor
  *
- * @param <Data>
+ * @param <T>
  */
-public abstract class List<Data> {
+public abstract class List<T> {
 
 	/**A list entry containing two fields, 'data' that holds the data, and 'next' referencing the subsequent element in the list
 	 * 
@@ -17,10 +17,10 @@ public abstract class List<Data> {
 	 */
 	protected class ListItem {
 		
-		protected Data data;
+		protected T data;
 		protected ListItem next;
 		
-		ListItem(Data data) {
+		ListItem(T data) {
 			this.data = data;
 		}
 	}
@@ -32,7 +32,7 @@ public abstract class List<Data> {
 	 * 
 	 * @return
 	 */
-	public Data getHead() {
+	public T getHead() {
 		if (head != null)
 			return head.data;
 		return null;
@@ -41,17 +41,17 @@ public abstract class List<Data> {
 	 *
 	 * @return
 	 */
-	public abstract Data getTail();
+	public abstract T getTail();
 	/**Creates a node for the input data and adds it to the list.
 	 * 
 	 * @param data
 	 */
-	public abstract void add(Data data);
+	public abstract void add(T data);
 	/**Adds all nodes of another list of the same generic type to this list.
 	 * 
 	 * @param list
 	 */
-	public void addAll(List<Data> list) {
+	public void addAll(List<T> list) {
 		while (list.hasNext())
 			add(list.next());
 	}
@@ -71,8 +71,8 @@ public abstract class List<Data> {
 	 * 
 	 * @return
 	 */
-	public Data next() {
-		Data next = iterator.data;
+	public T next() {
+		T next = iterator.data;
 		iterator = iterator.next;
 		return next;
 	}
@@ -86,9 +86,9 @@ public abstract class List<Data> {
 	 * 
 	 * @return
 	 */
-	public Data pop() {
+	public T pop() {
 		if (head != null) {
-			Data data = head.data;
+			T data = head.data;
 			if (head.next != null)
 				head = head.next;
 			else
@@ -109,12 +109,12 @@ public abstract class List<Data> {
 	 *
 	 * @return
 	 */
-	public Data[] toArray() {
+	public T[] toArray() {
 		int i = 0;
 		if (head == null)
 			return null;
 		@SuppressWarnings({"unchecked"})
-		Data[] arr = (Data[])Array.newInstance(head.data.getClass(), length());
+		T[] arr = (T[])Array.newInstance(head.data.getClass(), length());
 		while (hasNext()) {
 			arr[i] = next();
 			i++;

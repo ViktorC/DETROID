@@ -406,7 +406,7 @@ public final class Zobrist {
 		p.key = key;
 		p.pawnKey = pawnKey;
 	}
-	/**Returns the 64 bit hash key used for positions in Polyglot opening books.
+	/**Returns the 64 bit hash key used for positions in PolyGlot opening books.
 	 * 
 	 * @param p
 	 * @return

@@ -231,7 +231,7 @@ public class Search extends Thread {
 			if (!thereIsPvMove) {
 				// Check the PV form the last iteration.
 				pVmove = pV[distFromRoot];
-				if (pVmove != null && pos.isLegal(pVmove))
+				if (pVmove != null && pos.isLegalSoft(pVmove))
 					thereIsPvMove = true;
 				// If there is no hash entry at all and the search is within the PV and close enough to the root, try IID.
 				else if (e == null && depth > 5 && beta > alpha + 1)
@@ -242,7 +242,7 @@ public class Search extends Thread {
 				// If the hashed move was searched to a smaller depth, try the previous iteration's PV move for this ply.
 				if (e.depth < depth - 1) {
 					move = pV[ply - depth];
-					if (move != null && pos.isLegal(move)) {
+					if (move != null && pos.isLegalSoft(move)) {
 						pVmove = move;
 						thereIsPvMove = true;
 					}
@@ -359,7 +359,7 @@ public class Search extends Thread {
 			kE = kT.retrieve(distFromRoot);
 			if (kE.move1 != 0) {	// Killer move no. 1.
 				killerMove1 = Move.toMove(kE.move1);
-				if (pos.isLegal(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
+				if (pos.isLegalSoft(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
 					thereIsKillerMove1 = true;
 					pos.makeMove(killerMove1);
 					if (!thereIsPvMove && matMoveBreakInd == 0)
@@ -385,7 +385,7 @@ public class Search extends Thread {
 			}
 			if (kE.move2 != 0) {	// Killer move no. 2.
 				killerMove2 = Move.toMove(kE.move2);
-				if (pos.isLegal(killerMove2) && (!thereIsPvMove || !killerMove2.equals(pVmove))) {
+				if (pos.isLegalSoft(killerMove2) && (!thereIsPvMove || !killerMove2.equals(pVmove))) {
 					thereIsKillerMove2 = true;
 					pos.makeMove(killerMove2);
 					if (!thereIsPvMove && !thereIsKillerMove1 && matMoveBreakInd == 0)

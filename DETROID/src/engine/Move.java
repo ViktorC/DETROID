@@ -131,7 +131,7 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public boolean equals(Move m) {
-		if (from == m.from && to == m.to && type == m.type)
+		if (from == m.from && to == m.to && movedPiece == m.movedPiece && capturedPiece == m.capturedPiece && type == m.type)
 			return true;
 		return false;
 	}
@@ -142,6 +142,8 @@ public class Move implements Comparable<Move> {
 	 */
 	public boolean equals(int m) {
 		if (from == (m & ToInt.MASK_FROM_TO.value) && to == ((m >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM_TO.value) &&
+			movedPiece == ((m >>> ToInt.SHIFT_MOVED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value) &&
+			capturedPiece == ((m >>> ToInt.SHIFT_CAPTURED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value) &&
 			type == (m >>> ToInt.SHIFT_TYPE.value))
 			return true;
 		return false;

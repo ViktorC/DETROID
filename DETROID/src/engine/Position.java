@@ -923,7 +923,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param move
 	 * @return
 	 */
-	public boolean isLegal(Move move) {
+	public boolean isLegalSoft(Move move) {
 		MoveSetDatabase dB;
 		long checkers;
 		long moveSet = 0;
@@ -1024,6 +1024,21 @@ public class Position implements Hashable, Copiable<Position> {
 				unmakeMoveOnBoard(move);
 				if (checkers == 0) return true;
 			}
+		}
+		return false;
+	}
+	/**Returns whether a move is legal or not in the current position. It does not assume that the move argument is legal in any positions. It is
+	 * more costly than {@link #isLegalSoft(Move) isLegalSoft} as it generates a list of all the legal moves in the given position and compares
+	 * the input parameter to them.
+	 * 
+	 * @param move
+	 * @return
+	 */
+	public boolean isLegalHard(Move move) {
+		List<Move> moveList = generateAllMoves();
+		while (moveList.hasNext()) {
+			if (moveList.next().equals(move))
+				return true;
 		}
 		return false;
 	}
@@ -5231,6 +5246,73 @@ public class Position implements Hashable, Copiable<Position> {
 		else
 			return generateNonMaterialNormalMoves();
 	}
+	/**Parses a Pure Algebraic Coordinate Notation move string into a {@link #engine.Move Move} object. If the input string does not pass the
+	 * formal requirements of a PACN string, the method returns null. It performs no legality check on the move.
+	 * 
+	 * @param pacn
+	 * @return
+	 */
+	public Move parsePACN(String pacn) {
+		int from, to, movedPiece, capturedPiece, type;
+		String input = pacn.trim().toLowerCase();
+		if (input.length() != 4 && input.length() != 6)
+			return null;
+		from = (int)(input.charAt(0) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(1))) - 1);
+		to = (int)(input.charAt(2) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(3))) - 1);
+		movedPiece = offsetBoard[from];
+		if (input.length() == 6) {
+			switch (input.charAt(5)) {
+				case 'q' : type = MoveType.PROMOTION_TO_QUEEN.ind;
+				break;
+				case 'r' : type = MoveType.PROMOTION_TO_ROOK.ind;
+				break;
+				case 'b' : type = MoveType.PROMOTION_TO_BISHOP.ind;
+				break;
+				case 'n' : type = MoveType.PROMOTION_TO_KNIGHT.ind;
+				break;
+				default: return null;
+			}
+			capturedPiece = offsetBoard[to];
+		}
+		else {
+			if (movedPiece == Piece.W_PAWN.ind) {
+				if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND) {
+					type = MoveType.EN_PASSANT.ind;
+					capturedPiece = Piece.B_PAWN.ind;
+				}
+				else {
+					type = MoveType.NORMAL.ind;
+					capturedPiece = offsetBoard[to];
+				}
+			}
+			else if (movedPiece == Piece.B_PAWN.ind) {
+				if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND) {
+					type = MoveType.EN_PASSANT.ind;
+					capturedPiece = Piece.W_PAWN.ind;
+				}
+				else {
+					type = MoveType.NORMAL.ind;
+					capturedPiece = offsetBoard[to];
+				}
+			}
+			else {
+				capturedPiece = offsetBoard[to];
+				if ((from == Square.E1.ind && to == Square.G1.ind) || (from == Square.E8.ind && to == Square.G8.ind)) {
+					type = MoveType.SHORT_CASTLING.ind;
+					capturedPiece = Piece.NULL.ind;
+				}
+				else if ((from == Square.E1.ind && to == Square.C1.ind) || (from == Square.E8.ind && to == Square.C8.ind)) {
+					type = MoveType.LONG_CASTLING.ind;
+					capturedPiece = Piece.NULL.ind;
+				}
+				else {
+					type = MoveType.NORMAL.ind;
+					capturedPiece = offsetBoard[to];
+				}
+			}
+		}
+		return new Move(from, to, movedPiece, capturedPiece, type);
+	}
 	/**Parses a string describing a move in Standard Algebraic Notation and returns a Move object created based on it. The move described by the
 	 * SAN string is assumed to be legal in the position it is parsed for.
 	 * 
@@ -5937,74 +6019,24 @@ public class Position implements Hashable, Copiable<Position> {
 		key = keyHistory[--halfMoveIndex];
 		pawnKey = pawnKeyHistory[halfMoveIndex];
 	}
-	/**Makes a move specified by user input. If it is legal and the command is valid ([origin square + destination square] as e.g.: b1a3 without
-	 * any spaces; in case of promotion, the letter notation of the piece the pawn is wished to be promoted to should be appended to the command
-	 * as in c7c8q; the parser is not case sensitive), it returns true, else false.
+	/**Makes a move specified by user input in Pure Algebraic Coordinate Notation. If the command is valid and the move is legal, it makes the move
+	 * and returns true, otherwise it returns false.
 	 * 
 	 * @param input A string representation of the move to make in Pure Algebraic Coordinate Notation
-	 * 				[origin square|destination square|(piece to promote to)] e.g.: b1c3 or e7e8q
+	 * 				([origin square + destination square] as e.g.: b1a3 without any spaces; in case of promotion, the equal sign and the letter
+	 * 				notation of the piece the pawn is wished to be promoted to should be appended to the command as in c7c8=q; the parser is not
+	 * 				case sensitive)
 	 * @return Whether the move was legal and could successfully be made or not.
 	 */
 	public boolean makeMove(String input) {
-		char zero, one, two, three, four;
-		int from, to, type = 0;
-		Move move;
-		Queue<Move> moves;
-		String command = "";
-		for (int i = 0; i < input.length(); i++) {
-			if (Character.toString(input.charAt(i)).matches("\\p{Graph}"))
-				command += input.charAt(i);
+		Move m = parsePACN(input);
+		if (m == null || !isLegalHard(m))
+			return false;
+		else {
+			extendKeyHistory();
+			makeMove(m);
+			return true;
 		}
-		if (command.length() == 4 || command.length() == 5) {
-			command = command.toLowerCase();
-			if (Character.toString(zero = command.charAt(0)).matches("[a-h]") && Character.toString(two = command.charAt(2)).matches("[a-h]") &&
-				Character.toString(one = command.charAt(1)).matches("[1-8]") && Character.toString(three = command.charAt(3)).matches("[1-8]")) {
-				from = (zero - 'a') + (one - '1')*8;
-				to 	 = (two - 'a') + (three - '1')*8;
-				if (command.length() == 5) {
-					four = command.charAt(4);
-					if (three == '1' || three == '8') {
-						switch (four) {
-							case 'q':
-								type = MoveType.PROMOTION_TO_QUEEN.ind;
-							break;
-							case 'r':
-								type = MoveType.PROMOTION_TO_ROOK.ind;
-							break;
-							case 'b':
-								type = MoveType.PROMOTION_TO_BISHOP.ind;
-							break;
-							case 'n':
-								type = MoveType.PROMOTION_TO_KNIGHT.ind;
-							break;
-							default:
-								return false;
-						}
-					}
-					else
-						return false;
-				}
-				moves = generateAllMoves();
-				while (moves.hasNext()) {
-					move = moves.next();
-					if (move.from == from && move.to == to) {
-						if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
-							if (move.type == type) {
-								makeMove(move);
-								extendKeyHistory();
-								return true;
-							}
-						}
-						else {
-							makeMove(move);
-							extendKeyHistory();
-							return true;
-						}
-					}
-				}
-			}
-		}
-		return false;
 	}
 	/**Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated by spaces.
 	 * The six fields are as follows:

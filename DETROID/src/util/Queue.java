@@ -5,9 +5,9 @@ package util;
  * 
  * @author Viktor
  *
- * @param <Data>
+ * @param <T>
  */
-public class Queue<Data> extends List<Data> {
+public class Queue<T> extends List<T> {
 
 	private ListItem tail;		//a reference to the last node of the queue; for faster addition
 	private int length = 0;		//the number of nodes contained in the list
@@ -15,7 +15,7 @@ public class Queue<Data> extends List<Data> {
 	public Queue() {
 
 	}
-	public Queue(Data data) {
+	public Queue(T data) {
 		head = new ListItem(data);
 		tail = head;
 		iterator = head;
@@ -25,7 +25,7 @@ public class Queue<Data> extends List<Data> {
 	 * 
 	 * @return
 	 */
-	public Data getTail() {
+	public T getTail() {
 		if (tail != null)
 			return tail.data;
 		return null;
@@ -38,7 +38,7 @@ public class Queue<Data> extends List<Data> {
 		return length;
 	}
 	/**Enqueues a new node storing the input parameter data.*/
-	public void add(Data data) {
+	public void add(T data) {
 		if (head == null) {
 			head = new ListItem(data);
 			tail = head;
@@ -53,7 +53,7 @@ public class Queue<Data> extends List<Data> {
 	/**Removes the head node form the list and returns the data stored in it.
 	 * 
 	 * If there is nothing to pop, it returns null.*/
-	public Data pop() {
+	public T pop() {
 		length--;
 		if (length == 0)
 			tail = null;

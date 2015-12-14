@@ -21,17 +21,17 @@ import java.util.function.Predicate;
  * 
  * @author Viktor
  *
- * @param <E> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
+ * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
-public class HashTable<E extends HashTable.Entry<E>> {
+public class HashTable<T extends HashTable.Entry<T>> {
 	
 	/**An interface for hash table entries that extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
 	 * 
 	 * @author Viktor
 	 *
-	 * @param <E> The type of the hash table entry that implements this interface.
+	 * @param <T> The type of the hash table entry that implements this interface.
 	 */
-	public static interface Entry<E> extends Comparable<E>, Hashable {}
+	public static interface Entry<T> extends Comparable<T>, Hashable {}
 	
 	// A long with which when another long is AND-ed, the result will be that other long's absolute value.
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
@@ -50,15 +50,15 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	
 	private AtomicInteger load = new AtomicInteger(0);	// Load counter.
 	
-	private E[] t1, t2, t3, t4;	// The four hash tables.
+	private T[] t1, t2, t3, t4;	// The four hash tables.
 	
 	/**Instantiates a HashTable with a default length of 1022.*/
 	@SuppressWarnings({"unchecked"})
 	public HashTable() {
-		t1 = (E[])new Entry[(int)(T1_SHARE*DEFAULT_SIZE)];
-		t2 = (E[])new Entry[(int)(T2_SHARE*DEFAULT_SIZE)];
-		t3 = (E[])new Entry[(int)(T3_SHARE*DEFAULT_SIZE)];
-		t4 = (E[])new Entry[(int)(T4_SHARE*DEFAULT_SIZE)];
+		t1 = (T[])new Entry[(int)(T1_SHARE*DEFAULT_SIZE)];
+		t2 = (T[])new Entry[(int)(T2_SHARE*DEFAULT_SIZE)];
+		t3 = (T[])new Entry[(int)(T3_SHARE*DEFAULT_SIZE)];
+		t4 = (T[])new Entry[(int)(T4_SHARE*DEFAULT_SIZE)];
 	}
 	/**Instantiates a HashTable with the specified length.
 	 * 
@@ -68,10 +68,10 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	public HashTable(int size) {
 		if (size <= 0)
 			size = DEFAULT_SIZE;
-		t1 = (E[])new Entry[(int)(T1_SHARE*size)];
-		t2 = (E[])new Entry[(int)(T2_SHARE*size)];
-		t3 = (E[])new Entry[(int)(T3_SHARE*size)];
-		t4 = (E[])new Entry[(int)(T4_SHARE*size)];
+		t1 = (T[])new Entry[(int)(T1_SHARE*size)];
+		t2 = (T[])new Entry[(int)(T2_SHARE*size)];
+		t3 = (T[])new Entry[(int)(T3_SHARE*size)];
+		t4 = (T[])new Entry[(int)(T4_SHARE*size)];
 	}
 	/**Returns the length of the hash table.
 	 * 
@@ -94,9 +94,9 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * 
 	 * @param e
 	 */
-	public void insert(E e) {
+	public void insert(T e) {
 		int ind;
-		E slot;
+		T slot;
 		long key = e.hashKey();
 		synchronized (t1) {
 			if ((slot = t1[(ind = hash1(key))]) != null && key == slot.hashKey()) {
@@ -172,8 +172,8 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * @param key
 	 * @return
 	 */
-	public E lookUp(long key) {
-		E e;
+	public T lookUp(long key) {
+		T e;
 		synchronized (t1) {
 			if ((e = t1[hash1(key)]) != null && e.hashKey() == key)
 				return e;
@@ -200,7 +200,7 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 */
 	public boolean remove(long key) {
 		int ind;
-		E e;
+		T e;
 		synchronized (t1) {
 			if ((e = t1[(ind = hash1(key))]) != null && e.hashKey() == key) {
 				t1[ind] = null;
@@ -235,8 +235,8 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	 * 
 	 * @param condition
 	 */
-	public void remove(Predicate<E> condition) {
-		E e;
+	public void remove(Predicate<T> condition) {
+		T e;
 		synchronized (t1) {
 			for (int i = 0; i < t1.length; i++) {
 				e = t1[i];
@@ -277,29 +277,29 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	@SuppressWarnings({"unchecked"})
 	private void rehash() {
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
-			E[] oldTable1 = t1;
-			E[] oldTable2 = t2;
-			E[] oldTable3 = t3;
-			E[] oldTable4 = t4;
+			T[] oldTable1 = t1;
+			T[] oldTable2 = t2;
+			T[] oldTable3 = t3;
+			T[] oldTable4 = t4;
 			float size = load.get()/MINIMUM_LOAD_FACTOR;
 			load = new AtomicInteger(0);
-			t1 = (E[])new Entry[(int)(T1_SHARE*size)];
-			t2 = (E[])new Entry[(int)(T2_SHARE*size)];
-			t3 = (E[])new Entry[(int)(T3_SHARE*size)];
-			t4 = (E[])new Entry[(int)(T4_SHARE*size)];
-			for (E e : oldTable1) {
+			t1 = (T[])new Entry[(int)(T1_SHARE*size)];
+			t2 = (T[])new Entry[(int)(T2_SHARE*size)];
+			t3 = (T[])new Entry[(int)(T3_SHARE*size)];
+			t4 = (T[])new Entry[(int)(T4_SHARE*size)];
+			for (T e : oldTable1) {
 				if (e != null)
 					insert(e);
 			}
-			for (E e : oldTable2) {
+			for (T e : oldTable2) {
 				if (e != null)
 					insert(e);
 			}
-			for (E e : oldTable3) {
+			for (T e : oldTable3) {
 				if (e != null)
 					insert(e);
 			}
-			for (E e : oldTable4) {
+			for (T e : oldTable4) {
 				if (e != null)
 					insert(e);
 			}
@@ -310,32 +310,32 @@ public class HashTable<E extends HashTable.Entry<E>> {
 	public void clear() {
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			load = new AtomicInteger(0);
-			t1 = (E[])new Entry[t1.length];
-			t2 = (E[])new Entry[t2.length];
-			t3 = (E[])new Entry[t3.length];
-			t4 = (E[])new Entry[t4.length];
+			t1 = (T[])new Entry[t1.length];
+			t2 = (T[])new Entry[t2.length];
+			t3 = (T[])new Entry[t3.length];
+			t4 = (T[])new Entry[t4.length];
 		}}}}
 	}
 	/**Prints all non-null entries to the console.*/
 	public void printAll() {
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			System.out.println("TABLE_1:\n");
-			for (E e : t1) {
+			for (T e : t1) {
 				if (e != null)
 					System.out.println(e);
 			}
 			System.out.println("TABLE_2:\n");
-			for (E e : t2) {
+			for (T e : t2) {
 				if (e != null)
 					System.out.println(e);
 			}
 			System.out.println("TABLE_3:\n");
-			for (E e : t3) {
+			for (T e : t3) {
 				if (e != null)
 					System.out.println(e);
 			}
 			System.out.println("TABLE_4:\n");
-			for (E e : t4) {
+			for (T e : t4) {
 				if (e != null)
 					System.out.println(e);
 			}
