@@ -7,6 +7,8 @@ import java.nio.*;
 import java.util.ArrayList;
 import java.util.Random;
 
+import engine.Board.Square;
+
 /**A class for reading and selecting moves from PolyGlot opening books. It allows for the possibility of using an alternative book, and furthermore,
  * to use the default book once out of the alternative book.
  * 
@@ -158,12 +160,29 @@ public class Book {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	private static String polyglotMoveToPACN(short polyglotMove) throws IllegalArgumentException {
-		String toFile, toRank, fromFile, fromRank, promPiece;
+	private static String polyglotMoveToPACN(Position p, short polyglotMove) throws IllegalArgumentException {
+		String toFile, toRank, fromFile, fromRank, promPiece, pacn;
 		toFile = "" + (char)((polyglotMove & 7) + 'a');
 		toRank = "" + (int)(((polyglotMove >>> 3) & 7) + 1);
 		fromFile = "" + (char)(((polyglotMove >>> 6) & 7) + 'a');
 		fromRank = "" + (int)(((polyglotMove >>> 9) & 7) + 1);
+		pacn = fromFile + fromRank + toFile + toRank;
+		if (pacn.equals("e1h1")) {
+			if (p.whiteKing == Square.E1.bitmap)
+				return "e1g1";
+		}
+		else if (pacn.equals("e1a1")) {
+			if (p.whiteKing == Square.E1.bitmap)
+				return "e1c1";
+		}
+		else if (pacn.equals("e8h8")) {
+			if (p.blackKing == Square.E8.bitmap)
+				return "e8g8";
+		}
+		else if (pacn.equals("e8a8")) {
+			if (p.blackKing == Square.E8.bitmap)
+				return "e8c8";
+		}
 		switch (polyglotMove >>> 12) {
 			case 0: promPiece = "";
 			break;
@@ -177,7 +196,7 @@ public class Book {
 			break;
 			default: throw new IllegalArgumentException();
 		}
-		return fromFile + fromRank + toFile + toRank + promPiece;
+		return pacn + promPiece;
 	}
 	/**Picks and returns an opening move for the Position from all the relevant entries found in the PolyGlot book based on the specified
 	 * mathematical model for selection. If there have been no relevant entries found, it returns null.
@@ -231,6 +250,6 @@ public class Book {
 			break;
 			default: return null;
 		}
-		return p.parsePACN(polyglotMoveToPACN(e.move));
+		return p.parsePACN(polyglotMoveToPACN(p, e.move));
 	}
 }
