@@ -5247,16 +5247,18 @@ public class Position implements Hashable, Copiable<Position> {
 			return generateNonMaterialNormalMoves();
 	}
 	/**Parses a Pure Algebraic Coordinate Notation move string into a {@link #engine.Move Move} object. If the input string does not pass the
-	 * formal requirements of a PACN string, the method returns null. It performs no legality check on the move.
-	 * 
+	 * formal requirements of a PACN string, the method throws an {@link #java.lang.IllegalArgumentExcetion IllegalArgumentExcetion}. It
+	 * performs no legality check on the move.
+	 *
 	 * @param pacn
 	 * @return
+	 * @throws IllegalArgumentException
 	 */
-	public Move parsePACN(String pacn) {
+	public Move parsePACN(String pacn) throws IllegalArgumentException {
 		int from, to, movedPiece, capturedPiece, type;
 		String input = pacn.trim().toLowerCase();
 		if (input.length() != 4 && input.length() != 6)
-			return null;
+			throw new IllegalArgumentException();
 		from = (int)(input.charAt(0) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(1))) - 1);
 		to = (int)(input.charAt(2) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(3))) - 1);
 		movedPiece = offsetBoard[from];
@@ -5270,7 +5272,7 @@ public class Position implements Hashable, Copiable<Position> {
 				break;
 				case 'n' : type = MoveType.PROMOTION_TO_KNIGHT.ind;
 				break;
-				default: return null;
+				default: throw new IllegalArgumentException();
 			}
 			capturedPiece = offsetBoard[to];
 		}
@@ -5296,7 +5298,6 @@ public class Position implements Hashable, Copiable<Position> {
 				}
 			}
 			else {
-				capturedPiece = offsetBoard[to];
 				if ((from == Square.E1.ind && to == Square.G1.ind) || (from == Square.E8.ind && to == Square.G8.ind)) {
 					type = MoveType.SHORT_CASTLING.ind;
 					capturedPiece = Piece.NULL.ind;

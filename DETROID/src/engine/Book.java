@@ -49,7 +49,7 @@ public class Book {
 	// U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 	// Will be an own book.
-	private final static String DEFAULT_FILE_PATH = "book.bin";
+	private final static String DEFAULT_FILE_PATH = "default.bin";
 	
 	private static Book DEFAULT_BOOK;
 	private static Book ALTERNATIVE_BOOK;
@@ -57,13 +57,14 @@ public class Book {
 	private boolean useDefaultBook;
 	private SeekableByteChannel bookStream;
 	
-	private Book(String filePath, boolean useDefaultBook) {
+	private Book(String filePath, boolean useDefaultBook) throws IllegalArgumentException {
 		try {
 			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
 			this.useDefaultBook = useDefaultBook;
 		}
 		catch (IOException e) {
 			System.out.println("File not found: " + filePath);
+			throw new IllegalArgumentException();
 		}
 	}
 	/**Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)} method.
@@ -71,7 +72,7 @@ public class Book {
 	 * 
 	 * @return
 	 */
-	public Book getInstance() {
+	public static Book getInstance() {
 		if (ALTERNATIVE_BOOK != null)
 			return ALTERNATIVE_BOOK;
 		if (DEFAULT_BOOK == null)
@@ -88,7 +89,7 @@ public class Book {
 	 * @return
 	 * @throws IllegalStateException
 	 */
-	public Book getInstance(String filePath, boolean useDefaultBook) throws IllegalStateException {
+	public static Book getInstance(String filePath, boolean useDefaultBook) throws IllegalStateException {
 		if (ALTERNATIVE_BOOK != null || DEFAULT_BOOK != null)
 			throw new IllegalStateException();
 		ALTERNATIVE_BOOK = new Book(filePath, useDefaultBook);
@@ -115,6 +116,7 @@ public class Book {
 				mid = (((hi + low)/2)/ENTRY_SIZE)*ENTRY_SIZE;
 				bookStream.position(mid);
 				bookStream.read(buff);
+				buff.clear();
 				currKey = buff.getLong();
 				/* If our reader head falls onto the right entry, run it in both directions until it encounters entries with a different hash code
 				 * to collect all the relevant moves for p. */
@@ -123,27 +125,32 @@ public class Book {
 					do {
 						entries.add(new Entry(buff.getShort(), buff.getShort()));
 						bookStream.position((readerPos -= ENTRY_SIZE));
+						buff.clear();
 						bookStream.read(buff);
+						buff.clear();
 					}
 					while (buff.getLong() == key && readerPos >= 0);
 					readerPos = mid + ENTRY_SIZE;
-					if (bookStream.read(buff) == -1) {
-						while (buff.getLong() == key)  {
-							entries.add(new Entry(buff.getShort(), buff.getShort()));
-							bookStream.position((readerPos += ENTRY_SIZE));
-							if (bookStream.read(buff) == -1) break;
-						}
+					bookStream.position((readerPos));
+					buff.clear();
+					while (bookStream.read(buff) != -1) {
+						buff.clear();
+						if (buff.getLong() != key) break;
+						entries.add(new Entry(buff.getShort(), buff.getShort()));
+						bookStream.position((readerPos += ENTRY_SIZE));
+						buff.clear();
 					}
 					return entries;
 				}
 				/* If not, we compare p's hash code to the hash code of the entry the reader head fell on. We have to consider that PolyGlot books
 				 * use unsigned 64 bit integers for hashing. */
 				else {
-					if ((currKey | Long.MIN_VALUE) > (key | Long.MIN_VALUE))
-						low = mid;
-					else
+					if ((currKey + Long.MIN_VALUE) > (key + Long.MIN_VALUE))
 						hi = mid;
+					else
+						low = mid;
 				}
+				buff.clear();
 			}
 			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK and its useDefaultBook is set
 			 * to true, we search the DEFAULT_BOOK, too. */
@@ -208,8 +215,7 @@ public class Book {
 	 */
 	public Move getMove(Position p, SelectionModel selection) {
 		short max;
-		long totalWeight;
-		double randomDouble, weightSum;
+		double totalWeight, randomDouble, weightSum;
 		Entry e;
 		ArrayList<Entry> relEntries = getRelevantEntries(p);
 		if (relEntries == null)
@@ -229,7 +235,7 @@ public class Book {
 				weightSum = 0;
 				e = null;
 				for (Entry ent : relEntries) {
-					weightSum += (ent.weight/totalWeight);
+					weightSum += ((double)ent.weight/totalWeight);
 					if (weightSum >= randomDouble) {
 						e = ent;
 						break;
