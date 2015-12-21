@@ -19,7 +19,7 @@ import util.TextCommand;
  * @author Viktor
  *
  */
-public class Game implements Runnable {
+public class Game implements Runnable, UCI {
 	
 	
 	/**A simple enum for game outcome types.
@@ -135,7 +135,7 @@ public class Game implements Runnable {
 		INSTANCE = parsePGN(pgn);
 		return INSTANCE;
 	}
-	private static Game parsePGN(String pgn) {
+	private static Game parsePGN(String pgn) throws IllegalArgumentException {
 		char tagChar;
 		String tagContent, tagType, tagValue,
 			event = null, site = null, date = null, round = null,
@@ -249,7 +249,7 @@ public class Game implements Runnable {
 		while (true) {
 			try {
 				try {
-					this.wait(1000);
+					this.wait(200);
 				}
 				catch (InterruptedException e){
 					
