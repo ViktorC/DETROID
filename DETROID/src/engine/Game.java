@@ -11,15 +11,13 @@ import java.util.Scanner;
 
 import util.List;
 import util.Queue;
-import util.IllegalCommandArgumentException;
-import util.TextCommand;
 
 /**A UI base and controller class for the engine.
  * 
  * @author Viktor
  *
  */
-public class Game implements Runnable, UCI {
+public class Game {
 	
 	
 	/**A simple enum for game outcome types.
@@ -72,22 +70,6 @@ public class Game implements Runnable, UCI {
 	private State state;
 	
 	private boolean playerIsWhite;
-	
-	private InputStream inputStream;
-	private OutputStream outputStream;
-	
-	private List<TextCommand> commandList;
-	
-	{
-		commandList = new Queue<>();
-		commandList.add(new TextCommand(s -> s.startsWith("position"),
-										s -> { try { pos = new Position(s.replaceFirst("position", "")); }
-										catch (IllegalArgumentException e) { throw new IllegalCommandArgumentException(e); }},
-										b -> b ? "ok" : "nok"));
-		commandList.add(new TextCommand(p -> p.matches("^([a-hA-H][1-8]){2}[qQrRbBkK]?$"),
-										p -> { if (!pos.makeMove(p)) throw new IllegalCommandArgumentException("Illegal move."); },
-										b -> b ? "ok" : "nok"));
-	}
 
 	private Game() {
 		
@@ -103,37 +85,6 @@ public class Game implements Runnable, UCI {
 		this.blackPlayerName = blackPlayerName;
 		state = State.IN_PROGRESS;
 		playerIsWhite = true;
-		inputStream = System.in;
-		outputStream = System.out;
-	}
-	public static Game getInstance(String event, String site, String whitePlayerName,
-			String blackPlayerName) {
-		INSTANCE = new Game(event, site, whitePlayerName, blackPlayerName);
-		INSTANCE.outputStream = System.out;
-		return INSTANCE;
-	}
-	public static Game getInstance(String event, String site, String whitePlayerName,
-			String blackPlayerName, InputStream inputStream, OutputStream outputStream) {
-		INSTANCE = new Game(event, site, whitePlayerName, blackPlayerName);
-		INSTANCE.inputStream = inputStream;
-		INSTANCE.outputStream = outputStream;
-		return INSTANCE;
-	}
-	public static Game getInstance(String fen, String event, String site,
-			String whitePlayerName, String blackPlayerName) {
-		INSTANCE = getInstance(event, site, whitePlayerName, blackPlayerName);
-		INSTANCE.pos = new Position(fen);
-		return INSTANCE;
-	}
-	public static Game getInstance(String fen, String event, String site,
-			String whitePlayerName, String blackPlayerName, InputStream inputStream, OutputStream outputStream) {
-		INSTANCE = getInstance(event, site, whitePlayerName, blackPlayerName, inputStream, outputStream);
-		INSTANCE.pos = new Position(fen);
-		return INSTANCE;
-	}
-	public static Game getInstance(String pgn) {
-		INSTANCE = parsePGN(pgn);
-		return INSTANCE;
 	}
 	private static Game parsePGN(String pgn) throws IllegalArgumentException {
 		char tagChar;
@@ -240,45 +191,5 @@ public class Game implements Runnable, UCI {
 		pgn += "\n";
 		pgn += pos.moveListInSAN();
 		return pgn;
-	}
-	public void run() {
-		Scanner in = new Scanner(inputStream);
-		OutputStreamWriter out = new OutputStreamWriter(outputStream);
-		String commandLine;
-		TextCommand cmd;
-		while (true) {
-			try {
-				try {
-					this.wait(200);
-				}
-				catch (InterruptedException e){
-					
-				}
-				if (in.hasNextLine()) {
-					commandLine = in.nextLine();
-					while (commandList.hasNext()) {
-						cmd = commandList.next();
-						if (cmd.isCalled(commandLine)) {
-							try {
-								cmd.execute(commandLine);
-								out.write(cmd.respond(true));
-							}
-							catch (IllegalCommandArgumentException e) {
-								out.write(cmd.respond(false));
-							}
-						}
-					}
-				}
-			}
-			catch (Exception e) {
-				in.close();
-				try {
-					out.close();
-				} catch (IOException ioE) {
-					
-				}
-				break;
-			}
-		}
 	}
 }

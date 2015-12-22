@@ -51,16 +51,17 @@ public class Book {
 	// Will be an own book.
 	private final static String DEFAULT_FILE_PATH = "default.bin";
 	
-	private static Book DEFAULT_BOOK;
-	private static Book ALTERNATIVE_BOOK;
+	private static Book PRIMARY_BOOK;
 	
-	private boolean useDefaultBook;
+	private Book secondaryBook;
+	
+	private boolean useSecondaryBook;
 	private SeekableByteChannel bookStream;
 	
-	private Book(String filePath, boolean useDefaultBook) throws IllegalArgumentException {
+	private Book(String filePath, boolean useSecondaryBook) throws IllegalArgumentException {
 		try {
 			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
-			this.useDefaultBook = useDefaultBook;
+			this.useSecondaryBook = useSecondaryBook;
 		}
 		catch (IOException e) {
 			System.out.println("File not found: " + filePath);
@@ -68,16 +69,15 @@ public class Book {
 		}
 	}
 	/**Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)} method.
-	 * If there is none, it instantiates and returns the default book.
+	 * If there is none, it instantiates and returns an object with the default file path to the book.
 	 * 
 	 * @return
 	 */
 	public static Book getInstance() {
-		if (ALTERNATIVE_BOOK != null)
-			return ALTERNATIVE_BOOK;
-		if (DEFAULT_BOOK == null)
-			DEFAULT_BOOK = new Book(DEFAULT_FILE_PATH, false);
-		return DEFAULT_BOOK;
+		if (PRIMARY_BOOK != null)
+			return PRIMARY_BOOK;
+		PRIMARY_BOOK = new Book(DEFAULT_FILE_PATH, false);
+		return PRIMARY_BOOK;
 	}
 	/**Instantiates an alternative book and returns it. Only one Book instance can exist; two if an alternative book has been created by the
 	 * invocation of this method with useDefaultBook set to true which results in the instantiation of the default book of the engine as well.
