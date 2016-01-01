@@ -51,17 +51,16 @@ public class Book {
 	// Will be an own book.
 	private final static String DEFAULT_FILE_PATH = "default.bin";
 	
-	private static Book PRIMARY_BOOK;
+	private static Book INSTANCE;
 	
 	private Book secondaryBook;
-	
-	private boolean useSecondaryBook;
+	private boolean useDefaultBook;
 	private SeekableByteChannel bookStream;
 	
-	private Book(String filePath, boolean useSecondaryBook) throws IllegalArgumentException {
+	private Book(String filePath, boolean useDefaultBook) throws IllegalArgumentException {
 		try {
 			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
-			this.useSecondaryBook = useSecondaryBook;
+			this.useDefaultBook = useDefaultBook;
 		}
 		catch (IOException e) {
 			System.out.println("File not found: " + filePath);
@@ -69,20 +68,18 @@ public class Book {
 		}
 	}
 	/**Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)} method.
-	 * If there is none, it instantiates and returns an object with the default file path to the book.
+	 * If there is none, it instantiates and returns the default book.
 	 * 
 	 * @return
 	 */
 	public static Book getInstance() {
-		if (PRIMARY_BOOK != null)
-			return PRIMARY_BOOK;
-		PRIMARY_BOOK = new Book(DEFAULT_FILE_PATH, false);
-		return PRIMARY_BOOK;
+		if (INSTANCE == null)
+			INSTANCE = new Book(DEFAULT_FILE_PATH, false);
+		return INSTANCE;
 	}
-	/**Instantiates an alternative book and returns it. Only one Book instance can exist; two if an alternative book has been created by the
-	 * invocation of this method with useDefaultBook set to true which results in the instantiation of the default book of the engine as well.
-	 * If this method or {@link #getInstance() getInstance} has already been called before, it throws an
-	 * {@link #java.lang.IllegalStateExcetion IllegalStateExcetion}.
+	/**Instantiates a book and returns it. Only one Book instance can exist; the invocation of this method with useDefaultBook set to true results
+	 * in the instantiation of the default book of the engine as well as a secondary book for when the engine is out of the specified book. If this
+	 * method or {@link #getInstance() getInstance} has already been called before, it throws an {@link #java.lang.IllegalStateExcetion IllegalStateExcetion}.
 	 * 
 	 * @param filePath The path to the opening book file.
 	 * @param useDefaultBook Whether to instantiate and use the default book in case there is no move found in the specified book for a position.
@@ -90,12 +87,12 @@ public class Book {
 	 * @throws IllegalStateException
 	 */
 	public static Book getInstance(String filePath, boolean useDefaultBook) throws IllegalStateException {
-		if (ALTERNATIVE_BOOK != null || DEFAULT_BOOK != null)
+		if (INSTANCE != null)
 			throw new IllegalStateException();
-		ALTERNATIVE_BOOK = new Book(filePath, useDefaultBook);
+		INSTANCE = new Book(filePath, useDefaultBook);
 		if (useDefaultBook)
-			DEFAULT_BOOK = new Book(DEFAULT_FILE_PATH, false);
-		return ALTERNATIVE_BOOK;
+			INSTANCE.secondaryBook = new Book(DEFAULT_FILE_PATH, false);
+		return INSTANCE;
 	}
 	/**Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search through
 	 * the entries.
@@ -154,7 +151,7 @@ public class Book {
 			}
 			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK and its useDefaultBook is set
 			 * to true, we search the DEFAULT_BOOK, too. */
-			return useDefaultBook ? DEFAULT_BOOK.getRelevantEntries(p) : null;
+			return useDefaultBook ? secondaryBook.getRelevantEntries(p) : null;
 		}
 		// Some IO error has occured.
 		catch (IOException e) {
