@@ -69,11 +69,12 @@ public class Game {
 	private boolean playerIsWhite;
 	
 	private Book book;
-	private long timeLeft;
+	private long whiteTimeLeft;
+	private long blackTimeLeft;
 
 	private Game() {
 		book = Book.getInstance();
-		timeLeft = 60*60*1000;
+		whiteTimeLeft = blackTimeLeft = 60*60*1000;
 	}
 	private Game(String event, String site, String whitePlayerName,
 			String blackPlayerName) {
@@ -89,9 +90,10 @@ public class Game {
 		playerIsWhite = true;
 	}
 	private Game(String event, String site, String whitePlayerName,
-			String blackPlayerName, long timeLeft) {
+			String blackPlayerName, long whiteTimeLeft, long blackTimeLeft) {
 		this(event, site, whitePlayerName, blackPlayerName);
-		this.timeLeft = timeLeft;
+		this.whiteTimeLeft = whiteTimeLeft;
+		this.blackTimeLeft = blackTimeLeft;
 	}
 	private static Game parsePGN(String pgn) throws IllegalArgumentException {
 		char tagChar;
@@ -190,7 +192,8 @@ public class Game {
 		INSTANCE.state = game.state;
 		INSTANCE.playerIsWhite = game.playerIsWhite;
 		INSTANCE.book = game.book;
-		INSTANCE.timeLeft = game.timeLeft;
+		INSTANCE.whiteTimeLeft = game.whiteTimeLeft;
+		INSTANCE.blackTimeLeft = game.blackTimeLeft;
 	}
 	public static Game getInstance(String event, String site, String whitePlayerName,
 			String blackPlayerName) {
@@ -198,15 +201,15 @@ public class Game {
 		return INSTANCE;
 	}
 	public static Game getInstance(String event, String site, String whitePlayerName,
-			String blackPlayerName, long timeLeft) {
-		setInstance(new Game(event, site, whitePlayerName, blackPlayerName, timeLeft));
+			String blackPlayerName, long whiteTimeLeft, long blackTimeLeft) {
+		setInstance(new Game(event, site, whitePlayerName, blackPlayerName, whiteTimeLeft, blackTimeLeft));
 		return INSTANCE;
 	}
 	public static Game getInstance(String pgn) {
 		setInstance(parsePGN(pgn));
 		return INSTANCE;
 	}
-	public long calculateTimeForNextMove() {
+	public long calculateTimeForNextMove(boolean forWhite) {
 		return 30*1000;
 	}
 	public String toString() {
@@ -240,13 +243,26 @@ public class Game {
 			if (game.pos.getTurn() == game.playerIsWhite) {
 				System.out.print("Please make your move: ");
 				start = System.currentTimeMillis();
-				Search s = new Search(game.pos, game.calculateTimeForNextMove());
+				Search s = new Search(game.pos);
 				s.start();
 				while (!game.pos.makeMove(in.nextLine()))
-					System.out.print("Illegal move.\n Please try again: ");
+					System.out.print("Illegal move.\nPlease try again: ");
 				end = System.currentTimeMillis();
 				s.interrupt();
-				game.timeLeft -= (end - start);
+				if (game.playerIsWhite) {
+					game.whiteTimeLeft -= (end - start);
+					if (game.whiteTimeLeft <= 0) {
+						System.out.println("Out of time. Black wins.");
+						break;
+					}
+				}
+				else {
+					game.blackTimeLeft -= (end - start);
+					if (game.blackTimeLeft <= 0) {
+						System.out.println("Out of time. White wins.");
+						break;
+					}
+				}
 			}
 			else {
 				System.out.println("Searching...");
@@ -255,14 +271,27 @@ public class Game {
 					bookMove = game.book.getMove(game.pos, SelectionModel.STOCHASTIC);
 					if (bookMove != null) {
 						end = System.currentTimeMillis();
-						System.out.print("Book move: " + bookMove + "\n");
+						System.out.println("Book move: " + bookMove + "\n");
 						game.pos.makeMove(bookMove);
-						game.timeLeft -= (end - start);
+						if (!game.playerIsWhite) {
+							game.whiteTimeLeft -= (end - start);
+							if (game.whiteTimeLeft <= 0) {
+								System.out.println("Out of time. Black wins.");
+								break;
+							}
+						}
+						else {
+							game.blackTimeLeft -= (end - start);
+							if (game.blackTimeLeft <= 0) {
+								System.out.println("Out of time. White wins.");
+								break;
+							}
+						}
 						continue;
 					}
 					outOfBook = true;
 				}
-				Search s = new Search(game.pos, game.calculateTimeForNextMove());
+				Search s = new Search(game.pos, game.calculateTimeForNextMove(!game.playerIsWhite));
 				s.start();
 				try {
 					s.join();
@@ -270,10 +299,22 @@ public class Game {
 					e.printStackTrace();
 				}
 				end = System.currentTimeMillis();
-				System.out.print("PV: ");
-				Move.printMovesToConsole(s.getPv());
+				System.out.println("Best move: " + s.getBestMove() + "\n");
 				game.pos.makeMove(s.getBestMove());
-				game.timeLeft -= (end - start);
+				if (!game.playerIsWhite) {
+					game.whiteTimeLeft -= (end - start);
+					if (game.whiteTimeLeft <= 0) {
+						System.out.println("Out of time. Black wins.");
+						break;
+					}
+				}
+				else {
+					game.blackTimeLeft -= (end - start);
+					if (game.blackTimeLeft <= 0) {
+						System.out.println("Out of time. White wins.");
+						break;
+					}
+				}
 			}
 			System.out.println();
 			// Very rudimental for now.

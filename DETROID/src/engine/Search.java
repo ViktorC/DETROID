@@ -34,7 +34,7 @@ public class Search extends Thread {
 	}
 	
 	private static int MAX_USABLE_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private static int MAX_SEARCH_DEPTH = 10;
+	private static int MAX_SEARCH_DEPTH = 32;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
@@ -84,8 +84,6 @@ public class Search extends Thread {
 			searchTime = searchTimeInMilliSeconds;
 			pondering = false;
 		}
-		else
-			pondering = true;
 	}
 	/**Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found (either due to a
 	 * search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
@@ -538,7 +536,7 @@ public class Search extends Thread {
 		Move[] moves;
 		Move move;
 		int staticScore, searchScore;
-		boolean check = pos.getCheck();
+		boolean checkMemory = false, check = pos.getCheck();
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (check) {
 			tacticalMoves = null;
@@ -589,7 +587,11 @@ public class Search extends Thread {
 		// Quiescence search.
 		else {
 			moves = orderTacticalMoves(pos, tacticalMoves);
-			for (int i = 0; i < moves.length; i++) {
+			for (int i = 0; i < moves.length; i++, checkMemory = !checkMemory) {
+				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
+					tT.remove(entry -> entry.depth < 2);
+					System.gc();
+				}
 				move = moves[i];
 				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
 				if (move.value < 0 || move.value < alpha - DELTA)
@@ -602,6 +604,8 @@ public class Search extends Thread {
 					if (alpha >= beta)
 						break;
 				}
+				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+					break;
 			}
 		}
 		if (alpha >= beta)

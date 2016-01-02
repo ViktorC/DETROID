@@ -101,7 +101,7 @@ public class Book {
 	 * @return
 	 */
 	private ArrayList<Entry> getRelevantEntries(Position p) {
-		long low, mid, hi;
+		long low, mid, hi, temp = -1;
 		long readerPos, currKey, key = Zobrist.getPolyglotHashKey(p);
 		ArrayList<Entry> entries = new ArrayList<>();
 		ByteBuffer buff = ByteBuffer.allocateDirect(ENTRY_SIZE);
@@ -109,8 +109,7 @@ public class Book {
 			// A simple binary search on the position hash values.
 			low = 0;
 			hi = bookStream.size();
-			while (low < hi) {
-				mid = (((hi + low)/2)/ENTRY_SIZE)*ENTRY_SIZE;
+			while ((mid = (((hi + low)/2)/ENTRY_SIZE)*ENTRY_SIZE) != temp) {
 				bookStream.position(mid);
 				bookStream.read(buff);
 				buff.clear();
@@ -148,6 +147,7 @@ public class Book {
 						low = mid;
 				}
 				buff.clear();
+				temp = mid;
 			}
 			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK and its useDefaultBook is set
 			 * to true, we search the DEFAULT_BOOK, too. */
