@@ -3,7 +3,9 @@ package engine;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Scanner;
 
+import engine.Book.SelectionModel;
 import util.List;
 import util.Queue;
 
@@ -53,7 +55,7 @@ public class Game {
 		}
 	}
 	
-	private static Game INSTANCE;
+	private static Game INSTANCE = new Game();
 	
 	private Position pos;
 	private String event;
@@ -65,12 +67,17 @@ public class Game {
 	private State state;
 	
 	private boolean playerIsWhite;
+	
+	private Book book;
+	private long timeLeft;
 
 	private Game() {
-		
+		book = Book.getInstance();
+		timeLeft = 60*60*1000;
 	}
 	private Game(String event, String site, String whitePlayerName,
 			String blackPlayerName) {
+		this();
 		pos = new Position();
 		this.event = event;
 		this.site = site;
@@ -80,6 +87,11 @@ public class Game {
 		this.blackPlayerName = blackPlayerName;
 		state = State.IN_PROGRESS;
 		playerIsWhite = true;
+	}
+	private Game(String event, String site, String whitePlayerName,
+			String blackPlayerName, long timeLeft) {
+		this(event, site, whitePlayerName, blackPlayerName);
+		this.timeLeft = timeLeft;
 	}
 	private static Game parsePGN(String pgn) throws IllegalArgumentException {
 		char tagChar;
@@ -167,6 +179,36 @@ public class Game {
 		}
 		return out;
 	}
+	private static void setInstance(Game game) {
+		INSTANCE.pos = game.pos;
+		INSTANCE.event = game.event;
+		INSTANCE.site = game.site;
+		INSTANCE.date = game.date;
+		INSTANCE.round = game.round;
+		INSTANCE.whitePlayerName = game.whitePlayerName;
+		INSTANCE.blackPlayerName = game.blackPlayerName;
+		INSTANCE.state = game.state;
+		INSTANCE.playerIsWhite = game.playerIsWhite;
+		INSTANCE.book = game.book;
+		INSTANCE.timeLeft = game.timeLeft;
+	}
+	public static Game getInstance(String event, String site, String whitePlayerName,
+			String blackPlayerName) {
+		setInstance(new Game(event, site, whitePlayerName, blackPlayerName));
+		return INSTANCE;
+	}
+	public static Game getInstance(String event, String site, String whitePlayerName,
+			String blackPlayerName, long timeLeft) {
+		setInstance(new Game(event, site, whitePlayerName, blackPlayerName, timeLeft));
+		return INSTANCE;
+	}
+	public static Game getInstance(String pgn) {
+		setInstance(parsePGN(pgn));
+		return INSTANCE;
+	}
+	public long calculateTimeForNextMove() {
+		return 30*1000;
+	}
 	public String toString() {
 		String pgn = "", date;
 		Calendar cal = Calendar.getInstance();
@@ -188,6 +230,58 @@ public class Game {
 		return pgn;
 	}
 	public static void main(String[] args) {
-		
+		boolean outOfBook = false;
+		long start, end;
+		Move bookMove;
+		Scanner in = new Scanner(System.in);
+		Game game = getInstance("test", "at home", "human opponent", "computer");
+		while (game.state == State.IN_PROGRESS) {
+			game.pos.printStateToConsole();
+			if (game.pos.getTurn() == game.playerIsWhite) {
+				System.out.print("Please make your move: ");
+				start = System.currentTimeMillis();
+				Search s = new Search(game.pos, game.calculateTimeForNextMove());
+				s.start();
+				while (!game.pos.makeMove(in.nextLine()))
+					System.out.print("Illegal move.\n Please try again: ");
+				end = System.currentTimeMillis();
+				s.interrupt();
+				game.timeLeft -= (end - start);
+			}
+			else {
+				System.out.println("Searching...");
+				start = System.currentTimeMillis();
+				if (!outOfBook) {
+					bookMove = game.book.getMove(game.pos, SelectionModel.STOCHASTIC);
+					if (bookMove != null) {
+						end = System.currentTimeMillis();
+						System.out.print("Book move: " + bookMove + "\n");
+						game.pos.makeMove(bookMove);
+						game.timeLeft -= (end - start);
+						continue;
+					}
+					outOfBook = true;
+				}
+				Search s = new Search(game.pos, game.calculateTimeForNextMove());
+				s.start();
+				try {
+					s.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				end = System.currentTimeMillis();
+				System.out.print("PV: ");
+				Move.printMovesToConsole(s.getPv());
+				game.pos.makeMove(s.getBestMove());
+				game.timeLeft -= (end - start);
+			}
+			System.out.println();
+			// Very rudimental for now.
+			if (game.pos.generateAllMoves().length() == 0) {
+				game.state = game.pos.getTurn() ? State.BLACK_WIN : State.WHITE_WIN;
+			}
+		}
+		in.close();
+		System.out.print("Game over: " + game.state);
 	}
 }

@@ -57,37 +57,35 @@ public class Search extends Thread {
 	private static HashTable<TTEntry> tT = new HashTable<>();
 	private static byte tTgen = 0;
 	
-	private boolean pondering = false;
+	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
 	
-	private Search(Position pos, long searchTimeInMilliSeconds) {
-		this.pos = pos;
-		if (searchTimeInMilliSeconds > 0)
-			searchTime = searchTimeInMilliSeconds;
-		else
-			pondering = true;
-		gamePhase = Evaluator.evaluateGamePhase(pos);
-		nullMoveObservHolds = gamePhase == GamePhase.END_GAME ? false : true;
-	}
-	/**Returns a new Search thread instance instead for pondering on the argument position which once started, will not stop until the thread is
+	/**Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
 	 * interrupted.
 	 *
 	 * @param pos
-	 * @return A new Search instance for pondering.
 	 */
-	public static Search getInstance(Position pos) {
-		return new Search(pos.deepCopy(), 0);
+	public Search(Position pos) {
+		this.pos = pos.deepCopy();
+		gamePhase = Evaluator.evaluateGamePhase(this.pos);
+		pondering = true;
+		nullMoveObservHolds = gamePhase == GamePhase.END_GAME ? false : true;
 	}
-	/**Returns a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder on the
-	 * position once the search thread is started, and will not stop until it is interrupted.
+	/**Creates a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder on
+	 * the position once the search thread is started, and will not stop until it is interrupted.
 	 *
 	 * @param pos
 	 * @param searchTimeInMilliSeconds
-	 * @return A new Search instance.
 	 */
-	public static Search getInstance(Position pos, long searchTimeInMilliSeconds) {
-		return new Search(pos.deepCopy(), searchTimeInMilliSeconds);
+	public Search(Position pos, long searchTimeInMilliSeconds) {
+		this(pos);
+		if (searchTimeInMilliSeconds > 0) {
+			searchTime = searchTimeInMilliSeconds;
+			pondering = false;
+		}
+		else
+			pondering = true;
 	}
 	/**Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found (either due to a
 	 * search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
