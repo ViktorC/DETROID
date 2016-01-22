@@ -3,9 +3,6 @@ package engine;
 import java.util.Random;
 
 import engine.Board.Square;
-import engine.Move.MoveType;
-import engine.Position.CastlingRights;
-import engine.Position.EnPassantRights;
 
 /**A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
  * Two Position objects with identical states will always have the same Zobrist keys within one runtime and two Position objects with

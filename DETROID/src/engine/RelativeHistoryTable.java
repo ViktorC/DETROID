@@ -1,6 +1,5 @@
 package engine;
 
-import engine.Evaluator.Material;
 
 /**A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only incremented upon a cutoff and a
  * butterfly table that is incremented upon every searched move no matter what. Using these two tables' respective values for the same move, a

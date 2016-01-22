@@ -1,6 +1,5 @@
 package engine;
 
-import engine.Move.MoveType;
 import engine.Board.Diagonal;
 import util.*;
 
@@ -11,50 +10,6 @@ import util.*;
  *
  */
 public final class Evaluator {
-	
-	/**An enum type defining the standard values of different piece types.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public static enum Material {
-		
-		KING	(400, 0),
-		QUEEN	(900, 4),
-		ROOK	(500, 2),
-		BISHOP	(300, 1),
-		KNIGHT	(300, 1),
-		PAWN	(100, 0),
-		NULL	(0, 0);
-		
-		public final short score;		// The standard worth of the piece type.
-		public final short phaseWeight;	// A measure of the impact a certain material type has on the phase evaluation.
-		
-		private Material(int score, int phaseWeight) {
-			this.score = (short)score;
-			this.phaseWeight = (byte)phaseWeight;
-		}
-		/**Returns the enum for a piece type defined by a piece index according to {@link #engine.Piece Piece}.
-		 * 
-		 * @param pieceInd A piece index according to {@link #engine.Piece Piece}.
-		 * @return The enumeration of the piece type.
-		 */
-		public static Material getByPieceInd(int pieceInd) {
-			if (pieceInd == Piece.W_KING.ind) return KING;
-			else if (pieceInd == Piece.W_QUEEN.ind) return QUEEN;
-			else if (pieceInd == Piece.W_ROOK.ind) return ROOK;
-			else if (pieceInd == Piece.W_BISHOP.ind) return BISHOP;
-			else if (pieceInd == Piece.W_KNIGHT.ind) return KNIGHT;
-			else if (pieceInd == Piece.W_PAWN.ind) return PAWN;
-			else if (pieceInd == Piece.B_KING.ind) return KING;
-			else if (pieceInd == Piece.B_QUEEN.ind) return QUEEN;
-			else if (pieceInd == Piece.B_ROOK.ind) return ROOK;
-			else if (pieceInd == Piece.B_BISHOP.ind) return BISHOP;
-			else if (pieceInd == Piece.B_KNIGHT.ind) return KNIGHT;
-			else if (pieceInd == Piece.B_PAWN.ind) return PAWN;
-			else return NULL;
-		}
-	}
 	
 	/**An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.
 	 * 
@@ -72,39 +27,6 @@ public final class Evaluator {
 		
 		private Termination(int score) {
 			this.score = (short)score;
-		}
-	}
-	
-	/**An enumration type for game phases such as opening, middle game, and end game so searches can be conducted accordingly.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public static enum GamePhase {
-		
-		OPENING 	(0, 22),
-		MIDDLE_GAME (23, 170),
-		END_GAME	(171, 256);	// Very early end game.
-		
-		public final short lowerBound;
-		public final short upperBound;
-		
-		private GamePhase(int lowerBound, int upperBound) {
-			this.lowerBound = (short)lowerBound;
-			this.upperBound = (short)upperBound;
-		}
-		/**Returns the phase associated with the given phase score.
-		 * 
-		 * @param phaseScore
-		 * @return
-		 */
-		public static GamePhase getByPhaseScore(int phaseScore) {
-			if (phaseScore < MIDDLE_GAME.lowerBound)
-				return OPENING;
-			else if (phaseScore >= END_GAME.lowerBound)
-				return END_GAME;
-			else
-				return MIDDLE_GAME;
 		}
 	}
 	

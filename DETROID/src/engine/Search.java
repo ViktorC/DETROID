@@ -1,10 +1,7 @@
 package engine;
 
-import engine.Evaluator.GamePhase;
-import engine.Evaluator.Material;
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
-import engine.Move.MoveType;
 import util.*;
 
 /**A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It uses

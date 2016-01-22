@@ -2,8 +2,6 @@ package engine;
 
 import util.*;
 import engine.Board.Square;
-import engine.Position.CastlingRights;
-import engine.Position.EnPassantRights;
 
 /**Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers, and the
  * moved and captured pieces--is stored in this unencapsulated class' instances so as to make reverting back to the previous position when unmaking a move faster.
