@@ -62,10 +62,12 @@ public class Move implements Comparable<Move> {
 		return m;
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
+	@Override
 	public boolean betterThan(Move m) throws NullPointerException {
 		return (value > m.value);
 	}
 	/**Returns whether the owner Move instance's value field holds a smaller number than the parameter Move instance's.*/
+	@Override
 	public boolean worseThan(Move m) throws NullPointerException {
 		return (value < m.value);
 	}
@@ -73,6 +75,7 @@ public class Move implements Comparable<Move> {
 	 *
 	 * @return
 	 */
+	@Override
 	public String toString() {
 		String lan, originFile, originRank, destFile, destRank;
 		originRank	= Integer.toString(from/8 + 1);

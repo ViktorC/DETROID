@@ -128,7 +128,7 @@ public class Search extends Thread {
 	 * @return A string of the total size and load of the transposition table.
 	 */
 	public String getTranspositionTableStats() {
-		return tT.size() + "\n" + tT.load();
+		return tT.capacity() + "\n" + tT.load();
 	}
 	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth has been reached.*/
@@ -466,7 +466,7 @@ public class Search extends Thread {
 				}
 				pos.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (depth > 2 && bestMove.value <= origAlpha && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0
+				if (depth > 2 && beta <= alpha + 1 && !pos.getCheck() && pos.getUnmakeRegister().checkers == 0
 					&& searchedMoves > 4 && hT.score(move) <= RelativeHistoryTable.MAX_SCORE/(matMovesArr.length + nonMatMovesArr.length)) {
 					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true, qDepth);
 					// If it does not fail low, research with full window.

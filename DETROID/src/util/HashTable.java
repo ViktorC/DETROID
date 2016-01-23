@@ -1,5 +1,8 @@
 package util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -23,7 +26,7 @@ import java.util.function.Predicate;
  *
  * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
-public class HashTable<T extends HashTable.Entry<T>> {
+public class HashTable<T extends HashTable.Entry<T>> implements Estimative, Iterable<T> {
 	
 	/**An interface for hash table entries that extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
 	 * 
@@ -31,7 +34,7 @@ public class HashTable<T extends HashTable.Entry<T>> {
 	 *
 	 * @param <T> The type of the hash table entry that implements this interface.
 	 */
-	public static interface Entry<T> extends Comparable<T>, Hashable {}
+	public static interface Entry<T> extends Comparable<T>, Hashable, Estimative {}
 	
 	// A long with which when another long is AND-ed, the result will be that other long's absolute value.
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
@@ -73,11 +76,11 @@ public class HashTable<T extends HashTable.Entry<T>> {
 		t3 = (T[])new Entry[(int)(T3_SHARE*size)];
 		t4 = (T[])new Entry[(int)(T4_SHARE*size)];
 	}
-	/**Returns the length of the hash table.
+	/**Returns the sum of the lengths of the hash tables.
 	 * 
 	 * @return
 	 */
-	public int size() {
+	public int capacity() {
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			return t1.length + t2.length + t3.length + t4.length;
 		}}}}
@@ -126,7 +129,7 @@ public class HashTable<T extends HashTable.Entry<T>> {
 				return;
 			}
 		}
-		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(size())/Math.log(EPSILON)); i++) {
+		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(capacity())/Math.log(EPSILON)); i++) {
 			synchronized (t1) {
 				if ((slot = t1[(ind = hash1(key))]) == null) {
 					t1[ind] = e;
@@ -352,5 +355,48 @@ public class HashTable<T extends HashTable.Entry<T>> {
 	}
 	private int hash4(long key) {
 		return (int)((key & UNSIGNED_LONG)%t4.length);
+	}
+	@Override
+	public int baseSize() {
+		int size = 0;
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
+			for (Entry<T> e : t1) {
+				if (e == null)
+					size += SizeOf.POINTER.numOfBytes;
+				else
+					size += e.allocatedMemory();
+			}
+			for (Entry<T> e : t2) {
+				if (e == null)
+					size += SizeOf.POINTER.numOfBytes;
+				else
+					size += e.allocatedMemory();
+			}
+			for (Entry<T> e : t3) {
+				if (e == null)
+					size += SizeOf.POINTER.numOfBytes;
+				else
+					size += e.allocatedMemory();
+			}
+			for (Entry<T> e : t4) {
+				if (e == null)
+					size += SizeOf.POINTER.numOfBytes;
+				else
+					size += e.allocatedMemory();
+			}
+		}}}}
+		return size;
+	}
+	@Override
+	public Iterator<T> iterator() {
+		ArrayList<T> list;
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
+			list = new ArrayList<T>();
+			list.addAll(Arrays.asList(t1));
+			list.addAll(Arrays.asList(t2));
+			list.addAll(Arrays.asList(t3));
+			list.addAll(Arrays.asList(t4));
+			return list.iterator();
+		}}}}
 	}
 }

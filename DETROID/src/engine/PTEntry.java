@@ -19,17 +19,25 @@ public class PTEntry implements HashTable.Entry<PTEntry> {
 		this.whitesTurn = whitesTurn;
 		this.score = (short)score;
 	}
+	@Override
 	public boolean betterThan(PTEntry t) {
 		// Hash table entries need not to be overwritten at this point;
 		return false;
 	}
+	@Override
 	public boolean worseThan(PTEntry t) {
 		// Hash table entries need not to be overwritten at this point;
 		return false;
 	}
 	/**Returns the Zobrist pawn hash key. */
+	@Override
 	public long hashKey() {
 		return key;
+	}
+	/**Returns the estimated base size of the object including the pointer. */
+	@Override
+	public int baseSize() {
+		return SizeOf.POINTER.numOfBytes + SizeOf.BOOLEAN.numOfBytes + SizeOf.SHORT.numOfBytes + SizeOf.LONG.numOfBytes;
 	}
 
 }

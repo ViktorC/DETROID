@@ -1,11 +1,13 @@
 package util;
 
+import java.util.Iterator;
+
 /**A simple abstract class for providing the basics for int-based list data structures such as stacks and queues.
  * 
  * @author Viktor
  *
  */
-public abstract class IntList {
+public abstract class IntList implements Iterable<Integer> {
 
 	/**A list entry containing two fields, 'data' that holds the information, an integer, and 'next' referencing the subsequent element in the list
 	 * 
@@ -94,6 +96,18 @@ public abstract class IntList {
 			return data;
 		}
 		return 0;
+	}
+	/**Its usage is advised against as the sole purpose of this class is the avoidance of implicit casting to increase performance. */
+	@Override
+	public Iterator<Integer> iterator() {
+		return new Iterator<Integer>() {
+			public boolean hasNext() {
+				return hasNext();
+			}
+			public Integer next() {
+				return next();
+			}
+		};
 	}
 	/**Returns the number of nodes in the list.
 	 * 

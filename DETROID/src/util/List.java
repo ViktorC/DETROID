@@ -1,6 +1,7 @@
 package util;
 
 import java.lang.reflect.Array;
+import java.util.Iterator;
 
 /**A generic abstract class for providing the basics for list data structures such as stacks and queues.
  * 
@@ -8,7 +9,7 @@ import java.lang.reflect.Array;
  *
  * @param <T>
  */
-public abstract class List<T> {
+public abstract class List<T> implements Iterable<T>, Iterator<T> {
 
 	/**A list entry containing two fields, 'data' that holds the data, and 'next' referencing the subsequent element in the list
 	 * 
@@ -60,6 +61,7 @@ public abstract class List<T> {
 	 * 
 	 * @return
 	 */
+	@Override
 	public boolean hasNext() {
 		if (iterator == null) {
 			reset();
@@ -71,6 +73,7 @@ public abstract class List<T> {
 	 * 
 	 * @return
 	 */
+	@Override
 	public T next() {
 		T next = iterator.data;
 		iterator = iterator.next;
@@ -97,6 +100,11 @@ public abstract class List<T> {
 			return data;
 		}
 		return null;
+	}
+	/**For for-each loops. */
+	@Override
+	public Iterator<T> iterator() {
+		return this;
 	}
 	/**Returns the number of nodes in the list.
 	 * 

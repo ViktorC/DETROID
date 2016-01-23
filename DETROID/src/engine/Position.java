@@ -2,7 +2,6 @@ package engine;
 
 import util.*;
 import engine.Board.*;
-import engine.Move.*;
 
 /**A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
  * on castling and en passant rights, and on the player to move. It uses a pre-calculated 'magic' move database to avoid the cost of computing the
@@ -215,6 +214,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
+	@Override
 	public Position deepCopy() {
 		Move move;
 		Position copy;
@@ -298,6 +298,7 @@ public class Position implements Hashable, Copiable<Position> {
 		return repetitions;
 	}
 	/**Returns the 64-bit Zobrist key of the current position. A Zobrist key is used to almost uniquely hash a chess position to an integer.*/
+	@Override
 	public long hashKey() {
 		return key;
 	}
@@ -5895,6 +5896,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 		5. fifty-move rule clock
 	 * 		6. fullmove number
 	 */
+	@Override
 	public String toString() {
 		String fen = "";
 		int piece, emptyCount;

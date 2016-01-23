@@ -28,22 +28,26 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 		this.generation = age;
 	}
 	/**Returns whether this entry is more valuable for storing than the input parameter entry. */
+	@Override
 	public boolean betterThan(TTEntry e) {
 		if (generation >= e.generation && depth >= e.depth && (type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind))
 			return true;
 		return false;
 	}
 	/**Returns whether this entry is less valuable for storing than the input parameter entry. */
+	@Override
 	public boolean worseThan(TTEntry e) {
 		if (generation < e.generation - 2 || depth < e.depth || (e.type == NodeType.EXACT.ind && type != NodeType.EXACT.ind))
 			return true;
 		return false;
 	}
 	/**Returns a 64-bit hash code identifying this object. */
+	@Override
 	public long hashKey() {
 		return key;
 	}
 	/**Returns a String representation of the object state. */
+	@Override
 	public String toString() {
 		String move = (bestMove == 0) ? null : Move.toMove(bestMove).toString();
 		String type = "";
@@ -58,5 +62,11 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 				type = NodeType.FAIL_LOW.toString();
 		}
 		return String.format("%-17s %2d %-9s %7d  %10s %2d",Long.toHexString(key), depth, type, score, move, generation);
+	}
+	/**Returns the estimated base size of the object including the pointer. */
+	@Override
+	public int baseSize() {
+		return SizeOf.POINTER.numOfBytes + SizeOf.LONG.numOfBytes + SizeOf.INT.numOfBytes +
+				2*SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes;
 	}
 }

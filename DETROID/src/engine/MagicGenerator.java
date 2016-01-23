@@ -38,6 +38,7 @@ public final class MagicGenerator {
 		}
 		/**Format:
 		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)*/
+		@Override
 		public String toString() {
 			String type = rook ? "ROOK" : "BISHOP";
 			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toHexLiteral(magicNumber) +

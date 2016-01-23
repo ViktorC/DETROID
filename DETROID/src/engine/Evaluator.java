@@ -30,7 +30,7 @@ public final class Evaluator {
 		}
 	}
 	
-	private static HashTable<PTEntry> pT = new HashTable<>();	// Pawn table.
+	// private static HashTable<PTEntry> pT = new HashTable<>();	// Pawn table.
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
@@ -197,7 +197,7 @@ public final class Evaluator {
 			numOfBlackKnights, numOfAllPieces, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0,
 			bishopColor, bishopField, newBishopColor;
 		int[] bishopSqrArr;
-		PTEntry e;
+		// PTEntry e;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
