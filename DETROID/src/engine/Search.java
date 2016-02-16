@@ -67,7 +67,7 @@ public class Search extends Thread {
 		this.pos = pos.deepCopy();
 		gamePhase = Evaluator.evaluateGamePhase(this.pos);
 		pondering = true;
-		nullMoveObservHolds = gamePhase == GamePhase.END_GAME ? false : true;
+		nullMoveObservHolds = gamePhase != GamePhase.END_GAME;
 	}
 	/**Creates a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder on
 	 * the position once the search thread is started, and will not stop until it is interrupted.
