@@ -2,10 +2,11 @@ package engine;
 
 import engine.Board.*;
 
-/**A preinitialized move set database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains a so called
- * fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the desired move sets
- * can be retrieved by simply invoking one of this database's functions and feeding it an occupancy bitmap or two. Beside the sliding pieces' attack sets,
- * all the other pieces masks have been preinitialized too, for the sake of simplicity.
+/**
+ * A preinitialized move set database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains
+ * a so called fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the
+ * desired move sets can be retrieved by simply invoking one of this database's functions and feeding it an occupancy bitmap or two. Beside the
+ * sliding pieces' attack sets, all the other pieces masks have been preinitialized too, for the sake of simplicity.
  * 
  * @author Viktor
  *
@@ -97,7 +98,9 @@ public enum MoveSetDatabase {
 	public final long pawnWhiteCaptureMoveMask;
 	public final long pawnBlackCaptureMoveMask;
 	
-	/**Requires magic numbers which can be generated and printed to the console externally, using the {@link #engine.MagicNumberGenerator MagicNumberGenerator}.
+	/**
+	 * Requires magic numbers which can be generated and printed to the console externally, using the
+	 * {@link #engine.MagicNumberGenerator MagicNumberGenerator}.
 	 * 
 	 * @param rookMagicNumber
 	 * @param bishopMagicNumber
@@ -133,28 +136,32 @@ public enum MoveSetDatabase {
 		pawnBlackAdvanceMoveMask = MoveMask.blackPawnAdvanceMask(sqr);
 		pawnBlackCaptureMoveMask = MoveMask.blackPawnCaptureMask(sqr);
 	}
-	/**Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.
+	/**
+	 * Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.
 	 * 
 	 * @return
 	 */
 	public long getRookMoveMask() {
 		return rookMoveSets[0];
 	}
-	/**Returns a simple bishop move mask, i.e. the diagonal and anti-diagonal that cross each other on the square indexed by this enum instance.
+	/**
+	 * Returns a simple bishop move mask, i.e. the diagonal and anti-diagonal that cross each other on the square indexed by this enum instance.
 	 * 
 	 * @return
 	 */
 	public long getBishopMoveMask() {
 		return bishopMoveSets[0];
 	}
-	/**Returns a simple queen move mask, i.e. the file, rank, diagonal, and anti-diagonal that cross each other on the square indexed by this enum instance.
+	/**
+	 * Returns a simple queen move mask, i.e. the file, rank, diagonal, and anti-diagonal that cross each other on the square indexed by this enum instance.
 	 * 
 	 * @return
 	 */
 	public long getQueenMoveMask() {
 		return rookMoveSets[0] | bishopMoveSets[0];
 	}
-	/**Returns a king's pseudo-legal move set.
+	/**
+	 * Returns a king's pseudo-legal move set.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @return
@@ -162,7 +169,8 @@ public enum MoveSetDatabase {
 	public long getKingMoveSet(long allNonSameColorOccupied) {
 		return kingMoveMask & allNonSameColorOccupied;
 	}
-	/**Returns a knight's pseudo-legal move set.
+	/**
+	 * Returns a knight's pseudo-legal move set.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @return
@@ -170,7 +178,8 @@ public enum MoveSetDatabase {
 	public long getKnightMoveSet(long allNonSameColorOccupied) {
 		return knightMoveMask & allNonSameColorOccupied;
 	}
-	/**Returns a white pawn's pseudo-legal attack set.
+	/**
+	 * Returns a white pawn's pseudo-legal attack set.
 	 * 
 	 * @param allNonWhiteOccupied
 	 * @return
@@ -178,7 +187,8 @@ public enum MoveSetDatabase {
 	public long getWhitePawnCaptureSet(long allBlackOccupied) {
 		return pawnWhiteCaptureMoveMask & allBlackOccupied;
 	}
-	/**Returns a black pawn's pseudo-legal attack set.
+	/**
+	 * Returns a black pawn's pseudo-legal attack set.
 	 * 
 	 * @param allNonWhiteOccupied
 	 * @return
@@ -186,7 +196,8 @@ public enum MoveSetDatabase {
 	public long getBlackPawnCaptureSet(long allWhiteOccupied) {
 		return pawnBlackCaptureMoveMask & allWhiteOccupied;
 	}
-	/**Returns a white pawn's pseudo-legal quiet move set.
+	/**
+	 * Returns a white pawn's pseudo-legal quiet move set.
 	 * 
 	 * @param allNonWhiteOccupied
 	 * @return
@@ -197,7 +208,8 @@ public enum MoveSetDatabase {
 		long adv = pawnWhiteAdvanceMoveMask & allEmpty;
 		return adv | ((adv << 8) & allEmpty);
 	}
-	/**Returns a black pawn's pseudo-legal quiet move set.
+	/**
+	 * Returns a black pawn's pseudo-legal quiet move set.
 	 * 
 	 * @param allNonWhiteOccupied
 	 * @return
@@ -208,7 +220,8 @@ public enum MoveSetDatabase {
 		long adv = pawnBlackAdvanceMoveMask & allEmpty;
 		return adv | ((adv >>> 8) & allEmpty);
 	}
-	/**Returns a white pawn's pseudo-legal complete move set.
+	/**
+	 * Returns a white pawn's pseudo-legal complete move set.
 	 * 
 	 * @param allNonWhiteOccupied
 	 * @return
@@ -220,7 +233,8 @@ public enum MoveSetDatabase {
 			advSet |= ((advSet << 8) & allEmpty);
 		return advSet | captSet;
 	}
-	/**Returns a black pawn's pseudo-legal complete move set.
+	/**
+	 * Returns a black pawn's pseudo-legal complete move set.
 	 * 
 	 * @param allNonWhiteOccupied
 	 * @return
@@ -232,7 +246,8 @@ public enum MoveSetDatabase {
 			advSet |= ((advSet >>> 8) & allEmpty);
 		return advSet | captSet;
 	}
-	/**Returns a rook's pseudo-legal move set given the occupancies fed to the method.
+	/**
+	 * Returns a rook's pseudo-legal move set given the occupancies fed to the method.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @param allOccupied
@@ -242,7 +257,8 @@ public enum MoveSetDatabase {
 		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonSameColorOccupied;
 	}
 	
-	/**Returns a bishop's pseudo-legal move set given the occupancies fed to the method.
+	/**
+	 * Returns a bishop's pseudo-legal move set given the occupancies fed to the method.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @param allOccupied
@@ -251,7 +267,8 @@ public enum MoveSetDatabase {
 	public long getBishopMoveSet(long allNonSameColorOccupied, long allOccupied) {
 		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonSameColorOccupied;
 	}
-	/**Returns a queen's pseudo-legal move set given the occupancies fed to the method.
+	/**
+	 * Returns a queen's pseudo-legal move set given the occupancies fed to the method.
 	 * 
 	 * @param allNonSameColorOccupied
 	 * @param allOccupied
@@ -261,7 +278,8 @@ public enum MoveSetDatabase {
 		return (rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
 			    bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonSameColorOccupied;
 	}
-	/**Returns a MoveDatabase enum instance that holds the preinitialized move sets for the square specified by the given square index, sqrInd.
+	/**
+	 * Returns a MoveDatabase enum instance that holds the preinitialized move sets for the square specified by the given square index, sqrInd.
 	 * 
 	 * @param sqrInd
 	 * @return

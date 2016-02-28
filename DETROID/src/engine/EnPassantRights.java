@@ -2,7 +2,8 @@ package engine;
 
 import engine.Board.Square;
 
-/**A simple enum type for the representation of a side's en passant rights in a position.
+/**
+ * A simple enum type for the representation of a side's en passant rights in a position.
  * 
  * @author Viktor
  *
@@ -21,7 +22,8 @@ public enum EnPassantRights {
 	private EnPassantRights() {
 		ind = (byte)ordinal();
 	}
-	/**Returns a EnPassantRights type based on the argument numeral.
+	/**
+	 * Returns a EnPassantRights type based on the argument numeral.
 	 * 
 	 * @param num
 	 * @return
@@ -33,7 +35,8 @@ public enum EnPassantRights {
 			default: throw new IllegalArgumentException();
 		}
 	}
-	/**Parses a string in FEN notation and returns an EnPassantRights type.
+	/**
+	 * Parses a string in FEN notation and returns an EnPassantRights type.
 	 * 
 	 * @param fen
 	 * @return
@@ -45,7 +48,10 @@ public enum EnPassantRights {
 			return NONE;
 		return values()[fen.toLowerCase().charAt(0) - 'a'];
 	}
-	/**Returns a string representation.*/
+	/**
+	 * Returns a string representation.
+	 */
+	@Override
 	public String toString() {
 		if (this == NONE)
 			return "-";

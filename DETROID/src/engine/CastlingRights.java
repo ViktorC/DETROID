@@ -1,6 +1,7 @@
 package engine;
 
-/**A simple enum type for the representation of a side's castling rights in a position.
+/**
+ * A simple enum type for the representation of a side's castling rights in a position.
  * 
  * @author Viktor
  *
@@ -17,7 +18,8 @@ public enum CastlingRights {
 	private CastlingRights() {
 		ind = (byte)ordinal();
 	}
-	/**Returns a CastlingRights type based on the argument numeral.
+	/**
+	 * Returns a CastlingRights type based on the argument numeral.
 	 * 
 	 * @param num
 	 * @return
@@ -28,7 +30,8 @@ public enum CastlingRights {
 			default: throw new IllegalArgumentException();
 		}
 	}
-	/**Parses a string in FEN notation and returns an array of two containing white's and black's castling rights respectively.
+	/**
+	 * Parses a string in FEN notation and returns an array of two containing white's and black's castling rights respectively.
 	 * 
 	 * @param fen
 	 * @return
@@ -61,7 +64,8 @@ public enum CastlingRights {
 			blackCastlingRights = CastlingRights.NONE;
 		return new CastlingRights[] { whiteCastlingRights, blackCastlingRights };
 	}
-	/**Returns a string representation in FEN notation of two castling right enum types for white and black respectively.
+	/**
+	 * Returns a string representation in FEN notation of two castling right enum types for white and black respectively.
 	 * 
 	 * @param white
 	 * @param black

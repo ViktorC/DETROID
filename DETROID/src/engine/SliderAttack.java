@@ -1,13 +1,14 @@
 package engine;
 
 import util.BitOperations;
-import util.IntList;
+import util.ByteList;
 import engine.Board.Square;
 import engine.Board.*;
 
-/**A class for generating occupancy variations and the attack set(s) for a rook or a bishop on the specified square for the given relevant occupancy or array
- * of occupancy variations. It can also generate the attack sets for all possible occupancy variations on all squares either for the rook or for the bishop.
- * It uses ray-wise parallel-prefix algorithms to determine the attack sets.
+/**
+ * A class for generating occupancy variations and the attack set(s) for a rook or a bishop on the specified square for the given relevant
+ * occupancy or array of occupancy variations. It can also generate the attack sets for all possible occupancy variations on all squares either
+ * for the rook or for the bishop. It uses ray-wise parallel-prefix algorithms to determine the attack sets.
  * 
  * @author Viktor
  *
@@ -17,10 +18,12 @@ public final class SliderAttack {
 	private SliderAttack() {
 		
 	}
-	/**Returns the rank-wise attack set for the relevant occupancy from the defined square.
+	/**
+	 * Returns the rank-wise attack set for the relevant occupancy from the defined square.
 	 * 
 	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the rank on which the square is (all occupied AND rank [minus the perimeter squares, as they make no difference])
+	 * @param relevantOccupancy - the relevant occupancy of the rank on which the square is (all occupied AND rank [minus the perimeter squares,
+	 * as they make no difference])
 	 * @return
 	 */
 	public static long rankAttackSet(Square sqr, long relevantOccupancy) {
@@ -33,10 +36,12 @@ public final class SliderAttack {
 		forward ^= BitOperations.reverse(reverse);
 		return forward & rank.bitmap;
 	}
-	/**Returns the file-wise attack set for the relevant occupancy from the defined square.
+	/**
+	 * Returns the file-wise attack set for the relevant occupancy from the defined square.
 	 * 
 	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the file on which the square is (all occupied AND file [minus the perimeter squares, as they make no difference])
+	 * @param relevantOccupancy - the relevant occupancy of the file on which the square is (all occupied AND file [minus the perimeter squares,
+	 * as they make no difference])
 	 * @return
 	 */
 	public static long fileAttackSet(Square sqr, long relevantOccupancy) {
@@ -49,10 +54,12 @@ public final class SliderAttack {
 		forward ^= BitOperations.reverseBytes(reverse);
 		return forward & file.bitmap;
 	}
-	/**Returns the diagonal-wise attack set for the relevant occupancy from the defined square.
+	/**
+	 * Returns the diagonal-wise attack set for the relevant occupancy from the defined square.
 	 * 
 	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the diagonal on which the square is (all occupied AND diagonal [minus the perimeter squares, as they make no difference])
+	 * @param relevantOccupancy - the relevant occupancy of the diagonal on which the square is (all occupied AND diagonal [minus the perimeter
+	 * squares, as they make no difference])
 	 * @return
 	 */
 	public static long diagonalAttackSet(Square sqr, long relevantOccupancy) {
@@ -65,10 +72,12 @@ public final class SliderAttack {
 		forward ^= BitOperations.reverseBytes(reverse);
 		return forward & diagonal.bitmap;
 	}
-	/**Returns the anti-diagonal-wise attack set for the relevant occupancy from the defined square.
+	/**
+	 * Returns the anti-diagonal-wise attack set for the relevant occupancy from the defined square.
 	 * 
 	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the anti-diagonal on which the square is (all occupied AND anti-diagonal [minus the perimeter squares, as they make no difference])
+	 * @param relevantOccupancy - the relevant occupancy of the anti-diagonal on which the square is (all occupied AND anti-diagonal
+	 * [minus the perimeter squares, as they make no difference])
 	 * @return
 	 */
 	public static long antiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
@@ -81,7 +90,8 @@ public final class SliderAttack {
 		forward ^= BitOperations.reverseBytes(reverse);
 		return forward & antiDiagonal.bitmap;
 	}
-	/**Returns a rook's attack set from the defined square with the given occupancy.
+	/**
+	 * Returns a rook's attack set from the defined square with the given occupancy.
 	 * 
 	 * @param sqr - the square on which the rook is
 	 * @param relevantOccupancy - the relevant occupancy of the rank and file that cross each other on the specified square
@@ -91,7 +101,8 @@ public final class SliderAttack {
 	public static long rookAttackSet(Square sqr, long occupancy) {
 		return rankAttackSet(sqr, occupancy) | fileAttackSet(sqr, occupancy);
 	}
-	/**Returns a bishop's attack set from the defined square with the given occupancy.
+	/**
+	 * Returns a bishop's attack set from the defined square with the given occupancy.
 	 * 
 	 * @param sqr - the square on which the bishop is
 	 * @param relevantOccupancy - the relevant occupancy of the diagonal and anti-diagonal that cross each other on the specified square
@@ -101,21 +112,16 @@ public final class SliderAttack {
 	public static long bishopAttackSet(Square sqr, long occupancy) {
 		return diagonalAttackSet(sqr, occupancy) | antiDiagonalAttackSet(sqr, occupancy);
 	}
-	/**Returns a rook's attack set variations from the given square for all occupancy variations specified.
-	 * 
-	 * @param sqr - the square on which the bishop is
-	 * @param rookOccupancyVariations - the occupancy variations within the rook's occupancy mask
-	 * @return
-	 */
-	/**Generates all the variations for the occupancy mask fed to it.
+	/**
+	 * Generates all the variations for the occupancy mask fed to it.
 	 * 
 	 * @param sqrInd
 	 * @return
 	 */
 	public static long[] occupancyVariations(long occupancyMask) {
-		int numOfBitsInMask = BitOperations.getCardinality(occupancyMask);
-		int[] occMaskBitIndArr = BitOperations.serialize(occupancyMask, numOfBitsInMask);
-		IntList occVarBitIndList;
+		byte numOfBitsInMask = BitOperations.getCardinality(occupancyMask);
+		byte[] occMaskBitIndArr = BitOperations.serialize(occupancyMask, numOfBitsInMask);
+		ByteList occVarBitIndList;
 		int numOfVar = 1 << numOfBitsInMask;
 		long[] occVarArr = new long[numOfVar];
 		long occVar;
@@ -128,7 +134,8 @@ public final class SliderAttack {
 		}
 		return occVarArr;
 	}
-	/**For each square it generates all the relevant occupancy variations for a rook.
+	/**
+	 * For each square it generates all the relevant occupancy variations for a rook.
 	 * 
 	 * @return
 	 */
@@ -138,7 +145,8 @@ public final class SliderAttack {
 			rookOccVar[sqr.ordinal()] = occupancyVariations(MoveMask.rookOccupancyMask(sqr));
 		return rookOccVar;
 	}
-	/**For each square it generates all the relevant occupancy variations for a bishop.
+	/**
+	 * For each square it generates all the relevant occupancy variations for a bishop.
 	 * 
 	 * @return
 	 */
@@ -154,7 +162,8 @@ public final class SliderAttack {
 			rookAttVar[i] = rookAttackSet(sqr, rookOccupancyVariations[i]);
 		return rookAttVar;
 	}
-	/**Returns a bishop's attack set variations from the given square for all occupancy variations specified.
+	/**
+	 * Returns a bishop's attack set variations from the given square for all occupancy variations specified.
 	 * 
 	 * @param sqr - the square on which the bishop is
 	 * @param bishopOccupancyVariations - the occupancy variations within the bishop's occupancy mask
@@ -166,7 +175,8 @@ public final class SliderAttack {
 			bishopAttVar[i] = bishopAttackSet(sqr, bishopOccupancyVariations[i]);
 		return bishopAttVar;
 	}
-	/**Returns a rook's attack set variations from each square for all occupancy variations specified.
+	/**
+	 * Returns a rook's attack set variations from each square for all occupancy variations specified.
 	 * 
 	 * @param rookOccupancyVariations - the occupancy variations within the rook's occupancy mask for each square
 	 * @return
@@ -177,7 +187,8 @@ public final class SliderAttack {
 			rookAttVar[sqr.ind] = rookAttackSetVariations(sqr, rookOccupancyVariations[sqr.ind]);
 		return rookAttVar;
 	}
-	/**Returns a bishop's attack set variations from each square for all occupancy variations specified.
+	/**
+	 * Returns a bishop's attack set variations from each square for all occupancy variations specified.
 	 * 
 	 * @param bishopAttackSetVariations - the occupancy variations within the bishop's occupancy mask for each square
 	 * @return

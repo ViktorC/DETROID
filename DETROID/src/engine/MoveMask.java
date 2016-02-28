@@ -2,7 +2,8 @@ package engine;
 
 import engine.Board.*;
 
-/**A static class that generates the basic move masks for each piece type. It does not include special moves  occupancy considerations.
+/**
+ * A static class that generates the basic move masks for each piece type. It does not include special moves  occupancy considerations.
  * 
  * @author Viktor
  *
@@ -21,7 +22,8 @@ public final class MoveMask {
 	private MoveMask() {
 		
 	}
-	/**Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.
+	/**
+	 * Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -37,7 +39,8 @@ public final class MoveMask {
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
-	/**Generates a bitmap of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.
+	/**
+	 * Generates a bitmap of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -58,7 +61,8 @@ public final class MoveMask {
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
-	/**Generates a bitmap of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
+	/**
+	 * Generates a bitmap of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -74,7 +78,8 @@ public final class MoveMask {
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
-	/**Generates a bitmap of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
+	/**
+	 * Generates a bitmap of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -90,7 +95,8 @@ public final class MoveMask {
 			mask &= ~File.A.bitmap;
 		return mask;
 	}
-	/**Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
+	/**
+	 * Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -100,7 +106,8 @@ public final class MoveMask {
 			return 0;
 		return sqr.bitmap << 8;
 	}
-	/**Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
+	/**
+	 * Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -110,7 +117,8 @@ public final class MoveMask {
 			return 0;
 		return sqr.bitmap >>> 8;
 	}
-	/**Generates a bitmap of the basic rook's rank-wise/horizontal move mask. Occupancies are disregarded. Perimeter squares are included.
+	/**
+	 * Generates a bitmap of the basic rook's rank-wise/horizontal move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
 	 * @param sqr
 	 * @return
@@ -118,7 +126,8 @@ public final class MoveMask {
 	public final static long rookRankMoveMask(Square sqr) {
 		return Rank.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
-	/**Generates a bitmap of the basic rook's file-wise/vertical move mask. Occupancies are disregarded. Perimeter squares are included.
+	/**
+	 * Generates a bitmap of the basic rook's file-wise/vertical move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
 	 * @param sqr
 	 * @return
@@ -126,7 +135,8 @@ public final class MoveMask {
 	public final static long rookFileMoveMask(Square sqr) {
 		return File.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
-	/**Generates a bitmap of the basic bishop's diagonal move mask. Occupancies are disregarded. Perimeter squares are included.
+	/**
+	 * Generates a bitmap of the basic bishop's diagonal move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
 	 * @param sqr
 	 * @return
@@ -134,7 +144,8 @@ public final class MoveMask {
 	public final static long bishopDiagonalMoveMask(Square sqr) {
 		return Diagonal.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
-	/**Generates a bitmap of the basic bishop's anti-diagonal move mask. Occupancies are disregarded. Perimeter squares are included.
+	/**
+	 * Generates a bitmap of the basic bishop's anti-diagonal move mask. Occupancies are disregarded. Perimeter squares are included.
 	 * 
 	 * @param sqr
 	 * @return
@@ -142,7 +153,8 @@ public final class MoveMask {
 	public final static long bishopAntiDiagonalMoveMask(Square sqr) {
 		return AntiDiagonal.getBySquare(sqr).bitmap^sqr.bitmap;
 	}
-	/**Generates a bitmap of the relevant occupancy mask for a rook on the square specified by 'sqr'.
+	/**
+	 * Generates a bitmap of the relevant occupancy mask for a rook on the square specified by 'sqr'.
 	 * 
 	 * @param sqr
 	 * @return
@@ -150,7 +162,8 @@ public final class MoveMask {
 	public static long rookOccupancyMask(Square sqr) {
 		return (rookRankMoveMask(sqr) & ANTIFRAME_VERTICAL) | (rookFileMoveMask(sqr) & ANTIFRAME_HORIZONTAL);
 	}
-	/**Generates a bitmap of the relevant occupancy mask for a bishop on the square specified by 'sqr'.
+	/**
+	 * Generates a bitmap of the relevant occupancy mask for a bishop on the square specified by 'sqr'.
 	 * 
 	 * @param sqr
 	 * @return

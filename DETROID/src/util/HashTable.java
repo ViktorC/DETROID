@@ -3,22 +3,20 @@ package util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
-/**A generic, concurrent hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of the hash
- * table are required to be immutable to guarantee thread-safety, and implement {@link #HashTable.Entry Entry} and thus implicitly implement the
- * {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
+/**
+ * A generic, concurrent hash table utilizing cuckoo hashing with constant look-up time and amortized constant insertion time. Entries of the
+ * hash table implement {@link #HashTable.Entry Entry} and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable}
+ * interfaces.
  * 
- * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash functions.
- * All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's size]; it applies no randomization
- * whatsoever either. The average load factor is around 60%, but it can be as high as 92% and it never goes below 33%. Due to the uneven table sizes,
- * look up is biased towards the foremost tables. The odds of a look up terminating after checking the first two tables is 60%. It is reasonable
- * compromise between memory and time efficiency. I have determined epsilon and the optimal minimum load factor rather through brute-force tuning
- * methods than mathematics. The framework itself was also more of the fruit of intuition than research, but it works way better than any others I have
- * tried.
+ * It uses asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have four unique hash
+ * functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's size]; it applies
+ * no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the foremost tables. The odds of a look up
+ * terminating after checking the first two tables is 60%.
  * 
- * The default length of the hash table (the sum of the four tables' lengths) is 1022.
+ * The default size of the hash table is 64MB; the minimum is 1MB and the maximum is 6GB.
  * 
  * The target application-context, when concurrent, involves moderate contention and similar frequencies of reads and writes.
  * 
@@ -26,207 +24,225 @@ import java.util.function.Predicate;
  *
  * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
-public class HashTable<T extends HashTable.Entry<T>> implements Estimative, Iterable<T> {
+public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Estimable {
 	
-	/**An interface for hash table entries that extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
+	/**
+	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
 	 * 
 	 * @author Viktor
 	 *
 	 * @param <T> The type of the hash table entry that implements this interface.
 	 */
-	public static interface Entry<T> extends Comparable<T>, Hashable, Estimative {}
+	public static interface Entry<T extends HashTable.Entry<T>> extends Comparable<T>, Hashable {
+		
+	}
 	
 	// A long with which when another long is AND-ed, the result will be that other long's absolute value.
 	private final static long UNSIGNED_LONG = (1L << 63) - 1;
 	
-	public final static int DEFAULT_SIZE = 1 << 10;
-	
-	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access due to the
-	 * order of the tables tried as the probability of getting a hit in bigger tables is higher. */
+	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
+	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
 	private final static float T1_SHARE = 0.325F;
 	private final static float T2_SHARE = 0.275F;
 	private final static float T3_SHARE = 0.225F;
 	private final static float T4_SHARE = 0.175F;
 	
-	private final static float MINIMUM_LOAD_FACTOR = 1/3F;
-	private final static float EPSILON = 1.36F;
+	/**
+	 * The default maximum hash table size in megabytes.
+	 */
+	public final static int DEFAULT_SIZE = 1 << 6;
+	private final static int MAX_SIZE = 3*(1 << 11); // The absolute maximum hash table size in megabytes.
 	
-	private AtomicInteger load = new AtomicInteger(0);	// Load counter.
+	private long entrySize;	// The size of a hash entry, including all overheads, in bytes.
+	private long capacity;	// The number of allowed hash table slots.
+	
+	private AtomicLong load = new AtomicLong(0);	// Load counter.
 	
 	private T[] t1, t2, t3, t4;	// The four hash tables.
 	
-	/**Instantiates a HashTable with a default length of 1022.*/
-	@SuppressWarnings({"unchecked"})
-	public HashTable() {
-		t1 = (T[])new Entry[(int)(T1_SHARE*DEFAULT_SIZE)];
-		t2 = (T[])new Entry[(int)(T2_SHARE*DEFAULT_SIZE)];
-		t3 = (T[])new Entry[(int)(T3_SHARE*DEFAULT_SIZE)];
-		t4 = (T[])new Entry[(int)(T4_SHARE*DEFAULT_SIZE)];
-	}
-	/**Instantiates a HashTable with the specified length.
+	/**
+	 * 4 array headers + 4 array lengths + 3 longs (capacity, etc.) + AtomicLong
+	 */
+	private static final int HOUSE_KEEPING_OVERHEAD = (int)(4*SizeOf.POINTER.numOfBytes + 4*SizeOf.INT.numOfBytes + 3*SizeOf.LONG.numOfBytes +
+			SizeOf.roundedSize(SizeOf.POINTER.numOfBytes + SizeOf.INT.numOfBytes + SizeOf.LONG.numOfBytes));
+	
+	/**
+	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
+	 * type's instance.
 	 * 
-	 * @param size > 0
+	 * @param sizeMB Maximum hash table size in megabytes.
+	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
 	@SuppressWarnings({"unchecked"})
-	public HashTable(int size) {
-		if (size <= 0)
-			size = DEFAULT_SIZE;
-		t1 = (T[])new Entry[(int)(T1_SHARE*size)];
-		t2 = (T[])new Entry[(int)(T2_SHARE*size)];
-		t3 = (T[])new Entry[(int)(T3_SHARE*size)];
-		t4 = (T[])new Entry[(int)(T4_SHARE*size)];
+	protected HashTable(int sizeMB, int entrySizeB) {
+		entrySize = entrySizeB;
+		if (sizeMB <= 0)
+			sizeMB = DEFAULT_SIZE;
+		else if (sizeMB > MAX_SIZE)
+			sizeMB = MAX_SIZE;
+		capacity = (sizeMB*(1 << 20) - HOUSE_KEEPING_OVERHEAD)/entrySize;
+		t1 = (T[])new Entry[(int)Math.round(T1_SHARE*capacity)];
+		t2 = (T[])new Entry[(int)Math.round(T2_SHARE*capacity)];
+		t3 = (T[])new Entry[(int)Math.round(T3_SHARE*capacity)];
+		t4 = (T[])new Entry[(int)Math.round(T4_SHARE*capacity)];
+		capacity = t1.length + t2.length + t3.length + t4.length;
 	}
-	/**Returns the sum of the lengths of the hash tables.
+	/**
+	 * Returns the number of occupied slots in the hash table.
 	 * 
 	 * @return
 	 */
-	public int capacity() {
-		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
-			return t1.length + t2.length + t3.length + t4.length;
-		}}}}
-		
-	}
-	/**Returns the number of occupied slots in the hash table.
-	 * 
-	 * @return
-	 */
-	public int load() {
+	public long getLoad() {
 		return load.get();
 	}
-	/**Inserts an entry into the hash table.
+	/**
+	 * Returns the total number of slots in the hash tables.
 	 * 
-	 * @param e
+	 * @return
 	 */
-	public void insert(T e) {
-		int ind;
-		T slot;
-		long key = e.hashKey();
-		synchronized (t1) {
-			if ((slot = t1[(ind = hash1(key))]) != null && key == slot.hashKey()) {
-				if (e.betterThan(slot))
-					t1[ind] = e;
-				return;
-			}
-		}
-		synchronized (t2) {
-			if ((slot = t2[(ind = hash2(key))]) != null && key == slot.hashKey()) {
-				if (e.betterThan(slot))
-					t2[ind] = e;
-				return;
-			}
-		}
-		synchronized (t3) {
-			if ((slot = t3[(ind = hash3(key))]) != null && key == slot.hashKey()) {
-				if (e.betterThan(slot))
-					t3[ind] = e;
-				return;
-			}
-		}
-		synchronized (t4) {
-			if ((slot = t4[(ind = hash4(key))]) != null && key == slot.hashKey()) {
-				if (e.betterThan(slot))
-					t4[ind] = e;
-				return;
-			}
-		}
-		for (int i = 0; i <= MINIMUM_LOAD_FACTOR*(Math.log(capacity())/Math.log(EPSILON)); i++) {
-			synchronized (t1) {
-				if ((slot = t1[(ind = hash1(key))]) == null) {
-					t1[ind] = e;
-					load.incrementAndGet();
-					return;
-				}
-				t1[ind] = e;
-				e = slot;
-			}
-			synchronized (t2) {
-				if ((slot = t2[(ind = hash2(e.hashKey()))]) == null) {
-					t2[ind] = e;
-					load.incrementAndGet();
-					return;
-				}
-				t2[ind] = e;
-				e = slot;
-			}
-			synchronized (t3) {
-				if ((slot = t3[(ind = hash3(e.hashKey()))]) == null) {
-					t3[ind] = e;
-					load.incrementAndGet();
-					return;
-				}
-				t3[ind] = e;
-				e = slot;
-			}
-			synchronized (t4) {
-				if ((slot = t4[(ind = hash4(e.hashKey()))]) == null) {
-					t4[ind] = e;
-					load.incrementAndGet();
-					return;
-				}
-				t4[ind] = e;
-				e = slot;
-			}
-		}
-		rehash();
-		insert(e);
+	public long getCapacity() {
+		return capacity;
 	}
-	/**Return the entry identified by the input parameter key or null if it is not in the table.
+	/**
+	 * Inserts an entry into the hash table. No null checks are made.
+	 * 
+	 * @param e The entry to be inserted.
+	 * @return Whether the entry has been inserted into one of the tables.
+	 * @throws NullPointerException
+	 */
+	public boolean insert(T e) throws NullPointerException {
+		int ind1, ind2, ind3, ind4;
+		T slot1, slot2, slot3, slot4;
+		long key = e.hashKey();
+		long absKey = key & UNSIGNED_LONG;
+		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
+			if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
+				if (key == slot1.hashKey() && e.betterThan(slot1)) {
+					t1[ind1] = e;
+					return true;
+				}
+			}
+			else {
+				t1[ind1] = e;
+				load.incrementAndGet();
+				return true;
+			}
+		
+			if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
+				if (key == slot2.hashKey() && e.betterThan(slot2)) {
+					t2[ind2] = e;
+					return true;
+				}
+			}
+			else {
+				t2[ind2] = e;
+				load.incrementAndGet();
+				return true;
+			}
+		
+			if ((slot3 = t3[(ind3 = (int)(absKey%t3.length))]) != null) {
+				if (key == slot3.hashKey() && e.betterThan(slot3)) {
+					t3[ind3] = e;
+					return true;
+				}
+			}
+			else {
+				t3[ind3] = e;
+				load.incrementAndGet();
+				return true;
+			}
+		
+			if ((slot4 = t4[(ind4 = (int)(absKey%t4.length))]) != null) {
+				if (key == slot4.hashKey() && e.betterThan(slot4)) {
+					t4[ind4] = e;
+					return true;
+				}
+			}
+			else {
+				t4[ind4] = e;
+				load.incrementAndGet();
+				return true;
+			}
+			if (e.betterThan(slot1)) {
+				t1[ind1] = e;
+				return true;
+			}
+			if (e.betterThan(slot2)) {
+				t2[ind2] = e;
+				return true;
+			}
+			if (e.betterThan(slot3)) {
+				t3[ind3] = e;
+				return true;
+			}
+			if (e.betterThan(slot4)) {
+				t4[ind4] = e;
+				return true;
+			}
+		}}}}
+		return false;
+	}
+	/**
+	 * Return the entry identified by the input parameter key or null if it is not in the table.
 	 * 
 	 * @param key
-	 * @return
+	 * @return The entry mapped to the speciied key.
 	 */
 	public T lookUp(long key) {
 		T e;
+		long absKey = key & UNSIGNED_LONG;
 		synchronized (t1) {
-			if ((e = t1[hash1(key)]) != null && e.hashKey() == key)
+			if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
 				return e;
 		}
 		synchronized (t2) {
-			if ((e = t2[hash2(key)]) != null && e.hashKey() == key)
+			if ((e = t2[(int)(absKey%t2.length)]) != null && e.hashKey() == key)
 				return e;
 		}
 		synchronized (t3) {
-			if ((e = t3[hash3(key)]) != null && e.hashKey() == key)
+			if ((e = t3[(int)(absKey%t3.length)]) != null && e.hashKey() == key)
 				return e;
 		}
 		synchronized (t4) {
-			if ((e = t4[hash4(key)]) != null && e.hashKey() == key)
+			if ((e = t4[(int)(absKey%t4.length)]) != null && e.hashKey() == key)
 				return e;
 		}
 		return null;
 	}
-	/**Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table; returns
-	 * false otherwise.
+	/**
+	 * Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table;
+	 * returns false otherwise.
 	 * 
 	 * @param key
-	 * @return
+	 * @return Whether there was an entry mapped to the specified key.
 	 */
 	public boolean remove(long key) {
 		int ind;
 		T e;
+		long absKey = key & UNSIGNED_LONG;
 		synchronized (t1) {
-			if ((e = t1[(ind = hash1(key))]) != null && e.hashKey() == key) {
+			if ((e = t1[(ind = (int)(absKey%t1.length))]) != null && e.hashKey() == key) {
 				t1[ind] = null;
 				load.decrementAndGet();
 				return true;
 			}
 		}
 		synchronized (t2) {
-			if ((e = t2[(ind = hash2(key))]) != null && e.hashKey() == key) {
+			if ((e = t2[(ind = (int)(absKey%t2.length))]) != null && e.hashKey() == key) {
 				t2[ind] = null;
 				load.decrementAndGet();
 				return true;
 			}
 		}
 		synchronized (t3) {
-			if ((e = t3[(ind = hash3(key))]) != null && e.hashKey() == key) {
+			if ((e = t3[(ind = (int)(absKey%t3.length))]) != null && e.hashKey() == key) {
 				t3[ind] = null;
 				load.decrementAndGet();
 				return true;
 			}
 		}
 		synchronized (t4) {
-			if ((e = t4[(ind = hash4(key))]) != null && e.hashKey() == key) {
+			if ((e = t4[(ind = (int)(absKey%t4.length))]) != null && e.hashKey() == key) {
 				t4[ind] = null;
 				load.decrementAndGet();
 				return true;
@@ -234,11 +250,12 @@ public class HashTable<T extends HashTable.Entry<T>> implements Estimative, Iter
 		}
 		return false;
 	}
-	/**Removes all the entries that match the condition specified in the argument.
+	/**
+	 * Removes all the entries that match the condition specified in the argument.
 	 * 
 	 * @param condition
 	 */
-	public void remove(Predicate<T> condition) {
+	public void remove(Predicate<T> condition) throws NullPointerException {
 		T e;
 		synchronized (t1) {
 			for (int i = 0; i < t1.length; i++) {
@@ -277,115 +294,29 @@ public class HashTable<T extends HashTable.Entry<T>> implements Estimative, Iter
 			}
 		}
 	}
-	@SuppressWarnings({"unchecked"})
-	private void rehash() {
-		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
-			T[] oldTable1 = t1;
-			T[] oldTable2 = t2;
-			T[] oldTable3 = t3;
-			T[] oldTable4 = t4;
-			float size = load.get()/MINIMUM_LOAD_FACTOR;
-			load = new AtomicInteger(0);
-			t1 = (T[])new Entry[(int)(T1_SHARE*size)];
-			t2 = (T[])new Entry[(int)(T2_SHARE*size)];
-			t3 = (T[])new Entry[(int)(T3_SHARE*size)];
-			t4 = (T[])new Entry[(int)(T4_SHARE*size)];
-			for (T e : oldTable1) {
-				if (e != null)
-					insert(e);
-			}
-			for (T e : oldTable2) {
-				if (e != null)
-					insert(e);
-			}
-			for (T e : oldTable3) {
-				if (e != null)
-					insert(e);
-			}
-			for (T e : oldTable4) {
-				if (e != null)
-					insert(e);
-			}
-		}}}}
-	}
-	/**Replaces the current tables with new, empty hash tables of the same sizes.*/
+	/**
+	 * Replaces the current tables with new, empty hash tables of the same sizes.
+	 */
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
-			load = new AtomicInteger(0);
+			load = new AtomicLong(0);
 			t1 = (T[])new Entry[t1.length];
 			t2 = (T[])new Entry[t2.length];
 			t3 = (T[])new Entry[t3.length];
 			t4 = (T[])new Entry[t4.length];
 		}}}}
 	}
-	/**Prints all non-null entries to the console.*/
-	public void printAll() {
+	/**
+	 * Returns the base size of the HashTable instance in bytes.
+	 * 
+	 * @return The size of the underlying hash table structure.
+	 */
+	protected long baseSize() {
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
-			System.out.println("TABLE_1:\n");
-			for (T e : t1) {
-				if (e != null)
-					System.out.println(e);
-			}
-			System.out.println("TABLE_2:\n");
-			for (T e : t2) {
-				if (e != null)
-					System.out.println(e);
-			}
-			System.out.println("TABLE_3:\n");
-			for (T e : t3) {
-				if (e != null)
-					System.out.println(e);
-			}
-			System.out.println("TABLE_4:\n");
-			for (T e : t4) {
-				if (e != null)
-					System.out.println(e);
-			}
+			// Total size of entries and empty slots + house keeping overhead
+			return capacity*SizeOf.POINTER.numOfBytes + load.get()*(entrySize - SizeOf.POINTER.numOfBytes) + HOUSE_KEEPING_OVERHEAD;
 		}}}}
-	}
-	private int hash1(long key) {
-		return (int)((key & UNSIGNED_LONG)%t1.length);
-	}
-	private int hash2(long key) {
-		return (int)((key & UNSIGNED_LONG)%t2.length);
-	}
-	private int hash3(long key) {
-		return (int)((key & UNSIGNED_LONG)%t3.length);
-	}
-	private int hash4(long key) {
-		return (int)((key & UNSIGNED_LONG)%t4.length);
-	}
-	@Override
-	public int baseSize() {
-		int size = 0;
-		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
-			for (Entry<T> e : t1) {
-				if (e == null)
-					size += SizeOf.POINTER.numOfBytes;
-				else
-					size += e.allocatedMemory();
-			}
-			for (Entry<T> e : t2) {
-				if (e == null)
-					size += SizeOf.POINTER.numOfBytes;
-				else
-					size += e.allocatedMemory();
-			}
-			for (Entry<T> e : t3) {
-				if (e == null)
-					size += SizeOf.POINTER.numOfBytes;
-				else
-					size += e.allocatedMemory();
-			}
-			for (Entry<T> e : t4) {
-				if (e == null)
-					size += SizeOf.POINTER.numOfBytes;
-				else
-					size += e.allocatedMemory();
-			}
-		}}}}
-		return size;
 	}
 	@Override
 	public Iterator<T> iterator() {
@@ -398,5 +329,10 @@ public class HashTable<T extends HashTable.Entry<T>> implements Estimative, Iter
 			list.addAll(Arrays.asList(t4));
 			return list.iterator();
 		}}}}
+	}
+	@Override
+	public String toString() {
+		return "Load/Capacity: " + load.get() + "/" + capacity + "\n" +
+				"Size: " + this.size()/(1 << 20) + "MB";
 	}
 }

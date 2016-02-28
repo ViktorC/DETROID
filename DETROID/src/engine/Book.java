@@ -9,7 +9,8 @@ import java.util.Random;
 
 import engine.Board.Square;
 
-/**A class for reading and selecting moves from PolyGlot opening books. It allows for the possibility of using an alternative book, and furthermore,
+/**
+ * A class for reading and selecting moves from PolyGlot opening books. It allows for the possibility of using an alternative book, and furthermore,
  * to use the default book once out of the alternative book.
  * 
  * @author Viktor
@@ -17,7 +18,8 @@ import engine.Board.Square;
  */
 public class Book {
 	
-	/**A simple container class for Polyglot book entries. Only stores relevant information, i.e. move and weight.
+	/**
+	 * A simple container class for Polyglot book entries. Only stores relevant information, i.e. move and weight.
 	 * 
 	 * @author Viktor
 	 *
@@ -32,7 +34,8 @@ public class Book {
 			this.weight = weight;
 		}
 	}
-	/**An enumeration type for mathematical models used in the process of selecting one from all the available opening moves for a position. RANDOM
+	/**
+	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening moves for a position. RANDOM
 	 * is actually pseudo-random.
 	 * 
 	 * @author Viktor
@@ -67,7 +70,8 @@ public class Book {
 			throw new IllegalArgumentException();
 		}
 	}
-	/**Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)} method.
+	/**
+	 * Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)} method.
 	 * If there is none, it instantiates and returns the default book.
 	 * 
 	 * @return
@@ -77,7 +81,8 @@ public class Book {
 			INSTANCE = new Book(DEFAULT_FILE_PATH, false);
 		return INSTANCE;
 	}
-	/**Instantiates a book and returns it. Only one Book instance can exist; the invocation of this method with useDefaultBook set to true results
+	/**
+	 * Instantiates a book and returns it. Only one Book instance can exist; the invocation of this method with useDefaultBook set to true results
 	 * in the instantiation of the default book of the engine as well as a secondary book for when the engine is out of the specified book. If this
 	 * method or {@link #getInstance() getInstance} has already been called before, it throws an {@link #java.lang.IllegalStateExcetion IllegalStateExcetion}.
 	 * 
@@ -94,7 +99,8 @@ public class Book {
 			INSTANCE.secondaryBook = new Book(DEFAULT_FILE_PATH, false);
 		return INSTANCE;
 	}
-	/**Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search through
+	/**
+	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search through
 	 * the entries.
 	 * 
 	 * @param p The position for which the entries are to be returned.
@@ -158,7 +164,8 @@ public class Book {
 			return null;
 		}
 	}
-	/**Parses a short in which moves are encoded in PolyGlot books and creates a Pure Algebraic Coordinate Notation string from it.
+	/**
+	 * Parses a short in which moves are encoded in PolyGlot books and creates a Pure Algebraic Coordinate Notation string from it.
 	 * 
 	 * @param polyglotMove
 	 * @return
@@ -202,7 +209,8 @@ public class Book {
 		}
 		return pacn + promPiece;
 	}
-	/**Picks and returns an opening move for the Position from all the relevant entries found in the PolyGlot book based on the specified
+	/**
+	 * Picks and returns an opening move for the Position from all the relevant entries found in the PolyGlot book based on the specified
 	 * mathematical model for selection. If there have been no relevant entries found, it returns null.
 	 * 
 	 * @param p The position for which an opening move is sought.

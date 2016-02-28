@@ -1,9 +1,11 @@
 package engine;
 
 import engine.Board.Diagonal;
+import engine.Move.MoveType;
 import util.*;
 
-/**A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
+/**
+ * A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
  * kept incrementally updated after moves made using {@link #score score}.
  * 
  * @author Viktor
@@ -11,7 +13,8 @@ import util.*;
  */
 public final class Evaluator {
 	
-	/**An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.
+	/**
+	 * An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.
 	 * 
 	 * @author Viktor
 	 *
@@ -37,7 +40,8 @@ public final class Evaluator {
 	private Evaluator() {
 		
 	}
-	/**Returns a phaseScore between 0 and 256.
+	/**
+	 * Returns a phaseScore between 0 and 256.
 	 * 
 	 * @param numOfQueens
 	 * @param numOfRooks
@@ -50,7 +54,8 @@ public final class Evaluator {
 					+ numOfBishops*Material.BISHOP.phaseWeight + numOfKnights*Material.KNIGHT.phaseWeight);
 		return (phase*256 + TOTAL_PHASE_WEIGHTS/2)/TOTAL_PHASE_WEIGHTS;
 	}
-	/**Returns an estimation of the phase in which the current game is based on the given position.
+	/**
+	 * Returns an estimation of the phase in which the current game is based on the given position.
 	 * 
 	 * @param pos
 	 * @return
@@ -63,15 +68,16 @@ public final class Evaluator {
 		numOfKnights = BitOperations.getCardinality(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
 		return GamePhase.getByPhaseScore(phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights));
 	}
-	/**A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
+	/**
+	 * A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
 	 * in the quiescence search.
 	 * 
 	 * @param pos
 	 * @param move
 	 * @return
 	 */
-	public static int SEE(Position pos, Move move) {
-		int score = 0, victimVal, firstVictimVal, attackerVal, kingVictVal = 0;
+	public static short SEE(Position pos, Move move) {
+		short score = 0, victimVal, firstVictimVal, attackerVal, kingVictVal = 0;
 		long attackers, bpAttack, rkAttack, occupied = pos.allOccupied;
 		boolean whitesTurn, noRetaliation = true;
 		MoveSetDatabase dB;
@@ -161,7 +167,8 @@ public final class Evaluator {
 		}
 		return score;
 	}
-	/**Returns the right score for when there are no more legal move in a position.
+	/**
+	 * Returns the right score for when there are no more legal move in a position.
 	 * 
 	 * @param sideToMoveInCheck
 	 * @param ply
@@ -174,7 +181,8 @@ public final class Evaluator {
 		else
 			return Termination.STALE_MATE.score;
 	}
-	/**Returns an evaluation score according to the current phase and the evaluation scores of the same position in the context of an opening and
+	/**
+	 * Returns an evaluation score according to the current phase and the evaluation scores of the same position in the context of an opening and
 	 * in the context of and end game to establish continuity.
 	 * 
 	 * @param openingEval
@@ -185,7 +193,8 @@ public final class Evaluator {
 	private static int taperedEvalScore(int openingEval, int endGameEval, int phaseScore) {
 		return (openingEval*(256 - phaseScore) + endGameEval*phaseScore)/256;
 	}
-	/**Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
+	/**
+	 * Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @param pos The position to evaluate.
 	 * @param allMoves A list of all the legal moves for the side to move.
@@ -193,10 +202,10 @@ public final class Evaluator {
 	 * @return
 	 */
 	public static int score(Position pos, List<Move> allMoves, int ply) {
-		int numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
-			numOfBlackKnights, numOfAllPieces, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0,
-			bishopColor, bishopField, newBishopColor;
-		int[] bishopSqrArr;
+		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
+			numOfBlackKnights, numOfAllPieces;
+		int bishopField, bishopColor, newBishopColor, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
+		byte[] bishopSqrArr;
 		// PTEntry e;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
@@ -222,7 +231,7 @@ public final class Evaluator {
 			Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
 				return Termination.INSUFFICIENT_MATERIAL.score;
 			if (numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
-				bishopSqrArr = BitOperations.serialize(pos.whiteBishops | pos.blackBishops, numOfWhiteBishops + numOfBlackBishops);
+				bishopSqrArr = BitOperations.serialize(pos.whiteBishops | pos.blackBishops, (byte)(numOfWhiteBishops + numOfBlackBishops));
 				bishopColor = Diagonal.getBySquareIndex(bishopSqrArr[0]).ordinal()%2;
 				for (int i = 1; i < bishopSqrArr.length; i++) {
 					bishopField = bishopSqrArr[i];

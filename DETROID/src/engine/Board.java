@@ -2,14 +2,16 @@ package engine;
 
 import util.BitOperations;
 
-/*A class to group together objects/enums exclusive to the chess board itself such as the squares, files, and ranks.
+/*
+ * A class to group together objects/enums exclusive to the chess board itself such as the squares, files, and ranks.
  * 
  * @author Viktor
  *
  */
 public final class Board {
 	
-	/**An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
+	/**
+	 * An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
 	 * the respective square's index set.
 	 * 
 	 * @author Viktor
@@ -33,11 +35,15 @@ public final class Board {
 			ind = (byte)ordinal();
 			bitmap = 1L << ind;
 		}
-		/**Returns a String representation of the square.*/
+		/**
+		 * Returns a String representation of the square.
+		 */
+		@Override
 		public String toString() {
 			return toString(ind);
 		}
-		/**Returns a String representation of the square that is easily readable for humans.
+		/**
+		 * Returns a String representation of the square that is easily readable for humans.
 		 * 
 		 * @param sqrInd
 		 * @return
@@ -45,7 +51,8 @@ public final class Board {
 		public static String toString(int sqrInd) {
 			return ("" + (char)('a' + sqrInd%8) + "" + (sqrInd/8 + 1)).toUpperCase();
 		}
-		/**Returns the index of a square specified by its file and rank.
+		/**
+		 * Returns the index of a square specified by its file and rank.
 		 * 
 		 * @param square
 		 * @return
@@ -59,7 +66,9 @@ public final class Board {
 			}
 			throw new IllegalArgumentException();
 		}
-		/**@return a Square enum.*/
+		/**
+		 * @return a Square enum.
+		 */
 		public static Square getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
@@ -75,7 +84,8 @@ public final class Board {
 		}
 	}
 
-	/**An enum type for the 8 files/columns of a chess board. Each constant has a field that contains a long with only the bits falling on the
+	/**
+	 * An enum type for the 8 files/columns of a chess board. Each constant has a field that contains a long with only the bits falling on the
 	 * file set.
 	 * 
 	 * @author Viktor
@@ -90,9 +100,11 @@ public final class Board {
 		private File() {
 			bitmap = 0b0000000100000001000000010000000100000001000000010000000100000001L << ordinal();
 		}
-		/**Returns the file 'fileInd' to the right from the file A.
+		/**
+		 * Returns the file 'fileInd' to the right from the file A.
 		 * 
-		 * @param fileInd the index of the file*/
+		 * @param fileInd The index of the file.
+		 */
 		public static File getByIndex(int fileInd) {
 			switch(fileInd) {
 				case 0:  return A;
@@ -106,21 +118,26 @@ public final class Board {
 				default: throw new IllegalArgumentException("Invalid file index.");
 			}
 		}
-		/**Returns a the file of the chess board on which the input parameter square lies.
+		/**
+		 * Returns a the file of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqr a Square enum*/
+		 * @param sqr A Square enum.
+		 */
 		public static File getBySquare(Square sqr) {
 			return getByIndex(sqr.ind & 7);
 		}
-		/**Returns the file of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the file of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqrInd the index of the square*/
+		 * @param sqrInd The index of the square.
+		 */
 		public static File getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd & 7);
 		}
 	}
 	
-	/**An enum type for the 8 ranks/rows of a chess board. Each constant has a field that contains a long with only the byte on the rank's
+	/**
+	 * An enum type for the 8 ranks/rows of a chess board. Each constant has a field that contains a long with only the byte on the rank's
 	 * index set.
 	 * 
 	 * @author Viktor
@@ -135,9 +152,11 @@ public final class Board {
 		private Rank() {
 			bitmap = 0b0000000000000000000000000000000000000000000000000000000011111111L << (8*ordinal());
 		}
-		/**Returns the 'rnkInd'th rank.
+		/**
+		 * Returns the 'rnkInd'th rank.
 		 * 
-		 * @param rnkInd the index of the rank*/
+		 * @param rnkInd The index of the rank.
+		 */
 		public static Rank getByIndex(int rnkInd) {
 			switch(rnkInd) {
 				case 0:  return R1;
@@ -151,21 +170,26 @@ public final class Board {
 				default: throw new IllegalArgumentException("Invalid rank index.");
 			}
 		}
-		/**Returns the rank of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the rank of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqr a Square enum*/
+		 * @param sqr A Square enum.
+		 */
 		public static Rank getBySquare(Square sqr) {
 			return getByIndex(sqr.ind >>> 3);
 		}
-		/**Returns the rank of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the rank of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqrInd the index of the square*/
+		 * @param sqrInd The index of the square.
+		 */
 		public static Rank getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd >>> 3);
 		}
 	}
 	
-	/**An enum type for the 15 diagonals of a chess board. Each constant has a field that contains a long with only the bits on indexes
+	/**
+	 * An enum type for the 15 diagonals of a chess board. Each constant has a field that contains a long with only the bits on indexes
 	 * of the squares falling on the diagonal set.
 	 * 
 	 * @author Viktor
@@ -183,9 +207,11 @@ public final class Board {
 			bitmap = shift > 0 ? base >>> 8*shift : base << 8*-shift;
 				
 		}
-		/**Returns the diagonal indexed by the input parameter.
+		/**
+		 * Returns the diagonal indexed by the input parameter.
 		 * 
-		 * @param dgnInd the index of the diagonal*/
+		 * @param dgnInd The index of the diagonal.
+		 */
 		public static Diagonal getByIndex(int dgnInd) {
 			switch(dgnInd) {
 				case 0:  return DG1;
@@ -206,21 +232,26 @@ public final class Board {
 				default: throw new IllegalArgumentException("Invalid diagonal index.");
 			}
 		}
-		/**Returns the diagonal of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the diagonal of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqr a Square enum*/
+		 * @param sqr A Square enum.
+		 */
 		public static Diagonal getBySquare(Square sqr) {
 			return getByIndex((sqr.ind & 7) + (sqr.ind >>> 3));
 		}
-		/**Returns the diagonal of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the diagonal of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqrInd the index of a square*/
+		 * @param sqrInd The index of a square.
+		 */
 		public static Diagonal getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (sqrInd >>> 3));
 		}
 	}
 	
-	/**An enum type for the 15 anti-diagonals of a chess board. Each constant has a field that contains a long with only the bits on indexes
+	/**
+	 * An enum type for the 15 anti-diagonals of a chess board. Each constant has a field that contains a long with only the bits on indexes
 	 * of the squares falling on the diagonal set.
 	 * 
 	 * @author Viktor
@@ -237,9 +268,11 @@ public final class Board {
 			int shift = 7 - ordinal();
 			bitmap = shift > 0 ? base << 8*shift : base >>> 8*-shift;
 		}
-		/**Returns the anti-diagonal indexed by the input parameter.
+		/**
+		 * Returns the anti-diagonal indexed by the input parameter.
 		 * 
-		 * @param adgnInd the index of the anti-diagonal*/
+		 * @param adgnInd The index of the anti-diagonal.
+		 */
 		public static AntiDiagonal getByIndex(int adgnInd) {
 			switch(adgnInd) {
 				case 0:  return ADG1;
@@ -260,15 +293,19 @@ public final class Board {
 				default: throw new IllegalArgumentException("Invalid anti-diagonal index.");
 			}
 		}
-		/**Returns the anti-diagonal of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the anti-diagonal of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqr a Square enum*/
+		 * @param sqr A Square enum.
+		 */
 		public static AntiDiagonal getBySquare(Square sqr) {
 			return getByIndex((sqr.ind & 7) + (7 - (sqr.ind >>> 3)));
 		}
-		/**Returns the anti-diagonal of the chess board on which the input parameter square lies.
+		/**
+		 * Returns the anti-diagonal of the chess board on which the input parameter square lies.
 		 * 
-		 * @param sqrInd the index of a square*/
+		 * @param sqrInd The index of a square.
+		 */
 		public static AntiDiagonal getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
@@ -277,7 +314,8 @@ public final class Board {
 	private Board() {
 		
 	}
-	/**Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.
+	/**
+	 * Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.
 	 * 
 	 * @param bitmap
 	 * @return

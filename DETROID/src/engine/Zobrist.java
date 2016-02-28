@@ -3,8 +3,10 @@ package engine;
 import java.util.Random;
 
 import engine.Board.Square;
+import engine.Move.MoveType;
 
-/**A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
+/**
+ * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
  * Two Position objects with identical states will always have the same Zobrist keys within one runtime and two Position objects with
  * different values for the concerned instance fields will almost always have different Zobrist keys.
  * The relevant fields are:
@@ -231,7 +233,9 @@ public final class Zobrist {
 	private Zobrist() {
 		
 	}
-	/**Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.*/
+	/**
+	 * Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.
+	 */
 	private static void pseudorandNumGen() {
 		Random random = new Random();
 		turn = random.nextLong();
@@ -248,12 +252,13 @@ public final class Zobrist {
 		for (int i = 0; i < enPassantRights.length; i++)
 			enPassantRights[i] = random.nextLong();
 	}
-	/**Encodes a Position object's pawn and main hash keys and sets the respective fields in the Position object.
+	/**
+	 * Encodes a Position object's pawn and main hash keys and sets the respective fields in the Position object.
 	 * 
 	 * @param board
 	 */
 	public static void setHashKeys(Position p) {
-		int[] board64 = p.getOffsetBoard();
+		byte[] board64 = p.getOffsetBoard();
 		long key = 0, pawnKey = 0;
 		if (!p.whitesTurn)
 			key ^= turn;
@@ -270,8 +275,8 @@ public final class Zobrist {
 		p.key = key;
 		p.pawnKey = pawnKey;
 	}
-	/**Modifies a Position object's hash keys according to the changes made by
-	 * the last move.
+	/**
+	 * Modifies a Position object's hash keys according to the changes made by the last move.
 	 * 
 	 * @param p
 	 */
@@ -403,7 +408,8 @@ public final class Zobrist {
 		p.key = key;
 		p.pawnKey = pawnKey;
 	}
-	/**Returns the 64 bit hash key used for positions in PolyGlot opening books.
+	/**
+	 * Returns the 64 bit hash key used for positions in PolyGlot opening books.
 	 * 
 	 * @param p
 	 * @return
@@ -411,7 +417,7 @@ public final class Zobrist {
 	public static long getPolyglotHashKey(Position p) {
 		long key = 0L;
 		int piece, pieceNote;
-		int[] offBoard = p.getOffsetBoard();
+		byte[] offBoard = p.getOffsetBoard();
 		int wCastlingRights = p.whiteCastlingRights;
 		int bCastlingRights = p.blackCastlingRights;
 		int enPassantRights = p.enPassantRights;

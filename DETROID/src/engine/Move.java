@@ -3,14 +3,39 @@ package engine;
 import util.List;
 import util.Comparable;
 
-/**A simple unencapsulated class that provides objects for storing information about moves necessary for making them.
+/**
+ * A simple unencapsulated class that provides objects for storing information about moves necessary for making them.
  * 
  * @author Viktor
  *
  */
 public class Move implements Comparable<Move> {
 	
-	/**Mask and shift values for encoding contents of a Move object into an int; and vica versa.
+	/**
+	 * An enum type defining the seven move types the engine handles differently.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public enum MoveType {
+		
+		NORMAL,
+		SHORT_CASTLING,
+		LONG_CASTLING,
+		EN_PASSANT,
+		PROMOTION_TO_QUEEN,
+		PROMOTION_TO_ROOK,
+		PROMOTION_TO_BISHOP,
+		PROMOTION_TO_KNIGHT;
+		
+		public final byte ind;	// A numeric representation of the move type; to avoid the overhead of calling the ordinal function.
+		
+		private MoveType() {
+			ind = (byte)ordinal();
+		}
+	}
+	/**
+	 * Mask and shift values for encoding contents of a Move object into an int; and vica versa.
 	 * 
 	 * @author Viktor
 	 *
@@ -18,11 +43,13 @@ public class Move implements Comparable<Move> {
 	private enum ToInt {
 		
 		SHIFT_TO 			(6),
-		SHIFT_MOVED_PIECE	(12),
-		SHIFT_CAPTURED_PIECE(16),
+		SHIFT_MOVED			(12),
+		SHIFT_CAPTURED		(16),
 		SHIFT_TYPE			(20),
-		MASK_FROM_TO		(63),
-		MASK_MOVED_CAPTURED	(15);
+		MASK_FROM			(63),
+		MASK_TO				(63),
+		MASK_MOVED			(15),
+		MASK_CAPTURED		(15);
 		
 		final byte value;
 		
@@ -31,35 +58,60 @@ public class Move implements Comparable<Move> {
 		}
 	}
 	
-
-	int from;			// The index of the origin square.
-	int to;				// The index of the destination square.
-	int movedPiece;		// The numeric notation of the type of piece moved.
-	int capturedPiece;	// The numeric notation of the type of piece captured; if none, 0.
-	int type;			// The type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen, 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight.
-	int value;			// The value assigned to the move at move ordering, or the value returned by the search algorithm based on the evaluator's scoring for the position that the move leads to.
+	/**
+	 * The index of the origin square.
+	 */
+	public final byte from;
+	/**
+	 * The index of the destination square.
+	 */
+	public final byte to;
+	/**
+	 * The numeric notation of the type of piece moved.
+	 */
+	public final byte movedPiece;
+	/**
+	 * The numeric notation of the type of piece captured; if none, 0.
+	 */
+	public final byte capturedPiece;
+	/**
+	 * The type of the move; 0 - normal, 1 - short castling, 2 - long castling, 3 - en passant, 4 - promotion to queen,
+	 * 5 - promotion to rook, 6 - promotion to bishop, 7 - promotion to knight.
+	 */
+	public final byte type;
+	/**
+	 * The value assigned to the move at move ordering (or the value returned by the search algorithm based on the evaluator's
+	 * scoring for the position that the move leads to).
+	 */
+	short value;
 	
 	public Move() {
+		from = 0;
+		to = 0;
+		movedPiece = 0;
+		capturedPiece = 0;
+		type = 0;
 	}
-	public Move(int score) {
-		value = score;
-	}
-	public Move(int from, int to, int movedPiece, int capturedPiece, int type) {
+	public Move(byte from, byte to, byte movedPiece, byte capturedPiece, byte type) {
 		this.from = from;
 		this.to = to;
 		this.movedPiece = movedPiece;
 		this.capturedPiece = capturedPiece;
 		this.type = type;
 	}
+	public Move(byte from, byte to, byte movedPiece, byte capturedPiece, byte type, short value) {
+		this(from, to, movedPiece, capturedPiece, type);
+		this.value = value;
+	}
 	/**Parses a move encoded in a 32 bit integer.*/
 	public static Move toMove(int move) {
-		Move m = new Move();
-		m.from = move & ToInt.MASK_FROM_TO.value;
-		m.to = (move >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM_TO.value;
-		m.movedPiece = (move >>> ToInt.SHIFT_MOVED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value;
-		m.capturedPiece = (move >>> ToInt.SHIFT_CAPTURED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value;
-		m.type = move >>> ToInt.SHIFT_TYPE.value;
-		return m;
+		byte from, to, movedPiece, capturedPiece, type;
+		from = (byte)(move & ToInt.MASK_FROM.value);
+		to = (byte)((move >>> ToInt.SHIFT_TO.value) & ToInt.MASK_TO.value);
+		movedPiece = (byte)((move >>> ToInt.SHIFT_MOVED.value) & ToInt.MASK_MOVED.value);
+		capturedPiece = (byte)((move >>> ToInt.SHIFT_CAPTURED.value) & ToInt.MASK_CAPTURED.value);
+		type = (byte)(move >>> ToInt.SHIFT_TYPE.value);
+		return new Move(from, to, movedPiece, capturedPiece, type);
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
 	@Override
@@ -102,8 +154,8 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public int toInt() {
-		return (from | (to << ToInt.SHIFT_TO.value) | (movedPiece << ToInt.SHIFT_MOVED_PIECE.value) |
-			   (capturedPiece << ToInt.SHIFT_CAPTURED_PIECE.value) | (type << ToInt.SHIFT_TYPE.value));
+		return (from | (to << ToInt.SHIFT_TO.value) | (movedPiece << ToInt.SHIFT_MOVED.value) |
+			   (capturedPiece << ToInt.SHIFT_CAPTURED.value) | (type << ToInt.SHIFT_TYPE.value));
 	}
 	/**Returns whether this move is equal to the input parameter move.
 	 * 
@@ -121,9 +173,9 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public boolean equals(int m) {
-		if (from == (m & ToInt.MASK_FROM_TO.value) && to == ((m >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM_TO.value) &&
-			movedPiece == ((m >>> ToInt.SHIFT_MOVED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value) &&
-			capturedPiece == ((m >>> ToInt.SHIFT_CAPTURED_PIECE.value) & ToInt.MASK_MOVED_CAPTURED.value) &&
+		if (from == (m & ToInt.MASK_FROM.value) && to == ((m >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM.value) &&
+			movedPiece == ((m >>> ToInt.SHIFT_MOVED.value) & ToInt.MASK_MOVED.value) &&
+			capturedPiece == ((m >>> ToInt.SHIFT_CAPTURED.value) & ToInt.MASK_CAPTURED.value) &&
 			type == (m >>> ToInt.SHIFT_TYPE.value))
 			return true;
 		return false;

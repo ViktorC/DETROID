@@ -1,6 +1,7 @@
 package util;
 
-/**An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
+/**
+ * An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
  * {@link #Comparable Comparable} interface.
  * 
  * @author Viktor
@@ -11,7 +12,8 @@ public final class QuickSort {
 	private QuickSort() {
 		
 	}
-	/**Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
+	/**
+	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
 	 * {@link #Comparable Comparable} interface.
 	 * 
 	 * @param container The list to be sorted.
@@ -29,7 +31,8 @@ public final class QuickSort {
 		}
 		return null;
 	}
-	/**Sorts and returns the array. The elements have to implement the {@link #Comparable Comparable} interface.
+	/**
+	 * Sorts and returns the array. The elements have to implement the {@link #Comparable Comparable} interface.
 	 * 
 	 * @param array The array to be sorted.
 	 * @return The sorted array.
@@ -43,7 +46,8 @@ public final class QuickSort {
 		}
 		return array;
 	}
-	/**The quickSort algorithm.
+	/**
+	 * The quickSort algorithm.
 	 * 
 	 * @param array
 	 * @param left

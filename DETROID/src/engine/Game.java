@@ -9,7 +9,8 @@ import engine.Book.SelectionModel;
 import util.List;
 import util.Queue;
 
-/**A UI base and controller class for the engine.
+/**
+ * A UI base and controller class for the engine.
  * 
  * @author Viktor
  *
@@ -17,7 +18,8 @@ import util.Queue;
 public class Game {
 	
 	
-	/**A simple enum for game outcome types.
+	/**
+	 * A simple enum for game outcome types.
 	 * 
 	 * @author Viktor
 	 *
@@ -34,7 +36,8 @@ public class Game {
 		private State(String pgnNotation) {
 			this.pgnNotation = pgnNotation;
 		}
-		/**Parses the result tag field's value of a game in PGN and returns the equivalent state.
+		/**
+		 * Parses the result tag field's value of a game in PGN and returns the equivalent state.
 		 * 
 		 * @param tagValue
 		 * @return

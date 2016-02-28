@@ -2,17 +2,22 @@ package engine;
 
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
+import engine.Move.MoveType;
+import engine.TranspositionTable.TTEntry;
 import util.*;
 
-/**A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It uses
- * principal variation search with a transposition table and MVV-LVA and history heuristics based move ordering within an iterative deepening framework.
+/**
+ * A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It
+ * uses principal variation search with a transposition table and MVV-LVA and history heuristics based move ordering within an iterative
+ * deepening framework.
  * 
  * @author Viktor
  *
  */
 public class Search extends Thread {
 	
-	/**A simple enum for game tree node types based on their values' relation to alpha and beta.
+	/**
+	 * A simple enum for game tree node types based on their values' relation to alpha and beta.
 	 * 
 	 * @author Viktor
 	 *
@@ -30,8 +35,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_USABLE_MEMORY = (int)(Runtime.getRuntime().maxMemory()*0.9);
-	private static int MAX_SEARCH_DEPTH = 32;
+	private static int MAX_SEARCH_DEPTH = 10;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
@@ -51,14 +55,15 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();
-	private static HashTable<TTEntry> tT = new HashTable<>();
+	private static TranspositionTable tT = new TranspositionTable();
 	private static byte tTgen = 0;
 	
 	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
 	
-	/**Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
+	/**
+	 * Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
 	 * interrupted.
 	 *
 	 * @param pos
@@ -69,8 +74,9 @@ public class Search extends Thread {
 		pondering = true;
 		nullMoveObservHolds = gamePhase == GamePhase.END_GAME ? false : true;
 	}
-	/**Creates a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder on
-	 * the position once the search thread is started, and will not stop until it is interrupted.
+	/**
+	 * Creates a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder
+	 * on the position once the search thread is started, and will not stop until it is interrupted.
 	 *
 	 * @param pos
 	 * @param searchTimeInMilliSeconds
@@ -82,8 +88,9 @@ public class Search extends Thread {
 			pondering = false;
 		}
 	}
-	/**Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found (either due to a
-	 * search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
+	/**
+	 * Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found
+	 * (either due to a search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
 	 * 
 	 * @return The best move according to the results of the search; if such a thing does not exist, a pseudo-random legal move.
 	 */
@@ -97,7 +104,8 @@ public class Search extends Thread {
 			return moveList[(int)Math.random()*moveList.length];
 		}
 	}
-	/**Returns the best line of play from the position if it has already been searched; else it returns null.
+	/**
+	 * Returns the best line of play from the position if it has already been searched; else it returns null.
 	 * 
 	 * @return The principal variation according to the results of the search.
 	 */
@@ -109,29 +117,34 @@ public class Search extends Thread {
 			pV.add(this.pV[i++]);
 		return pV;
 	}
-	/**Returns whether pondering mode is active.
+	/**
+	 * Returns whether pondering mode is active.
 	 * 
 	 * @return Whether pondering is on.
 	 */
 	public boolean isPonderingOn() {
 		return pondering;
 	}
-	/**Returns the allocated search time in milliseconds.
+	/**
+	 * Returns the allocated search time in milliseconds.
 	 * 
 	 * @return The allocated search time in milliseconds.
 	 */
 	public long getSearchTime() {
 		return searchTime;
 	}
-	/**Returns a string containing basic statistics about the transposition table.
+	/**
+	 * Returns a string containing basic statistics about the transposition table.
 	 * 
 	 * @return A string of the total size and load of the transposition table.
 	 */
 	public String getTranspositionTableStats() {
-		return tT.capacity() + "\n" + tT.load();
+		return tT.toString();
 	}
-	/**Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
-	 * depth has been reached.*/
+	/**
+	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
+	 * depth has been reached.
+	 */
 	public void run() {
 		numOfCores = Runtime.getRuntime().availableProcessors();
 		if (numOfCores <= 1 && pondering)
@@ -147,7 +160,7 @@ public class Search extends Thread {
 		}
 		if (!pondering) {
 			if (tTgen == 127) {
-				tT.remove(e -> (e.generation -= 125) < 0);
+				tT.clear();
 				tTgen = 2;
 			}
 			else {
@@ -157,8 +170,9 @@ public class Search extends Thread {
 			hT.decrementCurrentValues();
 		}
 	}
-	/**A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the principal
-	 * variation can be extracted from the transposition table after a search has been run.
+	/**
+	 * A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the
+	 * principal variation can be extracted from the transposition table after a search has been run.
 	 * 
 	 * @param depth Depth of the main search in plies.
 	 * @param alpha
@@ -168,15 +182,16 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
-		int score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly,
+		int bestScore, score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly, kMove,
 			checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH, distFromRoot = ply - depth;
 		Move pVmove = null, bestMove, killerMove1 = null, killerMove2 = null, move;
-		boolean thereIsPvMove = false, checkMemory = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false, doIID = false;
+		boolean thereIsPvMove = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false, doIID = false;
 		Queue<Move> matMoves = null, nonMatMoves = null;
 		Move[] matMovesArr, nonMatMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
-		bestMove = new Move(Termination.CHECK_MATE.score);
+		bestMove = null;
+		bestScore = Termination.CHECK_MATE.score;
 		Search: {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
@@ -194,8 +209,8 @@ public class Search extends Thread {
 					if (e.type == NodeType.EXACT.ind)
 						return score;
 					else if (e.type == NodeType.FAIL_HIGH.ind) {
-						if (score > bestMove.value) {
-							bestMove.value = score;
+						if (score > bestScore) {
+							bestScore = score;
 							if (score > alpha)
 								alpha = score;
 						}
@@ -266,9 +281,9 @@ public class Search extends Thread {
 				val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				pos.unmakeMove();
 				searchedMoves++;
-				if (val > bestMove.value) {
+				if (val > bestScore) {
 					bestMove = pVmove;
-					bestMove.value = val;
+					bestScore = val;
 					if (val > alpha)
 						alpha = val;
 				}
@@ -278,7 +293,7 @@ public class Search extends Thread {
 					break Search;
 			}
 			// If there is no hash entry or PV-move for this ply, perform mate check.
-			else if (bestMove.value <= Termination.CHECK_MATE.score + MAX_SEARCH_DEPTH && bestMove.value != Termination.STALE_MATE.score){
+			else if (bestScore <= Termination.CHECK_MATE.score + MAX_SEARCH_DEPTH && bestScore != Termination.STALE_MATE.score){
 				matMoves = pos.generateMaterialMoves();
 				if (matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
@@ -302,7 +317,8 @@ public class Search extends Thread {
 					val = -search(depth - NMR - 1, -beta, -beta + 1, false, qDepth);
 				pos.unmakeMove();
 				if (val >= beta) {
-					bestMove = new Move(val);
+					bestMove = null;
+					bestScore = val;
 					break Search;
 				}
 			}
@@ -312,11 +328,7 @@ public class Search extends Thread {
 			// Order the material moves.
 			matMovesArr = orderMaterialMoves(matMoves);
 			// Search winning and equal captures.
-			for (int i = 0; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
-					tT.remove(entry -> entry.depth < 2);
-					System.gc();
-				}
+			for (int i = 0; i < matMovesArr.length; i++) {
 				move = matMovesArr[i];
 				// If this move was the PV-move, skip it.
 				if (thereIsPvMove && move.equals(pVmove))
@@ -337,9 +349,9 @@ public class Search extends Thread {
 				}
 				pos.unmakeMove();
 				searchedMoves++;
-				if (val > bestMove.value) {
+				if (val > bestScore) {
 					bestMove = move;
-					bestMove.value = val;
+					bestScore = val;
 					if (val > alpha)
 						alpha = val;
 				}
@@ -350,8 +362,8 @@ public class Search extends Thread {
 			}
 			// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
 			kE = kT.retrieve(distFromRoot);
-			if (kE.move1 != 0) {	// Killer move no. 1.
-				killerMove1 = Move.toMove(kE.move1);
+			if ((kMove = kE.getMove1()) != 0) {	// Killer move no. 1.
+				killerMove1 = Move.toMove(kMove);
 				if (pos.isLegalSoft(killerMove1) && (!thereIsPvMove || !killerMove1.equals(pVmove))) {
 					thereIsKillerMove1 = true;
 					pos.makeMove(killerMove1);
@@ -364,9 +376,9 @@ public class Search extends Thread {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					if (val > bestMove.value) {
+					if (val > bestScore) {
 						bestMove = killerMove1;
-						bestMove.value = val;
+						bestScore = val;
 						if (val > alpha)
 							alpha = val;
 					}
@@ -376,8 +388,8 @@ public class Search extends Thread {
 						break Search;
 				}
 			}
-			if (kE.move2 != 0) {	// Killer move no. 2.
-				killerMove2 = Move.toMove(kE.move2);
+			if ((kMove = kE.getMove2()) != 0) {	// Killer move no. 2.
+				killerMove2 = Move.toMove(kMove);
 				if (pos.isLegalSoft(killerMove2) && (!thereIsPvMove || !killerMove2.equals(pVmove))) {
 					thereIsKillerMove2 = true;
 					pos.makeMove(killerMove2);
@@ -390,9 +402,9 @@ public class Search extends Thread {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					if (val > bestMove.value) {
+					if (val > bestScore) {
 						bestMove = killerMove2;
-						bestMove.value = val;
+						bestScore = val;
 						if (val > alpha)
 							alpha = val;
 					}
@@ -403,11 +415,7 @@ public class Search extends Thread {
 				}
 			}	// Killer move check ending.
 			// Search losing captures if there are any.
-			for (int i = matMoveBreakInd; i < matMovesArr.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
-					tT.remove(entry -> entry.depth < 2);
-					System.gc();
-				}
+			for (int i = matMoveBreakInd; i < matMovesArr.length; i++) {
 				move = matMovesArr[i];
 				// If this move was the PV-move, skip it.
 				if (thereIsPvMove && move.equals(pVmove))
@@ -427,9 +435,9 @@ public class Search extends Thread {
 				}
 				pos.unmakeMove();
 				searchedMoves++;
-				if (val > bestMove.value) {
+				if (val > bestScore) {
 					bestMove = move;
-					bestMove.value = val;
+					bestScore = val;
 					if (val > alpha)
 						alpha = val;
 				}
@@ -443,11 +451,7 @@ public class Search extends Thread {
 				nonMatMoves = pos.generateNonMaterialMoves();
 			// Order and search the non-material moves.
 			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
-			for (int i = 0; i < nonMatMovesArr.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
-					tT.remove(entry -> entry.depth < 2);
-					System.gc();
-				}
+			for (int i = 0; i < nonMatMovesArr.length; i++) {
 				move = nonMatMovesArr[i];
 				// If this move was the PV-move, skip it.
 				if (thereIsPvMove && move.equals(pVmove)) {
@@ -483,9 +487,9 @@ public class Search extends Thread {
 				}
 				pos.unmakeMove();
 				searchedMoves++;
-				if (val > bestMove.value) {
+				if (val > bestScore) {
 					bestMove = move;
-					bestMove.value = val;
+					bestScore = val;
 					if (val > alpha)
 						alpha = val;
 				}
@@ -501,23 +505,26 @@ public class Search extends Thread {
 			}
 		}
 		// Adjustment of bestMove's stored score for TT insertion in case it's a check mate score.
-		if (bestMove.value <= checkMateLim)
-			score = bestMove.value - distFromRoot;
-		else if (bestMove.value >= -checkMateLim)
-			score = bestMove.value + distFromRoot;
+		if (bestScore <= checkMateLim)
+			score = bestScore - distFromRoot;
+		else if (bestScore >= -checkMateLim)
+			score = bestScore + distFromRoot;
 		else
-			score = bestMove.value;
+			score = bestScore;
+		if (bestMove == null)
+			bestMove = new Move();
 		//	Add new entry to the transposition table.
-		if (bestMove.value <= origAlpha)
+		if (bestScore <= origAlpha)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, score, bestMove.toInt(), tTgen));
-		else if (bestMove.value >= beta)
+		else if (bestScore >= beta)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMove.toInt(), tTgen));
 		else
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, bestMove.toInt(), tTgen));
 		// Return bestMove's unadjusted score.
-		return bestMove.value;
+		return bestScore;
 	}
-	/**A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keep searching until
+	/**
+	 * A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keep searching until
 	 * the side to move is not in check and does not have any legal winning captures according to SEE.
 	 * 
 	 * In the first two plies (unless it has been extended due to the side to move being in chess), it also searches moves that give check.
@@ -533,7 +540,7 @@ public class Search extends Thread {
 		Move[] moves;
 		Move move;
 		int staticScore, searchScore;
-		boolean checkMemory = false, check = pos.getCheck();
+		boolean check = pos.getCheck();
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (check) {
 			tacticalMoves = null;
@@ -584,11 +591,7 @@ public class Search extends Thread {
 		// Quiescence search.
 		else {
 			moves = orderTacticalMoves(pos, tacticalMoves);
-			for (int i = 0; i < moves.length; i++, checkMemory = !checkMemory) {
-				if (checkMemory && Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() > MAX_USABLE_MEMORY) {
-					tT.remove(entry -> entry.depth < 2);
-					System.gc();
-				}
+			for (int i = 0; i < moves.length; i++) {
 				move = moves[i];
 				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
 				if (move.value < 0 || move.value < alpha - DELTA)
@@ -609,7 +612,8 @@ public class Search extends Thread {
 			return beta;
 		return alpha;
 	}
-	/**Orders material moves and checks, the former of which according to the SEE swap algorithm.
+	/**
+	 * Orders material moves and checks, the former of which according to the SEE swap algorithm.
 	 * 
 	 * @param pos
 	 * @param moves
@@ -629,7 +633,8 @@ public class Search extends Thread {
 		}
 		return QuickSort.sort(arr);
 	}
-	/**Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.
+	/**
+	 * Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.
 	 * 
 	 * @param moves
 	 * @return
@@ -646,12 +651,13 @@ public class Search extends Thread {
 					move.value += Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
 			}
 			else
-				move.value = Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
+				move.value = (short)(Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score);
 			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
 	}
-	/**Orders non-material moves according to the relative history heuristic.
+	/**
+	 * Orders non-material moves according to the relative history heuristic.
 	 * 
 	 * @param moves
 	 * @return
@@ -667,7 +673,8 @@ public class Search extends Thread {
 		}
 		return QuickSort.sort(arr);
 	}
-	/**Returns an array of Move objects according to the best line of play extracted form the transposition table.
+	/**
+	 * Returns an array of Move objects according to the best line of play extracted form the transposition table.
 	 * 
 	 * @return An array of Move objects according to the best line of play.
 	 */

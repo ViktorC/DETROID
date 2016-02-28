@@ -1,6 +1,7 @@
 package engine;
 
-/**An enumration type for game phases such as opening, middle game, and end game so searches can be conducted accordingly.
+/**
+ * An enumration type for game phases such as opening, middle game, and end game so searches can be conducted accordingly.
  * 
  * @author Viktor
  *
@@ -18,7 +19,8 @@ public enum GamePhase {
 		this.lowerBound = (short)lowerBound;
 		this.upperBound = (short)upperBound;
 	}
-	/**Returns the phase associated with the given phase score.
+	/**
+	 * Returns the phase associated with the given phase score.
 	 * 
 	 * @param phaseScore
 	 * @return

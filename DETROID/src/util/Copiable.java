@@ -1,6 +1,7 @@
 package util;
 
-/**A functional interface declaring a method for deep-copying objects of the implementing class.
+/**
+ * A functional interface declaring a method for deep-copying objects of the implementing class.
  * 
  * @author Viktor
  *
@@ -8,6 +9,8 @@ package util;
  */
 public interface Copiable<T> {
 	
-	/**Returns a deep copy of the object. */
+	/**
+	 * Returns a deep copy of the object.
+	 */
 	T deepCopy();
 }

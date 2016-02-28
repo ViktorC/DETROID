@@ -44,4 +44,13 @@ public enum SizeOf {
 			return 8;
 		}
 	}
+	/**Returns the total memory overhead in bytes.
+	 * 
+	 * @param baseSize The raw size of the object including the object header.
+	 * @return The estimated memory the object consumes in the heap.
+	 */
+	public static long roundedSize(long baseSize) {
+		// The JVM rounds the allocated memory up to the closest multiple of 8.
+		return baseSize%8 == 0 ? baseSize : baseSize + 8 - baseSize%8;
+	}
 }

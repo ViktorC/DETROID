@@ -2,7 +2,8 @@ package engine;
 
 import engine.Board.*;
 
-/**An enum type that holds all the attack rays for each direction from each square on the board as bitmaps.
+/**
+ * An enum type that holds all the attack rays for each direction from each square on the board as bitmaps.
  * 
  * @author Viktor
  *
@@ -43,7 +44,8 @@ public enum RayMask {
 		antiDiagonalPos = antiDiagonal.bitmap & ~((sqrBit << 1) - 1);
 		antiDiagonalNeg = antiDiagonal.bitmap & (sqrBit - 1);
 	}
-	/**Returns a RayMask enum instance that holds the ray masks for the square specified by the given square index, sqrInd.
+	/**
+	 * Returns a RayMask enum instance that holds the ray masks for the square specified by the given square index, sqrInd.
 	 * 
 	 * @param sqrInd
 	 * @return

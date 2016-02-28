@@ -1,6 +1,7 @@
 package engine;
 
-/**An enum type for the different chess pieces. Each piece has an id number by which it is represented in the array of the auxiliary offset board, and
+/**
+ * An enum type for the different chess pieces. Each piece has an id number by which it is represented in the array of the auxiliary offset board, and
  * a FEN notation character.
  * 
  * @author Viktor
@@ -24,14 +25,15 @@ public enum Piece {
 	B_KNIGHT('n'),
 	B_PAWN	('p');
 	
-	public final int  ind;		// A number that generally represents the respective piece, among others, for example on the offset board.
+	public final byte  ind;		// A number that generally represents the respective piece, among others, for example on the offset board.
 	public final char letter;	// A character denoting the piece-type in chess notation.
 	
 	private Piece(char fen) {
-		this.ind = ordinal();
+		this.ind = (byte)ordinal();
 		this.letter = fen;
 	}
-	/**Returns the piece defined by the FEN piece notation input parameter's numeric equivalent according to {@link #engine.Piece Piece}.
+	/**
+	 * Returns the piece defined by the FEN piece notation input parameter's numeric equivalent according to {@link #engine.Piece Piece}.
 	 * 
 	 * @param piece
 	 * @return
@@ -68,7 +70,8 @@ public enum Piece {
 				throw new IllegalArgumentException();
 		}
 	}
-	/**Return an enum instance of the piece denoted by the input parameter numericNotation.
+	/**
+	 * Returns an enum instance of the piece denoted by the input parameter numericNotation.
 	 * 
 	 * @param numericNotation
 	 * @return

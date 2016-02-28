@@ -5,20 +5,23 @@ import java.util.Random;
 import util.BitOperations;
 import engine.Board.*;
 
-/**A class that generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move database by multiplying the intersection
- * of the occupancy bitmap and the occupancy mask by the magic number, then right shifting the product by the magic shift value specific to the given square--calculated by extracting
- * the number of bits in the relevant occupancy mask from 64.
+/**
+ * A class that generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move database
+ * by multiplying the intersection of the occupancy bitmap and the occupancy mask by the magic number, then right shifting the product by the
+ * magic shift value specific to the given square--calculated by extracting the number of bits in the relevant occupancy mask from 64.
  * 
- * With better magics, even smaller tablebases can be produced. Sometimes magic numbers can be found that when multiplied by the occupancy bitmap can be shifted to the right by one more than
- * the usual number of bits and will still hash on the right index because of the existence of different occupancy variations that allow for the same attack sets. All one should have to do is
- * try generating magics with the usual shift value plus one for the squares for which one wishes to find better magics.
+ * With better magics, even smaller tablebases can be produced. Sometimes magic numbers can be found that when multiplied by the occupancy bitmap
+ * can be shifted to the right by one more than the usual number of bits and will still hash on the right index because of the existence of
+ * different occupancy variations that allow for the same attack sets. All one should have to do is try generating magics with the usual shift
+ * value plus one for the squares for which one wishes to find better magics.
  * 
  * @author Viktor
  *
  */
 public final class MagicGenerator {
 	
-	/**A simple unencapsulated class for returning both the magic number and the magic shift value.
+	/**
+	 * A simple unencapsulated class for returning both the magic number and the magic shift value.
 	 * 
 	 * @author Viktor
 	 *
@@ -36,8 +39,10 @@ public final class MagicGenerator {
 			this.magicNumber = magicNumber;
 			this.magicShift = magicShift;
 		}
-		/**Format:
-		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)*/
+		/**
+		 * Format:
+		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)
+		 */
 		@Override
 		public String toString() {
 			String type = rook ? "ROOK" : "BISHOP";
@@ -60,9 +65,10 @@ public final class MagicGenerator {
 	private MagicGenerator() {
 		
 	}
-	/**Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
-	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right shifted by one more
-	 * than the usual value resulting in denser tables.
+	/**
+	 * Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
+	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right
+	 * shifted by one more than the usual value resulting in denser tables.
 	 * 
 	 * @param sqrInd
 	 * @param rook
@@ -107,8 +113,11 @@ public final class MagicGenerator {
 		while (collision);
 		return new Magics(rook, (byte)sqrInd, magicNumber, (byte)shift);
 	}
-	/**Generates magic numbers for each square either for a rook or a bishop depending on 'rook' and returns them in a {@link #engine.MagicNumberGenerator.Magics Magics} array.
-	 * For the squares whose indices are fed to this method, it will attempt to find enhanced magics. If print is set, it also prints all the objects in the array to the console.
+	/**
+	 * Generates magic numbers for each square either for a rook or a bishop depending on 'rook' and returns them in a
+	 * {@link #engine.MagicNumberGenerator.Magics Magics} array. For the squares whose indices are fed to this method, it will attempt to
+	 * find enhanced magics. If print is set, it also prints all the objects in the array to the console.
+	 * 
 	 * @param rook
 	 * @param print
 	 * @param enhancedSquares

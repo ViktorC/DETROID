@@ -1,6 +1,7 @@
 package engine;
 
-/**An enum type defining the standard values of different piece types.
+/**
+ * An enum type defining the standard values of different piece types.
  * 
  * @author Viktor
  *
@@ -22,7 +23,8 @@ public enum Material {
 		this.score = (short)score;
 		this.phaseWeight = (byte)phaseWeight;
 	}
-	/**Returns the enum for a piece type defined by a piece index according to {@link #engine.Piece Piece}.
+	/**
+	 * Returns the enum for a piece type defined by a piece index according to {@link #engine.Piece Piece}.
 	 * 
 	 * @param pieceInd A piece index according to {@link #engine.Piece Piece}.
 	 * @return The enumeration of the piece type.

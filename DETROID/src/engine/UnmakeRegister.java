@@ -3,22 +3,24 @@ package engine;
 import util.*;
 import engine.Board.Square;
 
-/**Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers, and the
- * moved and captured pieces--is stored in this unencapsulated class' instances so as to make reverting back to the previous position when unmaking a move faster.
+/**
+ * Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers,
+ * and the moved and captured pieces--is stored in this unencapsulated class' instances so as to make reverting back to the previous position when
+ * unmaking a move faster.
  * 
  * @author Viktor
  *
  */
 public class UnmakeRegister {
 
-	final int whiteCastlingRights;
-	final int blackCastlingRights;
-	final int enPassantRights;
-	final int fiftyMoveRuleClock;
-	final int repetitions;
-	final long checkers;
+	public final byte whiteCastlingRights;
+	public final byte blackCastlingRights;
+	public final byte enPassantRights;
+	public final int fiftyMoveRuleClock;
+	public final int repetitions;
+	public final long checkers;
 	
-	public UnmakeRegister(int whiteCastlingRights, int blackCastlingRights, int enPassantRights,
+	public UnmakeRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
 	int fiftyMoveRuleClock, int repetitions, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;
@@ -27,7 +29,8 @@ public class UnmakeRegister {
 		this.repetitions = repetitions;
 		this.checkers = checkers;
 	}
-	/**Returns a human-readable String representation of the position information stored in the long.
+	/**
+	 * Returns a human-readable String representation of the position information stored in the long.
 	 * 
 	 * @param positionInfo
 	 * @return
