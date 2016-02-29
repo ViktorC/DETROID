@@ -3,7 +3,6 @@ package engine;
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
 import engine.Move.MoveType;
-import engine.TranspositionTable.TTEntry;
 import util.*;
 
 /**
@@ -55,12 +54,14 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();
-	private static TranspositionTable tT = new TranspositionTable();
+	private static HashTable<TTEntry> tT = new HashTable<>(TTEntry.SIZE);
 	private static byte tTgen = 0;
 	
 	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
+	
+	public int nodes;
 	
 	/**
 	 * Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
@@ -192,10 +193,12 @@ public class Search extends Thread {
 		KillerTableEntry kE;
 		bestMove = null;
 		bestScore = Termination.CHECK_MATE.score;
+		nodes++;
 		Search: {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
 			if (e != null) {
+				e.generation = tTgen;
 				// Mate score adjustment to root distance.
 				if (e.score <= checkMateLim)
 					score = e.score + distFromRoot;
@@ -540,6 +543,8 @@ public class Search extends Thread {
 		Move[] moves;
 		Move move;
 		int staticScore, searchScore;
+		if (depth != 0)
+			nodes++;
 		boolean check = pos.getCheck();
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (check) {

@@ -13,6 +13,7 @@ public class Playground {
 		s.run();
 		Move.printMovesToConsole(s.getPv());
 		System.out.println(s.getTranspositionTableStats());
+		System.out.println("Nodes: " + s.nodes);
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
 	}

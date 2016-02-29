@@ -33,7 +33,7 @@ public final class Evaluator {
 		}
 	}
 	
-	// private static PawnTable pT = new PawnTable();	// Pawn table.
+	// private static HashTable<PTEntry> pT = new HashTable<>();	// Pawn table.
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
