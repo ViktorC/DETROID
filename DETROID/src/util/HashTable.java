@@ -16,7 +16,7 @@ import java.util.function.Predicate;
  * alternative locations for the pushed out entry in case of a hash conflict. Entries of the hash table implement {@link #HashTable.Entry Entry}
  * and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
  * 
- * The hash table is based on asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have
+ * The storage scheme is based on asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have
  * four unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
  * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the foremost tables. The odds
  * of a look up terminating after checking the first two tables is 60%.
@@ -69,12 +69,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	private Lock writeLock;	// The reentrant write lock of the read-write lock.
 	
 	/**
-	 * 4 array headers + 4 array lengths + 3 longs (capacity, etc.) + AtomicLong
-	 */
-	private static final int HOUSE_KEEPING_OVERHEAD = (int)(4*SizeOf.POINTER.numOfBytes + 4*SizeOf.INT.numOfBytes + 3*SizeOf.LONG.numOfBytes +
-			SizeOf.roundedSize(SizeOf.POINTER.numOfBytes + SizeOf.INT.numOfBytes + SizeOf.LONG.numOfBytes));
-	
-	/**
 	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
 	 * type's instance.
 	 * 
@@ -91,7 +85,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			sizeMB = DEFAULT_SIZE;
 		else if (sizeMB > MAX_SIZE)
 			sizeMB = MAX_SIZE;
-		capacity = (sizeMB*(1 << 20) - HOUSE_KEEPING_OVERHEAD)/entrySize;
+		capacity = (sizeMB*(1 << 20))/entrySize;
 		t1 = (T[])new Entry[(int)Math.round(T1_SHARE*capacity)];
 		t2 = (T[])new Entry[(int)Math.round(T2_SHARE*capacity)];
 		t3 = (T[])new Entry[(int)Math.round(T3_SHARE*capacity)];
@@ -375,9 +369,8 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	public long size() {
 		readLock.lock();
 		try {
-			// Total size of entries and empty slots + house keeping overhead
-			return SizeOf.roundedSize(capacity*SizeOf.POINTER.numOfBytes + load.get()*(entrySize - SizeOf.POINTER.numOfBytes) +
-					HOUSE_KEEPING_OVERHEAD);
+			// Total size of entries and empty slots
+			return SizeOf.roundedSize(capacity*SizeOf.POINTER.numOfBytes + load.get()*(entrySize - SizeOf.POINTER.numOfBytes));
 		}
 		finally {
 			readLock.unlock();
