@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
-public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Estimable {
+public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Estimable {
 	
 	/**
 	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
@@ -74,7 +74,7 @@ public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterabl
 	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
 	@SuppressWarnings({"unchecked"})
-	protected HashTable(int sizeMB, int entrySizeB) {
+	protected HashTable(int sizeMB, final int entrySizeB) {
 		entrySize = entrySizeB;
 		if (sizeMB <= 0)
 			sizeMB = DEFAULT_SIZE;
@@ -113,13 +113,18 @@ public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterabl
 	public boolean insert(T e) throws NullPointerException {
 		int ind1, ind2, ind3, ind4;
 		T slot1, slot2, slot3, slot4;
+		boolean isInserted;
 		long key = e.hashKey();
 		long absKey = key & UNSIGNED_LONG;
 		synchronized (t1) { synchronized (t2) { synchronized (t3) { synchronized (t4) {
 			if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
-				if (key == slot1.hashKey() && e.betterThan(slot1)) {
-					t1[ind1] = e;
-					return true;
+				if (key == slot1.hashKey()) {
+					if (e.betterThan(slot1)) {
+						t1[ind1] = e;
+						return true;
+					}
+					else
+						return false;
 				}
 			}
 			else {
@@ -129,9 +134,13 @@ public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterabl
 			}
 		
 			if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
-				if (key == slot2.hashKey() && e.betterThan(slot2)) {
-					t2[ind2] = e;
-					return true;
+				if (key == slot2.hashKey()) {
+					if (e.betterThan(slot2)) {
+						t2[ind2] = e;
+						return true;
+					}
+					else
+						return false;
 				}
 			}
 			else {
@@ -141,9 +150,13 @@ public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterabl
 			}
 		
 			if ((slot3 = t3[(ind3 = (int)(absKey%t3.length))]) != null) {
-				if (key == slot3.hashKey() && e.betterThan(slot3)) {
-					t3[ind3] = e;
-					return true;
+				if (key == slot3.hashKey()) {
+					if (e.betterThan(slot3)) {
+						t3[ind3] = e;
+						return true;
+					}
+					else
+						return false;
 				}
 			}
 			else {
@@ -153,9 +166,13 @@ public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterabl
 			}
 		
 			if ((slot4 = t4[(ind4 = (int)(absKey%t4.length))]) != null) {
-				if (key == slot4.hashKey() && e.betterThan(slot4)) {
-					t4[ind4] = e;
-					return true;
+				if (key == slot4.hashKey()) {
+					if (e.betterThan(slot4)) {
+						t4[ind4] = e;
+						return true;
+					}
+					else
+						return false;
 				}
 			}
 			else {
@@ -163,9 +180,10 @@ public abstract class HashTable<T extends HashTable.Entry<T>> implements Iterabl
 				load.incrementAndGet();
 				return true;
 			}
+			isInserted = false;
 			if (e.betterThan(slot1)) {
 				t1[ind1] = e;
-				return true;
+				isInserted = true;
 			}
 			if (e.betterThan(slot2)) {
 				t2[ind2] = e;

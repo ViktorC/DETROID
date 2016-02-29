@@ -60,7 +60,7 @@ public class TranspositionTable extends HashTable<TranspositionTable.TTEntry> {
 		 */
 		@Override
 		public boolean betterThan(TTEntry e) {
-			return generation >= e.generation && depth >= e.depth && (type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind);
+			return depth >= e.depth && (type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind);
 		}
 		/**
 		 * Returns a 64-bit hash code identifying this object.
