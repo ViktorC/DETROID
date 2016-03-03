@@ -34,7 +34,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_SEARCH_DEPTH = 10;
+	private static int MAX_SEARCH_DEPTH = 12;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
@@ -54,7 +54,7 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();
-	private static HashTable<TTEntry> tT = new HashTable<>(TTEntry.SIZE);
+	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);
 	private static byte tTgen = 0;
 	
 	private boolean pondering;

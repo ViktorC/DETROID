@@ -86,10 +86,10 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		else if (sizeMB > MAX_SIZE)
 			sizeMB = MAX_SIZE;
 		capacity = (sizeMB*(1 << 20))/entrySize;
-		t1 = (T[])new Entry[(int)Math.round(T1_SHARE*capacity)];
-		t2 = (T[])new Entry[(int)Math.round(T2_SHARE*capacity)];
-		t3 = (T[])new Entry[(int)Math.round(T3_SHARE*capacity)];
-		t4 = (T[])new Entry[(int)Math.round(T4_SHARE*capacity)];
+		t1 = (T[])new Entry[(int)(T1_SHARE*capacity)];
+		t2 = (T[])new Entry[(int)(T2_SHARE*capacity)];
+		t3 = (T[])new Entry[(int)(T3_SHARE*capacity)];
+		t4 = (T[])new Entry[(int)(T4_SHARE*capacity)];
 		capacity = t1.length + t2.length + t3.length + t4.length;
 	}
 	/**
