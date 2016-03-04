@@ -78,7 +78,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int sizeMB, final int entrySizeB) {
 		long tL1, tL2, tL3, tL4;
-		long newCap, sum, allowedError, error;
 		ReadWriteLock lock = new ReentrantReadWriteLock();
 		readLock = lock.readLock();
 		writeLock = lock.writeLock();
@@ -88,29 +87,16 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		else if (sizeMB > MAX_SIZE)
 			sizeMB = MAX_SIZE;
 		capacity = ((long)sizeMB*(1 << 20))/entrySize;
-		newCap = capacity;
-		allowedError = (int)(capacity*0.0005);
 		// Ensuring all tables have prime lengths.
-		while (true) {
-			tL1 = MillerRabin.greatestLEPrime((long)(T1_SHARE*newCap));
-			if ((tL2 = MillerRabin.greatestLEPrime((long)(T2_SHARE*newCap))) == tL1)
-				tL2 = MillerRabin.leastGEPrime((long)(T2_SHARE*newCap));
-			if ((tL3 = MillerRabin.greatestLEPrime((long)(T3_SHARE*newCap))) == tL2)
-				tL3 = MillerRabin.leastGEPrime((long)(T3_SHARE*newCap));
-			if ((tL4 = MillerRabin.greatestLEPrime((long)(T4_SHARE*newCap))) == tL3)
-				tL4 = MillerRabin.leastGEPrime((long)(T4_SHARE*newCap));
-			sum = (long)(tL1 + tL2 + tL3 + tL4);
-			error = capacity - sum;
-			if (Math.abs(error) > allowedError)
-				newCap += error;
-			else
-				break;
-		}
+		tL1 = MillerRabin.greatestLEPrime((long)(T1_SHARE*capacity));
+		tL2 = MillerRabin.greatestLEPrime((long)(T2_SHARE*capacity));
+		tL3 = MillerRabin.greatestLEPrime((long)(T3_SHARE*capacity));
+		tL4 = MillerRabin.greatestLEPrime((long)(T4_SHARE*capacity));
 		t1 = (T[])new Entry[(int)tL1];
 		t2 = (T[])new Entry[(int)tL2];
 		t3 = (T[])new Entry[(int)tL3];
 		t4 = (T[])new Entry[(int)tL4];
-		capacity = sum;
+		capacity = t1.length + t2.length + t3.length + t4.length;
 	}
 	/**
 	 * Initializes a hash table with a default maximum size of 64MB and a maximum capacity calculated from the division of this default maximum

@@ -12,7 +12,7 @@ public final class MillerRabin {
 	
 	private static final int DEFAULT_ACCURACY = 7;
 	
-	private static Random rand = new Random(System.currentTimeMillis());
+	private static Random rand = new Random();
 	
 	private MillerRabin() {
 		
@@ -111,6 +111,7 @@ public final class MillerRabin {
 			throw new IllegalArgumentException("n has to be positive.");
 		if (n%2 == 0 && n != 2)
 			n++;
+		rand = new Random(System.currentTimeMillis());
 		while (!isPrime(n, k))
 			n += 2;
 		return n;
@@ -136,6 +137,7 @@ public final class MillerRabin {
 			throw new IllegalArgumentException("n has to be >= 2.");
 		if (n%2 == 0 && n != 2)
 			n--;
+		rand = new Random(System.currentTimeMillis());
 		while (!isPrime(n, k) && n >= 0)
 			n -= 2;
 		return n;
