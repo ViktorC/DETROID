@@ -8,7 +8,7 @@ import java.util.Iterator;
  * @author Viktor
  *
  */
-public abstract class ByteList implements Iterable<Integer> {
+public abstract class ByteList implements Iterable<Byte> {
 
 	/**
 	 * A list entry containing two fields, 'data' that holds the information, a byte, and 'next' referencing the subsequent element in the list
@@ -100,12 +100,12 @@ public abstract class ByteList implements Iterable<Integer> {
 	 * Its usage is advised against as the sole purpose of this class is the avoidance of implicit casting to increase performance.
 	 */
 	@Override
-	public Iterator<Integer> iterator() {
-		return new Iterator<Integer>() {
+	public Iterator<Byte> iterator() {
+		return new Iterator<Byte>() {
 			public boolean hasNext() {
 				return hasNext();
 			}
-			public Integer next() {
+			public Byte next() {
 				return next();
 			}
 		};
