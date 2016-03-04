@@ -12,25 +12,42 @@ public final class MillerRabin {
 	
 	private static final int DEFAULT_ACCURACY = 7;
 	
-	private static Random rand = new Random();
+	private static Random rand = new Random(System.currentTimeMillis());
 	
 	private MillerRabin() {
 		
 	}
 	/**
-	 * Builds a random long within the specified range by adjoining two random integers;
+	 * Returns random long within the specified range by adjoining two random integers;
 	 * 
 	 * @param upperBound Exclusive.
 	 * @return
 	 */
 	private static long nextLong(long upperBound) {
-		long hi, low;
-		if (upperBound <= Integer.MAX_VALUE)
-			return rand.nextInt((int)upperBound);
-		upperBound = upperBound >>> 32;
-		hi = rand.nextInt((int)upperBound) << 32;
-		low = rand.nextInt();
-		return hi | low;
+		long r = rand.nextLong() & ((1L << 63) - 1); // Taking the absolute value of the random long.
+		return r%upperBound;
+	}
+	/**
+	 * Performs modular exponentiation using the right-to-left binary method.
+	 * 
+	 * @param base The base of the modular exponentiation.
+	 * @param exp The exponent.
+	 * @param mod The modulus;
+	 * @return
+	 */
+	private static long modPow(long base, long exp, long mod) {
+		long res;
+		if (mod == 1)
+			return 0;
+		res = 1;
+		base = base%mod;
+		while (exp > 0) {
+			if (exp%2 == 1)
+				res = (res*base)%mod;
+			exp = exp >>> 1;
+			base = (base*base)%mod;
+		}
+		return res;
 	}
 	/**
 	 * Tests whether a number is probably prime or not using the Miller-Rabin algorithm.
@@ -49,19 +66,23 @@ public final class MillerRabin {
 			return true;
 		s = 0;
 		d = n - 1;
+		// n - 1 = (2^d)*s
 		while (d%2 == 0) {
 			s++;
-			d /= 2;
+			d = d >>> 1;
 		}
 		WitnessLoop: for (int i = 0; i < k; i++) {
+			// a: random integer between 2 and n - 1
 			a = nextLong(n - 3) + 2;
-			x = ((long)Math.pow(a, d))%n;
+			// x = (a^d)%n - The straightforward method would result in huge numbers for a^b that would overflow a long.
+			x = modPow(a, d, n);
 			if (x == 1 || x == n - 1)
 				continue;
-			for (int j = 1; j < s; j++) {
+			// a^((2^r)*d) computed with a loop.
+			for (int r = 1; r < s; r++) {
 				x = (x*x)%n;
 				if (x == 1)
-					return false;
+					break;
 				if (x == n - 1)
 					continue WitnessLoop;
 			}
@@ -127,8 +148,5 @@ public final class MillerRabin {
 	 */
 	public static long greatestLEPrime(long n) {
 		return greatestLEPrime(n, DEFAULT_ACCURACY);
-	}
-	public static void main(String[] args) {
-		System.out.println(isPrime(101));
 	}
 }

@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 /**
  * A generic, concurrent hash table for statistical or turn-based game AI applications with massive storage requirements where losslessness is
  * inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and constant time insertion that, instead of pushing out
- * and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, just checks four possible
+ * and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, just checks three possible
  * alternative locations for the pushed out entry in case of a hash conflict. Entries of the hash table implement {@link #HashTable.Entry Entry}
  * and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
  * 
@@ -23,7 +23,7 @@ import java.util.function.Predicate;
  * 
  * The default size of the hash table is 64MB; the minimum is 1MB and the maximum is 6GB.
  * 
- * The target application-context, when concurrent, involves moderate contention and similar frequencies of reads and writes.
+ * The target application-context, when concurrent, involves moderate contention and more frequent reads than writes.
  * 
  * @author Viktor
  *
@@ -77,6 +77,8 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 */
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int sizeMB, final int entrySizeB) {
+		long tL1, tL2, tL3, tL4;
+		long newCap, sum, allowedError, error;
 		ReadWriteLock lock = new ReentrantReadWriteLock();
 		readLock = lock.readLock();
 		writeLock = lock.writeLock();
@@ -85,12 +87,30 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			sizeMB = DEFAULT_SIZE;
 		else if (sizeMB > MAX_SIZE)
 			sizeMB = MAX_SIZE;
-		capacity = (sizeMB*(1 << 20))/entrySize;
-		t1 = (T[])new Entry[(int)(T1_SHARE*capacity)];
-		t2 = (T[])new Entry[(int)(T2_SHARE*capacity)];
-		t3 = (T[])new Entry[(int)(T3_SHARE*capacity)];
-		t4 = (T[])new Entry[(int)(T4_SHARE*capacity)];
-		capacity = t1.length + t2.length + t3.length + t4.length;
+		capacity = ((long)sizeMB*(1 << 20))/entrySize;
+		newCap = capacity;
+		allowedError = (int)(capacity*0.0005);
+		// Ensuring all tables have prime lengths.
+		while (true) {
+			tL1 = MillerRabin.greatestLEPrime((long)(T1_SHARE*newCap));
+			if ((tL2 = MillerRabin.greatestLEPrime((long)(T2_SHARE*newCap))) == tL1)
+				tL2 = MillerRabin.leastGEPrime((long)(T2_SHARE*newCap));
+			if ((tL3 = MillerRabin.greatestLEPrime((long)(T3_SHARE*newCap))) == tL2)
+				tL3 = MillerRabin.leastGEPrime((long)(T3_SHARE*newCap));
+			if ((tL4 = MillerRabin.greatestLEPrime((long)(T4_SHARE*newCap))) == tL3)
+				tL4 = MillerRabin.leastGEPrime((long)(T4_SHARE*newCap));
+			sum = (long)(tL1 + tL2 + tL3 + tL4);
+			error = capacity - sum;
+			if (Math.abs(error) > allowedError)
+				newCap += error;
+			else
+				break;
+		}
+		t1 = (T[])new Entry[(int)tL1];
+		t2 = (T[])new Entry[(int)tL2];
+		t3 = (T[])new Entry[(int)tL3];
+		t4 = (T[])new Entry[(int)tL4];
+		capacity = sum;
 	}
 	/**
 	 * Initializes a hash table with a default maximum size of 64MB and a maximum capacity calculated from the division of this default maximum
@@ -394,7 +414,8 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	}
 	@Override
 	public String toString() {
-		return "Load/Capacity: " + load.get() + "/" + capacity + "\n" +
-				"Size: " + size()/(1 << 20) + "MB";
+		return "Load/Capacity: " + load.get() + "/" + capacity + "; " +
+				String.format("Factor: %.1f", (load.get()*100)/(double)capacity) + "%\n" +
+				String.format("Size: %.2fMB", size()/(double)(1 << 20));
 	}
 }
