@@ -12,21 +12,35 @@ import util.SizeOf;
  */
 public class PTEntry implements HashTable.Entry<PTEntry> {
 
-	long key;			// The Zobrist pawn key used to hash pawn positions.
-	boolean whitesTurn;	// Whether the stored score is for white or black.
-	short score;		// The pawn structure evaluation score.
+	/**
+	 * The Zobrist pawn key used to hash pawn positions.
+	 */
+	final long key;
+	/**
+	 * The pawn structure evaluation score.
+	 */
+	final short score;
+	/**
+	 * The age of the entry.
+	 */
+	byte generation;
 	
-	public static final int SIZE = SizeOf.OBJ_POINTER.numOfBytes + SizeOf.BOOLEAN.numOfBytes + SizeOf.SHORT.numOfBytes + SizeOf.LONG.numOfBytes;
+	/**
+	 * The total size of the entry in bytes.
+	 */
+	public static final int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.SHORT.numOfBytes +
+			SizeOf.LONG.numOfBytes + SizeOf.BYTE.numOfBytes);
 	
-	public PTEntry(long key, boolean whitesTurn, int score) {
+	public PTEntry(long key, int score) {
 		this.key = key;
-		this.whitesTurn = whitesTurn;
 		this.score = (short)score;
 	}
 	@Override
 	public boolean betterThan(PTEntry t) {
-		// Hash table entries need not to be overwritten at this point;
-		return false;
+		if (key == t.key)
+			return false;
+		else
+			return generation >= t.generation;
 	}
 	/**Returns the Zobrist pawn hash key. */
 	@Override

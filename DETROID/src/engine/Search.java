@@ -52,10 +52,13 @@ public class Search extends Thread {
 	
 	private Move[] pV;
 	
-	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);
-	private static RelativeHistoryTable hT = new RelativeHistoryTable();
-	private static HashTable<TTEntry> tT = new HashTable<>(TTEntry.SIZE);
-	private static byte tTgen = 0;
+	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);					// Killer heuristic table.
+	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
+	private static HashTable<TTEntry> tT = new HashTable<>(TTEntry.SIZE);		// Transposition table.
+	private static HashTable<PTEntry> pT = new HashTable<>(16, PTEntry.SIZE);	// Pawn table.
+	private static byte eGen = 0;	// Entry generation.
+	
+	Evaluator eval = new Evaluator(pT, eGen);
 	
 	private boolean pondering;
 	private long searchTime;
@@ -143,6 +146,14 @@ public class Search extends Thread {
 		return tT.toString();
 	}
 	/**
+	 * Returns a string containing basic statistics about the pawn table.
+	 * 
+	 * @return A string of the total size and load of the pawn table.
+	 */
+	public String getPawnTableStats() {
+		return pT.toString();
+	}
+	/**
 	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth has been reached.
 	 */
@@ -160,14 +171,16 @@ public class Search extends Thread {
 				break;
 		}
 		if (!pondering) {
-			if (tTgen == 127) {
+			if (eGen == 127) {
 				tT.clear();
-				tTgen = 2;
+				pT.clear();
+				eGen = 2;
 			}
 			else {
-				tT.remove(e -> e.generation < tTgen - 2);
+				tT.remove(e -> e.generation < eGen - 2);
+				pT.remove(e -> e.generation < eGen - 4);
 			}
-			tTgen++;
+			eGen++;
 			hT.decrementCurrentValues();
 		}
 	}
@@ -198,7 +211,7 @@ public class Search extends Thread {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
 			if (e != null) {
-				e.generation = tTgen;
+				e.generation = eGen;
 				// Mate score adjustment to root distance.
 				if (e.score <= checkMateLim)
 					score = e.score + distFromRoot;
@@ -232,7 +245,7 @@ public class Search extends Thread {
 			// Return the score from the quiescence search in case a leaf node has been reached.
 			if (depth == 0) {
 				score = quiescence(qDepth, alpha, beta);
-				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
+				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, eGen));
 				return score;
 			}
 			// Check for the repetition rule; return a draw score if it applies.
@@ -302,7 +315,7 @@ public class Search extends Thread {
 					nonMatMoves = pos.generateNonMaterialMoves();
 					if (nonMatMoves.length() == 0) {
 						score = Evaluator.mateScore(pos.getCheck(), distFromRoot);
-						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, tTgen));
+						tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, eGen));
 						return score;
 					}
 				}
@@ -518,11 +531,11 @@ public class Search extends Thread {
 			bestMove = new Move();
 		//	Add new entry to the transposition table.
 		if (bestScore <= origAlpha)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, score, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, score, bestMove.toInt(), eGen));
 		else if (bestScore >= beta)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMove.toInt(), eGen));
 		else
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, bestMove.toInt(), tTgen));
+			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, bestMove.toInt(), eGen));
 		// Return bestMove's unadjusted score.
 		return bestScore;
 	}
@@ -562,7 +575,7 @@ public class Search extends Thread {
 				if (nullMoveObservHolds) {
 					allMoves = pos.generateQuietMoves(checkSquares);
 					allMoves.addAll(tacticalMoves); // We need all the lagal moves for the side to move for mate-detection in the evaluation.
-					staticScore = Evaluator.score(pos, allMoves, ply - depth);
+					staticScore = eval.score(pos, allMoves, ply - depth);
 				}
 				// Else no bound.
 				else
@@ -575,7 +588,7 @@ public class Search extends Thread {
 				if (nullMoveObservHolds) {
 					allMoves = pos.generateNonMaterialMoves();
 					allMoves.addAll(tacticalMoves);
-					staticScore = Evaluator.score(pos, allMoves, ply - depth);
+					staticScore = eval.score(pos, allMoves, ply - depth);
 				}
 				// No bound.
 				else

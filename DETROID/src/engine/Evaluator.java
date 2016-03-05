@@ -33,12 +33,15 @@ public final class Evaluator {
 		}
 	}
 	
-	// private static HashTable<PTEntry> pT = new HashTable<>();	// Pawn table.
+	// private HashTable<PTEntry> pT;	// Pawn table.
+	
+	// private byte eGen;	// Entry generation.
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
-	private Evaluator() {
-		
+	public Evaluator(HashTable<PTEntry> pawnTable, byte entryGeneration) {
+		// pT = pawnTable;
+		// eGen = entryGeneration;
 	}
 	/**
 	 * Returns a phaseScore between 0 and 256.
@@ -201,7 +204,7 @@ public final class Evaluator {
 	 * @param ply The current level of distance from the root in the search.
 	 * @return
 	 */
-	public static int score(Position pos, List<Move> allMoves, int ply) {
+	public int score(Position pos, List<Move> allMoves, int ply) {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
@@ -244,13 +247,14 @@ public final class Evaluator {
 		/* Try for hashed pawn score.
 		e = pT.lookUp(pos.pawnKey);
 		if (e != null) {
+			e.generation = eGen;
 			pawnScore = e.score;
 		}
 		// Evaluate pawn structure.
 		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
 		else {
 			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
-			pT.insert(new PTEntry(pos.pawnKey, true, pawnScore));
+			pT.insert(new PTEntry(pos.pawnKey, pawnScore));
 		} */
 		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
 		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
