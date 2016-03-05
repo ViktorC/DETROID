@@ -33,15 +33,16 @@ public final class Evaluator {
 		}
 	}
 	
-	// private HashTable<PTEntry> pT;	// Pawn table.
+	private HashTable<PTEntry> pT;	// Pawn table.
 	
-	// private byte eGen;	// Entry generation.
+	private byte eGen;	// Entry generation.
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
+	
 	public Evaluator(HashTable<PTEntry> pawnTable, byte entryGeneration) {
-		// pT = pawnTable;
-		// eGen = entryGeneration;
+		pT = pawnTable;
+		eGen = entryGeneration;
 	}
 	/**
 	 * Returns a phaseScore between 0 and 256.
@@ -207,9 +208,10 @@ public final class Evaluator {
 	public int score(Position pos, List<Move> allMoves, int ply) {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
-		int bishopField, bishopColor, newBishopColor, phase, baseScore = 0, pawnScore = 0, openingScore = 0, endGameScore = 0;
+		int bishopField, bishopColor, newBishopColor, phase;
+		short pawnScore, baseScore, openingScore, endGameScore;
 		byte[] bishopSqrArr;
-		// PTEntry e;
+		PTEntry e;
 		if (allMoves.length() == 0)
 			return mateScore(pos.getCheck(), ply);
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
@@ -244,7 +246,7 @@ public final class Evaluator {
 				}
 			}
 		}
-		/* Try for hashed pawn score.
+		// Try for hashed pawn score.
 		e = pT.lookUp(pos.pawnKey);
 		if (e != null) {
 			e.generation = eGen;
@@ -253,9 +255,11 @@ public final class Evaluator {
 		// Evaluate pawn structure.
 		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
 		else {
-			pawnScore = (BitOperations.getCardinality(pos.whitePawns) - BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score;
-			pT.insert(new PTEntry(pos.pawnKey, pawnScore));
-		} */
+			pawnScore = (short)((BitOperations.getCardinality(pos.whitePawns) -
+					BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score);
+			pT.insert(new PTEntry(pos.pawnKey, pawnScore, eGen));
+		}
+		baseScore = 0;
 		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
 		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
 		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
@@ -265,6 +269,7 @@ public final class Evaluator {
 			baseScore *= -1;
 		// Need to implement separate evaluation features for openings and end games.
 		// Pairs of piece square tables are imperative.
+		openingScore = endGameScore = 0;
 		openingScore += baseScore;
 		endGameScore += baseScore;
 		return taperedEvalScore(openingScore, endGameScore, phase);

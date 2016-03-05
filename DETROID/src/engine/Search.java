@@ -34,7 +34,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_SEARCH_DEPTH = 10;
+	private static int MAX_SEARCH_DEPTH = 11;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
@@ -54,7 +54,7 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);					// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
-	private static HashTable<TTEntry> tT = new HashTable<>(TTEntry.SIZE);		// Transposition table.
+	private static HashTable<TTEntry> tT = new HashTable<>(512, TTEntry.SIZE);		// Transposition table.
 	private static HashTable<PTEntry> pT = new HashTable<>(16, PTEntry.SIZE);	// Pawn table.
 	private static byte eGen = 0;	// Entry generation.
 	

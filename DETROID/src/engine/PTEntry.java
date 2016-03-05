@@ -31,9 +31,10 @@ public class PTEntry implements HashTable.Entry<PTEntry> {
 	public static final int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.SHORT.numOfBytes +
 			SizeOf.LONG.numOfBytes + SizeOf.BYTE.numOfBytes);
 	
-	public PTEntry(long key, int score) {
+	public PTEntry(long key, short score, byte generation) {
 		this.key = key;
-		this.score = (short)score;
+		this.score = score;
+		this.generation = generation;
 	}
 	@Override
 	public boolean betterThan(PTEntry t) {
