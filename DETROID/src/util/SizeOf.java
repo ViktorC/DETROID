@@ -11,7 +11,7 @@ import java.lang.management.RuntimeMXBean;
  */
 public enum SizeOf {
 
-	POINTER(getJVMPointerSize()),
+	OBJ_REF(getJVMObjectReferenceSize()),
 	BYTE(1),
 	BOOLEAN(1),
 	SHORT(2),
@@ -34,7 +34,7 @@ public enum SizeOf {
 	 * 
 	 * @return
 	 */
-	private static int getJVMPointerSize() {
+	private static int getJVMObjectReferenceSize() {
 		RuntimeMXBean runtimeMX;
 		String dataModel = System.getProperty("sun.arch.data.model");
 		if (dataModel.equals("32"))
