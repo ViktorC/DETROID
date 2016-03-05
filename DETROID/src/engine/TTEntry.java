@@ -42,7 +42,7 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 	/**
 	 * The total size of the entry in bytes.
 	 */
-	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_REF.numOfBytes + SizeOf.LONG.numOfBytes + SizeOf.INT.numOfBytes +
+	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.LONG.numOfBytes + SizeOf.INT.numOfBytes +
 			2*SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes);
 
 	public TTEntry(long key, int depth, byte type, int score, int bestMove, byte age) {

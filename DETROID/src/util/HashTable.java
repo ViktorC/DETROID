@@ -343,7 +343,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		readLock.lock();
 		try {
 			// Total size of entries and empty slots
-			return SizeOf.roundedSize(capacity*SizeOf.OBJ_REF.numOfBytes + load.get()*(entrySize - SizeOf.OBJ_REF.numOfBytes));
+			return SizeOf.roundedSize(capacity*SizeOf.OBJ_POINTER.numOfBytes + load.get()*(entrySize - SizeOf.OBJ_POINTER.numOfBytes));
 		}
 		finally {
 			readLock.unlock();

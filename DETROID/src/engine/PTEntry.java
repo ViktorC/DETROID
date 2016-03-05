@@ -16,7 +16,7 @@ public class PTEntry implements HashTable.Entry<PTEntry> {
 	boolean whitesTurn;	// Whether the stored score is for white or black.
 	short score;		// The pawn structure evaluation score.
 	
-	public static final int SIZE = SizeOf.OBJ_REF.numOfBytes + SizeOf.BOOLEAN.numOfBytes + SizeOf.SHORT.numOfBytes + SizeOf.LONG.numOfBytes;
+	public static final int SIZE = SizeOf.OBJ_POINTER.numOfBytes + SizeOf.BOOLEAN.numOfBytes + SizeOf.SHORT.numOfBytes + SizeOf.LONG.numOfBytes;
 	
 	public PTEntry(long key, boolean whitesTurn, int score) {
 		this.key = key;
