@@ -16,12 +16,11 @@ import java.util.function.Predicate;
  * alternative locations for the pushed out entry in case of a hash conflict. Entries of the hash table implement {@link #HashTable.Entry Entry}
  * and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
  * 
- * The storage scheme is based on asymmetric hashing with four hash tables with different sizes in decreasing order, thus it does not really have
- * four unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
- * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the foremost tables. The odds
- * of a look up terminating after checking the first two tables is 60%.
+ * The storage scheme is based on asymmetric hashing with two hash tables with different sizes in decreasing order, thus it does not really have
+ * two unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
+ * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the first table.
  * 
- * The default size of the hash table is 64MB; the minimum is 1MB and the maximum is 6GB.
+ * The default size of the hash table is 64MB and the minimum is 1MB.
  * 
  * The target application-context, when concurrent, involves moderate contention and more frequent reads than writes.
  * 
@@ -47,41 +46,39 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
-	private final static double T1_SHARE = 0.325F;
-	private final static double T2_SHARE = 0.275F;
-	private final static double T3_SHARE = 0.225F;
-	private final static double T4_SHARE = 0.175F;
+	private final static double T1_SHARE = 0.6F;
+	private final static double T2_SHARE = 0.4F;
 	
 	/**
 	 * The default maximum hash table size in megabytes.
 	 */
 	public final static int DEFAULT_SIZE = 1 << 6;
-	private final static int MAX_SIZE = 3*(1 << 11);	// The absolute maximum hash table size in megabytes.
-	private final static int MIN_CAPACITY = 2 << 7;		// The minimum number of slots.
+	private final static long MAX_CAPACITY = 2L << 30;	// The maximum number of slots.
+	private final static long MIN_CAPACITY = 2L << 7;		// The minimum number of slots.
 	
 	private long entrySize;	// The size of a hash entry, including all overheads, in bytes.
-	private long capacity;	// The number of allowed hash table slots.
+	private long capacity;	// The number of hash table slots.
 	
 	private AtomicLong load = new AtomicLong(0);	// Load counter.
 	
-	private T[] t1, t2, t3, t4;	// The four hash tables.
+	private T[] t1, t2;	// The two hash tables.
 	
 	private Lock readLock;	// The reentrant read lock of a read-write lock for concurrency handling.
 	private Lock writeLock;	// The reentrant write lock of the read-write lock.
 	
 	/**
 	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
-	 * type's instance. The size has to be great enough for the hash table to be able to accommodate at least 128 entries of the specified entry
-	 * size.
+	 * type's instance. The size has to be at least 128 (2^7) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the entry
+	 * size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*128 bytes < 1MB).
 	 * 
 	 * @param sizeMB Maximum hash table size in megabytes. It can not not be guaranteed to be completely accurately reflected, but will be very
-	 * closely approximated. The absolute maximum is 6GB and the minimum maximum is 1MB. If sizeMB is 0 or less, the hash table defaults to 64MB.
+	 * closely approximated. The minimum maximum size is 1MB. If sizeMB is 0 or less, the hash table defaults to 64MB.
 	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int sizeMB, final int entrySizeB) {
-		long tL1, tL2, tL3, tL4;
-		long t1Cap, t2Cap, t3Cap, t4Cap;
+		long tL1, tL2;
+		long t1Cap, t2Cap;
 		long adjCap;
 		ReadWriteLock lock = new ReentrantReadWriteLock();
 		readLock = lock.readLock();
@@ -89,26 +86,19 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		entrySize = entrySizeB;
 		if (sizeMB <= 0)
 			sizeMB = DEFAULT_SIZE;
-		else if (sizeMB > MAX_SIZE)
-			sizeMB = MAX_SIZE;
 		capacity = ((long)sizeMB*(1 << 20))/entrySize;
 		if (capacity < MIN_CAPACITY)
 			throw new IllegalArgumentException("The size has to be great enough for the hash table " +
-					"to be able to accommodate at least 128 entries of the specified entry size.");
+					"to be able to accommodate at least 128 (2^7) entries of the specified entry size.");
+		if (capacity > MAX_CAPACITY)
+			throw new IllegalArgumentException("The size has to be small enough for the hash table not " +
+					"to be able to accommodate more than 1073741824 (2^30) entries of the specified entry size.");
 		// Ensuring all tables have prime lengths.
 		adjCap = capacity;
-		tL1 = tL2 = tL3 = tL4 = 0;
+		tL1 = tL2 = 0;
 		for (int i = 0; i < 2; i++) {
-			t4Cap = (long)(T4_SHARE*adjCap);
-			tL4 = MillerRabin.greatestLEPrime(t4Cap);
-			adjCap += t4Cap - tL4;
-			t3Cap = (long)(T3_SHARE*adjCap);
-			if ((tL3 = MillerRabin.greatestLEPrime(t3Cap)) == tL4)
-				tL3 = MillerRabin.leastGEPrime(t3Cap);
-			adjCap += t3Cap - tL3;
 			t2Cap = (long)(T2_SHARE*adjCap);
-			if ((tL2 = MillerRabin.greatestLEPrime(t2Cap)) == tL3)
-				tL2 = MillerRabin.leastGEPrime(t2Cap);
+			tL2 = MillerRabin.greatestLEPrime(t2Cap);
 			adjCap += t2Cap - tL2;
 			t1Cap = (long)(T1_SHARE*adjCap);
 			if ((tL1 = MillerRabin.greatestLEPrime(t1Cap)) == tL2)
@@ -117,9 +107,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		}
 		t1 = (T[])new Entry[(int)tL1];
 		t2 = (T[])new Entry[(int)tL2];
-		t3 = (T[])new Entry[(int)tL3];
-		t4 = (T[])new Entry[(int)tL4];
-		capacity = t1.length + t2.length + t3.length + t4.length;
+		capacity = t1.length + t2.length;
 	}
 	/**
 	 * Initializes a hash table with a default maximum size of 64MB and a maximum capacity calculated from the division of this default maximum
@@ -154,8 +142,8 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 * @throws NullPointerException
 	 */
 	public boolean insert(T e) throws NullPointerException {
-		int ind1, ind2, ind3, ind4, altInd;
-		T slot1, slot2, slot3, slot4;
+		int ind1, ind2, altInd;
+		T slot1, slot2;
 		long key = e.hashKey();
 		long altAbsKey, absKey = key & UNSIGNED_LONG;
 		writeLock.lock();
@@ -188,43 +176,11 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 				load.incrementAndGet();
 				return true;
 			}
-			if ((slot3 = t3[(ind3 = (int)(absKey%t3.length))]) != null) {
-				if (key == slot3.hashKey()) {
-					if (e.betterThan(slot3)) {
-						t3[ind3] = e;
-						return true;
-					}
-					return false;
-				}
-			}
-			else {
-				t3[ind3] = e;
-				load.incrementAndGet();
-				return true;
-			}
-			if ((slot4 = t4[(ind4 = (int)(absKey%t4.length))]) != null) {
-				if (key == slot4.hashKey()) {
-					if (e.betterThan(slot4)) {
-						t4[ind4] = e;
-						return true;
-					}
-					return false;
-				}
-			}
-			else {
-				t4[ind4] = e;
-				load.incrementAndGet();
-				return true;
-			}
 			if (e.betterThan(slot1)) {
 				t1[ind1] = e;
 				altAbsKey = slot1.hashKey() & UNSIGNED_LONG;
 				if (t2[(altInd = (int)(altAbsKey%t2.length))] == null)
 					t2[altInd] = slot1;
-				else if (t3[(altInd = (int)(altAbsKey%t3.length))] == null)
-					t3[altInd] = slot1;
-				else if (t4[(altInd = (int)(altAbsKey%t4.length))] == null)
-					t4[altInd] = slot1;
 				return true;
 			}
 			if (e.betterThan(slot2)) {
@@ -232,32 +188,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 				altAbsKey = slot2.hashKey() & UNSIGNED_LONG;
 				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null)
 					t1[altInd] = slot2;
-				else if (t3[(altInd = (int)(altAbsKey%t3.length))] == null)
-					t3[altInd] = slot2;
-				else if (t4[(altInd = (int)(altAbsKey%t4.length))] == null)
-					t4[altInd] = slot2;
-				return true;
-			}
-			if (e.betterThan(slot3)) {
-				t3[ind3] = e;
-				altAbsKey = slot3.hashKey() & UNSIGNED_LONG;
-				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null)
-					t1[altInd] = slot3;
-				else if (t2[(altInd = (int)(altAbsKey%t2.length))] == null)
-					t2[altInd] = slot3;
-				else if (t4[(altInd = (int)(altAbsKey%t4.length))] == null)
-					t4[altInd] = slot3;
-				return true;
-			}
-			if (e.betterThan(slot4)) {
-				t4[ind4] = e;
-				altAbsKey = slot4.hashKey() & UNSIGNED_LONG;
-				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null)
-					t1[altInd] = slot4;
-				else if (t2[(altInd = (int)(altAbsKey%t2.length))] == null)
-					t2[altInd] = slot4;
-				else if (t3[(altInd = (int)(altAbsKey%t3.length))] == null)
-					t3[altInd] = slot4;
 				return true;
 			}
 			return false;
@@ -280,10 +210,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
 				return e;
 			if ((e = t2[(int)(absKey%t2.length)]) != null && e.hashKey() == key)
-				return e;
-			if ((e = t3[(int)(absKey%t3.length)]) != null && e.hashKey() == key)
-					return e;
-			if ((e = t4[(int)(absKey%t4.length)]) != null && e.hashKey() == key)
 				return e;
 			return null;
 		}
@@ -311,16 +237,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			}
 			if ((e = t2[(ind = (int)(absKey%t2.length))]) != null && e.hashKey() == key) {
 				t2[ind] = null;
-				load.decrementAndGet();
-				return true;
-			}
-			if ((e = t3[(ind = (int)(absKey%t3.length))]) != null && e.hashKey() == key) {
-				t3[ind] = null;
-				load.decrementAndGet();
-				return true;
-			}
-			if ((e = t4[(ind = (int)(absKey%t4.length))]) != null && e.hashKey() == key) {
-				t4[ind] = null;
 				load.decrementAndGet();
 				return true;
 			}
@@ -353,20 +269,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 					load.decrementAndGet();
 				}
 			}
-			for (int i = 0; i < t3.length; i++) {
-				e = t3[i];
-				if (e != null && condition.test(e)) {
-					t3[i] = null;
-					load.decrementAndGet();
-				}
-			}
-			for (int i = 0; i < t4.length; i++) {
-				e = t4[i];
-				if (e != null && condition.test(e)) {
-					t4[i] = null;
-					load.decrementAndGet();
-				}
-			}
 		}
 		finally {
 			writeLock.unlock();
@@ -382,8 +284,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			load = new AtomicLong(0);
 			t1 = (T[])new Entry[t1.length];
 			t2 = (T[])new Entry[t2.length];
-			t3 = (T[])new Entry[t3.length];
-			t4 = (T[])new Entry[t4.length];
 		}
 		finally {
 			writeLock.unlock();
@@ -413,8 +313,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			list = new ArrayList<T>();
 			list.addAll(Arrays.asList(t1));
 			list.addAll(Arrays.asList(t2));
-			list.addAll(Arrays.asList(t3));
-			list.addAll(Arrays.asList(t4));
 			return list.iterator();
 		}
 		finally {

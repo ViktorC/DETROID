@@ -34,7 +34,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_SEARCH_DEPTH = 10;
+	private static int MAX_SEARCH_DEPTH = 11;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
