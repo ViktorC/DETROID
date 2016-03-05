@@ -34,7 +34,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_SEARCH_DEPTH = 11;
+	private static int MAX_SEARCH_DEPTH = 10;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
@@ -48,7 +48,7 @@ public class Search extends Thread {
 	private static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
 	
 	private GamePhase gamePhase;			// The phase the 'game' at the root position is in.
-	private boolean nullMoveObservHolds;	// Whether heursitcs based on the null move observation such as stand-pat and NMP are applicable.
+	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
 	
 	private Move[] pV;
 	

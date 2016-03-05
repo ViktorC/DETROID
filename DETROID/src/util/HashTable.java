@@ -12,15 +12,15 @@ import java.util.function.Predicate;
 /**
  * A generic, concurrent hash table for statistical or turn-based game AI applications with massive storage requirements where losslessness is
  * inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and constant time insertion that, instead of pushing out
- * and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, just checks three possible
- * alternative locations for the pushed out entry in case of a hash conflict. Entries of the hash table implement {@link #HashTable.Entry Entry}
- * and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
+ * and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, just does the equivalent of
+ * one and a half iterations of the standard cuckoo insertion loop in case of a hash conflict. Entries of the hash table implement
+ * {@link #HashTable.Entry Entry} and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
  * 
  * The storage scheme is based on asymmetric hashing with two hash tables with different sizes in decreasing order, thus it does not really have
  * two unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
  * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the first table.
  * 
- * The default size of the hash table is 64MB and the minimum is 1MB.
+ * The default size of the hash table is 64MB, the minimum is 1MB, and it can hold up to 2^30 entries.
  * 
  * The target application-context, when concurrent, involves moderate contention and more frequent reads than writes.
  * 
@@ -53,6 +53,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 * The default maximum hash table size in megabytes.
 	 */
 	public final static int DEFAULT_SIZE = 1 << 6;
+	
 	private final static long MAX_CAPACITY = 2L << 30;	// The maximum number of slots.
 	private final static long MIN_CAPACITY = 2L << 7;		// The minimum number of slots.
 	
@@ -80,9 +81,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		long tL1, tL2;
 		long t1Cap, t2Cap;
 		long adjCap;
-		ReadWriteLock lock = new ReentrantReadWriteLock();
-		readLock = lock.readLock();
-		writeLock = lock.writeLock();
+		ReadWriteLock lock;
 		entrySize = entrySizeB;
 		if (sizeMB <= 0)
 			sizeMB = DEFAULT_SIZE;
@@ -93,6 +92,9 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		if (capacity > MAX_CAPACITY)
 			throw new IllegalArgumentException("The size has to be small enough for the hash table not " +
 					"to be able to accommodate more than 1073741824 (2^30) entries of the specified entry size.");
+		lock = new ReentrantReadWriteLock();
+		readLock = lock.readLock();
+		writeLock = lock.writeLock();
 		// Ensuring all tables have prime lengths.
 		adjCap = capacity;
 		tL1 = tL2 = 0;
@@ -143,11 +145,14 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 */
 	public boolean insert(T e) throws NullPointerException {
 		int ind1, ind2, altInd;
-		T slot1, slot2;
+		T slot1, slot2, temp;
 		long key = e.hashKey();
+		boolean slot1IsEmpty, slot2IsEmpty, slot1IsInT1;
 		long altAbsKey, absKey = key & UNSIGNED_LONG;
 		writeLock.lock();
 		try {
+			slot1IsEmpty = slot2IsEmpty = true;
+			// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
 			if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
 				if (key == slot1.hashKey()) {
 					if (e.betterThan(slot1)) {
@@ -156,11 +161,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 					}
 					return false;
 				}
-			}
-			else {
-				t1[ind1] = e;
-				load.incrementAndGet();
-				return true;
+				slot1IsEmpty = false;
 			}
 			if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
 				if (key == slot2.hashKey()) {
@@ -170,26 +171,69 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 					}
 					return false;
 				}
+				slot2IsEmpty = false;
 			}
-			else {
+			// If there was no entry with the same key, but there was at least one empty slot, insert the entry into it.
+			if (slot1IsEmpty) {
+				t1[ind1] = e;
+				load.incrementAndGet();
+				return true;
+			}
+			if (slot2IsEmpty) {
 				t2[ind2] = e;
 				load.incrementAndGet();
 				return true;
 			}
+			/* If the method is still executing, there was no empty slot or an entry with an identical key, so we will check if the new entry is
+			 * better than any of the entries with different keys. To make sure that the least valuable entry gets pushed out, we first check the
+			 * new entry against the "weaker" old entry.
+			 */
+			if (slot1.betterThan(slot2)) {
+				temp = slot1;
+				slot1 = slot2;
+				slot2 = temp;
+				slot1IsInT1 = false;
+			}
+			else
+				slot1IsInT1 = true;
 			if (e.betterThan(slot1)) {
-				t1[ind1] = e;
 				altAbsKey = slot1.hashKey() & UNSIGNED_LONG;
-				if (t2[(altInd = (int)(altAbsKey%t2.length))] == null)
-					t2[altInd] = slot1;
+				if (slot1IsInT1) {
+					t1[ind1] = e;
+					// If the entry that is about to get pushed out's alternative slot is empty insert the entry there.
+					if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
+						t2[altInd] = slot1;
+						load.incrementAndGet();
+					}
+				}
+				else {
+					t2[ind2] = e;
+					if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
+						t1[altInd] = slot1;
+						load.incrementAndGet();
+					}
+				}
 				return true;
 			}
 			if (e.betterThan(slot2)) {
-				t2[ind2] = e;
 				altAbsKey = slot2.hashKey() & UNSIGNED_LONG;
-				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null)
-					t1[altInd] = slot2;
+				if (slot1IsInT1) {
+					t2[ind2] = e;
+					if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
+						t1[altInd] = slot2;
+						load.incrementAndGet();
+					}
+				}
+				else {
+					t1[ind1] = e;
+					if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
+						t2[altInd] = slot2;
+						load.incrementAndGet();
+					}
+				}
 				return true;
 			}
+			// The new entry is weaker than the old entries with colliding hash keys are.
 			return false;
 		}
 		finally {
