@@ -3,7 +3,8 @@ package util;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
-/**A simple enumeration type to help estimate the memory overhead of objects.
+/**
+ * A simple enumeration type to help estimate the memory overhead of objects.
  * 
  * @author Viktor
  *
@@ -20,13 +21,16 @@ public enum SizeOf {
 	LONG(8),
 	DOUBLE(8);
 	
-	/**The number of bytes occupied in memory. */
+	/**
+	 * The number of bytes occupied in memory. 
+	 */
 	public final byte numOfBytes;
 	
 	private SizeOf(int numOfBytes) {
 		this.numOfBytes = (byte)numOfBytes;
 	}
-	/**Determines the space pointers take up in memory depending on the JVM.
+	/**
+	 * Determines the space pointers take up in memory depending on the JVM.
 	 * 
 	 * @return
 	 */
@@ -44,7 +48,8 @@ public enum SizeOf {
 			return 8;
 		}
 	}
-	/**Returns the total memory overhead in bytes.
+	/**
+	 * Returns the total memory overhead in bytes.
 	 * 
 	 * @param baseSize The raw size of the object including the object header.
 	 * @return The estimated memory the object consumes in the heap.
