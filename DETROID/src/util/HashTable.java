@@ -47,16 +47,17 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
-	private final static float T1_SHARE = 0.325F;
-	private final static float T2_SHARE = 0.275F;
-	private final static float T3_SHARE = 0.225F;
-	private final static float T4_SHARE = 0.175F;
+	private final static double T1_SHARE = 0.325F;
+	private final static double T2_SHARE = 0.275F;
+	private final static double T3_SHARE = 0.225F;
+	private final static double T4_SHARE = 0.175F;
 	
 	/**
 	 * The default maximum hash table size in megabytes.
 	 */
 	public final static int DEFAULT_SIZE = 1 << 6;
-	private final static int MAX_SIZE = 3*(1 << 11); // The absolute maximum hash table size in megabytes.
+	private final static int MAX_SIZE = 3*(1 << 11);	// The absolute maximum hash table size in megabytes.
+	private final static int MIN_CAPACITY = 2 << 7;		// The minimum number of slots.
 	
 	private long entrySize;	// The size of a hash entry, including all overheads, in bytes.
 	private long capacity;	// The number of allowed hash table slots.
@@ -70,14 +71,18 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	
 	/**
 	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
-	 * type's instance.
+	 * type's instance. The size has to be great enough for the hash table to be able to accommodate at least 128 entries of the specified entry
+	 * size.
 	 * 
-	 * @param sizeMB Maximum hash table size in megabytes.
+	 * @param sizeMB Maximum hash table size in megabytes. It can not not be guaranteed to be completely accurately reflected, but will be very
+	 * closely approximated. The absolute maximum is 6GB and the minimum maximum is 1MB. If sizeMB is 0 or less, the hash table defaults to 64MB.
 	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int sizeMB, final int entrySizeB) {
 		long tL1, tL2, tL3, tL4;
+		long t1Cap, t2Cap, t3Cap, t4Cap;
+		long adjCap;
 		ReadWriteLock lock = new ReentrantReadWriteLock();
 		readLock = lock.readLock();
 		writeLock = lock.writeLock();
@@ -87,11 +92,29 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		else if (sizeMB > MAX_SIZE)
 			sizeMB = MAX_SIZE;
 		capacity = ((long)sizeMB*(1 << 20))/entrySize;
+		if (capacity < MIN_CAPACITY)
+			throw new IllegalArgumentException("The size has to be great enough for the hash table " +
+					"to be able to accommodate at least 128 entries of the specified entry size.");
 		// Ensuring all tables have prime lengths.
-		tL1 = MillerRabin.greatestLEPrime((long)(T1_SHARE*capacity));
-		tL2 = MillerRabin.greatestLEPrime((long)(T2_SHARE*capacity));
-		tL3 = MillerRabin.greatestLEPrime((long)(T3_SHARE*capacity));
-		tL4 = MillerRabin.greatestLEPrime((long)(T4_SHARE*capacity));
+		adjCap = capacity;
+		tL1 = tL2 = tL3 = tL4 = 0;
+		for (int i = 0; i < 2; i++) {
+			t4Cap = (long)(T4_SHARE*adjCap);
+			tL4 = MillerRabin.greatestLEPrime(t4Cap);
+			adjCap += t4Cap - tL4;
+			t3Cap = (long)(T3_SHARE*adjCap);
+			if ((tL3 = MillerRabin.greatestLEPrime(t3Cap)) == tL4)
+				tL3 = MillerRabin.leastGEPrime(t3Cap);
+			adjCap += t3Cap - tL3;
+			t2Cap = (long)(T2_SHARE*adjCap);
+			if ((tL2 = MillerRabin.greatestLEPrime(t2Cap)) == tL3)
+				tL2 = MillerRabin.leastGEPrime(t2Cap);
+			adjCap += t2Cap - tL2;
+			t1Cap = (long)(T1_SHARE*adjCap);
+			if ((tL1 = MillerRabin.greatestLEPrime(t1Cap)) == tL2)
+				tL1 = MillerRabin.leastGEPrime(t1Cap);
+			adjCap += t1Cap - tL1;
+		}
 		t1 = (T[])new Entry[(int)tL1];
 		t2 = (T[])new Entry[(int)tL2];
 		t3 = (T[])new Entry[(int)tL3];

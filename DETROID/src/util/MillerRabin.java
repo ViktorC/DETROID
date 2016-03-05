@@ -78,9 +78,10 @@ public final class MillerRabin {
 			x = modPow(a, d, n);
 			if (x == 1 || x == n - 1)
 				continue;
-			// a^((2^r)*d) computed with a loop.
+			// a^((2^r)*d) - If (a^d)%n is not 1 or -1, for n to be prime, there has to be an r, 1 < r < s, for which a^((2^r)*d)%n is -1
 			for (int r = 1; r < s; r++) {
 				x = (x*x)%n;
+				// A residual of 1 that when squared resulted in neither -1 nor 1 proves n is composite as it has a nontrivial sqrt of 1 mod.
 				if (x == 1)
 					break;
 				if (x == n - 1)
