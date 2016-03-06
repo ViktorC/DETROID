@@ -41,7 +41,7 @@ public class PTEntry implements HashTable.Entry<PTEntry> {
 		if (key == t.key)
 			return false;
 		else
-			return generation >= t.generation;
+			return generation > t.generation;
 	}
 	/**Returns the Zobrist pawn hash key. */
 	@Override

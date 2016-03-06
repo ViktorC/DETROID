@@ -4,7 +4,7 @@ import util.List;
 import util.Comparable;
 
 /**
- * A simple unencapsulated class that provides objects for storing information about moves necessary for making them.
+ * A simple class that provides objects for storing information about moves necessary for making them.
  * 
  * @author Viktor
  *

@@ -54,7 +54,7 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);					// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
-	private static HashTable<TTEntry> tT = new HashTable<>(512, TTEntry.SIZE);		// Transposition table.
+	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);		// Transposition table.
 	private static HashTable<PTEntry> pT = new HashTable<>(16, PTEntry.SIZE);	// Pawn table.
 	private static byte eGen = 0;	// Entry generation.
 	
