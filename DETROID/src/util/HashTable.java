@@ -81,6 +81,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		long tL1, tL2;
 		long t1Cap, t2Cap;
 		long adjCap;
+		MillerRabin prim;
 		ReadWriteLock lock;
 		entrySize = entrySizeB;
 		if (sizeMB <= 0)
@@ -98,13 +99,14 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		// Ensuring all tables have prime lengths.
 		adjCap = capacity;
 		tL1 = tL2 = 0;
+		prim = new MillerRabin();
 		for (int i = 0; i < 2; i++) {
 			t2Cap = (long)(T2_SHARE*adjCap);
-			tL2 = MillerRabin.greatestLEPrime(t2Cap);
+			tL2 = prim.greatestLEPrime(t2Cap);
 			adjCap += t2Cap - tL2;
 			t1Cap = (long)(T1_SHARE*adjCap);
-			if ((tL1 = MillerRabin.greatestLEPrime(t1Cap)) == tL2)
-				tL1 = MillerRabin.leastGEPrime(t1Cap);
+			if ((tL1 = prim.greatestLEPrime(t1Cap)) == tL2)
+				tL1 = prim.leastGEPrime(t1Cap);
 			adjCap += t1Cap - tL1;
 		}
 		t1 = (T[])new Entry[(int)tL1];

@@ -12,10 +12,10 @@ public final class MillerRabin {
 	
 	private static final int DEFAULT_ACCURACY = 7;
 	
-	private static Random rand = new Random();
+	private Random rand;
 	
-	private MillerRabin() {
-		
+	public MillerRabin() {
+		rand = new Random(System.currentTimeMillis());
 	}
 	/**
 	 * Returns random long within the specified range by adjoining two random integers;
@@ -23,7 +23,7 @@ public final class MillerRabin {
 	 * @param upperBound Exclusive.
 	 * @return
 	 */
-	private static long nextLong(long upperBound) {
+	private long nextLong(long upperBound) {
 		long r = rand.nextLong() & ((1L << 63) - 1); // Taking the absolute value of the random long.
 		return r%upperBound;
 	}
@@ -56,7 +56,7 @@ public final class MillerRabin {
 	 * @param k The accuracy of the primality test.
 	 * @return
 	 */
-	public static boolean isPrime(long n, int k) {
+	public boolean isPrime(long n, int k) {
 		long d, s, a, x;
 		if (n < 2)
 			return false;
@@ -97,7 +97,7 @@ public final class MillerRabin {
 	 * @param n The number to be tested.
 	 * @return
 	 */
-	public static boolean isPrime(long n) {
+	public boolean isPrime(long n) {
 		return isPrime(n, DEFAULT_ACCURACY);
 	}
 	/**
@@ -107,12 +107,11 @@ public final class MillerRabin {
 	 * @param k The accuracy of the primality test.
 	 * @return
 	 */
-	public static long leastGEPrime(long n, int k) {
+	public long leastGEPrime(long n, int k) {
 		if (n < 0)
 			throw new IllegalArgumentException("n has to be positive.");
 		if (n%2 == 0 && n != 2)
 			n++;
-		rand = new Random(System.currentTimeMillis());
 		while (!isPrime(n, k))
 			n += 2;
 		return n;
@@ -123,7 +122,7 @@ public final class MillerRabin {
 	 * @param n The number to be tested.
 	 * @return
 	 */
-	public static long leastGEPrime(long n) {
+	public long leastGEPrime(long n) {
 		return leastGEPrime(n, DEFAULT_ACCURACY);
 	}
 	/**
@@ -133,12 +132,11 @@ public final class MillerRabin {
 	 * @param k The accuracy of the primality test.
 	 * @return
 	 */
-	public static long greatestLEPrime(long n, int k) {
+	public long greatestLEPrime(long n, int k) {
 		if (n < 2)
 			throw new IllegalArgumentException("n has to be >= 2.");
 		if (n%2 == 0 && n != 2)
 			n--;
-		rand = new Random(System.currentTimeMillis());
 		while (!isPrime(n, k) && n >= 0)
 			n -= 2;
 		return n;
@@ -149,7 +147,7 @@ public final class MillerRabin {
 	 * @param n The number to be tested.
 	 * @return
 	 */
-	public static long greatestLEPrime(long n) {
+	public long greatestLEPrime(long n) {
 		return greatestLEPrime(n, DEFAULT_ACCURACY);
 	}
 }
