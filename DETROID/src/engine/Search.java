@@ -54,7 +54,7 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH);					// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
-	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);		// Transposition table.
+	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
 	private static HashTable<PTEntry> pT = new HashTable<>(16, PTEntry.SIZE);	// Pawn table.
 	private static byte eGen = 0;	// Entry generation.
 	
@@ -161,7 +161,12 @@ public class Search extends Thread {
 		numOfCores = Runtime.getRuntime().availableProcessors();
 		if (numOfCores <= 1 && pondering)
 			return;
-		deadLine = pondering ? Long.MAX_VALUE : (System.currentTimeMillis() + searchTime);
+		if (pondering)
+			deadLine = Long.MAX_VALUE;
+		else {
+			eGen++;
+			deadLine = System.currentTimeMillis() + searchTime;
+		}
 		pV = new Move[MAX_SEARCH_DEPTH];
 		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
 			ply = i;
@@ -170,19 +175,16 @@ public class Search extends Thread {
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
 		}
-		if (!pondering) {
-			if (eGen == 127) {
-				tT.clear();
-				pT.clear();
-				eGen = 2;
-			}
-			else {
-				tT.remove(e -> e.generation < eGen - 2);
-				pT.remove(e -> e.generation < eGen - 4);
-			}
-			eGen++;
-			hT.decrementCurrentValues();
+		if (eGen == 127) {
+			tT.clear();
+			pT.clear();
+			eGen = 2;
 		}
+		else {
+			tT.remove(e -> e.generation < eGen);
+			pT.remove(e -> e.generation < eGen - 2);
+		}
+		hT.decrementCurrentValues();
 	}
 	/**
 	 * A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the

@@ -302,7 +302,13 @@ public class Game {
 					e.printStackTrace();
 				}
 				end = System.currentTimeMillis();
-				System.out.println("Best move: " + s.getBestMove() + "\n");
+				System.out.print("PV:");
+				for (Move m : s.getPv())
+					System.out.print(" " + m.toString());
+				System.out.println();
+				System.out.println(s.getTranspositionTableStats());
+				System.out.println(s.getPawnTableStats());
+				System.out.println("Nodes: " + s.nodes);
 				game.pos.makeMove(s.getBestMove());
 				if (!game.playerIsWhite) {
 					game.whiteTimeLeft -= (end - start);

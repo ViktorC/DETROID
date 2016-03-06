@@ -87,7 +87,7 @@ public enum CastlingRights {
 			case ALL:
 				out += "KQ";
 		}
-		switch (white) {
+		switch (black) {
 			case NONE:
 			break;
 			case SHORT:

@@ -6328,27 +6328,27 @@ public class Position implements Hashable, Copiable<Position> {
 		ByteStack checkers;
 		System.out.println(drawFancyBoard());
 		System.out.println();
-		System.out.printf("%-23s ", "To move:");
+		System.out.printf("%-23s ", "To move: ");
 		if (this.whitesTurn)
 			System.out.println("white");
 		else
 			System.out.println("black");
 		if (this.check) {
-			System.out.printf("%-23s ", "Checker(s):");
+			System.out.printf("%-23s ", "Checker(s): ");
 			checkers = BitOperations.serialize(this.checkers);
 			while (checkers.hasNext())
 				System.out.print(Square.toString(checkers.next()) + " ");
 			System.out.println();
 		}
-		System.out.printf("%-23s ", "Castling rights:");
+		System.out.printf("%-23s ", "Castling rights: ");
 		System.out.print(CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights)));
 		System.out.println();
-		System.out.printf("%-23s ", "En passant rights:");
+		System.out.printf("%-23s ", "En passant rights: ");
 		System.out.println(EnPassantRights.getByIndex(enPassantRights).toString());
-		System.out.printf("%-23s " + halfMoveIndex + "\n", "Half-move index:");
-		System.out.printf("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
-		System.out.printf("%-23s " + BitOperations.toHexLiteral(key) + "\n", "Hash key:");
-		System.out.printf("%-23s ", "Move history:" + moveListInSAN());
+		System.out.printf("%-23s " + halfMoveIndex + "\n", "Half-move index: ");
+		System.out.printf("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock: ");
+		System.out.printf("%-23s " + BitOperations.toHexLiteral(key) + "\n", "Hash key: ");
+		System.out.printf("%-23s ", "Move history: " + moveListInSAN());
 		System.out.println();
 	}
 	/**
