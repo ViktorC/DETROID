@@ -198,32 +198,38 @@ public class Search extends Thread {
 	 * @return The score of the position searched.
 	 */
 	private int search(int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
-		int bestScore, score, origAlpha = alpha, val, searchedMoves = 0, matMoveBreakInd = 0, IIDdepth, extPly, kMove,
-			checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH, distFromRoot = ply - depth;
-		Move pVmove = null, bestMove, killerMove1 = null, killerMove2 = null, move;
-		boolean thereIsPvMove = false, thereIsKillerMove1 = false, thereIsKillerMove2 = false, doIID = false;
-		Queue<Move> matMoves = null, nonMatMoves = null;
+		final int origAlpha = alpha;
+		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
+		final int distFromRoot = ply - depth;
+		int bestScore, score, val, searchedMoves, matMoveBreakInd, IIDdepth, extPly, kMove;
+		Move pVmove, bestMove, killerMove1, killerMove2, move;
+		boolean thereIsPvMove, thereIsKillerMove1, thereIsKillerMove2, doIID;
+		Queue<Move> matMoves, nonMatMoves;
 		Move[] matMovesArr, nonMatMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
-		bestMove = null;
 		bestScore = Termination.CHECK_MATE.score;
+		bestMove = null;
+		searchedMoves = matMoveBreakInd = 0;
+		pVmove = killerMove1 = killerMove2 = null;
+		thereIsPvMove = thereIsKillerMove1 = thereIsKillerMove2 = doIID = false;
+		matMoves = nonMatMoves = null;
 		nodes++;
 		Search: {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
 			if (e != null) {
 				e.generation = eGen;
-				// Mate score adjustment to root distance.
-				if (e.score <= checkMateLim)
-					score = e.score + distFromRoot;
-				else if (e.score >= -checkMateLim)
-					score = e.score - distFromRoot;
-				else
-					score = e.score;
 				/* If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
 				 * the score if the entry stored a PV node. */
 				if (e.depth >= depth) {
+					// Mate score adjustment to root distance.
+					if (e.score <= checkMateLim)
+						score = e.score + distFromRoot;
+					else if (e.score >= -checkMateLim)
+						score = e.score - distFromRoot;
+					else
+						score = e.score;
 					if (e.type == NodeType.EXACT.ind)
 						return score;
 					else if (e.type == NodeType.FAIL_HIGH.ind) {
@@ -311,7 +317,7 @@ public class Search extends Thread {
 					break Search;
 			}
 			// If there is no hash entry or PV-move for this ply, perform mate check.
-			else if (bestScore <= Termination.CHECK_MATE.score + MAX_SEARCH_DEPTH && bestScore != Termination.STALE_MATE.score){
+			else {
 				matMoves = pos.generateMaterialMoves();
 				if (matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
@@ -492,7 +498,7 @@ public class Search extends Thread {
 					&& searchedMoves > 4 && hT.score(move) <= RelativeHistoryTable.MAX_SCORE/(matMovesArr.length + nonMatMovesArr.length)) {
 					val = -search(depth - LMR - 1, -alpha - 1, -alpha, true, qDepth);
 					// If it does not fail low, research with full window.
-					if (val > origAlpha)
+					if (val > alpha)
 						val = -search(depth - 1, -beta, -alpha, true, qDepth);
 				}
 				// Else PVS.
@@ -522,7 +528,10 @@ public class Search extends Thread {
 					break Search;
 			}
 		}
-		// Adjustment of bestMove's stored score for TT insertion in case it's a check mate score.
+		// If the search has been invoked from quiescence search, do not store entries in the TT.
+		if (depth <= 0)
+			return bestScore;
+		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
 		if (bestScore <= checkMateLim)
 			score = bestScore - distFromRoot;
 		else if (bestScore >= -checkMateLim)
@@ -538,7 +547,7 @@ public class Search extends Thread {
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMove.toInt(), eGen));
 		else
 			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, bestMove.toInt(), eGen));
-		// Return bestMove's unadjusted score.
+		// Return the unadjusted best score.
 		return bestScore;
 	}
 	/**
@@ -557,14 +566,15 @@ public class Search extends Thread {
 		long[] checkSquares;
 		Move[] moves;
 		Move move;
-		int staticScore, searchScore;
+		int bestScore, searchScore;
+		final int mateScore = Termination.CHECK_MATE.score + ply - depth;
 		if (depth != 0)
 			nodes++;
 		boolean check = pos.getCheck();
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (check) {
 			tacticalMoves = null;
-			staticScore = Termination.CHECK_MATE.score + ply - depth;
+			bestScore = mateScore;
 		}
 		/* Generate tactical and quiet moves separately then combine them in the quiet move list for evaluation of the position for stand-pat
 		 * this way the ordering if the interesting moves can be restricted to only the tactical moves. */
@@ -577,11 +587,11 @@ public class Search extends Thread {
 				if (nullMoveObservHolds) {
 					allMoves = pos.generateQuietMoves(checkSquares);
 					allMoves.addAll(tacticalMoves); // We need all the lagal moves for the side to move for mate-detection in the evaluation.
-					staticScore = eval.score(pos, allMoves, ply - depth);
+					bestScore = allMoves.length() == 0 ? Evaluator.mateScore(pos.getCheck(), ply - depth) : eval.score(pos);
 				}
 				// Else no bound.
 				else
-					staticScore = Termination.CHECK_MATE.score + ply - depth;
+					bestScore = mateScore;
 			}
 			// After that, only material moves.
 			else {
@@ -590,23 +600,26 @@ public class Search extends Thread {
 				if (nullMoveObservHolds) {
 					allMoves = pos.generateNonMaterialMoves();
 					allMoves.addAll(tacticalMoves);
-					staticScore = eval.score(pos, allMoves, ply - depth);
+					bestScore = allMoves.length() == 0 ? Evaluator.mateScore(pos.getCheck(), ply - depth) : eval.score(pos);
 				}
 				// No bound.
 				else
-					staticScore = Termination.CHECK_MATE.score + ply - depth;
+					bestScore = mateScore;
 			}
 		}
-		// Fail hard.
-		if (staticScore >= beta)
-			return beta;
-		if (staticScore > alpha)
-			alpha = staticScore;
+		// Fail soft.
+		if (bestScore >= beta)
+			return bestScore;
+		if (bestScore > alpha)
+			alpha = bestScore;
 		// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
 		if (check) {
 			searchScore = -search(1, alpha, beta, false, depth - 2);
-			if (searchScore > alpha)
-				alpha = searchScore;
+			if (searchScore > bestScore) {
+				bestScore = searchScore;
+				if (bestScore > alpha)
+					alpha = bestScore;
+			}
 		}
 		// Quiescence search.
 		else {
@@ -619,18 +632,19 @@ public class Search extends Thread {
 				pos.makeMove(move);
 				searchScore = -quiescence(depth - 1, -beta, -alpha);
 				pos.unmakeMove();
-				if (searchScore > alpha) {
-					alpha = searchScore;
-					if (alpha >= beta)
-						break;
+				if (searchScore > bestScore) {
+					bestScore = searchScore;
+					if (bestScore > alpha) {
+						alpha = bestScore;
+						if (alpha >= beta)
+							break;
+					}
 				}
 				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 					break;
 			}
 		}
-		if (alpha >= beta)
-			return beta;
-		return alpha;
+		return bestScore;
 	}
 	/**
 	 * Orders material moves and checks, the former of which according to the SEE swap algorithm.

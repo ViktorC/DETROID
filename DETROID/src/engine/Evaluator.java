@@ -175,13 +175,13 @@ public final class Evaluator {
 	 * Returns the right score for when there are no more legal move in a position.
 	 * 
 	 * @param sideToMoveInCheck
-	 * @param ply
+	 * @param distanceFromRoot
 	 * @return
 	 */
-	public static int mateScore(boolean sideToMoveInCheck, int ply) {
+	public static int mateScore(boolean sideToMoveInCheck, int distanceFromRoot) {
 		if (sideToMoveInCheck)
-		// The longer the line of play is to a check mate, the better for the side getting mated.
-			return Termination.CHECK_MATE.score + ply;
+			// The longer the line of play is to a check mate, the better for the side getting mated.
+			return Termination.CHECK_MATE.score + distanceFromRoot;
 		else
 			return Termination.STALE_MATE.score;
 	}
@@ -205,15 +205,13 @@ public final class Evaluator {
 	 * @param ply The current level of distance from the root in the search.
 	 * @return
 	 */
-	public int score(Position pos, List<Move> allMoves, int ply) {
+	public int score(Position pos) {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase;
 		short pawnScore, baseScore, openingScore, endGameScore;
 		byte[] bishopSqrArr;
 		PTEntry e;
-		if (allMoves.length() == 0)
-			return mateScore(pos.getCheck(), ply);
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
 		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
