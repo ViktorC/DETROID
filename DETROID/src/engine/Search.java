@@ -201,6 +201,8 @@ public class Search extends Thread {
 		final int origAlpha = alpha;
 		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		final int distFromRoot = ply - depth;
+		final int lMateScore = Termination.CHECK_MATE.score + distFromRoot;
+		final int wMateScore = -lMateScore;
 		int bestScore, score, val, searchedMoves, matMoveBreakInd, IIDdepth, extPly, kMove;
 		Move pVmove, bestMove, killerMove1, killerMove2, move;
 		boolean thereIsPvMove, thereIsKillerMove1, thereIsKillerMove2, doIID;
@@ -216,6 +218,20 @@ public class Search extends Thread {
 		matMoves = nonMatMoves = null;
 		nodes++;
 		Search: {
+			// Check for the repetition rule; return a draw score if it applies.
+			if (pos.getRepetitions() >= 3)
+				return Termination.DRAW_CLAIMED.score;
+			// Mate pruning
+			if (wMateScore < beta) {
+				beta = wMateScore;
+				if (alpha >= beta)
+					return wMateScore;
+			}
+			else if (lMateScore > alpha) {
+				alpha = lMateScore;
+				if (alpha >= beta)
+					return lMateScore;
+			}
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
 			if (e != null) {
@@ -256,9 +272,6 @@ public class Search extends Thread {
 				tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, 0, eGen));
 				return score;
 			}
-			// Check for the repetition rule; return a draw score if it applies.
-			if (pos.getRepetitions() >= 3)
-				return Termination.DRAW_CLAIMED.score;
 			// In case there is no hash move...
 			if (!thereIsPvMove) {
 				// Check the PV form the last iteration.
