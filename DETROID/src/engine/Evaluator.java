@@ -172,20 +172,6 @@ public final class Evaluator {
 		return score;
 	}
 	/**
-	 * Returns the right score for when there are no more legal move in a position.
-	 * 
-	 * @param sideToMoveInCheck
-	 * @param distanceFromRoot
-	 * @return
-	 */
-	public static int mateScore(boolean sideToMoveInCheck, int distanceFromRoot) {
-		if (sideToMoveInCheck)
-			// The longer the line of play is to a check mate, the better for the side getting mated.
-			return Termination.CHECK_MATE.score + distanceFromRoot;
-		else
-			return Termination.STALE_MATE.score;
-	}
-	/**
 	 * Returns an evaluation score according to the current phase and the evaluation scores of the same position in the context of an opening and
 	 * in the context of and end game to establish continuity.
 	 * 
