@@ -308,7 +308,7 @@ public class Game {
 				System.out.println();
 				System.out.println(s.getTranspositionTableStats());
 				System.out.println(s.getPawnTableStats());
-				System.out.println("Nodes: " + s.nodes);
+				System.out.println("Nodes: " + s.getNodeCount());
 				game.pos.makeMove(s.getBestMove());
 				if (!game.playerIsWhite) {
 					game.whiteTimeLeft -= (end - start);

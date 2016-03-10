@@ -157,6 +157,15 @@ public class Move implements Comparable<Move> {
 		return (from | (to << ToInt.SHIFT_TO.value) | (movedPiece << ToInt.SHIFT_MOVED.value) |
 			   (capturedPiece << ToInt.SHIFT_CAPTURED.value) | (type << ToInt.SHIFT_TYPE.value));
 	}
+	/**
+	 * Returns whether the move is a material move or not.
+	 * 
+	 * @param move
+	 * @return
+	 */
+	public boolean isMaterial() {
+		return capturedPiece != Piece.NULL.ind || type >= MoveType.PROMOTION_TO_QUEEN.ind;
+	}
 	/**Returns whether this move is equal to the input parameter move.
 	 * 
 	 * @param m

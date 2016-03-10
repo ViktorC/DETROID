@@ -15,7 +15,7 @@ public class Playground {
 		Move.printMovesToConsole(s.getPv());
 		System.out.println(s.getTranspositionTableStats());
 		System.out.println(s.getPawnTableStats());
-		System.out.println("Nodes: " + s.nodes);
+		System.out.println("Nodes: " + s.getNodeCount());
 		System.out.println(end - start);
 	}
 }
