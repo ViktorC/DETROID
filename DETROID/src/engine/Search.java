@@ -212,6 +212,7 @@ public class Search extends Thread {
 		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		final int distFromRoot = ply - depth;
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
+		final int origAlpha = alpha;
 		final boolean inCheck = pos.getCheck();
 		int bestScore, score, searchedMoves, matMoveBreakInd, IIDdepth, extPly, kMove, bestMoveInt;
 		Move hashMove, bestMove, killerMove1, killerMove2, move;
@@ -514,7 +515,7 @@ public class Search extends Thread {
 				}
 				pos.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (depth > 2 && beta == alpha + 1 && !inCheck && pos.getUnmakeRegister().checkers == 0 &&
+				if (depth > 2 && beta == origAlpha + 1 && !inCheck && pos.getUnmakeRegister().checkers == 0 &&
 						alpha < checkMateLim && searchedMoves > 4) {
 					score = -search(depth - LMR - 1, -alpha - 1, -alpha, true, qDepth);
 					// If it does not fail low, research with "full" window.
@@ -561,7 +562,7 @@ public class Search extends Thread {
 			score = bestScore;
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
 		//	Add new entry to the transposition table.
-		if (bestScore <= alpha)
+		if (bestScore <= origAlpha)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, score, bestMoveInt, eGen));
 		else if (bestScore >= beta)
 			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMoveInt, eGen));
