@@ -288,7 +288,7 @@ public class Search extends Thread {
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
 			if (!isThereHashMove) {
-				if (depth > 5 && beta > alpha + 1) {
+				if (depth > 5 && beta > origAlpha + 1) {
 					IIDdepth = (depth > 7) ? depth/2 : depth - 2;
 					extPly = ply;
 					for (int i = 2; i < IIDdepth; i++) {
