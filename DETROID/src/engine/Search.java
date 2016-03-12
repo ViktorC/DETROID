@@ -253,13 +253,15 @@ public class Search extends Thread {
 						score = e.score - distFromRoot;
 					else
 						score = e.score;
-					// If the score was exact, or it was the score of a fail low node (which is the same as exact in a fail soft framework),
-					// or it was that of a fail high node and greater than beta, return the score.
-					if (!(e.type == NodeType.FAIL_HIGH.ind && score < beta)) {
-						if (score >= beta && e.bestMove != 0)
-							kT.add(distFromRoot, Move.toMove(e.bestMove));
+					// If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
+					// node and is greater than or equal to beta, return the score.
+					if (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_LOW.ind && score <= alpha) ||
+							(e.type == NodeType.FAIL_HIGH.ind && score >= beta)) {
+						if (score >= beta && e.bestMove != 0 && !(bestMove = Move.toMove(e.bestMove)).isMaterial())
+							kT.add(distFromRoot, bestMove);
 						return score;
 					}
+					
 				}
 				// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
 				if (e.bestMove != 0) {
