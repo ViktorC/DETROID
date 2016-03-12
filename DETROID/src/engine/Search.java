@@ -54,8 +54,9 @@ public class Search extends Thread {
 	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH + 1);				// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
-	private static HashTable<TTEntry> tT = new HashTable<>(512, TTEntry.SIZE);	// Transposition table.
-	private static HashTable<PTEntry> pT = new HashTable<>(16, PTEntry.SIZE);	// Pawn table.
+	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
+	private static HashTable<ETEntry> eT = new HashTable<>(128, ETEntry.SIZE);	// Evaluation hash table.
+	private static HashTable<PTEntry> pT = new HashTable<>(8, PTEntry.SIZE);	// Pawn hash table.
 	private static byte eGen = 0;	// Entry generation.
 	
 	Evaluator eval = new Evaluator(pT, eGen);
@@ -74,7 +75,7 @@ public class Search extends Thread {
 	 */
 	public Search(Position pos) {
 		this.pos = pos.deepCopy();
-		gamePhase = Evaluator.evaluateGamePhase(this.pos);
+		gamePhase = Evaluator.evaluateGamePhase(pos);
 		pondering = true;
 		nullMoveObservHolds = gamePhase != GamePhase.END_GAME;
 	}
@@ -146,6 +147,14 @@ public class Search extends Thread {
 		return tT.toString();
 	}
 	/**
+	 * Returns a string containing basic statistics about the evaluation table.
+	 * 
+	 * @return A string of the total size and load of the evaluation table.
+	 */
+	public String getEvaluationTableStats() {
+		return eT.toString();
+	}
+	/**
 	 * Returns a string containing basic statistics about the pawn table.
 	 * 
 	 * @return A string of the total size and load of the pawn table.
@@ -186,11 +195,13 @@ public class Search extends Thread {
 		}
 		if (eGen == 127) {
 			tT.clear();
+			eT.clear();
 			pT.clear();
 			eGen = 2;
 		}
 		else {
 			tT.remove(e -> e.generation < eGen);
+			eT.remove(e -> e.generation < eGen);
 			pT.remove(e -> e.generation < eGen - 2);
 		}
 		hT.decrementCurrentValues();
@@ -232,10 +243,10 @@ public class Search extends Thread {
 				return Termination.DRAW_CLAIMED.score;
 			// Mate distance pruning.
 			if (-mateScore < beta) {
-				if (origAlpha >= -mateScore)
+				if (alpha >= -mateScore)
 					return -mateScore;
 			}
-			if (mateScore > origAlpha) {
+			if (mateScore > alpha) {
 				  if (beta <= mateScore)
 					  return mateScore;
 			}
@@ -583,6 +594,7 @@ public class Search extends Thread {
 		Move[] moves;
 		Move move;
 		int bestScore, searchScore;
+		ETEntry e;
 		if (depth != 0)
 			nodes.incrementAndGet();
 		// Just for my peace of mind.
@@ -600,9 +612,26 @@ public class Search extends Thread {
 			materialMoves = pos.generateMaterialMoves();
 			// Stand-pat, evaluate position.
 			if (nullMoveObservHolds) {
-				allMoves = pos.generateNonMaterialMoves();
-				allMoves.addAll(materialMoves);
-				bestScore = allMoves.length() == 0 ? (inCheck ? mateScore : Termination.STALE_MATE.score) : eval.score(pos);
+				if (materialMoves.length() == 0) {
+					allMoves = pos.generateNonMaterialMoves();
+					allMoves.addAll(materialMoves);
+				}
+				else
+					allMoves = null;
+				if (allMoves != null && allMoves.length() == 0)
+					bestScore = inCheck ? mateScore : Termination.STALE_MATE.score;
+				// Use evaluation hash table.
+				else {
+					e = eT.lookUp(pos.key);
+					if (e != null) {
+						e.generation = eGen;
+						bestScore = e.score;
+					}
+					else {
+						bestScore = eval.score(pos);
+						eT.insert(new ETEntry(pos.key, bestScore, eGen));
+					}
+				}
 			}
 			// No bound.
 			else

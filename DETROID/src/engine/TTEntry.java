@@ -58,8 +58,18 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 	 */
 	@Override
 	public boolean betterThan(TTEntry e) {
-		return generation >= e.generation &&((depth >= e.depth && type == NodeType.EXACT.ind) || 
-				(depth > e.depth && e.type != NodeType.EXACT.ind));
+		if (generation < e.generation || depth < e.depth)
+			return false;
+		if (type == e.type) {
+			if (type == NodeType.FAIL_HIGH.ind)
+				return score >= e.score;
+			else if (type == NodeType.FAIL_LOW.ind)
+				return score <= e.score;
+			else
+				return true;
+		}
+		else
+			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind;
 	}
 	/**
 	 * Returns a 64-bit hash code identifying this object.

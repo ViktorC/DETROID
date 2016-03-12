@@ -16,7 +16,7 @@ public class ETEntry implements HashTable.Entry<ETEntry> {
 	 */
 	public final long key;
 	/**
-	 * The returned score.
+	 * The evaluation score.
 	 */
 	public final short score;
 	/**
@@ -27,8 +27,8 @@ public class ETEntry implements HashTable.Entry<ETEntry> {
 	/**
 	 * The total size of the entry in bytes.
 	 */
-	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.LONG.numOfBytes + 
-														   SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes);
+	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.LONG.numOfBytes +
+			SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes);
 
 	public ETEntry(long key, int score, byte age) {
 		this.key = key;
@@ -40,7 +40,7 @@ public class ETEntry implements HashTable.Entry<ETEntry> {
 	 */
 	@Override
 	public boolean betterThan(ETEntry e) {
-		return true;
+		return generation >= e.generation;
 	}
 	/**
 	 * Returns a 64-bit hash code identifying this object.

@@ -4,7 +4,7 @@ import util.HashTable;
 import util.SizeOf;
 
 /**
- * A siple entry class for a pawn table implementation that stores the evaluation scores for different pawn positions. Tne number of expected
+ * A simple entry class for a pawn table implementation that stores the evaluation scores for different pawn positions. The number of expected
  * hash table hits is high due to the pawn structure rarely changing while traversing the search tree.
  * 
  * @author Viktor
@@ -37,11 +37,8 @@ public class PTEntry implements HashTable.Entry<PTEntry> {
 		this.generation = generation;
 	}
 	@Override
-	public boolean betterThan(PTEntry t) {
-		if (key == t.key)
-			return false;
-		else
-			return generation > t.generation;
+	public boolean betterThan(PTEntry e) {
+		return generation >= e.generation;
 	}
 	/**Returns the Zobrist pawn hash key. */
 	@Override
