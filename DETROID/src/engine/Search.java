@@ -36,27 +36,26 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_SEARCH_DEPTH = 10;
-	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
+	private final static int MAX_SEARCH_DEPTH = 10;
+	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
 	
-	private Position pos;
+	private final static int NMR = 2;												// Null move pruning reduction.
+	private final static int LMR = 1;												// Late move reduction.
+	private final static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
 	
 	private int ply;
 	
-	private static int NMR = 2;													// Null move pruning reduction.
-	private static int LMR = 1;													// Late move reduction.
-	private static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
-	
+	private Position pos;
 	private GamePhase gamePhase;			// The phase the 'game' at the root position is in.
 	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
 	
 	private Move[] pV;
 	
-	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH + 1);					// Killer heuristic table.
+	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH + 1);				// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
-	private static HashTable<TTEntry> tT = new HashTable<>(128, TTEntry.SIZE);	// Transposition table.
+	private static HashTable<TTEntry> tT = new HashTable<>(512, TTEntry.SIZE);	// Transposition table.
 	private static HashTable<PTEntry> pT = new HashTable<>(16, PTEntry.SIZE);	// Pawn table.
 	private static byte eGen = 0;	// Entry generation.
 	
@@ -271,7 +270,7 @@ public class Search extends Thread {
 			}
 			// Return the score from the quiescence search in case a leaf node has been reached.
 			if (depth == 0) {
-				score = eval.score(pos);
+				score = quiescence(qDepth, alpha, beta);
 				if (score > bestScore) {
 					bestMove = null;
 					bestScore = score;
@@ -351,7 +350,7 @@ public class Search extends Thread {
 				}
 			}
 			// Order the material moves.
-			matMovesArr = orderMaterialMoves(matMoves);
+			matMovesArr = orderMaterialMovesMVVLVA(matMoves);
 			matMoveBreakInd = 0;
 			// Search winning and equal captures.
 			for (int i = 0; i < matMovesArr.length; i++) {
@@ -544,7 +543,7 @@ public class Search extends Thread {
 			}
 		}
 		// If the search has been invoked from quiescence search, do not store entries in the TT.
-		if (depth < 0)
+		if (qDepth < 0)
 			return bestScore;
 		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
 		if (bestScore <= checkMateLim)
@@ -576,50 +575,37 @@ public class Search extends Thread {
 	 * @return
 	 */
 	public int quiescence(int depth, int alpha, int beta) {
-		final int mateScore = Termination.CHECK_MATE.score + ply - depth;
+		final int distFromRoot = ply - depth;
+		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final boolean inCheck = pos.getCheck();
-		List<Move> tacticalMoves, allMoves;
-		long[] checkSquares;
+		List<Move> materialMoves, allMoves;
 		Move[] moves;
 		Move move;
 		int bestScore, searchScore;
 		if (depth != 0)
 			nodes.incrementAndGet();
+		// Just for my peace of mind.
+		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
+			return eval.score(pos);
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (inCheck) {
-			tacticalMoves = null;
+			materialMoves = null;
 			bestScore = mateScore;
 		}
 		/* Generate tactical and quiet moves separately then combine them in the quiet move list for evaluation of the position for stand-pat
 		 * this way the ordering if the interesting moves can be restricted to only the tactical moves. */
 		else {
-			// For the first two plies, generate non-material moves that give check as well.
-			if (depth > -2) {
-				checkSquares = pos.squaresToCheckFrom();
-				tacticalMoves = pos.generateTacticalMoves(checkSquares);
-				// No check and the null move observation holds, thus stand-pat applies, and we can use the position's eval score as our bound.
-				if (nullMoveObservHolds) {
-					allMoves = pos.generateQuietMoves(checkSquares);
-					allMoves.addAll(tacticalMoves); // We need all the lagal moves for the side to move for mate-detection in the evaluation.
-					bestScore = allMoves.length() == 0 ? (inCheck ? mateScore : Termination.STALE_MATE.score) : eval.score(pos);
-				}
-				// Else no bound.
-				else
-					bestScore = mateScore;
+			// Generate only material moves.
+			materialMoves = pos.generateMaterialMoves();
+			// Stand-pat, evaluate position.
+			if (nullMoveObservHolds) {
+				allMoves = pos.generateNonMaterialMoves();
+				allMoves.addAll(materialMoves);
+				bestScore = allMoves.length() == 0 ? (inCheck ? mateScore : Termination.STALE_MATE.score) : eval.score(pos);
 			}
-			// After that, only material moves.
-			else {
-				tacticalMoves = pos.generateMaterialMoves();
-				// Stand-pat, evaluate position.
-				if (nullMoveObservHolds) {
-					allMoves = pos.generateNonMaterialMoves();
-					allMoves.addAll(tacticalMoves);
-					bestScore = allMoves.length() == 0 ? (inCheck ? mateScore : Termination.STALE_MATE.score) : eval.score(pos);
-				}
-				// No bound.
-				else
-					bestScore = mateScore;
-			}
+			// No bound.
+			else
+				bestScore = mateScore;
 		}
 		// Fail soft.
 		if (bestScore > alpha) {
@@ -639,7 +625,7 @@ public class Search extends Thread {
 		}
 		// Quiescence search.
 		else {
-			moves = orderTacticalMoves(pos, tacticalMoves);
+			moves = orderMaterialMovesSEE(pos, materialMoves);
 			for (int i = 0; i < moves.length; i++) {
 				move = moves[i];
 				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
@@ -669,27 +655,24 @@ public class Search extends Thread {
 	 * @param moves
 	 * @return
 	 */
-	private Move[] orderTacticalMoves(Position pos, List<Move> moves) {
+	private Move[] orderMaterialMovesSEE(Position pos, List<Move> moves) {
 		Move[] arr = new Move[moves.length()];
 		Move move;
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
-			if (move.capturedPiece == Piece.NULL.ind && move.type < MoveType.PROMOTION_TO_QUEEN.ind)
-				move.value = 0;
-			else
-				move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
+			move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
 			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
 	}
 	/**
-	 * Orders captures and promotions according to the LVA-MVV principle; in case of a promotion, add the standard value of a queen to the score.
+	 * Orders captures and promotions according to the MVV-LVA principle; in case of a promotion, add the standard value of a queen to the score.
 	 * 
 	 * @param moves
 	 * @return
 	 */
-	private Move[] orderMaterialMoves(List<Move> moves) {
+	private Move[] orderMaterialMovesMVVLVA(List<Move> moves) {
 		Move[] arr = new Move[moves.length()];
 		Move move;
 		int i = 0;
