@@ -36,7 +36,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private static int MAX_SEARCH_DEPTH = 8;
+	private static int MAX_SEARCH_DEPTH = 10;
 	private static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 16*MAX_SEARCH_DEPTH;
 	
 	private int numOfCores;
@@ -234,10 +234,10 @@ public class Search extends Thread {
 				return Termination.DRAW_CLAIMED.score;
 			// Mate distance pruning.
 			if (-mateScore < beta) {
-				if (alpha >= -mateScore)
+				if (origAlpha >= -mateScore)
 					return -mateScore;
 			}
-			if (mateScore > alpha) {
+			if (mateScore > origAlpha) {
 				  if (beta <= mateScore)
 					  return mateScore;
 			}
@@ -245,8 +245,8 @@ public class Search extends Thread {
 			e = tT.lookUp(pos.key);
 			if (e != null) {
 				e.generation = eGen;
-				/* If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
-				 * the score if the entry stored a PV node. */
+				// If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
+				// the score if the entry stored a PV node. 
 				if (e.depth >= depth) {
 					// Mate score adjustment to root distance.
 					if (e.score <= checkMateLim)
@@ -255,18 +255,11 @@ public class Search extends Thread {
 						score = e.score - distFromRoot;
 					else
 						score = e.score;
-					// If it exceeds the current beta, update the history and killer tables and return the score.
-					if (score >= beta) {
-						if (e.bestMove != 0 && !(hashMove = Move.toMove(e.bestMove)).isMaterial()) {
-							kT.add(distFromRoot, hashMove);	// Add to killer moves.
-							hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
-						}
-						return score;
-					}
-					// If the score was exact, or if it belongs to a fail low node and is lower than alpha, return the score.
-					if (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
-						if (e.bestMove != 0 && !(hashMove = Move.toMove(e.bestMove)).isMaterial())
-							hT.recordUnsuccessfulMove(hashMove);	// Record failure in the relative history table.
+					// If the score was exact, or it was the score of a fail low node (which is the same as exact in a fail soft framework),
+					// or it was that of a fail high node and greater than beta, return the score.
+					if (!(e.type == NodeType.FAIL_HIGH.ind && score < beta)) {
+						if (score >= beta && e.bestMove != 0)
+							kT.add(distFromRoot, Move.toMove(e.bestMove));
 						return score;
 					}
 				}
@@ -278,8 +271,9 @@ public class Search extends Thread {
 			}
 			// Return the score from the quiescence search in case a leaf node has been reached.
 			if (depth == 0) {
-				score = quiescence(qDepth, alpha, beta);
+				score = eval.score(pos);
 				if (score > bestScore) {
+					bestMove = null;
 					bestScore = score;
 					if (score > alpha)
 						alpha = score;
@@ -287,20 +281,18 @@ public class Search extends Thread {
 				break Search;
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-			if (!isThereHashMove) {
-				if (depth > 5 && beta > origAlpha + 1) {
-					IIDdepth = (depth > 7) ? depth/2 : depth - 2;
-					extPly = ply;
-					for (int i = 2; i < IIDdepth; i++) {
-						ply = i;
-						search(i, alpha, beta, true, qDepth);
-					}
-					ply = extPly;
-					e = tT.lookUp(pos.key);
-					if (e != null && e.bestMove != 0) {
-						hashMove = Move.toMove(e.bestMove);
-						isThereHashMove = true;
-					}
+			if (!isThereHashMove && depth > 5 && beta > origAlpha + 1) {
+				IIDdepth = (depth > 7) ? depth/2 : depth - 2;
+				extPly = ply;
+				for (int i = 2; i < IIDdepth; i++) {
+					ply = i;
+					search(i, alpha, beta, true, qDepth);
+				}
+				ply = extPly;
+				e = tT.lookUp(pos.key);
+				if (e != null && e.bestMove != 0) {
+					hashMove = Move.toMove(e.bestMove);
+					isThereHashMove = true;
 				}
 			}
 			// If there is a hash move, search that first.
@@ -334,6 +326,7 @@ public class Search extends Thread {
 				if (nonMatMoves.length() == 0) {
 					score = inCheck ? mateScore : Termination.STALE_MATE.score;
 					if (score > bestScore) {
+						bestMove = null;
 						bestScore = score;
 						if (score > alpha)
 							alpha = score;
@@ -629,13 +622,15 @@ public class Search extends Thread {
 			}
 		}
 		// Fail soft.
-		if (bestScore >= beta)
-			return bestScore;
-		if (bestScore > alpha)
+		if (bestScore > alpha) {
 			alpha = bestScore;
+			if (bestScore >= beta)
+				return bestScore;
+		}
 		// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
 		if (inCheck) {
-			searchScore = -search(1, alpha, beta, false, depth - 2);
+			nodes.decrementAndGet();
+			searchScore = search(1, alpha, beta, false, depth - 2);
 			if (searchScore > bestScore) {
 				bestScore = searchScore;
 				if (bestScore > alpha)
