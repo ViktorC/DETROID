@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
-import engine.Move.MoveType;
 import util.*;
 
 /**
