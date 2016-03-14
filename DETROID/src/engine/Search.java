@@ -264,10 +264,20 @@ public class Search extends Thread {
 						score = e.score - distFromRoot;
 					else
 						score = e.score;
-					// If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
-					// node and is greater than or equal to beta, return the score.
-					if (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_LOW.ind && score <= alpha) ||
-							(e.type == NodeType.FAIL_HIGH.ind && score >= beta)) {
+					/* If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
+					 * node and is greater than or equal to beta, return the score. */
+					if (e.type == NodeType.EXACT.ind ||
+							/* To make sure that a score that might not have been the exact score for the subtree below the node regardless of the
+							 * alpha-beta boundaries is not treated as an exact score in the current context, we can not allow it to fall between
+							 * the current alpha and beta. If it was a fail high node, the score is a lower boundary of the exact score of the
+							 * node due to there possibly being siblings to the right of the child node that raised alpha higher than beta and
+							 * caused a cut-off that could raise alpha even higher. If it was a fail low node, the score is a higher boundary for
+							 * the exact score of the node, because all children of a fail low node are fail high nodes (-score <= alpha ->
+							 * score >= -alpha [-alpha = beta in the child node]). To keep the interval of values the exact score could take on
+							 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
+							 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
+							 */
+							(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
 						if (score >= beta && e.bestMove != 0 && !(bestMove = Move.toMove(e.bestMove)).isMaterial())
 							kT.add(distFromRoot, bestMove);
 						return score;
@@ -598,8 +608,18 @@ public class Search extends Thread {
 		if (depth != 0)
 			nodes.incrementAndGet();
 		// Just for my peace of mind.
-		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
-			return eval.score(pos);
+		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH) {
+			e = eT.lookUp(pos.key);
+			if (e != null) {
+				e.generation = eGen;
+				bestScore = e.score;
+			}
+			else {
+				bestScore = eval.score(pos);
+				eT.insert(new ETEntry(pos.key, bestScore, eGen));
+			}
+			return bestScore;
+		}
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (inCheck) {
 			materialMoves = null;
@@ -659,7 +679,7 @@ public class Search extends Thread {
 			for (int i = 0; i < moves.length; i++) {
 				move = moves[i];
 				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-				if (move.value < 0 || move.value < alpha - DELTA)
+				if (move.value < 0 || (nullMoveObservHolds && move.value < alpha - DELTA))
 					break;
 				pos.makeMove(move);
 				searchScore = -quiescence(depth - 1, -beta, -alpha);
