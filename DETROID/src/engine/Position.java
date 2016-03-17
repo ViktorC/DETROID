@@ -964,50 +964,38 @@ public class Position implements Hashable, Copiable<Position> {
 		long toBit = 1L << move.to;
 		if (whitesTurn) {
 			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(blackKing));
-			switch (move.movedPiece) {
-				case 2: {
-					if ((db.getQueenMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 3: {
-					if ((db.getRookMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 4: {
-					if ((db.getBishopMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 5: {
-					if ((db.getKnightMoveSet(allNonWhiteOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 6: {
-					if ((db.pawnBlackCaptureMoveMask & toBit) != 0) return true;
-				}
+			if (move.movedPiece == Piece.W_QUEEN.ind) {
+				if ((db.getQueenMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
+			}
+			else if (move.movedPiece == Piece.W_ROOK.ind) {
+				if ((db.getRookMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
+			}
+			else if (move.movedPiece == Piece.W_BISHOP.ind) {
+				if ((db.getBishopMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
+			}
+			else if (move.movedPiece == Piece.W_KNIGHT.ind) {
+				if ((db.getKnightMoveSet(allNonWhiteOccupied) & toBit) != 0) return true;
+			}
+			else {
+				if ((db.pawnBlackCaptureMoveMask & toBit) != 0) return true;
 			}
 		}
 		else {
 			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(whiteKing));
-			switch (move.movedPiece) {
-				case 8: {
-					if ((db.getQueenMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 9: {
-					if ((db.getRookMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 10: {
-					if ((db.getBishopMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 11: {
-					if ((db.getKnightMoveSet(allNonBlackOccupied) & toBit) != 0) return true;
-				}
-				break;
-				case 12: {
-					if ((db.pawnWhiteCaptureMoveMask & toBit) != 0) return true;
-				}
+			if (move.movedPiece == Piece.B_QUEEN.ind) {
+				if ((db.getQueenMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
+			}
+			else if (move.movedPiece == Piece.B_ROOK.ind) {
+				if ((db.getRookMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
+			}
+			else if (move.movedPiece == Piece.B_BISHOP.ind) {
+				if ((db.getBishopMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
+			}
+			else if (move.movedPiece == Piece.B_KNIGHT.ind) {
+				if ((db.getKnightMoveSet(allNonBlackOccupied) & toBit) != 0) return true;
+			}
+			else {
+				if ((db.pawnWhiteCaptureMoveMask & toBit) != 0) return true;
 			}
 		}
 		return false;

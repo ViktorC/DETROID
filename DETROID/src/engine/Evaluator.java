@@ -33,14 +33,16 @@ public final class Evaluator {
 		}
 	}
 	
-	private HashTable<PTEntry> pT;	// Pawn table.
+	private HashTable<ETEntry> eT;	// Evaluation score hash table.
+	private HashTable<PTEntry> pT;	// Pawn hash table.
 	
 	private byte eGen;	// Entry generation.
 	
 	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
-	public Evaluator(HashTable<PTEntry> pawnTable, byte entryGeneration) {
+	public Evaluator(HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, byte entryGeneration) {
+		eT = evalTable;
 		pT = pawnTable;
 		eGen = entryGeneration;
 	}
@@ -195,9 +197,15 @@ public final class Evaluator {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase;
-		short pawnScore, baseScore, openingScore, endGameScore;
+		short pawnScore, baseScore, openingScore, endGameScore, score;
 		byte[] bishopSqrArr;
-		PTEntry e;
+		ETEntry eE;
+		PTEntry pE;
+		eE = eT.lookUp(pos.key);
+		if (eE != null) {
+			eE.generation = eGen;
+			return eE.score;
+		}
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
 		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
@@ -231,10 +239,10 @@ public final class Evaluator {
 			}
 		}
 		// Try for hashed pawn score.
-		e = pT.lookUp(pos.pawnKey);
-		if (e != null) {
-			e.generation = eGen;
-			pawnScore = e.score;
+		pE = pT.lookUp(pos.pawnKey);
+		if (pE != null) {
+			pE.generation = eGen;
+			pawnScore = pE.score;
 		}
 		// Evaluate pawn structure.
 		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
@@ -249,13 +257,15 @@ public final class Evaluator {
 		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
 		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
 		baseScore += pawnScore;
-		if (!pos.whitesTurn)
-			baseScore *= -1;
 		// Need to implement separate evaluation features for openings and end games.
 		// Pairs of piece square tables are imperative.
 		openingScore = endGameScore = 0;
 		openingScore += baseScore;
 		endGameScore += baseScore;
-		return taperedEvalScore(openingScore, endGameScore, phase);
+		score = (short)taperedEvalScore(openingScore, endGameScore, phase);
+		eT.insert(new ETEntry(pos.key, score, eGen));
+		if (!pos.whitesTurn)
+			score *= -1;
+		return score;
 	}
 }

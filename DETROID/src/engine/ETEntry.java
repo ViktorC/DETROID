@@ -30,9 +30,9 @@ public class ETEntry implements HashTable.Entry<ETEntry> {
 	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.LONG.numOfBytes +
 			SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes);
 
-	public ETEntry(long key, int score, byte age) {
+	public ETEntry(long key, short score, byte age) {
 		this.key = key;
-		this.score = (short)score;
+		this.score = score;
 		this.generation = age;
 	}
 	/**

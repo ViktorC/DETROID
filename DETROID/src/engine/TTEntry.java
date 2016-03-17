@@ -45,11 +45,11 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.LONG.numOfBytes + SizeOf.INT.numOfBytes +
 			2*SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes);
 
-	public TTEntry(long key, int depth, byte type, int score, int bestMove, byte age) {
+	public TTEntry(long key, short depth, byte type, short score, int bestMove, byte age) {
 		this.key = key;
-		this.depth = (short)depth;
+		this.depth = depth;
 		this.type = type;
-		this.score = (short)score;
+		this.score = score;
 		this.bestMove = bestMove;
 		this.generation = age;
 	}

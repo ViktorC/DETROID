@@ -36,14 +36,16 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_SEARCH_DEPTH = 10;
-	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*MAX_SEARCH_DEPTH;
-	
-	private int numOfCores;
+	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*MAX_SEARCH_DEPTH;	// Including quiescence search.
 	
 	private final static int NMR = 2;												// Null move pruning reduction.
 	private final static int LMR = 1;												// Late move reduction.
+	private final static int FMAR1 = Material.KNIGHT.score;							// Futility margin.
+	private final static int FMAR2 = Material.ROOK.score;							// Extended futility margin.
+	private final static int FMAR3 = Material.QUEEN.score;							// Razoring margin.
 	private final static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
 	
+	private final static int plyDenominator = 8;	// For fractional ply extensions.
 	private int ply;
 	
 	private Position pos;
@@ -52,6 +54,8 @@ public class Search extends Thread {
 	
 	private Move[] pV;
 	
+	private static AtomicLong nodes;	// Number of searched positions.
+	
 	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH + 1);				// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
 	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
@@ -59,13 +63,13 @@ public class Search extends Thread {
 	private static HashTable<PTEntry> pT = new HashTable<>(8, PTEntry.SIZE);	// Pawn hash table.
 	private static byte eGen = 0;	// Entry generation.
 	
-	Evaluator eval = new Evaluator(pT, eGen);
+	Evaluator eval = new Evaluator(eT, pT, eGen);
 	
 	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
 	
-	private static AtomicLong nodes;
+	private int numOfThreads;
 	
 	/**
 	 * Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
@@ -176,9 +180,7 @@ public class Search extends Thread {
 	 */
 	public void run() {
 		nodes = new AtomicLong(0);
-		numOfCores = Runtime.getRuntime().availableProcessors();
-		if (numOfCores <= 1 && pondering)
-			return;
+		numOfThreads = Runtime.getRuntime().availableProcessors();
 		if (pondering)
 			deadLine = Long.MAX_VALUE;
 		else {
@@ -223,8 +225,8 @@ public class Search extends Thread {
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
 		final boolean inCheck = pos.getCheck();
-		int bestScore, score, searchedMoves, matMoveBreakInd, IIDdepth, extPly, kMove, bestMoveInt;
-		Move hashMove, bestMove, killerMove1, killerMove2, move;
+		int bestScore, score, searchedMoves, matMoveBreakInd, IIDdepth, extPly, kMove, bestMoveInt, razRed;
+		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean isThereHashMove, isThereKM1, isThereKM2;
 		Queue<Move> matMoves, nonMatMoves;
 		Move[] matMovesArr, nonMatMovesArr;
@@ -527,6 +529,26 @@ public class Search extends Thread {
 					isThereKM2 = false;
 					continue;
 				}
+				razRed = 0;
+				// Futility pruning, extended futility pruning, and razoring.
+				if (depth <= 3) {
+					if (alpha > checkMateLim && beta < -checkMateLim && !inCheck && (lastMove = pos.getLastMove()) != null &&
+							!lastMove.isMaterial() && !pos.givesCheck(move)) {
+						score = eval.score(pos);
+						if (depth == 1) {
+							if (score + FMAR1 <= alpha)
+								continue;
+						}
+						else if (depth == 2) {
+							if (score + FMAR2 <= alpha)
+								continue;
+						}
+						else {
+							if (score + FMAR3 <= alpha)
+								razRed = 1;
+						}
+					}
+				}
 				pos.makeMove(move);
 				// Try late move reduction if not within the PV.
 				if (depth > 2 && beta == origAlpha + 1 && !inCheck && pos.getUnmakeRegister().checkers == 0 &&
@@ -538,11 +560,11 @@ public class Search extends Thread {
 				}
 				// Else PVS.
 				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && matMovesArr.length == 0)
-					score = -search(depth - 1, -beta, -alpha, true, qDepth);
+					score = -search(depth - razRed - 1, -beta, -alpha, true, qDepth);
 				else {
-					score = -search(depth - 1, -alpha - 1, -alpha, true, qDepth);
+					score = -search(depth - razRed - 1, -alpha - 1, -alpha, true, qDepth);
 					if (score > alpha && score < beta)
-						score = -search(depth - 1, -beta, -score, true, qDepth);
+						score = -search(depth - razRed - 1, -beta, -score, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -577,11 +599,11 @@ public class Search extends Thread {
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
 		//	Add new entry to the transposition table.
 		if (bestScore <= origAlpha)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_LOW.ind, score, bestMoveInt, eGen));
+			tT.insert(new TTEntry(pos.key, (short)depth, NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, eGen));
 		else if (bestScore >= beta)
-			tT.insert(new TTEntry(pos.key, depth, NodeType.FAIL_HIGH.ind, score, bestMoveInt, eGen));
+			tT.insert(new TTEntry(pos.key, (short)depth, NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, eGen));
 		else
-			tT.insert(new TTEntry(pos.key, depth, NodeType.EXACT.ind, score, bestMoveInt, eGen));
+			tT.insert(new TTEntry(pos.key, (short)depth, NodeType.EXACT.ind, (short)score, bestMoveInt, eGen));
 		// Return the unadjusted best score.
 		return bestScore;
 	}
@@ -604,22 +626,11 @@ public class Search extends Thread {
 		Move[] moves;
 		Move move;
 		int bestScore, searchScore;
-		ETEntry e;
 		if (depth != 0)
 			nodes.incrementAndGet();
 		// Just for my peace of mind.
-		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH) {
-			e = eT.lookUp(pos.key);
-			if (e != null) {
-				e.generation = eGen;
-				bestScore = e.score;
-			}
-			else {
-				bestScore = eval.score(pos);
-				eT.insert(new ETEntry(pos.key, bestScore, eGen));
-			}
-			return bestScore;
-		}
+		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
+			return eval.score(pos);
 		// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
 		if (inCheck) {
 			materialMoves = null;
@@ -641,17 +652,8 @@ public class Search extends Thread {
 				if (allMoves != null && allMoves.length() == 0)
 					bestScore = inCheck ? mateScore : Termination.STALE_MATE.score;
 				// Use evaluation hash table.
-				else {
-					e = eT.lookUp(pos.key);
-					if (e != null) {
-						e.generation = eGen;
-						bestScore = e.score;
-					}
-					else {
-						bestScore = eval.score(pos);
-						eT.insert(new ETEntry(pos.key, bestScore, eGen));
-					}
-				}
+				else
+					bestScore = eval.score(pos);
 			}
 			// No bound.
 			else
