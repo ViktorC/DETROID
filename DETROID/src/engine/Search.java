@@ -35,8 +35,8 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_SEARCH_DEPTH = 10;
-	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*MAX_SEARCH_DEPTH;	// Including quiescence search.
+	private final static int MAX_NOMINAL_SEARCH_DEPTH = 10;
+	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*2*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
 	private final static int NMR = 2;												// Null move pruning reduction.
 	private final static int LMR = 1;												// Late move reduction.
@@ -56,7 +56,7 @@ public class Search extends Thread {
 	
 	private static AtomicLong nodes;	// Number of searched positions.
 	
-	private KillerTable kT = new KillerTable(MAX_SEARCH_DEPTH + 1);				// Killer heuristic table.
+	private KillerTable kT = new KillerTable(MAX_NOMINAL_SEARCH_DEPTH + 1);				// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
 	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
 	private static HashTable<ETEntry> eT = new HashTable<>(128, ETEntry.SIZE);	// Evaluation hash table.
@@ -187,8 +187,8 @@ public class Search extends Thread {
 			eGen++;
 			deadLine = System.currentTimeMillis() + searchTime;
 		}
-		pV = new Move[MAX_SEARCH_DEPTH];
-		for (int i = 2; i <= MAX_SEARCH_DEPTH; i++) {
+		pV = new Move[2*MAX_NOMINAL_SEARCH_DEPTH];	// In case every ply within the search triggers a full ply extension.
+		for (int i = 2; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
 			ply = i;
 			search(ply, Termination.CHECK_MATE.score, -Termination.CHECK_MATE.score, true, 0);
 			pV = extractPv();
@@ -224,7 +224,7 @@ public class Search extends Thread {
 		final int distFromRoot = ply - depth;
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
-		final boolean inCheck = pos.getCheck();
+		final boolean inCheck = pos.inCheck();
 		int bestScore, score, searchedMoves, matMoveBreakInd, IIDdepth, extPly, kMove, bestMoveInt, razRed;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean isThereHashMove, isThereKM1, isThereKM2;
@@ -621,7 +621,7 @@ public class Search extends Thread {
 	public int quiescence(int depth, int alpha, int beta) {
 		final int distFromRoot = ply - depth;
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
-		final boolean inCheck = pos.getCheck();
+		final boolean inCheck = pos.inCheck();
 		List<Move> materialMoves, allMoves;
 		Move[] moves;
 		Move move;
@@ -764,11 +764,11 @@ public class Search extends Thread {
 	 * @return An array of Move objects according to the best line of play.
 	 */
 	private Move[] extractPv() {
-		Move[] pV = new Move[MAX_SEARCH_DEPTH];
+		Move[] pV = new Move[MAX_NOMINAL_SEARCH_DEPTH];
 		TTEntry e;
 		Move bestMove;
 		int i = 0;
-		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < MAX_SEARCH_DEPTH) {
+		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < MAX_NOMINAL_SEARCH_DEPTH) {
 			bestMove = Move.toMove(e.bestMove);
 			pos.makeMove(bestMove);
 			pV[i++] = bestMove;

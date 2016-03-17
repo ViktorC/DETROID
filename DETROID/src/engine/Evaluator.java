@@ -92,7 +92,7 @@ public final class Evaluator {
 		if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.B_KING.ind)
 			return victimVal;
 		firstVictimVal = victimVal;
-		whitesTurn = pos.whitesTurn;
+		whitesTurn = pos.isWhitesTurn;
 		occupied &= ~(1L << move.from);
 		victimVal = Material.getByPieceInd(move.movedPiece).score;
 		dB = MoveSetDatabase.getByIndex(move.to);
@@ -154,7 +154,7 @@ public final class Evaluator {
 			// Simulate move.
 			occupied &= ~BitOperations.getLSBit(attackers);
 		}
-		if (pos.whitesTurn) {
+		if (pos.isWhitesTurn) {
 			score += firstVictimVal;
 		}
 		else {
@@ -264,7 +264,7 @@ public final class Evaluator {
 		endGameScore += baseScore;
 		score = (short)taperedEvalScore(openingScore, endGameScore, phase);
 		eT.insert(new ETEntry(pos.key, score, eGen));
-		if (!pos.whitesTurn)
+		if (!pos.isWhitesTurn)
 			score *= -1;
 		return score;
 	}

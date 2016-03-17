@@ -243,7 +243,7 @@ public class Game {
 		Game game = getInstance("test", "at home", "human opponent", "computer");
 		while (game.state == State.IN_PROGRESS) {
 			game.pos.printStateToConsole();
-			if (game.pos.getTurn() == game.playerIsWhite) {
+			if (game.pos.isWhitesTurn() == game.playerIsWhite) {
 				System.out.print("Please make your move: ");
 				start = System.currentTimeMillis();
 				Search s = new Search(game.pos);
@@ -328,7 +328,7 @@ public class Game {
 			System.out.println();
 			// Very rudimental for now.
 			if (game.pos.generateAllMoves().length() == 0) {
-				game.state = game.pos.getTurn() ? State.BLACK_WIN : State.WHITE_WIN;
+				game.state = game.pos.isWhitesTurn() ? State.BLACK_WIN : State.WHITE_WIN;
 			}
 		}
 		in.close();
