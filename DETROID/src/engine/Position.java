@@ -248,6 +248,18 @@ public class Position implements Hashable, Copiable<Position> {
 		whiteBishops = pos.whiteBishops;
 		whiteKnights = pos.whiteKnights;
 		whitePawns = pos.whitePawns;
+		blackKing = pos.blackKing;
+		blackQueens = pos.blackQueens;
+		blackRooks = pos.blackRooks;
+		blackBishops = pos.blackBishops;
+		blackKnights = pos.blackKnights;
+		blackPawns = pos.blackPawns;
+		allWhiteOccupied = pos.allWhiteOccupied;
+		allBlackOccupied = pos.allBlackOccupied;
+		allNonWhiteOccupied = pos.allNonWhiteOccupied;
+		allNonBlackOccupied = pos.allNonBlackOccupied;
+		allOccupied = pos.allOccupied;
+		allEmpty = pos.allEmpty;
 		enPassantRights = pos.enPassantRights;
 		whiteCastlingRights = pos.whiteCastlingRights;
 		blackCastlingRights = pos.blackCastlingRights;
@@ -263,7 +275,7 @@ public class Position implements Hashable, Copiable<Position> {
 		for (int i = 0; i < pos.offsetBoard.length; i++)
 			offsetBoard[i] = pos.offsetBoard[i];
 		keyHistory = new long[pos.keyHistory.length];
-		pawnKeyHistory = new long[pos.pawnKeyHistory.length];
+		pawnKeyHistory = new long[pos.keyHistory.length];
 		for (int i = 0; i < pos.keyHistory.length; i++) {
 			keyHistory[i] = pos.keyHistory[i];
 			pawnKeyHistory[i] = pos.pawnKeyHistory[i];

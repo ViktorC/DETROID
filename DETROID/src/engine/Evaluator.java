@@ -263,9 +263,9 @@ public final class Evaluator {
 		openingScore += baseScore;
 		endGameScore += baseScore;
 		score = (short)taperedEvalScore(openingScore, endGameScore, phase);
-		eT.insert(new ETEntry(pos.key, score, eGen));
 		if (!pos.isWhitesTurn)
 			score *= -1;
+		eT.insert(new ETEntry(pos.key, score, eGen));
 		return score;
 	}
 }
