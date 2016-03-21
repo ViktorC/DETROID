@@ -36,7 +36,7 @@ public class Search extends Thread {
 	}
 	
 	private final static int MAX_NOMINAL_SEARCH_DEPTH = 10;
-	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*2*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
+	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
 	private final static int LMR = 1;													// Late move reduction.
@@ -57,7 +57,7 @@ public class Search extends Thread {
 	
 	private static AtomicLong nodes;	// Number of searched positions.
 	
-	private KillerTable kT = new KillerTable(MAX_NOMINAL_SEARCH_DEPTH + 1);		// Killer heuristic table.
+	private KillerTable kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);	// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
 	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
 	private static HashTable<ETEntry> eT = new HashTable<>(128, ETEntry.SIZE);	// Evaluation hash table.
@@ -69,8 +69,6 @@ public class Search extends Thread {
 	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
-	
-	private int numOfThreads;
 	
 	/**
 	 * Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
@@ -182,7 +180,6 @@ public class Search extends Thread {
 	public void run() {
 		int alpha, beta, score, failHigh, failLow;
 		nodes = new AtomicLong(0);
-		numOfThreads = Runtime.getRuntime().availableProcessors();
 		if (pondering)
 			deadLine = Long.MAX_VALUE;
 		else {
@@ -192,24 +189,27 @@ public class Search extends Thread {
 		pV = new Move[2*MAX_NOMINAL_SEARCH_DEPTH];	// In case every ply within the search triggers a full ply extension.
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
-		failHigh = failLow = 0;
+		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		for (int i = 1; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
 			ply = i;
 			score = search(ply*FULL_PLY, alpha, beta, true, 0);
 			pV = extractPv();
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
-			// Aspiration windows with 'gradual' widening.
+			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
-				alpha = failLow < 1 ? alpha - 2*A_DELTA : Termination.CHECK_MATE.score;
+				alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :
+					failLow == 1 ? Math.max(alpha - 5*A_DELTA, Termination.CHECK_MATE.score) :Termination.CHECK_MATE.score;
 				failLow++;
 				continue;
 			}
 			if (score >= beta) {
-				beta = failHigh < 1 ? beta + 2*A_DELTA : -Termination.CHECK_MATE.score;
+				beta = failHigh == 0 ? Math.min(beta + 2*A_DELTA, -Termination.CHECK_MATE.score) :
+					failHigh == 1 ? Math.min(beta + 5*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 				failHigh++;
 				continue;
 			}
+			failHigh = failLow = 0;
 			alpha = score - A_DELTA;
 			beta = score + A_DELTA;
 		}
@@ -217,7 +217,7 @@ public class Search extends Thread {
 			tT.clear();
 			eT.clear();
 			pT.clear();
-			eGen = 2;
+			eGen = 0;
 		}
 		else {
 			tT.remove(e -> e.generation < eGen);
@@ -298,8 +298,11 @@ public class Search extends Thread {
 							 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
 							 */
 							(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
-						if (score >= beta && e.bestMove != 0 && !(bestMove = Move.toMove(e.bestMove)).isMaterial())
-							kT.add(distFromRoot, bestMove);
+						if (score >= beta && e.bestMove != 0 && !(bestMove = Move.toMove(e.bestMove)).isMaterial()) {
+							// Only if not in the quiescence search's check extension.
+							if (qDepth == 0)
+								kT.add(distFromRoot, bestMove);
+						}
 						return score;
 					}
 					
@@ -354,7 +357,8 @@ public class Search extends Thread {
 						alpha = score;
 						if (alpha >= beta) {
 							if (!hashMove.isMaterial()) {
-								kT.add(distFromRoot, hashMove);	// Add to killer moves.
+								if (qDepth == 0)
+									kT.add(distFromRoot, hashMove);	// Add to killer moves.
 								hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
 							}
 							break Search;
@@ -607,7 +611,8 @@ public class Search extends Thread {
 					if (score > alpha) {
 						alpha = score;
 						if (alpha >= beta) {	// Cutoff from a non-material move.
-							kT.add(distFromRoot, move);	// Add to killer moves.
+							if (qDepth == 0)
+								kT.add(distFromRoot, move);	// Add to killer moves.
 							hT.recordSuccessfulMove(move);	// Record success in the relative history table.
 							break Search;
 						}
