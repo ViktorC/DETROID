@@ -38,12 +38,13 @@ public class Search extends Thread {
 	private final static int MAX_NOMINAL_SEARCH_DEPTH = 10;
 	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*2*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
-	private final static int NMR = 2;												// Null move pruning reduction.
-	private final static int LMR = 1;												// Late move reduction.
-	private final static int FMAR1 = Material.KNIGHT.score;							// Futility margin.
-	private final static int FMAR2 = Material.ROOK.score;							// Extended futility margin.
-	private final static int FMAR3 = Material.QUEEN.score;							// Razoring margin.
-	private final static int DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
+	private final static int NMR = 2;													// Null move pruning reduction.
+	private final static int LMR = 1;													// Late move reduction.
+	private final static int FMAR1 = Material.KNIGHT.score;								// Futility margin.
+	private final static int FMAR2 = Material.ROOK.score;								// Extended futility margin.
+	private final static int FMAR3 = Material.QUEEN.score;								// Razoring margin.
+	private final static int A_DELTA = Material.PAWN.score/2;							// The aspiration delta within iterative deepening.
+	private final static int Q_DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
 	
 	private final static int FULL_PLY = 4;	// For fractional ply extensions.
 	private int ply;
@@ -179,6 +180,7 @@ public class Search extends Thread {
 	 * depth has been reached.
 	 */
 	public void run() {
+		int alpha, beta, score, failHigh, failLow;
 		nodes = new AtomicLong(0);
 		numOfThreads = Runtime.getRuntime().availableProcessors();
 		if (pondering)
@@ -188,12 +190,28 @@ public class Search extends Thread {
 			deadLine = System.currentTimeMillis() + searchTime;
 		}
 		pV = new Move[2*MAX_NOMINAL_SEARCH_DEPTH];	// In case every ply within the search triggers a full ply extension.
-		for (int i = 2; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
+		alpha = Termination.CHECK_MATE.score;
+		beta = -alpha;
+		failHigh = failLow = 0;
+		for (int i = 1; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
 			ply = i;
-			search(ply*FULL_PLY, Termination.CHECK_MATE.score, -Termination.CHECK_MATE.score, true, 0);
+			score = search(ply*FULL_PLY, alpha, beta, true, 0);
 			pV = extractPv();
 			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
 				break;
+			// Aspiration windows with 'gradual' widening.
+			if (score <= alpha) {
+				alpha = failLow < 1 ? alpha - 2*A_DELTA : Termination.CHECK_MATE.score;
+				failLow++;
+				continue;
+			}
+			if (score >= beta) {
+				beta = failHigh < 1 ? beta + 2*A_DELTA : -Termination.CHECK_MATE.score;
+				failHigh++;
+				continue;
+			}
+			alpha = score - A_DELTA;
+			beta = score + A_DELTA;
 		}
 		if (eGen == 127) {
 			tT.clear();
@@ -308,7 +326,7 @@ public class Search extends Thread {
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
 			if (!isThereHashMove && depth/FULL_PLY >= 5 && beta > origAlpha + 1) {
 				extPly = ply;
-				for (int i = 2; i < depth/FULL_PLY*3/5; i++) {
+				for (int i = 1; i < depth/FULL_PLY*3/5; i++) {
 					ply = i;
 					search(ply*FULL_PLY, alpha, beta, true, qDepth);
 				}
@@ -696,7 +714,7 @@ public class Search extends Thread {
 			for (int i = 0; i < moves.length; i++) {
 				move = moves[i];
 				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-				if (move.value < 0 || (nullMoveObservHolds && move.value < alpha - DELTA))
+				if (move.value < 0 || (nullMoveObservHolds && move.value < alpha - Q_DELTA))
 					break;
 				pos.makeMove(move);
 				searchScore = -quiescence(depth - 1, -beta, -alpha);
