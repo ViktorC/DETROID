@@ -35,7 +35,7 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_NOMINAL_SEARCH_DEPTH = 10;
+	private final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
 	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
@@ -60,11 +60,11 @@ public class Search extends Thread {
 	private KillerTable kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);	// Killer heuristic table.
 	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
 	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
-	private static HashTable<ETEntry> eT = new HashTable<>(128, ETEntry.SIZE);	// Evaluation hash table.
+	private static HashTable<ETEntry> eT = new HashTable<>(192, ETEntry.SIZE);	// Evaluation hash table.
 	private static HashTable<PTEntry> pT = new HashTable<>(8, PTEntry.SIZE);	// Pawn hash table.
 	private static byte eGen = 0;	// Entry generation.
 	
-	Evaluator eval = new Evaluator(eT, pT, eGen);
+	Evaluator eval;
 	
 	private boolean pondering;
 	private long searchTime;
@@ -92,7 +92,7 @@ public class Search extends Thread {
 	public Search(Position pos, long searchTimeInMilliSeconds) {
 		this(pos);
 		if (searchTimeInMilliSeconds > 0) {
-			searchTime = searchTimeInMilliSeconds;
+			searchTime = searchTimeInMilliSeconds - 500;
 			pondering = false;
 		}
 	}
@@ -186,6 +186,7 @@ public class Search extends Thread {
 			eGen++;
 			deadLine = System.currentTimeMillis() + searchTime;
 		}
+		eval = new Evaluator(eT, pT, eGen);
 		pV = new Move[2*MAX_NOMINAL_SEARCH_DEPTH];	// In case every ply within the search triggers a full ply extension.
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
@@ -243,7 +244,7 @@ public class Search extends Thread {
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
 		final boolean inCheck = pos.inCheck();
-		int bestScore, score, searchedMoves, matMoveBreakInd, extPly, kMove, bestMoveInt, razRed, extension;
+		int bestScore, score, searchedMoves, matMoveBreakInd, extPly, kMove, bestMoveInt, evalScore, razRed, extension;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
 		Queue<Move> matMoves, nonMatMoves;
@@ -548,6 +549,7 @@ public class Search extends Thread {
 			// One reply extension.
 			if (matMoves.length() == 0 && nonMatMoves.length() == 1)
 				depth += FULL_PLY/2;
+			evalScore = score = eval.score(pos, alpha, beta);
 			// Order and search the non-material moves.
 			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
 			for (int i = 0; i < nonMatMovesArr.length; i++) {
@@ -571,17 +573,16 @@ public class Search extends Thread {
 				// Futility pruning, extended futility pruning, and razoring.
 				if (depth/FULL_PLY <= 3) {
 					if (alpha > checkMateLim && beta < -checkMateLim && !inCheck && lastMoveIsMaterial && !pos.givesCheck(move)) {
-						score = eval.score(pos, alpha, beta);
 						if (depth/FULL_PLY == 1) {
-							if (score + FMAR1 <= alpha)
+							if (evalScore + FMAR1 <= alpha)
 								continue;
 						}
 						else if (depth/FULL_PLY == 2) {
-							if (score + FMAR2 <= alpha)
+							if (evalScore + FMAR2 <= alpha)
 								continue;
 						}
 						else {
-							if (score + FMAR3 <= alpha)
+							if (evalScore + FMAR3 <= alpha)
 								razRed = 1;
 						}
 					}

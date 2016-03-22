@@ -243,6 +243,8 @@ public class Game {
 		Game game = getInstance("test", "at home", "human opponent", "computer");
 		while (game.state == State.IN_PROGRESS) {
 			game.pos.printStateToConsole();
+			System.out.printf("White time left: %.2fs\n", (float)((double)game.whiteTimeLeft/1000));
+			System.out.printf("Black time left: %.2fs\n", (float)((double)game.blackTimeLeft/1000));
 			if (game.pos.isWhitesTurn() == game.playerIsWhite) {
 				System.out.print("Please make your move: ");
 				start = System.currentTimeMillis();
@@ -302,13 +304,18 @@ public class Game {
 					e.printStackTrace();
 				}
 				end = System.currentTimeMillis();
+				System.out.println();
+				System.out.println("Transposition Table");
+				System.out.println(s.getTranspositionTableStats());
+				System.out.println("Evaluation Hash Table");
+				System.out.println(s.getEvaluationTableStats());
+				System.out.println("Pawn Hash Table");
+				System.out.println(s.getPawnTableStats() + "\n");
+				System.out.println("Nodes: " + s.getNodeCount() + "; Time: " + (end - start) + "ms");
+				System.out.println("Search speed: " + ((double)s.getNodeCount()/((double)(end - start)/1000D)) + "Nps");
 				System.out.print("PV:");
 				for (Move m : s.getPv())
 					System.out.print(" " + m.toString());
-				System.out.println();
-				System.out.println(s.getTranspositionTableStats());
-				System.out.println(s.getPawnTableStats());
-				System.out.println("Nodes: " + s.getNodeCount());
 				game.pos.makeMove(s.getBestMove());
 				if (!game.playerIsWhite) {
 					game.whiteTimeLeft -= (end - start);

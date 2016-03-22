@@ -36,18 +36,27 @@ public final class Evaluator {
 	private final static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
-	private final static int LAZY_EVAL_MAR = 6*Material.PAWN.score;
+	private final static int LAZY_EVAL_MAR = 8*Material.PAWN.score;
 	
-	// Piece-square tables according to Tomasz Michniewski's "Unified Evaluation".
-	private final static byte[] PST_W_PAWN =
-		{ 0,  0,  0,  0,  0,  0,  0,  0,
-		 50, 50, 50, 50, 50, 50, 50, 50,
-		 10, 10, 20, 30, 30, 20, 10, 10,
-		  5,  5, 10, 25, 25, 10,  5,  5,
-		  0,  0,  0, 20, 20,  0,  0,  0,
-		  5, -5,-10,  0,  0,-10, -5,  5,
-		  5, 10, 10,-20,-20, 10, 10,  5,
-		  0,  0,  0,  0,  0,  0,  0,  0};
+	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation".
+	private final static byte[] PST_W_PAWN_OPENING =
+		{  0,  0,  0,  0,  0,  0,  0,  0,
+		  40, 40, 40, 40, 40, 40, 40, 40,
+		  10, 10, 20, 30, 30, 20, 10, 10,
+		   5,  5, 10, 25, 25, 10,  5,  5,
+		   0,  5,  5, 25, 25,  5,  5,  0,
+		   0,  5,  5, 20, 20,  5,  5,  0,
+		   5, 10, 10,-25,-25, 10, 10,  5,
+		   0,  0,  0,  0,  0,  0,  0,  0};
+	private final static byte[] PST_W_PAWN_ENDGAME =
+		{  0,  0,  0,  0,  0,  0,  0,  0,
+		  50, 50, 50, 50, 50, 50, 50, 50,
+		  10, 10, 20, 30, 30, 20, 10, 10,
+		   5,  5, 10, 25, 25, 10,  5,  5,
+		   0,  0,  0, 20, 20,  0,  0,  0,
+		   5, -5,-10,  0,  0,-10, -5,  5,
+		   5, 10, 10,-20,-20, 10, 10,  5,
+		   0,  0,  0,  0,  0,  0,  0,  0};
 	private final static byte[] PST_W_KNIGHT =
 		{-50,-40,-30,-30,-30,-30,-40,-50,
 		 -40,-20,  0,  0,  0,  0,-20,-40,
@@ -66,7 +75,16 @@ public final class Evaluator {
 		 -10, 10, 10, 10, 10, 10, 10,-10,
 		 -10,  5,  0,  0,  0,  0,  5,-10,
 		 -20,-10,-10,-10,-10,-10,-10,-20};
-	private final static byte[] PST_W_ROOK =
+	private final static byte[] PST_W_ROOK_OPENING =
+		{  0,  0,  0,  0,  0,  0,  0,  0,
+		   5, 10, 10, 10, 10, 10, 10,  5,
+		  -5, -5, -5, -5, -5, -5, -5, -5,
+		  -5, -5, -5, -5, -5, -5, -5, -5,
+		  -5, -5, -5, -5, -5, -5, -5, -5,
+		  -5, -5, -5, -5, -5, -5, -5, -5,
+		  -5, -5, -5, -5, -5, -5, -5, -5,
+		  20, -5,  0, 25, 25,  0, -5, 20};
+	private final static byte[] PST_W_ROOK_ENDGAME =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		   5, 10, 10, 10, 10, 10, 10,  5,
 		  -5,  0,  0,  0,  0,  0,  0, -5,
@@ -103,30 +121,35 @@ public final class Evaluator {
 		 -30,-30,  0,  0,  0,  0,-30,-30,
 		 -50,-30,-30,-30,-30,-30,-30,-50};
 	
-	private final static byte[] PST_B_PAWN = new byte[64];
+	private final static byte[] PST_B_PAWN_OPENING = new byte[64];
+	private final static byte[] PST_B_PAWN_ENDGAME = new byte[64];
 	private final static byte[] PST_B_KNIGHT = new byte[64];
 	private final static byte[] PST_B_BISHOP = new byte[64];
-	private final static byte[] PST_B_ROOK = new byte[64];
+	private final static byte[] PST_B_ROOK_OPENING = new byte[64];
+	private final static byte[] PST_B_ROOK_ENDGAME = new byte[64];
 	private final static byte[] PST_B_QUEEN = new byte[64];
 	private final static byte[] PST_B_KING_OPENING = new byte[64];
 	private final static byte[] PST_B_KING_ENDGAME = new byte[64];
 	
 	static {
+		// 180° rotation of the piece-square tables for white with negated values for black.
 		for (int i = 0; i < 64; i++) {
-			PST_B_PAWN[i] = (byte)-PST_W_PAWN[63 - i];
+			PST_B_PAWN_OPENING[i] = (byte)-PST_W_PAWN_OPENING[63 - i];
+			PST_B_PAWN_ENDGAME[i] = (byte)-PST_W_PAWN_ENDGAME[63 - i];
 			PST_B_KNIGHT[i] = (byte)-PST_W_KNIGHT[63 - i];
 			PST_B_BISHOP[i] = (byte)-PST_W_BISHOP[63 - i];
-			PST_B_ROOK[i] = (byte)-PST_W_ROOK[63 - i];
+			PST_B_ROOK_OPENING[i] = (byte)-PST_W_ROOK_OPENING[63 - i];
+			PST_B_ROOK_ENDGAME[i] = (byte)-PST_W_ROOK_ENDGAME[63 - i];
 			PST_B_QUEEN[i] = (byte)-PST_W_QUEEN[63 - i];
 			PST_B_KING_OPENING[i] = (byte)-PST_W_KING_OPENING[63 - i];
 			PST_B_KING_ENDGAME[i] = (byte)-PST_W_KING_ENDGAME[63 - i];
 		}
 	}
 	
-	private final static byte[][] PST_OPENING = {PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK, PST_W_BISHOP, PST_W_KNIGHT, PST_W_PAWN,
-		PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN};
-	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK, PST_W_BISHOP, PST_W_KNIGHT, PST_W_PAWN,
-		PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN};
+	private final static byte[][] PST_OPENING = {PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK_OPENING, PST_W_BISHOP, PST_W_KNIGHT,
+		PST_W_PAWN_OPENING, PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK_OPENING, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_OPENING};
+	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT,
+		PST_W_PAWN_ENDGAME, PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_ENDGAME};
 	
 	private HashTable<ETEntry> eT;	// Evaluation score hash table.
 	private HashTable<PTEntry> pT;	// Pawn hash table.

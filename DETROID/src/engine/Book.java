@@ -49,55 +49,74 @@ public class Book {
 		
 	}
 	
-	// U64 hash + U16 move + U16 weight + U32 learning
+	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
-	// Will be an own book.
+	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
 	private final static String DEFAULT_FILE_PATH = "default.bin";
 	
 	private static Book INSTANCE;
 	
 	private Book secondaryBook;
-	private boolean useDefaultBook;
 	private SeekableByteChannel bookStream;
 	
-	private Book(String filePath, boolean useDefaultBook) throws IllegalArgumentException {
+	private Book() {
+		
+	}
+	private Book(String filePath) throws IllegalArgumentException {
 		try {
 			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
-			this.useDefaultBook = useDefaultBook;
 		}
 		catch (IOException e) {
 			System.out.println("File not found: " + filePath);
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("File not found: " + filePath);
 		}
 	}
 	/**
-	 * Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)} method.
-	 * If there is none, it instantiates and returns the default book.
+	 * Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)}
+	 * method. If there is none, it instantiates and returns the default book or an 'empty' instance one if the default book file can not be
+	 * accessed.
 	 * 
-	 * @return
+	 * @return The Book instance.
 	 */
 	public static Book getInstance() {
-		if (INSTANCE == null)
-			INSTANCE = new Book(DEFAULT_FILE_PATH, false);
+		try {
+			if (INSTANCE == null)
+				INSTANCE = new Book(DEFAULT_FILE_PATH);
+		}
+		catch (IllegalArgumentException e) {
+			System.out.println("Default book file missing. " + e.getMessage());
+			INSTANCE = new Book();
+		}
 		return INSTANCE;
 	}
 	/**
-	 * Instantiates a book and returns it. Only one Book instance can exist; the invocation of this method with useDefaultBook set to true results
-	 * in the instantiation of the default book of the engine as well as a secondary book for when the engine is out of the specified book. If this
-	 * method or {@link #getInstance() getInstance} has already been called before, it throws an {@link #java.lang.IllegalStateExcetion IllegalStateExcetion}.
+	 * Tries and sets/changes the main book to the file specified by the path.
 	 * 
-	 * @param filePath The path to the opening book file.
-	 * @param useDefaultBook Whether to instantiate and use the default book in case there is no move found in the specified book for a position.
-	 * @return
-	 * @throws IllegalStateException
+	 * @param filePath
+	 * @return Whether the book could be successfully set to the file.
 	 */
-	public static Book getInstance(String filePath, boolean useDefaultBook) throws IllegalStateException {
-		if (INSTANCE != null)
-			throw new IllegalStateException();
-		INSTANCE = new Book(filePath, useDefaultBook);
-		if (useDefaultBook)
-			INSTANCE.secondaryBook = new Book(DEFAULT_FILE_PATH, false);
-		return INSTANCE;
+	public boolean setMainBookPath(String filePath) {
+		try {
+			if (bookStream != null)
+				bookStream.close();
+			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
+			return true;
+		}
+		catch (IOException e) {
+			System.out.println("Could not change to file path: " + filePath);
+			return false;
+		}
+	}
+	/**
+	 * Tries and sets/changes the secondary book to the file specified by the path.
+	 * 
+	 * @param filePath
+	 * @return Whether the book could be successfully set to the file.
+	 */
+	public boolean setSecondaryBookPath(String filePath) {
+		if (secondaryBook == null)
+			secondaryBook = new Book();
+		return secondaryBook.setMainBookPath(filePath);
 	}
 	/**
 	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search through
@@ -105,8 +124,9 @@ public class Book {
 	 * 
 	 * @param p The position for which the entries are to be returned.
 	 * @return
+	 * @throws NullPointerException If the book stream is not initialized.
 	 */
-	private ArrayList<Entry> getRelevantEntries(Position p) {
+	private ArrayList<Entry> getRelevantEntries(Position p) throws NullPointerException {
 		long low, mid, hi, temp = -1;
 		long readerPos, currKey, key = Zobrist.getPolyglotHashKey(p);
 		ArrayList<Entry> entries = new ArrayList<>();
@@ -157,7 +177,7 @@ public class Book {
 			}
 			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK and its useDefaultBook is set
 			 * to true, we search the DEFAULT_BOOK, too. */
-			return useDefaultBook ? secondaryBook.getRelevantEntries(p) : null;
+			return secondaryBook != null ? secondaryBook.getRelevantEntries(p) : null;
 		}
 		// Some IO error has occured.
 		catch (IOException e) {
