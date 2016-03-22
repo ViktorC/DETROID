@@ -50,7 +50,7 @@ public class Position implements Hashable, Copiable<Position> {
 	long allEmpty;
 	
 	/**A complimentary board data-structure to the bit boards to efficiently detect pieces on specific squares. */
-	private byte[] offsetBoard;
+	byte[] offsetBoard;
 	
 	/**Denotes whether it is white's turn to make a move, or not, i.e. it is black's. */
 	boolean isWhitesTurn = true;

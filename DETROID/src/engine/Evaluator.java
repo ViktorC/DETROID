@@ -33,13 +33,105 @@ public final class Evaluator {
 		}
 	}
 	
+	private final static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
+			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
+	
+	private final static int LAZY_EVAL_MAR = 6*Material.PAWN.score;
+	
+	// Piece-square tables according to Tomasz Michniewski's "Unified Evaluation".
+	private final static byte[] PST_W_PAWN =
+		{ 0,  0,  0,  0,  0,  0,  0,  0,
+		 50, 50, 50, 50, 50, 50, 50, 50,
+		 10, 10, 20, 30, 30, 20, 10, 10,
+		  5,  5, 10, 25, 25, 10,  5,  5,
+		  0,  0,  0, 20, 20,  0,  0,  0,
+		  5, -5,-10,  0,  0,-10, -5,  5,
+		  5, 10, 10,-20,-20, 10, 10,  5,
+		  0,  0,  0,  0,  0,  0,  0,  0};
+	private final static byte[] PST_W_KNIGHT =
+		{-50,-40,-30,-30,-30,-30,-40,-50,
+		 -40,-20,  0,  0,  0,  0,-20,-40,
+		 -30,  0, 10, 15, 15, 10,  0,-30,
+		 -30,  5, 15, 20, 20, 15,  5,-30,
+		 -30,  0, 15, 20, 20, 15,  0,-30,
+		 -30,  5, 10, 15, 15, 10,  5,-30,
+		 -40,-20,  0,  5,  5,  0,-20,-40,
+		 -50,-40,-30,-30,-30,-30,-40,-50};
+	private final static byte[] PST_W_BISHOP =
+		{-20,-10,-10,-10,-10,-10,-10,-20,
+		 -10,  0,  0,  0,  0,  0,  0,-10,
+		 -10,  0,  5, 10, 10,  5,  0,-10,
+		 -10,  5,  5, 10, 10,  5,  5,-10,
+		 -10,  0, 10, 10, 10, 10,  0,-10,
+		 -10, 10, 10, 10, 10, 10, 10,-10,
+		 -10,  5,  0,  0,  0,  0,  5,-10,
+		 -20,-10,-10,-10,-10,-10,-10,-20};
+	private final static byte[] PST_W_ROOK =
+		{  0,  0,  0,  0,  0,  0,  0,  0,
+		   5, 10, 10, 10, 10, 10, 10,  5,
+		  -5,  0,  0,  0,  0,  0,  0, -5,
+		  -5,  0,  0,  0,  0,  0,  0, -5,
+		  -5,  0,  0,  0,  0,  0,  0, -5,
+		  -5,  0,  0,  0,  0,  0,  0, -5,
+		  -5,  0,  0,  0,  0,  0,  0, -5,
+		   0,  0,  0,  5,  5,  0,  0,  0};
+	private final static byte[] PST_W_QUEEN =
+		{-20,-10,-10, -5, -5,-10,-10,-20,
+		 -10,  0,  0,  0,  0,  0,  0,-10,
+		 -10,  0,  5,  5,  5,  5,  0,-10,
+		  -5,  0,  5,  5,  5,  5,  0, -5,
+		   0,  0,  5,  5,  5,  5,  0, -5,
+		 -10,  5,  5,  5,  5,  5,  0,-10,
+		 -10,  0,  5,  0,  0,  0,  0,-10,
+		 -20,-10,-10, -5, -5,-10,-10,-20};
+	private final static byte[] PST_W_KING_OPENING =
+		{-30,-40,-40,-50,-50,-40,-40,-30,
+		 -30,-40,-40,-50,-50,-40,-40,-30,
+		 -30,-40,-40,-50,-50,-40,-40,-30,
+		 -30,-40,-40,-50,-50,-40,-40,-30,
+		 -20,-30,-30,-40,-40,-30,-30,-20,
+		 -10,-20,-20,-20,-20,-20,-20,-10,
+		  20, 20,  0,  0,  0,  0, 20, 20,
+		  20, 30, 10,  0,  0, 10, 30, 20};
+	private final static byte[] PST_W_KING_ENDGAME =
+		{-50,-40,-30,-20,-20,-30,-40,-50,
+		 -30,-20,-10,  0,  0,-10,-20,-30,
+		 -30,-10, 20, 30, 30, 20,-10,-30,
+		 -30,-10, 30, 40, 40, 30,-10,-30,
+		 -30,-10, 30, 40, 40, 30,-10,-30,
+		 -30,-10, 20, 30, 30, 20,-10,-30,
+		 -30,-30,  0,  0,  0,  0,-30,-30,
+		 -50,-30,-30,-30,-30,-30,-30,-50};
+	
+	private final static byte[] PST_B_PAWN = new byte[64];
+	private final static byte[] PST_B_KNIGHT = new byte[64];
+	private final static byte[] PST_B_BISHOP = new byte[64];
+	private final static byte[] PST_B_ROOK = new byte[64];
+	private final static byte[] PST_B_QUEEN = new byte[64];
+	private final static byte[] PST_B_KING_OPENING = new byte[64];
+	private final static byte[] PST_B_KING_ENDGAME = new byte[64];
+	
+	static {
+		for (int i = 0; i < 64; i++) {
+			PST_B_PAWN[i] = (byte)-PST_W_PAWN[63 - i];
+			PST_B_KNIGHT[i] = (byte)-PST_W_KNIGHT[63 - i];
+			PST_B_BISHOP[i] = (byte)-PST_W_BISHOP[63 - i];
+			PST_B_ROOK[i] = (byte)-PST_W_ROOK[63 - i];
+			PST_B_QUEEN[i] = (byte)-PST_W_QUEEN[63 - i];
+			PST_B_KING_OPENING[i] = (byte)-PST_W_KING_OPENING[63 - i];
+			PST_B_KING_ENDGAME[i] = (byte)-PST_W_KING_ENDGAME[63 - i];
+		}
+	}
+	
+	private final static byte[][] PST_OPENING = {PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK, PST_W_BISHOP, PST_W_KNIGHT, PST_W_PAWN,
+		PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN};
+	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK, PST_W_BISHOP, PST_W_KNIGHT, PST_W_PAWN,
+		PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN};
+	
 	private HashTable<ETEntry> eT;	// Evaluation score hash table.
 	private HashTable<PTEntry> pT;	// Pawn hash table.
 	
 	private byte eGen;	// Entry generation.
-	
-	private static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
-												Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
 	public Evaluator(HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, byte entryGeneration) {
 		eT = evalTable;
@@ -193,12 +285,13 @@ public final class Evaluator {
 	 * @param ply The current level of distance from the root in the search.
 	 * @return
 	 */
-	public int score(Position pos) {
+	public int score(Position pos, int alpha, int beta) {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
-		int bishopField, bishopColor, newBishopColor, phase;
-		short pawnScore, baseScore, openingScore, endGameScore, score;
+		int bishopField, bishopColor, newBishopColor, phase, piece;
+		short pawnScore, baseScore, openingScore, endgameScore, score;
 		byte[] bishopSqrArr;
+		boolean isWhitesTurn;
 		ETEntry eE;
 		PTEntry pE;
 		eE = eT.lookUp(pos.key);
@@ -206,6 +299,7 @@ public final class Evaluator {
 			eE.generation = eGen;
 			return eE.score;
 		}
+		isWhitesTurn = pos.isWhitesTurn;
 		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
 		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
 		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
@@ -257,14 +351,26 @@ public final class Evaluator {
 		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
 		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
 		baseScore += pawnScore;
-		// Need to implement separate evaluation features for openings and end games.
-		// Pairs of piece square tables are imperative.
-		openingScore = endGameScore = 0;
+		if (!isWhitesTurn)
+			baseScore *= -1;
+		// Lazy evaluation.
+		if (baseScore <= alpha - LAZY_EVAL_MAR || baseScore >= beta + LAZY_EVAL_MAR)
+			return baseScore;
+		openingScore = endgameScore = 0;
+		for (int i = 0; i < pos.offsetBoard.length; i++) {
+			piece = pos.offsetBoard[i];
+			if (piece == Piece.NULL.ind)
+				continue;
+			openingScore += PST_OPENING[piece - 1][i];
+			endgameScore += PST_ENDGAME[piece - 1][i];
+		}
+		if (!isWhitesTurn) {
+			openingScore *= -1;
+			endgameScore *= -1;
+		}
 		openingScore += baseScore;
-		endGameScore += baseScore;
-		score = (short)taperedEvalScore(openingScore, endGameScore, phase);
-		if (!pos.isWhitesTurn)
-			score *= -1;
+		endgameScore += baseScore;
+		score = (short)taperedEvalScore(openingScore, endgameScore, phase);
 		eT.insert(new ETEntry(pos.key, score, eGen));
 		return score;
 	}

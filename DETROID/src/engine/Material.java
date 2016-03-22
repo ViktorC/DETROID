@@ -8,11 +8,11 @@ package engine;
  */
 public enum Material {
 	
-	KING	(400, 0),
+	KING	(20000, 0),
 	QUEEN	(900, 4),
 	ROOK	(500, 2),
-	BISHOP	(300, 1),
-	KNIGHT	(300, 1),
+	BISHOP	(330, 1),
+	KNIGHT	(320, 1),
 	PAWN	(100, 0),
 	NULL	(0, 0);
 	
