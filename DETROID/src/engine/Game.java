@@ -71,15 +71,35 @@ public class Game {
 	private Game() {
 		
 	}
+	/**
+	 * Returns the current position in the game.
+	 * 
+	 * @return
+	 */
 	public Position getPosition() {
 		return position;
 	}
+	/**
+	 * Sets the name of the white player.
+	 * 
+	 * @param whitePlayerName
+	 */
 	public void setWhitePlayerName(String whitePlayerName) {
 		this.whitePlayerName = whitePlayerName;
 	}
+	/**
+	 * Sets the name of the black player.
+	 * 
+	 * @param blackPlayerName
+	 */
 	public void setBlackPlayerName(String blackPlayerName) {
 		this.blackPlayerName = blackPlayerName;
 	}
+	/**
+	 * Returns the state of the game.
+	 * 
+	 * @return
+	 */
 	public State getState() {
 		return state;
 	}
