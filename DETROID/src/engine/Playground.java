@@ -8,7 +8,7 @@ public class Playground {
 	
 	public static void main(String[] args) {
 		Position p = new Position(tP1);
-		Engine e = new Engine(System.in, System.out, null, 0);
+		
 		long start = System.currentTimeMillis();
 		long end = System.currentTimeMillis();
 		System.out.println(end - start);
