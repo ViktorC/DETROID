@@ -1,9 +1,11 @@
 package engine;
 
+import java.util.Observable;
 import java.util.concurrent.atomic.AtomicLong;
 
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
+import engine.Move.MoveType;
 import util.*;
 
 /**
@@ -14,7 +16,7 @@ import util.*;
  * @author Viktor
  *
  */
-public class Search extends Thread {
+public class Search implements Runnable {
 	
 	/**
 	 * A simple enum for game tree node types based on their values' relation to alpha and beta.
@@ -35,7 +37,65 @@ public class Search extends Thread {
 		}
 	}
 	
-	private final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
+	/**
+	 * An observable class for the principal variation of a search.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public class Results extends Observable {
+		
+		private Queue<Move> PVline;	// Principal variation.
+		private short score;		// The result score of the search.
+		private long nodes;			// The number of nodes searched.
+		private long time;			// Time spent on the search.
+		
+		private Results() {
+			
+		}
+		/**
+		 * Returns the principal variation of the search as a queue of moves.
+		 * 
+		 * @return
+		 */
+		public Queue<Move> getPVline() {
+			return PVline;
+		}
+		/**
+		 * Returns the result score of the search for the side to move.
+		 * 
+		 * @return
+		 */
+		public short getScore() {
+			return score;
+		}
+		/**
+		 * Returns the number of nodes searched to reach this result.
+		 * 
+		 * @return
+		 */
+		public long getNodes() {
+			return nodes;
+		}
+		/**
+		 * Returns the time spent on the search to reach this result in milliseconds.
+		 * 
+		 * @return
+		 */
+		public long getTime() {
+			return time;
+		}
+		private void set(Queue<Move> PVline, short score, long nodes, long time) {
+			this.PVline = PVline;
+			this.score = score;
+			this.nodes = nodes;
+			this.time = time;
+			setChanged();
+			notifyObservers();
+		}
+	}
+	
+	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
 	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
@@ -50,182 +110,140 @@ public class Search extends Thread {
 	private int ply;
 	
 	private Position pos;
-	private GamePhase gamePhase;			// The phase the 'game' at the root position is in.
 	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
 	
-	private Move[] pV;
+	private KillerTable kT;				// Killer heuristic table.
+	private RelativeHistoryTable hT;	// History heuristic table.
+	private HashTable<TTEntry> tT;		// Transposition table.
+	private HashTable<ETEntry> eT;		// Evaluation hash table.
+	private HashTable<PTEntry> pT;		// Pawn hash table.
+	private byte hashEntryGen;	// Entry generation.
 	
-	private static AtomicLong nodes;	// Number of searched positions.
-	
-	private KillerTable kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);	// Killer heuristic table.
-	private static RelativeHistoryTable hT = new RelativeHistoryTable();		// History heuristic table.
-	private static HashTable<TTEntry> tT = new HashTable<>(256, TTEntry.SIZE);	// Transposition table.
-	private static HashTable<ETEntry> eT = new HashTable<>(192, ETEntry.SIZE);	// Evaluation hash table.
-	private static HashTable<PTEntry> pT = new HashTable<>(8, PTEntry.SIZE);	// Pawn hash table.
-	private static byte eGen = 0;	// Entry generation.
-	
-	Evaluator eval;
+	private Evaluator eval;
 	
 	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
+	private long maxNodes;
+	private AtomicLong nodes;	// Number of searched positions.
+	
+	private boolean doBreak = false;
+	
+	private Results results;
 	
 	/**
-	 * Creates a new Search thread instance for pondering on the argument position which once started, will not stop until the thread is
-	 * interrupted.
-	 *
-	 * @param pos
+	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
+	 * moves to search; if maxNodes is <= 0, the engine will ponder on the position once the search thread is started, and will not stop until
+	 * it is interrupted.
+	 * 
+	 * @param pos The position to search.
+	 * @param timeLeft Time left until the end of the time control.
+	 * @param maxNodes Max number of searched nodes.
+	 * @param moves Moves to search.
+	 * @param gamePhase The game phase in which the position is.
+	 * @param hT History table.
+	 * @param hashEntryGen Hash entry generation.
+	 * @param tT Transposition table.
+	 * @param eT Evaluation hash table.
+	 * @param pT Pawn hash table.
 	 */
-	public Search(Position pos) {
+	public Search(Position pos, long timeLeft, long maxNodes, Move[] moves, GamePhase gamePhase,
+			RelativeHistoryTable hT, byte hashEntryGen, HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT) {
 		this.pos = pos.deepCopy();
-		gamePhase = Evaluator.evaluateGamePhase(pos);
-		pondering = true;
-		nullMoveObservHolds = gamePhase != GamePhase.END_GAME;
-	}
-	/**
-	 * Creates a new Search thread instance for searching a position for the specified amount of time; if that is <= 0, the engine will ponder
-	 * on the position once the search thread is started, and will not stop until it is interrupted.
-	 *
-	 * @param pos
-	 * @param searchTimeInMilliSeconds
-	 */
-	public Search(Position pos, long searchTimeInMilliSeconds) {
-		this(pos);
-		if (searchTimeInMilliSeconds > 0) {
-			searchTime = searchTimeInMilliSeconds - 500;
-			pondering = false;
-		}
-	}
-	/**
-	 * Returns the best move from the position if it has already been searched; else it returns null. If there is no best move found
-	 * (either due to a search bug or because the search thread has not been run yet), it returns a pseudo-random legal move.
-	 * 
-	 * @return The best move according to the results of the search; if such a thing does not exist, a pseudo-random legal move.
-	 */
-	public Move getBestMove() {
-		Move[] moveList;
-		TTEntry e = tT.lookUp(pos.key);
-		if (e != null && e.bestMove != 0)
-			return Move.toMove(e.bestMove);
+		if (maxNodes <= 0)
+			pondering = true;
 		else {
-			moveList = pos.generateAllMoves().toArray();
-			return moveList[(int)Math.random()*moveList.length];
+			pondering = false;
+			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(pos, gamePhase, timeLeft);
 		}
+		nullMoveObservHolds = gamePhase != GamePhase.END_GAME;
+		kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);
+		this.hT = hT;
+		this.hashEntryGen = hashEntryGen;
+		this.tT = tT;
+		this.eT = eT;
+		this.pT = pT;
+		results = new Results();
 	}
 	/**
-	 * Returns the best line of play from the position if it has already been searched; else it returns null.
+	 * Returns an observable container class for the results of the search.
 	 * 
-	 * @return The principal variation according to the results of the search.
+	 * @return
 	 */
-	public Queue<Move> getPv() {
+	public Results getResults() {
+		return results;
+	}
+	/**
+	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
+	 * 
+	 * @return A queue of Move objects according to the best line of play.
+	 */
+	private Queue<Move> extractPv() {
+		// In case every ply within the search triggers the maximum number of fractional extensions.
+		Move[] pVarr = new Move[3*MAX_NOMINAL_SEARCH_DEPTH + 1];
 		Queue<Move> pV = new Queue<>();
-		int i = 0;
-		this.pV = extractPv();
-		while (i < this.pV.length && this.pV[i] != null)
-			pV.add(this.pV[i++]);
+		TTEntry e;
+		Move bestMove;
+		int i, j;
+		i = j = 0;
+		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < MAX_NOMINAL_SEARCH_DEPTH) {
+			bestMove = Move.toMove(e.bestMove);
+			pos.makeMove(bestMove);
+			pVarr[i++] = bestMove;
+		}
+		for (int k = 0; k < i; k++)
+			pos.unmakeMove();
+		while (j < pVarr.length && pVarr[j] != null)
+			pV.add(pVarr[j++]);
 		return pV;
 	}
-	/**
-	 * Returns whether pondering mode is active.
-	 * 
-	 * @return Whether pondering is on.
-	 */
-	public boolean isPonderingOn() {
-		return pondering;
+	@Override
+	public void run() {
+		eval = new Evaluator(eT, pT, hashEntryGen);
+		deadLine = System.currentTimeMillis() + searchTime;
+		iterativeDeepening();
 	}
-	/**
-	 * Returns the allocated search time in milliseconds.
-	 * 
-	 * @return The allocated search time in milliseconds.
-	 */
-	public long getSearchTime() {
-		return searchTime;
-	}
-	/**
-	 * Returns a string containing basic statistics about the transposition table.
-	 * 
-	 * @return A string of the total size and load of the transposition table.
-	 */
-	public String getTranspositionTableStats() {
-		return tT.toString();
-	}
-	/**
-	 * Returns a string containing basic statistics about the evaluation table.
-	 * 
-	 * @return A string of the total size and load of the evaluation table.
-	 */
-	public String getEvaluationTableStats() {
-		return eT.toString();
-	}
-	/**
-	 * Returns a string containing basic statistics about the pawn table.
-	 * 
-	 * @return A string of the total size and load of the pawn table.
-	 */
-	public String getPawnTableStats() {
-		return pT.toString();
-	}
-	/**
-	 * Returns the number of nodes searched.
-	 * 
-	 * @return Searched node count.
-	 */
-	public long getNodeCount() {
-		return nodes.get();
+	private long allocateSearchTime(Position pos, GamePhase gamePhase, long timeLeft) {
+		// !FIXME
+		return 30*1000;
 	}
 	/**
 	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth has been reached.
 	 */
-	public void run() {
+	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
 		nodes = new AtomicLong(0);
-		if (pondering)
-			deadLine = Long.MAX_VALUE;
-		else {
-			eGen++;
-			deadLine = System.currentTimeMillis() + searchTime;
-		}
-		eval = new Evaluator(eT, pT, eGen);
-		pV = new Move[2*MAX_NOMINAL_SEARCH_DEPTH];	// In case every ply within the search triggers a full ply extension.
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		for (int i = 1; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
 			ply = i;
-			score = search(pos, ply*FULL_PLY, alpha, beta, true, 0);
-			pV = extractPv();
-			if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+			score = pVsearch(pos, ply*FULL_PLY, alpha, beta, true, 0);
+			results.set(extractPv(), (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
+			if (doBreak || (!pondering && (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)))
 				break;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :
 					failLow == 1 ? Math.max(alpha - 5*A_DELTA, Termination.CHECK_MATE.score) :Termination.CHECK_MATE.score;
 				failLow++;
+				if (i == MAX_NOMINAL_SEARCH_DEPTH)
+					i--;
 				continue;
 			}
 			if (score >= beta) {
 				beta = failHigh == 0 ? Math.min(beta + 2*A_DELTA, -Termination.CHECK_MATE.score) :
 					failHigh == 1 ? Math.min(beta + 5*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 				failHigh++;
+				if (i == MAX_NOMINAL_SEARCH_DEPTH)
+					i--;
 				continue;
 			}
 			failHigh = failLow = 0;
 			alpha = score - A_DELTA;
 			beta = score + A_DELTA;
 		}
-		if (eGen == 127) {
-			tT.clear();
-			eT.clear();
-			pT.clear();
-			eGen = 0;
-		}
-		else {
-			tT.remove(e -> e.generation < eGen);
-			eT.remove(e -> e.generation < eGen);
-			pT.remove(e -> e.generation < eGen - 2);
-		}
-		hT.decrementCurrentValues();
 	}
 	/**
 	 * A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the
@@ -238,7 +256,7 @@ public class Search extends Thread {
 	 * @param qDepth The depth with which quiescence search should be called.
 	 * @return The score of the position searched.
 	 */
-	private int search(Position pos, int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
+	private int pVsearch(Position pos, int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
 		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		final int distFromRoot = ply - depth/FULL_PLY;
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
@@ -258,6 +276,8 @@ public class Search extends Thread {
 		isThereHashMove = isThereKM1 = isThereKM2 = false;
 		matMoves = nonMatMoves = null;
 		nodes.incrementAndGet();
+		if (!pondering && (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
+			doBreak = true;
 		Search: {
 			// Check for the repetition rule; return a draw score if it applies.
 			if (pos.getRepetitions() >= 3)
@@ -274,7 +294,7 @@ public class Search extends Thread {
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(pos.key);
 			if (e != null) {
-				e.generation = eGen;
+				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
 				// the score if the entry stored a PV node. 
 				if (e.depth >= depth/FULL_PLY) {
@@ -332,7 +352,7 @@ public class Search extends Thread {
 				extPly = ply;
 				for (int i = 1; i < depth/FULL_PLY*3/5; i++) {
 					ply = i;
-					search(pos, ply*FULL_PLY, alpha, beta, true, qDepth);
+					pVsearch(pos, ply*FULL_PLY, alpha, beta, true, qDepth);
 				}
 				ply = extPly;
 				e = tT.lookUp(pos.key);
@@ -348,7 +368,7 @@ public class Search extends Thread {
 				// Recapture extension (includes capturing newly promoted pieces).
 				extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? FULL_PLY/2 : 0;
 				pos.makeMove(hashMove);
-				score = -search(pos, depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
+				score = -pVsearch(pos, depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
 				pos.unmakeMove();
 				searchedMoves++;
 				if (score > bestScore) {
@@ -393,13 +413,13 @@ public class Search extends Thread {
 				pos.makeNullMove();
 				// Do not allow consecutive null moves.
 				if (depth/FULL_PLY == NMR) {
-					score = -search(pos, depth - NMR*FULL_PLY, -beta, -beta + 1, false, qDepth);
+					score = -pVsearch(pos, depth - NMR*FULL_PLY, -beta, -beta + 1, false, qDepth);
 					// Mate threat extension.
 					if (score <= checkMateLim)
 						depth += FULL_PLY;
 				}
 				else
-					score = -search(pos, depth - (NMR + 1)*FULL_PLY, -beta, -beta + 1, false, qDepth);
+					score = -pVsearch(pos, depth - (NMR + 1)*FULL_PLY, -beta, -beta + 1, false, qDepth);
 				pos.unmakeMove();
 				if (score >= beta) {
 					return score;
@@ -426,11 +446,11 @@ public class Search extends Thread {
 				pos.makeMove(move);
 				// PVS.
 				if (i == 0)
-					score = -search(pos, depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
 				else {
-					score = -search(pos, depth + extension - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth + extension - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 					if (score > alpha && score < beta)
-						score = -search(pos, depth + extension - FULL_PLY, -beta, -score, true, qDepth);
+						score = -pVsearch(pos, depth + extension - FULL_PLY, -beta, -score, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -443,7 +463,7 @@ public class Search extends Thread {
 							break Search;
 					}
 				}
-				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+				if (doBreak)
 					break Search;
 			}
 			// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
@@ -454,11 +474,11 @@ public class Search extends Thread {
 					isThereKM1 = true;
 					pos.makeMove(killerMove1);
 					if (!isThereHashMove && matMoveBreakInd == 0)
-						score = -search(pos, depth - FULL_PLY, -beta, -alpha, true, qDepth);
+						score = -pVsearch(pos, depth - FULL_PLY, -beta, -alpha, true, qDepth);
 					else {
-						score = -search(pos, depth - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+						score = -pVsearch(pos, depth - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 						if (score > alpha && score < beta)
-							score = -search(pos, depth - FULL_PLY, -beta, -score, true, qDepth);
+							score = -pVsearch(pos, depth - FULL_PLY, -beta, -score, true, qDepth);
 					}
 					pos.unmakeMove();
 					searchedMoves++;
@@ -475,7 +495,7 @@ public class Search extends Thread {
 								hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
 						}
 					}
-					if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+					if (doBreak)
 						break Search;
 				}
 			}
@@ -485,11 +505,11 @@ public class Search extends Thread {
 					isThereKM2 = true;
 					pos.makeMove(killerMove2);
 					if (!isThereHashMove && !isThereKM1 && matMoveBreakInd == 0)
-						score = -search(pos, depth - FULL_PLY, -beta, -alpha, true, qDepth);
+						score = -pVsearch(pos, depth - FULL_PLY, -beta, -alpha, true, qDepth);
 					else {
-						score = -search(pos, depth - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+						score = -pVsearch(pos, depth - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 						if (score > alpha && score < beta)
-							score = -search(pos, depth - FULL_PLY, -beta, -score, true, qDepth);
+							score = -pVsearch(pos, depth - FULL_PLY, -beta, -score, true, qDepth);
 					}
 					pos.unmakeMove();
 					searchedMoves++;
@@ -506,7 +526,7 @@ public class Search extends Thread {
 								hT.recordUnsuccessfulMove(killerMove2);	// Record failure in the relative history table.
 						}
 					}
-					if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+					if (doBreak)
 						break Search;
 				}
 			}	// Killer move check ending.
@@ -523,11 +543,11 @@ public class Search extends Thread {
 				pos.makeMove(move);
 				// PVS.
 				if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
-					score = -search(pos, depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
 				else {
-					score = -search(pos, depth + extension - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth + extension - FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 					if (score > alpha && score < beta)
-						score = -search(pos, depth + extension - FULL_PLY, -beta, -score, true, qDepth);
+						score = -pVsearch(pos, depth + extension - FULL_PLY, -beta, -score, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -540,7 +560,7 @@ public class Search extends Thread {
 							break Search;
 					}
 				}
-				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+				if (doBreak)
 					break Search;
 			}
 			// Generate the non-material legal moves if they are not generated yet.
@@ -591,18 +611,18 @@ public class Search extends Thread {
 				// Try late move reduction if not within the PV.
 				if (depth/FULL_PLY > 2 && beta == origAlpha + 1 && !inCheck && pos.getUnmakeRegister().checkers == 0 &&
 						alpha < checkMateLim && searchedMoves > 4) {
-					score = -search(pos, depth - (LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth - (LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 					// If it does not fail low, research with "full" window.
 					if (score > alpha)
-						score = -search(pos, depth - FULL_PLY, -beta, -score, true, qDepth);
+						score = -pVsearch(pos, depth - FULL_PLY, -beta, -score, true, qDepth);
 				}
 				// Else PVS.
 				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && matMovesArr.length == 0)
-					score = -search(pos, depth - (razRed + 1)*FULL_PLY, -beta, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth - (razRed + 1)*FULL_PLY, -beta, -alpha, true, qDepth);
 				else {
-					score = -search(pos, depth - (razRed + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(pos, depth - (razRed + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 					if (score > alpha && score < beta)
-						score = -search(pos, depth - (razRed + 1)*FULL_PLY, -beta, -score, true, qDepth);
+						score = -pVsearch(pos, depth - (razRed + 1)*FULL_PLY, -beta, -score, true, qDepth);
 				}
 				pos.unmakeMove();
 				searchedMoves++;
@@ -621,7 +641,7 @@ public class Search extends Thread {
 							hT.recordUnsuccessfulMove(move);	// Record failure in the relative history table.
 					}
 				}
-				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+				if (doBreak)
 					break Search;
 			}
 		}
@@ -638,11 +658,11 @@ public class Search extends Thread {
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
 		//	Add new entry to the transposition table.
 		if (bestScore <= origAlpha)
-			tT.insert(new TTEntry(pos.key, (short)(depth/FULL_PLY), NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, eGen));
+			tT.insert(new TTEntry(pos.key, (short)(depth/FULL_PLY), NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, hashEntryGen));
 		else if (bestScore >= beta)
-			tT.insert(new TTEntry(pos.key, (short)(depth/FULL_PLY), NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, eGen));
+			tT.insert(new TTEntry(pos.key, (short)(depth/FULL_PLY), NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, hashEntryGen));
 		else
-			tT.insert(new TTEntry(pos.key, (short)(depth/FULL_PLY), NodeType.EXACT.ind, (short)score, bestMoveInt, eGen));
+			tT.insert(new TTEntry(pos.key, (short)(depth/FULL_PLY), NodeType.EXACT.ind, (short)score, bestMoveInt, hashEntryGen));
 		// Return the unadjusted best score.
 		return bestScore;
 	}
@@ -667,6 +687,8 @@ public class Search extends Thread {
 		int bestScore, searchScore;
 		if (depth != 0)
 			nodes.incrementAndGet();
+		if (!pondering && (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
+			doBreak = true;
 		// Just for my peace of mind.
 		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 			return eval.score(pos, alpha, beta);
@@ -707,7 +729,7 @@ public class Search extends Thread {
 		// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
 		if (inCheck) {
 			nodes.decrementAndGet();
-			searchScore = search(pos, FULL_PLY, alpha, beta, false, depth - 2);
+			searchScore = pVsearch(pos, FULL_PLY, alpha, beta, false, depth - 2);
 			if (searchScore > bestScore) {
 				bestScore = searchScore;
 				if (bestScore > alpha)
@@ -733,7 +755,7 @@ public class Search extends Thread {
 							break;
 					}
 				}
-				if (currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)
+				if (doBreak)
 					break;
 			}
 		}
@@ -769,7 +791,7 @@ public class Search extends Thread {
 		int i = 0;
 		while (moves.hasNext()) {
 			move = moves.next();
-			if (move.type > 3) {
+			if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
 				move.value = Material.QUEEN.score;
 				if (move.capturedPiece != Piece.NULL.ind)
 					move.value += Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
@@ -796,24 +818,5 @@ public class Search extends Thread {
 			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
-	}
-	/**
-	 * Returns an array of Move objects according to the best line of play extracted form the transposition table.
-	 * 
-	 * @return An array of Move objects according to the best line of play.
-	 */
-	private Move[] extractPv() {
-		Move[] pV = new Move[MAX_NOMINAL_SEARCH_DEPTH];
-		TTEntry e;
-		Move bestMove;
-		int i = 0;
-		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < MAX_NOMINAL_SEARCH_DEPTH) {
-			bestMove = Move.toMove(e.bestMove);
-			pos.makeMove(bestMove);
-			pV[i++] = bestMove;
-		}
-		for (int j = 0; j < i; j++)
-			pos.unmakeMove();
-		return pV;
 	}
 }

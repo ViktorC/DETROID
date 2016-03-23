@@ -3,14 +3,12 @@ package engine;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Scanner;
 
-import engine.Book.SelectionModel;
 import util.List;
 import util.Queue;
 
 /**
- * A UI base and controller class for the engine.
+ * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.
  * 
  * @author Viktor
  *
@@ -60,7 +58,8 @@ public class Game {
 	
 	private static Game INSTANCE = new Game();
 	
-	private Position pos;
+	private String startPos;
+	private Position position;
 	private String event;
 	private String site;
 	private Date date;
@@ -68,21 +67,26 @@ public class Game {
 	private String whitePlayerName;
 	private String blackPlayerName;
 	private State state;
-	
-	private boolean playerIsWhite;
-	
-	private Book book;
-	private long whiteTimeLeft;
-	private long blackTimeLeft;
 
 	private Game() {
-		book = Book.getInstance();
-		whiteTimeLeft = blackTimeLeft = 60*60*1000;
+		
 	}
-	private Game(String event, String site, String whitePlayerName,
+	public Position getPosition() {
+		return position;
+	}
+	public void setWhitePlayerName(String whitePlayerName) {
+		this.whitePlayerName = whitePlayerName;
+	}
+	public void setBlackPlayerName(String blackPlayerName) {
+		this.blackPlayerName = blackPlayerName;
+	}
+	public State getState() {
+		return state;
+	}
+	private Game(String position, String event, String site, String whitePlayerName,
 			String blackPlayerName) {
-		this();
-		pos = new Position();
+		startPos = position;
+		this.position = new Position(position);
 		this.event = event;
 		this.site = site;
 		date = new Date();
@@ -90,13 +94,6 @@ public class Game {
 		this.whitePlayerName = whitePlayerName;
 		this.blackPlayerName = blackPlayerName;
 		state = State.IN_PROGRESS;
-		playerIsWhite = true;
-	}
-	private Game(String event, String site, String whitePlayerName,
-			String blackPlayerName, long whiteTimeLeft, long blackTimeLeft) {
-		this(event, site, whitePlayerName, blackPlayerName);
-		this.whiteTimeLeft = whiteTimeLeft;
-		this.blackTimeLeft = blackTimeLeft;
 	}
 	private static Game parsePGN(String pgn) throws IllegalArgumentException {
 		char tagChar;
@@ -159,7 +156,7 @@ public class Game {
 			out.whitePlayerName = whiteName;
 			out.blackPlayerName = blackName;
 			out.state = State.parsePGNResultTag(result);
-			out.pos = fen == null ? new Position() : new Position(fen);
+			out.position = fen == null ? new Position() : new Position(fen);
 			if (moveDescStartInd < pgn.length())
 				pgn = pgn.substring(moveDescStartInd);
 			pgn = pgn.trim();
@@ -175,8 +172,8 @@ public class Game {
 					sanStrings.add(s);
 			}
 			while (sanStrings.hasNext()) {
-				move = out.pos.parseSAN(sanStrings.next());
-				out.pos.makeMove(move);
+				move = out.position.parseSAN(sanStrings.next());
+				out.position.makeMove(move);
 			}
 		}
 		catch (Exception e) {
@@ -185,7 +182,7 @@ public class Game {
 		return out;
 	}
 	private static void setInstance(Game game) {
-		INSTANCE.pos = game.pos;
+		INSTANCE.position = game.position;
 		INSTANCE.event = game.event;
 		INSTANCE.site = game.site;
 		INSTANCE.date = game.date;
@@ -193,28 +190,37 @@ public class Game {
 		INSTANCE.whitePlayerName = game.whitePlayerName;
 		INSTANCE.blackPlayerName = game.blackPlayerName;
 		INSTANCE.state = game.state;
-		INSTANCE.playerIsWhite = game.playerIsWhite;
-		INSTANCE.book = game.book;
-		INSTANCE.whiteTimeLeft = game.whiteTimeLeft;
-		INSTANCE.blackTimeLeft = game.blackTimeLeft;
+
 	}
-	public static Game getInstance(String event, String site, String whitePlayerName,
+	/**
+	 * Returns a game instance according to the parameter values.
+	 * 
+	 * @param position
+	 * @param event
+	 * @param site
+	 * @param whitePlayerName
+	 * @param blackPlayerName
+	 * @return
+	 */
+	public static Game getInstance(String position, String event, String site, String whitePlayerName,
 			String blackPlayerName) {
-		setInstance(new Game(event, site, whitePlayerName, blackPlayerName));
+		setInstance(new Game(position, event, site, whitePlayerName, blackPlayerName));
 		return INSTANCE;
 	}
-	public static Game getInstance(String event, String site, String whitePlayerName,
-			String blackPlayerName, long whiteTimeLeft, long blackTimeLeft) {
-		setInstance(new Game(event, site, whitePlayerName, blackPlayerName, whiteTimeLeft, blackTimeLeft));
-		return INSTANCE;
-	}
+	/**
+	 * Parses a PGN and returns a game instance based on it.
+	 * 
+	 * @param pgn
+	 * @return
+	 */
 	public static Game getInstance(String pgn) {
 		setInstance(parsePGN(pgn));
 		return INSTANCE;
 	}
-	public long calculateTimeForNextMove(boolean forWhite) {
-		return 30*1000;
-	}
+	/**
+	 * Returns a string of the game in PGN.
+	 */
+	@Override
 	public String toString() {
 		String pgn = "", date;
 		Calendar cal = Calendar.getInstance();
@@ -231,114 +237,9 @@ public class Game {
 		pgn += "[White \"" + whitePlayerName + "\"]\n";
 		pgn += "[Black \"" + blackPlayerName + "\"]\n";
 		pgn += "[Result \"" + state.pgnNotation + "\"]\n";
+		pgn += "[FEN \"" + startPos + "\"]\n";
 		pgn += "\n";
-		pgn += pos.moveListInSAN();
+		pgn += position.moveListInSAN();
 		return pgn;
-	}
-	public static void main(String[] args) {
-		boolean outOfBook = false;
-		long start, end;
-		Move bookMove;
-		Scanner in = new Scanner(System.in);
-		Game game = getInstance("test", "at home", "human opponent", "computer");
-		while (game.state == State.IN_PROGRESS) {
-			game.pos.printStateToConsole();
-			System.out.printf("White time left: %.2fs\n", (float)((double)game.whiteTimeLeft/1000));
-			System.out.printf("Black time left: %.2fs\n", (float)((double)game.blackTimeLeft/1000));
-			if (game.pos.isWhitesTurn() == game.playerIsWhite) {
-				System.out.print("Please make your move: ");
-				start = System.currentTimeMillis();
-				Search s = new Search(game.pos);
-				s.start();
-				while (!game.pos.makeMove(in.nextLine()))
-					System.out.print("Illegal move.\nPlease try again: ");
-				end = System.currentTimeMillis();
-				s.interrupt();
-				if (game.playerIsWhite) {
-					game.whiteTimeLeft -= (end - start);
-					if (game.whiteTimeLeft <= 0) {
-						System.out.println("Out of time. Black wins.");
-						break;
-					}
-				}
-				else {
-					game.blackTimeLeft -= (end - start);
-					if (game.blackTimeLeft <= 0) {
-						System.out.println("Out of time. White wins.");
-						break;
-					}
-				}
-			}
-			else {
-				System.out.println("Searching...");
-				start = System.currentTimeMillis();
-				if (!outOfBook) {
-					bookMove = game.book.getMove(game.pos, SelectionModel.STOCHASTIC);
-					if (bookMove != null) {
-						end = System.currentTimeMillis();
-						System.out.println("Book move: " + bookMove + "\n");
-						game.pos.makeMove(bookMove);
-						if (!game.playerIsWhite) {
-							game.whiteTimeLeft -= (end - start);
-							if (game.whiteTimeLeft <= 0) {
-								System.out.println("Out of time. Black wins.");
-								break;
-							}
-						}
-						else {
-							game.blackTimeLeft -= (end - start);
-							if (game.blackTimeLeft <= 0) {
-								System.out.println("Out of time. White wins.");
-								break;
-							}
-						}
-						continue;
-					}
-					outOfBook = true;
-				}
-				Search s = new Search(game.pos, game.calculateTimeForNextMove(!game.playerIsWhite));
-				s.start();
-				try {
-					s.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				end = System.currentTimeMillis();
-				System.out.println();
-				System.out.println("Transposition Table");
-				System.out.println(s.getTranspositionTableStats());
-				System.out.println("Evaluation Hash Table");
-				System.out.println(s.getEvaluationTableStats());
-				System.out.println("Pawn Hash Table");
-				System.out.println(s.getPawnTableStats() + "\n");
-				System.out.println("Nodes: " + s.getNodeCount() + "; Time: " + (end - start) + "ms");
-				System.out.println("Search speed: " + ((double)s.getNodeCount()/((double)(end - start)/1000D)) + "Nps");
-				System.out.print("PV:");
-				for (Move m : s.getPv())
-					System.out.print(" " + m.toString());
-				game.pos.makeMove(s.getBestMove());
-				if (!game.playerIsWhite) {
-					game.whiteTimeLeft -= (end - start);
-					if (game.whiteTimeLeft <= 0) {
-						System.out.println("Out of time. Black wins.");
-						break;
-					}
-				}
-				else {
-					game.blackTimeLeft -= (end - start);
-					if (game.blackTimeLeft <= 0) {
-						System.out.println("Out of time. White wins.");
-						break;
-					}
-				}
-			}
-			System.out.println();
-			// Very rudimental for now.
-			if (game.pos.generateAllMoves().length() == 0) {
-				game.state = game.pos.isWhitesTurn() ? State.BLACK_WIN : State.WHITE_WIN;
-			}
-		}
-		in.close();
-		System.out.print("Game over: " + game.state);
 	}
 }

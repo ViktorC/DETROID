@@ -36,7 +36,7 @@ public final class Evaluator {
 	private final static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
-	private final static int LAZY_EVAL_MAR = 8*Material.PAWN.score;
+	private final static int LAZY_EVAL_MAR = 2*Material.PAWN.score;
 	
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation".
 	private final static byte[] PST_W_PAWN_OPENING =
@@ -150,6 +150,12 @@ public final class Evaluator {
 		PST_W_PAWN_OPENING, PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK_OPENING, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_OPENING};
 	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT,
 		PST_W_PAWN_ENDGAME, PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_ENDGAME};
+	
+	private final static long UNDEFINED_POSITION_KEY = -1;
+	
+	private long lastEvaluatedPos = UNDEFINED_POSITION_KEY;
+	private long lastEvaluatedPosPrev = UNDEFINED_POSITION_KEY;
+	private short lastPSTscore;
 	
 	private HashTable<ETEntry> eT;	// Evaluation score hash table.
 	private HashTable<PTEntry> pT;	// Pawn hash table.
@@ -312,9 +318,9 @@ public final class Evaluator {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase, piece;
-		short pawnScore, baseScore, openingScore, endgameScore, score;
-		byte[] bishopSqrArr;
-		boolean isWhitesTurn;
+		short pawnScore, baseScore, openingScore, endgameScore, pstScore, score;
+		byte[] bishopSqrArr, offsetBoard;;
+		boolean isWhitesTurn, doLazyEval;
 		ETEntry eE;
 		PTEntry pE;
 		eE = eT.lookUp(pos.key);
@@ -376,24 +382,41 @@ public final class Evaluator {
 		baseScore += pawnScore;
 		if (!isWhitesTurn)
 			baseScore *= -1;
+		doLazyEval = false;
+		if (lastEvaluatedPos != UNDEFINED_POSITION_KEY) {
+			if (pos.halfMoveIndex > 0) {
+				if (lastEvaluatedPosPrev != UNDEFINED_POSITION_KEY)
+					doLazyEval = pos.key == lastEvaluatedPosPrev || pos.getPrevHashKey() == lastEvaluatedPos ||
+						pos.getPrevHashKey() == lastEvaluatedPosPrev;
+				else
+					doLazyEval = pos.getPrevHashKey() == lastEvaluatedPos;
+			}
+			else if (lastEvaluatedPosPrev != UNDEFINED_POSITION_KEY)
+				doLazyEval = pos.key == lastEvaluatedPosPrev;
+		}
 		// Lazy evaluation.
-		if (baseScore <= alpha - LAZY_EVAL_MAR || baseScore >= beta + LAZY_EVAL_MAR)
-			return baseScore;
+		if (doLazyEval) {
+			score = (short)(isWhitesTurn ? lastPSTscore : -lastPSTscore);
+			score += baseScore;
+			if (score <= alpha - LAZY_EVAL_MAR || score >= beta + LAZY_EVAL_MAR)
+				return baseScore;
+		}
 		openingScore = endgameScore = 0;
-		for (int i = 0; i < pos.offsetBoard.length; i++) {
-			piece = pos.offsetBoard[i];
+		offsetBoard = pos.getOffsetBoard();
+		for (int i = 0; i < offsetBoard.length; i++) {
+			piece = offsetBoard[i];
 			if (piece == Piece.NULL.ind)
 				continue;
 			openingScore += PST_OPENING[piece - 1][i];
 			endgameScore += PST_ENDGAME[piece - 1][i];
 		}
-		if (!isWhitesTurn) {
-			openingScore *= -1;
-			endgameScore *= -1;
-		}
-		openingScore += baseScore;
-		endgameScore += baseScore;
-		score = (short)taperedEvalScore(openingScore, endgameScore, phase);
+		pstScore = (short)taperedEvalScore(openingScore, endgameScore, phase);
+		lastEvaluatedPos = pos.key;
+		lastEvaluatedPosPrev = pos.halfMoveIndex > 0 ? pos.getPrevHashKey() : UNDEFINED_POSITION_KEY;
+		lastPSTscore = pstScore;
+		if (!isWhitesTurn)
+			pstScore *= -1;
+		score = (short)(baseScore + pstScore);
 		eT.insert(new ETEntry(pos.key, score, eGen));
 		return score;
 	}

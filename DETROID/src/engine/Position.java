@@ -50,7 +50,7 @@ public class Position implements Hashable, Copiable<Position> {
 	long allEmpty;
 	
 	/**A complimentary board data-structure to the bit boards to efficiently detect pieces on specific squares. */
-	byte[] offsetBoard;
+	private byte[] offsetBoard;
 	
 	/**Denotes whether it is white's turn to make a move, or not, i.e. it is black's. */
 	boolean isWhitesTurn = true;
@@ -384,11 +384,20 @@ public class Position implements Hashable, Copiable<Position> {
 		return key;
 	}
 	/**
+	 * Returns the hash key of the position from before the last move was made.
+	 * 
+	 * @return
+	 * @throws ArrayIndexOutOfBoundsException
+	 */
+	public long getPrevHashKey() throws ArrayIndexOutOfBoundsException {
+		return keyHistory[halfMoveIndex - 1];
+	}
+	/**
 	 * Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.
 	 * 
 	 * @return
 	 */
-	public Move getLastMove() {
+	Move getLastMove() {
 		return moveList.getHead();
 	}
 	/**
@@ -396,7 +405,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	public UnmakeRegister getUnmakeRegister() {
+	UnmakeRegister getUnmakeRegister() {
 		return unmakeRegisterHistory.getHead();
 	}
 	private void setBitboards(int moved, int captured, long fromBit, long toBit) {

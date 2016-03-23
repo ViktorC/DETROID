@@ -8,15 +8,9 @@ public class Playground {
 	
 	public static void main(String[] args) {
 		Position p = new Position(tP1);
+		Engine e = new Engine(System.in, System.out, null, 0);
 		long start = System.currentTimeMillis();
-		Search s = new Search(p);
-		s.run();
 		long end = System.currentTimeMillis();
-		Move.printMovesToConsole(s.getPv());
-		System.out.println(s.getTranspositionTableStats());
-		System.out.println(s.getEvaluationTableStats());
-		System.out.println(s.getPawnTableStats());
-		System.out.println("Nodes: " + s.getNodeCount());
 		System.out.println(end - start);
 	}
 }

@@ -8,7 +8,7 @@ package engine;
  */
 public enum GamePhase {
 	
-	OPENING 	(0, 22),
+	OPENING 	(0, 22),	// Late opening.
 	MIDDLE_GAME (23, 170),
 	END_GAME	(171, 256);	// Very early end game.
 	
