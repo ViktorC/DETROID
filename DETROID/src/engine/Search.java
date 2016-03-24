@@ -94,7 +94,7 @@ public class Search implements Runnable {
 		public long getTime() {
 			return time;
 		}
-		private void set(Queue<Move> PVline, short score, long nodes, long time) {
+		private void set(Queue<Move> PVline, short nominalDepth, short score, long nodes, long time) {
 			this.PVline = PVline;
 			this.score = score;
 			this.nodes = nodes;
@@ -116,7 +116,7 @@ public class Search implements Runnable {
 	private final static int Q_DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
 	
 	private final static int FULL_PLY = 4;	// For fractional ply extensions.
-	private int ply;
+	private short ply;
 	
 	private Position pos;
 	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
@@ -157,16 +157,17 @@ public class Search implements Runnable {
 	 * @param eT Evaluation hash table.
 	 * @param pT Pawn hash table.
 	 */
-	public Search(Position pos, long timeLeft, long maxNodes, Move[] moves, GamePhase gamePhase,
-			RelativeHistoryTable hT, byte hashEntryGen, HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT) {
+	public Search(Position pos, long timeLeft, long maxNodes, Move[] moves, RelativeHistoryTable hT,
+			byte hashEntryGen, HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT) {
 		this.pos = pos.deepCopy();
+		int phaseScore = Evaluator.phaseScore(pos);
 		if (maxNodes <= 0)
 			pondering = true;
 		else {
 			pondering = false;
-			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(pos, gamePhase, timeLeft);
+			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(pos, phaseScore, timeLeft);
 		}
-		nullMoveObservHolds = gamePhase != GamePhase.END_GAME;
+		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
 		quick = new QuickSort();
 		kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);
 		this.hT = hT;
@@ -214,7 +215,7 @@ public class Search implements Runnable {
 		deadLine = System.currentTimeMillis() + searchTime;
 		iterativeDeepening();
 	}
-	private long allocateSearchTime(Position pos, GamePhase gamePhase, long timeLeft) {
+	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft) {
 		// !FIXME
 		return 30*1000;
 	}
@@ -228,10 +229,10 @@ public class Search implements Runnable {
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
-		for (int i = 1; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
+		for (short i = 1; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
 			ply = i;
 			score = pVsearch(pos, ply*FULL_PLY, alpha, beta, true, 0);
-			results.set(extractPv(), (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
+			results.set(extractPv(), ply, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 			if (doBreak || (!pondering && (Thread.currentThread().isInterrupted() || System.currentTimeMillis() >= deadLine)))
 				break;
 			// Aspiration windows with gradual widening.
@@ -273,7 +274,8 @@ public class Search implements Runnable {
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
 		final boolean inCheck = pos.inCheck();
-		int bestScore, score, searchedMoves, matMoveBreakInd, extPly, kMove, bestMoveInt, evalScore, razRed, extension;
+		int bestScore, score, searchedMoves, matMoveBreakInd, kMove, bestMoveInt, evalScore, razRed, extension;
+		short extPly;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
 		Queue<Move> matMoves, nonMatMoves;
@@ -361,7 +363,7 @@ public class Search implements Runnable {
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
 			if (!isThereHashMove && depth/FULL_PLY >= 5 && beta > origAlpha + 1) {
 				extPly = ply;
-				for (int i = 1; i < depth/FULL_PLY*3/5; i++) {
+				for (short i = 1; i < depth/FULL_PLY*3/5; i++) {
 					ply = i;
 					pVsearch(pos, ply*FULL_PLY, alpha, beta, true, qDepth);
 				}

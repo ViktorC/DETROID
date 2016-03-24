@@ -187,13 +187,13 @@ public final class Evaluator {
 	 * @param pos
 	 * @return
 	 */
-	public static GamePhase evaluateGamePhase(Position pos) {
+	public static int phaseScore(Position pos) {
 		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
 		numOfQueens = BitOperations.getCardinality(pos.whiteQueens | pos.blackQueens)*Material.QUEEN.phaseWeight;
 		numOfRooks = BitOperations.getCardinality(pos.whiteRooks | pos.blackRooks)*Material.ROOK.phaseWeight;
 		numOfBishops = BitOperations.getCardinality(pos.whiteBishops | pos.blackBishops)*Material.BISHOP.phaseWeight;
 		numOfKnights = BitOperations.getCardinality(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
-		return GamePhase.getByPhaseScore(phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights));
+		return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
 	}
 	/**
 	 * A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering

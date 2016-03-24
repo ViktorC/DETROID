@@ -36,8 +36,8 @@ public class Engine implements UCI {
 		this.in = new Scanner(in);
 		this.out = new PrintStream(out);
 		this.searchResultObserver = searchResultObserver;
-		maxHashMemory = maxHashSizeMb <= 64 || maxHashSizeMb >= Runtime.getRuntime().maxMemory()/(1 << 20) ?
-				(int)(Runtime.getRuntime().maxMemory()/(1 << 20))/2 : maxHashSizeMb;
+		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.75*Runtime.getRuntime().maxMemory()/(1 << 20) ?
+				(int)(0.75*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
 		hT = new RelativeHistoryTable();
 		tT = new HashTable<>(maxHashMemory/2, TTEntry.SIZE);
 		eT = new HashTable<>(maxHashMemory*15/32, ETEntry.SIZE);
@@ -45,28 +45,19 @@ public class Engine implements UCI {
 		book = Book.getInstance();
 		numOfCores = Runtime.getRuntime().availableProcessors();
 	}
+	private Move tryBook() {
+		return book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+	}
 	private void ponder(Move move) {
 		Position copy = game.getPosition().deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
-		GamePhase phase = Evaluator.evaluateGamePhase(copy);
-		search = new Search(copy, 0, 0, null, phase, hT, gen, tT, eT, pT);
+		search = new Search(copy, 0, 0, null, hT, gen, tT, eT, pT);
 		search.run();
 	}
-	private Queue<Move> search(long timeLeft, long maxNodes, Move[] moves) {
-		long start, end;
-		Move bookMove;
+	private Move search(long timeLeft, long maxNodes, Move[] moves) {
 		Results res;
-		start = System.currentTimeMillis();
-		GamePhase phase = Evaluator.evaluateGamePhase(game.getPosition());
-		if (phase == GamePhase.OPENING) {
-			bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
-			if (bookMove != null)
-				return new Queue<>(bookMove);
-		}
-		end = System.currentTimeMillis();
-		gen++;
-		search = new Search(game.getPosition(), timeLeft - (end - start), maxNodes, moves, phase, hT, gen, tT, eT, pT);
+		search = new Search(game.getPosition(), timeLeft, maxNodes, moves, hT, gen, tT, eT, pT);
 		res = search.getResults();
 		if (searchResultObserver != null)
 			res.addObserver(searchResultObserver);
@@ -83,7 +74,7 @@ public class Engine implements UCI {
 			pT.remove(e -> e.generation < gen - 1);
 		}
 		hT.decrementCurrentValues();
-		return res.getPVline();
+		return res.getPVline().getHead();
 	}
 	public void listen() {
 		String command;
