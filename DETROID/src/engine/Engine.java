@@ -67,7 +67,9 @@ public class Engine implements UCI {
 		end = System.currentTimeMillis();
 		gen++;
 		search = new Search(game.getPosition(), timeLeft - (end - start), maxNodes, moves, phase, hT, gen, tT, eT, pT);
-		(res = search.getResults()).addObserver(searchResultObserver);
+		res = search.getResults();
+		if (searchResultObserver != null)
+			res.addObserver(searchResultObserver);
 		search.run();
 		if (gen == 127) {
 			tT.clear();

@@ -9,7 +9,7 @@ package util;
  */
 public final class QuickSort {
 	
-	private QuickSort() {
+	public QuickSort() {
 		
 	}
 	/**
@@ -19,7 +19,7 @@ public final class QuickSort {
 	 * @param container The list to be sorted.
 	 * @return A sorted array.
 	 */
-	public static <T extends Comparable<T>> T[] sort(List<T> container) {
+	public <T extends Comparable<T>> T[] sort(List<T> container) {
 		int left, right;
 		T[] array;
 		if (container.length() != 0) {
@@ -37,7 +37,7 @@ public final class QuickSort {
 	 * @param array The array to be sorted.
 	 * @return The sorted array.
 	 */
-	public static <T extends Comparable<T>> T[] sort(T[] array) {
+	public <T extends Comparable<T>> T[] sort(T[] array) {
 		int left, right;
 		if (array.length != 0) {
 			left = 0;
@@ -53,7 +53,7 @@ public final class QuickSort {
 	 * @param left
 	 * @param right
 	 */
-	private static <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
+	private <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
 		int index, partLeft = left, partRight = right;
 		T temp, pivot = array[(left + right)/2];
 		while (partLeft <= partRight) {

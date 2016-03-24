@@ -46,6 +46,7 @@ public class Search implements Runnable {
 	public class Results extends Observable {
 		
 		private Queue<Move> PVline;	// Principal variation.
+		private short nominalDepth;	// The depth to which the PV has been searched.
 		private short score;		// The result score of the search.
 		private long nodes;			// The number of nodes searched.
 		private long time;			// Time spent on the search.
@@ -60,6 +61,14 @@ public class Search implements Runnable {
 		 */
 		public Queue<Move> getPVline() {
 			return PVline;
+		}
+		/**
+		 * Returns the greatest nominal depth of the search. It does not necessarily mean that the whole ply has been searched.
+		 * 
+		 * @return
+		 */
+		public short getNominalDepth() {
+			return nominalDepth;
 		}
 		/**
 		 * Returns the result score of the search for the side to move.
@@ -119,6 +128,7 @@ public class Search implements Runnable {
 	private HashTable<PTEntry> pT;		// Pawn hash table.
 	private byte hashEntryGen;	// Entry generation.
 	
+	private QuickSort quick;
 	private Evaluator eval;
 	
 	private boolean pondering;
@@ -157,6 +167,7 @@ public class Search implements Runnable {
 			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(pos, gamePhase, timeLeft);
 		}
 		nullMoveObservHolds = gamePhase != GamePhase.END_GAME;
+		quick = new QuickSort();
 		kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);
 		this.hT = hT;
 		this.hashEntryGen = hashEntryGen;
@@ -777,7 +788,7 @@ public class Search implements Runnable {
 			move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
 			arr[i++] = move;
 		}
-		return QuickSort.sort(arr);
+		return quick.sort(arr);
 	}
 	/**
 	 * Orders captures and promotions according to the MVV-LVA principle; in case of a promotion, add the standard value of a queen to the score.
@@ -800,7 +811,7 @@ public class Search implements Runnable {
 				move.value = (short)(Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score);
 			arr[i++] = move;
 		}
-		return QuickSort.sort(arr);
+		return quick.sort(arr);
 	}
 	/**
 	 * Orders non-material moves according to the relative history heuristic.
@@ -817,6 +828,6 @@ public class Search implements Runnable {
 			move.value = hT.score(move);
 			arr[i++] = move;
 		}
-		return QuickSort.sort(arr);
+		return quick.sort(arr);
 	}
 }
