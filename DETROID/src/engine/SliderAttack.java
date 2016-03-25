@@ -119,8 +119,8 @@ public final class SliderAttack {
 	 * @return
 	 */
 	public static long[] occupancyVariations(long occupancyMask) {
-		byte[] occMaskBitIndArr = BitOperations.serializeAsArray(occupancyMask);
-		byte numOfBitsInMask = (byte)occMaskBitIndArr.length;
+		byte numOfBitsInMask = BitOperations.getHammingWeight(occupancyMask);
+		byte[] occMaskBitIndArr = BitOperations.serialize(occupancyMask, numOfBitsInMask);
 		ByteList occVarBitIndList;
 		int numOfVar = 1 << numOfBitsInMask;
 		long[] occVarArr = new long[numOfVar];

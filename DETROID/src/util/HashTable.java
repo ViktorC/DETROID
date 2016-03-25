@@ -66,8 +66,8 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	
 	/**
 	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
-	 * type's instance. The size has to be at least 512 (2^9) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the entry
-	 * size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*512 bytes < 1MB).
+	 * type's instance. The size has to be at least 1024 (2^10) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the
+	 * entry size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*1024 bytes < 1MB).
 	 * 
 	 * @param sizeMB Maximum hash table size in megabytes. It can not not be guaranteed to be completely accurately reflected, but will be very
 	 * closely approximated. The minimum maximum size is 1MB. If sizeMB is 0 or less, the hash table defaults to 64MB.
@@ -76,8 +76,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	@SuppressWarnings({"unchecked"})
 	public HashTable(int sizeMB, final int entrySizeB) {
 		long tL1, tL2;
-		long t1Cap, t2Cap;
-		long adjCap;
 		MillerRabin prim;
 		ReadWriteLock lock;
 		entrySize = entrySizeB;
@@ -86,7 +84,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		capacity = ((long)sizeMB*(1 << 20))/entrySize;
 		if (capacity < MIN_CAPACITY)
 			throw new IllegalArgumentException("The size has to be great enough for the hash table " +
-					"to be able to accommodate at least 512 (2^9) entries of the specified entry size.");
+					"to be able to accommodate at least 1024 (2^10) entries of the specified entry size.");
 		if (capacity > MAX_CAPACITY)
 			throw new IllegalArgumentException("The size has to be small enough for the hash table not " +
 					"to be able to accommodate more than 1073741824 (2^30) entries of the specified entry size.");
@@ -94,17 +92,14 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		readLock = lock.readLock();
 		writeLock = lock.writeLock();
 		// Ensuring all tables have prime lengths.
-		adjCap = capacity;
 		tL1 = tL2 = 0;
 		prim = new MillerRabin();
-		for (int i = 0; i < 2; i++) {
-			t2Cap = (long)(T2_SHARE*adjCap);
-			tL2 = prim.greatestLEPrime(t2Cap);
-			adjCap += t2Cap - tL2;
-			t1Cap = (long)(T1_SHARE*adjCap);
-			if ((tL1 = prim.greatestLEPrime(t1Cap)) == tL2)
-				tL1 = prim.leastGEPrime(t1Cap);
-			adjCap += t1Cap - tL1;
+		tL2 = prim.greatestLEPrime((long)(T2_SHARE*capacity));
+		if ((tL1 = prim.greatestLEPrime((long)(T1_SHARE*capacity))) == tL2) {
+			if (tL2 >= 3)
+				tL2 = prim.greatestLEPrime(tL2 - 1);
+			else
+				tL1 = prim.leastGEPrime(tL1 + 1);
 		}
 		t1 = (T[])new Entry[(int)tL1];
 		t2 = (T[])new Entry[(int)tL2];

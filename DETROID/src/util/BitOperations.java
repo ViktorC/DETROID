@@ -167,10 +167,11 @@ public final class BitOperations {
 	 * Returns an array of the indexes of all set bits in the input parameter.
 	 * 
 	 * @param bitmap
+	 * @param numberOfSetBits The Hamming weight of the number. Assumed to be correct.
 	 * @return
 	 */
-	public final static byte[] serializeAsArray(long bitmap) {
-		byte[] series = new byte[getHammingWeight(bitmap)];
+	public final static byte[] serialize(long bitmap, byte numberOfSetBits) {
+		byte[] series = new byte[numberOfSetBits];
 		int ind = 0;
 		while (bitmap != 0) {
 			series[ind] = indexOfLSBit(bitmap);
