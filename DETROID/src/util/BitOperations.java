@@ -118,7 +118,7 @@ public final class BitOperations {
 	 * @param bitmap
 	 * @return
 	 */
-	public final static byte getCardinality(long bitmap) {
+	public final static byte getHammingWeight(long bitmap) {
 		bitmap -= ((bitmap >>> 1) & SWAR_POPCOUNT_CONST1);
 		bitmap  = (bitmap & SWAR_POPCOUNT_CONST2) + ((bitmap >>> 2) & SWAR_POPCOUNT_CONST2);
 		bitmap  = (bitmap + (bitmap >>> 4)) & SWAR_POPCOUNT_CONST3;
@@ -167,11 +167,10 @@ public final class BitOperations {
 	 * Returns an array of the indexes of all set bits in the input parameter.
 	 * 
 	 * @param bitmap
-	 * @param numberOfSetBits is not checked
 	 * @return
 	 */
-	public final static byte[] serialize(long bitmap, byte numberOfSetBits) {
-		byte[] series = new byte[numberOfSetBits];
+	public final static byte[] serializeAsArray(long bitmap) {
+		byte[] series = new byte[getHammingWeight(bitmap)];
 		int ind = 0;
 		while (bitmap != 0) {
 			series[ind] = indexOfLSBit(bitmap);

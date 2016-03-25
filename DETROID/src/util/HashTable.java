@@ -41,9 +41,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		
 	}
 	
-	// A long with which when another long is AND-ed, the result will be that other long's absolute value.
-	private final static long UNSIGNED_LONG = (1L << 63) - 1;
-	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
 	private final static double T1_SHARE = 0.6F;
@@ -69,8 +66,8 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	
 	/**
 	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
-	 * type's instance. The size has to be at least 128 (2^7) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the entry
-	 * size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*128 bytes < 1MB).
+	 * type's instance. The size has to be at least 512 (2^9) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the entry
+	 * size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*512 bytes < 1MB).
 	 * 
 	 * @param sizeMB Maximum hash table size in megabytes. It can not not be guaranteed to be completely accurately reflected, but will be very
 	 * closely approximated. The minimum maximum size is 1MB. If sizeMB is 0 or less, the hash table defaults to 64MB.
@@ -89,7 +86,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		capacity = ((long)sizeMB*(1 << 20))/entrySize;
 		if (capacity < MIN_CAPACITY)
 			throw new IllegalArgumentException("The size has to be great enough for the hash table " +
-					"to be able to accommodate at least 128 (2^7) entries of the specified entry size.");
+					"to be able to accommodate at least 512 (2^9) entries of the specified entry size.");
 		if (capacity > MAX_CAPACITY)
 			throw new IllegalArgumentException("The size has to be small enough for the hash table not " +
 					"to be able to accommodate more than 1073741824 (2^30) entries of the specified entry size.");
@@ -150,7 +147,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 		T slot1, slot2, temp;
 		long key = e.hashKey();
 		boolean slot1IsEmpty, slot2IsEmpty, slot1IsInT1;
-		long altAbsKey, absKey = key & UNSIGNED_LONG;
+		long altAbsKey, absKey = key & Long.MAX_VALUE;
 		writeLock.lock();
 		try {
 			slot1IsEmpty = slot2IsEmpty = true;
@@ -199,7 +196,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			else
 				slot1IsInT1 = true;
 			if (e.betterThan(slot1)) {
-				altAbsKey = slot1.hashKey() & UNSIGNED_LONG;
+				altAbsKey = slot1.hashKey() & Long.MAX_VALUE;
 				if (slot1IsInT1) {
 					t1[ind1] = e;
 					// If the entry that is about to get pushed out's alternative slot is empty insert the entry there.
@@ -218,7 +215,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 				return true;
 			}
 			if (e.betterThan(slot2)) {
-				altAbsKey = slot2.hashKey() & UNSIGNED_LONG;
+				altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
 				if (slot1IsInT1) {
 					t2[ind2] = e;
 					if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
@@ -250,7 +247,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 */
 	public T lookUp(long key) {
 		T e;
-		long absKey = key & UNSIGNED_LONG;
+		long absKey = key & Long.MAX_VALUE;
 		readLock.lock();
 		try {
 			if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
@@ -273,7 +270,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	public boolean remove(long key) {
 		int ind;
 		T e;
-		long absKey = key & UNSIGNED_LONG;
+		long absKey = key & Long.MAX_VALUE;
 		writeLock.lock();
 		try {
 			if ((e = t1[(ind = (int)(absKey%t1.length))]) != null && e.hashKey() == key) {

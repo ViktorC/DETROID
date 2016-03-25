@@ -4103,7 +4103,7 @@ public class Position implements Hashable, Copiable<Position> {
 			case W_PAWN: {
 				if (move.capturedPiece != Piece.NULL.ind) {
 					possOriginSqrs = mT.getBlackPawnCaptureSet(whitePawns & movablePieces);
-					if (BitOperations.getCardinality(possOriginSqrs) == 1)
+					if (BitOperations.getHammingWeight(possOriginSqrs) == 1)
 						origin = "";
 					else
 						origin = Character.toString((char)(move.from%8 + 'a'));
@@ -4142,7 +4142,7 @@ public class Position implements Hashable, Copiable<Position> {
 			case B_PAWN: {
 				if (move.capturedPiece != Piece.NULL.ind) {
 					possOriginSqrs = mT.getWhitePawnCaptureSet(blackPawns & movablePieces);
-					if (BitOperations.getCardinality(possOriginSqrs) == 1)
+					if (BitOperations.getHammingWeight(possOriginSqrs) == 1)
 						origin = "";
 					else
 						origin = Character.toString((char)(move.from%8 + 'a'));
@@ -4157,11 +4157,11 @@ public class Position implements Hashable, Copiable<Position> {
 				return null;
 		}
 		if (origin == null) {
-			if (BitOperations.getCardinality(possOriginSqrs) == 1)
+			if (BitOperations.getHammingWeight(possOriginSqrs) == 1)
 				origin = "";
-			else if (BitOperations.getCardinality(File.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
+			else if (BitOperations.getHammingWeight(File.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
 				origin = Character.toString((char)(move.from%8 + 'a'));
-			else if (BitOperations.getCardinality(Rank.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
+			else if (BitOperations.getHammingWeight(Rank.getBySquareIndex(move.from).bitmap & possOriginSqrs) == 1)
 				origin = Integer.toString(move.from/8 + 1);
 			else
 				origin = Character.toString((char)(move.from%8 + 'a')) + Integer.toString(move.from/8 + 1);

@@ -132,7 +132,7 @@ public final class Evaluator {
 	private final static byte[] PST_B_KING_ENDGAME = new byte[64];
 	
 	static {
-		// 180° rotation of the piece-square tables for white with negated values for black.
+		// 180ï¿½ rotation of the piece-square tables for white with negated values for black.
 		for (int i = 0; i < 64; i++) {
 			PST_B_PAWN_OPENING[i] = (byte)-PST_W_PAWN_OPENING[63 - i];
 			PST_B_PAWN_ENDGAME[i] = (byte)-PST_W_PAWN_ENDGAME[63 - i];
@@ -189,10 +189,10 @@ public final class Evaluator {
 	 */
 	public static int phaseScore(Position pos) {
 		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
-		numOfQueens = BitOperations.getCardinality(pos.whiteQueens | pos.blackQueens)*Material.QUEEN.phaseWeight;
-		numOfRooks = BitOperations.getCardinality(pos.whiteRooks | pos.blackRooks)*Material.ROOK.phaseWeight;
-		numOfBishops = BitOperations.getCardinality(pos.whiteBishops | pos.blackBishops)*Material.BISHOP.phaseWeight;
-		numOfKnights = BitOperations.getCardinality(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
+		numOfQueens = BitOperations.getHammingWeight(pos.whiteQueens | pos.blackQueens)*Material.QUEEN.phaseWeight;
+		numOfRooks = BitOperations.getHammingWeight(pos.whiteRooks | pos.blackRooks)*Material.ROOK.phaseWeight;
+		numOfBishops = BitOperations.getHammingWeight(pos.whiteBishops | pos.blackBishops)*Material.BISHOP.phaseWeight;
+		numOfKnights = BitOperations.getHammingWeight(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
 		return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
 	}
 	/**
@@ -329,20 +329,20 @@ public final class Evaluator {
 			return eE.score;
 		}
 		isWhitesTurn = pos.isWhitesTurn;
-		numOfWhiteQueens = BitOperations.getCardinality(pos.whiteQueens);
-		numOfWhiteRooks = BitOperations.getCardinality(pos.whiteRooks);
-		numOfWhiteBishops = BitOperations.getCardinality(pos.whiteBishops);
-		numOfWhiteKnights = BitOperations.getCardinality(pos.whiteKnights);
-		numOfBlackQueens = BitOperations.getCardinality(pos.blackQueens);
-		numOfBlackRooks = BitOperations.getCardinality(pos.blackRooks);
-		numOfBlackBishops = BitOperations.getCardinality(pos.blackBishops);
-		numOfBlackKnights = BitOperations.getCardinality(pos.blackKnights);
+		numOfWhiteQueens = BitOperations.getHammingWeight(pos.whiteQueens);
+		numOfWhiteRooks = BitOperations.getHammingWeight(pos.whiteRooks);
+		numOfWhiteBishops = BitOperations.getHammingWeight(pos.whiteBishops);
+		numOfWhiteKnights = BitOperations.getHammingWeight(pos.whiteKnights);
+		numOfBlackQueens = BitOperations.getHammingWeight(pos.blackQueens);
+		numOfBlackRooks = BitOperations.getHammingWeight(pos.blackRooks);
+		numOfBlackBishops = BitOperations.getHammingWeight(pos.blackBishops);
+		numOfBlackKnights = BitOperations.getHammingWeight(pos.blackKnights);
 		phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
 				numOfWhiteKnights + numOfBlackKnights);
 		// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
 		if (phase >= 234 && numOfWhiteQueens == 0 && numOfBlackQueens == 0 &&
 		numOfWhiteRooks == 0 && numOfBlackRooks == 0 && pos.whitePawns == 0 && pos.blackPawns == 0) {
-			numOfAllPieces = BitOperations.getCardinality(pos.allOccupied);
+			numOfAllPieces = BitOperations.getHammingWeight(pos.allOccupied);
 			if (numOfAllPieces == 2 ||
 			(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
 									numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
@@ -370,8 +370,8 @@ public final class Evaluator {
 		// Evaluate pawn structure.
 		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
 		else {
-			pawnScore = (short)((BitOperations.getCardinality(pos.whitePawns) -
-					BitOperations.getCardinality(pos.blackPawns))*Material.PAWN.score);
+			pawnScore = (short)((BitOperations.getHammingWeight(pos.whitePawns) -
+					BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score);
 			pT.insert(new PTEntry(pos.pawnKey, pawnScore, eGen));
 		}
 		baseScore = 0;
