@@ -46,136 +46,136 @@ public final class BitOperations {
 	 * Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only one set bit and it is not
 	 * checked!
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static byte indexOfBit(long bitmap) {
-		return DE_BRUIJN_TABLE[(int)((bitmap*DE_BRUIJN_CONST) >>> 58)];
+	public final static byte indexOfBit(long n) {
+		return DE_BRUIJN_TABLE[(int)((n*DE_BRUIJN_CONST) >>> 58)];
 	}
 	/**
 	 * Returns the most significant (leftmost) bit in a long.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static long getMSBit(long bitmap) {
-		bitmap |= (bitmap >> 1);
-		bitmap |= (bitmap >> 2);
-		bitmap |= (bitmap >> 4);
-		bitmap |= (bitmap >> 8);
-		bitmap |= (bitmap >> 16);
-		bitmap |= (bitmap >> 32);
-		return bitmap - (bitmap >>> 1);
+	public final static long getMSBit(long n) {
+		n |= (n >> 1);
+		n |= (n >> 2);
+		n |= (n >> 4);
+		n |= (n >> 8);
+		n |= (n >> 16);
+		n |= (n >> 32);
+		return n - (n >>> 1);
 	}
 	/**
 	 * Returns a long with the most significant (leftmost) bit in the input parameter reset.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static long resetMSBit(long bitmap) {
-		return bitmap^getMSBit(bitmap);
+	public final static long resetMSBit(long n) {
+		return n^getMSBit(n);
 	}
 	/**
 	 * Returns the index of the most significant (leftmost) bit in a long.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static byte indexOfMSBit(long bitmap) {
-		return DE_BRUIJN_TABLE[(int)((getMSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
+	public final static byte indexOfMSBit(long n) {
+		return DE_BRUIJN_TABLE[(int)((getMSBit(n)*DE_BRUIJN_CONST) >>> 58)];
 	}
 	/**
 	 * Returns the least significant (rightmost) bit in a long.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static long getLSBit(long bitmap) {
-		return bitmap & -bitmap;
+	public final static long getLSBit(long n) {
+		return n & -n;
 	}
 	/**
 	 * Returns a long with the least significant (rightmost) bit in the input parameter reset.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static long resetLSBit(long bitmap) {
-		return bitmap & (bitmap - 1);
+	public final static long resetLSBit(long n) {
+		return n & (n - 1);
 	}
 	/**
 	 * Returns the index of the least significant (rightmost) bit in a long.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static byte indexOfLSBit(long bitmap) {
-		return DE_BRUIJN_TABLE[(int)((getLSBit(bitmap)*DE_BRUIJN_CONST) >>> 58)];
+	public final static byte indexOfLSBit(long n) {
+		return DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)];
 	}
 	/**
 	 * Returns the number of set bits in a long.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static byte getHammingWeight(long bitmap) {
-		bitmap -= ((bitmap >>> 1) & SWAR_POPCOUNT_CONST1);
-		bitmap  = (bitmap & SWAR_POPCOUNT_CONST2) + ((bitmap >>> 2) & SWAR_POPCOUNT_CONST2);
-		bitmap  = (bitmap + (bitmap >>> 4)) & SWAR_POPCOUNT_CONST3;
-	    return (byte)((bitmap*SWAR_POPCOUNT_CONSTF) >>> 56);
+	public final static byte getHammingWeight(long n) {
+		n -= ((n >>> 1) & SWAR_POPCOUNT_CONST1);
+		n  = (n & SWAR_POPCOUNT_CONST2) + ((n >>> 2) & SWAR_POPCOUNT_CONST2);
+		n  = (n + (n >>> 4)) & SWAR_POPCOUNT_CONST3;
+	    return (byte)((n*SWAR_POPCOUNT_CONSTF) >>> 56);
 	}
 	/**
 	 * Returns a long with the bits of the input parameter reversed.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static long reverse(long bitmap) {
-		bitmap = (((bitmap & BIT_REVERSAL_1_CONST1)  >>> 1)  | ((bitmap & BIT_REVERSAL_1_CONST2)  << 1));
-		bitmap = (((bitmap & BIT_REVERSAL_2_CONST1)  >>> 2)  | ((bitmap & BIT_REVERSAL_2_CONST2)  << 2));
-		bitmap = (((bitmap & BIT_REVERSAL_4_CONST1)  >>> 4)  | ((bitmap & BIT_REVERSAL_4_CONST2)  << 4));
-		bitmap = (((bitmap & BIT_REVERSAL_8_CONST1)  >>> 8)  | ((bitmap & BIT_REVERSAL_8_CONST2)  << 8));
-		bitmap = (((bitmap & BIT_REVERSAL_16_CONST1) >>> 16) | ((bitmap & BIT_REVERSAL_16_CONST2) << 16));
-		return   (( bitmap >>> 32) 							 | ( bitmap << 32));
+	public final static long reverse(long n) {
+		n = (((n & BIT_REVERSAL_1_CONST1)  >>> 1)  | ((n & BIT_REVERSAL_1_CONST2)  << 1));
+		n = (((n & BIT_REVERSAL_2_CONST1)  >>> 2)  | ((n & BIT_REVERSAL_2_CONST2)  << 2));
+		n = (((n & BIT_REVERSAL_4_CONST1)  >>> 4)  | ((n & BIT_REVERSAL_4_CONST2)  << 4));
+		n = (((n & BIT_REVERSAL_8_CONST1)  >>> 8)  | ((n & BIT_REVERSAL_8_CONST2)  << 8));
+		n = (((n & BIT_REVERSAL_16_CONST1) >>> 16) | ((n & BIT_REVERSAL_16_CONST2) << 16));
+		return   (( n >>> 32) 							 | ( n << 32));
 	}
 	/**
 	 * Returns a long with the bytes of the input parameter reversed/flipped.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static long reverseBytes(long bitmap) {
-		bitmap = (bitmap & BIT_REVERSAL_32_CONST1) >>> 32 | (bitmap & BIT_REVERSAL_32_CONST2) << 32;
-		bitmap = (bitmap & BIT_REVERSAL_16_CONST1) >>> 16 | (bitmap & BIT_REVERSAL_16_CONST2) << 16;
-		return	 (bitmap & BIT_REVERSAL_8_CONST1)  >>> 8  | (bitmap & BIT_REVERSAL_8_CONST2)  << 8;
+	public final static long reverseBytes(long n) {
+		n = (n & BIT_REVERSAL_32_CONST1) >>> 32 | (n & BIT_REVERSAL_32_CONST2) << 32;
+		n = (n & BIT_REVERSAL_16_CONST1) >>> 16 | (n & BIT_REVERSAL_16_CONST2) << 16;
+		return	 (n & BIT_REVERSAL_8_CONST1)  >>> 8  | (n & BIT_REVERSAL_8_CONST2)  << 8;
 	}
 	/**
 	 * Returns a queue of the indexes of all set bits in the input parameter.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static ByteStack serialize(long bitmap) {
+	public final static ByteStack serialize(long n) {
 		ByteStack out = new ByteStack();
-		while (bitmap != 0) {
-			out.add(indexOfLSBit(bitmap));
-			bitmap = resetLSBit(bitmap);
+		while (n != 0) {
+			out.add(DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)]);
+			n = n & (n - 1);
 		}
 		return out;
 	}
 	/**
 	 * Returns an array of the indexes of all set bits in the input parameter.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @param numberOfSetBits The Hamming weight of the number. Assumed to be correct.
 	 * @return
 	 */
-	public final static byte[] serialize(long bitmap, byte numberOfSetBits) {
+	public final static byte[] serialize(long n, byte numberOfSetBits) {
 		byte[] series = new byte[numberOfSetBits];
 		int ind = 0;
-		while (bitmap != 0) {
-			series[ind] = indexOfLSBit(bitmap);
-			bitmap = resetLSBit(bitmap);
+		while (n != 0) {
+			series[ind] = DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)];
+			n = n & (n - 1);
 			ind++;
 		}
 		return series;
@@ -183,30 +183,30 @@ public final class BitOperations {
 	/**
 	 * Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static String toBinaryString(long bitmap) {
-		String binString = Long.toBinaryString(bitmap);
+	public final static String toBinaryString(long n) {
+		String binString = Long.toBinaryString(n);
 		return ("0000000000000000000000000000000000000000000000000000000000000000" + binString).substring(binString.length());
 	}
 	/**
 	 * Returns the binary literal of the input long as a String.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static String toBinaryLiteral(long bitmap) {
-		return "0b"+ toBinaryString(bitmap) + "L";
+	public final static String toBinaryLiteral(long n) {
+		return "0b"+ toBinaryString(n) + "L";
 	}
 	/**
 	 * Returns the hexadecimal literal of the input long as a String.
 	 * 
-	 * @param bitmap
+	 * @param n
 	 * @return
 	 */
-	public final static String toHexLiteral(long bitmap) {
-		String hexString = Long.toHexString(bitmap);
+	public final static String toHexLiteral(long n) {
+		String hexString = Long.toHexString(n);
 		return "0x" + ("0000000000000000" + hexString).substring(hexString.length()).toUpperCase() + "L";
 	}
 }
