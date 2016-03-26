@@ -273,7 +273,7 @@ public class Search implements Runnable {
 		final int distFromRoot = ply - depth/FULL_PLY;
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
-		final boolean inCheck = pos.inCheck();
+		final boolean inCheck = pos.isInCheck();
 		int bestScore, score, searchedMoves, matMoveBreakInd, kMove, bestMoveInt, evalScore, razRed, extension;
 		short extPly;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
@@ -693,7 +693,7 @@ public class Search implements Runnable {
 	public int quiescence(Position pos, int depth, int alpha, int beta) {
 		final int distFromRoot = ply - depth;
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
-		final boolean inCheck = pos.inCheck();
+		final boolean inCheck = pos.isInCheck();
 		List<Move> materialMoves, allMoves;
 		Move[] moves;
 		Move move;

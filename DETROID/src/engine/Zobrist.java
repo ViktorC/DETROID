@@ -24,12 +24,14 @@ import engine.Move.MoveType;
  */
 public final class Zobrist {
 	
-	private static long turn;
-	private static long[][] board = new long[Piece.values().length][64];
-	private static long[] whiteCastlingRights = new long[CastlingRights.values().length];
-	private static long[] blackCastlingRights = new long[CastlingRights.values().length];
-	private static long[] enPassantRights = new long[EnPassantRights.values().length];
-	private static final long[] polyglotRandom64 = new long[] {
+	private static final Zobrist INSTANCE = new Zobrist();
+	
+	private long turn;
+	private long[][] board = new long[Piece.values().length][64];
+	private long[] whiteCastlingRights = new long[CastlingRights.values().length];
+	private long[] blackCastlingRights = new long[CastlingRights.values().length];
+	private long[] enPassantRights = new long[EnPassantRights.values().length];
+	private final long[] polyglotRandom64 = new long[] {
 		0x9D39247E33776D41L, 0x2AF7398005AAA5C7L, 0x44DB015024623547L, 0x9C15F73E62A76AE2L,
 		0x75834465489C0C89L, 0x3290AC3A203001BFL, 0x0FBBAD1F61042279L, 0xE83A908FF2FB60CAL,
 		0x0D7E765D58755C10L, 0x1A083822CEAFE02DL, 0x9605D5F0E25EC3B0L, 0xD021FF5CD13A2ED5L,
@@ -227,16 +229,7 @@ public final class Zobrist {
 		0xCF3145DE0ADD4289L, 0xD0E4427A5514FB72L, 0x77C621CC9FB3A483L, 0x67A34DAC4356550BL,
 		0xF8D626AAAF278509L
 	};
-	static {
-		pseudorandNumGen();
-	}
 	private Zobrist() {
-		
-	}
-	/**
-	 * Generates the 'random' values for the instance fields. For the board, there is a value for any piece on any square.
-	 */
-	private static void pseudorandNumGen() {
 		Random random = new Random();
 		turn = random.nextLong();
 		for (int i = 0; i < board[0].length; i++)
@@ -253,11 +246,19 @@ public final class Zobrist {
 			enPassantRights[i] = random.nextLong();
 	}
 	/**
+	 * Return a reference to the only single Zobrist instance.
+	 * 
+	 * @return
+	 */
+	public static Zobrist getInstance() {
+		return INSTANCE;
+	}
+	/**
 	 * Encodes a Position object's pawn and main hash keys and sets the respective fields in the Position object.
 	 * 
 	 * @param board
 	 */
-	public static void setHashKeys(Position p) {
+	public void setHashKeys(Position p) {
 		byte[] board64 = p.getOffsetBoard();
 		long key = 0, pawnKey = 0;
 		if (!p.isWhitesTurn)
@@ -280,7 +281,7 @@ public final class Zobrist {
 	 * 
 	 * @param p
 	 */
-	public static void updateKeys(Position p) {
+	public void updateKeys(Position p) {
 		int enPassVictSqr;
 		long[] movedRow;
 		long key = p.key, pawnKey = p.pawnKey;
@@ -414,7 +415,7 @@ public final class Zobrist {
 	 * @param p
 	 * @return
 	 */
-	public static long getPolyglotHashKey(Position p) {
+	public long getPolyglotHashKey(Position p) {
 		long key = 0L;
 		int piece, pieceNote;
 		byte[] offBoard = p.getOffsetBoard();

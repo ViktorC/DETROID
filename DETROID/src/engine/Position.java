@@ -58,7 +58,7 @@ public class Position implements Hashable, Copiable<Position> {
 	/**A bitmap of all the pieces that attack the color to move's king. */
 	long checkers = 0;
 	/**Denotes whether the color to move's king is in check or not. */
-	boolean inCheck = false;
+	boolean isInCheck = false;
 	
 	/**The count of the current ply/half-move. */
 	int halfMoveIndex = 0;
@@ -230,7 +230,8 @@ public class Position implements Hashable, Copiable<Position> {
 		blackCastlingRights = castlingRights[1] != null ? castlingRights[1].ind : blackCastlingRights;
 		enPassantRights = EnPassantRights.getByFEN(enPassant);
 		this.enPassantRights = enPassantRights != null ? enPassantRights.ind : this.enPassantRights;
-		setCheck();
+		checkers = getCheckers();
+		isInCheck = checkers != 0;
 		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 		 * - one third of that is used as the initial length of the history array. */
 		keyHistory = new long[158];
@@ -264,7 +265,7 @@ public class Position implements Hashable, Copiable<Position> {
 		whiteCastlingRights = pos.whiteCastlingRights;
 		blackCastlingRights = pos.blackCastlingRights;
 		isWhitesTurn = pos.isWhitesTurn;
-		inCheck = pos.inCheck;
+		isInCheck = pos.isInCheck;
 		checkers = pos.checkers;
 		halfMoveIndex = pos.halfMoveIndex;
 		fiftyMoveRuleClock = pos.fiftyMoveRuleClock;
@@ -324,8 +325,8 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	public boolean inCheck() {
-		return inCheck;
+	public boolean isInCheck() {
+		return isInCheck;
 	}
 	/**
 	 * Returns the current ply/half-move index.
@@ -508,16 +509,6 @@ public class Position implements Hashable, Copiable<Position> {
 			allEmpty = ~allOccupied;
 		}
 	}
-	private void setTurn() {
-		isWhitesTurn = !isWhitesTurn;
-	}
-	private void setMoveIndices(int moved, int captured) {
-		halfMoveIndex++;
-		if (captured != Piece.NULL.ind || moved == Piece.W_PAWN.ind || moved == Piece.B_PAWN.ind)
-			fiftyMoveRuleClock = 0;
-		else
-			fiftyMoveRuleClock++;
-	}
 	private void setEnPassantRights(int from, int to, int movedPiece) {
 		if (movedPiece == Piece.W_PAWN.ind) {
 			if (to - from == 16) {
@@ -584,10 +575,6 @@ public class Position implements Hashable, Copiable<Position> {
 					blackCastlingRights = CastlingRights.NONE.ind;
 			}
 		}
-	}
-	private void setCheck() {
-		checkers = getCheckers();
-		inCheck = checkers != 0;
 	}
 	private void setKeys() {
 		Zobrist.updateKeys(this);
@@ -890,7 +877,7 @@ public class Position implements Hashable, Copiable<Position> {
 				if (isWhitesTurn) {
 					if (move.movedPiece == Piece.W_KING.ind) {
 						if (move.type == MoveType.SHORT_CASTLING.ind) {
-							if (!inCheck && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+							if (!isInCheck && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 								if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
 									if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
 										return true;
@@ -898,7 +885,7 @@ public class Position implements Hashable, Copiable<Position> {
 							}
 						}
 						else if (move.type == MoveType.LONG_CASTLING.ind) {
-							if (!inCheck && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
+							if (!isInCheck && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
 								if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
 									if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
 										return true;
@@ -933,7 +920,7 @@ public class Position implements Hashable, Copiable<Position> {
 				else {
 					if (move.movedPiece == Piece.B_KING.ind) {
 						if (move.type == MoveType.SHORT_CASTLING.ind) {
-							if (!inCheck && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+							if (!isInCheck && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 								if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
 									if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
 										return true;
@@ -941,7 +928,7 @@ public class Position implements Hashable, Copiable<Position> {
 							}
 						}
 						else if (move.type == MoveType.LONG_CASTLING.ind) {
-							if (!inCheck && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
+							if (!isInCheck && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
 								if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
 									if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
 										return true;
@@ -3651,7 +3638,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of all the legal moves from this position.
 	 */
 	public Queue<Move> generateAllMoves() {
-		if (inCheck)
+		if (isInCheck)
 			return generateAllCheckEvasionMoves();
 		else
 			return generateAllNormalMoves();
@@ -3663,7 +3650,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of the material legal moves from this position.
 	 */
 	public Queue<Move> generateMaterialMoves() {
-		if (inCheck)
+		if (isInCheck)
 			return generateMaterialCheckEvasionMoves();
 		else
 			return generateMaterialNormalMoves();
@@ -3675,7 +3662,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of the non-material legal moves from this position.
 	 */
 	public Queue<Move> generateNonMaterialMoves() {
-		if (inCheck)
+		if (isInCheck)
 			return generateNonMaterialCheckEvasionMoves();
 		else
 			return generateNonMaterialNormalMoves();
@@ -4214,10 +4201,10 @@ public class Position implements Hashable, Copiable<Position> {
 		moveList.add(null);
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
 				repetitions, checkers));
-		setTurn();
+		isWhitesTurn = !isWhitesTurn;
 		enPassantRights = EnPassantRights.NONE.ind;
 		setCastlingRights();
-		setMoveIndices(Piece.NULL.ind, Piece.NULL.ind);
+		halfMoveIndex++;
 		setKeys();
 	}
 	/**
@@ -4432,11 +4419,16 @@ public class Position implements Hashable, Copiable<Position> {
 		moveList.add(move);
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
 				repetitions, checkers));
-		setTurn();
+		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
 		setEnPassantRights(move.from, move.to, move.movedPiece);
-		setCheck();
-		setMoveIndices(move.movedPiece, move.capturedPiece);
+		checkers = getCheckers();
+		isInCheck = checkers != 0;
+		halfMoveIndex++;
+		if (move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.W_PAWN.ind || move.movedPiece == Piece.B_PAWN.ind)
+			fiftyMoveRuleClock = 0;
+		else
+			fiftyMoveRuleClock++;
 		setKeys();
 		setRepetitions();
 	}
@@ -4446,7 +4438,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 */
 	public void unmakeMove() {
 		Move move = moveList.pop();
-		setTurn();
+		isWhitesTurn = !isWhitesTurn;
 		if (move != null) unmakeMoveOnBoard(move);
 		UnmakeRegister positionInfo = unmakeRegisterHistory.pop();
 		whiteCastlingRights = positionInfo.whiteCastlingRights;
@@ -4455,7 +4447,7 @@ public class Position implements Hashable, Copiable<Position> {
 		fiftyMoveRuleClock = positionInfo.fiftyMoveRuleClock;
 		repetitions = positionInfo.repetitions;
 		checkers = positionInfo.checkers;
-		inCheck = checkers != 0;
+		isInCheck = checkers != 0;
 		keyHistory[halfMoveIndex] = 0;
 		pawnKeyHistory[halfMoveIndex] = 0;
 		key = keyHistory[--halfMoveIndex];
@@ -4608,7 +4600,7 @@ public class Position implements Hashable, Copiable<Position> {
 			System.out.println("white");
 		else
 			System.out.println("black");
-		if (this.inCheck) {
+		if (this.isInCheck) {
 			System.out.printf("%-23s ", "Checker(s): ");
 			checkers = BitOperations.serialize(this.checkers);
 			while (checkers.hasNext())

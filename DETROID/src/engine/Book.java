@@ -58,9 +58,10 @@ public class Book {
 	
 	private Book secondaryBook;
 	private SeekableByteChannel bookStream;
+	private Zobrist gen;
 	
 	private Book() {
-		
+		gen = Zobrist.getInstance();
 	}
 	private Book(String filePath) throws IllegalArgumentException {
 		try {
@@ -128,7 +129,7 @@ public class Book {
 	 */
 	private ArrayList<Entry> getRelevantEntries(Position p) throws NullPointerException {
 		long low, mid, hi, temp = -1;
-		long readerPos, currKey, key = Zobrist.getPolyglotHashKey(p);
+		long readerPos, currKey, key = gen.getPolyglotHashKey(p);
 		ArrayList<Entry> entries = new ArrayList<>();
 		ByteBuffer buff = ByteBuffer.allocateDirect(ENTRY_SIZE);
 		try {
