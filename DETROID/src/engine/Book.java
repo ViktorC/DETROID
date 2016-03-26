@@ -10,8 +10,7 @@ import java.util.Random;
 import engine.Board.Square;
 
 /**
- * A class for reading and selecting moves from PolyGlot opening books. It allows for the possibility of using an alternative book, and furthermore,
- * to use the default book once out of the alternative book.
+ * A class for reading and selecting moves from PolyGlot opening books. It allows for using an alternative book once out of the main book.
  * 
  * @author Viktor
  *
@@ -35,8 +34,8 @@ public class Book {
 		}
 	}
 	/**
-	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening moves for a position. RANDOM
-	 * is actually pseudo-random.
+	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening moves for a position.
+	 * RANDOM is actually pseudo-random.
 	 * 
 	 * @author Viktor
 	 *
@@ -49,46 +48,78 @@ public class Book {
 		
 	}
 	
+	/**
+	 * An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w. Located in the root folder of the project by the name
+	 * "default.bin".
+	 */
+	public final static String DEFAULT_BOOK_FILE_PATH = "default.bin";
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
-	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
-	private final static String DEFAULT_FILE_PATH = "default.bin";
 	
-	private static Book INSTANCE;
-	
-	private Book secondaryBook;
 	private SeekableByteChannel bookStream;
+	private Book secondaryBook;
 	private Zobrist gen;
 	
-	private Book() {
+	private Book(String filePath) throws IOException {
 		gen = Zobrist.getInstance();
-	}
-	private Book(String filePath) throws IllegalArgumentException {
-		try {
-			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
-		}
-		catch (IOException e) {
-			System.out.println("File not found: " + filePath);
-			throw new IllegalArgumentException("File not found: " + filePath);
-		}
+		bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
 	}
 	/**
-	 * Returns an instance already created by invoking either this or the {@link #getInstance(String, boolean) getInstance(String, boolean)}
-	 * method. If there is none, it instantiates and returns the default book or an 'empty' instance one if the default book file can not be
-	 * accessed.
+	 * It instantiates and returns a Book object on the default opening book or null if the default book file can not be accessed.
 	 * 
-	 * @return The Book instance.
+	 * @return
 	 */
 	public static Book getInstance() {
 		try {
-			if (INSTANCE == null)
-				INSTANCE = new Book(DEFAULT_FILE_PATH);
+			return new Book(DEFAULT_BOOK_FILE_PATH);
 		}
-		catch (IllegalArgumentException e) {
-			System.out.println("Default book file missing. " + e.getMessage());
-			INSTANCE = new Book();
+		catch (IOException e) {
+			System.out.println("Default book file missing: " + DEFAULT_BOOK_FILE_PATH);
+			return null;
 		}
-		return INSTANCE;
+	}
+	/**
+	 * It instantiates and returns a Book object on the opening book file specified by filePath or null if the file can not be accessed.
+	 * 
+	 * @param filePath
+	 * @return
+	 */
+	public static Book getInstance(String filePath) {
+		try {
+			return new Book(filePath);
+		}
+		catch (IOException e) {
+			System.out.println("File not found: " + filePath);
+			return null;
+		}
+	}
+	/**
+	 * It instantiates and returns a Book object on the opening book files specified by filePath and secondaryBookFilePath (as an alternative
+	 * book for when out of the main book) or null if any of the files can not be accessed.
+	 * 
+	 * @param filePath
+	 * @return
+	 */
+	public static Book getInstance(String filePath, String secondaryBookFilePath) {
+		Book book;
+		try {
+			book = new Book(filePath);
+		}
+		catch (IOException e1) {
+			System.out.println("File not found: " + filePath);
+			return null;
+		}
+		try {
+			book.secondaryBook = new Book(secondaryBookFilePath);
+		}
+		catch (IOException e2) {
+			System.out.println("File not found: " + secondaryBookFilePath);
+			try {
+				book.bookStream.close();
+			} catch (IOException e3) { }
+			return null;
+		}
+		return book;
 	}
 	/**
 	 * Tries and sets/changes the main book to the file specified by the path.
@@ -97,13 +128,18 @@ public class Book {
 	 * @return Whether the book could be successfully set to the file.
 	 */
 	public boolean setMainBookPath(String filePath) {
-		try {
-			if (bookStream != null)
+		if (bookStream != null) {
+			try {
 				bookStream.close();
+			} catch (IOException e1) {
+				System.out.println("Could not close stream: " + bookStream.toString());
+			}
+		}
+		try {
 			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
 			return true;
 		}
-		catch (IOException e) {
+		catch (IOException e2) {
 			System.out.println("Could not change to file path: " + filePath);
 			return false;
 		}
@@ -115,8 +151,14 @@ public class Book {
 	 * @return Whether the book could be successfully set to the file.
 	 */
 	public boolean setSecondaryBookPath(String filePath) {
-		if (secondaryBook == null)
-			secondaryBook = new Book();
+		if (secondaryBook == null) {
+			try {
+				secondaryBook = new Book(filePath);
+			} catch (IOException e) {
+				System.out.println("File not found: " + filePath);
+				return false;
+			}
+		}
 		return secondaryBook.setMainBookPath(filePath);
 	}
 	/**

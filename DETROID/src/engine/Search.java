@@ -168,7 +168,7 @@ public class Search implements Runnable {
 			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(pos, phaseScore, timeLeft);
 		}
 		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
-		quick = new QuickSort();
+		quick = QuickSort.getInstance();
 		kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);
 		this.hT = hT;
 		this.hashEntryGen = hashEntryGen;

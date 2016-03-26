@@ -53,37 +53,39 @@ public class Position implements Hashable, Copiable<Position> {
 	private byte[] offsetBoard;
 	
 	/**Denotes whether it is white's turn to make a move, or not, i.e. it is black's. */
-	boolean isWhitesTurn = true;
+	boolean isWhitesTurn;
 	
 	/**A bitmap of all the pieces that attack the color to move's king. */
-	long checkers = 0;
+	long checkers;
 	/**Denotes whether the color to move's king is in check or not. */
-	boolean isInCheck = false;
+	boolean isInCheck;
 	
 	/**The count of the current ply/half-move. */
-	int halfMoveIndex = 0;
+	int halfMoveIndex;
 	/**The number of moves made since the last pawn move or capture; the choice of type fell on long due to data loss when smaller integer
 	 * types are shifted beyond the 32nd bit in the move integer. */
-	int fiftyMoveRuleClock = 0;
+	int fiftyMoveRuleClock;
 	
 	/**Denotes the file on which en passant is possible; 8 means no en passant rights. */
-	byte enPassantRights = EnPassantRights.NONE.ind;
+	byte enPassantRights;
 	/**
 	 * Denotes to what extent it would still be possible to castle for white regardless of whether it is actually legally executable in the
 	 * current position. 0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights.
 	 */
-	byte whiteCastlingRights = CastlingRights.ALL.ind;
+	byte whiteCastlingRights;
 	/**
 	 * Denotes to what extent it would still be possible to castle for black regardless of whether it is actually legally executable in the
 	 * current position. 0 - no castling rights, 1 - king-side castling only, 2 - queen-side castling only, 3 - all castling rights.
 	 */
-	byte blackCastlingRights = CastlingRights.ALL.ind;
+	byte blackCastlingRights;
 	
 	/**A stack of all the moves made so far. */
-	private Stack<Move> moveList = new Stack<Move>();
+	private Stack<Move> moveList;
 	/**A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info. */
-	private Stack<UnmakeRegister> unmakeRegisterHistory = new Stack<UnmakeRegister>();
+	private Stack<UnmakeRegister> unmakeRegisterHistory;
 	
+	/**A Zobrist key generator instance. */
+	private Zobrist gen;
 	/**The Zobrist key that is fairly close to a unique representation of the state of the Position instance in one number. */
 	long key;
 	/**A Zobrist key for the pawns' position only. */
@@ -116,6 +118,17 @@ public class Position implements Hashable, Copiable<Position> {
 		int pieceNum, index = 0, fiftyMoveRuleClock, moveIndex;
 		CastlingRights[] castlingRights;
 		EnPassantRights enPassantRights;
+		isWhitesTurn = true;
+		checkers = 0;
+		isInCheck = false;
+		halfMoveIndex = 0;
+		this.fiftyMoveRuleClock = 0;
+		this.enPassantRights = EnPassantRights.NONE.ind;
+		whiteCastlingRights = CastlingRights.ALL.ind;
+		blackCastlingRights = CastlingRights.ALL.ind;
+		moveList = new Stack<Move>();
+		unmakeRegisterHistory = new Stack<UnmakeRegister>();
+		gen = Zobrist.getInstance();
 		if (fenFields.length == 6) {
 			try {
 				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
@@ -236,7 +249,7 @@ public class Position implements Hashable, Copiable<Position> {
 		 * - one third of that is used as the initial length of the history array. */
 		keyHistory = new long[158];
 		pawnKeyHistory = new long[158];
-		Zobrist.setHashKeys(this);
+		gen.setHashKeys(this);
 		keyHistory[0] = key;
 		pawnKeyHistory[0] = pawnKey;
 	}
@@ -408,204 +421,6 @@ public class Position implements Hashable, Copiable<Position> {
 	 */
 	UnmakeRegister getUnmakeRegister() {
 		return unmakeRegisterHistory.getHead();
-	}
-	private void setBitboards(int moved, int captured, long fromBit, long toBit) {
-		if (isWhitesTurn) {
-			PseudoSwitch1: {
-				if (moved == Piece.W_KING.ind) {
-					whiteKing ^= fromBit;
-					whiteKing ^= toBit;
-				}
-				else if (moved == Piece.W_QUEEN.ind) {
-					whiteQueens ^= fromBit;
-					whiteQueens ^= toBit;
-				}
-				else if (moved == Piece.W_ROOK.ind) {
-					whiteRooks ^= fromBit;
-					whiteRooks ^= toBit;
-				}
-				else if (moved == Piece.W_BISHOP.ind) {
-					whiteBishops ^= fromBit;
-					whiteBishops ^= toBit;
-				}
-				else if (moved == Piece.W_KNIGHT.ind) {
-					whiteKnights ^= fromBit;
-					whiteKnights ^= toBit;
-				}
-				else if (moved == Piece.W_PAWN.ind) {
-					whitePawns ^= fromBit;
-					whitePawns ^= toBit;
-				}
-				else break PseudoSwitch1;
-				allWhiteOccupied ^= fromBit;
-				allWhiteOccupied ^= toBit;
-				allNonWhiteOccupied = ~allWhiteOccupied;
-			}
-			PseudoSwitch2: {
-				if (captured == Piece.NULL.ind) break PseudoSwitch2;
-				else if (captured == Piece.B_QUEEN.ind)
-					blackQueens ^= toBit;
-				else if (captured == Piece.B_ROOK.ind)
-					blackRooks ^= toBit;
-				else if (captured == Piece.B_BISHOP.ind)
-					blackBishops ^= toBit;
-				else if (captured == Piece.B_KNIGHT.ind)
-					blackKnights ^= toBit;
-				else if (captured == Piece.B_PAWN.ind)
-					blackPawns ^= toBit;
-				allBlackOccupied ^= toBit;
-				allNonBlackOccupied = ~allBlackOccupied;
-			}
-			allOccupied = allWhiteOccupied | allBlackOccupied;
-			allEmpty = ~allOccupied;
-		}
-		else {
-			PseudoSwitch1: {
-				if (moved == Piece.B_KING.ind) {
-					blackKing ^= fromBit;
-					blackKing ^= toBit;
-				}
-				else if (moved == Piece.B_QUEEN.ind) {
-					blackQueens ^= fromBit;
-					blackQueens ^= toBit;
-				}
-				else if (moved == Piece.B_ROOK.ind) {
-					blackRooks ^= fromBit;
-					blackRooks ^= toBit;
-				}
-				else if (moved == Piece.B_BISHOP.ind) {
-					blackBishops ^= fromBit;
-					blackBishops ^= toBit;
-				}
-				else if (moved == Piece.B_KNIGHT.ind) {
-					blackKnights ^= fromBit;
-					blackKnights ^= toBit;
-				}
-				else if (moved == Piece.B_PAWN.ind) {
-					blackPawns ^= fromBit;
-					blackPawns ^= toBit;
-				}
-				else break PseudoSwitch1;
-				allBlackOccupied ^= fromBit;
-				allBlackOccupied ^= toBit;
-				allNonBlackOccupied = ~allBlackOccupied;
-			}
-			PseudoSwitch2: {
-				if (captured == Piece.NULL.ind) break PseudoSwitch2;
-				else if (captured == Piece.W_QUEEN.ind)
-					whiteQueens ^= toBit;
-				else if (captured == Piece.W_ROOK.ind)
-					whiteRooks ^= toBit;
-				else if (captured == Piece.W_BISHOP.ind)
-					whiteBishops ^= toBit;
-				else if (captured == Piece.W_KNIGHT.ind)
-					whiteKnights ^= toBit;
-				else if (captured == Piece.W_PAWN.ind)
-					whitePawns ^= toBit;
-				allWhiteOccupied ^= toBit;
-				allNonWhiteOccupied = ~allWhiteOccupied;
-			}
-			allOccupied = allWhiteOccupied | allBlackOccupied;
-			allEmpty = ~allOccupied;
-		}
-	}
-	private void setEnPassantRights(int from, int to, int movedPiece) {
-		if (movedPiece == Piece.W_PAWN.ind) {
-			if (to - from == 16) {
-				enPassantRights = (byte)(to%8);
-				return;
-			}
-		}
-		else if (movedPiece == Piece.B_PAWN.ind) {
-			if (from - to == 16) {
-				enPassantRights = (byte)(to%8);
-				return;
-			}
-		}
-		enPassantRights = 8;
-	}
-	private void setCastlingRights() {
-		if (isWhitesTurn) {
-			if (whiteCastlingRights == CastlingRights.NONE.ind) return;
-			if (whiteCastlingRights == CastlingRights.SHORT.ind) {
-				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
-					whiteCastlingRights = CastlingRights.NONE.ind;
-			}
-			else if (whiteCastlingRights == CastlingRights.LONG.ind) {
-				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-					whiteCastlingRights = CastlingRights.NONE.ind;
-			}
-			else {
-				if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
-					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
-						if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-							whiteCastlingRights = CastlingRights.NONE.ind;
-						else
-							whiteCastlingRights = CastlingRights.LONG.ind;
-					}
-					else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.SHORT.ind;
-				}
-				else
-					whiteCastlingRights = CastlingRights.NONE.ind;
-			}
-		}
-		else {
-			if (blackCastlingRights == CastlingRights.NONE.ind) return;
-			if (blackCastlingRights == CastlingRights.SHORT.ind) {
-				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
-					blackCastlingRights = CastlingRights.NONE.ind;
-			}
-			else if (blackCastlingRights == CastlingRights.LONG.ind) {
-				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-					blackCastlingRights = CastlingRights.NONE.ind;
-			}
-			else {
-				if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
-					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
-						if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-							blackCastlingRights = CastlingRights.NONE.ind;
-						else
-							blackCastlingRights = CastlingRights.LONG.ind;
-					}
-					else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.SHORT.ind;
-				}
-				else
-					blackCastlingRights = CastlingRights.NONE.ind;
-			}
-		}
-	}
-	private void setKeys() {
-		Zobrist.updateKeys(this);
-		keyHistory[halfMoveIndex] = key;
-		pawnKeyHistory[halfMoveIndex] = pawnKey;
-	}
-	private void extendKeyHistory() {
-		long[] temp;
-		if (keyHistory.length - halfMoveIndex <= 75) {
-			temp = keyHistory;
-			keyHistory = new long[keyHistory.length + 25];
-			for (int i = 0; i < temp.length; i++)
-				keyHistory[i] = temp[i];
-			temp = pawnKeyHistory;
-			pawnKeyHistory = new long[pawnKeyHistory.length + 25];
-			for (int i = 0; i < temp.length; i++)
-				pawnKeyHistory[i] = temp[i];
-		}
-	}
-	/**
-	 * Should be used before resetMoveIndices().
-	 */
-	private void setRepetitions() {
-		if (fiftyMoveRuleClock >= 4) {
-			for (int i = halfMoveIndex; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
-				if (keyHistory[i] == key)
-					repetitions++;
-			}
-		}
-		else
-			repetitions = 0;
 	}
 	/**
 	 * Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the
@@ -3668,6 +3483,817 @@ public class Position implements Hashable, Copiable<Position> {
 			return generateNonMaterialNormalMoves();
 	}
 	/**
+	 * Makes a null move that can be taken back without breaking the game.
+	 */
+	public void makeNullMove() {
+		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
+				repetitions, checkers));
+		isWhitesTurn = !isWhitesTurn;
+		enPassantRights = EnPassantRights.NONE.ind;
+		if (moveList.getHead() != null){
+			if (isWhitesTurn) {
+				if (whiteCastlingRights == CastlingRights.NONE.ind);
+				else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
+					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.NONE.ind;
+				}
+				else if (whiteCastlingRights == CastlingRights.LONG.ind) {
+					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.NONE.ind;
+				}
+				else {
+					if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
+						if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
+							if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+								whiteCastlingRights = CastlingRights.NONE.ind;
+							else
+								whiteCastlingRights = CastlingRights.LONG.ind;
+						}
+						else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+							whiteCastlingRights = CastlingRights.SHORT.ind;
+					}
+					else
+						whiteCastlingRights = CastlingRights.NONE.ind;
+				}
+			}
+			else {
+				if (blackCastlingRights == CastlingRights.NONE.ind);
+				else if (blackCastlingRights == CastlingRights.SHORT.ind) {
+					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.NONE.ind;
+				}
+				else if (blackCastlingRights == CastlingRights.LONG.ind) {
+					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.NONE.ind;
+				}
+				else {
+					if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
+						if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
+							if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+								blackCastlingRights = CastlingRights.NONE.ind;
+							else
+								blackCastlingRights = CastlingRights.LONG.ind;
+						}
+						else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+							blackCastlingRights = CastlingRights.SHORT.ind;
+					}
+					else
+						blackCastlingRights = CastlingRights.NONE.ind;
+				}
+			}
+		}
+		moveList.add(null);
+		halfMoveIndex++;
+		gen.updateKeys(this);
+		keyHistory[halfMoveIndex] = key;
+		pawnKeyHistory[halfMoveIndex] = pawnKey;
+	}
+	/**
+	 * Makes a move only on the chess board representations of this Position object.
+	 * 
+	 * @param move
+	 */
+	private void makeMoveOnBoard(Move move) {
+		int enPassantVictimSquare;
+		long fromBit = 1L << move.from;
+		long toBit = 1L << move.to;
+		long changedBits = (fromBit | toBit);
+		long collChangedBits;
+		if (isWhitesTurn) {
+			if (move.type == MoveType.NORMAL.ind) {
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				if (move.movedPiece == Piece.W_KING.ind)
+					whiteKing = toBit;
+				else if (move.movedPiece == Piece.W_QUEEN.ind)
+					whiteQueens ^= changedBits;
+				else if (move.movedPiece == Piece.W_ROOK.ind)
+					whiteRooks ^= changedBits;
+				else if (move.movedPiece == Piece.W_BISHOP.ind)
+					whiteBishops ^= changedBits;
+				else if (move.movedPiece == Piece.W_KNIGHT.ind)
+					whiteKnights ^= changedBits;
+				else
+					whitePawns ^= changedBits;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allBlackOccupied ^= toBit;
+					blackQueens &= allBlackOccupied;
+					blackRooks &= allBlackOccupied;
+					blackBishops &= allBlackOccupied;
+					blackKnights &= allBlackOccupied;
+					blackPawns &= allBlackOccupied;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else if (move.type == MoveType.SHORT_CASTLING.ind) {
+				offsetBoard[Square.H1.ind] = Piece.NULL.ind;
+				offsetBoard[Square.F1.ind] = Piece.W_ROOK.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				whiteKing = toBit;
+				collChangedBits = (1L << Square.H1.ind) | (1L << Square.F1.ind);
+				whiteRooks ^= collChangedBits;
+				allWhiteOccupied ^= (changedBits | collChangedBits);
+				allNonWhiteOccupied = ~allWhiteOccupied;
+			}
+			else if (move.type == MoveType.LONG_CASTLING.ind) {
+				offsetBoard[Square.A1.ind] = Piece.NULL.ind;
+				offsetBoard[Square.D1.ind] = Piece.W_ROOK.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				whiteKing = toBit;
+				collChangedBits = (1L << Square.A1.ind) | (1L << Square.D1.ind);
+				whiteRooks ^= collChangedBits;
+				allWhiteOccupied ^= (changedBits | collChangedBits);
+				allNonWhiteOccupied = ~allWhiteOccupied;
+			}
+			else if (move.type == MoveType.EN_PASSANT.ind) {
+				enPassantVictimSquare = move.to - 8;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				offsetBoard[enPassantVictimSquare] = Piece.NULL.ind;
+				whitePawns ^= changedBits;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				collChangedBits = 1L << enPassantVictimSquare;
+				blackPawns ^= collChangedBits;
+				allBlackOccupied ^= collChangedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+			}
+			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+				offsetBoard[move.to] = Piece.W_QUEEN.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				whitePawns ^= fromBit;
+				whiteQueens ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allBlackOccupied ^= toBit;
+					blackQueens &= allBlackOccupied;
+					blackRooks &= allBlackOccupied;
+					blackBishops &= allBlackOccupied;
+					blackKnights &= allBlackOccupied;
+					// It would normally be impossible for a pawn the reside on the first or last ranks. In case of artificial positions...
+					blackPawns &= allBlackOccupied;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
+				offsetBoard[move.to] = Piece.W_ROOK.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				whitePawns ^= fromBit;
+				whiteRooks ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allBlackOccupied ^= toBit;
+					blackQueens &= allBlackOccupied;
+					blackRooks &= allBlackOccupied;
+					blackBishops &= allBlackOccupied;
+					blackKnights &= allBlackOccupied;
+					blackPawns &= allBlackOccupied;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
+				offsetBoard[move.to] = Piece.W_BISHOP.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				whitePawns ^= fromBit;
+				whiteBishops ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allBlackOccupied ^= toBit;
+					blackQueens &= allBlackOccupied;
+					blackRooks &= allBlackOccupied;
+					blackBishops &= allBlackOccupied;
+					blackKnights &= allBlackOccupied;
+					blackPawns &= allBlackOccupied;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else {
+				offsetBoard[move.to] = Piece.W_KNIGHT.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				whitePawns ^= fromBit;
+				whiteKnights ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allBlackOccupied ^= toBit;
+					blackQueens &= allBlackOccupied;
+					blackRooks &= allBlackOccupied;
+					blackBishops &= allBlackOccupied;
+					blackKnights &= allBlackOccupied;
+					blackPawns &= allBlackOccupied;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+		}
+		else {
+			if (move.type == MoveType.NORMAL.ind) {
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				if (move.movedPiece == Piece.B_KING.ind)
+					blackKing = toBit;
+				else if (move.movedPiece == Piece.B_QUEEN.ind)
+					blackQueens ^= changedBits;
+				else if (move.movedPiece == Piece.B_ROOK.ind)
+					blackRooks ^= changedBits;
+				else if (move.movedPiece == Piece.B_BISHOP.ind)
+					blackBishops ^= changedBits;
+				else if (move.movedPiece == Piece.B_KNIGHT.ind)
+					blackKnights ^= changedBits;
+				else
+					blackPawns ^= changedBits;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allWhiteOccupied ^= toBit;
+					whiteQueens &= allWhiteOccupied;
+					whiteRooks &= allWhiteOccupied;
+					whiteBishops &= allWhiteOccupied;
+					whiteKnights &= allWhiteOccupied;
+					whitePawns &= allWhiteOccupied;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else if (move.type == MoveType.SHORT_CASTLING.ind) {
+				offsetBoard[Square.H8.ind] = Piece.NULL.ind;
+				offsetBoard[Square.F8.ind] = Piece.B_ROOK.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				blackKing = toBit;
+				collChangedBits = (1L << Square.H8.ind) | (1L << Square.F8.ind);
+				blackRooks ^= collChangedBits;
+				allBlackOccupied ^= (changedBits | collChangedBits);
+				allNonBlackOccupied = ~allBlackOccupied;
+			}
+			else if (move.type == MoveType.LONG_CASTLING.ind) {
+				offsetBoard[Square.A8.ind] = Piece.NULL.ind;
+				offsetBoard[Square.D8.ind] = Piece.B_ROOK.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				blackKing = toBit;
+				collChangedBits = (1L << Square.A8.ind) | (1L << Square.D8.ind);
+				blackRooks ^= collChangedBits;
+				allBlackOccupied ^= (changedBits | collChangedBits);
+				allNonBlackOccupied = ~allBlackOccupied;
+			}
+			else if (move.type == MoveType.EN_PASSANT.ind) {
+				enPassantVictimSquare = move.to + 8;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				offsetBoard[move.to] = move.movedPiece;
+				offsetBoard[enPassantVictimSquare] = Piece.NULL.ind;
+				blackPawns ^= changedBits;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				collChangedBits = 1L << enPassantVictimSquare;
+				whitePawns ^= collChangedBits;
+				allWhiteOccupied ^= collChangedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+			}
+			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+				offsetBoard[move.to] = Piece.B_QUEEN.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				blackPawns ^= fromBit;
+				blackQueens ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allWhiteOccupied ^= toBit;
+					whiteQueens &= allWhiteOccupied;
+					whiteRooks &= allWhiteOccupied;
+					whiteBishops &= allWhiteOccupied;
+					whiteKnights &= allWhiteOccupied;
+					whitePawns &= allWhiteOccupied;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
+				offsetBoard[move.to] = Piece.B_ROOK.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				blackPawns ^= fromBit;
+				blackRooks ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allWhiteOccupied ^= toBit;
+					whiteQueens &= allWhiteOccupied;
+					whiteRooks &= allWhiteOccupied;
+					whiteBishops &= allWhiteOccupied;
+					whiteKnights &= allWhiteOccupied;
+					whitePawns &= allWhiteOccupied;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
+				offsetBoard[move.to] = Piece.B_BISHOP.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				blackPawns ^= fromBit;
+				blackBishops ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allWhiteOccupied ^= toBit;
+					whiteQueens &= allWhiteOccupied;
+					whiteRooks &= allWhiteOccupied;
+					whiteBishops &= allWhiteOccupied;
+					whiteKnights &= allWhiteOccupied;
+					whitePawns &= allWhiteOccupied;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else {
+				offsetBoard[move.to] = Piece.B_KNIGHT.ind;
+				offsetBoard[move.from] = Piece.NULL.ind;
+				blackPawns ^= fromBit;
+				blackKnights ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					allWhiteOccupied ^= toBit;
+					whiteQueens &= allWhiteOccupied;
+					whiteRooks &= allWhiteOccupied;
+					whiteBishops &= allWhiteOccupied;
+					whiteKnights &= allWhiteOccupied;
+					whitePawns &= allWhiteOccupied;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+		}
+		allOccupied = (allWhiteOccupied | allBlackOccupied);
+		allEmpty = ~allOccupied;
+	}
+	/**
+	 * Unmakes a move only on the chess board representations of this Position object.
+	 * 
+	 * @param move
+	 */
+	private void unmakeMoveOnBoard(Move move) {
+		int enPassantVictimSquare;
+		long fromBit = Square.getByIndex(move.from).bitmap;
+		long toBit = Square.getByIndex(move.to).bitmap;
+		long changedBits = (fromBit | toBit);
+		long collChangedBits;
+		if (isWhitesTurn) {
+			if (move.type == MoveType.NORMAL.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				if (move.movedPiece == Piece.W_KING.ind)
+					whiteKing = fromBit;
+				else if (move.movedPiece == Piece.W_QUEEN.ind)
+					whiteQueens ^= changedBits;
+				else if (move.movedPiece == Piece.W_ROOK.ind)
+					whiteRooks ^= changedBits;
+				else if (move.movedPiece == Piece.W_BISHOP.ind)
+					whiteBishops ^= changedBits;
+				else if (move.movedPiece == Piece.W_KNIGHT.ind)
+					whiteKnights ^= changedBits;
+				else
+					whitePawns ^= changedBits;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.B_QUEEN.ind)
+						blackQueens ^= toBit;
+					else if (move.capturedPiece == Piece.B_ROOK.ind)
+						blackRooks ^= toBit;
+					else if (move.capturedPiece == Piece.B_BISHOP.ind)
+						blackBishops ^= toBit;
+					else if (move.capturedPiece == Piece.B_KNIGHT.ind)
+						blackKnights ^= toBit;
+					else
+						blackPawns ^= toBit;
+					allBlackOccupied ^= toBit;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else if (move.type == MoveType.SHORT_CASTLING.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
+				offsetBoard[Square.F1.ind] = Piece.NULL.ind;
+				whiteKing = fromBit;
+				collChangedBits = (1L << Square.H1.ind) | (1L << Square.F1.ind);
+				whiteRooks ^= collChangedBits;
+				allWhiteOccupied ^= (changedBits | collChangedBits);
+				allNonWhiteOccupied = ~allWhiteOccupied;
+			}
+			else if (move.type == MoveType.LONG_CASTLING.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
+				offsetBoard[Square.D1.ind] = Piece.NULL.ind;
+				whiteKing = fromBit;
+				collChangedBits = (1L << Square.A1.ind) | (1L << Square.D1.ind);
+				whiteRooks ^= collChangedBits;
+				allWhiteOccupied ^= (changedBits | collChangedBits);
+				allNonWhiteOccupied = ~allWhiteOccupied;
+			}
+			else if (move.type == MoveType.EN_PASSANT.ind) {
+				enPassantVictimSquare = move.to - 8;
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				offsetBoard[enPassantVictimSquare] = move.capturedPiece;
+				whitePawns ^= changedBits;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				collChangedBits = 1L << enPassantVictimSquare;
+				blackPawns ^= collChangedBits;
+				allBlackOccupied ^= collChangedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+			}
+			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				whitePawns ^= fromBit;
+				whiteQueens ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.B_QUEEN.ind)
+						blackQueens ^= toBit;
+					else if (move.capturedPiece == Piece.B_ROOK.ind)
+						blackRooks ^= toBit;
+					else if (move.capturedPiece == Piece.B_BISHOP.ind)
+						blackBishops ^= toBit;
+					else if (move.capturedPiece == Piece.B_KNIGHT.ind)
+						blackKnights ^= toBit;
+					else
+						blackPawns ^= toBit;
+					allBlackOccupied ^= toBit;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				whitePawns ^= fromBit;
+				whiteRooks ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.B_QUEEN.ind)
+						blackQueens ^= toBit;
+					else if (move.capturedPiece == Piece.B_ROOK.ind)
+						blackRooks ^= toBit;
+					else if (move.capturedPiece == Piece.B_BISHOP.ind)
+						blackBishops ^= toBit;
+					else if (move.capturedPiece == Piece.B_KNIGHT.ind)
+						blackKnights ^= toBit;
+					else
+						blackPawns ^= toBit;
+					allBlackOccupied ^= toBit;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				whitePawns ^= fromBit;
+				whiteBishops ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.B_QUEEN.ind)
+						blackQueens ^= toBit;
+					else if (move.capturedPiece == Piece.B_ROOK.ind)
+						blackRooks ^= toBit;
+					else if (move.capturedPiece == Piece.B_BISHOP.ind)
+						blackBishops ^= toBit;
+					else if (move.capturedPiece == Piece.B_KNIGHT.ind)
+						blackKnights ^= toBit;
+					else
+						blackPawns ^= toBit;
+					allBlackOccupied ^= toBit;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+			else {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				whitePawns ^= fromBit;
+				whiteKnights ^= toBit;
+				allWhiteOccupied ^= changedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.B_QUEEN.ind)
+						blackQueens ^= toBit;
+					else if (move.capturedPiece == Piece.B_ROOK.ind)
+						blackRooks ^= toBit;
+					else if (move.capturedPiece == Piece.B_BISHOP.ind)
+						blackBishops ^= toBit;
+					else if (move.capturedPiece == Piece.B_KNIGHT.ind)
+						blackKnights ^= toBit;
+					else
+						blackPawns ^= toBit;
+					allBlackOccupied ^= toBit;
+					allNonBlackOccupied = ~allBlackOccupied;
+				}
+			}
+		}
+		else {
+			if (move.type == MoveType.NORMAL.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				if (move.movedPiece == Piece.B_KING.ind)
+					blackKing = fromBit;
+				else if (move.movedPiece == Piece.B_QUEEN.ind)
+					blackQueens ^= changedBits;
+				else if (move.movedPiece == Piece.B_ROOK.ind)
+					blackRooks ^= changedBits;
+				else if (move.movedPiece == Piece.B_BISHOP.ind)
+					blackBishops ^= changedBits;
+				else if (move.movedPiece == Piece.B_KNIGHT.ind)
+					blackKnights ^= changedBits;
+				else
+					blackPawns ^= changedBits;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.W_QUEEN.ind)
+						whiteQueens ^= toBit;
+					else if (move.capturedPiece == Piece.W_ROOK.ind)
+						whiteRooks ^= toBit;
+					else if (move.capturedPiece == Piece.W_BISHOP.ind)
+						whiteBishops ^= toBit;
+					else if (move.capturedPiece == Piece.W_KNIGHT.ind)
+						whiteKnights ^= toBit;
+					else
+						whitePawns ^= toBit;
+					allWhiteOccupied ^= toBit;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else if (move.type == MoveType.SHORT_CASTLING.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
+				offsetBoard[Square.F8.ind] = Piece.NULL.ind;
+				blackKing = fromBit;
+				collChangedBits = (1L << Square.H8.ind) | (1L << Square.F8.ind);
+				blackRooks ^= collChangedBits;
+				allBlackOccupied ^= (changedBits | collChangedBits);
+				allNonBlackOccupied = ~allBlackOccupied;
+			}
+			else if (move.type == MoveType.LONG_CASTLING.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
+				offsetBoard[Square.D8.ind] = Piece.NULL.ind;
+				blackKing = fromBit;
+				collChangedBits = (1L << Square.A8.ind) | (1L << Square.D8.ind);
+				blackRooks ^= collChangedBits;
+				allBlackOccupied ^= (changedBits | collChangedBits);
+				allNonBlackOccupied = ~allBlackOccupied;
+			}
+			else if (move.type == MoveType.EN_PASSANT.ind) {
+				enPassantVictimSquare = move.to + 8;
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = Piece.NULL.ind;
+				offsetBoard[enPassantVictimSquare] = move.capturedPiece;
+				blackPawns ^= changedBits;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				collChangedBits = 1L << enPassantVictimSquare;
+				whitePawns ^= collChangedBits;
+				allWhiteOccupied ^= collChangedBits;
+				allNonWhiteOccupied = ~allWhiteOccupied;
+			}
+			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				blackPawns ^= fromBit;
+				blackQueens ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.W_QUEEN.ind)
+						whiteQueens ^= toBit;
+					else if (move.capturedPiece == Piece.W_ROOK.ind)
+						whiteRooks ^= toBit;
+					else if (move.capturedPiece == Piece.W_BISHOP.ind)
+						whiteBishops ^= toBit;
+					else if (move.capturedPiece == Piece.W_KNIGHT.ind)
+						whiteKnights ^= toBit;
+					else
+						whitePawns ^= toBit;
+					allWhiteOccupied ^= toBit;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				blackPawns ^= fromBit;
+				blackRooks ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.W_QUEEN.ind)
+						whiteQueens ^= toBit;
+					else if (move.capturedPiece == Piece.W_ROOK.ind)
+						whiteRooks ^= toBit;
+					else if (move.capturedPiece == Piece.W_BISHOP.ind)
+						whiteBishops ^= toBit;
+					else if (move.capturedPiece == Piece.W_KNIGHT.ind)
+						whiteKnights ^= toBit;
+					else
+						whitePawns ^= toBit;
+					allWhiteOccupied ^= toBit;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				blackPawns ^= fromBit;
+				blackBishops ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.W_QUEEN.ind)
+						whiteQueens ^= toBit;
+					else if (move.capturedPiece == Piece.W_ROOK.ind)
+						whiteRooks ^= toBit;
+					else if (move.capturedPiece == Piece.W_BISHOP.ind)
+						whiteBishops ^= toBit;
+					else if (move.capturedPiece == Piece.W_KNIGHT.ind)
+						whiteKnights ^= toBit;
+					else
+						whitePawns ^= toBit;
+					allWhiteOccupied ^= toBit;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+			else {
+				offsetBoard[move.from] = move.movedPiece;
+				offsetBoard[move.to] = move.capturedPiece;
+				blackPawns ^= fromBit;
+				blackKnights ^= toBit;
+				allBlackOccupied ^= changedBits;
+				allNonBlackOccupied = ~allBlackOccupied;
+				if (move.capturedPiece != Piece.NULL.ind) {
+					if (move.capturedPiece == Piece.W_QUEEN.ind)
+						whiteQueens ^= toBit;
+					else if (move.capturedPiece == Piece.W_ROOK.ind)
+						whiteRooks ^= toBit;
+					else if (move.capturedPiece == Piece.W_BISHOP.ind)
+						whiteBishops ^= toBit;
+					else if (move.capturedPiece == Piece.W_KNIGHT.ind)
+						whiteKnights ^= toBit;
+					else
+						whitePawns ^= toBit;
+					allWhiteOccupied ^= toBit;
+					allNonWhiteOccupied = ~allWhiteOccupied;
+				}
+			}
+		}
+		allOccupied = (allWhiteOccupied | allBlackOccupied);
+		allEmpty = ~allOccupied;
+	}
+	/**
+	 * Makes a single move from a LongQueue generated by generateMoves.
+	 * 
+	 * @param move A Move object that is going to be made in the position.
+	 */
+	public void makeMove(Move move) {
+		makeMoveOnBoard(move);
+		moveList.add(move);
+		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
+				repetitions, checkers));
+		isWhitesTurn = !isWhitesTurn;
+		if (isWhitesTurn) {
+			// Check castling rights.
+			if (whiteCastlingRights == CastlingRights.NONE.ind);
+			else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
+				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (whiteCastlingRights == CastlingRights.LONG.ind) {
+				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+			else {
+				if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
+					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
+						if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+							whiteCastlingRights = CastlingRights.NONE.ind;
+						else
+							whiteCastlingRights = CastlingRights.LONG.ind;
+					}
+					else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.SHORT.ind;
+				}
+				else
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+			// Check en passant rights.
+			enPassantRights = (move.movedPiece == Piece.B_PAWN.ind && move.from - move.to == 16) ? (byte)(move.to%8) : 8;
+			// Fifty move rule
+			fiftyMoveRuleClock = (move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.B_PAWN.ind) ? 0 : fiftyMoveRuleClock + 1;
+		}
+		else {
+			// Check castling rights.
+			if (blackCastlingRights == CastlingRights.NONE.ind);
+			else if (blackCastlingRights == CastlingRights.SHORT.ind) {
+				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (blackCastlingRights == CastlingRights.LONG.ind) {
+				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			else {
+				if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
+					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
+						if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+							blackCastlingRights = CastlingRights.NONE.ind;
+						else
+							blackCastlingRights = CastlingRights.LONG.ind;
+					}
+					else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.SHORT.ind;
+				}
+				else
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			// Check en passant rights.
+			enPassantRights = (move.movedPiece == Piece.W_PAWN.ind && move.to - move.from == 16) ? (byte)(move.to%8) : 8;
+			// Fifty move rule
+			fiftyMoveRuleClock = (move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.W_PAWN.ind) ? 0 : fiftyMoveRuleClock + 1;
+				
+		}
+		checkers = getCheckers();
+		isInCheck = checkers != 0;
+		halfMoveIndex++;
+		gen.updateKeys(this);
+		keyHistory[halfMoveIndex] = key;
+		pawnKeyHistory[halfMoveIndex] = pawnKey;
+		if (fiftyMoveRuleClock >= 4) {
+			for (int i = halfMoveIndex; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
+				if (keyHistory[i] == key)
+					repetitions++;
+			}
+		}
+		else
+			repetitions = 0;
+	}
+	/**
+	 * Reverts the state of the instance to that before the last move made in every aspect necessary for the traversal of the game tree.
+	 * Used within the engine.
+	 */
+	public void unmakeMove() {
+		Move move = moveList.pop();
+		isWhitesTurn = !isWhitesTurn;
+		if (move != null) unmakeMoveOnBoard(move);
+		UnmakeRegister positionInfo = unmakeRegisterHistory.pop();
+		whiteCastlingRights = positionInfo.whiteCastlingRights;
+		blackCastlingRights = positionInfo.blackCastlingRights;
+		enPassantRights = positionInfo.enPassantRights;
+		fiftyMoveRuleClock = positionInfo.fiftyMoveRuleClock;
+		repetitions = positionInfo.repetitions;
+		checkers = positionInfo.checkers;
+		isInCheck = checkers != 0;
+		keyHistory[halfMoveIndex] = 0;
+		pawnKeyHistory[halfMoveIndex] = 0;
+		key = keyHistory[--halfMoveIndex];
+		pawnKey = pawnKeyHistory[halfMoveIndex];
+	}
+	/**
+	 * Makes a move specified by user input in Pure Algebraic Coordinate Notation. If the command is valid and the move is legal, it makes
+	 * the move and returns true, otherwise it returns false.
+	 * 
+	 * @param input A string representation of the move to make in Pure Algebraic Coordinate Notation
+	 * 				([origin square + destination square] as e.g.: b1a3 without any spaces; in case of promotion, the equal sign and the
+	 * 				letter notation of the piece the pawn is wished to be promoted to should be appended to the command as in c7c8=q; the
+	 * 				parser is not case sensitive)
+	 * @return Whether the move was legal and could successfully be made or not.
+	 */
+	public boolean makeMove(String input) {
+		long[] temp;
+		Move m = parsePACN(input);
+		if (m == null || !isLegalHard(m))
+			return false;
+		else {
+			if (keyHistory.length - halfMoveIndex <= 75) {
+				temp = keyHistory;
+				keyHistory = new long[keyHistory.length + 25];
+				for (int i = 0; i < temp.length; i++)
+					keyHistory[i] = temp[i];
+				temp = pawnKeyHistory;
+				pawnKeyHistory = new long[pawnKeyHistory.length + 25];
+				for (int i = 0; i < temp.length; i++)
+					pawnKeyHistory[i] = temp[i];
+			}
+			makeMove(m);
+			return true;
+		}
+	}
+	/**
 	 * Parses a Pure Algebraic Coordinate Notation move string into a {@link #engine.Move Move} object. If the input string does not pass
 	 * the formal requirements of a PACN string, the method throws an {@link #java.lang.IllegalArgumentExcetion IllegalArgumentExcetion}.
 	 * It performs no legality check on the move.
@@ -4193,285 +4819,6 @@ public class Position implements Hashable, Copiable<Position> {
 				moveListSAN += "\n";
 		}
 		return moveListSAN;
-	}
-	/**
-	 * Makes a null move that can be taken back without breaking the game.
-	 */
-	public void makeNullMove() {
-		moveList.add(null);
-		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
-				repetitions, checkers));
-		isWhitesTurn = !isWhitesTurn;
-		enPassantRights = EnPassantRights.NONE.ind;
-		setCastlingRights();
-		halfMoveIndex++;
-		setKeys();
-	}
-	/**
-	 * Makes a move only on the chess board representations of this Position object.
-	 * 
-	 * @param move
-	 */
-	private void makeMoveOnBoard(Move move) {
-		int enPassantVictimSquare;
-		long enPassantVictimSquareBit;
-		long fromBit = Square.getByIndex(move.from).bitmap;
-		long toBit = Square.getByIndex(move.to).bitmap;
-		if (move.type == MoveType.NORMAL.ind) {
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = move.movedPiece;
-			setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
-		}
-		else if (move.type == MoveType.SHORT_CASTLING.ind) {
-			if (isWhitesTurn) {
-				offsetBoard[Square.H1.ind] = Piece.NULL.ind;
-				offsetBoard[Square.F1.ind] = Piece.W_ROOK.ind;
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.H1.bitmap, Square.F1.bitmap);
-			}
-			else {
-				offsetBoard[Square.H8.ind] = Piece.NULL.ind;
-				offsetBoard[Square.F8.ind] = Piece.B_ROOK.ind;
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.H8.bitmap, Square.F8.bitmap);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = move.movedPiece;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-		}
-		else if (move.type == MoveType.LONG_CASTLING.ind) {
-			if (isWhitesTurn) {
-				offsetBoard[Square.A1.ind] = Piece.NULL.ind;
-				offsetBoard[Square.D1.ind] = Piece.W_ROOK.ind;
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.A1.bitmap, Square.D1.bitmap);
-			}
-			else {
-				offsetBoard[Square.A8.ind] = Piece.NULL.ind;
-				offsetBoard[Square.D8.ind] = Piece.B_ROOK.ind;
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.A8.bitmap, Square.D8.bitmap);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = move.movedPiece;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-		}
-		else if (move.type == MoveType.EN_PASSANT.ind) {
-			if (isWhitesTurn)
-				enPassantVictimSquare = move.to - 8;
-			else
-				enPassantVictimSquare = move.to + 8;
-			offsetBoard[move.from] = Piece.NULL.ind;
-			offsetBoard[move.to] = move.movedPiece;
-			offsetBoard[enPassantVictimSquare] = Piece.NULL.ind;
-			enPassantVictimSquareBit = Square.getByIndex(enPassantVictimSquare).bitmap;
-			setBitboards(move.movedPiece, move.capturedPiece, fromBit, enPassantVictimSquareBit);
-			setBitboards(move.movedPiece, Piece.NULL.ind, enPassantVictimSquareBit, toBit);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
-			if (isWhitesTurn) {
-				offsetBoard[move.to] = Piece.W_QUEEN.ind;
-				setBitboards(Piece.W_QUEEN.ind, move.capturedPiece, 0, toBit);
-			}
-			else {
-				offsetBoard[move.to] = Piece.B_QUEEN.ind;
-				setBitboards(Piece.B_QUEEN.ind, move.capturedPiece, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
-			if (isWhitesTurn) {
-				offsetBoard[move.to] = Piece.W_ROOK.ind;
-				setBitboards(Piece.W_ROOK.ind, move.capturedPiece, 0, toBit);
-			}
-			else {
-				offsetBoard[move.to] = Piece.B_ROOK.ind;
-				setBitboards(Piece.B_ROOK.ind, move.capturedPiece, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
-			if (isWhitesTurn) {
-				offsetBoard[move.to] = Piece.W_BISHOP.ind;
-				setBitboards(Piece.W_BISHOP.ind, move.capturedPiece, 0, toBit);
-			}
-			else {
-				offsetBoard[move.to] = Piece.B_BISHOP.ind;
-				setBitboards(Piece.B_BISHOP.ind, move.capturedPiece, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
-			if (isWhitesTurn) {
-				offsetBoard[move.to] = Piece.W_KNIGHT.ind;
-				setBitboards(Piece.W_KNIGHT.ind, move.capturedPiece, 0, toBit);
-			}
-			else {
-				offsetBoard[move.to] = Piece.B_KNIGHT.ind;
-				setBitboards(Piece.B_KNIGHT.ind, move.capturedPiece, 0, toBit);
-			}
-			offsetBoard[move.from] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-		}
-	}
-	/**
-	 * Unmakes a move only on the chess board representations of this Position object.
-	 * 
-	 * @param move
-	 */
-	private void unmakeMoveOnBoard(Move move) {
-		int enPassantVictimSquare;
-		long fromBit = Square.getByIndex(move.from).bitmap;
-		long toBit = Square.getByIndex(move.to).bitmap;
-		if (move.type == MoveType.NORMAL.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = move.capturedPiece;
-			setBitboards(move.movedPiece, move.capturedPiece, fromBit, toBit);
-		}
-		else if (move.type == MoveType.SHORT_CASTLING.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-			if (isWhitesTurn) {
-				offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
-				offsetBoard[Square.F1.ind] = Piece.NULL.ind;
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.F1.bitmap, Square.H1.bitmap);
-			}
-			else {
-				offsetBoard[Square.H8.ind] = Piece.B_ROOK.ind;
-				offsetBoard[Square.F8.ind] = Piece.NULL.ind;
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.F8.bitmap, Square.H8.bitmap);
-			}
-		}
-		else if (move.type == MoveType.LONG_CASTLING.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-			if (isWhitesTurn) {
-				offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
-				offsetBoard[Square.D1.ind] = Piece.NULL.ind;
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, Square.D1.bitmap, Square.A1.bitmap);
-			}
-			else {
-				offsetBoard[Square.A8.ind] = Piece.B_ROOK.ind;
-				offsetBoard[Square.D8.ind] = Piece.NULL.ind;
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, Square.D8.bitmap, Square.A8.bitmap);
-			}
-		}
-		else if (move.type == MoveType.EN_PASSANT.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = Piece.NULL.ind;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, toBit);
-			if (isWhitesTurn)
-				enPassantVictimSquare = move.to - 8;
-			else
-				enPassantVictimSquare = move.to + 8;
-			offsetBoard[enPassantVictimSquare] = move.capturedPiece;
-			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, Square.getByIndex(enPassantVictimSquare).bitmap);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = move.capturedPiece;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-			if (isWhitesTurn)
-				setBitboards(Piece.W_QUEEN.ind, Piece.NULL.ind, toBit, 0);
-			else
-				setBitboards(Piece.B_QUEEN.ind, Piece.NULL.ind, toBit, 0);
-			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = move.capturedPiece;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-			if (isWhitesTurn)
-				setBitboards(Piece.W_ROOK.ind, Piece.NULL.ind, toBit, 0);
-			else
-				setBitboards(Piece.B_ROOK.ind, Piece.NULL.ind, toBit, 0);
-			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = move.capturedPiece;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-			if (isWhitesTurn)
-				setBitboards(Piece.W_BISHOP.ind, Piece.NULL.ind, toBit, 0);
-			else
-				setBitboards(Piece.B_BISHOP.ind, Piece.NULL.ind, toBit, 0);
-			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-		}
-		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
-			offsetBoard[move.from] = move.movedPiece;
-			offsetBoard[move.to] = move.capturedPiece;
-			setBitboards(move.movedPiece, Piece.NULL.ind, fromBit, 0);
-			if (isWhitesTurn)
-				setBitboards(Piece.W_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
-			else
-				setBitboards(Piece.B_KNIGHT.ind, Piece.NULL.ind, toBit, 0);
-			setBitboards(Piece.NULL.ind, move.capturedPiece, 0, toBit);
-		}
-	}
-	/**
-	 * Makes a single move from a LongQueue generated by generateMoves.
-	 * 
-	 * @param move A Move object that is going to be made in the position.
-	 */
-	public void makeMove(Move move) {
-		makeMoveOnBoard(move);
-		moveList.add(move);
-		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
-				repetitions, checkers));
-		isWhitesTurn = !isWhitesTurn;
-		setCastlingRights();
-		setEnPassantRights(move.from, move.to, move.movedPiece);
-		checkers = getCheckers();
-		isInCheck = checkers != 0;
-		halfMoveIndex++;
-		if (move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.W_PAWN.ind || move.movedPiece == Piece.B_PAWN.ind)
-			fiftyMoveRuleClock = 0;
-		else
-			fiftyMoveRuleClock++;
-		setKeys();
-		setRepetitions();
-	}
-	/**
-	 * Reverts the state of the instance to that before the last move made in every aspect necessary for the traversal of the game tree.
-	 * Used within the engine.
-	 */
-	public void unmakeMove() {
-		Move move = moveList.pop();
-		isWhitesTurn = !isWhitesTurn;
-		if (move != null) unmakeMoveOnBoard(move);
-		UnmakeRegister positionInfo = unmakeRegisterHistory.pop();
-		whiteCastlingRights = positionInfo.whiteCastlingRights;
-		blackCastlingRights = positionInfo.blackCastlingRights;
-		enPassantRights = positionInfo.enPassantRights;
-		fiftyMoveRuleClock = positionInfo.fiftyMoveRuleClock;
-		repetitions = positionInfo.repetitions;
-		checkers = positionInfo.checkers;
-		isInCheck = checkers != 0;
-		keyHistory[halfMoveIndex] = 0;
-		pawnKeyHistory[halfMoveIndex] = 0;
-		key = keyHistory[--halfMoveIndex];
-		pawnKey = pawnKeyHistory[halfMoveIndex];
-	}
-	/**
-	 * Makes a move specified by user input in Pure Algebraic Coordinate Notation. If the command is valid and the move is legal, it makes
-	 * the move and returns true, otherwise it returns false.
-	 * 
-	 * @param input A string representation of the move to make in Pure Algebraic Coordinate Notation
-	 * 				([origin square + destination square] as e.g.: b1a3 without any spaces; in case of promotion, the equal sign and the
-	 * 				letter notation of the piece the pawn is wished to be promoted to should be appended to the command as in c7c8=q; the
-	 * 				parser is not case sensitive)
-	 * @return Whether the move was legal and could successfully be made or not.
-	 */
-	public boolean makeMove(String input) {
-		Move m = parsePACN(input);
-		if (m == null || !isLegalHard(m))
-			return false;
-		else {
-			extendKeyHistory();
-			makeMove(m);
-			return true;
-		}
 	}
 	/**
 	 * Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated

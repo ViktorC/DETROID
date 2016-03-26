@@ -9,8 +9,18 @@ package util;
  */
 public final class QuickSort {
 	
-	public QuickSort() {
+	private final static QuickSort INSTANCE = new QuickSort();
+	
+	private QuickSort() {
 		
+	}
+	/**
+	 * Returns the single QuickSort instance.
+	 * 
+	 * @return
+	 */
+	public static QuickSort getInstance() {
+		return INSTANCE;
 	}
 	/**
 	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
