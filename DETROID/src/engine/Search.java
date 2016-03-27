@@ -117,7 +117,6 @@ public class Search implements Runnable {
 		private int alpha;
 		private int beta;
 		private int qDepth;
-		private QuickSort quick;
 		
 		SearchThread(Position pos, short ply, int depth, int alpha, int beta, int qDepth) {
 			this.pos = pos;
@@ -126,7 +125,6 @@ public class Search implements Runnable {
 			this.alpha = alpha;
 			this.beta = beta;
 			this.qDepth = qDepth;
-			quick = QuickSort.getInstance();
 		}
 		public Integer call() {
 			return pVsearch(pos, depth, alpha, beta, nullMoveObservHolds, qDepth);
@@ -456,7 +454,7 @@ public class Search implements Runnable {
 				// One reply extension.
 				if (matMoves.length() == 0 && nonMatMoves.length() == 1)
 					depth += FULL_PLY/2;
-				evalScore = score = eval.score(pos, alpha, beta);
+				evalScore = Integer.MIN_VALUE;
 				// Order and search the non-material moves.
 				nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
 				for (int i = 0; i < nonMatMovesArr.length; i++) {
@@ -480,6 +478,8 @@ public class Search implements Runnable {
 					// Futility pruning, extended futility pruning, and razoring.
 					if (depth/FULL_PLY <= 3) {
 						if (alpha > checkMateLim && beta < -checkMateLim && !inCheck && lastMoveIsMaterial && !pos.givesCheck(move)) {
+							if (evalScore == Integer.MIN_VALUE)
+								evalScore = eval.score(pos, alpha, beta);
 							if (depth/FULL_PLY == 1) {
 								if (evalScore + FMAR1 <= alpha)
 									continue;
@@ -708,7 +708,7 @@ public class Search implements Runnable {
 		}
 	}
 	
-	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
+	public final static int MAX_NOMINAL_SEARCH_DEPTH = 10;
 	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
@@ -721,7 +721,8 @@ public class Search implements Runnable {
 	
 	private final static int FULL_PLY = 4;	// For fractional ply extensions.
 	
-	ThreadPoolExecutor threadPool;
+	private ThreadPoolExecutor threadPool;
+	private int numOfThreads;
 	
 	private Position pos;
 	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
@@ -743,6 +744,8 @@ public class Search implements Runnable {
 	
 	private boolean doBreak = false;
 	
+	private QuickSort quick;
+	
 	private Results results;
 	
 	/**
@@ -762,24 +765,25 @@ public class Search implements Runnable {
 	 * @param pT Pawn hash table.
 	 */
 	public Search(Position pos, long timeLeft, long maxNodes, Move[] moves, RelativeHistoryTable hT, byte hashEntryGen,
-			HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT, int searchThreads) {
+			HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT, int numOfSearchThreads) {
+		numOfThreads = numOfSearchThreads;
 		this.pos = pos.deepCopy();
-		int phaseScore = Evaluator.phaseScore(pos);
+		int phaseScore = Evaluator.phaseScore(this.pos);
+		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
 		if (maxNodes <= 0)
 			pondering = true;
 		else {
 			pondering = false;
 			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(pos, phaseScore, timeLeft);
 		}
-		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
 		kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);
 		this.hT = hT;
 		this.hashEntryGen = hashEntryGen;
 		this.tT = tT;
 		this.eT = eT;
 		this.pT = pT;
+		quick = QuickSort.getInstance();
 		results = new Results();
-		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(searchThreads);
 	}
 	/**
 	 * Returns an observable container class for the results of the search.
@@ -815,9 +819,11 @@ public class Search implements Runnable {
 	}
 	@Override
 	public void run() {
+		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numOfThreads);
 		eval = new Evaluator(eT, pT, hashEntryGen);
 		deadLine = System.currentTimeMillis() + searchTime;
 		iterativeDeepening();
+		threadPool.shutdown();
 	}
 	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft) {
 		// !FIXME

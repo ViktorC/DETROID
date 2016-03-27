@@ -312,7 +312,7 @@ public final class Evaluator {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase, piece;
-		short pawnScore, baseScore, openingScore, endgameScore, pstScore, score;
+		short pawnScore, baseScore, openingScore, endgameScore, score;
 		byte[] bishopSqrArr, offsetBoard;;
 		boolean isWhitesTurn;
 		ETEntry eE;
@@ -374,8 +374,6 @@ public final class Evaluator {
 		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
 		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
 		baseScore += pawnScore;
-		if (!isWhitesTurn)
-			baseScore *= -1;
 		openingScore = endgameScore = 0;
 		offsetBoard = pos.getOffsetBoard();
 		for (int i = 0; i < offsetBoard.length; i++) {
@@ -385,10 +383,11 @@ public final class Evaluator {
 			openingScore += PST_OPENING[piece - 1][i];
 			endgameScore += PST_ENDGAME[piece - 1][i];
 		}
-		pstScore = (short)taperedEvalScore(openingScore, endgameScore, phase);
+		openingScore += baseScore;
+		endgameScore += baseScore;
+		score = (short)taperedEvalScore(openingScore, endgameScore, phase);
 		if (!isWhitesTurn)
-			pstScore *= -1;
-		score = (short)(baseScore + pstScore);
+			score *= -1;
 		eT.insert(new ETEntry(pos.key, score, eGen));
 		return score;
 	}

@@ -36,8 +36,8 @@ public class Engine implements UCI {
 		this.in = new Scanner(in);
 		this.out = new PrintStream(out);
 		this.searchResultObserver = searchResultObserver;
-		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.75*Runtime.getRuntime().maxMemory()/(1 << 20) ?
-				(int)(0.75*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
+		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.5*Runtime.getRuntime().maxMemory()/(1 << 20) ?
+				(int)(0.5*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
 		hT = new RelativeHistoryTable();
 		tT = new HashTable<>(maxHashMemory/2, TTEntry.SIZE);
 		eT = new HashTable<>(maxHashMemory*15/32, ETEntry.SIZE);
@@ -55,7 +55,7 @@ public class Engine implements UCI {
 		search = new Search(copy, 0, 0, null, hT, gen, tT, eT, pT, numOfCores - 1);
 		search.run();
 	}
-	private Move search(long timeLeft, long maxNodes, Move[] moves) {
+	private Move search(long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves) {
 		Results res;
 		search = new Search(game.getPosition(), timeLeft, maxNodes, moves, hT, gen, tT, eT, pT, numOfCores - 1);
 		res = search.getResults();

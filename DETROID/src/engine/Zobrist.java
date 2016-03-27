@@ -261,14 +261,14 @@ public final class Zobrist {
 	public void setHashKeys(Position p) {
 		byte[] board64 = p.getOffsetBoard();
 		long key = 0, pawnKey = 0;
+		int piece;
 		if (!p.isWhitesTurn)
 			key ^= turn;
 		for (int i = 0; i < board64.length; i++) {
+			piece = board64[i];
 			key ^= board[board64[i]][i];
-			if (board64[i] == Piece.W_PAWN.ind)
-				pawnKey ^= board[Piece.W_PAWN.ind][i];
-			else if (board64[i] == Piece.B_PAWN.ind)
-				pawnKey ^= board[Piece.B_PAWN.ind][i];
+			if (piece == Piece.W_PAWN.ind || piece == Piece.B_PAWN.ind || piece == Piece.W_KING.ind || piece == Piece.B_KING.ind)
+				pawnKey ^= board[piece][i];
 		}
 		key ^= whiteCastlingRights[p.whiteCastlingRights];
 		key ^= blackCastlingRights[p.blackCastlingRights];
