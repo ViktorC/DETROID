@@ -294,6 +294,7 @@ public class Position implements Hashable, Copiable<Position> {
 			keyHistory[i] = pos.keyHistory[i];
 			pawnKeyHistory[i] = pos.pawnKeyHistory[i];
 		}
+		gen = pos.gen;
 		reverseMoves = new Stack<>();
 		moveList = new Stack<>();
 		while (pos.moveList.hasNext())
