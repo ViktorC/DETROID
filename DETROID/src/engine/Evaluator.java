@@ -151,12 +151,6 @@ public final class Evaluator {
 	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT,
 		PST_W_PAWN_ENDGAME, PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_ENDGAME};
 	
-	private final static long UNDEFINED_POSITION_KEY = -1;
-	
-	private long lastEvaluatedPos = UNDEFINED_POSITION_KEY;
-	private long lastEvaluatedPosPrev = UNDEFINED_POSITION_KEY;
-	private short lastPSTscore;
-	
 	private HashTable<ETEntry> eT;	// Evaluation score hash table.
 	private HashTable<PTEntry> pT;	// Pawn hash table.
 	
@@ -320,7 +314,7 @@ public final class Evaluator {
 		int bishopField, bishopColor, newBishopColor, phase, piece;
 		short pawnScore, baseScore, openingScore, endgameScore, pstScore, score;
 		byte[] bishopSqrArr, offsetBoard;;
-		boolean isWhitesTurn, doLazyEval;
+		boolean isWhitesTurn;
 		ETEntry eE;
 		PTEntry pE;
 		eE = eT.lookUp(pos.key);
@@ -382,25 +376,6 @@ public final class Evaluator {
 		baseScore += pawnScore;
 		if (!isWhitesTurn)
 			baseScore *= -1;
-		doLazyEval = false;
-		if (lastEvaluatedPos != UNDEFINED_POSITION_KEY) {
-			if (pos.halfMoveIndex > 0) {
-				if (lastEvaluatedPosPrev != UNDEFINED_POSITION_KEY)
-					doLazyEval = pos.key == lastEvaluatedPosPrev || pos.getPrevHashKey() == lastEvaluatedPos ||
-						pos.getPrevHashKey() == lastEvaluatedPosPrev;
-				else
-					doLazyEval = pos.getPrevHashKey() == lastEvaluatedPos;
-			}
-			else if (lastEvaluatedPosPrev != UNDEFINED_POSITION_KEY)
-				doLazyEval = pos.key == lastEvaluatedPosPrev;
-		}
-		// Lazy evaluation.
-		if (doLazyEval) {
-			score = (short)(isWhitesTurn ? lastPSTscore : -lastPSTscore);
-			score += baseScore;
-			if (score <= alpha - LAZY_EVAL_MAR || score >= beta + LAZY_EVAL_MAR)
-				return baseScore;
-		}
 		openingScore = endgameScore = 0;
 		offsetBoard = pos.getOffsetBoard();
 		for (int i = 0; i < offsetBoard.length; i++) {
@@ -411,9 +386,6 @@ public final class Evaluator {
 			endgameScore += PST_ENDGAME[piece - 1][i];
 		}
 		pstScore = (short)taperedEvalScore(openingScore, endgameScore, phase);
-		lastEvaluatedPos = pos.key;
-		lastEvaluatedPosPrev = pos.halfMoveIndex > 0 ? pos.getPrevHashKey() : UNDEFINED_POSITION_KEY;
-		lastPSTscore = pstScore;
 		if (!isWhitesTurn)
 			pstScore *= -1;
 		score = (short)(baseScore + pstScore);

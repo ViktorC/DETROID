@@ -3636,8 +3636,7 @@ public class Position implements Hashable, Copiable<Position> {
 					blackRooks &= allBlackOccupied;
 					blackBishops &= allBlackOccupied;
 					blackKnights &= allBlackOccupied;
-					// It would normally be impossible for a pawn the reside on the first or last ranks. In case of artificial positions...
-					blackPawns &= allBlackOccupied;
+					// It is impossible for a pawn the reside on the first or last ranks.
 					allNonBlackOccupied = ~allBlackOccupied;
 				}
 			}
@@ -3654,7 +3653,6 @@ public class Position implements Hashable, Copiable<Position> {
 					blackRooks &= allBlackOccupied;
 					blackBishops &= allBlackOccupied;
 					blackKnights &= allBlackOccupied;
-					blackPawns &= allBlackOccupied;
 					allNonBlackOccupied = ~allBlackOccupied;
 				}
 			}
@@ -3671,7 +3669,6 @@ public class Position implements Hashable, Copiable<Position> {
 					blackRooks &= allBlackOccupied;
 					blackBishops &= allBlackOccupied;
 					blackKnights &= allBlackOccupied;
-					blackPawns &= allBlackOccupied;
 					allNonBlackOccupied = ~allBlackOccupied;
 				}
 			}
@@ -3688,7 +3685,6 @@ public class Position implements Hashable, Copiable<Position> {
 					blackRooks &= allBlackOccupied;
 					blackBishops &= allBlackOccupied;
 					blackKnights &= allBlackOccupied;
-					blackPawns &= allBlackOccupied;
 					allNonBlackOccupied = ~allBlackOccupied;
 				}
 			}
@@ -3769,7 +3765,6 @@ public class Position implements Hashable, Copiable<Position> {
 					whiteRooks &= allWhiteOccupied;
 					whiteBishops &= allWhiteOccupied;
 					whiteKnights &= allWhiteOccupied;
-					whitePawns &= allWhiteOccupied;
 					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
 			}
@@ -3786,7 +3781,6 @@ public class Position implements Hashable, Copiable<Position> {
 					whiteRooks &= allWhiteOccupied;
 					whiteBishops &= allWhiteOccupied;
 					whiteKnights &= allWhiteOccupied;
-					whitePawns &= allWhiteOccupied;
 					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
 			}
@@ -3803,7 +3797,6 @@ public class Position implements Hashable, Copiable<Position> {
 					whiteRooks &= allWhiteOccupied;
 					whiteBishops &= allWhiteOccupied;
 					whiteKnights &= allWhiteOccupied;
-					whitePawns &= allWhiteOccupied;
 					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
 			}
@@ -3820,7 +3813,6 @@ public class Position implements Hashable, Copiable<Position> {
 					whiteRooks &= allWhiteOccupied;
 					whiteBishops &= allWhiteOccupied;
 					whiteKnights &= allWhiteOccupied;
-					whitePawns &= allWhiteOccupied;
 					allNonWhiteOccupied = ~allWhiteOccupied;
 				}
 			}
