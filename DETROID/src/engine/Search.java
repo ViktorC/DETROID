@@ -138,6 +138,7 @@ public class Search implements Runnable {
 		private int beta;
 		private boolean nullMoveAllowed;
 		private int qDepth;
+		private boolean doStopThread;
 		
 		SearchThread(Position pos, short ply, int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
 			this.pos = pos;
@@ -147,7 +148,9 @@ public class Search implements Runnable {
 			this.beta = beta;
 			this.nullMoveAllowed = nullMoveAllowed;
 			this.qDepth = qDepth;
+			doStopThread = false;
 		}
+		@Override
 		public Integer call() {
 			return pVsearch(depth, alpha, beta, nullMoveAllowed, qDepth);
 		}
@@ -183,8 +186,10 @@ public class Search implements Runnable {
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
-			if (Thread.currentThread().isInterrupted() || (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes)))
-				doBreak = true;
+			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
+				doStopSearch = true;
+			if (Thread.currentThread().isInterrupted())
+				doStopThread = true;
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
 				if (pos.getRepetitions() >= 3)
@@ -370,7 +375,7 @@ public class Search implements Runnable {
 								break Search;
 						}
 					}
-					if (doBreak)
+					if (doStopSearch || doStopThread)
 						break Search;
 				}
 				// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
@@ -402,7 +407,7 @@ public class Search implements Runnable {
 									hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
 							}
 						}
-						if (doBreak)
+						if (doStopSearch || doStopThread)
 							break Search;
 					}
 				}
@@ -433,7 +438,7 @@ public class Search implements Runnable {
 									hT.recordUnsuccessfulMove(killerMove2);	// Record failure in the relative history table.
 							}
 						}
-						if (doBreak)
+						if (doStopSearch || doStopThread)
 							break Search;
 					}
 				}	// Killer move check ending.
@@ -467,7 +472,7 @@ public class Search implements Runnable {
 								break Search;
 						}
 					}
-					if (doBreak)
+					if (doStopSearch || doStopThread)
 						break Search;
 				}
 				// Generate the non-material legal moves if they are not generated yet.
@@ -550,7 +555,7 @@ public class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);	// Record failure in the relative history table.
 						}
 					}
-					if (doBreak)
+					if (doStopSearch || doStopThread)
 						break Search;
 				}
 			}
@@ -596,8 +601,10 @@ public class Search implements Runnable {
 			int bestScore, searchScore;
 			if (depth != 0)
 				nodes.incrementAndGet();
-			if (Thread.currentThread().isInterrupted() || (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes)))
-				doBreak = true;
+			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
+				doStopSearch = true;
+			if (Thread.currentThread().isInterrupted())
+				doStopThread = true;
 			// Just for my peace of mind.
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
@@ -664,7 +671,7 @@ public class Search implements Runnable {
 								break;
 						}
 					}
-					if (doBreak)
+					if (doStopSearch || doStopThread)
 						break;
 				}
 			}
@@ -757,6 +764,7 @@ public class Search implements Runnable {
 	private byte hashEntryGen;		// Entry generation.
 	
 	private Evaluator eval;
+	private QuickSort quick;
 	
 	private boolean pondering;
 	private long searchTime;
@@ -765,9 +773,7 @@ public class Search implements Runnable {
 	private long maxNodes;
 	private AtomicLong nodes;	// Number of searched positions.
 	
-	private boolean doBreak;
-	
-	private QuickSort quick;
+	private boolean doStopSearch;
 	
 	/**
 	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
@@ -779,14 +785,15 @@ public class Search implements Runnable {
 	 * @param maxNodes Max number of searched nodes.
 	 * @param moves Moves to search.
 	 * @param gamePhase The game phase in which the position is.
-	 * @param hT History table.
+	 * @param historyTable History table.
 	 * @param hashEntryGen Hash entry generation.
-	 * @param tT Transposition table.
-	 * @param eT Evaluation hash table.
-	 * @param pT Pawn hash table.
+	 * @param transposTable Transposition table.
+	 * @param evalTable Evaluation hash table.
+	 * @param pawnTable Pawn hash table.
 	 */
-	public Search(Position pos, long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves, RelativeHistoryTable hT,
-			byte hashEntryGen, HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT, int numOfSearchThreads) {
+	public Search(Position pos, long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves, RelativeHistoryTable historyTable,
+			byte hashEntryGen, HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable,
+			int numOfSearchThreads) {
 		numOfThreads = numOfSearchThreads;
 		this.pos = pos.deepCopy();
 		int phaseScore = Evaluator.phaseScore(this.pos);
@@ -801,12 +808,12 @@ public class Search implements Runnable {
 			this.maxDepth = maxDepth >= 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
 			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
 		}
-		doBreak = false;
+		doStopSearch = false;
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
-		this.hT = hT;
-		this.tT = tT;
+		this.hT = historyTable;
+		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
-		eval = new Evaluator(eT, pT, hashEntryGen);
+		eval = new Evaluator(evalTable, pawnTable, hashEntryGen);
 		results = new Results();
 		quick = QuickSort.getInstance();
 	}
@@ -871,10 +878,10 @@ public class Search implements Runnable {
 				score = compService.take().get();
 			} catch (InterruptedException | ExecutionException e) {
 				score = alpha;
-				doBreak = true;
+				doStopSearch = true;
 			}
 			this.results.set(extractPv(), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
-			if (doBreak || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine))
+			if (doStopSearch || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine))
 				break;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {

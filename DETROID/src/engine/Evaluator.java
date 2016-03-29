@@ -41,10 +41,10 @@ public final class Evaluator {
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation".
 	private final static byte[] PST_W_PAWN_OPENING =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
-		  40, 40, 40, 40, 40, 40, 40, 40,
+		  50, 50, 50, 50, 50, 50, 50, 50,
 		  10, 10, 20, 30, 30, 20, 10, 10,
-		   5,  5, 10, 25, 25, 10,  5,  5,
-		   0,  5,  5, 25, 25,  5,  5,  0,
+		   5,  5, 10, 30, 30, 10,  5,  5,
+		   0, 10,  5, 30, 30,  5, 10,  0,
 		   0,  5,  5, 20, 20,  5,  5,  0,
 		   5, 10, 10,-25,-25, 10, 10,  5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
@@ -154,12 +154,12 @@ public final class Evaluator {
 	private HashTable<ETEntry> eT;	// Evaluation score hash table.
 	private HashTable<PTEntry> pT;	// Pawn hash table.
 	
-	private byte eGen;	// Entry generation.
+	private byte hashGen;	// Entry generation.
 	
-	public Evaluator(HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, byte entryGeneration) {
+	public Evaluator(HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, byte hashEntryGeneration) {
 		eT = evalTable;
 		pT = pawnTable;
-		eGen = entryGeneration;
+		hashGen = hashEntryGeneration;
 	}
 	/**
 	 * Returns a phaseScore between 0 and 256.
@@ -319,7 +319,7 @@ public final class Evaluator {
 		PTEntry pE;
 		eE = eT.lookUp(pos.key);
 		if (eE != null) {
-			eE.generation = eGen;
+			eE.generation = hashGen;
 			return eE.score;
 		}
 		isWhitesTurn = pos.isWhitesTurn;
@@ -358,7 +358,7 @@ public final class Evaluator {
 		// Try for hashed pawn score.
 		pE = pT.lookUp(pos.pawnKey);
 		if (pE != null) {
-			pE.generation = eGen;
+			pE.generation = hashGen;
 			pawnScore = pE.score;
 		}
 		// Evaluate pawn structure.
@@ -366,7 +366,7 @@ public final class Evaluator {
 		else {
 			pawnScore = (short)((BitOperations.getHammingWeight(pos.whitePawns) -
 					BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score);
-			pT.insert(new PTEntry(pos.pawnKey, pawnScore, eGen));
+			pT.insert(new PTEntry(pos.pawnKey, pawnScore, hashGen));
 		}
 		baseScore = 0;
 		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
@@ -388,7 +388,7 @@ public final class Evaluator {
 		score = (short)taperedEvalScore(openingScore, endgameScore, phase);
 		if (!isWhitesTurn)
 			score *= -1;
-		eT.insert(new ETEntry(pos.key, score, eGen));
+		eT.insert(new ETEntry(pos.key, score, hashGen));
 		return score;
 	}
 }
