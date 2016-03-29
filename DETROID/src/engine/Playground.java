@@ -16,19 +16,18 @@ public class Playground {
 
 		@Override
 		public void update(Observable arg0, Object arg1) {
-			Results res = (Results)arg0;
-			Move.printMovesToConsole(res.getPVline());
+			System.out.println(arg0);
 		}
 		
 	}
 	
 	public static void main(String[] args) {
-		Position p = new Position();
+		Position p = new Position(tP3);
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(256);
 		HashTable<ETEntry> eT = new HashTable<>(192);
 		HashTable<PTEntry> pT = new HashTable<>(16);
-		Search s = new Search(p, 0, 0, null, hT, (byte) 0, tT, eT, pT, 1);
+		Search s = new Search(p, 0, 0, 10, 0, null, hT, (byte) 0, tT, eT, pT, Runtime.getRuntime().availableProcessors() - 1);
 		long start = System.currentTimeMillis();
 		s.getResults().addObserver(new PVO());
 		s.run();

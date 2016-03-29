@@ -1,8 +1,10 @@
 package engine;
 
+import java.util.ArrayList;
 import java.util.Observable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -101,14 +103,34 @@ public class Search implements Runnable {
 		}
 		private void set(Queue<Move> PVline, short nominalDepth, short score, long nodes, long time) {
 			this.PVline = PVline;
+			this.nominalDepth = nominalDepth;
 			this.score = score;
 			this.nodes = nodes;
 			this.time = time;
 			setChanged();
 			notifyObservers();
 		}
+		@Override
+		public String toString() {
+			String out = "PV:";
+			for (Move m : PVline)
+				out += " " + m.toString();
+			out += "\n";
+			out += "Nominal depth: " + nominalDepth + "\n";
+			out += "Score: " + score + "\n";
+			out += String.format("Time: %.2fs\n", (float)time/1000);
+			out += "Nodes: " + nodes + "\n";
+			out += "Search speed: " + nodes/Math.max(time, 1) + "kNps\n";
+			return out;
+		}
 	}
 	
+	/**
+	 * A thread-task for parallel search.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	private class SearchThread implements Callable<Integer> {
 		
 		private Position pos;
@@ -710,7 +732,7 @@ public class Search implements Runnable {
 		}
 	}
 	
-	public final static int MAX_NOMINAL_SEARCH_DEPTH = 10;
+	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
 	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
@@ -724,16 +746,16 @@ public class Search implements Runnable {
 	private final static int FULL_PLY = 4;	// For fractional ply extensions.
 	
 	private ThreadPoolExecutor threadPool;
+	private ExecutorCompletionService<Integer> compService;
 	private int numOfThreads;
 	
 	private Position pos;
 	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
+	private Results results;
 	
 	private KillerTable kT;			// Killer heuristic table.
 	private RelativeHistoryTable hT;// History heuristic table.
 	private HashTable<TTEntry> tT;	// Transposition table.
-	private HashTable<ETEntry> eT;	// Evaluation hash table.
-	private HashTable<PTEntry> pT;	// Pawn hash table.
 	private byte hashEntryGen;		// Entry generation.
 	
 	private Evaluator eval;
@@ -741,14 +763,13 @@ public class Search implements Runnable {
 	private boolean pondering;
 	private long searchTime;
 	private long deadLine;
+	private int maxDepth;
 	private long maxNodes;
 	private AtomicLong nodes;	// Number of searched positions.
 	
 	private boolean doBreak;
 	
 	private QuickSort quick;
-	
-	private Results results;
 	
 	/**
 	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
@@ -766,27 +787,30 @@ public class Search implements Runnable {
 	 * @param eT Evaluation hash table.
 	 * @param pT Pawn hash table.
 	 */
-	public Search(Position pos, long timeLeft, long maxNodes, Move[] moves, RelativeHistoryTable hT, byte hashEntryGen,
-			HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT, int numOfSearchThreads) {
+	public Search(Position pos, long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves, RelativeHistoryTable hT,
+			byte hashEntryGen, HashTable<TTEntry> tT, HashTable<ETEntry> eT, HashTable<PTEntry> pT, int numOfSearchThreads) {
 		numOfThreads = numOfSearchThreads;
 		this.pos = pos.deepCopy();
 		int phaseScore = Evaluator.phaseScore(this.pos);
 		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
-		if (maxNodes <= 0)
+		if (timeLeft <= 0 && searchTime <= 0 && maxDepth < 0 && maxNodes <= 0) {
 			pondering = true;
+			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
+		}
 		else {
 			pondering = false;
-			searchTime = timeLeft <= 0 ? 0 : allocateSearchTime(this.pos, phaseScore, timeLeft);
+			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.pos, phaseScore, timeLeft);
+			this.maxDepth = maxDepth >= 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
+			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
 		}
 		doBreak = false;
-		kT = new KillerTable(3*MAX_NOMINAL_SEARCH_DEPTH + 1);
+		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
 		this.hT = hT;
 		this.tT = tT;
-		this.eT = eT;
-		this.pT = pT;
 		this.hashEntryGen = hashEntryGen;
-		quick = QuickSort.getInstance();
+		eval = new Evaluator(eT, pT, hashEntryGen);
 		results = new Results();
+		quick = QuickSort.getInstance();
 	}
 	/**
 	 * Returns an observable container class for the results of the search.
@@ -802,13 +826,13 @@ public class Search implements Runnable {
 	 * @return A queue of Move objects according to the best line of play.
 	 */
 	private Queue<Move> extractPv() {
-		Move[] pVarr = new Move[MAX_NOMINAL_SEARCH_DEPTH];
+		Move[] pVarr = new Move[maxDepth];
 		Queue<Move> pV = new Queue<>();
 		TTEntry e;
 		Move bestMove;
 		int i, j;
 		i = j = 0;
-		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < MAX_NOMINAL_SEARCH_DEPTH) {
+		while ((e = tT.lookUp(pos.key)) != null && e.bestMove != 0 && i < maxDepth) {
 			bestMove = Move.toMove(e.bestMove);
 			pos.makeMove(bestMove);
 			pVarr[i++] = bestMove;
@@ -822,39 +846,38 @@ public class Search implements Runnable {
 	@Override
 	public void run() {
 		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numOfThreads);
-		eval = new Evaluator(eT, pT, hashEntryGen);
 		deadLine = System.currentTimeMillis() + searchTime;
 		iterativeDeepening();
 		threadPool.shutdown();
 	}
 	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft) {
 		// !FIXME
-		return 30*1000;
+		return 3600*1000;
 	}
 	/**
 	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth has been reached.
 	 */
 	private void iterativeDeepening() {
-		Future<Integer> threadResult;
 		int alpha, beta, score, failHigh, failLow;
 		SearchThread rootThread;
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
-		for (short i = 1; i <= MAX_NOMINAL_SEARCH_DEPTH; i++) {
-			rootThread = new SearchThread(pos, i, i*FULL_PLY, alpha, beta, true, 0);
-			threadResult = threadPool.submit(rootThread);
+		for (short i = 1; i <= maxDepth; i++) {
+			compService = new ExecutorCompletionService<Integer>(threadPool);
+			rootThread = new SearchThread(pos.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0);
+			compService.submit(rootThread);
 			try {
-				score = (int)threadResult.get();
+				score = compService.take().get();
 			} catch (InterruptedException | ExecutionException e) {
 				score = alpha;
 				doBreak = true;
 			}
-			results.set(extractPv(), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
+			this.results.set(extractPv(), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 			if (doBreak || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine))
-				break;
+				doBreak = false;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :

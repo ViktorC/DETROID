@@ -52,12 +52,12 @@ public class Engine implements UCI {
 		Position copy = game.getPosition().deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
-		search = new Search(copy, 0, 0, null, hT, gen, tT, eT, pT, numOfCores - 1);
+		search = new Search(copy, 0, 0, 0, 0, null, hT, gen, tT, eT, pT, numOfCores - 1);
 		search.run();
 	}
 	private Move search(long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves) {
 		Results res;
-		search = new Search(game.getPosition(), timeLeft, maxNodes, moves, hT, gen, tT, eT, pT, numOfCores - 1);
+		search = new Search(game.getPosition(), timeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, numOfCores - 1);
 		res = search.getResults();
 		if (searchResultObserver != null)
 			res.addObserver(searchResultObserver);
