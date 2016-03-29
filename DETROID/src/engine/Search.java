@@ -1,12 +1,10 @@
 package engine;
 
-import java.util.ArrayList;
 import java.util.Observable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -877,7 +875,7 @@ public class Search implements Runnable {
 			}
 			this.results.set(extractPv(), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 			if (doBreak || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine))
-				doBreak = false;
+				break;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :
