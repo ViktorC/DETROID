@@ -22,12 +22,12 @@ public class Playground {
 	}
 	
 	public static void main(String[] args) {
-		Position p = new Position();
+		Position p = new Position(tP2);
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(256);
 		HashTable<ETEntry> eT = new HashTable<>(192);
 		HashTable<PTEntry> pT = new HashTable<>(16);
-		Search s = new Search(p, 0, 0, 10, 0, null, hT, (byte) 0, tT, eT, pT, 1);
+		Search s = new Search(p, 0, 10000, -1, 0, null, hT, (byte) 0, tT, eT, pT, 4);
 		long start = System.currentTimeMillis();
 		s.getResults().addObserver(new PVO());
 		s.run();

@@ -138,6 +138,7 @@ public class Search implements Runnable {
 		private int beta;
 		private boolean nullMoveAllowed;
 		private int qDepth;
+		private boolean boundsUpdated;
 		private boolean doStopThread;
 		
 		SearchThread(Position pos, short ply, int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
@@ -148,6 +149,7 @@ public class Search implements Runnable {
 			this.beta = beta;
 			this.nullMoveAllowed = nullMoveAllowed;
 			this.qDepth = qDepth;
+			boundsUpdated = false;
 			doStopThread = false;
 		}
 		@Override
@@ -190,6 +192,12 @@ public class Search implements Runnable {
 				doStopSearch = true;
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
+			if (boundsUpdated) {
+				if (this.alpha > alpha)
+					alpha = this.alpha;
+				if (this.beta < beta)
+					beta = this.beta;
+			}
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
 				if (pos.getRepetitions() >= 3)
@@ -366,6 +374,14 @@ public class Search implements Runnable {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
+					if (boundsUpdated) {
+						if (this.alpha > alpha)
+							alpha = this.alpha;
+						if (this.beta < beta)
+							beta = this.beta;
+						if (depth == 0)
+							boundsUpdated = false;
+					}
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -394,6 +410,14 @@ public class Search implements Runnable {
 						}
 						pos.unmakeMove();
 						searchedMoves++;
+						if (boundsUpdated) {
+							if (this.alpha > alpha)
+								alpha = this.alpha;
+							if (this.beta < beta)
+								beta = this.beta;
+							if (depth == 0)
+								boundsUpdated = false;
+						}
 						if (score > bestScore) {
 							bestMove = killerMove1;
 							bestScore = score;
@@ -425,6 +449,14 @@ public class Search implements Runnable {
 						}
 						pos.unmakeMove();
 						searchedMoves++;
+						if (boundsUpdated) {
+							if (this.alpha > alpha)
+								alpha = this.alpha;
+							if (this.beta < beta)
+								beta = this.beta;
+							if (depth == 0)
+								boundsUpdated = false;
+						}
 						if (score > bestScore) {
 							bestMove = killerMove2;
 							bestScore = score;
@@ -463,6 +495,14 @@ public class Search implements Runnable {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
+					if (boundsUpdated) {
+						if (this.alpha > alpha)
+							alpha = this.alpha;
+						if (this.beta < beta)
+							beta = this.beta;
+						if (depth == 0)
+							boundsUpdated = false;
+					}
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -540,6 +580,14 @@ public class Search implements Runnable {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
+					if (boundsUpdated) {
+						if (this.alpha > alpha)
+							alpha = this.alpha;
+						if (this.beta < beta)
+							beta = this.beta;
+						if (depth == 0)
+							boundsUpdated = false;
+					}
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -605,6 +653,12 @@ public class Search implements Runnable {
 				doStopSearch = true;
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
+			if (boundsUpdated) {
+				if (this.alpha > alpha)
+					alpha = this.alpha;
+				if (this.beta < beta)
+					beta = this.beta;
+			}
 			// Just for my peace of mind.
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
@@ -663,6 +717,12 @@ public class Search implements Runnable {
 					pos.makeMove(move);
 					searchScore = -quiescence(depth - 1, -beta, -alpha);
 					pos.unmakeMove();
+					if (boundsUpdated) {
+						if (this.alpha > alpha)
+							alpha = this.alpha;
+						if (this.beta < beta)
+							beta = this.beta;
+					}
 					if (searchScore > bestScore) {
 						bestScore = searchScore;
 						if (bestScore > alpha) {
@@ -865,15 +925,13 @@ public class Search implements Runnable {
 	 */
 	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
-		SearchThread rootThread;
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		for (short i = 1; i <= maxDepth; i++) {
 			compService = new ExecutorCompletionService<Integer>(threadPool);
-			rootThread = new SearchThread(pos.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0);
-			compService.submit(rootThread);
+			compService.submit(new SearchThread(pos.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0));
 			try {
 				score = compService.take().get();
 			} catch (InterruptedException | ExecutionException e) {
