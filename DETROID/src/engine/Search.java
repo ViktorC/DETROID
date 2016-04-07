@@ -667,28 +667,25 @@ public class Search implements Runnable {
 				materialMoves = null;
 				bestScore = mateScore;
 			}
-			/* Generate tactical and quiet moves separately then combine them in the quiet move list for evaluation of the position for stand-pat
-			 * this way the ordering if the interesting moves can be restricted to only the tactical moves. */
+			// Set lower bound.
 			else {
-				// Generate only material moves.
 				materialMoves = pos.generateMaterialMoves();
-				// Stand-pat, evaluate position.
-				if (nullMoveObservHolds) {
-					if (materialMoves.length() == 0) {
-						allMoves = pos.generateNonMaterialMoves();
-						allMoves.addAll(materialMoves);
-					}
-					else
-						allMoves = null;
-					if (allMoves != null && allMoves.length() == 0)
-						bestScore = inCheck ? mateScore : Termination.STALE_MATE.score;
-					// Use evaluation hash table.
-					else
-						bestScore = eval.score(pos, alpha, beta);
+				if (materialMoves.length() == 0) {
+					allMoves = pos.generateNonMaterialMoves();
+					allMoves.addAll(materialMoves);
 				}
-				// No bound.
 				else
-					bestScore = mateScore;
+					allMoves = null;
+				if (allMoves != null && allMoves.length() == 0)
+					bestScore = inCheck ? mateScore : Termination.STALE_MATE.score;
+				else {
+					// Stand pat.
+					if (nullMoveObservHolds)
+						bestScore = eval.score(pos, alpha, beta);
+					// If the null move observation does not hold, the lower bound is the mate score; evaluate only if the position is quiet.
+					else
+						bestScore = materialMoves.length() == 0 ? eval.score(pos, alpha, beta) : mateScore;
+				}
 			}
 			// Fail soft.
 			if (bestScore > alpha) {
