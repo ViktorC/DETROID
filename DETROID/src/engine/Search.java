@@ -696,7 +696,7 @@ public class Search implements Runnable {
 			// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
 			if (inCheck) {
 				nodes.decrementAndGet();
-				searchScore = pVsearch(FULL_PLY, alpha, beta, false, depth - 2);
+				searchScore = pVsearch(FULL_PLY, alpha, beta, false, depth - 1);
 				if (searchScore > bestScore) {
 					bestScore = searchScore;
 					if (bestScore > alpha)
@@ -709,7 +709,7 @@ public class Search implements Runnable {
 				for (int i = 0; i < moves.length; i++) {
 					move = moves[i];
 					// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-					if (move.value < 0 || (nullMoveObservHolds && move.value < alpha - Q_DELTA))
+					if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - Q_DELTA))
 						break;
 					pos.makeMove(move);
 					searchScore = -quiescence(depth - 1, -beta, -alpha);

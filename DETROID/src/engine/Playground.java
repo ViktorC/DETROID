@@ -27,7 +27,7 @@ public class Playground {
 		HashTable<TTEntry> tT = new HashTable<>(256);
 		HashTable<ETEntry> eT = new HashTable<>(192);
 		HashTable<PTEntry> pT = new HashTable<>(16);
-		Search s = new Search(p, 0, 0, 13, 0, null, hT, (byte) 0, tT, eT, pT, 4);
+		Search s = new Search(p, 0, 0, 10, 0, null, hT, (byte) 0, tT, eT, pT, 4);
 		long start = System.currentTimeMillis();
 		s.getResults().addObserver(new PVO());
 		s.run();
