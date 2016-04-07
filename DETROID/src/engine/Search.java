@@ -181,7 +181,7 @@ public class Search implements Runnable {
 			Move[] matMovesArr, nonMatMovesArr;
 			TTEntry e;
 			KillerTableEntry kE;
-			bestScore = Termination.CHECK_MATE.score;
+			bestScore = mateScore;
 			bestMove = null;
 			searchedMoves = 0;
 			hashMove = killerMove1 = killerMove2 = null;
