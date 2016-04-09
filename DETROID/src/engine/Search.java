@@ -931,6 +931,7 @@ public class Search implements Runnable {
 	 */
 	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
+		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
@@ -945,25 +946,40 @@ public class Search implements Runnable {
 				score = alpha;
 				doStopSearch = true;
 			}
-			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 			if (doStopSearch || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine))
 				break;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
-				alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :
-					failLow == 1 ? Math.max(alpha - 4*A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
-				failLow++;
+				if (score <= checkMateLim) {
+					alpha = Termination.CHECK_MATE.score;
+					failLow = 2;
+				}
+				else {
+					alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :
+						failLow == 1 ? Math.max(alpha - 4*A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
+					failLow++;
+				}
+				i--;
 				continue;
 			}
 			if (score >= beta) {
-				beta = failHigh == 0 ? Math.min(beta + 2*A_DELTA, -Termination.CHECK_MATE.score) :
-					failHigh == 1 ? Math.min(beta + 4*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
-				failHigh++;
+				if (score >= -checkMateLim) {
+					beta = -Termination.CHECK_MATE.score;
+					failHigh = 2;
+				}
+				else {
+					beta = failHigh == 0 ? Math.min(beta + 2*A_DELTA, -Termination.CHECK_MATE.score) :
+						failHigh == 1 ? Math.min(beta + 4*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
+					failHigh++;
+				}
+				i--;
 				continue;
 			}
+			// Collecting results.
+			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 			failHigh = failLow = 0;
-			alpha = Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
-			beta = Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
+			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
+			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
 		}
 	}
 }
