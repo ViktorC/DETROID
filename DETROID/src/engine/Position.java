@@ -684,7 +684,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 */
 	public boolean isLegalSoft(Move move) {
 		MoveSetDatabase dB;
-		long checkers;
+		boolean checked;
 		long moveSet = 0;
 		long toBit = (1L << move.to);
 		if (offsetBoard[move.from] == move.movedPiece) {
@@ -694,7 +694,8 @@ public class Position implements Hashable, Copiable<Position> {
 					if (move.movedPiece == Piece.W_KING.ind) {
 						if (move.type == MoveType.SHORT_CASTLING.ind) {
 							if (!isInCheck && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0) {
+								if (((Square.F1.bitmap | Square.G1.bitmap) & allOccupied) == 0 &&
+										offsetBoard[Square.H1.ind] == Piece.W_ROOK.ind) {
 									if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
 										return true;
 								}
@@ -702,7 +703,8 @@ public class Position implements Hashable, Copiable<Position> {
 						}
 						else if (move.type == MoveType.LONG_CASTLING.ind) {
 							if (!isInCheck && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0) {
+								if (((Square.B1.bitmap | Square.C1.bitmap | Square.D1.bitmap) & allOccupied) == 0 &&
+										offsetBoard[Square.A1.ind] == Piece.W_ROOK.ind) {
 									if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
 										return true;
 								}
@@ -737,7 +739,8 @@ public class Position implements Hashable, Copiable<Position> {
 					if (move.movedPiece == Piece.B_KING.ind) {
 						if (move.type == MoveType.SHORT_CASTLING.ind) {
 							if (!isInCheck && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0) {
+								if (((Square.F8.bitmap | Square.G8.bitmap) & allOccupied) == 0 &&
+										offsetBoard[Square.H8.ind] == Piece.B_ROOK.ind) {
 									if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
 										return true;
 								}
@@ -745,7 +748,8 @@ public class Position implements Hashable, Copiable<Position> {
 						}
 						else if (move.type == MoveType.LONG_CASTLING.ind) {
 							if (!isInCheck && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0) {
+								if (((Square.B8.bitmap | Square.C8.bitmap | Square.D8.bitmap) & allOccupied) == 0 &&
+										offsetBoard[Square.A8.ind] == Piece.B_ROOK.ind) {
 									if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
 										return true;
 								}
@@ -781,9 +785,9 @@ public class Position implements Hashable, Copiable<Position> {
 			}
 			if ((moveSet & toBit) != 0) {
 				makeMoveOnBoard(move);
-				checkers = getCheckers();
+				checked = isAttacked(BitOperations.indexOfBit(isWhitesTurn ? whiteKing : blackKing), !isWhitesTurn);
 				unmakeMoveOnBoard(move);
-				if (checkers == 0) return true;
+				if (!checked) return true;
 			}
 		}
 		return false;
@@ -3484,72 +3488,6 @@ public class Position implements Hashable, Copiable<Position> {
 			return generateNonMaterialNormalMoves();
 	}
 	/**
-	 * Makes a null move that can be taken back without breaking the game.
-	 */
-	public void makeNullMove() {
-		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
-				repetitions, checkers));
-		isWhitesTurn = !isWhitesTurn;
-		enPassantRights = EnPassantRights.NONE.ind;
-		if (moveList.getHead() != null){
-			if (isWhitesTurn) {
-				if (whiteCastlingRights == CastlingRights.NONE.ind);
-				else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
-					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.NONE.ind;
-				}
-				else if (whiteCastlingRights == CastlingRights.LONG.ind) {
-					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.NONE.ind;
-				}
-				else {
-					if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
-						if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
-							if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-								whiteCastlingRights = CastlingRights.NONE.ind;
-							else
-								whiteCastlingRights = CastlingRights.LONG.ind;
-						}
-						else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-							whiteCastlingRights = CastlingRights.SHORT.ind;
-					}
-					else
-						whiteCastlingRights = CastlingRights.NONE.ind;
-				}
-			}
-			else {
-				if (blackCastlingRights == CastlingRights.NONE.ind);
-				else if (blackCastlingRights == CastlingRights.SHORT.ind) {
-					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.NONE.ind;
-				}
-				else if (blackCastlingRights == CastlingRights.LONG.ind) {
-					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.NONE.ind;
-				}
-				else {
-					if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
-						if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
-							if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-								blackCastlingRights = CastlingRights.NONE.ind;
-							else
-								blackCastlingRights = CastlingRights.LONG.ind;
-						}
-						else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-							blackCastlingRights = CastlingRights.SHORT.ind;
-					}
-					else
-						blackCastlingRights = CastlingRights.NONE.ind;
-				}
-			}
-		}
-		moveList.add(null);
-		halfMoveIndex++;
-		gen.updateKeys(this);
-		keyHistory[halfMoveIndex] = key;
-		pawnKeyHistory[halfMoveIndex] = pawnKey;
-	}
-	/**
 	 * Makes a move only on the chess board representations of this Position object.
 	 * 
 	 * @param move
@@ -3636,7 +3574,7 @@ public class Position implements Hashable, Copiable<Position> {
 					blackRooks &= allBlackOccupied;
 					blackBishops &= allBlackOccupied;
 					blackKnights &= allBlackOccupied;
-					// It is impossible for a pawn the reside on the first or last ranks.
+					// It is impossible for a pawn to reside on the first or last ranks.
 					allNonBlackOccupied = ~allBlackOccupied;
 				}
 			}
@@ -4226,14 +4164,79 @@ public class Position implements Hashable, Copiable<Position> {
 		gen.updateKeys(this);
 		keyHistory[halfMoveIndex] = key;
 		pawnKeyHistory[halfMoveIndex] = pawnKey;
+		repetitions = 0;
 		if (fiftyMoveRuleClock >= 4) {
 			for (int i = halfMoveIndex; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
 				if (keyHistory[i] == key)
 					repetitions++;
 			}
 		}
-		else
-			repetitions = 0;
+	}
+	/**
+	 * Makes a null move that can be taken back without breaking the game.
+	 */
+	public void makeNullMove() {
+		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
+				repetitions, checkers));
+		isWhitesTurn = !isWhitesTurn;
+		enPassantRights = EnPassantRights.NONE.ind;
+		if (moveList.getHead() != null){
+			if (isWhitesTurn) {
+				if (whiteCastlingRights == CastlingRights.NONE.ind);
+				else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
+					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.NONE.ind;
+				}
+				else if (whiteCastlingRights == CastlingRights.LONG.ind) {
+					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.NONE.ind;
+				}
+				else {
+					if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
+						if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
+							if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+								whiteCastlingRights = CastlingRights.NONE.ind;
+							else
+								whiteCastlingRights = CastlingRights.LONG.ind;
+						}
+						else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+							whiteCastlingRights = CastlingRights.SHORT.ind;
+					}
+					else
+						whiteCastlingRights = CastlingRights.NONE.ind;
+				}
+			}
+			else {
+				if (blackCastlingRights == CastlingRights.NONE.ind);
+				else if (blackCastlingRights == CastlingRights.SHORT.ind) {
+					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.NONE.ind;
+				}
+				else if (blackCastlingRights == CastlingRights.LONG.ind) {
+					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.NONE.ind;
+				}
+				else {
+					if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
+						if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
+							if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+								blackCastlingRights = CastlingRights.NONE.ind;
+							else
+								blackCastlingRights = CastlingRights.LONG.ind;
+						}
+						else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+							blackCastlingRights = CastlingRights.SHORT.ind;
+					}
+					else
+						blackCastlingRights = CastlingRights.NONE.ind;
+				}
+			}
+		}
+		moveList.add(null);
+		halfMoveIndex++;
+		gen.updateKeys(this);
+		keyHistory[halfMoveIndex] = key;
+		pawnKeyHistory[halfMoveIndex] = pawnKey;
 	}
 	/**
 	 * Reverts the state of the instance to that before the last move made in every aspect necessary for the traversal of the game tree.

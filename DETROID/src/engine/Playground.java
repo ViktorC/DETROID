@@ -21,11 +21,11 @@ public class Playground {
 	}
 	
 	public static void main(String[] args) {
-		Position p = new Position(tP1);
+		Position p = new Position();
 		RelativeHistoryTable hT = new RelativeHistoryTable();
-		HashTable<TTEntry> tT = new HashTable<>(256);
-		HashTable<ETEntry> eT = new HashTable<>(192);
-		HashTable<PTEntry> pT = new HashTable<>(16);
+		HashTable<TTEntry> tT = new HashTable<>(64);
+		HashTable<ETEntry> eT = new HashTable<>(60);
+		HashTable<PTEntry> pT = new HashTable<>(4);
 		Search s = new Search(p, 0, 0, 10, 0, null, hT, (byte) 0, tT, eT, pT, 4);
 		long start = System.currentTimeMillis();
 		s.getResults().addObserver(new PVO());

@@ -266,7 +266,7 @@ public final class Zobrist {
 			key ^= turn;
 		for (int i = 0; i < board64.length; i++) {
 			piece = board64[i];
-			key ^= board[board64[i]][i];
+			key ^= board[piece][i];
 			if (piece == Piece.W_PAWN.ind || piece == Piece.B_PAWN.ind || piece == Piece.W_KING.ind || piece == Piece.B_KING.ind)
 				pawnKey ^= board[piece][i];
 		}
