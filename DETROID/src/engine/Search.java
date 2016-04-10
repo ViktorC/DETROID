@@ -5,6 +5,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -932,22 +933,29 @@ public class Search implements Runnable {
 	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
 		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
+		Stack<Future<Integer>> futures;
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		for (short i = 1; i <= maxDepth; i++) {
+			futures = new Stack<>();
 			compService = new ExecutorCompletionService<Integer>(threadPool);
-			compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0));
+			for (int j = 0; j < numOfThreads; j++)
+				futures.add(compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0)));
 			try {
 				score = compService.take().get();
+				for (Future<Integer> f : futures)
+					f.cancel(true);
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 				score = alpha;
 				doStopSearch = true;
 			}
-			if (doStopSearch || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine))
+			if (doStopSearch || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
+				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 				break;
+			}
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= checkMateLim) {
@@ -975,7 +983,6 @@ public class Search implements Runnable {
 				i--;
 				continue;
 			}
-			// Collecting results.
 			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 			failHigh = failLow = 0;
 			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
