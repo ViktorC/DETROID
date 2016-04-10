@@ -44,8 +44,8 @@ public final class Evaluator {
 		  50, 50, 50, 50, 50, 50, 50, 50,
 		  10, 10, 20, 30, 30, 20, 10, 10,
 		   5,  5, 10, 30, 30, 10,  5,  5,
-		   0, 10,  5, 30, 30,  5, 10,  0,
-		   0,  5,  5, 20, 20,  5,  5,  0,
+		   0, 10,  5, 40, 50,  5, 10,  0,
+		   0,  5,  5, 50, 40,  5,  5,  0,
 		   5, 10, 10,-25,-25, 10, 10,  5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
 	private final static byte[] PST_W_PAWN_ENDGAME =
@@ -53,11 +53,20 @@ public final class Evaluator {
 		  50, 50, 50, 50, 50, 50, 50, 50,
 		  10, 10, 20, 30, 30, 20, 10, 10,
 		   5,  5, 10, 25, 25, 10,  5,  5,
-		   0,  0,  0, 20, 20,  0,  0,  0,
-		   5, -5,-10,  0,  0,-10, -5,  5,
+		   0,  0,  0, 20, 30,  0,  0,  0,
+		   5, -5,-10, 20, 10,-10, -5,  5,
 		   5, 10, 10,-20,-20, 10, 10,  5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
-	private final static byte[] PST_W_KNIGHT =
+	private final static byte[] PST_W_KNIGHT_OPENING =
+		{-15,-10, -5, -5, -5, -5,-10,-15,
+		 -10,-10,  0,  0,  0,  0,-10,-10,
+		  -5,  0,  5, 10, 10,  5,  0, -5,
+		  -5,  0, 10, 15, 15, 10,  0, -5,
+		  -5,  0, 10, 15, 15, 10,  0, -5,
+		  -5,  0,  5, 10, 10,  5,  0, -5,
+		 -10, -5,  0,  0,  0,  0, -5,-10,
+		 -15,-10, -5, -5, -5, -5,-10,-15};
+	private final static byte[] PST_W_KNIGHT_ENDGAME =
 		{-50,-40,-30,-30,-30,-30,-40,-50,
 		 -40,-20,  0,  0,  0,  0,-20,-40,
 		 -30,  0, 10, 15, 15, 10,  0,-30,
@@ -123,7 +132,8 @@ public final class Evaluator {
 	
 	private final static byte[] PST_B_PAWN_OPENING = new byte[64];
 	private final static byte[] PST_B_PAWN_ENDGAME = new byte[64];
-	private final static byte[] PST_B_KNIGHT = new byte[64];
+	private final static byte[] PST_B_KNIGHT_OPENING = new byte[64];
+	private final static byte[] PST_B_KNIGHT_ENDGAME = new byte[64];
 	private final static byte[] PST_B_BISHOP = new byte[64];
 	private final static byte[] PST_B_ROOK_OPENING = new byte[64];
 	private final static byte[] PST_B_ROOK_ENDGAME = new byte[64];
@@ -132,24 +142,30 @@ public final class Evaluator {
 	private final static byte[] PST_B_KING_ENDGAME = new byte[64];
 	
 	static {
-		// 180ï¿½ rotation of the piece-square tables for white with negated values for black.
-		for (int i = 0; i < 64; i++) {
-			PST_B_PAWN_OPENING[i] = (byte)-PST_W_PAWN_OPENING[63 - i];
-			PST_B_PAWN_ENDGAME[i] = (byte)-PST_W_PAWN_ENDGAME[63 - i];
-			PST_B_KNIGHT[i] = (byte)-PST_W_KNIGHT[63 - i];
-			PST_B_BISHOP[i] = (byte)-PST_W_BISHOP[63 - i];
-			PST_B_ROOK_OPENING[i] = (byte)-PST_W_ROOK_OPENING[63 - i];
-			PST_B_ROOK_ENDGAME[i] = (byte)-PST_W_ROOK_ENDGAME[63 - i];
-			PST_B_QUEEN[i] = (byte)-PST_W_QUEEN[63 - i];
-			PST_B_KING_OPENING[i] = (byte)-PST_W_KING_OPENING[63 - i];
-			PST_B_KING_ENDGAME[i] = (byte)-PST_W_KING_ENDGAME[63 - i];
+		int c1, c2;
+		// Vertically mirrored piece-square tables with negated values for black.
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				c1 = i*8 + j;
+				c2 = 56 - i*8 + j;
+				PST_B_PAWN_OPENING[c1] = (byte)-PST_W_PAWN_OPENING[c2];
+				PST_B_PAWN_ENDGAME[c1] = (byte)-PST_W_PAWN_ENDGAME[c2];
+				PST_B_KNIGHT_OPENING[c1] = (byte)-PST_W_KNIGHT_OPENING[c2];
+				PST_B_KNIGHT_ENDGAME[c1] = (byte)-PST_W_KNIGHT_ENDGAME[c2];
+				PST_B_BISHOP[c1] = (byte)-PST_W_BISHOP[c2];
+				PST_B_ROOK_OPENING[c1] = (byte)-PST_W_ROOK_OPENING[c2];
+				PST_B_ROOK_ENDGAME[c1] = (byte)-PST_W_ROOK_ENDGAME[c2];
+				PST_B_QUEEN[c1] = (byte)-PST_W_QUEEN[c2];
+				PST_B_KING_OPENING[c1] = (byte)-PST_W_KING_OPENING[c2];
+				PST_B_KING_ENDGAME[c1] = (byte)-PST_W_KING_ENDGAME[c2];
+			}
 		}
 	}
 	
-	private final static byte[][] PST_OPENING = {PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK_OPENING, PST_W_BISHOP, PST_W_KNIGHT,
-		PST_W_PAWN_OPENING, PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK_OPENING, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_OPENING};
-	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT,
-		PST_W_PAWN_ENDGAME, PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT, PST_B_PAWN_ENDGAME};
+	private final static byte[][] PST_OPENING = {PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK_OPENING, PST_W_BISHOP, PST_W_KNIGHT_OPENING,
+		PST_W_PAWN_OPENING, PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK_OPENING, PST_B_BISHOP, PST_B_KNIGHT_OPENING, PST_B_PAWN_OPENING};
+	private final static byte[][] PST_ENDGAME = {PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT_ENDGAME,
+		PST_W_PAWN_ENDGAME, PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT_ENDGAME, PST_B_PAWN_ENDGAME};
 	
 	private HashTable<ETEntry> eT;	// Evaluation score hash table.
 	private HashTable<PTEntry> pT;	// Pawn hash table.
@@ -162,7 +178,7 @@ public final class Evaluator {
 		hashGen = hashEntryGeneration;
 	}
 	/**
-	 * Returns a phaseScore between 0 and 256.
+	 * Returns a phaseScore between 0 and 256 á la Fruit.
 	 * 
 	 * @param numOfQueens
 	 * @param numOfRooks

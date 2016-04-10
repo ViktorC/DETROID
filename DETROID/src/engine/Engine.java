@@ -3,6 +3,7 @@ package engine;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
 
@@ -13,6 +14,12 @@ import util.Queue;
 
 public class Engine implements UCI {
 
+	private final static InputStream DEFAULT_INPUT_STREAM = System.in;
+	private final static OutputStream DEFAULT_OUTPUT_STREAM = System.out;
+	private final static int DEFAULT_HASH_SIZE = 128;
+	
+	private final static Engine INSTANCE = new Engine();
+	
 	private Scanner in;
 	private PrintStream out;
 	
@@ -32,18 +39,36 @@ public class Engine implements UCI {
 	
 	boolean verbose;
 	
-	public Engine(InputStream in, OutputStream out, Observer searchResultObserver, int maxHashSizeMb) {
-		this.in = new Scanner(in);
-		this.out = new PrintStream(out);
-		this.searchResultObserver = searchResultObserver;
-		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.5*Runtime.getRuntime().maxMemory()/(1 << 20) ?
-				(int)(0.5*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
+	private Engine() {
+		setInputStream(DEFAULT_INPUT_STREAM);
+		setOutputStream(DEFAULT_OUTPUT_STREAM);
+		setHashSize(DEFAULT_HASH_SIZE);
 		hT = new RelativeHistoryTable();
 		tT = new HashTable<>(maxHashMemory/2, TTEntry.SIZE);
 		eT = new HashTable<>(maxHashMemory*15/32, ETEntry.SIZE);
 		pT = new HashTable<>(maxHashMemory/32);
 		book = Book.getInstance();
 		numOfCores = Runtime.getRuntime().availableProcessors();
+	}
+	public Engine getInstance() {
+		return INSTANCE;
+	}
+	private void setInputStream(InputStream in) {
+		if (this.in != null)
+			this.in.close();
+		this.in = new Scanner(in);
+	}
+	private void setOutputStream(OutputStream out) {
+		if (this.out != null)
+			this.out.close();
+		this.out = new PrintStream(out);
+	}
+	private void setHashSize(int maxHashSizeMb) {
+		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.5*Runtime.getRuntime().maxMemory()/(1 << 20) ?
+				(int)(0.5*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
+	}
+	private void setObserver(Observer obs) {
+		searchResultObserver = obs;
 	}
 	private Move tryBook() {
 		return book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
