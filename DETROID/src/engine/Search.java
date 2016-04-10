@@ -945,8 +945,10 @@ public class Search implements Runnable {
 				futures.add(compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0)));
 			try {
 				score = compService.take().get();
-				for (Future<Integer> f : futures)
-					f.cancel(true);
+				if (i == maxDepth) {
+					for (Future<Integer> f : futures)
+						f.cancel(true);
+				}
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 				score = alpha;
