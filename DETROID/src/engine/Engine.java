@@ -31,7 +31,6 @@ public class Engine implements UCI {
 	
 	private Game game;
 	private Book book;
-	private Search search;
 	private RelativeHistoryTable hT;
 	private int maxHashMemory;
 	private HashTable<TTEntry> tT;		// Transposition table.
@@ -79,18 +78,20 @@ public class Engine implements UCI {
 		return background.submit(task);
 	}
 	private Move tryBook() {
-		return book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+		return book.getMove(game.position, SelectionModel.STOCHASTIC);
 	}
 	private void ponder(Move move) {
-		Position copy = game.getPosition().deepCopy();
+		Search search;
+		Position copy = game.position.deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
 		search = new Search(copy, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
 		search.run();
 	}
 	private Move search(long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves) {
+		Search search;
 		Results res;
-		search = new Search(game.getPosition(), timeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
+		search = new Search(game.position, timeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
 		res = search.getResults();
 		if (searchResultObserver != null)
 			res.addObserver(searchResultObserver);

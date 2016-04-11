@@ -3,7 +3,6 @@ package engine;
 import java.util.Random;
 
 import engine.Board.Square;
-import engine.Move.MoveType;
 
 /**
  * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
@@ -259,7 +258,7 @@ public final class Zobrist {
 	 * @param board
 	 */
 	public void setHashKeys(Position p) {
-		byte[] board64 = p.getOffsetBoard();
+		byte[] board64 = p.offsetBoard;
 		long key = 0, pawnKey = 0;
 		int piece;
 		if (!p.isWhitesTurn)
@@ -408,7 +407,7 @@ public final class Zobrist {
 	public long getPolyglotHashKey(Position p) {
 		long key = 0L;
 		int piece, pieceNote;
-		byte[] offBoard = p.getOffsetBoard();
+		byte[] offBoard = p.offsetBoard;
 		int wCastlingRights = p.whiteCastlingRights;
 		int bCastlingRights = p.blackCastlingRights;
 		int enPassantRights = p.enPassantRights;

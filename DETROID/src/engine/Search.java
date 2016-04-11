@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
-import engine.Move.MoveType;
 import util.*;
 
 /**
@@ -183,7 +182,7 @@ public class Search implements Runnable {
 			final int distFromRoot = ply - depth/FULL_PLY;
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 			final int origAlpha = alpha;
-			final boolean inCheck = pos.isInCheck();
+			final boolean isInCheck = pos.isInCheck;
 			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, bestMoveInt, evalScore, razRed, extension;
 			short extPly;
 			Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
@@ -211,7 +210,7 @@ public class Search implements Runnable {
 			}
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
-				if (pos.getRepetitions() >= 3)
+				if (pos.repetitions >= 3)
 					return Termination.DRAW_CLAIMED.score;
 				// Mate distance pruning.
 				if (-mateScore < beta) {
@@ -223,7 +222,7 @@ public class Search implements Runnable {
 						  return mateScore;
 				}
 				// Check extension (less than a whole ply because the quiescence search handles checks).
-				depth = inCheck && qDepth == 0 ? depth + FULL_PLY/4 : depth;
+				depth = isInCheck && qDepth == 0 ? depth + FULL_PLY/4 : depth;
 				// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 				e = tT.lookUp(pos.key);
 				if (e != null) {
@@ -326,7 +325,7 @@ public class Search implements Runnable {
 				if (!isThereHashMove && matMoves.length() == 0) {
 					nonMatMoves = pos.generateNonMaterialMoves();
 					if (nonMatMoves.length() == 0) {
-						score = inCheck ? mateScore : Termination.STALE_MATE.score;
+						score = isInCheck ? mateScore : Termination.STALE_MATE.score;
 						if (score > bestScore) {
 							bestMove = null;
 							bestScore = score;
@@ -337,10 +336,10 @@ public class Search implements Runnable {
 					}
 				}
 				// Check for the fifty-move rule; return a draw score if it applies.
-				if (pos.getFiftyMoveRuleClock() >= 100)
+				if (pos.fiftyMoveRuleClock >= 100)
 					return Termination.DRAW_CLAIMED.score;
 				// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-				if (nullMoveAllowed && nullMoveObservHolds && !inCheck && beta == origAlpha + 1 && depth/FULL_PLY >= NMR) {
+				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && beta == origAlpha + 1 && depth/FULL_PLY >= NMR) {
 					pos.makeNullMove();
 					// Do not allow consecutive null moves.
 					if (depth/FULL_PLY == NMR) {
@@ -555,7 +554,7 @@ public class Search implements Runnable {
 					razRed = 0;
 					// Futility pruning, extended futility pruning, and razoring.
 					if (depth/FULL_PLY <= 3 && beta == origAlpha + 1) {
-						if (alpha > checkMateLim && beta < -checkMateLim && !inCheck && !pos.givesCheck(move)) {
+						if (alpha > checkMateLim && beta < -checkMateLim && !isInCheck && !pos.givesCheck(move)) {
 							if (evalScore == Integer.MIN_VALUE)
 								evalScore = eval.score(pos, alpha, beta);
 							if (depth/FULL_PLY == 1) {
@@ -574,7 +573,7 @@ public class Search implements Runnable {
 					}
 					pos.makeMove(move);
 					// Try late move reduction if not within the PV.
-					if (depth/FULL_PLY > 2 && beta == origAlpha + 1 && !inCheck && pos.getUnmakeRegister().checkers == 0 && searchedMoves > 4) {
+					if (depth/FULL_PLY > 2 && beta == origAlpha + 1 && !isInCheck && pos.getUnmakeRegister().checkers == 0 && searchedMoves > 4) {
 						score = -pVsearch(depth - (LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 						// If it does not fail low, research with full window.
 						if (score > alpha)
@@ -652,7 +651,7 @@ public class Search implements Runnable {
 		public int quiescence(int depth, int alpha, int beta) {
 			final int distFromRoot = ply - depth;
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
-			final boolean inCheck = pos.isInCheck();
+			final boolean isInCheck = pos.isInCheck;
 			List<Move> materialMoves, allMoves;
 			Move[] moves;
 			Move move;
@@ -673,7 +672,7 @@ public class Search implements Runnable {
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
 			// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
-			if (inCheck) {
+			if (isInCheck) {
 				materialMoves = null;
 				bestScore = mateScore;
 			}
@@ -687,7 +686,7 @@ public class Search implements Runnable {
 				else
 					allMoves = null;
 				if (allMoves != null && allMoves.length() == 0)
-					bestScore = inCheck ? mateScore : Termination.STALE_MATE.score;
+					bestScore = isInCheck ? mateScore : Termination.STALE_MATE.score;
 				else {
 					// Stand pat.
 					if (nullMoveObservHolds)
@@ -704,7 +703,7 @@ public class Search implements Runnable {
 					return bestScore;
 			}
 			// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
-			if (inCheck) {
+			if (isInCheck) {
 				nodes.decrementAndGet();
 				searchScore = pVsearch(FULL_PLY, alpha, beta, false, depth - 1);
 				if (searchScore > bestScore) {

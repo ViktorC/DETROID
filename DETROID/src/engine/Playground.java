@@ -20,13 +20,13 @@ public class Playground {
 		
 	}
 	
-	public static void main(String[] args) {
-		Position p = new Position();
+	public static void main(String[] args) throws ChessParseException {
+		Position p = ChessParser.parseFEN(tP1);
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
 		HashTable<PTEntry> pT = new HashTable<>(4);
-		Search s = new Search(p, 0, 10000, -1, 0, null, hT, (byte) 0, tT, eT, pT, 1);
+		Search s = new Search(p, 0, 0, 13, 0, null, hT, (byte) 0, tT, eT, pT, 1);
 		long start = System.currentTimeMillis();
 		s.getResults().addObserver(new PVO());
 		s.run();

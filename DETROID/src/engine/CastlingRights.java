@@ -21,48 +21,14 @@ public enum CastlingRights {
 	/**
 	 * Returns a CastlingRights type based on the argument numeral.
 	 * 
-	 * @param num
+	 * @param ind
 	 * @return
 	 */
-	public static CastlingRights getByIndex(int num) {
-		switch (num) {
+	public static CastlingRights getByIndex(int ind) {
+		switch (ind) {
 			case 0: return NONE; case 1: return SHORT; case 2: return LONG; case 3: return ALL;
 			default: throw new IllegalArgumentException();
 		}
-	}
-	/**
-	 * Parses a string in FEN notation and returns an array of two containing white's and black's castling rights respectively.
-	 * 
-	 * @param fen
-	 * @return
-	 */
-	public static CastlingRights[] getInstancesByFEN(String fen) {
-		if (fen == null)
-			return new CastlingRights[] { null, null };
-		if (fen.equals("-"))
-			return new CastlingRights[] { CastlingRights.NONE, CastlingRights.NONE };
-		CastlingRights whiteCastlingRights, blackCastlingRights;
-		if (fen.contains("K")) {
-			if (fen.contains("Q"))
-				whiteCastlingRights = CastlingRights.ALL;
-			else
-				whiteCastlingRights = CastlingRights.SHORT;
-		}
-		else if (fen.contains("Q"))
-			whiteCastlingRights = CastlingRights.LONG;
-		else
-			whiteCastlingRights = CastlingRights.NONE;
-		if (fen.contains("k")) {
-			if (fen.contains("q"))
-				blackCastlingRights = CastlingRights.ALL;
-			else
-				blackCastlingRights = CastlingRights.SHORT;
-		}
-		else if (fen.contains("q"))
-			blackCastlingRights = CastlingRights.LONG;
-		else
-			blackCastlingRights = CastlingRights.NONE;
-		return new CastlingRights[] { whiteCastlingRights, blackCastlingRights };
 	}
 	/**
 	 * Returns a string representation in FEN notation of two castling right enum types for white and black respectively.

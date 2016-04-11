@@ -16,12 +16,12 @@ public class UnmakeRegister {
 	public final byte whiteCastlingRights;
 	public final byte blackCastlingRights;
 	public final byte enPassantRights;
-	public final int fiftyMoveRuleClock;
-	public final int repetitions;
+	public final short fiftyMoveRuleClock;
+	public final byte repetitions;
 	public final long checkers;
 	
 	public UnmakeRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
-	int fiftyMoveRuleClock, int repetitions, long checkers) {
+	short fiftyMoveRuleClock, byte repetitions, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;
 		this.enPassantRights = enPassantRights;
@@ -40,9 +40,9 @@ public class UnmakeRegister {
 		long checker;
 		String rep = "";
 		if ((checker = BitOperations.getLSBit(checkers)) != 0) {
-			rep += String.format("%-23s " + Square.toString(BitOperations.indexOfBit(checker)), "Checker(s):");
+			rep += String.format("%-23s " + Square.getByIndex(BitOperations.indexOfBit(checker)).toString(), "Checker(s):");
 			if ((checker = BitOperations.getLSBit(checkers^checker)) != 0)
-				rep += ", " + Square.toString(BitOperations.indexOfBit(checker));
+				rep += ", " + Square.getByIndex(BitOperations.indexOfBit(checker)).toString();
 		}
 		rep += String.format("%-23s ", "Castling rights:");
 		rep += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights));

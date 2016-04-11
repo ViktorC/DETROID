@@ -13,11 +13,15 @@ public enum EnPassantRights {
 	A, B, C, D, E, F, G, H,
 	NONE;
 	
-	public final byte ind;										// Numeric representation of the the en passant rights.
-	public final static byte TO_W_DEST_SQR_IND = Square.A6.ind;	// The difference between the en passant right index and the square index of the destination of en passant for white.
-	public final static byte TO_W_VICT_SQR_IND = Square.A5.ind;	// The difference between the en passant right index and the square index of the possible vicim of en passant for white.
-	public final static byte TO_B_DEST_SQR_IND = Square.A3.ind;	// The difference between the en passant right index and the square index of the destination of en passant for black.
-	public final static byte TO_B_VICT_SQR_IND = Square.A4.ind;	// The difference between the en passant right index and the square index of the possible vicim of en passant for black.
+	public final byte ind;	// Numeric representation of the the en passant rights.
+	// The difference between the EP right index and the square index of the destination of EP for white.
+	public final static byte TO_W_DEST_SQR_IND = Square.A6.ind;
+	// The difference between the EP right index and the square index of the possible victim of EP for white.
+	public final static byte TO_W_VICT_SQR_IND = Square.A5.ind;
+	// The difference between the EP right index and the square index of the destination of EP for black.
+	public final static byte TO_B_DEST_SQR_IND = Square.A3.ind;
+	// The difference between the EP right index and the square index of the possible victim of EP for black.
+	public final static byte TO_B_VICT_SQR_IND = Square.A4.ind;
 	
 	private EnPassantRights() {
 		ind = (byte)ordinal();
@@ -34,19 +38,6 @@ public enum EnPassantRights {
 			case 5: return F; case 6: return G; case 7: return H; case 8: return NONE;
 			default: throw new IllegalArgumentException();
 		}
-	}
-	/**
-	 * Parses a string in FEN notation and returns an EnPassantRights type.
-	 * 
-	 * @param fen
-	 * @return
-	 */
-	public static EnPassantRights getByFEN(String fen) {
-		if (fen == null || fen.length() < 2)
-			return null;
-		if (fen.equals("-"))
-			return NONE;
-		return values()[fen.toLowerCase().charAt(0) - 'a'];
 	}
 	/**
 	 * Returns a string representation.

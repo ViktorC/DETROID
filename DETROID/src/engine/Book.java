@@ -234,7 +234,7 @@ public class Book {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	private static String polyglotMoveToPACN(Position p, short polyglotMove) throws IllegalArgumentException {
+	public static String polyglotMoveToPACN(Position pos, short polyglotMove) throws IllegalArgumentException {
 		String toFile, toRank, fromFile, fromRank, promPiece, pacn;
 		toFile = "" + (char)((polyglotMove & 7) + 'a');
 		toRank = "" + (int)(((polyglotMove >>> 3) & 7) + 1);
@@ -242,19 +242,19 @@ public class Book {
 		fromRank = "" + (int)(((polyglotMove >>> 9) & 7) + 1);
 		pacn = fromFile + fromRank + toFile + toRank;
 		if (pacn.equals("e1h1")) {
-			if (p.whiteKing == Square.E1.bitmap)
+			if (pos.whiteKing == Square.E1.bitmap)
 				return "e1g1";
 		}
 		else if (pacn.equals("e1a1")) {
-			if (p.whiteKing == Square.E1.bitmap)
+			if (pos.whiteKing == Square.E1.bitmap)
 				return "e1c1";
 		}
 		else if (pacn.equals("e8h8")) {
-			if (p.blackKing == Square.E8.bitmap)
+			if (pos.blackKing == Square.E8.bitmap)
 				return "e8g8";
 		}
 		else if (pacn.equals("e8a8")) {
-			if (p.blackKing == Square.E8.bitmap)
+			if (pos.blackKing == Square.E8.bitmap)
 				return "e8c8";
 		}
 		switch (polyglotMove >>> 12) {
@@ -324,6 +324,12 @@ public class Book {
 			break;
 			default: return null;
 		}
-		return p.parsePACN(polyglotMoveToPACN(p, e.move));
+		try {
+			return ChessParser.parsePACN(p, polyglotMoveToPACN(p, e.move));
+		} catch (ChessParseException | NullPointerException | IllegalArgumentException ex) {
+			// TODO Auto-generated catch block
+			ex.printStackTrace();
+			return null;
+		}
 	}
 }

@@ -40,46 +40,25 @@ public final class Board {
 		 */
 		@Override
 		public String toString() {
-			return toString(ind);
-		}
-		/**
-		 * Returns a String representation of the square that is easily readable for humans.
-		 * 
-		 * @param sqrInd
-		 * @return
-		 */
-		public static String toString(int sqrInd) {
-			return ("" + (char)('a' + sqrInd%8) + "" + (sqrInd/8 + 1)).toUpperCase();
-		}
-		/**
-		 * Returns the index of a square specified by its file and rank.
-		 * 
-		 * @param square
-		 * @return
-		 */
-		public static int toNumeric(String square) {
-			if (square.length() == 2) {
-				square = square.toLowerCase();
-				int out = 8*(square.charAt(0) - 'a') + (square.charAt(1) - '1');
-				if (out >= 0 && out < 64)
-					return out;
-			}
-			throw new IllegalArgumentException();
+			return ("" + (char)('a' + ind%8) + "" + (ind/8 + 1)).toUpperCase();
 		}
 		/**
 		 * @return a Square enum.
 		 */
 		public static Square getByIndex(int sqrInd) {
 			switch(sqrInd) {
-				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1; case 6:  return G1; case 7:  return H1;
-				case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2; case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2;
-				case 16: return A3; case 17: return B3; case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
-				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4; case 30: return G4; case 31: return H4;
-				case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5; case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5;
-				case 40: return A6; case 41: return B6; case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
-				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7; case 54: return G7; case 55: return H7;
-				case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8; case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8;
-				default: throw new IllegalArgumentException("Invalid square index.");
+				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1;
+				case 6:  return G1; case 7:  return H1; case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2;
+				case 12: return E2; case 13: return F2; case 14: return G2; case 15: return H2; case 16: return A3; case 17: return B3;
+				case 18: return C3; case 19: return D3; case 20: return E3; case 21: return F3; case 22: return G3; case 23: return H3;
+				case 24: return A4; case 25: return B4; case 26: return C4; case 27: return D4; case 28: return E4; case 29: return F4;
+				case 30: return G4; case 31: return H4; case 32: return A5; case 33: return B5; case 34: return C5; case 35: return D5;
+				case 36: return E5; case 37: return F5; case 38: return G5; case 39: return H5; case 40: return A6; case 41: return B6;
+				case 42: return C6; case 43: return D6; case 44: return E6; case 45: return F6; case 46: return G6; case 47: return H6;
+				case 48: return A7; case 49: return B7; case 50: return C7; case 51: return D7; case 52: return E7; case 53: return F7;
+				case 54: return G7; case 55: return H7; case 56: return A8; case 57: return B8; case 58: return C8; case 59: return D8;
+				case 60: return E8; case 61: return F8; case 62: return G8; case 63: return H8; default:
+					throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
 	}

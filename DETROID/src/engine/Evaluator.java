@@ -1,7 +1,6 @@
 package engine;
 
 import engine.Board.Diagonal;
-import engine.Move.MoveType;
 import util.*;
 
 /**
@@ -391,7 +390,7 @@ public final class Evaluator {
 		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
 		baseScore += pawnScore;
 		openingScore = endgameScore = 0;
-		offsetBoard = pos.getOffsetBoard();
+		offsetBoard = pos.offsetBoard;
 		for (int i = 0; i < offsetBoard.length; i++) {
 			piece = offsetBoard[i];
 			if (piece == Piece.NULL.ind)

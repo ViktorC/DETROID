@@ -15,9 +15,9 @@ public final class MoveMask {
 	private static long ANTIFRAME;
 	
 	static {
-		ANTIFRAME_VERTICAL 		= ~(File.A.bitmap 	| File.H.bitmap);
-		ANTIFRAME_HORIZONTAL	= ~(Rank.R1.bitmap  | Rank.R8.bitmap);
-		ANTIFRAME				=  (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
+		ANTIFRAME_VERTICAL = ~(File.A.bitmap 	| File.H.bitmap);
+		ANTIFRAME_HORIZONTAL = ~(Rank.R1.bitmap  | Rank.R8.bitmap);
+		ANTIFRAME = (ANTIFRAME_VERTICAL	& ANTIFRAME_HORIZONTAL);
 	}
 	private MoveMask() {
 		

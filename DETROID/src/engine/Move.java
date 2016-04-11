@@ -12,29 +12,6 @@ import util.Comparable;
 public class Move implements Comparable<Move> {
 	
 	/**
-	 * An enum type defining the seven move types the engine handles differently.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public enum MoveType {
-		
-		NORMAL,
-		SHORT_CASTLING,
-		LONG_CASTLING,
-		EN_PASSANT,
-		PROMOTION_TO_QUEEN,
-		PROMOTION_TO_ROOK,
-		PROMOTION_TO_BISHOP,
-		PROMOTION_TO_KNIGHT;
-		
-		public final byte ind;	// A numeric representation of the move type; to avoid the overhead of calling the ordinal function.
-		
-		private MoveType() {
-			ind = (byte)ordinal();
-		}
-	}
-	/**
 	 * Mask and shift values for encoding contents of a Move object into an int; and vica versa.
 	 * 
 	 * @author Viktor
@@ -130,10 +107,10 @@ public class Move implements Comparable<Move> {
 	@Override
 	public String toString() {
 		String lan, originFile, originRank, destFile, destRank;
-		originRank	= Integer.toString(from/8 + 1);
-		originFile	= Character.toString((char)(from%8 + 'a'));
-		destRank	= Integer.toString(to/8 + 1);
-		destFile	= Character.toString((char)(to%8 + 'a'));
+		originRank = Integer.toString(from/8 + 1);
+		originFile = Character.toString((char)(from%8 + 'a'));
+		destRank = Integer.toString(to/8 + 1);
+		destFile = Character.toString((char)(to%8 + 'a'));
 		lan = originFile + originRank + destFile + destRank;
 		switch (type) {
 			case 4:
