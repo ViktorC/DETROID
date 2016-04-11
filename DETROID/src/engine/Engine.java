@@ -3,14 +3,12 @@ package engine;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
 
 import engine.Book.SelectionModel;
 import engine.Search.Results;
 import util.HashTable;
-import util.Queue;
 
 public class Engine implements UCI {
 
@@ -23,7 +21,7 @@ public class Engine implements UCI {
 	private Scanner in;
 	private PrintStream out;
 	
-	Observer searchResultObserver;
+	private Observer searchResultObserver;
 	
 	private Game game;
 	private Book book;
@@ -53,21 +51,21 @@ public class Engine implements UCI {
 	public Engine getInstance() {
 		return INSTANCE;
 	}
-	private void setInputStream(InputStream in) {
+	public void setInputStream(InputStream in) {
 		if (this.in != null)
 			this.in.close();
 		this.in = new Scanner(in);
 	}
-	private void setOutputStream(OutputStream out) {
+	public void setOutputStream(OutputStream out) {
 		if (this.out != null)
 			this.out.close();
 		this.out = new PrintStream(out);
 	}
-	private void setHashSize(int maxHashSizeMb) {
+	public void setHashSize(int maxHashSizeMb) {
 		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.5*Runtime.getRuntime().maxMemory()/(1 << 20) ?
 				(int)(0.5*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
 	}
-	private void setObserver(Observer obs) {
+	public void setObserver(Observer obs) {
 		searchResultObserver = obs;
 	}
 	private Move tryBook() {
@@ -77,7 +75,7 @@ public class Engine implements UCI {
 		Position copy = game.getPosition().deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
-		search = new Search(copy, 0, 0, 0, 0, null, hT, gen, tT, eT, pT, numOfCores - 1);
+		search = new Search(copy, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, numOfCores - 1);
 		search.run();
 	}
 	private Move search(long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves) {

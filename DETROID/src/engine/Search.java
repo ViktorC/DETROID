@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import engine.Evaluator.Termination;
@@ -199,7 +200,7 @@ public class Search implements Runnable {
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
 			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
-				doStopSearch = true;
+				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
 			if (boundsChanged) {
@@ -401,7 +402,7 @@ public class Search implements Runnable {
 								break Search;
 						}
 					}
-					if (doStopSearch || doStopThread)
+					if (doStopSearch.get() || doStopThread)
 						break Search;
 				}
 				// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
@@ -441,7 +442,7 @@ public class Search implements Runnable {
 									hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
 							}
 						}
-						if (doStopSearch || doStopThread)
+						if (doStopSearch.get() || doStopThread)
 							break Search;
 					}
 				}
@@ -480,7 +481,7 @@ public class Search implements Runnable {
 									hT.recordUnsuccessfulMove(killerMove2);	// Record failure in the relative history table.
 							}
 						}
-						if (doStopSearch || doStopThread)
+						if (doStopSearch.get() || doStopThread)
 							break Search;
 					}
 				}	// Killer move check ending.
@@ -522,7 +523,7 @@ public class Search implements Runnable {
 								break Search;
 						}
 					}
-					if (doStopSearch || doStopThread)
+					if (doStopSearch.get() || doStopThread)
 						break Search;
 				}
 				// Generate the non-material legal moves if they are not generated yet.
@@ -612,7 +613,7 @@ public class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);	// Record failure in the relative history table.
 						}
 					}
-					if (doStopSearch || doStopThread)
+					if (doStopSearch.get() || doStopThread)
 						break Search;
 				}
 			}
@@ -659,7 +660,7 @@ public class Search implements Runnable {
 			if (depth != 0)
 				nodes.incrementAndGet();
 			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
-				doStopSearch = true;
+				doStopSearch.set(true);;
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
 			if (boundsChanged) {
@@ -737,7 +738,7 @@ public class Search implements Runnable {
 								break;
 						}
 					}
-					if (doStopSearch || doStopThread)
+					if (doStopSearch.get() || doStopThread)
 						break;
 				}
 			}
@@ -839,7 +840,7 @@ public class Search implements Runnable {
 	private long maxNodes;
 	private AtomicLong nodes;	// Number of searched positions.
 	
-	private boolean doStopSearch;
+	private AtomicBoolean doStopSearch;
 	
 	/**
 	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
@@ -874,7 +875,7 @@ public class Search implements Runnable {
 			this.maxDepth = maxDepth >= 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
 			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
 		}
-		doStopSearch = false;
+		doStopSearch = new AtomicBoolean(false);
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
 		this.hT = historyTable;
 		this.tT = transposTable;
@@ -915,13 +916,6 @@ public class Search implements Runnable {
 			pV.add(pVarr[j++]);
 		return pV;
 	}
-	@Override
-	public void run() {
-		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numOfThreads);
-		deadLine = System.currentTimeMillis() + searchTime;
-		iterativeDeepening();
-		threadPool.shutdown();
-	}
 	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft) {
 		// !FIXME
 		return 3600*1000;
@@ -952,9 +946,9 @@ public class Search implements Runnable {
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 				score = alpha;
-				doStopSearch = true;
+				doStopSearch.set(true);
 			}
-			if (doStopSearch || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
+			if (doStopSearch.get() || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
 				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
 				break;
 			}
@@ -990,5 +984,12 @@ public class Search implements Runnable {
 			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
 			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
 		}
+	}
+	@Override
+	public void run() {
+		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numOfThreads);
+		deadLine = System.currentTimeMillis() + searchTime;
+		iterativeDeepening();
+		threadPool.shutdown();
 	}
 }
