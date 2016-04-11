@@ -668,6 +668,9 @@ public class Search implements Runnable {
 				if (this.beta < beta)
 					beta = this.beta;
 			}
+			// Check for the repetition rule; return a draw score if it applies.
+			if (pos.repetitions >= 3)
+				return Termination.DRAW_CLAIMED.score;
 			// Just for my peace of mind.
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
@@ -687,6 +690,9 @@ public class Search implements Runnable {
 					allMoves = null;
 				if (allMoves != null && allMoves.length() == 0)
 					bestScore = isInCheck ? mateScore : Termination.STALE_MATE.score;
+				// Check for the fifty-move rule; return a draw score if it applies.
+				else if (pos.fiftyMoveRuleClock >= 100)
+					return Termination.DRAW_CLAIMED.score;
 				else {
 					// Stand pat.
 					if (nullMoveObservHolds)

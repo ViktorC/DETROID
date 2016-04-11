@@ -21,7 +21,7 @@ public class Playground {
 	}
 	
 	public static void main(String[] args) throws ChessParseException {
-		Position p = ChessParser.parseFEN(tP1);
+		Position p = ChessParser.parseFEN(tP2);
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
