@@ -58,10 +58,10 @@ public class Book {
 	
 	private SeekableByteChannel bookStream;
 	private Book secondaryBook;
-	private Zobrist gen;
+	private ZobristKeyGenerator gen;
 	
 	private Book(String filePath) throws IOException {
-		gen = Zobrist.getInstance();
+		gen = ZobristKeyGenerator.getInstance();
 		bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
 	}
 	/**

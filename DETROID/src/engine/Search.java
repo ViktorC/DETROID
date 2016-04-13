@@ -10,7 +10,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import engine.Evaluator.Termination;
 import engine.KillerTable.KillerTableEntry;
 import util.*;
 
@@ -183,6 +182,7 @@ public class Search implements Runnable {
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 			final int origAlpha = alpha;
 			final boolean isInCheck = pos.isInCheck;
+			final boolean isPvNode = beta > origAlpha + 1;
 			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, bestMoveInt, evalScore, razRed, extension;
 			short extPly;
 			Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
@@ -229,7 +229,7 @@ public class Search implements Runnable {
 					e.generation = hashEntryGen;
 					// If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
 					// the score if the entry stored a PV node. 
-					if (e.depth >= depth/FULL_PLY && beta == origAlpha + 1) {
+					if (!isPvNode && e.depth >= depth/FULL_PLY) {
 						// Mate score adjustment to root distance.
 						if (e.score <= checkMateLim)
 							score = e.score + distFromRoot;
@@ -278,7 +278,7 @@ public class Search implements Runnable {
 					break Search;
 				}
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
-				if (!isThereHashMove && depth/FULL_PLY >= 5 && beta > origAlpha + 1) {
+				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= 5) {
 					extPly = ply;
 					for (short i = 1; i < depth/FULL_PLY*3/5; i++) {
 						ply = i;
@@ -339,7 +339,7 @@ public class Search implements Runnable {
 				if (pos.fiftyMoveRuleClock >= 100)
 					return Termination.DRAW_CLAIMED.score;
 				// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && beta == origAlpha + 1 && depth/FULL_PLY >= NMR) {
+				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && !isPvNode && depth/FULL_PLY >= NMR) {
 					pos.makeNullMove();
 					// Do not allow consecutive null moves.
 					if (depth/FULL_PLY == NMR) {
@@ -553,7 +553,7 @@ public class Search implements Runnable {
 					}
 					razRed = 0;
 					// Futility pruning, extended futility pruning, and razoring.
-					if (depth/FULL_PLY <= 3 && beta == origAlpha + 1) {
+					if (!isPvNode && depth/FULL_PLY <= 3) {
 						if (alpha > checkMateLim && beta < -checkMateLim && !isInCheck && !pos.givesCheck(move)) {
 							if (evalScore == Integer.MIN_VALUE)
 								evalScore = eval.score(pos, alpha, beta);
@@ -573,7 +573,7 @@ public class Search implements Runnable {
 					}
 					pos.makeMove(move);
 					// Try late move reduction if not within the PV.
-					if (depth/FULL_PLY > 2 && beta == origAlpha + 1 && !isInCheck && pos.getUnmakeRegister().checkers == 0 && searchedMoves > 4) {
+					if (!isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > LMRMSM && pos.getUnmakeRegister().checkers == 0) {
 						score = -pVsearch(depth - (LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 						// If it does not fail low, research with full window.
 						if (score > alpha)
@@ -814,6 +814,7 @@ public class Search implements Runnable {
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
 	private final static int LMR = 1;													// Late move reduction.
+	private final static int LMRMSM = 4;												// Min. number of searched moves for late move reduction
 	private final static int FMAR1 = Material.KNIGHT.score;								// Futility margin.
 	private final static int FMAR2 = Material.ROOK.score;								// Extended futility margin.
 	private final static int FMAR3 = Material.QUEEN.score;								// Razoring margin.
@@ -949,7 +950,6 @@ public class Search implements Runnable {
 						f.cancel(true);
 				}
 			} catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
 				score = alpha;
 				doStopSearch.set(true);
 			}
@@ -964,8 +964,8 @@ public class Search implements Runnable {
 					failLow = 2;
 				}
 				else {
-					alpha = failLow == 0 ? Math.max(alpha - 2*A_DELTA, Termination.CHECK_MATE.score) :
-						failLow == 1 ? Math.max(alpha - 4*A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
+					alpha = failLow == 0 ? Math.max(score - 2*A_DELTA, Termination.CHECK_MATE.score) :
+						failLow == 1 ? Math.max(score - 4*A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
 					failLow++;
 				}
 				i--;
@@ -977,8 +977,8 @@ public class Search implements Runnable {
 					failHigh = 2;
 				}
 				else {
-					beta = failHigh == 0 ? Math.min(beta + 2*A_DELTA, -Termination.CHECK_MATE.score) :
-						failHigh == 1 ? Math.min(beta + 4*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
+					beta = failHigh == 0 ? Math.min(score + 2*A_DELTA, -Termination.CHECK_MATE.score) :
+						failHigh == 1 ? Math.min(score + 4*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 					failHigh++;
 				}
 				i--;

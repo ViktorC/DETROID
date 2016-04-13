@@ -81,7 +81,7 @@ public class Position implements Hashable, Copiable<Position> {
 	Stack<UnmakeRegister> unmakeRegisterHistory;
 	
 	/**A Zobrist key generator instance. */
-	Zobrist gen;
+	ZobristKeyGenerator gen;
 	/**The Zobrist key that is fairly close to a unique representation of the state of the Position instance in one number. */
 	long key;
 	/**A Zobrist key for the pawns' position only. */
@@ -101,7 +101,7 @@ public class Position implements Hashable, Copiable<Position> {
 	Position() {
 		moveList = new Stack<Move>();
 		unmakeRegisterHistory = new Stack<UnmakeRegister>();
-		gen = Zobrist.getInstance();
+		gen = ZobristKeyGenerator.getInstance();
 		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 		 * - one third of that is used as the initial length of the history array. */
 		keyHistory = new long[158];
@@ -3944,7 +3944,7 @@ public class Position implements Hashable, Copiable<Position> {
 		checkers = getCheckers();
 		isInCheck = checkers != 0;
 		halfMoveIndex++;
-		if (keyHistory.length - halfMoveIndex <= 50) {
+		if (keyHistory.length - halfMoveIndex <= 2) {
 			temp = keyHistory;
 			keyHistory = new long[keyHistory.length + 50];
 			for (int i = 0; i < temp.length; i++)
@@ -3957,9 +3957,9 @@ public class Position implements Hashable, Copiable<Position> {
 		gen.updateKeys(this);
 		keyHistory[halfMoveIndex] = key;
 		pawnKeyHistory[halfMoveIndex] = pawnKey;
-		repetitions = 0;
+		repetitions = 1;
 		if (fiftyMoveRuleClock >= 4) {
-			for (int i = halfMoveIndex; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
+			for (int i = halfMoveIndex - 2; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
 				if (keyHistory[i] == key)
 					repetitions++;
 			}
@@ -3974,61 +3974,59 @@ public class Position implements Hashable, Copiable<Position> {
 				repetitions, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		enPassantRights = EnPassantRights.NONE.ind;
-		if (moveList.getHead() != null){
-			if (isWhitesTurn) {
-				if (whiteCastlingRights == CastlingRights.NONE.ind);
-				else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
-					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.NONE.ind;
-				}
-				else if (whiteCastlingRights == CastlingRights.LONG.ind) {
-					if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.NONE.ind;
-				}
-				else {
-					if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
-						if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
-							if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-								whiteCastlingRights = CastlingRights.NONE.ind;
-							else
-								whiteCastlingRights = CastlingRights.LONG.ind;
-						}
-						else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-							whiteCastlingRights = CastlingRights.SHORT.ind;
-					}
-					else
-						whiteCastlingRights = CastlingRights.NONE.ind;
-				}
+		if (isWhitesTurn) {
+			if (whiteCastlingRights == CastlingRights.NONE.ind);
+			else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
+				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (whiteCastlingRights == CastlingRights.LONG.ind) {
+				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+					whiteCastlingRights = CastlingRights.NONE.ind;
 			}
 			else {
-				if (blackCastlingRights == CastlingRights.NONE.ind);
-				else if (blackCastlingRights == CastlingRights.SHORT.ind) {
-					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.NONE.ind;
-				}
-				else if (blackCastlingRights == CastlingRights.LONG.ind) {
-					if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.NONE.ind;
-				}
-				else {
-					if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
-						if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
-							if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-								blackCastlingRights = CastlingRights.NONE.ind;
-							else
-								blackCastlingRights = CastlingRights.LONG.ind;
-						}
-						else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-							blackCastlingRights = CastlingRights.SHORT.ind;
+				if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
+					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
+						if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+							whiteCastlingRights = CastlingRights.NONE.ind;
+						else
+							whiteCastlingRights = CastlingRights.LONG.ind;
 					}
-					else
-						blackCastlingRights = CastlingRights.NONE.ind;
+					else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
+						whiteCastlingRights = CastlingRights.SHORT.ind;
 				}
+				else
+					whiteCastlingRights = CastlingRights.NONE.ind;
+			}
+		}
+		else {
+			if (blackCastlingRights == CastlingRights.NONE.ind);
+			else if (blackCastlingRights == CastlingRights.SHORT.ind) {
+				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			else if (blackCastlingRights == CastlingRights.LONG.ind) {
+				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+					blackCastlingRights = CastlingRights.NONE.ind;
+			}
+			else {
+				if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
+					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
+						if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+							blackCastlingRights = CastlingRights.NONE.ind;
+						else
+							blackCastlingRights = CastlingRights.LONG.ind;
+					}
+					else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
+						blackCastlingRights = CastlingRights.SHORT.ind;
+				}
+				else
+					blackCastlingRights = CastlingRights.NONE.ind;
 			}
 		}
 		moveList.add(null);
 		halfMoveIndex++;
-		if (keyHistory.length - halfMoveIndex <= 50) {
+		if (keyHistory.length - halfMoveIndex <= 2) {
 			temp = keyHistory;
 			keyHistory = new long[keyHistory.length + 50];
 			for (int i = 0; i < temp.length; i++)
@@ -4041,6 +4039,7 @@ public class Position implements Hashable, Copiable<Position> {
 		gen.updateKeys(this);
 		keyHistory[halfMoveIndex] = key;
 		pawnKeyHistory[halfMoveIndex] = pawnKey;
+		repetitions = 1;
 	}
 	/**
 	 * Reverts the state of the instance to that before the last move made in every aspect necessary for the traversal of the game tree.

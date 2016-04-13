@@ -12,26 +12,6 @@ import util.*;
  */
 public final class Evaluator {
 	
-	/**
-	 * An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public static enum Termination {
-		
-		CHECK_MATE				(Short.MIN_VALUE + 1),
-		STALE_MATE				(0),
-		INSUFFICIENT_MATERIAL	(0),
-		DRAW_CLAIMED			(1);
-		
-		public final short score;
-		
-		private Termination(int score) {
-			this.score = (short)score;
-		}
-	}
-	
 	private final static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	

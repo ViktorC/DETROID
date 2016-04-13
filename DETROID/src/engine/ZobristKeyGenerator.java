@@ -21,12 +21,12 @@ import engine.Board.Square;
  * @author Viktor
  *
  */
-public final class Zobrist {
+public final class ZobristKeyGenerator {
 	
-	private static final Zobrist INSTANCE = new Zobrist();
+	private static final ZobristKeyGenerator INSTANCE = new ZobristKeyGenerator();
 	
 	private long turn;
-	private long[][] board = new long[Piece.values().length][64];
+	private long[][] board = new long[Piece.values().length][Square.values().length];
 	private long[] whiteCastlingRights = new long[CastlingRights.values().length];
 	private long[] blackCastlingRights = new long[CastlingRights.values().length];
 	private long[] enPassantRights = new long[EnPassantRights.values().length];
@@ -228,7 +228,7 @@ public final class Zobrist {
 		0xCF3145DE0ADD4289L, 0xD0E4427A5514FB72L, 0x77C621CC9FB3A483L, 0x67A34DAC4356550BL,
 		0xF8D626AAAF278509L
 	};
-	private Zobrist() {
+	private ZobristKeyGenerator() {
 		Random random = new Random();
 		turn = random.nextLong();
 		for (int i = 0; i < board[0].length; i++)
@@ -249,7 +249,7 @@ public final class Zobrist {
 	 * 
 	 * @return
 	 */
-	public static Zobrist getInstance() {
+	public static ZobristKeyGenerator getInstance() {
 		return INSTANCE;
 	}
 	/**
