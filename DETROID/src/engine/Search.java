@@ -871,14 +871,14 @@ public class Search implements Runnable {
 		this.position = position.deepCopy();
 		int phaseScore = Evaluator.phaseScore(position);
 		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
-		if (timeLeft <= 0 && searchTime <= 0 && maxDepth < 0 && maxNodes <= 0) {
+		if (timeLeft <= 0 && searchTime <= 0 && maxDepth <= 0 && maxNodes <= 0) {
 			pondering = true;
 			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
 		}
 		else {
 			pondering = false;
 			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.position, phaseScore, timeLeft);
-			this.maxDepth = maxDepth >= 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
+			this.maxDepth = maxDepth > 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
 			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
 		}
 		doStopSearch = new AtomicBoolean(false);
