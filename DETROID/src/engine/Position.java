@@ -179,15 +179,6 @@ public class Position implements Hashable, Copiable<Position> {
 		return key;
 	}
 	/**
-	 * Returns the hash key of the position from before the last move was made.
-	 * 
-	 * @return
-	 * @throws ArrayIndexOutOfBoundsException
-	 */
-	public long getPrevHashKey() throws ArrayIndexOutOfBoundsException {
-		return keyHistory[halfMoveIndex - 1];
-	}
-	/**
 	 * Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.
 	 * 
 	 * @return
@@ -211,7 +202,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param byWhite
 	 * @return
 	 */
-	public boolean isAttacked(int sqrInd, boolean byWhite) {
+	boolean isAttacked(int sqrInd, boolean byWhite) {
 		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
 		if (byWhite) {
 			if ((whiteKing & dB.kingMoveMask) != 0) return true;
@@ -245,7 +236,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param byWhite
 	 * @return
 	 */
-	public boolean isAttackedBySliders(int sqrInd, boolean byWhite) {
+	private boolean isAttackedBySliders(int sqrInd, boolean byWhite) {
 		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
 		if (byWhite) {
 			if (((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) != 0) return true;
@@ -265,7 +256,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param byWhite
 	 * @return
 	 */
-	public long getAttackers(int sqrInd, boolean byWhite) {
+	long getAttackers(int sqrInd, boolean byWhite) {
 		long attackers = 0;
 		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
 		if (byWhite) {
@@ -296,7 +287,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param byWhite
 	 * @return
 	 */
-	public long getBlockerCandidates(int sqrInd, boolean byWhite) {
+	long getBlockerCandidates(int sqrInd, boolean byWhite) {
 		long blockerCandidates = 0;
 		long sqrBit = 1L << sqrInd;
 		long blackPawnAdvance = (sqrBit >>> 8), whitePawnAdvance = (sqrBit << 8);
@@ -329,7 +320,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	public long getCheckers() {
+	long getCheckers() {
 		long attackers = 0;
 		int sqrInd;
 		MoveSetDatabase dB;
@@ -358,7 +349,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param forWhite
 	 * @return
 	 */
-	public long getPinnedPieces(boolean forWhite) {
+	long getPinnedPieces(boolean forWhite) {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders, pinnedPiece, pinnedPieces = 0;
 		RayMask attRayMask;
@@ -462,7 +453,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param move
 	 * @return
 	 */
-	public boolean isLegalSoft(Move move) {
+	boolean isLegalSoft(Move move) {
 		MoveSetDatabase dB;
 		boolean checked;
 		long moveSet = 0;
@@ -580,7 +571,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param move
 	 * @return
 	 */
-	public boolean isLegalHard(Move move) {
+	public boolean isLegal(Move move) {
 		List<Move> moveList = generateAllMoves();
 		while (moveList.hasNext()) {
 			if (moveList.next().equals(move))
@@ -594,7 +585,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param move
 	 * @return Whether the move would give check or not in this position.
 	 */
-	public boolean givesCheck(Move move) {
+	boolean givesCheck(Move move) {
 		MoveSetDatabase db;
 		long toBit = 1L << move.to;
 		if (isWhitesTurn) {
@@ -641,7 +632,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return An array of bitboards of squares from where the king can be checked  for each piece type for the side to move.
 	 */
-	public long[] squaresToCheckFrom() {
+	long[] squaresToCheckFrom() {
 		MoveSetDatabase kingDB;
 		long[] threatSquares = new long[5];
 		if (isWhitesTurn) {
@@ -3238,10 +3229,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of all the legal moves from this position.
 	 */
 	public Queue<Move> generateAllMoves() {
-		if (isInCheck)
-			return generateAllCheckEvasionMoves();
-		else
-			return generateAllNormalMoves();
+		return isInCheck? generateAllCheckEvasionMoves() : generateAllNormalMoves();
 	}
 	/**
 	 * Generates a queue of Move objects that represents the material legal moves (i.e. the ones that change the material balance of the
@@ -3250,10 +3238,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of the material legal moves from this position.
 	 */
 	public Queue<Move> generateMaterialMoves() {
-		if (isInCheck)
-			return generateMaterialCheckEvasionMoves();
-		else
-			return generateMaterialNormalMoves();
+		return isInCheck? generateMaterialCheckEvasionMoves() : generateMaterialNormalMoves();
 	}
 	/**
 	 * Generates a queue of Move objects that represents the non-material legal moves (i.e. the ones that do not affect the material
@@ -3262,10 +3247,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of the non-material legal moves from this position.
 	 */
 	public Queue<Move> generateNonMaterialMoves() {
-		if (isInCheck)
-			return generateNonMaterialCheckEvasionMoves();
-		else
-			return generateNonMaterialNormalMoves();
+		return isInCheck? generateNonMaterialCheckEvasionMoves() : generateNonMaterialNormalMoves();
 	}
 	/**
 	 * Makes a move only on the chess board representations of this Position object.
@@ -3867,19 +3849,10 @@ public class Position implements Hashable, Copiable<Position> {
 		allEmpty = ~allOccupied;
 	}
 	/**
-	 * Makes a single move from a LongQueue generated by generateMoves.
-	 * 
-	 * @param move A Move object that is going to be made in the position.
+	 * Sets the castling rights for the side to move.
 	 */
-	public void makeMove(Move move) {
-		long[] temp;
-		makeMoveOnBoard(move);
-		moveList.add(move);
-		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
-				repetitions, checkers));
-		isWhitesTurn = !isWhitesTurn;
+	private void setCastlingRights() {
 		if (isWhitesTurn) {
-			// Check castling rights.
 			if (whiteCastlingRights == CastlingRights.NONE.ind);
 			else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
 				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
@@ -3903,14 +3876,8 @@ public class Position implements Hashable, Copiable<Position> {
 				else
 					whiteCastlingRights = CastlingRights.NONE.ind;
 			}
-			// Check en passant rights.
-			enPassantRights = (move.movedPiece == Piece.B_PAWN.ind && move.from - move.to == 16) ? (byte)(move.to%8) : 8;
-			// Fifty move rule
-			fiftyMoveRuleClock = (short)((move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.B_PAWN.ind) ?
-					0 : fiftyMoveRuleClock + 1);
 		}
 		else {
-			// Check castling rights.
 			if (blackCastlingRights == CastlingRights.NONE.ind);
 			else if (blackCastlingRights == CastlingRights.SHORT.ind) {
 				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
@@ -3934,16 +3901,13 @@ public class Position implements Hashable, Copiable<Position> {
 				else
 					blackCastlingRights = CastlingRights.NONE.ind;
 			}
-			// Check en passant rights.
-			enPassantRights = (move.movedPiece == Piece.W_PAWN.ind && move.to - move.from == 16) ? (byte)(move.to%8) : 8;
-			// Fifty move rule
-			fiftyMoveRuleClock = (short)((move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.W_PAWN.ind) ?
-					0 : fiftyMoveRuleClock + 1);
-				
 		}
-		checkers = getCheckers();
-		isInCheck = checkers != 0;
-		halfMoveIndex++;
+	}
+	/**
+	 * Increases the length of the key history arrays when necessary.
+	 */
+	private void adjustKeyHistSize() {
+		long[] temp;
 		if (keyHistory.length - halfMoveIndex <= 2) {
 			temp = keyHistory;
 			keyHistory = new long[keyHistory.length + 50];
@@ -3954,9 +3918,38 @@ public class Position implements Hashable, Copiable<Position> {
 			for (int i = 0; i < temp.length; i++)
 				pawnKeyHistory[i] = temp[i];
 		}
+	}
+	/**
+	 * Makes a single move from a LongQueue generated by generateMoves.
+	 * 
+	 * @param move A Move object that is going to be made in the position.
+	 */
+	public void makeMove(Move move) {
+		makeMoveOnBoard(move);
+		moveList.add(move);
+		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
+				repetitions, checkers));
+		isWhitesTurn = !isWhitesTurn;
+		setCastlingRights();
+		// Check en passant rights and the fifty move rule.
+		if (isWhitesTurn) {
+			enPassantRights = (move.movedPiece == Piece.B_PAWN.ind && move.from - move.to == 16) ? (byte)(move.to%8) : 8;
+			fiftyMoveRuleClock = (short)((move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.B_PAWN.ind) ?
+					0 : fiftyMoveRuleClock + 1);
+		}
+		else {
+			enPassantRights = (move.movedPiece == Piece.W_PAWN.ind && move.to - move.from == 16) ? (byte)(move.to%8) : 8;
+			fiftyMoveRuleClock = (short)((move.capturedPiece != Piece.NULL.ind || move.movedPiece == Piece.W_PAWN.ind) ?
+					0 : fiftyMoveRuleClock + 1);
+		}
+		checkers = getCheckers();
+		isInCheck = checkers != 0;
+		halfMoveIndex++;
+		adjustKeyHistSize();
 		gen.updateKeys(this);
 		keyHistory[halfMoveIndex] = key;
 		pawnKeyHistory[halfMoveIndex] = pawnKey;
+		// Repetition checking.
 		repetitions = 1;
 		if (fiftyMoveRuleClock >= 4) {
 			for (int i = halfMoveIndex - 2; i >= (halfMoveIndex - fiftyMoveRuleClock); i -= 2) {
@@ -3969,73 +3962,14 @@ public class Position implements Hashable, Copiable<Position> {
 	 * Makes a null move that can be taken back without breaking the game.
 	 */
 	public void makeNullMove() {
-		long[] temp;
 		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
 				repetitions, checkers));
 		isWhitesTurn = !isWhitesTurn;
+		setCastlingRights();
 		enPassantRights = EnPassantRights.NONE.ind;
-		if (isWhitesTurn) {
-			if (whiteCastlingRights == CastlingRights.NONE.ind);
-			else if (whiteCastlingRights == CastlingRights.SHORT.ind) {
-				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind)
-					whiteCastlingRights = CastlingRights.NONE.ind;
-			}
-			else if (whiteCastlingRights == CastlingRights.LONG.ind) {
-				if (offsetBoard[Square.E1.ind] != Piece.W_KING.ind || offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-					whiteCastlingRights = CastlingRights.NONE.ind;
-			}
-			else {
-				if (offsetBoard[Square.E1.ind] == Piece.W_KING.ind) {
-					if (offsetBoard[Square.H1.ind] != Piece.W_ROOK.ind) {
-						if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-							whiteCastlingRights = CastlingRights.NONE.ind;
-						else
-							whiteCastlingRights = CastlingRights.LONG.ind;
-					}
-					else if (offsetBoard[Square.A1.ind] != Piece.W_ROOK.ind)
-						whiteCastlingRights = CastlingRights.SHORT.ind;
-				}
-				else
-					whiteCastlingRights = CastlingRights.NONE.ind;
-			}
-		}
-		else {
-			if (blackCastlingRights == CastlingRights.NONE.ind);
-			else if (blackCastlingRights == CastlingRights.SHORT.ind) {
-				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind)
-					blackCastlingRights = CastlingRights.NONE.ind;
-			}
-			else if (blackCastlingRights == CastlingRights.LONG.ind) {
-				if (offsetBoard[Square.E8.ind] != Piece.B_KING.ind || offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-					blackCastlingRights = CastlingRights.NONE.ind;
-			}
-			else {
-				if (offsetBoard[Square.E8.ind] == Piece.B_KING.ind) {
-					if (offsetBoard[Square.H8.ind] != Piece.B_ROOK.ind) {
-						if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-							blackCastlingRights = CastlingRights.NONE.ind;
-						else
-							blackCastlingRights = CastlingRights.LONG.ind;
-					}
-					else if (offsetBoard[Square.A8.ind] != Piece.B_ROOK.ind)
-						blackCastlingRights = CastlingRights.SHORT.ind;
-				}
-				else
-					blackCastlingRights = CastlingRights.NONE.ind;
-			}
-		}
 		moveList.add(null);
 		halfMoveIndex++;
-		if (keyHistory.length - halfMoveIndex <= 2) {
-			temp = keyHistory;
-			keyHistory = new long[keyHistory.length + 50];
-			for (int i = 0; i < temp.length; i++)
-				keyHistory[i] = temp[i];
-			temp = pawnKeyHistory;
-			pawnKeyHistory = new long[pawnKeyHistory.length + 50];
-			for (int i = 0; i < temp.length; i++)
-				pawnKeyHistory[i] = temp[i];
-		}
+		adjustKeyHistSize();
 		gen.updateKeys(this);
 		keyHistory[halfMoveIndex] = key;
 		pawnKeyHistory[halfMoveIndex] = pawnKey;
@@ -4201,7 +4135,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	public String moveListToSAN() {
+	private String moveListToSAN() {
 		String moveListSAN = "";
 		boolean printRound = true;
 		int roundNum = 0;
@@ -4230,7 +4164,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param pos
 	 * @return
 	 */
-	public String toFancyBoardString() {
+	private String toFancyBoardString() {
 		String out = "";
 		for (int i = 16; i >= 0; i--) {
 			if (i%2 == 0) {

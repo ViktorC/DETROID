@@ -55,6 +55,7 @@ public class Search implements Runnable {
 		private short score;		// The result score of the search.
 		private long nodes;			// The number of nodes searched.
 		private long time;			// Time spent on the search.
+		private boolean isFinal;	// Whether it is the final result of the search.
 		
 		private Results() {
 			
@@ -99,21 +100,39 @@ public class Search implements Runnable {
 		public long getTime() {
 			return time;
 		}
-		private void set(Queue<Move> PVline, short nominalDepth, short score, long nodes, long time) {
+		/**
+		 * Returns whether the result is final, i.e. it will not be updated anymore in this run of the search.
+		 * 
+		 * @return
+		 */
+		public boolean isFinal() {
+			return isFinal;
+		}
+		private void set(Queue<Move> PVline, short nominalDepth, short score, long nodes, long time, boolean isFinal) {
 			this.PVline = PVline;
 			this.nominalDepth = nominalDepth;
 			this.score = score;
 			this.nodes = nodes;
 			this.time = time;
+			this.isFinal = isFinal;
 			setChanged();
 			notifyObservers();
 		}
-		@Override
-		public String toString() {
+		/**
+		 * Returns a one-line String representation of the principal variation result.
+		 * 
+		 * @return
+		 */
+		public String pVlineToString() {
 			String out = "PV:";
 			for (Move m : PVline)
 				out += " " + m.toString();
 			out += "\n";
+			return out;
+		}
+		@Override
+		public String toString() {
+			String out = pVlineToString();
 			out += "Nominal depth: " + nominalDepth + "\n";
 			out += "Score: " + score + "\n";
 			out += String.format("Time: %.2fs\n", (float)time/1000);
@@ -186,7 +205,7 @@ public class Search implements Runnable {
 			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, bestMoveInt, evalScore, razRed, extension;
 			short extPly;
 			Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-			boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
+			boolean moveAllowed, isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
 			Queue<Move> matMoves, nonMatMoves;
 			Move[] matMovesArr, nonMatMovesArr;
 			TTEntry e;
@@ -295,27 +314,41 @@ public class Search implements Runnable {
 				lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
 				// If there is a hash move, search that first.
 				if (isThereHashMove) {
-					// Recapture extension (includes capturing newly promoted pieces).
-					extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? FULL_PLY/2 : 0;
-					pos.makeMove(hashMove);
-					score = -pVsearch(depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
-					pos.unmakeMove();
-					searchedMoves++;
-					if (score > bestScore) {
-						bestMove = hashMove;
-						bestScore = score;
-						if (score > alpha) {
-							alpha = score;
-							if (alpha >= beta) {
-								if (!hashMove.isMaterial()) {
-									if (qDepth == 0)
-										kT.add(distFromRoot, hashMove);	// Add to killer moves.
-									hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
-								}
-								break Search;
+					moveAllowed = true;
+					// Check if move is allowed.
+					if (areMovesRestricted && distFromRoot == 0) {
+						moveAllowed = false;
+						while (allowedRootMoves.hasNext()) {
+							if (hashMove.equals(allowedRootMoves.next())) {
+								moveAllowed = true;
+								allowedRootMoves.reset();
+								break;
 							}
-							else if (!hashMove.isMaterial())
-								hT.recordUnsuccessfulMove(hashMove);	// Record failure in the relative history table.
+						}
+					}
+					if (moveAllowed) {
+						// Recapture extension (includes capturing newly promoted pieces).
+						extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? FULL_PLY/2 : 0;
+						pos.makeMove(hashMove);
+						score = -pVsearch(depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
+						pos.unmakeMove();
+						searchedMoves++;
+						if (score > bestScore) {
+							bestMove = hashMove;
+							bestScore = score;
+							if (score > alpha) {
+								alpha = score;
+								if (alpha >= beta) {
+									if (!hashMove.isMaterial()) {
+										if (qDepth == 0)
+											kT.add(distFromRoot, hashMove);	// Add to killer moves.
+										hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
+									}
+									break Search;
+								}
+								else if (!hashMove.isMaterial())
+									hT.recordUnsuccessfulMove(hashMove);	// Record failure in the relative history table.
+							}
 						}
 					}
 				}
@@ -355,7 +388,7 @@ public class Search implements Runnable {
 						return score;
 					}
 				}
-				// Order the material moves.
+				// Sort the material moves.
 				matMovesArr = orderMaterialMovesMVVLVA(matMoves);
 				matMoveBreakInd = 0;
 				// Search winning and equal captures.
@@ -365,6 +398,19 @@ public class Search implements Runnable {
 					if (isThereHashMove && move.equals(hashMove)) {
 						isThereHashMove = false;
 						continue;
+					}
+					// Check if move is allowed.
+					if (areMovesRestricted && distFromRoot == 0) {
+						moveAllowed = false;
+						while (allowedRootMoves.hasNext()) {
+							if (move.equals(allowedRootMoves.next())) {
+								moveAllowed = true;
+								allowedRootMoves.reset();
+								break;
+							}
+						}
+						if (!moveAllowed)
+							continue;
 					}
 					// If the current move's order-value indicates a losing capture, break the search to check the killer moves.
 					if (move.value < 0) {
@@ -408,7 +454,19 @@ public class Search implements Runnable {
 				kE = kT.retrieve(distFromRoot);
 				if ((kMove = kE.getMove1()) != 0) {	// Killer move no. 1.
 					killerMove1 = Move.toMove(kMove);
-					if (pos.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove))) {
+					moveAllowed = true;
+					// Check if move is allowed.
+					if (areMovesRestricted && distFromRoot == 0) {
+						moveAllowed = false;
+						while (allowedRootMoves.hasNext()) {
+							if (killerMove1.equals(allowedRootMoves.next())) {
+								moveAllowed = true;
+								allowedRootMoves.reset();
+								break;
+							}
+						}
+					}
+					if (moveAllowed && pos.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove))) {
 						isThereKM1 = true;
 						pos.makeMove(killerMove1);
 						if (!isThereHashMove && matMoveBreakInd == 0)
@@ -447,7 +505,19 @@ public class Search implements Runnable {
 				}
 				if ((kMove = kE.getMove2()) != 0) {	// Killer move no. 2.
 					killerMove2 = Move.toMove(kMove);
-					if (pos.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove))) {
+					moveAllowed = true;
+					// Check if move is allowed.
+					if (areMovesRestricted && distFromRoot == 0) {
+						moveAllowed = false;
+						while (allowedRootMoves.hasNext()) {
+							if (killerMove2.equals(allowedRootMoves.next())) {
+								moveAllowed = true;
+								allowedRootMoves.reset();
+								break;
+							}
+						}
+					}
+					if (moveAllowed && pos.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove))) {
 						isThereKM2 = true;
 						pos.makeMove(killerMove2);
 						if (!isThereHashMove && !isThereKM1 && matMoveBreakInd == 0)
@@ -491,6 +561,19 @@ public class Search implements Runnable {
 					if (isThereHashMove && move.equals(hashMove)) {
 						isThereHashMove = false;
 						continue;
+					}
+					// Check if move is allowed.
+					if (areMovesRestricted && distFromRoot == 0) {
+						moveAllowed = false;
+						while (allowedRootMoves.hasNext()) {
+							if (move.equals(allowedRootMoves.next())) {
+								moveAllowed = true;
+								allowedRootMoves.reset();
+								break;
+							}
+						}
+						if (!moveAllowed)
+							continue;
 					}
 					// Recapture extension.
 					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? FULL_PLY/2 : 0;
@@ -550,6 +633,19 @@ public class Search implements Runnable {
 					if (isThereKM2 && move.equals(killerMove2)) {
 						isThereKM2 = false;
 						continue;
+					}
+					// Check if move is allowed.
+					if (areMovesRestricted && distFromRoot == 0) {
+						moveAllowed = false;
+						while (allowedRootMoves.hasNext()) {
+							if (move.equals(allowedRootMoves.next())) {
+								moveAllowed = true;
+								allowedRootMoves.reset();
+								break;
+							}
+						}
+						if (!moveAllowed)
+							continue;
 					}
 					razRed = 0;
 					// Futility pruning, extended futility pruning, and razoring.
@@ -845,6 +941,8 @@ public class Search implements Runnable {
 	private int maxDepth;
 	private long maxNodes;
 	private AtomicLong nodes;	// Number of searched positions.
+	private List<Move> allowedRootMoves;	// The only moves to search at the root.
+	private boolean areMovesRestricted;
 	
 	private AtomicBoolean doStopSearch;
 	
@@ -864,9 +962,9 @@ public class Search implements Runnable {
 	 * @param evalTable Evaluation hash table.
 	 * @param pawnTable Pawn hash table.
 	 */
-	public Search(Position position, long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves, RelativeHistoryTable historyTable,
-			byte hashEntryGen, HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable,
-			int numOfSearchThreads) {
+	public Search(Position position, long timeLeft, long oppTimeLeft, long searchTime, int maxDepth, long maxNodes, List<Move> moves,
+			RelativeHistoryTable historyTable, byte hashEntryGen, HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable,
+			HashTable<PTEntry> pawnTable, int numOfSearchThreads) {
 		numOfThreads = numOfSearchThreads;
 		this.position = position.deepCopy();
 		int phaseScore = Evaluator.phaseScore(position);
@@ -877,10 +975,12 @@ public class Search implements Runnable {
 		}
 		else {
 			pondering = false;
-			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.position, phaseScore, timeLeft);
+			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.position, phaseScore, timeLeft, oppTimeLeft);
 			this.maxDepth = maxDepth > 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
 			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
 		}
+		allowedRootMoves = moves;
+		areMovesRestricted = allowedRootMoves == null;
 		doStopSearch = new AtomicBoolean(false);
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
 		this.hT = historyTable;
@@ -922,7 +1022,7 @@ public class Search implements Runnable {
 			pV.add(pVarr[j++]);
 		return pV;
 	}
-	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft) {
+	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft, long oppTimeLeft) {
 		// !FIXME
 		return 3600*1000;
 	}
@@ -954,7 +1054,7 @@ public class Search implements Runnable {
 				doStopSearch.set(true);
 			}
 			if (doStopSearch.get() || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
-				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
+				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
 				break;
 			}
 			// Aspiration windows with gradual widening.
@@ -984,7 +1084,7 @@ public class Search implements Runnable {
 				i--;
 				continue;
 			}
-			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime));
+			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
 			failHigh = failLow = 0;
 			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
 			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);

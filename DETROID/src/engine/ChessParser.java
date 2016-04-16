@@ -21,13 +21,13 @@ public class ChessParser {
 	/**
 	 * A FEN string for the starting chess position.
 	 */
-	public final static String INITIAL_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	public final static String START_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 	
 	private ChessParser() {
 		
 	}
 	/**
-	 * It parses a FEN-String and sets the instance fields accordingly.
+	 * It parses a FEN-String and initializes a Position instance based on it.
 	 * Beside standard six-field FEN-Strings, it also accepts four-field Strings without the fifty-move rule clock and the move index.
 	 * 
 	 * @param fen

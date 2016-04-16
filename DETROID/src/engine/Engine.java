@@ -12,6 +12,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import engine.Book.SelectionModel;
 import engine.Search.Results;
 import util.HashTable;
+import util.*;
 
 public class Engine implements UCI {
 
@@ -85,13 +86,15 @@ public class Engine implements UCI {
 		Position copy = game.position.deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
-		search = new Search(copy, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
+		search = new Search(copy, 0, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
 		search.run();
 	}
-	private Move search(long timeLeft, long searchTime, int maxDepth, long maxNodes, Move[] moves) {
+	private Move search(long wTimeLeft, long bTimeLeft, long searchTime, int maxDepth, long maxNodes, List<Move> moves) {
 		Search search;
 		Results res;
-		search = new Search(game.position, timeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
+		search = game.position.isWhitesTurn ?
+			new Search(game.position, wTimeLeft, bTimeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1)) :
+			new Search(game.position, bTimeLeft, wTimeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
 		res = search.getResults();
 		if (searchResultObserver != null)
 			res.addObserver(searchResultObserver);
