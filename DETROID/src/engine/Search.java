@@ -123,22 +123,29 @@ public class Search implements Runnable {
 		 * 
 		 * @return
 		 */
-		public String pVlineToString() {
-			String out = "PV:";
+		public String getPvString() {
+			String out = "";
 			for (Move m : PVline)
 				out += " " + m.toString();
-			out += "\n";
 			return out;
 		}
-		@Override
-		public String toString() {
-			String out = pVlineToString();
+		/**
+		 * Returns a String of some search statistics such as greatest nominal depth, score, search speed, etc.
+		 * 
+		 * @return
+		 */
+		public String getStatString() {
+			String out = "";
 			out += "Nominal depth: " + nominalDepth + "\n";
 			out += "Score: " + score + "\n";
 			out += String.format("Time: %.2fs\n", (float)time/1000);
 			out += "Nodes: " + nodes + "\n";
 			out += "Search speed: " + nodes/Math.max(time, 1) + "kNps\n";
 			return out;
+		}
+		@Override
+		public String toString() {
+			return getPvString() + "\n" + getStatString();
 		}
 	}
 	
