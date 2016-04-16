@@ -127,6 +127,7 @@ public class Search implements Runnable {
 			String out = "";
 			for (Move m : PVline)
 				out += " " + m.toString();
+			out += "\n";
 			return out;
 		}
 		/**
@@ -145,7 +146,7 @@ public class Search implements Runnable {
 		}
 		@Override
 		public String toString() {
-			return getPvString() + "\n" + getStatString();
+			return getPvString() + getStatString();
 		}
 	}
 	
