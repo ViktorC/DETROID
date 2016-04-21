@@ -33,6 +33,45 @@ public enum Piece {
 		this.letter = fen;
 	}
 	/**
+	 * Returns the piece defined by the FEN piece letter notation input parameter.
+	 * 
+	 * @param piece
+	 * @return
+	 * @throws ChessParseException 
+	 */
+	public static Piece parse(char piece) throws ChessParseException {
+		switch (piece) {
+			case '\u0000':
+				return Piece.NULL;
+			case 'K':
+				return Piece.W_KING;
+			case 'Q':
+				return Piece.W_QUEEN;
+			case 'R':
+				return Piece.W_ROOK;
+			case 'B':
+				return Piece.W_BISHOP;
+			case 'N':
+				return Piece.W_KNIGHT;
+			case 'P':
+				return Piece.W_PAWN;
+			case 'k':
+				return Piece.B_KING;
+			case 'q':
+				return Piece.B_QUEEN;
+			case 'r':
+				return Piece.B_ROOK;
+			case 'b':
+				return Piece.B_BISHOP;
+			case 'n':
+				return Piece.B_KNIGHT;
+			case 'p':
+				return Piece.B_PAWN;
+			default:
+				throw new ChessParseException();
+		}
+	}
+	/**
 	 * Returns an enum instance of the piece denoted by the input parameter numericNotation.
 	 * 
 	 * @param numericNotation

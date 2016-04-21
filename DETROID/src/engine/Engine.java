@@ -79,11 +79,11 @@ public class Engine implements UCI {
 		return background.submit(task);
 	}
 	private Move tryBook() {
-		return book.getMove(game.position, SelectionModel.STOCHASTIC);
+		return book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
 	}
 	private void ponder(Move move) {
 		Search search;
-		Position copy = game.position.deepCopy();
+		Position copy = game.getPosition().deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
 		search = new Search(copy, 0, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
@@ -92,9 +92,11 @@ public class Engine implements UCI {
 	private Move search(long wTimeLeft, long bTimeLeft, long searchTime, int maxDepth, long maxNodes, List<Move> moves) {
 		Search search;
 		Results res;
-		search = game.position.isWhitesTurn ?
-			new Search(game.position, wTimeLeft, bTimeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1)) :
-			new Search(game.position, bTimeLeft, wTimeLeft, searchTime, maxDepth, maxNodes, moves, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
+		search = game.getPosition().isWhitesTurn ?
+			new Search(game.getPosition(), wTimeLeft, bTimeLeft, searchTime, maxDepth, maxNodes, moves,
+					hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1)) :
+			new Search(game.getPosition(), bTimeLeft, wTimeLeft, searchTime, maxDepth, maxNodes, moves,
+					hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
 		res = search.getResults();
 		if (searchResultObserver != null)
 			res.addObserver(searchResultObserver);

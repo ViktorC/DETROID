@@ -234,7 +234,7 @@ public class Book {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	public static String polyglotMoveToPACN(Position pos, short polyglotMove) throws IllegalArgumentException {
+	private static String polyglotMoveToPACN(Position pos, short polyglotMove) throws IllegalArgumentException {
 		String toFile, toRank, fromFile, fromRank, promPiece, pacn;
 		toFile = "" + (char)((polyglotMove & 7) + 'a');
 		toRank = "" + (int)(((polyglotMove >>> 3) & 7) + 1);
@@ -325,7 +325,7 @@ public class Book {
 			default: return null;
 		}
 		try {
-			return ChessParser.parsePACN(p, polyglotMoveToPACN(p, e.move));
+			return p.parsePACN(polyglotMoveToPACN(p, e.move));
 		} catch (ChessParseException | NullPointerException | IllegalArgumentException ex) {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();

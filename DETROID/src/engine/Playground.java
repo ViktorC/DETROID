@@ -21,12 +21,12 @@ public class Playground {
 	}
 	
 	public static void main(String[] args) throws ChessParseException {
-		Position p = ChessParser.parseFEN("2b4k/8/5Pr1/5N2/8/8/8/K1B5 w - -");
+		Position p = Position.parse("5r1k/p4Ppr/5p1p/2R4Q/7b/8/R5Kn/6n1 w - -");
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
 		HashTable<PTEntry> pT = new HashTable<>(4);
-		Search s = new Search(p, 0, 0, 30, 0, null, hT, (byte) 0, tT, eT, pT, 1);
+		Search s = new Search(p, 0, 0, 0, 30, 0, null, hT, (byte) 0, tT, eT, pT, 1);
 		long start = System.currentTimeMillis();
 		s.getResults().addObserver(new PVO());
 		s.run();

@@ -19,6 +19,11 @@ import engine.Board.*;
  */
 public class Position implements Hashable, Copiable<Position> {
 	
+	/**
+	 * A FEN string for the starting chess position.
+	 */
+	public final static String START_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	
 	// Bit boards for each piece type.
 	long whiteKing;
 	long whiteQueens;
@@ -96,6 +101,177 @@ public class Position implements Hashable, Copiable<Position> {
 	 */
 	byte repetitions;
 	
+	/**
+	 * It parses a FEN-String and initializes a Position instance based on it.
+	 * Beside standard six-field FEN-Strings, it also accepts four-field Strings without the fifty-move rule clock and the move index.
+	 * 
+	 * @param fen
+	 * @return
+	 * @throws ChessParseException 
+	 */
+	public static Position parse(String fen) throws ChessParseException {
+		Position pos = new Position();
+		String[] fenFields = fen.split(" "), ranks;
+		String board, turn, castling, enPassant, rank;
+		char piece;
+		int pieceNum, index = 0, fiftyMoveRuleClock, moveIndex;
+		pos.isWhitesTurn = true;
+		pos.checkers = 0;
+		pos.isInCheck = false;
+		pos.halfMoveIndex = 0;
+		pos.fiftyMoveRuleClock = 0;
+		pos.enPassantRights = EnPassantRights.NONE.ind;
+		pos.whiteCastlingRights = CastlingRights.ALL.ind;
+		pos.blackCastlingRights = CastlingRights.ALL.ind;
+		if (fenFields.length == 6) {
+			try {
+				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
+				if (fiftyMoveRuleClock >= 0)
+					pos.fiftyMoveRuleClock = (short)fiftyMoveRuleClock;
+				else
+					pos.fiftyMoveRuleClock = 0;
+			}
+			catch (NumberFormatException e) {
+				throw new ChessParseException("The fifty-move rule clock field of the FEN-string does not conform to the standards. " +
+						"Parsing not possible.");
+			}
+			try {
+				moveIndex = (Integer.parseInt(fenFields[5]) - 1)*2;
+				if (!pos.isWhitesTurn)
+					moveIndex++;
+				if (moveIndex >= 0)
+					pos.halfMoveIndex = moveIndex;
+				else
+					pos.halfMoveIndex = 0;
+			}
+			catch (NumberFormatException e) {
+				throw new ChessParseException("The move index field does not conform to the standards. Parsing not possible.");
+			}
+		}
+		else if (fenFields.length != 4)
+			throw new ChessParseException("The FEN-String has an unallowed number of fields.");
+		board = fenFields[0];
+		turn = fenFields[1];
+		castling = fenFields[2];
+		enPassant = fenFields[3];
+		ranks = board.split("/");
+		if (ranks.length != 8)
+			throw new ChessParseException("The board position representation does not have eight ranks.");
+		pos.offsetBoard = new byte[64];
+		for (int i = 0; i < 64; i++)
+			pos.offsetBoard[i] = Piece.NULL.ind;
+		for (int i = 7; i >= 0; i--) {
+			rank = ranks[i];
+			for (int j = 0; j < rank.length(); j++) {
+				piece = rank.charAt(j);
+				pieceNum = piece - '0';
+				if (pieceNum >= 0 && pieceNum <= 8)
+					index += pieceNum;
+				else {
+					pos.offsetBoard[index] = Piece.parse(piece).ind;
+					switch (piece) {
+						case 'K': {
+							pos.whiteKing = Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'Q': {
+							pos.whiteQueens	|= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'R': {
+							pos.whiteRooks |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'B': {
+							pos.whiteBishops |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'N': {
+							pos.whiteKnights |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'P': {
+							pos.whitePawns |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'k': {
+							pos.blackKing = Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'q': {
+							pos.blackQueens |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'r': {
+							pos.blackRooks |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'b': {
+							pos.blackBishops |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'n': {
+							pos.blackKnights |= Square.getByIndex(index).bitmap;
+						}
+						break;
+						case 'p': {
+							pos.blackPawns |= Square.getByIndex(index).bitmap;
+						}
+					}
+					index++;
+				}
+			}
+		}
+		pos.allWhiteOccupied = pos.whiteKing | pos.whiteQueens | pos.whiteRooks | pos.whiteBishops | pos.whiteKnights | pos.whitePawns;
+		pos.allBlackOccupied = pos.blackKing | pos.blackQueens | pos.blackRooks | pos.blackBishops | pos.blackKnights | pos.blackPawns;
+		pos.allNonWhiteOccupied = ~pos.allWhiteOccupied;
+		pos.allNonBlackOccupied = ~pos.allBlackOccupied;
+		pos.allOccupied	= pos.allWhiteOccupied | pos.allBlackOccupied;
+		pos.allEmpty = ~pos.allOccupied;
+		if (turn.toLowerCase().compareTo("w") == 0)
+			pos.isWhitesTurn = true;
+		else
+			pos.isWhitesTurn = false;
+		if (castling.equals("-")) {
+			pos.whiteCastlingRights = CastlingRights.NONE.ind;
+			pos.blackCastlingRights = CastlingRights.NONE.ind;
+		}
+		if (castling.length() < 1 || castling.length() > 4)
+			throw new ChessParseException("Invalid length");
+		if (castling.contains("K")) {
+			if (castling.contains("Q"))
+				pos.whiteCastlingRights = CastlingRights.ALL.ind;
+			else
+				pos.whiteCastlingRights = CastlingRights.SHORT.ind;
+		}
+		else if (castling.contains("Q"))
+			pos.whiteCastlingRights = CastlingRights.LONG.ind;
+		else
+			pos.whiteCastlingRights = CastlingRights.NONE.ind;
+		if (castling.contains("k")) {
+			if (castling.contains("q"))
+				pos.blackCastlingRights = CastlingRights.ALL.ind;
+			else
+				pos.blackCastlingRights = CastlingRights.SHORT.ind;
+		}
+		else if (castling.contains("q"))
+			pos.blackCastlingRights = CastlingRights.LONG.ind;
+		else
+			pos.blackCastlingRights = CastlingRights.NONE.ind;
+		if (enPassant.length() > 2)
+			throw new ChessParseException();
+		if (enPassant.equals("-"))
+			pos.enPassantRights = EnPassantRights.NONE.ind;
+		else
+			pos.enPassantRights = EnPassantRights.values()[enPassant.toLowerCase().charAt(0) - 'a'].ind;
+		pos.checkers = pos.getCheckers();
+		pos.isInCheck = pos.checkers != 0;
+		pos.gen.setHashKeys(pos);
+		pos.keyHistory[0] = pos.key;
+		pos.pawnKeyHistory[0] = pos.pawnKey;
+		pos.repetitions = 0;
+		return pos;
+	}
 	/**Initializes a default, empty Position instance.*/
 	Position() {
 		moveList = new Stack<Move>();
@@ -3993,6 +4169,484 @@ public class Position implements Hashable, Copiable<Position> {
 		return move;
 	}
 	/**
+	 * Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had. It is used mainly for move
+	 * generation and move making speed benchmarking; and bug detection by comparing the returned values to validated results.
+	 * 
+	 * @param depth
+	 * @return
+	 */
+	public long perft(int depth) {
+		Queue<Move> moves;
+		Move move;
+		long leafNodes = 0;
+		if (depth == 0)
+			return 1;
+		moves = generateAllMoves();
+		while (moves.hasNext()) {
+			move = moves.next();
+			makeMove(move);
+			leafNodes += perft(depth - 1);
+			unmakeMove();
+		}
+		return leafNodes;
+	}
+	/**
+	 * Runs a perft test with staged move generation, first generating only the material moves such as captures and promotions and then
+	 * proceeding to generate the non-material moves i.e. the rest.
+	 * 
+	 * @param depth
+	 * @return
+	 */
+	public long materialStagedPerft(int depth) {
+		Queue<Move> materialMoves, nonMaterialMoves;
+		Move move;
+		long leafNodes = 0;
+		if (depth == 0)
+			return 1;
+		materialMoves = generateMaterialMoves();
+		while (materialMoves.hasNext()) {
+			move = materialMoves.next();
+			makeMove(move);
+			leafNodes += materialStagedPerft(depth - 1);
+			unmakeMove();
+		}
+		nonMaterialMoves = generateNonMaterialMoves();
+		while (nonMaterialMoves.hasNext()) {
+			move = nonMaterialMoves.next();
+			makeMove(move);
+			leafNodes += materialStagedPerft(depth - 1);
+			unmakeMove();
+		}
+		return leafNodes;
+	}
+	/**
+	 * Runs a perft test faster than the standard method. Instead of making and unmaking the moves leading to the leafnodes, it simply
+	 * returns the number of generated moves from the nodes at depth 1. More suitable for benchmarking move generation.
+	 * 
+	 * @param depth
+	 * @return
+	 */
+	public long quickPerft(int depth) {
+		Queue<Move> moves;
+		Move move;
+		long leafNodes = 0;
+		moves = generateAllMoves();
+		if (depth == 1)
+			return moves.length();
+		while (moves.hasNext()) {
+			move = moves.next();
+			makeMove(move);
+			leafNodes += quickPerft(depth - 1);
+			unmakeMove();
+		}
+		return leafNodes;
+	}
+	/**
+	 * Runs a quick perft test (not making and unmaking leaf moves, just returning their count) with staged move generation, first
+	 * generating only the material moves such as captures and promotions and then proceeding to generate the non-material moves i.e.
+	 * the rest.
+	 * 
+	 * @param depth
+	 * @return
+	 */
+	public long materialStagedQuickPerft(int depth) {
+		Queue<Move> materialMoves, nonMaterialMoves;
+		Move move;
+		long leafNodes = 0;
+		if (depth == 1)
+			return generateMaterialMoves().length() + generateNonMaterialMoves().length();
+		materialMoves = generateMaterialMoves();
+		while (materialMoves.hasNext()) {
+			move = materialMoves.next();
+			makeMove(move);
+			leafNodes += materialStagedQuickPerft(depth - 1);
+			unmakeMove();
+		}
+		nonMaterialMoves = generateNonMaterialMoves();
+		while (nonMaterialMoves.hasNext()) {
+			move = nonMaterialMoves.next();
+			makeMove(move);
+			leafNodes += materialStagedQuickPerft(depth - 1);
+			unmakeMove();
+		}
+		return leafNodes;
+	}
+	/**
+	 * Parses a String describing a move in Standard Algebraic Notation and returns a Move object created based on it. The move described by
+	 * the SAN string is assumed to be legal in the position it is parsed for.
+	 * 
+	 * @param san
+	 * @return
+	 * @throws ChessParseException
+	 * @throws NullPointerException
+	 */
+	public Move parseSAN(String san) throws ChessParseException, NullPointerException {
+		byte from, to, movedPiece, capturedPiece, type;
+		long movablePieces, restriction, pawnAdvancer;
+		char[] chars;
+		MoveSetDatabase mT;
+		if (san == null)
+			return null;
+		try {
+			chars = san.toCharArray();
+			movablePieces = ~getPinnedPieces(isWhitesTurn);
+			if (san.matches("^O-O[+#]?[//?!]{0,2}$")) {
+				if (isWhitesTurn) {
+					to = Square.G1.ind;
+					from = Square.E1.ind;
+					movedPiece = Piece.W_KING.ind;
+				}
+				else {
+					to = Square.G8.ind;
+					from = Square.E8.ind;
+					movedPiece = Piece.B_KING.ind;
+				}
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.SHORT_CASTLING.ind;
+				restriction = -1L;
+			}
+			else if (san.matches("^O-O-O[+#]?[//?!]{0,2}$")) {
+				if (isWhitesTurn) {
+					to = Square.C1.ind;
+					from = Square.E1.ind;
+					movedPiece = Piece.W_KING.ind;
+				}
+				else {
+					to = Square.C8.ind;
+					from = Square.E8.ind;
+					movedPiece = Piece.B_KING.ind;
+				}
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.LONG_CASTLING.ind;
+				restriction = -1L;
+			}
+			else if (san.matches("^[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					pawnAdvancer = (1L << (to - 8)) & whitePawns & movablePieces;
+					from = (byte)((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16);
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					pawnAdvancer = (1L << (to + 8)) & blackPawns & movablePieces;
+					from = (byte)((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16);
+				}
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.NORMAL.ind;
+				restriction = -1L;
+			}
+			else if (san.matches("^[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					pawnAdvancer = (1L << (to - 8)) & whitePawns & movablePieces;
+					from = (byte)((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16);
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					pawnAdvancer = (1L << (to + 8)) & blackPawns & movablePieces;
+					from = (byte)((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16);
+				}
+				capturedPiece = Piece.NULL.ind;
+				type = (byte)(Piece.parse(chars[3]).ind + 2);
+				restriction = -1L;
+			}
+			else if (san.matches("^x[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getBlackPawnCaptureSet(whitePawns & movablePieces));
+					if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND) {
+						capturedPiece = Piece.B_PAWN.ind;
+						type = MoveType.EN_PASSANT.ind;
+					}
+					else {
+						capturedPiece = offsetBoard[to];
+						type = MoveType.NORMAL.ind;
+					}
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getWhitePawnCaptureSet(blackPawns & movablePieces));
+					if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND) {
+						capturedPiece = Piece.W_PAWN.ind;
+						type = MoveType.EN_PASSANT.ind;
+					}
+					else {
+						capturedPiece = offsetBoard[to];
+						type = MoveType.NORMAL.ind;
+					}
+				}
+				restriction = -1L;
+			}
+			else if (san.matches("^x[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getBlackPawnCaptureSet(whitePawns & movablePieces));
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getWhitePawnCaptureSet(blackPawns & movablePieces));
+				}
+				capturedPiece = offsetBoard[to];
+				type = (byte)(Piece.parse(chars[4]).ind + 2);
+				restriction = -1L;
+			}
+			else if (san.matches("^x[a-h][1-8]e.p.[+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getBlackPawnCaptureSet(whitePawns & movablePieces));
+					capturedPiece = Piece.B_PAWN.ind;
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getWhitePawnCaptureSet(blackPawns & movablePieces));
+					capturedPiece = Piece.W_PAWN.ind;
+				}
+				type = MoveType.EN_PASSANT.ind;
+				restriction = -1L;
+			}
+			else if (san.matches("^[a-h]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getBlackPawnCaptureSet(whitePawns & movablePieces)
+							& File.getByIndex((int)(chars[0] - 'a')).bitmap);
+					if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND) {
+						capturedPiece = Piece.B_PAWN.ind;
+						type = MoveType.EN_PASSANT.ind;
+					}
+					else {
+						capturedPiece = offsetBoard[to];
+						type = MoveType.NORMAL.ind;
+					}
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getWhitePawnCaptureSet(blackPawns & movablePieces)
+							& File.getByIndex((int)(chars[0] - 'a')).bitmap);
+					if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND) {
+						capturedPiece = Piece.W_PAWN.ind;
+						type = MoveType.EN_PASSANT.ind;
+					}
+					else {
+						capturedPiece = offsetBoard[to];
+						type = MoveType.NORMAL.ind;
+					}
+				}
+				restriction = -1L;
+			}
+			else if (san.matches("^[a-h]x[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getBlackPawnCaptureSet(whitePawns & movablePieces)
+							& File.getByIndex((int)(chars[0] - 'a')).bitmap);
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getWhitePawnCaptureSet(blackPawns & movablePieces)
+							& File.getByIndex((int)(chars[0] - 'a')).bitmap);
+				}
+				capturedPiece = offsetBoard[to];
+				type = (byte)(Piece.parse(chars[5]).ind + 2);
+				restriction = -1L;
+			}
+			else if (san.matches("^[a-h]x[a-h][1-8]e.p.[+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
+				mT = MoveSetDatabase.getByIndex(to);
+				if (isWhitesTurn) {
+					movedPiece = Piece.W_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getBlackPawnCaptureSet(whitePawns & movablePieces)
+							& File.getByIndex((int)(chars[0] - 'a')).bitmap);
+					capturedPiece = Piece.B_PAWN.ind;
+				}
+				else {
+					movedPiece = Piece.B_PAWN.ind;
+					from = BitOperations.indexOfBit(mT.getWhitePawnCaptureSet(blackPawns & movablePieces)
+							& File.getByIndex((int)(chars[0] - 'a')).bitmap);
+					capturedPiece = Piece.W_PAWN.ind;
+				}
+				type = MoveType.EN_PASSANT.ind;
+				restriction = -1L;
+			}
+			else if (san.matches("^[KQRBN][a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = -1L;
+			}
+			else if (san.matches("^[KQRBN][a-h][a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap;
+			}
+			else if (san.matches("^[KQRBN][1-8][a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = Rank.getByIndex((int)(chars[1] - '1')).bitmap;
+			}
+			else if (san.matches("^[KQRBN][a-h][1-8][a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = Piece.NULL.ind;
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap & Rank.getByIndex((int)(chars[2] - '1')).bitmap;
+			}
+			else if (san.matches("^[KQRBN]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = offsetBoard[to];
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = -1L;
+			}
+			else if (san.matches("^[KQRBN][a-h]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = offsetBoard[to];
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap;
+			}
+			else if (san.matches("^[KQRBN][1-8]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = offsetBoard[to];
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = Rank.getByIndex((int)(chars[1] - '1')).bitmap;
+			}
+			else if (san.matches("^[KQRBN][a-h][1-8]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
+				to = (byte)((int)(chars[4] - 'a') + 8*(Integer.parseInt(Character.toString(chars[5])) - 1));
+				movedPiece = (byte)(Piece.parse(chars[0]).ind + (isWhitesTurn ? 0 : Piece.W_PAWN.ind));
+				capturedPiece = offsetBoard[to];
+				type = MoveType.NORMAL.ind;
+				from = -1;
+				restriction = File.getByIndex((int)(chars[1] - 'a')).bitmap & Rank.getByIndex((int)(chars[2] - '1')).bitmap;
+			}
+			else
+				throw new ChessParseException("The move String violates the SAN standard.");
+			if (from == -1) {
+				mT = MoveSetDatabase.getByIndex(to);
+				if (movedPiece == Piece.W_KING.ind)
+					from = BitOperations.indexOfBit(mT.getKingMoveSet(whiteKing));
+				else if (movedPiece == Piece.W_QUEEN.ind)
+					from = BitOperations.indexOfBit(mT.getQueenMoveSet(whiteQueens & movablePieces & restriction, allOccupied));
+				else if (movedPiece == Piece.W_ROOK.ind)
+					from = BitOperations.indexOfBit(mT.getRookMoveSet(whiteRooks & movablePieces & restriction, allOccupied));
+				else if (movedPiece == Piece.W_BISHOP.ind)
+					from = BitOperations.indexOfBit(mT.getBishopMoveSet(whiteBishops & movablePieces & restriction, allOccupied));
+				else if (movedPiece == Piece.W_KNIGHT.ind)
+					from = BitOperations.indexOfBit(mT.getKnightMoveSet(whiteKnights & movablePieces & restriction));
+				else if (movedPiece == Piece.B_KING.ind)
+					from = BitOperations.indexOfBit(mT.getKingMoveSet(blackKing));
+				else if (movedPiece == Piece.B_QUEEN.ind)
+					from = BitOperations.indexOfBit(mT.getQueenMoveSet(blackQueens & movablePieces & restriction, allOccupied));
+				else if (movedPiece == Piece.B_ROOK.ind)
+					from = BitOperations.indexOfBit(mT.getRookMoveSet(blackRooks & movablePieces & restriction, allOccupied));
+				else if (movedPiece == Piece.B_BISHOP.ind)
+					from = BitOperations.indexOfBit(mT.getBishopMoveSet(blackBishops & movablePieces & restriction, allOccupied));
+				else
+					from = BitOperations.indexOfBit(mT.getKnightMoveSet(blackKnights & movablePieces & restriction));
+			}
+		}
+		catch (Exception e) {
+			throw new ChessParseException(e);
+		}
+		return new Move(from, to, movedPiece, capturedPiece, type);
+	}
+	/**
+	 * Parses a Pure Algebraic Coordinate Notation move string into a {@link #engine.Move Move} object. If the input string does not pass the formal
+	 * requirements of a PACN string, the method throws an {@link #engine.ChessTextParseException ChessTextParseException}. No legality checks are
+	 * performed on the move.
+	 * 
+	 * @param pacn
+	 * @return
+	 * @throws ChessParseException
+	 * @throws NullPointerException
+	 */
+	public Move parsePACN(String pacn) throws ChessParseException, NullPointerException {
+		byte from, to, movedPiece, capturedPiece, type;
+		String input = pacn.trim().toLowerCase();
+		if (input.length() != 4 && input.length() != 6)
+			throw new ChessParseException("The input does not pass the formal requirements of a PACN String. Its length is neither 4 nor 6");
+		from = (byte)((int)(input.charAt(0) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(1))) - 1));
+		to = (byte)((int)(input.charAt(2) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(3))) - 1));
+		movedPiece = offsetBoard[from];
+		if (input.length() == 6) {
+			switch (input.charAt(5)) {
+				case 'q' : type = MoveType.PROMOTION_TO_QUEEN.ind;
+				break;
+				case 'r' : type = MoveType.PROMOTION_TO_ROOK.ind;
+				break;
+				case 'b' : type = MoveType.PROMOTION_TO_BISHOP.ind;
+				break;
+				case 'n' : type = MoveType.PROMOTION_TO_KNIGHT.ind;
+				break;
+				default:
+					throw new ChessParseException("The input does not pass the formal requirements of a PACN String. Wrong promotion notation");
+			}
+			capturedPiece = offsetBoard[to];
+		}
+		else {
+			if (movedPiece == Piece.W_PAWN.ind) {
+				if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND) {
+					type = MoveType.EN_PASSANT.ind;
+					capturedPiece = Piece.B_PAWN.ind;
+				}
+				else {
+					type = MoveType.NORMAL.ind;
+					capturedPiece = offsetBoard[to];
+				}
+			}
+			else if (movedPiece == Piece.B_PAWN.ind) {
+				if (enPassantRights != EnPassantRights.NONE.ind && to == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND) {
+					type = MoveType.EN_PASSANT.ind;
+					capturedPiece = Piece.W_PAWN.ind;
+				}
+				else {
+					type = MoveType.NORMAL.ind;
+					capturedPiece = offsetBoard[to];
+				}
+			}
+			else {
+				if ((from == Square.E1.ind && to == Square.G1.ind) || (from == Square.E8.ind && to == Square.G8.ind)) {
+					type = MoveType.SHORT_CASTLING.ind;
+					capturedPiece = Piece.NULL.ind;
+				}
+				else if ((from == Square.E1.ind && to == Square.C1.ind) || (from == Square.E8.ind && to == Square.C8.ind)) {
+					type = MoveType.LONG_CASTLING.ind;
+					capturedPiece = Piece.NULL.ind;
+				}
+				else {
+					type = MoveType.NORMAL.ind;
+					capturedPiece = offsetBoard[to];
+				}
+			}
+		}
+		return new Move(from, to, movedPiece, capturedPiece, type);
+	}
+	/**
 	 * Creates and returns a string of the move in Standard Algebraic Notation. The move is assumed to be legal in the position on which
 	 * the method is called.
 	 * 
@@ -4131,7 +4785,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	private String moveListToSAN() {
+	String moveListToSAN() {
 		String moveListSAN = "";
 		boolean printRound = true;
 		int roundNum = 0;
@@ -4274,108 +4928,5 @@ public class Position implements Hashable, Copiable<Position> {
 		fen += ' ';
 		fen += 1 + halfMoveIndex/2;
 		return fen;
-	}
-	/**
-	 * Runs a perft test to the given depth and returns the number of leaf nodes the traversed game tree had. It is used mainly for move
-	 * generation and move making speed benchmarking; and bug detection by comparing the returned values to validated results.
-	 * 
-	 * @param depth
-	 * @return
-	 */
-	public long perft(int depth) {
-		Queue<Move> moves;
-		Move move;
-		long leafNodes = 0;
-		if (depth == 0)
-			return 1;
-		moves = generateAllMoves();
-		while (moves.hasNext()) {
-			move = moves.next();
-			makeMove(move);
-			leafNodes += perft(depth - 1);
-			unmakeMove();
-		}
-		return leafNodes;
-	}
-	/**
-	 * Runs a perft test with staged move generation, first generating only the material moves such as captures and promotions and then
-	 * proceeding to generate the non-material moves i.e. the rest.
-	 * 
-	 * @param depth
-	 * @return
-	 */
-	public long materialStagedPerft(int depth) {
-		Queue<Move> materialMoves, nonMaterialMoves;
-		Move move;
-		long leafNodes = 0;
-		if (depth == 0)
-			return 1;
-		materialMoves = generateMaterialMoves();
-		while (materialMoves.hasNext()) {
-			move = materialMoves.next();
-			makeMove(move);
-			leafNodes += materialStagedPerft(depth - 1);
-			unmakeMove();
-		}
-		nonMaterialMoves = generateNonMaterialMoves();
-		while (nonMaterialMoves.hasNext()) {
-			move = nonMaterialMoves.next();
-			makeMove(move);
-			leafNodes += materialStagedPerft(depth - 1);
-			unmakeMove();
-		}
-		return leafNodes;
-	}
-	/**
-	 * Runs a perft test faster than the standard method. Instead of making and unmaking the moves leading to the leafnodes, it simply
-	 * returns the number of generated moves from the nodes at depth 1. More suitable for benchmarking move generation.
-	 * 
-	 * @param depth
-	 * @return
-	 */
-	public long quickPerft(int depth) {
-		Queue<Move> moves;
-		Move move;
-		long leafNodes = 0;
-		moves = generateAllMoves();
-		if (depth == 1)
-			return moves.length();
-		while (moves.hasNext()) {
-			move = moves.next();
-			makeMove(move);
-			leafNodes += quickPerft(depth - 1);
-			unmakeMove();
-		}
-		return leafNodes;
-	}
-	/**
-	 * Runs a quick perft test (not making and unmaking leaf moves, just returning their count) with staged move generation, first
-	 * generating only the material moves such as captures and promotions and then proceeding to generate the non-material moves i.e.
-	 * the rest.
-	 * 
-	 * @param depth
-	 * @return
-	 */
-	public long materialStagedQuickPerft(int depth) {
-		Queue<Move> materialMoves, nonMaterialMoves;
-		Move move;
-		long leafNodes = 0;
-		if (depth == 1)
-			return generateMaterialMoves().length() + generateNonMaterialMoves().length();
-		materialMoves = generateMaterialMoves();
-		while (materialMoves.hasNext()) {
-			move = materialMoves.next();
-			makeMove(move);
-			leafNodes += materialStagedQuickPerft(depth - 1);
-			unmakeMove();
-		}
-		nonMaterialMoves = generateNonMaterialMoves();
-		while (nonMaterialMoves.hasNext()) {
-			move = nonMaterialMoves.next();
-			makeMove(move);
-			leafNodes += materialStagedQuickPerft(depth - 1);
-			unmakeMove();
-		}
-		return leafNodes;
 	}
 }

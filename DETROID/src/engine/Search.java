@@ -126,7 +126,7 @@ public class Search implements Runnable {
 		public String getPvString() {
 			String out = "";
 			for (Move m : PVline)
-				out += " " + m.toString();
+				out += m.toString() + " ";
 			out += "\n";
 			return out;
 		}
@@ -324,7 +324,7 @@ public class Search implements Runnable {
 				if (isThereHashMove) {
 					moveAllowed = true;
 					// Check if move is allowed.
-					if (areMovesRestricted && distFromRoot == 0) {
+					if (areMovesRestricted && distFromRoot == 0 && qDepth == 0) {
 						moveAllowed = false;
 						while (allowedRootMoves.hasNext()) {
 							if (hashMove.equals(allowedRootMoves.next())) {
@@ -408,7 +408,7 @@ public class Search implements Runnable {
 						continue;
 					}
 					// Check if move is allowed.
-					if (areMovesRestricted && distFromRoot == 0) {
+					if (areMovesRestricted && distFromRoot == 0 && qDepth == 0) {
 						moveAllowed = false;
 						while (allowedRootMoves.hasNext()) {
 							if (move.equals(allowedRootMoves.next())) {
@@ -464,7 +464,7 @@ public class Search implements Runnable {
 					killerMove1 = Move.toMove(kMove);
 					moveAllowed = true;
 					// Check if move is allowed.
-					if (areMovesRestricted && distFromRoot == 0) {
+					if (areMovesRestricted && distFromRoot == 0 && qDepth == 0) {
 						moveAllowed = false;
 						while (allowedRootMoves.hasNext()) {
 							if (killerMove1.equals(allowedRootMoves.next())) {
@@ -515,7 +515,7 @@ public class Search implements Runnable {
 					killerMove2 = Move.toMove(kMove);
 					moveAllowed = true;
 					// Check if move is allowed.
-					if (areMovesRestricted && distFromRoot == 0) {
+					if (areMovesRestricted && distFromRoot == 0 && qDepth == 0) {
 						moveAllowed = false;
 						while (allowedRootMoves.hasNext()) {
 							if (killerMove2.equals(allowedRootMoves.next())) {
@@ -571,7 +571,7 @@ public class Search implements Runnable {
 						continue;
 					}
 					// Check if move is allowed.
-					if (areMovesRestricted && distFromRoot == 0) {
+					if (areMovesRestricted && distFromRoot == 0 && qDepth == 0) {
 						moveAllowed = false;
 						while (allowedRootMoves.hasNext()) {
 							if (move.equals(allowedRootMoves.next())) {
@@ -643,7 +643,7 @@ public class Search implements Runnable {
 						continue;
 					}
 					// Check if move is allowed.
-					if (areMovesRestricted && distFromRoot == 0) {
+					if (areMovesRestricted && distFromRoot == 0 && qDepth == 0) {
 						moveAllowed = false;
 						while (allowedRootMoves.hasNext()) {
 							if (move.equals(allowedRootMoves.next())) {
@@ -988,7 +988,7 @@ public class Search implements Runnable {
 			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
 		}
 		allowedRootMoves = moves;
-		areMovesRestricted = allowedRootMoves == null;
+		areMovesRestricted = allowedRootMoves != null;
 		doStopSearch = new AtomicBoolean(false);
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
 		this.hT = historyTable;
