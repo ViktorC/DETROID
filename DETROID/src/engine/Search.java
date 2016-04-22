@@ -1065,7 +1065,7 @@ public class Search implements Runnable {
 				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
 				break;
 			}
-			// Aspiration windows with gradual widening.
+			/* Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= checkMateLim) {
 					alpha = Termination.CHECK_MATE.score;
@@ -1091,11 +1091,11 @@ public class Search implements Runnable {
 				}
 				i--;
 				continue;
-			}
+			}*/
 			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
-			failHigh = failLow = 0;
+			/*failHigh = failLow = 0;
 			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
-			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
+			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);*/
 		}
 	}
 	@Override
