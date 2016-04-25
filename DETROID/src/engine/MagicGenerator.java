@@ -21,7 +21,7 @@ import engine.Board.*;
 public final class MagicGenerator {
 	
 	/**
-	 * A simple unencapsulated class for returning both the magic number and the magic shift value.
+	 * A simple class for returning both the magic number and the magic shift value.
 	 * 
 	 * @author Viktor
 	 *
@@ -57,12 +57,21 @@ public final class MagicGenerator {
 	private static long[][] bishopAttackSetVariations;
 	
 	static {
-		rookOccupancyVariations = SliderSets.rookOccupancyVariations();
-		bishopOccupancyVariations = SliderSets.bishopOccupancyVariations();
-		rookAttackSetVariations = SliderSets.rookAttackSetVariations(rookOccupancyVariations);
-		bishopAttackSetVariations = SliderSets.bishopAttackSetVariations(bishopOccupancyVariations);
+		rookOccupancyVariations = new long[64][];
+		for (Square sqr : Square.values())
+			rookOccupancyVariations[sqr.ordinal()] = BitOperations.getAllSubsets(Sliders.getRookOccupancyMask(sqr));
+		bishopOccupancyVariations = new long[64][];
+		for (Square sqr : Square.values())
+			bishopOccupancyVariations[sqr.ordinal()] = BitOperations.getAllSubsets(Sliders.getBishopOccupancyMask(sqr));
+		rookAttackSetVariations = new long[64][];
+		for (Square sqr : Square.values())
+			rookAttackSetVariations[sqr.ind] = Sliders.getRookAttackSetVariations(sqr, rookOccupancyVariations[sqr.ind]);
+		bishopAttackSetVariations = new long[64][];
+		for (Square sqr : Square.values())
+			bishopAttackSetVariations[sqr.ind] = Sliders.getBishopAttackSetVariations(sqr, bishopOccupancyVariations[sqr.ind]);
 	}
-	private MagicGenerator() {
+	
+	public MagicGenerator() {
 		
 	}
 	/**
@@ -75,7 +84,7 @@ public final class MagicGenerator {
 	 * @param enhanced
 	 * @return
 	 */
-	public static Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+	public Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
 		long[] magicDatabase;
 		Random random = new Random();
 		long magicNumber;
@@ -123,7 +132,7 @@ public final class MagicGenerator {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public static Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
+	public Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
 		Magics[] allMagics = new Magics[64];
 		OuterLoop: for (int i = 0; i < 64; i++) {
 			for (int sqr : enhancedSquares) {

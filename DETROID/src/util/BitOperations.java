@@ -181,6 +181,28 @@ public final class BitOperations {
 		return series;
 	}
 	/**
+	 * Returns an array of all the bit-subsets of the parameter number.
+	 * 
+	 * @param n
+	 * @return
+	 */
+	public final static long[] getAllSubsets(long n) {
+		byte numOfSetBits = BitOperations.getHammingWeight(n);
+		byte[] bitIndArray = BitOperations.serialize(n, numOfSetBits);
+		ByteList subsetBitIndList;
+		int numOfSubsets = 1 << numOfSetBits;
+		long[] combArray = new long[numOfSubsets];
+		long combination;
+		for (int i = 0; i < numOfSubsets; i++) {
+			subsetBitIndList = BitOperations.serialize(i);
+			combination = 0L;
+			while (subsetBitIndList.hasNext())
+				combination |= (1L << bitIndArray[subsetBitIndList.next()]);
+			combArray[i] = combination;
+		}
+		return combArray;
+	}
+	/**
 	 * Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.
 	 * 
 	 * @param n

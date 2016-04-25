@@ -1,7 +1,6 @@
 package engine;
 
 import util.BitOperations;
-import util.ByteList;
 import engine.Board.*;
 
 /**
@@ -12,13 +11,13 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public final class SliderSets {
+public final class Sliders {
 	
 	private final static long ANTIFRAME_VERTICAL = ~(File.A.bitmap | File.H.bitmap);
 	private final static long ANTIFRAME_HORIZONTAL = ~(Rank.R1.bitmap | Rank.R8.bitmap);
 	private final static long ANTIFRAME = (ANTIFRAME_VERTICAL & ANTIFRAME_HORIZONTAL);
 	
-	private SliderSets() {
+	private Sliders() {
 		
 	}
 	/**
@@ -29,7 +28,7 @@ public final class SliderSets {
 	 * as they make no difference]).
 	 * @return
 	 */
-	public static long rankAttackSet(Square sqr, long relevantOccupancy) {
+	public static long getRankAttackSet(Square sqr, long relevantOccupancy) {
 		Rank rank = Rank.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = rank.bitmap & relevantOccupancy;
@@ -47,7 +46,7 @@ public final class SliderSets {
 	 * as they make no difference]).
 	 * @return
 	 */
-	public static long fileAttackSet(Square sqr, long relevantOccupancy) {
+	public static long getFileAttackSet(Square sqr, long relevantOccupancy) {
 		File file = File.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = file.bitmap & relevantOccupancy;
@@ -65,7 +64,7 @@ public final class SliderSets {
 	 * squares, as they make no difference]).
 	 * @return
 	 */
-	public static long diagonalAttackSet(Square sqr, long relevantOccupancy) {
+	public static long getDiagonalAttackSet(Square sqr, long relevantOccupancy) {
 		Diagonal diagonal = Diagonal.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = diagonal.bitmap & relevantOccupancy;
@@ -83,7 +82,7 @@ public final class SliderSets {
 	 * [minus the perimeter squares, as they make no difference]).
 	 * @return
 	 */
-	public static long antiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
+	public static long getAntiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
 		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqr.ind);
 		long forward, reverse;
 		forward  = antiDiagonal.bitmap & relevantOccupancy;
@@ -101,8 +100,8 @@ public final class SliderSets {
 	 * (all occupied AND (rank OR file) [minus the perimeter squares, as they make no difference]).
 	 * @return
 	 */
-	public static long rookAttackSet(Square sqr, long occupancy) {
-		return rankAttackSet(sqr, occupancy) | fileAttackSet(sqr, occupancy);
+	public static long getRookAttackSet(Square sqr, long occupancy) {
+		return getRankAttackSet(sqr, occupancy) | getFileAttackSet(sqr, occupancy);
 	}
 	/**
 	 * Returns a bishop's attack set from the defined square with the given occupancy.
@@ -112,30 +111,8 @@ public final class SliderSets {
 	 * (all occupied AND (diagonal OR anti-diagonal) [minus the perimeter squares, as they make no difference]).
 	 * @return
 	 */
-	public static long bishopAttackSet(Square sqr, long occupancy) {
-		return diagonalAttackSet(sqr, occupancy) | antiDiagonalAttackSet(sqr, occupancy);
-	}
-	/**
-	 * Generates all the variations for the occupancy mask fed to it.
-	 * 
-	 * @param sqrInd
-	 * @return
-	 */
-	public static long[] occupancyVariations(long occupancyMask) {
-		byte numOfBitsInMask = BitOperations.getHammingWeight(occupancyMask);
-		byte[] occMaskBitIndArr = BitOperations.serialize(occupancyMask, numOfBitsInMask);
-		ByteList occVarBitIndList;
-		int numOfVar = 1 << numOfBitsInMask;
-		long[] occVarArr = new long[numOfVar];
-		long occVar;
-		for (int i = 0; i < numOfVar; i++) {
-			occVarBitIndList = BitOperations.serialize(i);
-			occVar = 0L;
-			while (occVarBitIndList.hasNext())
-				occVar |= (1L << occMaskBitIndArr[occVarBitIndList.next()]);
-			occVarArr[i] = occVar;
-		}
-		return occVarArr;
+	public static long getBishopAttackSet(Square sqr, long occupancy) {
+		return getDiagonalAttackSet(sqr, occupancy) | getAntiDiagonalAttackSet(sqr, occupancy);
 	}
 	/**
 	 * Generates a bitmap of the relevant occupancy mask for a rook on the square specified by 'sqr'.
@@ -143,7 +120,7 @@ public final class SliderSets {
 	 * @param sqr
 	 * @return
 	 */
-	public static long rookOccupancyMask(Square sqr) {
+	public static long getRookOccupancyMask(Square sqr) {
 		return ((Rank.getBySquare(sqr).bitmap^sqr.bitmap) & ANTIFRAME_VERTICAL) |
 				((File.getBySquare(sqr).bitmap^sqr.bitmap) & ANTIFRAME_HORIZONTAL);
 	}
@@ -153,30 +130,8 @@ public final class SliderSets {
 	 * @param sqr
 	 * @return
 	 */
-	public static long bishopOccupancyMask(Square sqr) {
+	public static long getBishopOccupancyMask(Square sqr) {
 		return ((Diagonal.getBySquare(sqr).bitmap^sqr.bitmap) | (AntiDiagonal.getBySquare(sqr).bitmap^sqr.bitmap)) & ANTIFRAME;
-	}
-	/**
-	 * For each square it generates all the relevant occupancy variations for a rook.
-	 * 
-	 * @return
-	 */
-	public static long[][] rookOccupancyVariations() {
-		long[][] rookOccVar = new long[64][];
-		for (Square sqr : Square.values())
-			rookOccVar[sqr.ordinal()] = occupancyVariations(rookOccupancyMask(sqr));
-		return rookOccVar;
-	}
-	/**
-	 * For each square it generates all the relevant occupancy variations for a bishop.
-	 * 
-	 * @return
-	 */
-	public static long[][] bishopOccupancyVariations() {
-		long[][] bishopOccVar = new long[64][];
-		for (Square sqr : Square.values())
-			bishopOccVar[sqr.ordinal()] = SliderSets.occupancyVariations(bishopOccupancyMask(sqr));
-		return bishopOccVar;
 	}
 	/**
 	 * Returns a rook's attack set variations from the given square for all occupancy variations specified.
@@ -185,10 +140,10 @@ public final class SliderSets {
 	 * @param bishopOccupancyVariations The occupancy variations within the rook's occupancy mask.
 	 * @return
 	 */
-	public static long[] rookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
+	public static long[] getRookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
 		long[] rookAttVar = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < rookAttVar.length; i++)
-			rookAttVar[i] = rookAttackSet(sqr, rookOccupancyVariations[i]);
+			rookAttVar[i] = getRookAttackSet(sqr, rookOccupancyVariations[i]);
 		return rookAttVar;
 	}
 	/**
@@ -198,34 +153,10 @@ public final class SliderSets {
 	 * @param bishopOccupancyVariations - the occupancy variations within the bishop's occupancy mask
 	 * @return
 	 */
-	public static long[] bishopAttackSetVariations(Square sqr, long[] bishopOccupancyVariations) {
+	public static long[] getBishopAttackSetVariations(Square sqr, long[] bishopOccupancyVariations) {
 		long[] bishopAttVar = new long[bishopOccupancyVariations.length];
 		for (int i = 0; i < bishopAttVar.length; i++)
-			bishopAttVar[i] = bishopAttackSet(sqr, bishopOccupancyVariations[i]);
-		return bishopAttVar;
-	}
-	/**
-	 * Returns a rook's attack set variations from each square for all occupancy variations specified.
-	 * 
-	 * @param rookOccupancyVariations - the occupancy variations within the rook's occupancy mask for each square
-	 * @return
-	 */
-	public static long[][] rookAttackSetVariations(long[][] rookOccupancyVariations) {
-		long[][] rookAttVar = new long[64][];
-		for (Square sqr : Square.values())
-			rookAttVar[sqr.ind] = rookAttackSetVariations(sqr, rookOccupancyVariations[sqr.ind]);
-		return rookAttVar;
-	}
-	/**
-	 * Returns a bishop's attack set variations from each square for all occupancy variations specified.
-	 * 
-	 * @param bishopAttackSetVariations - the occupancy variations within the bishop's occupancy mask for each square
-	 * @return
-	 */
-	public static long[][] bishopAttackSetVariations(long[][] bishopOccupancyVariations) {
-		long[][] bishopAttVar = new long[64][];
-		for (Square sqr : Square.values())
-			bishopAttVar[sqr.ind] = bishopAttackSetVariations(sqr, bishopOccupancyVariations[sqr.ind]);
+			bishopAttVar[i] = getBishopAttackSet(sqr, bishopOccupancyVariations[i]);
 		return bishopAttVar;
 	}
 }

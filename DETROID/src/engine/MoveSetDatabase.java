@@ -1,5 +1,6 @@
 package engine;
 
+import util.BitOperations;
 import engine.Board.*;
 
 /**
@@ -115,12 +116,12 @@ public enum MoveSetDatabase {
 		rookMoveSets = new long[1 << (64 - rookMagicShift)];
 		bishopMoveSets = new long[1 << (64 - bishopMagicShift)];
 		Square sqr = Square.getByIndex(sqrInd);
-		rookOccupancyMask = SliderSets.rookOccupancyMask(sqr);
-		bishopOccupancyMask = SliderSets.bishopOccupancyMask(sqr);
-		long[] rookOccVar = SliderSets.occupancyVariations(rookOccupancyMask);
-		long[] bishopOccVar = SliderSets.occupancyVariations(bishopOccupancyMask);
-		long[] rookAttVar = SliderSets.rookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = SliderSets.bishopAttackSetVariations(sqr, bishopOccVar);
+		rookOccupancyMask = Sliders.getRookOccupancyMask(sqr);
+		bishopOccupancyMask = Sliders.getBishopOccupancyMask(sqr);
+		long[] rookOccVar = BitOperations.getAllSubsets(rookOccupancyMask);
+		long[] bishopOccVar = BitOperations.getAllSubsets(bishopOccupancyMask);
+		long[] rookAttVar = Sliders.getRookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = Sliders.getBishopAttackSetVariations(sqr, bishopOccVar);
 		for (int i = 0; i < rookOccVar.length; i++) {
 			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
 			rookMoveSets[index] = rookAttVar[i];
@@ -210,7 +211,8 @@ public enum MoveSetDatabase {
 		return mask;
 	}
 	/**
-	 * Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
+	 * Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It
+	 * handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
@@ -221,7 +223,8 @@ public enum MoveSetDatabase {
 		return sqr.bitmap << 8;
 	}
 	/**
-	 * Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
+	 * Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It
+	 * handles the wrap-around effect.
 	 * 
 	 * @param sqr
 	 * @return
