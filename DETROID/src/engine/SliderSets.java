@@ -2,7 +2,6 @@ package engine;
 
 import util.BitOperations;
 import util.ByteList;
-import engine.Board.Square;
 import engine.Board.*;
 
 /**
@@ -13,17 +12,21 @@ import engine.Board.*;
  * @author Viktor
  *
  */
-public final class SliderAttack {
+public final class SliderSets {
 	
-	private SliderAttack() {
+	private final static long ANTIFRAME_VERTICAL = ~(File.A.bitmap | File.H.bitmap);
+	private final static long ANTIFRAME_HORIZONTAL = ~(Rank.R1.bitmap | Rank.R8.bitmap);
+	private final static long ANTIFRAME = (ANTIFRAME_VERTICAL & ANTIFRAME_HORIZONTAL);
+	
+	private SliderSets() {
 		
 	}
 	/**
 	 * Returns the rank-wise attack set for the relevant occupancy from the defined square.
 	 * 
-	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the rank on which the square is (all occupied AND rank [minus the perimeter squares,
-	 * as they make no difference])
+	 * @param sqr The square on which the slider is.
+	 * @param relevantOccupancy The relevant occupancy of the rank on which the square is (all occupied AND rank [minus the perimeter squares,
+	 * as they make no difference]).
 	 * @return
 	 */
 	public static long rankAttackSet(Square sqr, long relevantOccupancy) {
@@ -39,9 +42,9 @@ public final class SliderAttack {
 	/**
 	 * Returns the file-wise attack set for the relevant occupancy from the defined square.
 	 * 
-	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the file on which the square is (all occupied AND file [minus the perimeter squares,
-	 * as they make no difference])
+	 * @param sqr The square on which the slider is.
+	 * @param relevantOccupancy The relevant occupancy of the file on which the square is (all occupied AND file [minus the perimeter squares,
+	 * as they make no difference]).
 	 * @return
 	 */
 	public static long fileAttackSet(Square sqr, long relevantOccupancy) {
@@ -57,9 +60,9 @@ public final class SliderAttack {
 	/**
 	 * Returns the diagonal-wise attack set for the relevant occupancy from the defined square.
 	 * 
-	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the diagonal on which the square is (all occupied AND diagonal [minus the perimeter
-	 * squares, as they make no difference])
+	 * @param sqr The square on which the slider is.
+	 * @param relevantOccupancy The relevant occupancy of the diagonal on which the square is (all occupied AND diagonal [minus the perimeter
+	 * squares, as they make no difference]).
 	 * @return
 	 */
 	public static long diagonalAttackSet(Square sqr, long relevantOccupancy) {
@@ -75,9 +78,9 @@ public final class SliderAttack {
 	/**
 	 * Returns the anti-diagonal-wise attack set for the relevant occupancy from the defined square.
 	 * 
-	 * @param sqr - the square on which the slider is
-	 * @param relevantOccupancy - the relevant occupancy of the anti-diagonal on which the square is (all occupied AND anti-diagonal
-	 * [minus the perimeter squares, as they make no difference])
+	 * @param sqr The square on which the slider is.
+	 * @param relevantOccupancy The relevant occupancy of the anti-diagonal on which the square is (all occupied AND anti-diagonal
+	 * [minus the perimeter squares, as they make no difference]).
 	 * @return
 	 */
 	public static long antiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
@@ -93,9 +96,9 @@ public final class SliderAttack {
 	/**
 	 * Returns a rook's attack set from the defined square with the given occupancy.
 	 * 
-	 * @param sqr - the square on which the rook is
-	 * @param relevantOccupancy - the relevant occupancy of the rank and file that cross each other on the specified square
-	 * (all occupied AND (rank OR file) [minus the perimeter squares, as they make no difference])
+	 * @param sqr The square on which the rook is.
+	 * @param relevantOccupancy The relevant occupancy of the rank and file that cross each other on the specified square
+	 * (all occupied AND (rank OR file) [minus the perimeter squares, as they make no difference]).
 	 * @return
 	 */
 	public static long rookAttackSet(Square sqr, long occupancy) {
@@ -104,9 +107,9 @@ public final class SliderAttack {
 	/**
 	 * Returns a bishop's attack set from the defined square with the given occupancy.
 	 * 
-	 * @param sqr - the square on which the bishop is
-	 * @param relevantOccupancy - the relevant occupancy of the diagonal and anti-diagonal that cross each other on the specified square
-	 * (all occupied AND (diagonal OR anti-diagonal) [minus the perimeter squares, as they make no difference])
+	 * @param sqr The square on which the bishop is.
+	 * @param relevantOccupancy The relevant occupancy of the diagonal and anti-diagonal that cross each other on the specified square
+	 * (all occupied AND (diagonal OR anti-diagonal) [minus the perimeter squares, as they make no difference]).
 	 * @return
 	 */
 	public static long bishopAttackSet(Square sqr, long occupancy) {
@@ -135,6 +138,25 @@ public final class SliderAttack {
 		return occVarArr;
 	}
 	/**
+	 * Generates a bitmap of the relevant occupancy mask for a rook on the square specified by 'sqr'.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	public static long rookOccupancyMask(Square sqr) {
+		return ((Rank.getBySquare(sqr).bitmap^sqr.bitmap) & ANTIFRAME_VERTICAL) |
+				((File.getBySquare(sqr).bitmap^sqr.bitmap) & ANTIFRAME_HORIZONTAL);
+	}
+	/**
+	 * Generates a bitmap of the relevant occupancy mask for a bishop on the square specified by 'sqr'.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	public static long bishopOccupancyMask(Square sqr) {
+		return ((Diagonal.getBySquare(sqr).bitmap^sqr.bitmap) | (AntiDiagonal.getBySquare(sqr).bitmap^sqr.bitmap)) & ANTIFRAME;
+	}
+	/**
 	 * For each square it generates all the relevant occupancy variations for a rook.
 	 * 
 	 * @return
@@ -142,7 +164,7 @@ public final class SliderAttack {
 	public static long[][] rookOccupancyVariations() {
 		long[][] rookOccVar = new long[64][];
 		for (Square sqr : Square.values())
-			rookOccVar[sqr.ordinal()] = occupancyVariations(MoveMask.rookOccupancyMask(sqr));
+			rookOccVar[sqr.ordinal()] = occupancyVariations(rookOccupancyMask(sqr));
 		return rookOccVar;
 	}
 	/**
@@ -153,9 +175,16 @@ public final class SliderAttack {
 	public static long[][] bishopOccupancyVariations() {
 		long[][] bishopOccVar = new long[64][];
 		for (Square sqr : Square.values())
-			bishopOccVar[sqr.ordinal()] = SliderAttack.occupancyVariations(MoveMask.bishopOccupancyMask(sqr));
+			bishopOccVar[sqr.ordinal()] = SliderSets.occupancyVariations(bishopOccupancyMask(sqr));
 		return bishopOccVar;
 	}
+	/**
+	 * Returns a rook's attack set variations from the given square for all occupancy variations specified.
+	 * 
+	 * @param sqr The square on which the rook is.
+	 * @param bishopOccupancyVariations The occupancy variations within the rook's occupancy mask.
+	 * @return
+	 */
 	public static long[] rookAttackSetVariations(Square sqr, long[] rookOccupancyVariations) {
 		long[] rookAttVar = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < rookAttVar.length; i++)

@@ -14,13 +14,21 @@ public enum EnPassantRights {
 	NONE;
 	
 	public final byte ind;	// Numeric representation of the the en passant rights.
-	// The difference between the EP right index and the square index of the destination of EP for white.
+	/**
+	 * The difference between the EP right index and the square index of the destination of EP for white.
+	 */
 	public final static byte TO_W_DEST_SQR_IND = Square.A6.ind;
-	// The difference between the EP right index and the square index of the possible victim of EP for white.
+	/**
+	 * The difference between the EP right index and the square index of the possible victim of EP for white.
+	 */
 	public final static byte TO_W_VICT_SQR_IND = Square.A5.ind;
-	// The difference between the EP right index and the square index of the destination of EP for black.
+	/**
+	 * The difference between the EP right index and the square index of the destination of EP for black.
+	 */
 	public final static byte TO_B_DEST_SQR_IND = Square.A3.ind;
-	// The difference between the EP right index and the square index of the possible victim of EP for black.
+	/**
+	 * The difference between the EP right index and the square index of the possible victim of EP for black.
+	 */
 	public final static byte TO_B_VICT_SQR_IND = Square.A4.ind;
 	
 	private EnPassantRights() {

@@ -235,7 +235,7 @@ public class Game {
 		pgn += "[Result \"" + state.pgnNotation + "\"]\n";
 		pgn += "[FEN \"" + startPos + "\"]\n";
 		pgn += "\n";
-		pgn += position.moveListToSAN();
+		pgn += position.getMoveListInSAN();
 		return pgn;
 	}
 }

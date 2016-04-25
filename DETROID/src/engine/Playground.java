@@ -3,6 +3,7 @@ package engine;
 import java.util.Observable;
 import java.util.Observer;
 
+import engine.Search.Results;
 import util.HashTable;
 
 public class Playground {
@@ -15,7 +16,8 @@ public class Playground {
 
 		@Override
 		public void update(Observable arg0, Object arg1) {
-			System.out.println(arg0);
+			Results res = (Results)arg0;
+			System.out.print(res.getPvString() + (res.isFinal() ? res.getStatString() : ""));
 		}
 		
 	}

@@ -361,10 +361,10 @@ public class Search implements Runnable {
 					}
 				}
 				// Generate material moves.
-				matMoves = pos.generateMaterialMoves();
+				matMoves = pos.getTacticalMoves();
 				// If there was no hash move or material moves, perform a mate check.
 				if (!isThereHashMove && matMoves.length() == 0) {
-					nonMatMoves = pos.generateNonMaterialMoves();
+					nonMatMoves = pos.getQuietMoves();
 					if (nonMatMoves.length() == 0) {
 						score = isInCheck ? mateScore : Termination.STALE_MATE.score;
 						if (score > bestScore) {
@@ -618,7 +618,7 @@ public class Search implements Runnable {
 				}
 				// Generate the non-material legal moves if they are not generated yet.
 				if (nonMatMoves == null)
-					nonMatMoves = pos.generateNonMaterialMoves();
+					nonMatMoves = pos.getQuietMoves();
 				// One reply extension.
 				if (matMoves.length() == 0 && nonMatMoves.length() == 1)
 					depth += FULL_PLY/2;
@@ -785,9 +785,9 @@ public class Search implements Runnable {
 			}
 			// Set lower bound.
 			else {
-				materialMoves = pos.generateMaterialMoves();
+				materialMoves = pos.getTacticalMoves();
 				if (materialMoves.length() == 0) {
-					allMoves = pos.generateNonMaterialMoves();
+					allMoves = pos.getQuietMoves();
 					allMoves.addAll(materialMoves);
 				}
 				else
@@ -1065,7 +1065,7 @@ public class Search implements Runnable {
 				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
 				break;
 			}
-			/* Aspiration windows with gradual widening.
+			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= checkMateLim) {
 					alpha = Termination.CHECK_MATE.score;
@@ -1091,11 +1091,11 @@ public class Search implements Runnable {
 				}
 				i--;
 				continue;
-			}*/
+			}
 			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
-			/*failHigh = failLow = 0;
+			failHigh = failLow = 0;
 			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
-			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);*/
+			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
 		}
 	}
 	@Override

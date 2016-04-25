@@ -115,12 +115,12 @@ public enum MoveSetDatabase {
 		rookMoveSets = new long[1 << (64 - rookMagicShift)];
 		bishopMoveSets = new long[1 << (64 - bishopMagicShift)];
 		Square sqr = Square.getByIndex(sqrInd);
-		rookOccupancyMask = MoveMask.rookOccupancyMask(sqr);
-		bishopOccupancyMask = MoveMask.bishopOccupancyMask(sqr);
-		long[] rookOccVar = SliderAttack.occupancyVariations(rookOccupancyMask);
-		long[] bishopOccVar = SliderAttack.occupancyVariations(bishopOccupancyMask);
-		long[] rookAttVar = SliderAttack.rookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = SliderAttack.bishopAttackSetVariations(sqr, bishopOccVar);
+		rookOccupancyMask = SliderSets.rookOccupancyMask(sqr);
+		bishopOccupancyMask = SliderSets.bishopOccupancyMask(sqr);
+		long[] rookOccVar = SliderSets.occupancyVariations(rookOccupancyMask);
+		long[] bishopOccVar = SliderSets.occupancyVariations(bishopOccupancyMask);
+		long[] rookAttVar = SliderSets.rookAttackSetVariations(sqr, rookOccVar);
+		long[] bishopAttVar = SliderSets.bishopAttackSetVariations(sqr, bishopOccVar);
 		for (int i = 0; i < rookOccVar.length; i++) {
 			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
 			rookMoveSets[index] = rookAttVar[i];
@@ -129,12 +129,107 @@ public enum MoveSetDatabase {
 			index = (int)((bishopOccVar[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishopMoveSets[index] = bishopAttVar[i];
 		}
-		kingMoveMask = MoveMask.kingMoveMask(sqr);
-		knightMoveMask = MoveMask.knightMoveMask(sqr);
-		pawnWhiteAdvanceMoveMask = MoveMask.whitePawnAdvanceMask(sqr);
-		pawnWhiteCaptureMoveMask = MoveMask.whitePawnCaptureMask(sqr);
-		pawnBlackAdvanceMoveMask = MoveMask.blackPawnAdvanceMask(sqr);
-		pawnBlackCaptureMoveMask = MoveMask.blackPawnCaptureMask(sqr);
+		kingMoveMask = kingMoveMask(sqr);
+		knightMoveMask = knightMoveMask(sqr);
+		pawnWhiteAdvanceMoveMask = whitePawnAdvanceMask(sqr);
+		pawnWhiteCaptureMoveMask = whitePawnCaptureMask(sqr);
+		pawnBlackAdvanceMoveMask = blackPawnAdvanceMask(sqr);
+		pawnBlackCaptureMoveMask = blackPawnCaptureMask(sqr);
+	}
+	/**
+	 * Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	private final static long kingMoveMask(Square sqr) {
+		long mask;
+		mask =	(sqr.bitmap << 7)  | (sqr.bitmap << 8)  | (sqr.bitmap << 9)  |
+				(sqr.bitmap << 1)    			    	| (sqr.bitmap >>> 1) |
+				(sqr.bitmap >>> 9) | (sqr.bitmap >>> 8) | (sqr.bitmap >>> 7) ;
+		if (sqr.ind%8 == 0)
+			mask &= ~File.H.bitmap;
+		else if ((sqr.ind + 1)%8 == 0)
+			mask &= ~File.A.bitmap;
+		return mask;
+	}
+	/**
+	 * Generates a bitmap of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	private final static long knightMoveMask(Square sqr) {
+		long mask;
+		mask =		 	(sqr.bitmap << 15)	| (sqr.bitmap << 17) |
+				(sqr.bitmap << 6)			| 		  (sqr.bitmap << 10)   |
+				(sqr.bitmap >>> 10)			|		  (sqr.bitmap >>> 6)   |
+						(sqr.bitmap >>> 17)	| (sqr.bitmap >>> 15);
+		if (sqr.ind%8 == 0)
+			mask &= ~(File.H.bitmap | File.G.bitmap);
+		else if ((sqr.ind - 1)%8 == 0)
+			mask &= ~File.H.bitmap;
+		else if ((sqr.ind + 1)%8 == 0)
+			mask &= ~(File.A.bitmap | File.B.bitmap);
+		else if ((sqr.ind + 2)%8 == 0)
+			mask &= ~File.A.bitmap;
+		return mask;
+	}
+	/**
+	 * Generates a bitmap of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	private final static long whitePawnCaptureMask(Square sqr) {
+		long mask;
+		if (sqr.ind > 55)
+				return 0;
+		mask = (sqr.bitmap << 7) | (sqr.bitmap << 9);
+		if (sqr.ind%8 == 0)
+			mask &= ~File.H.bitmap;
+		else if ((sqr.ind + 1)%8 == 0)
+			mask &= ~File.A.bitmap;
+		return mask;
+	}
+	/**
+	 * Generates a bitmap of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	private final static long blackPawnCaptureMask(Square sqr) {
+		long mask;
+		if (sqr.ind < 8)
+				return 0;
+		mask = (sqr.bitmap >>> 9) | (sqr.bitmap >>> 7);
+		if (sqr.ind%8 == 0)
+			mask &= ~File.H.bitmap;
+		else if ((sqr.ind + 1)%8 == 0)
+			mask &= ~File.A.bitmap;
+		return mask;
+	}
+	/**
+	 * Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	private final static long whitePawnAdvanceMask(Square sqr) {
+		if (sqr.ind < 8 || sqr.ind > 55)
+			return 0;
+		return sqr.bitmap << 8;
+	}
+	/**
+	 * Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It handles the wrap-around effect.
+	 * 
+	 * @param sqr
+	 * @return
+	 */
+	private final static long blackPawnAdvanceMask(Square sqr) {
+		if (sqr.ind < 8 || sqr.ind > 55)
+			return 0;
+		return sqr.bitmap >>> 8;
 	}
 	/**
 	 * Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.

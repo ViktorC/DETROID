@@ -57,10 +57,10 @@ public final class MagicGenerator {
 	private static long[][] bishopAttackSetVariations;
 	
 	static {
-		rookOccupancyVariations = SliderAttack.rookOccupancyVariations();
-		bishopOccupancyVariations = SliderAttack.bishopOccupancyVariations();
-		rookAttackSetVariations = SliderAttack.rookAttackSetVariations(rookOccupancyVariations);
-		bishopAttackSetVariations = SliderAttack.bishopAttackSetVariations(bishopOccupancyVariations);
+		rookOccupancyVariations = SliderSets.rookOccupancyVariations();
+		bishopOccupancyVariations = SliderSets.bishopOccupancyVariations();
+		rookAttackSetVariations = SliderSets.rookAttackSetVariations(rookOccupancyVariations);
+		bishopAttackSetVariations = SliderSets.bishopAttackSetVariations(bishopOccupancyVariations);
 	}
 	private MagicGenerator() {
 		
