@@ -1557,7 +1557,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return A queue of non-material legal moves.
 	 */
-	private Queue<Move> generateQuietNormalMoves() {
+	private Queue<Move> generateQuietMoves() {
 		long movablePieces, pieceSet, moveSet;
 		byte king, piece, to;
 		ByteStack pieces, moveList;
@@ -2369,7 +2369,7 @@ public class Position implements Hashable, Copiable<Position> {
 		}
 		else {
 			moves = generateTacticalMoves();
-			moves.addAll(generateQuietNormalMoves());
+			moves.addAll(generateQuietMoves());
 		}
 		return moves;
 	}
@@ -2389,7 +2389,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @return A queue of the non-material legal moves from this position.
 	 */
 	public Queue<Move> getQuietMoves() {
-		return isInCheck? generateQuietCheckEvasionMoves() : generateQuietNormalMoves();
+		return isInCheck? generateQuietCheckEvasionMoves() : generateQuietMoves();
 	}
 	/**
 	 * Makes a move only on the chess board representations of this Position object.
