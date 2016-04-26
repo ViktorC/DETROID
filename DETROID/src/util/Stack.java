@@ -15,7 +15,7 @@ public class Stack<T> extends List<T> {
 
 	}
 	public Stack(T data) {
-		head.data = data;
+		head = new ListItem(data);
 		iterator = head;
 	}
 	/**

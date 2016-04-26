@@ -2,9 +2,13 @@ package engine;
 
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Scanner;
 
+import engine.Book.SelectionModel;
 import engine.Search.Results;
 import util.HashTable;
+import util.List;
+import util.Stack;
 
 public class Playground {
 
@@ -22,17 +26,69 @@ public class Playground {
 		
 	}
 	
+	static byte gen = 0;
+	
 	public static void main(String[] args) throws ChessParseException {
-		Position p = Position.parse("5r1k/p4Ppr/5p1p/2R4Q/7b/8/R5Kn/6n1 w - -");
+		Results r;
+		Move playerMove, bookMove;
+		List<Move> moveRestrictions = null;
+		Position p = Position.parse(Position.START_POSITION_FEN);
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
 		HashTable<PTEntry> pT = new HashTable<>(4);
-		Search s = new Search(p, 0, 0, 0, 30, 0, null, hT, (byte) 0, tT, eT, pT, 1);
-		long start = System.currentTimeMillis();
-		s.getResults().addObserver(new PVO());
-		s.run();
-		long end = System.currentTimeMillis();
-		System.out.println(end - start);
+		Book book = Book.getInstance();
+		Scanner in = new Scanner(System.in);
+		boolean outOfBook = false;
+		while (true) {
+			if (p.isWhitesTurn) {
+				if (!outOfBook) {
+					bookMove = book.getMove(p, SelectionModel.STOCHASTIC);
+					if (bookMove != null) {
+						System.out.println("Book move found: " + bookMove);
+						moveRestrictions = new Stack<>(bookMove);
+					}
+					else {
+						moveRestrictions = null;
+						outOfBook = true;
+					}
+				}
+				Search s = new Search(p, 0, 0, 10000, 0, 0, moveRestrictions, hT, gen, tT, eT, pT, 1);
+				r = s.getResults();
+				r.addObserver(new PVO());
+				s.run();
+				p.makeMove(r.getPVline().getHead());
+				if (gen == 127) {
+					tT.clear();
+					eT.clear();
+					pT.clear();
+					gen = 0;
+				}
+				else {
+					tT.remove(e -> e.generation < gen - 2);
+					eT.remove(e -> e.generation < gen - 2);
+					pT.remove(e -> e.generation < gen - 4);
+				}
+				hT.decrementCurrentValues();
+				gen++;
+			}
+			else {
+				System.out.print("Make your move: ");
+				while (true) {
+					try {
+						playerMove = p.parsePACN(in.nextLine());
+						if (p.isLegal(playerMove)) {
+							p.makeMove(playerMove);
+							break;
+						}
+						else
+							System.out.print("Illegal move. Try again: ");
+					}
+					catch (ChessParseException e) {
+						System.out.print("Wrong format. Try again: ");
+					}
+				}
+			}
+		}
 	}
 }

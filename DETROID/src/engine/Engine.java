@@ -113,6 +113,7 @@ public class Engine implements UCI {
 				pT.remove(e -> e.generation < gen - 1);
 			}
 			hT.decrementCurrentValues();
+			gen++;
 		}
 		return res.getPVline() == null ? null : res.getPVline().getHead();
 	}

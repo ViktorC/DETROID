@@ -15,7 +15,7 @@ public class ByteStack extends ByteList {
 
 	}
 	public ByteStack(byte data) {
-		head.data = data;
+		head = new ByteListItem(data);
 		iterator = head;
 	}
 	/**
