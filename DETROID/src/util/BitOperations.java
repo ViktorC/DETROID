@@ -10,7 +10,6 @@ package util;
  */
 public final class BitOperations {
 	
-	private final static long DE_BRUIJN_CONST = 0b0000001111110111100111010111000110110100110010110000101010001001L;
 	private final static byte[] DE_BRUIJN_TABLE =
 		{ 0,  1, 48,  2, 57, 49, 28,  3,
 		 61, 58, 50, 42, 38, 29, 17,  4,
@@ -21,23 +20,7 @@ public final class BitOperations {
 		 46, 26, 40, 15, 34, 20, 31, 10,
 		 25, 14, 19,  9, 13,  8,  7,  6};
 	
-	private final static long SWAR_POPCOUNT_CONST1 = 0b0101010101010101010101010101010101010101010101010101010101010101L;
-	private final static long SWAR_POPCOUNT_CONST2 = 0b0011001100110011001100110011001100110011001100110011001100110011L;
-	private final static long SWAR_POPCOUNT_CONST3 = 0b0000111100001111000011110000111100001111000011110000111100001111L;
-	private final static long SWAR_POPCOUNT_CONSTF = 0b0000000100000001000000010000000100000001000000010000000100000001L;
-		
-	private final static long BIT_REVERSAL_1_CONST1 = 0b1010101010101010101010101010101010101010101010101010101010101010L;
-	private final static long BIT_REVERSAL_1_CONST2 = 0b0101010101010101010101010101010101010101010101010101010101010101L;
-	private final static long BIT_REVERSAL_2_CONST1 = 0b1100110011001100110011001100110011001100110011001100110011001100L;
-	private final static long BIT_REVERSAL_2_CONST2 = 0b0011001100110011001100110011001100110011001100110011001100110011L;
-	private final static long BIT_REVERSAL_4_CONST1 = 0b1111000011110000111100001111000011110000111100001111000011110000L;
-	private final static long BIT_REVERSAL_4_CONST2 = 0b0000111100001111000011110000111100001111000011110000111100001111L;
-	private final static long BIT_REVERSAL_8_CONST1 = 0b1111111100000000111111110000000011111111000000001111111100000000L;
-	private final static long BIT_REVERSAL_8_CONST2 = 0b0000000011111111000000001111111100000000111111110000000011111111L;
-	private final static long BIT_REVERSAL_16_CONST1 = 0b1111111111111111000000000000000011111111111111110000000000000000L;
-	private final static long BIT_REVERSAL_16_CONST2 = 0b0000000000000000111111111111111100000000000000001111111111111111L;
-	private final static long BIT_REVERSAL_32_CONST1 = 0b1111111111111111111111111111111100000000000000000000000000000000L;
-	private final static long BIT_REVERSAL_32_CONST2 = 0b0000000000000000000000000000000011111111111111111111111111111111L;
+	private final static long DE_BRUIJN_CONST = 0x03F79D71B4CB0A89L;
 	
 	private BitOperations() {
 		
@@ -119,10 +102,10 @@ public final class BitOperations {
 	 * @return
 	 */
 	public final static byte getHammingWeight(long n) {
-		n -= ((n >>> 1) & SWAR_POPCOUNT_CONST1);
-		n  = (n & SWAR_POPCOUNT_CONST2) + ((n >>> 2) & SWAR_POPCOUNT_CONST2);
-		n  = (n + (n >>> 4)) & SWAR_POPCOUNT_CONST3;
-	    return (byte)((n*SWAR_POPCOUNT_CONSTF) >>> 56);
+		n -= ((n >>> 1) & 0x5555555555555555L);
+		n  = (n & 0x3333333333333333L) + ((n >>> 2) & 0x3333333333333333L);
+		n  = (n + (n >>> 4)) & 0x0F0F0F0F0F0F0F0FL;
+	    return (byte)((n*0x0101010101010101L) >>> 56);
 	}
 	/**
 	 * Returns a long with the bits of the input parameter reversed.
@@ -131,12 +114,12 @@ public final class BitOperations {
 	 * @return
 	 */
 	public final static long reverse(long n) {
-		n = (((n & BIT_REVERSAL_1_CONST1)  >>> 1)  | ((n & BIT_REVERSAL_1_CONST2)  << 1));
-		n = (((n & BIT_REVERSAL_2_CONST1)  >>> 2)  | ((n & BIT_REVERSAL_2_CONST2)  << 2));
-		n = (((n & BIT_REVERSAL_4_CONST1)  >>> 4)  | ((n & BIT_REVERSAL_4_CONST2)  << 4));
-		n = (((n & BIT_REVERSAL_8_CONST1)  >>> 8)  | ((n & BIT_REVERSAL_8_CONST2)  << 8));
-		n = (((n & BIT_REVERSAL_16_CONST1) >>> 16) | ((n & BIT_REVERSAL_16_CONST2) << 16));
-		return   (( n >>> 32) 							 | ( n << 32));
+		n = (((n & 0xAAAAAAAAAAAAAAAAL)  >>> 1)  | ((n & 0x5555555555555555L)  << 1));
+		n = (((n & 0xCCCCCCCCCCCCCCCCL)  >>> 2)  | ((n & 0x3333333333333333L)  << 2));
+		n = (((n & 0xF0F0F0F0F0F0F0F0L)  >>> 4)  | ((n & 0x0F0F0F0F0F0F0F0FL)  << 4));
+		n = (((n & 0xFF00FF00FF00FF00L)  >>> 8)  | ((n & 0x00FF00FF00FF00FFL)  << 8));
+		n = (((n & 0xFFFF0000FFFF0000L) >>> 16) | ((n & 0x0000FFFF0000FFFFL) << 16));
+		return (( n >>> 32) 							 | ( n << 32));
 	}
 	/**
 	 * Returns a long with the bytes of the input parameter reversed/flipped.
@@ -145,9 +128,9 @@ public final class BitOperations {
 	 * @return
 	 */
 	public final static long reverseBytes(long n) {
-		n = (n & BIT_REVERSAL_32_CONST1) >>> 32 | (n & BIT_REVERSAL_32_CONST2) << 32;
-		n = (n & BIT_REVERSAL_16_CONST1) >>> 16 | (n & BIT_REVERSAL_16_CONST2) << 16;
-		return	 (n & BIT_REVERSAL_8_CONST1)  >>> 8  | (n & BIT_REVERSAL_8_CONST2)  << 8;
+		n = (n & 0xFFFFFFFF00000000L) >>> 32 | (n & 0x00000000FFFFFFFFL) << 32;
+		n = (n & 0xFFFF0000FFFF0000L) >>> 16 | (n & 0x0000FFFF0000FFFFL) << 16;
+		return (n & 0xFF00FF00FF00FF00L)  >>> 8  | (n & 0x00FF00FF00FF00FFL)  << 8;
 	}
 	/**
 	 * Returns a queue of the indexes of all set bits in the input parameter.
@@ -181,7 +164,7 @@ public final class BitOperations {
 		return series;
 	}
 	/**
-	 * Returns an array of all the bit-subsets of the parameter number.
+	 * Returns an array of all the bitwise subsets of the parameter number.
 	 * 
 	 * @param n
 	 * @return

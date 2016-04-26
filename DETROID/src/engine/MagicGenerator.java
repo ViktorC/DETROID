@@ -6,9 +6,9 @@ import util.BitOperations;
 import engine.Board.*;
 
 /**
- * A class that generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move database
- * by multiplying the intersection of the occupancy bitmap and the occupancy mask by the magic number, then right shifting the product by the
- * magic shift value specific to the given square--calculated by extracting the number of bits in the relevant occupancy mask from 64.
+ * A class whose instance generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move
+ * database by multiplying the intersection of the occupancy bitmap and the occupancy mask by the magic number, then right shifting the product by
+ * the magic shift value specific to the given square--calculated by extracting the number of bits in the relevant occupancy mask from 64.
  * 
  * With better magics, even smaller tablebases can be produced. Sometimes magic numbers can be found that when multiplied by the occupancy bitmap
  * can be shifted to the right by one more than the usual number of bits and will still hash on the right index because of the existence of
@@ -78,6 +78,7 @@ public final class MagicGenerator {
 	 * Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
 	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right
 	 * shifted by one more than the usual value resulting in denser tables.
+	 * called on.
 	 * 
 	 * @param sqrInd
 	 * @param rook
@@ -144,7 +145,7 @@ public final class MagicGenerator {
 			allMagics[i] = generateMagics(i, rook, false);
 		}
 		if (print) {
-			System.out.format("%-7s %-4s %-68s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
+			System.out.format("%-6s %-3s %-21s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
 			for (Magics m : allMagics)
 				System.out.println(m);
 		}
