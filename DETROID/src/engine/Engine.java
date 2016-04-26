@@ -5,13 +5,12 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Observer;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import engine.Book.SelectionModel;
 import engine.Search.Results;
-import util.HashTable;
 import util.*;
 
 public class Engine implements UCI {
@@ -22,7 +21,7 @@ public class Engine implements UCI {
 	
 	private final static Engine INSTANCE = new Engine();
 	
-	private ThreadPoolExecutor background;
+	private ExecutorService background;
 	private Future<?> backgroundTask;
 	
 	private Scanner in;
@@ -44,7 +43,7 @@ public class Engine implements UCI {
 	boolean verbose;
 	
 	private Engine() {
-		background = (ThreadPoolExecutor)Executors.newFixedThreadPool(1);
+		background = Executors.newFixedThreadPool(1);
 		setInputStream(DEFAULT_INPUT_STREAM);
 		setOutputStream(DEFAULT_OUTPUT_STREAM);
 		setHashSize(DEFAULT_HASH_SIZE);
