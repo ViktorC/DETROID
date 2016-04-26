@@ -115,7 +115,7 @@ public class Engine implements UCI {
 			hT.decrementCurrentValues();
 			gen++;
 		}
-		return res.getPVline() == null ? null : res.getPVline().getHead();
+		return res.getPvLine() == null ? null : res.getPvLine().getHead();
 	}
 	public void listen() {
 		String command;

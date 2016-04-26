@@ -57,7 +57,7 @@ public class Playground {
 				r = s.getResults();
 				r.addObserver(new PVO());
 				s.run();
-				p.makeMove(r.getPVline().getHead());
+				p.makeMove(r.getPvLine().getHead());
 				if (gen == 127) {
 					tT.clear();
 					eT.clear();

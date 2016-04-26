@@ -50,7 +50,7 @@ public class Search implements Runnable {
 	 */
 	public class Results extends Observable {
 		
-		private Queue<Move> PVline;	// Principal variation.
+		private Queue<Move> pVline;	// Principal variation.
 		private short nominalDepth;	// The depth to which the PV has been searched.
 		private short score;		// The result score of the search.
 		private long nodes;			// The number of nodes searched.
@@ -65,8 +65,8 @@ public class Search implements Runnable {
 		 * 
 		 * @return
 		 */
-		public Queue<Move> getPVline() {
-			return PVline;
+		public Queue<Move> getPvLine() {
+			return pVline;
 		}
 		/**
 		 * Returns the greatest nominal depth of the search. It does not necessarily mean that the whole ply has been searched.
@@ -109,7 +109,7 @@ public class Search implements Runnable {
 			return isFinal;
 		}
 		private void set(Queue<Move> PVline, short nominalDepth, short score, long nodes, long time, boolean isFinal) {
-			this.PVline = PVline;
+			this.pVline = PVline;
 			this.nominalDepth = nominalDepth;
 			this.score = score;
 			this.nodes = nodes;
@@ -125,7 +125,7 @@ public class Search implements Runnable {
 		 */
 		public String getPvString() {
 			String out = "";
-			for (Move m : PVline)
+			for (Move m : pVline)
 				out += m.toString() + " ";
 			out += "\n";
 			return out;
