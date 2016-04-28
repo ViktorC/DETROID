@@ -1042,13 +1042,13 @@ public class Search implements Runnable {
 		int alpha, beta, score, failHigh, failLow;
 		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		Stack<Future<Integer>> futures;
+		compService = new ExecutorCompletionService<Integer>(threadPool);
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		for (short i = 1; i <= maxDepth; i++) {
 			futures = new Stack<>();
-			compService = new ExecutorCompletionService<Integer>(threadPool);
 			for (int j = 0; j < numOfThreads; j++)
 				futures.add(compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0)));
 			try {

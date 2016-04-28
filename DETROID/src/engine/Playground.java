@@ -64,10 +64,11 @@ public class Playground {
 					pT.clear();
 					gen = 0;
 				}
+				//!FIXME If the tables are not cleared after each search, the PVs are cut short.
 				else {
-					tT.remove(e -> e.generation < gen - 2);
-					eT.remove(e -> e.generation < gen - 2);
-					pT.remove(e -> e.generation < gen - 4);
+					tT.remove(e -> e.generation <= gen);
+					eT.remove(e -> e.generation <= gen);
+					pT.remove(e -> e.generation <= gen);
 				}
 				hT.decrementCurrentValues();
 				gen++;
