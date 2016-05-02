@@ -40,7 +40,7 @@ public class Playground {
 		Book book = Book.getInstance();
 		Scanner in = new Scanner(System.in);
 		boolean outOfBook = false;
-		while (true) {
+		while (p.getMoves().length() != 0) {
 			if (p.isWhitesTurn) {
 				if (!outOfBook) {
 					bookMove = book.getMove(p, SelectionModel.STOCHASTIC);
@@ -91,5 +91,6 @@ public class Playground {
 				}
 			}
 		}
+		in.close();
 	}
 }

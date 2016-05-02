@@ -1368,35 +1368,16 @@ public class Position implements Hashable, Copiable<Position> {
 		ByteStack pieces, moveList;
 		Queue<Move> moves = new Queue<Move>();
 		if (isWhitesTurn) {
-			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveSetDatabase.getByIndex(king).getKingMoveSet(allBlackOccupied);
-			moveList = BitOperations.serialize(moveSet);
-			while (moveList.hasNext()) {
-				to = moveList.next();
-				if (!isAttacked(to, false))
-					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
-			}
 			movablePieces = ~addTacticalPinnedPieceMoves(moves);
-			pieceSet = whiteQueens & movablePieces;
+			pieceSet = whiteKnights & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allBlackOccupied, allOccupied);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allBlackOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whiteRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allBlackOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
 				}
 			}
 			pieceSet = whiteBishops & movablePieces;
@@ -1410,16 +1391,35 @@ public class Position implements Hashable, Copiable<Position> {
 					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.ind));
 				}
 			}
-			pieceSet = whiteKnights & movablePieces;
+			pieceSet = whiteRooks & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allBlackOccupied);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allBlackOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
 				}
+			}
+			pieceSet = whiteQueens & movablePieces;
+			pieces = BitOperations.serialize(pieceSet);
+			while (pieces.hasNext()) {
+				piece = pieces.next();
+				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allBlackOccupied, allOccupied);
+				moveList = BitOperations.serialize(moveSet);
+				while (moveList.hasNext()) {
+					to = moveList.next();
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
+				}
+			}
+			king = BitOperations.indexOfBit(whiteKing);
+			moveSet  = MoveSetDatabase.getByIndex(king).getKingMoveSet(allBlackOccupied);
+			moveList = BitOperations.serialize(moveSet);
+			while (moveList.hasNext()) {
+				to = moveList.next();
+				if (!isAttacked(to, false))
+					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
 			}
 			pieceSet = whitePawns & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
@@ -1459,35 +1459,16 @@ public class Position implements Hashable, Copiable<Position> {
 			}
 		}
 		else {
-			king  = BitOperations.indexOfBit(blackKing);
-			moveSet	= MoveSetDatabase.getByIndex(king).getKingMoveSet(allWhiteOccupied);
-			moveList = BitOperations.serialize(moveSet);
-			while (moveList.hasNext()) {
-				to = moveList.next();
-				if (!isAttacked(to, true))
-					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
-			}
 			movablePieces = ~addTacticalPinnedPieceMoves(moves);
-			pieceSet = blackQueens & movablePieces;
+			pieceSet = blackKnights & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allWhiteOccupied, allOccupied);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allWhiteOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allWhiteOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
 				}
 			}
 			pieceSet = blackBishops & movablePieces;
@@ -1501,16 +1482,35 @@ public class Position implements Hashable, Copiable<Position> {
 					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.ind));
 				}
 			}
-			pieceSet = blackKnights & movablePieces;
+			pieceSet = blackRooks & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allWhiteOccupied);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allWhiteOccupied, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
 				}
+			}
+			pieceSet = blackQueens & movablePieces;
+			pieces = BitOperations.serialize(pieceSet);
+			while (pieces.hasNext()) {
+				piece = pieces.next();
+				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allWhiteOccupied, allOccupied);
+				moveList = BitOperations.serialize(moveSet);
+				while (moveList.hasNext()) {
+					to = moveList.next();
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
+				}
+			}
+			king  = BitOperations.indexOfBit(blackKing);
+			moveSet	= MoveSetDatabase.getByIndex(king).getKingMoveSet(allWhiteOccupied);
+			moveList = BitOperations.serialize(moveSet);
+			while (moveList.hasNext()) {
+				to = moveList.next();
+				if (!isAttacked(to, true))
+					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
 			}
 			pieceSet = blackPawns & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
@@ -1585,37 +1585,16 @@ public class Position implements Hashable, Copiable<Position> {
 				}
 			}
 			movablePieces = ~addQuietPinnedPieceMoves(moves);
-			pieceSet = whiteQueens & movablePieces;
+			pieceSet = whitePawns & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
+				moveSet = MoveSetDatabase.getByIndex(piece).getWhitePawnAdvanceSet(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whiteRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whiteBishops & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					if (to <= 55)
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 				}
 			}
 			pieceSet = whiteKnights & movablePieces;
@@ -1629,16 +1608,37 @@ public class Position implements Hashable, Copiable<Position> {
 					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 				}
 			}
-			pieceSet = whitePawns & movablePieces;
+			pieceSet = whiteBishops & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getWhitePawnAdvanceSet(allEmpty);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					if (to <= 55)
-						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				}
+			}
+			pieceSet = whiteRooks & movablePieces;
+			pieces = BitOperations.serialize(pieceSet);
+			while (pieces.hasNext()) {
+				piece = pieces.next();
+				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allEmpty, allOccupied);
+				moveList = BitOperations.serialize(moveSet);
+				while (moveList.hasNext()) {
+					to = moveList.next();
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				}
+			}
+			pieceSet = whiteQueens & movablePieces;
+			pieces = BitOperations.serialize(pieceSet);
+			while (pieces.hasNext()) {
+				piece = pieces.next();
+				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
+				moveList = BitOperations.serialize(moveSet);
+				while (moveList.hasNext()) {
+					to = moveList.next();
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 				}
 			}
 		}
@@ -1664,37 +1664,16 @@ public class Position implements Hashable, Copiable<Position> {
 				}
 			}
 			movablePieces = ~addQuietPinnedPieceMoves(moves);
-			pieceSet = blackQueens & movablePieces;
+			pieceSet = blackPawns & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
+				moveSet = MoveSetDatabase.getByIndex(piece).getBlackPawnAdvanceSet(allEmpty);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackBishops & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					if (to >= 8)
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 				}
 			}
 			pieceSet = blackKnights & movablePieces;
@@ -1708,16 +1687,37 @@ public class Position implements Hashable, Copiable<Position> {
 					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 				}
 			}
-			pieceSet = blackPawns & movablePieces;
+			pieceSet = blackBishops & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
 			while (pieces.hasNext()) {
 				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getBlackPawnAdvanceSet(allEmpty);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
 				moveList = BitOperations.serialize(moveSet);
 				while (moveList.hasNext()) {
 					to = moveList.next();
-					if (to >= 8)
-						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				}
+			}
+			pieceSet = blackRooks & movablePieces;
+			pieces = BitOperations.serialize(pieceSet);
+			while (pieces.hasNext()) {
+				piece = pieces.next();
+				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allEmpty, allOccupied);
+				moveList = BitOperations.serialize(moveSet);
+				while (moveList.hasNext()) {
+					to = moveList.next();
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				}
+			}
+			pieceSet = blackQueens & movablePieces;
+			pieces = BitOperations.serialize(pieceSet);
+			while (pieces.hasNext()) {
+				piece = pieces.next();
+				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
+				moveList = BitOperations.serialize(moveSet);
+				while (moveList.hasNext()) {
+					to = moveList.next();
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 				}
 			}
 		}

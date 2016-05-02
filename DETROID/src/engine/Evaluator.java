@@ -1,6 +1,7 @@
 package engine;
 
 import engine.Board.Diagonal;
+import engine.Board.File;
 import util.*;
 
 /**
@@ -21,20 +22,20 @@ public final class Evaluator {
 	private final static byte[] PST_W_PAWN_OPENING =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		  50, 50, 50, 50, 50, 50, 50, 50,
-		  10, 10, 25, 30, 30, 25, 10, 10,
-		   5,  5, 20, 25, 25, 20,  5,  5,
-		   0, 10, 15, 20, 20, 15, 10,  0,
-		   0,  5,  5, 15, 15,  5,  5,  0,
-		   5, 10, 10,-20,-20, 10, 10,  5,
+		  10, 10, 30, 40, 40, 30, 10, 10,
+		   5, 15, 25, 30, 30, 25, 15,  5,
+		   0, 15, 20, 25, 25, 20, 15,  0,
+		   0,  8, 15, 20, 20, 15,  8,  0,
+		   5,  5,  5,-10,-10,  5,  5,  5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
 	private final static byte[] PST_W_PAWN_ENDGAME =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
-		  50, 50, 50, 50, 50, 50, 50, 50,
-		  10, 20, 20, 30, 30, 20, 20, 10,
-		   5, 15, 15, 25, 25, 15, 15,  5,
+		  70, 75, 80, 80, 80, 80, 75, 70,
+		  20, 30, 40, 45, 45, 40, 30, 20,
+		  10, 20, 25, 30, 30, 25, 20, 10,
 		   5, 10, 10, 15, 15, 10, 10,  5,
-		   5,  0, -5, -5, -5, -5,  0,  5,
-		   0,  0, -5,-20,-20, -5,  0,  0,
+		   0,  0, -5, -5, -5, -5,  0,  0,
+		  -5,-10,-10,-20,-20,-10,-10, -5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
 	private final static byte[] PST_W_KNIGHT_OPENING =
 		{-15,-10, -5, -5, -5, -5,-10,-15,
@@ -47,19 +48,19 @@ public final class Evaluator {
 		 -15,-10, -5, -5, -5, -5,-10,-15};
 	private final static byte[] PST_W_KNIGHT_ENDGAME =
 		{-50,-40,-30,-30,-30,-30,-40,-50,
-		 -40,-20,  0,  0,  0,  0,-20,-40,
-		 -30,  0, 10, 15, 15, 10,  0,-30,
-		 -30,  5, 15, 20, 20, 15,  5,-30,
-		 -30,  0, 15, 20, 20, 15,  0,-30,
-		 -30,  5, 10, 15, 15, 10,  5,-30,
-		 -40,-20,  0,  5,  5,  0,-20,-40,
+		 -40,-20, -5,  0,  0, -5,-20,-40,
+		 -30,  0,  0,  0,  0,  0, -5,-30,
+		 -30,  0,  5,  5,  5,  5,  0,-30,
+		 -30, -5,  5,  5,  5,  5, -5,-30,
+		 -30,  0,  0,  0,  0,  0,  0,-30,
+		 -40,-20, -5,  0,  0, -5,-20,-40,
 		 -50,-40,-30,-30,-30,-30,-40,-50};
 	private final static byte[] PST_W_BISHOP =
 		{-20,-10,-10,-10,-10,-10,-10,-20,
 		 -10,  0,  0,  0,  0,  0,  0,-10,
 		 -10,  0,  5, 10, 10,  5,  0,-10,
-		 -10,  5,  5, 10, 10,  5,  5,-10,
-		 -10,  0, 10, 10, 10, 10,  0,-10,
+		 -10,  5,  5, 15, 15,  5,  5,-10,
+		 -10,  0, 10, 15, 15, 10,  0,-10,
 		 -10, 10, 10, 10, 10, 10, 10,-10,
 		 -10,  5,  0,  0,  0,  0,  5,-10,
 		 -20,-10,-10,-10,-10,-10,-10,-20};
@@ -71,7 +72,7 @@ public final class Evaluator {
 		  -5, -5, -5, -5, -5, -5, -5, -5,
 		  -5, -5, -5, -5, -5, -5, -5, -5,
 		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  20, -5,  0, 25, 25,  0, -5, 20};
+		  20, -5,  0, 25,  5, 25, -5, 20};
 	private final static byte[] PST_W_ROOK_ENDGAME =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		   5, 10, 10, 10, 10, 10, 10,  5,
@@ -80,7 +81,7 @@ public final class Evaluator {
 		  -5,  0,  0,  0,  0,  0,  0, -5,
 		  -5,  0,  0,  0,  0,  0,  0, -5,
 		  -5,  0,  0,  0,  0,  0,  0, -5,
-		   0,  0,  0,  5,  5,  0,  0,  0};
+		   0,  0,  5,  5,  5,  5,  0,  0};
 	private final static byte[] PST_W_QUEEN =
 		{-20,-10,-10, -5, -5,-10,-10,-20,
 		 -10,  0,  0,  0,  0,  0,  0,-10,
@@ -98,7 +99,7 @@ public final class Evaluator {
 		 -20,-30,-30,-40,-40,-30,-30,-20,
 		 -10,-20,-20,-20,-20,-20,-20,-10,
 		  20, 20,  0,  0,  0,  0, 20, 20,
-		  20, 50,-10,-10,  0,-10, 50, 20};
+		  10, 20, 10,-10,  0,-10, 40, 20};
 	private final static byte[] PST_W_KING_ENDGAME =
 		{-50,-40,-30,-20,-20,-30,-40,-50,
 		 -30,-20,-10,  0,  0,-10,-20,-30,
@@ -122,21 +123,35 @@ public final class Evaluator {
 	
 	static {
 		int c1, c2;
-		// Vertically mirrored piece-square tables with negated values for black.
+		// Due to the reversed order of the rows in the definition of the white piece-square tables,
+		// they are just right for black with negated values.
+		for (int i = 0; i < 64; i++) {
+			PST_B_PAWN_OPENING[i] = (byte)-PST_W_PAWN_OPENING[i];
+			PST_B_PAWN_ENDGAME[i] = (byte)-PST_W_PAWN_ENDGAME[i];
+			PST_B_KNIGHT_OPENING[i] = (byte)-PST_W_KNIGHT_OPENING[i];
+			PST_B_KNIGHT_ENDGAME[i] = (byte)-PST_W_KNIGHT_ENDGAME[i];
+			PST_B_BISHOP[i] = (byte)-PST_W_BISHOP[i];
+			PST_B_ROOK_OPENING[i] = (byte)-PST_W_ROOK_OPENING[i];
+			PST_B_ROOK_ENDGAME[i] = (byte)-PST_W_ROOK_ENDGAME[i];
+			PST_B_QUEEN[i] = (byte)-PST_W_QUEEN[i];
+			PST_B_KING_OPENING[i] = (byte)-PST_W_KING_OPENING[i];
+			PST_B_KING_ENDGAME[i] = (byte)-PST_W_KING_ENDGAME[i];
+		}
+		// To get the right values for the white piece-square tables, we vertically mirror and negate the ones for black
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
 				c1 = i*8 + j;
-				c2 = 56 - i*8 + j;
-				PST_B_PAWN_OPENING[c1] = (byte)-PST_W_PAWN_OPENING[c2];
-				PST_B_PAWN_ENDGAME[c1] = (byte)-PST_W_PAWN_ENDGAME[c2];
-				PST_B_KNIGHT_OPENING[c1] = (byte)-PST_W_KNIGHT_OPENING[c2];
-				PST_B_KNIGHT_ENDGAME[c1] = (byte)-PST_W_KNIGHT_ENDGAME[c2];
-				PST_B_BISHOP[c1] = (byte)-PST_W_BISHOP[c2];
-				PST_B_ROOK_OPENING[c1] = (byte)-PST_W_ROOK_OPENING[c2];
-				PST_B_ROOK_ENDGAME[c1] = (byte)-PST_W_ROOK_ENDGAME[c2];
-				PST_B_QUEEN[c1] = (byte)-PST_W_QUEEN[c2];
-				PST_B_KING_OPENING[c1] = (byte)-PST_W_KING_OPENING[c2];
-				PST_B_KING_ENDGAME[c1] = (byte)-PST_W_KING_ENDGAME[c2];
+				c2 = ((7 - i)*8) + j;
+				PST_W_PAWN_OPENING[c1] = (byte)-PST_B_PAWN_OPENING[c2];
+				PST_W_PAWN_ENDGAME[c1] = (byte)-PST_B_PAWN_ENDGAME[c2];
+				PST_W_KNIGHT_OPENING[c1] = (byte)-PST_B_KNIGHT_OPENING[c2];
+				PST_W_KNIGHT_ENDGAME[c1] = (byte)-PST_B_KNIGHT_ENDGAME[c2];
+				PST_W_BISHOP[c1] = (byte)-PST_W_BISHOP[c2];
+				PST_W_ROOK_OPENING[c1] = (byte)-PST_B_ROOK_OPENING[c2];
+				PST_W_ROOK_ENDGAME[c1] = (byte)-PST_B_ROOK_ENDGAME[c2];
+				PST_W_QUEEN[c1] = (byte)-PST_W_QUEEN[c2];
+				PST_W_KING_OPENING[c1] = (byte)-PST_B_KING_OPENING[c2];
+				PST_W_KING_ENDGAME[c1] = (byte)-PST_B_KING_ENDGAME[c2];
 			}
 		}
 	}
@@ -296,6 +311,23 @@ public final class Evaluator {
 		return (openingEval*(256 - phaseScore) + endGameEval*phaseScore)/256;
 	}
 	/**
+	 * A simple evaluation of the pawn structure based on how well the pawns protect friendly pieces and other pawns in particular.
+	 * 
+	 * @param pos
+	 * @return
+	 */
+	private static int pawnStructureScore(Position pos) {
+		int score = 0;
+		long whitePawnAttacks, blackPawnAttacks;
+		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bitmap) | ((pos.whitePawns << 9) & ~File.A.bitmap);
+		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bitmap) | ((pos.blackPawns >>> 9) & ~File.H.bitmap);
+		score += 5*BitOperations.getHammingWeight(whitePawnAttacks | pos.allWhiteOccupied);
+		score += 5*BitOperations.getHammingWeight(whitePawnAttacks | pos.whitePawns);
+		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks | pos.allBlackOccupied);
+		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks | pos.blackPawns);
+		return score;
+	}
+	/**
 	 * Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
 	 * 
 	 * @param pos The position to evaluate.
@@ -361,6 +393,7 @@ public final class Evaluator {
 		else {
 			pawnScore = (short)((BitOperations.getHammingWeight(pos.whitePawns) -
 					BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score);
+			pawnScore += (short)pawnStructureScore(pos);
 			pT.insert(new PTEntry(pos.pawnKey, pawnScore, hashGen));
 		}
 		baseScore = 0;
@@ -372,15 +405,13 @@ public final class Evaluator {
 		openingScore = endgameScore = 0;
 		offsetBoard = pos.offsetBoard;
 		for (int i = 0; i < offsetBoard.length; i++) {
-			piece = offsetBoard[i];
-			if (piece == Piece.NULL.ind)
+			piece = offsetBoard[i] - 1;
+			if (piece < Piece.NULL.ind)
 				continue;
-			openingScore += PST_OPENING[piece - 1][i];
-			endgameScore += PST_ENDGAME[piece - 1][i];
+			openingScore += PST_OPENING[piece][i];
+			endgameScore += PST_ENDGAME[piece][i];
 		}
-		openingScore += baseScore;
-		endgameScore += baseScore;
-		score = (short)taperedEvalScore(openingScore, endgameScore, phase);
+		score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
 		if (!isWhitesTurn)
 			score *= -1;
 		eT.insert(new ETEntry(pos.key, score, hashGen));
