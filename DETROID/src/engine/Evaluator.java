@@ -316,9 +316,11 @@ public final class Evaluator {
 	 * @param pos
 	 * @return
 	 */
-	private static int pawnStructureScore(Position pos) {
-		int score = 0;
+	private static short pawnStructureScore(Position pos) {
 		long whitePawnAttacks, blackPawnAttacks;
+		// Base pawn material score.
+		int score = (BitOperations.getHammingWeight(pos.whitePawns) -
+				BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score;
 		// Piece defense.
 		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bitmap) | ((pos.whitePawns << 9) & ~File.A.bitmap);
 		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bitmap) | ((pos.blackPawns >>> 9) & ~File.H.bitmap);
@@ -331,7 +333,7 @@ public final class Evaluator {
 		score -= 20*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.whitePawns);
 		score += 5*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.allWhiteOccupied);
 		score += 20*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.blackPawns);
-		return score;
+		return (short)score;
 	}
 	/**
 	 * Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
@@ -397,9 +399,7 @@ public final class Evaluator {
 		// Evaluate pawn structure.
 		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
 		else {
-			pawnScore = (short)((BitOperations.getHammingWeight(pos.whitePawns) -
-					BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score);
-			pawnScore += (short)pawnStructureScore(pos);
+			pawnScore = pawnStructureScore(pos);
 			pT.insert(new PTEntry(pos.pawnKey, pawnScore, hashGen));
 		}
 		baseScore = 0;
