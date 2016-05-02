@@ -311,7 +311,7 @@ public final class Evaluator {
 		return (openingEval*(256 - phaseScore) + endGameEval*phaseScore)/256;
 	}
 	/**
-	 * A simple evaluation of the pawn structure based on how well the pawns protect friendly pieces and other pawns in particular.
+	 * A simple evaluation of the pawn structure.
 	 * 
 	 * @param pos
 	 * @return
@@ -319,12 +319,18 @@ public final class Evaluator {
 	private static int pawnStructureScore(Position pos) {
 		int score = 0;
 		long whitePawnAttacks, blackPawnAttacks;
+		// Piece defense.
 		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bitmap) | ((pos.whitePawns << 9) & ~File.A.bitmap);
 		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bitmap) | ((pos.blackPawns >>> 9) & ~File.H.bitmap);
-		score += 5*BitOperations.getHammingWeight(whitePawnAttacks | pos.allWhiteOccupied);
-		score += 5*BitOperations.getHammingWeight(whitePawnAttacks | pos.whitePawns);
-		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks | pos.allBlackOccupied);
-		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks | pos.blackPawns);
+		score += 5*BitOperations.getHammingWeight(whitePawnAttacks & pos.allWhiteOccupied);
+		score += 5*BitOperations.getHammingWeight(whitePawnAttacks & pos.whitePawns);
+		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks & pos.allBlackOccupied);
+		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks & pos.blackPawns);
+		// Blocked pawns.
+		score -= 5*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.allBlackOccupied);
+		score -= 20*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.whitePawns);
+		score += 5*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.allWhiteOccupied);
+		score += 20*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.blackPawns);
 		return score;
 	}
 	/**
