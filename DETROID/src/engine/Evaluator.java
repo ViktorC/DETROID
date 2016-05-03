@@ -23,7 +23,7 @@ public final class Evaluator {
 	
 	// Distance tables for tropism.
 	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];
-	private final static byte[][] CHEBYSEV_DISTANCE = new byte[64][64];
+	private final static byte[][] CHEBYSHEV_DISTANCE = new byte[64][64];
 	
 	static {
 		int r1, r2;
@@ -38,7 +38,7 @@ public final class Evaluator {
 				rankDist = Math.abs(r2 - r1);
 				fileDist = Math.abs(f2 - f1);
 				MANHATTAN_DISTANCE[i][j] = (byte)(rankDist + fileDist);
-				CHEBYSEV_DISTANCE[i][j] = (byte)Math.max(rankDist, fileDist);
+				CHEBYSHEV_DISTANCE[i][j] = (byte)Math.max(rankDist, fileDist);
 			}
 		}
 	}
@@ -574,18 +574,18 @@ public final class Evaluator {
 			return score;
 		}
 		extendedScore = 0;
-		// Tropism
+		// Piece-king tropism
 		// The maximum theoretical tropism value is 111.
 		whiteDistToBlackKing = 0;
 		whitePieces = BitOperations.serialize(pos.allWhiteOccupied & ~pos.whitePawns);
 		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
 		while (whitePieces.hasNext())
-			whiteDistToBlackKing += CHEBYSEV_DISTANCE[whitePieces.next()][blackKingInd];
+			whiteDistToBlackKing += CHEBYSHEV_DISTANCE[whitePieces.next()][blackKingInd];
 		blackDistToWhiteKing = 0;
 		blackPieces = BitOperations.serialize(pos.allBlackOccupied & ~pos.blackPawns);
 		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
 		while (blackPieces.hasNext())
-			blackDistToWhiteKing += CHEBYSEV_DISTANCE[blackPieces.next()][whiteKingInd];
+			blackDistToWhiteKing += CHEBYSHEV_DISTANCE[blackPieces.next()][whiteKingInd];
 		extendedScore -= whiteDistToBlackKing;
 		extendedScore += blackDistToWhiteKing;
 		// Trapped pieces @!TODO
