@@ -149,7 +149,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
 			if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
 				if (key == slot1.hashKey()) {
-					if (e.betterThan(slot1)) {
+					if (e.compareTo(slot1) > 0) {
 						t1[ind1] = e;
 						return true;
 					}
@@ -159,7 +159,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			}
 			if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
 				if (key == slot2.hashKey()) {
-					if (e.betterThan(slot2)) {
+					if (e.compareTo(slot2) > 0) {
 						t2[ind2] = e;
 						return true;
 					}
@@ -182,7 +182,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			 * better than any of the entries with different keys. To make sure that the least valuable entry gets pushed out, we first check the
 			 * new entry against the "weaker" old entry.
 			 */
-			if (slot1.betterThan(slot2)) {
+			if (slot1.compareTo(slot2) > 0) {
 				temp = slot1;
 				slot1 = slot2;
 				slot2 = temp;
@@ -190,7 +190,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 			}
 			else
 				slot1IsInT1 = true;
-			if (e.betterThan(slot1)) {
+			if (e.compareTo(slot1) > 0) {
 				altAbsKey = slot1.hashKey() & Long.MAX_VALUE;
 				if (slot1IsInT1) {
 					t1[ind1] = e;
@@ -209,7 +209,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 				}
 				return true;
 			}
-			if (e.betterThan(slot2)) {
+			if (e.compareTo(slot2) > 0) {
 				altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
 				if (slot1IsInT1) {
 					t2[ind2] = e;

@@ -304,6 +304,21 @@ public class Search implements Runnable {
 					}
 					break Search;
 				}
+				lastMove = pos.getLastMove();
+				if (lastMove != null) {
+					lastMoveIsMaterial = lastMove.isMaterial();
+					// Passed pawn extension.
+					if (lastMove.movedPiece == Piece.W_PAWN.ind) {
+						if (lastMove.to >= 36 && lastMove.to < 48)
+							depth += lastMove.to >= 40 ? FULL_PLY : FULL_PLY/2;
+					}
+					else if (lastMove.movedPiece == Piece.B_PAWN.ind) {
+						if (lastMove.to <= 31 && lastMove.to > 15)
+							depth += lastMove.to <= 23 ? FULL_PLY : FULL_PLY/2;
+					}
+				}
+				else
+					lastMoveIsMaterial = false;
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
 				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= 5) {
 					extPly = ply;
@@ -318,8 +333,6 @@ public class Search implements Runnable {
 						isThereHashMove = true;
 					}
 				}
-				lastMove = pos.getLastMove();
-				lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
 				// If there is a hash move, search that first.
 				if (isThereHashMove) {
 					moveAllowed = true;
@@ -884,7 +897,7 @@ public class Search implements Runnable {
 			while (moves.hasNext()) {
 				move = moves.next();
 				if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
-					move.value = Material.QUEEN.score;
+					move.value = (short)(Material.QUEEN.score - Material.PAWN.score);
 					if (move.capturedPiece != Piece.NULL.ind)
 						move.value += Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
 				}

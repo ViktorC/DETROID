@@ -2,23 +2,48 @@ package engine;
 
 import engine.Board.Diagonal;
 import engine.Board.File;
+import engine.Board.Rank;
+import engine.Board.Square;
 import util.*;
 
 /**
- * A class for evaluating chess positions. It is constructed feeding it a {@link #engine.Position Position} object reference which then can be scored as it is
- * kept incrementally updated after moves made using {@link #score score}.
+ * A class for evaluating chess positions.
  * 
  * @author Viktor
  *
  */
 public final class Evaluator {
 	
+	// The sum of the respective weights of pieces for assessing the game phase.
 	private final static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
-	private final static int LAZY_EVAL_MAR = 2*Material.PAWN.score;
+	// The margin for lazy evaluation. The extended score should never differ by more than this value form the core score.
+	private final static int LAZY_EVAL_MAR = (int)(1.2*Material.PAWN.score);
 	
-	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation".
+	// Distance tables for tropism.
+	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];
+	private final static byte[][] CHEBYSEV_DISTANCE = new byte[64][64];
+	
+	static {
+		int r1, r2;
+		int f1, f2;
+		int rankDist, fileDist;
+		for (int i = 0; i < 64; i++) {
+			r1 = Rank.getBySquareIndex(i).ordinal();
+			f1 = File.getBySquareIndex(i).ordinal();
+			for (int j = 0; j < 64; j++) {
+				r2 = Rank.getBySquareIndex(j).ordinal();
+				f2 = File.getBySquareIndex(j).ordinal();
+				rankDist = Math.abs(r2 - r1);
+				fileDist = Math.abs(f2 - f1);
+				MANHATTAN_DISTANCE[i][j] = (byte)(rankDist + fileDist);
+				CHEBYSEV_DISTANCE[i][j] = (byte)Math.max(rankDist, fileDist);
+			}
+		}
+	}
+	
+	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation" tables.
 	private final static byte[] PST_W_PAWN_OPENING =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		  50, 50, 50, 50, 50, 50, 50, 50,
@@ -172,34 +197,6 @@ public final class Evaluator {
 		hashGen = hashEntryGeneration;
 	}
 	/**
-	 * Returns a phaseScore between 0 and 256 á la Fruit.
-	 * 
-	 * @param numOfQueens
-	 * @param numOfRooks
-	 * @param numOfBishops
-	 * @param numOfKnights
-	 * @return
-	 */
-	private static int phaseScore(int numOfQueens, int numOfRooks, int numOfBishops, int numOfKnights) {
-		int phase = TOTAL_PHASE_WEIGHTS - (numOfQueens*Material.QUEEN.phaseWeight + numOfRooks*Material.ROOK.phaseWeight
-					+ numOfBishops*Material.BISHOP.phaseWeight + numOfKnights*Material.KNIGHT.phaseWeight);
-		return (phase*256 + TOTAL_PHASE_WEIGHTS/2)/TOTAL_PHASE_WEIGHTS;
-	}
-	/**
-	 * Returns an estimation of the phase in which the current game is based on the given position.
-	 * 
-	 * @param pos
-	 * @return
-	 */
-	public static int phaseScore(Position pos) {
-		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
-		numOfQueens = BitOperations.getHammingWeight(pos.whiteQueens | pos.blackQueens)*Material.QUEEN.phaseWeight;
-		numOfRooks = BitOperations.getHammingWeight(pos.whiteRooks | pos.blackRooks)*Material.ROOK.phaseWeight;
-		numOfBishops = BitOperations.getHammingWeight(pos.whiteBishops | pos.blackBishops)*Material.BISHOP.phaseWeight;
-		numOfKnights = BitOperations.getHammingWeight(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
-		return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
-	}
-	/**
 	 * A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
 	 * in the quiescence search.
 	 * 
@@ -299,6 +296,70 @@ public final class Evaluator {
 		return score;
 	}
 	/**
+	 * Returns whether the position is a case of insufficient material.
+	 * 
+	 * @param pos
+	 * @return
+	 */
+	public static boolean isMaterialInsufficient(Position pos) {
+		int numOfWhiteBishops, numOfWhiteKnights, numOfBlackBishops, numOfBlackKnights, numOfAllPieces;
+		int bishopField, bishopColor, newBishopColor;
+		byte[] bishopSqrArr;
+		if (pos.whitePawns != 0 && pos.blackPawns != 0)
+			return false;
+		numOfWhiteBishops = BitOperations.getHammingWeight(pos.whiteBishops);
+		numOfWhiteKnights = BitOperations.getHammingWeight(pos.whiteKnights);
+		numOfBlackBishops = BitOperations.getHammingWeight(pos.blackBishops);
+		numOfBlackKnights = BitOperations.getHammingWeight(pos.blackKnights);
+		numOfAllPieces = BitOperations.getHammingWeight(pos.allOccupied);
+		if (numOfAllPieces == 2 ||
+		(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
+								numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
+		(numOfAllPieces == 4 && numOfWhiteBishops == 1 && numOfBlackBishops == 1 &&
+		Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.whiteBishops)).ordinal()%2 ==
+		Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
+			return true;
+		if (numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
+			bishopSqrArr = BitOperations.serialize(pos.whiteBishops | pos.blackBishops, (byte)(numOfWhiteBishops + numOfBlackBishops));
+			bishopColor = Diagonal.getBySquareIndex(bishopSqrArr[0]).ordinal()%2;
+			for (int i = 1; i < bishopSqrArr.length; i++) {
+				bishopField = bishopSqrArr[i];
+				if ((newBishopColor = Diagonal.getBySquareIndex(bishopField).ordinal()%2) != bishopColor)
+					return true;
+				bishopColor = newBishopColor;
+			}
+		}
+		return false;
+	}
+	/**
+	 * Returns a phaseScore between 0 and 256 á la Fruit.
+	 * 
+	 * @param numOfQueens
+	 * @param numOfRooks
+	 * @param numOfBishops
+	 * @param numOfKnights
+	 * @return
+	 */
+	private static int phaseScore(int numOfQueens, int numOfRooks, int numOfBishops, int numOfKnights) {
+		int phase = TOTAL_PHASE_WEIGHTS - (numOfQueens*Material.QUEEN.phaseWeight + numOfRooks*Material.ROOK.phaseWeight
+					+ numOfBishops*Material.BISHOP.phaseWeight + numOfKnights*Material.KNIGHT.phaseWeight);
+		return (phase*256 + TOTAL_PHASE_WEIGHTS/2)/TOTAL_PHASE_WEIGHTS;
+	}
+	/**
+	 * Returns an estimation of the phase in which the current game is based on the given position.
+	 * 
+	 * @param pos
+	 * @return
+	 */
+	public static int phaseScore(Position pos) {
+		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
+		numOfQueens = BitOperations.getHammingWeight(pos.whiteQueens | pos.blackQueens)*Material.QUEEN.phaseWeight;
+		numOfRooks = BitOperations.getHammingWeight(pos.whiteRooks | pos.blackRooks)*Material.ROOK.phaseWeight;
+		numOfBishops = BitOperations.getHammingWeight(pos.whiteBishops | pos.blackBishops)*Material.BISHOP.phaseWeight;
+		numOfKnights = BitOperations.getHammingWeight(pos.whiteKnights | pos.blackKnights)*Material.KNIGHT.phaseWeight;
+		return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
+	}
+	/**
 	 * Returns an evaluation score according to the current phase and the evaluation scores of the same position in the context of an opening and
 	 * in the context of and end game to establish continuity.
 	 * 
@@ -316,23 +377,109 @@ public final class Evaluator {
 	 * @param pos
 	 * @return
 	 */
-	private static short pawnStructureScore(Position pos) {
+	private static short pawnKingStructureScore(Position pos) {
 		long whitePawnAttacks, blackPawnAttacks;
+		long whiteFrontSpans, blackFrontSpans;
+		long whitePawnNeighbours, blackPawnNeighbours;
+		int whiteKingInd, blackKingInd;
+		long whiteKingZone, blackKingZone;
 		// Base pawn material score.
 		int score = (BitOperations.getHammingWeight(pos.whitePawns) -
 				BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score;
-		// Piece defense.
-		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bitmap) | ((pos.whitePawns << 9) & ~File.A.bitmap);
-		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bitmap) | ((pos.blackPawns >>> 9) & ~File.H.bitmap);
-		score += 5*BitOperations.getHammingWeight(whitePawnAttacks & pos.allWhiteOccupied);
-		score += 5*BitOperations.getHammingWeight(whitePawnAttacks & pos.whitePawns);
-		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks & pos.allBlackOccupied);
-		score -= 5*BitOperations.getHammingWeight(blackPawnAttacks & pos.blackPawns);
+		// Pawn chain.
+		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bits) | ((pos.whitePawns << 9) & ~File.A.bits);
+		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bits) | ((pos.blackPawns >>> 9) & ~File.H.bits);
+		score += 15*BitOperations.getHammingWeight(whitePawnAttacks & pos.whitePawns);
+		score -= 15*BitOperations.getHammingWeight(blackPawnAttacks & pos.blackPawns);
 		// Blocked pawns.
-		score -= 5*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.allBlackOccupied);
-		score -= 20*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.whitePawns);
-		score += 5*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.allWhiteOccupied);
-		score += 20*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.blackPawns);
+		score -= 25*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.whitePawns);
+		score -= 10*BitOperations.getHammingWeight((pos.whitePawns << 16) & pos.whitePawns);
+		score -= 5*BitOperations.getHammingWeight((pos.whitePawns << 24) & pos.whitePawns);
+		score += 25*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.blackPawns);
+		score += 10*BitOperations.getHammingWeight((pos.blackPawns >>> 16) & pos.blackPawns);
+		score += 5*BitOperations.getHammingWeight((pos.blackPawns >>> 24) & pos.blackPawns);
+		// Isolated and passed pawns.
+		whiteFrontSpans = pos.whitePawns;
+		whiteFrontSpans |= whiteFrontSpans << 8;
+		whiteFrontSpans |= whiteFrontSpans << 16;
+		whiteFrontSpans |= whiteFrontSpans << 32;
+		whitePawnNeighbours = whiteFrontSpans;
+		whiteFrontSpans = whiteFrontSpans | ((whiteFrontSpans << 7) & ~File.H.bits) | ((whiteFrontSpans << 9) & ~File.A.bits);
+		whitePawnNeighbours |= whitePawnNeighbours >>> 8;
+		whitePawnNeighbours |= whitePawnNeighbours >>> 16;
+		whitePawnNeighbours |= whitePawnNeighbours >>> 32;
+		whitePawnNeighbours = whitePawnNeighbours | ((whitePawnNeighbours >>> 1) & ~File.H.bits) | ((whitePawnNeighbours << 1) & ~File.A.bits);
+		blackFrontSpans = pos.blackPawns;
+		blackFrontSpans |= blackFrontSpans >>> 8;
+		blackFrontSpans |= blackFrontSpans >>> 16;
+		blackFrontSpans |= blackFrontSpans >>> 32;
+		blackPawnNeighbours = blackFrontSpans;
+		blackFrontSpans = blackFrontSpans | ((blackFrontSpans >>> 7) & ~File.A.bits) | ((blackFrontSpans >>> 9) & ~File.H.bits);
+		blackPawnNeighbours |= blackPawnNeighbours << 8;
+		blackPawnNeighbours |= blackPawnNeighbours << 16;
+		blackPawnNeighbours |= blackPawnNeighbours << 32;
+		blackPawnNeighbours = blackPawnNeighbours | ((blackPawnNeighbours >>> 1) & ~File.H.bits) | ((blackPawnNeighbours << 1) & ~File.A.bits);
+		score -= 5*BitOperations.getHammingWeight(~whitePawnNeighbours & pos.whitePawns); // Isolated pawns.
+		score += 5*BitOperations.getHammingWeight(~blackPawnNeighbours & pos.blackPawns);
+		score += 30*BitOperations.getHammingWeight(pos.whitePawns & ~((whiteFrontSpans & ~pos.whitePawns) | blackFrontSpans)); // Passed pawns.
+		score -= 30*BitOperations.getHammingWeight(pos.blackPawns & ~((blackFrontSpans & ~pos.blackPawns) | whiteFrontSpans));
+		// King safety.
+		// Pawn shield and pawn storm.
+		if (pos.whiteKing == Square.G1.bit || pos.whiteKing == Square.H1.bit) {
+			if ((pos.whitePawns & Square.G2.bit) == 0)
+				score -= 30;
+			if ((pos.whitePawns & Square.H2.bit) == 0)
+				score -= 30;
+			if ((pos.whitePawns & Square.F2.bit) == 0)
+				score -= 15;
+			score -= 35*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit | Square.H4.bit) & pos.blackPawns);
+			score -= 10*BitOperations.getHammingWeight((Square.F3.bit | Square.F4.bit) & pos.blackPawns);
+		}
+		else if (pos.whiteKing == Square.A1.bit || pos.whiteKing == Square.B1.bit || pos.whiteKing == Square.C1.bit) {
+			if ((pos.whitePawns & Square.A2.bit) == 0)
+				score -= 30;
+			if ((pos.whitePawns & Square.B2.bit) == 0)
+				score -= 30;
+			if ((pos.whitePawns & Square.C2.bit) == 0)
+				score -= 20;
+			score -= 25*BitOperations.getHammingWeight((Square.A3.bit | Square.A4.bit | Square.B3.bit | Square.B4.bit |
+					Square.C3.bit | Square.C4.bit) & pos.blackPawns);
+			score -= 5*BitOperations.getHammingWeight((Square.D3.bit | Square.D4.bit) & pos.blackPawns);
+		}
+		if (pos.blackKing == Square.G8.bit || pos.blackKing == Square.H8.bit) {
+			if ((pos.blackPawns & Square.G7.bit) == 0)
+				score += 30;
+			if ((pos.blackPawns & Square.H7.bit) == 0)
+				score += 30;
+			if ((pos.blackPawns & Square.F7.bit) == 0)
+				score += 15;
+			score += 35*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit | Square.H6.bit) & pos.whitePawns);
+			score += 10*BitOperations.getHammingWeight((Square.F5.bit | Square.F6.bit) & pos.whitePawns);
+		}
+		else if (pos.blackKing == Square.A8.bit || pos.blackKing == Square.B8.bit || pos.blackKing == Square.C8.bit) {
+			if ((pos.blackPawns & Square.A7.bit) == 0)
+				score += 30;
+			if ((pos.blackPawns & Square.B7.bit) == 0)
+				score += 30;
+			if ((pos.blackPawns & Square.C7.bit) == 0)
+				score += 20;
+			score += 25*BitOperations.getHammingWeight((Square.A5.bit | Square.A6.bit | Square.B5.bit | Square.B6.bit |
+					Square.C5.bit | Square.C6.bit) & pos.whitePawns);
+			score += 5*BitOperations.getHammingWeight((Square.D5.bit | Square.D6.bit) & pos.whitePawns);
+		}
+		// Pawn-king defense and attack.
+		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
+		whiteKingZone = MoveSetDatabase.getByIndex(whiteKingInd).kingMoveMask;
+		score -= 25*BitOperations.getHammingWeight(blackPawnAttacks & whiteKingZone);
+		score += 10*BitOperations.getHammingWeight(whitePawnAttacks & whiteKingZone);
+		score += 5*BitOperations.getHammingWeight(pos.whitePawns & whiteKingZone);
+		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
+		blackKingZone = MoveSetDatabase.getByIndex(blackKingInd).kingMoveMask;
+		score += 25*BitOperations.getHammingWeight(whitePawnAttacks & blackKingZone);
+		score -= 10*BitOperations.getHammingWeight(blackPawnAttacks & blackKingZone);
+		score += 5*BitOperations.getHammingWeight(pos.blackPawns & blackKingZone);
+		// Pawn-king tropism. @!TODO
+		
 		return (short)score;
 	}
 	/**
@@ -347,7 +494,9 @@ public final class Evaluator {
 		byte numOfWhiteQueens, numOfBlackQueens, numOfWhiteRooks, numOfBlackRooks, numOfWhiteBishops, numOfBlackBishops, numOfWhiteKnights,
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase, piece;
-		short pawnScore, baseScore, openingScore, endgameScore, score;
+		int whiteDistToBlackKing, blackDistToWhiteKing, whiteKingInd, blackKingInd;
+		ByteList whitePieces, blackPieces;
+		short pawnScore, baseScore, openingScore, endgameScore, score, extendedScore;
 		byte[] bishopSqrArr, offsetBoard;;
 		boolean isWhitesTurn;
 		ETEntry eE;
@@ -390,6 +539,12 @@ public final class Evaluator {
 				}
 			}
 		}
+		// Basic material score.
+		baseScore = 0;
+		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
+		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
+		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
+		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
 		// Try for hashed pawn score.
 		pE = pT.lookUp(pos.pawnKey);
 		if (pE != null) {
@@ -397,17 +552,12 @@ public final class Evaluator {
 			pawnScore = pE.score;
 		}
 		// Evaluate pawn structure.
-		// Definitely needs to be thorough and sophisticated to make up for the costs of pawn hashing.
 		else {
-			pawnScore = pawnStructureScore(pos);
+			pawnScore = pawnKingStructureScore(pos);
 			pT.insert(new PTEntry(pos.pawnKey, pawnScore, hashGen));
 		}
-		baseScore = 0;
-		baseScore += (numOfWhiteQueens - numOfBlackQueens)*Material.QUEEN.score;
-		baseScore += (numOfWhiteRooks - numOfBlackRooks)*Material.ROOK.score;
-		baseScore += (numOfWhiteBishops - numOfBlackBishops)*Material.BISHOP.score;
-		baseScore += (numOfWhiteKnights - numOfBlackKnights)*Material.KNIGHT.score;
 		baseScore += pawnScore;
+		// Piece-square scores.
 		openingScore = endgameScore = 0;
 		offsetBoard = pos.offsetBoard;
 		for (int i = 0; i < offsetBoard.length; i++) {
@@ -420,7 +570,30 @@ public final class Evaluator {
 		score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
 		if (!isWhitesTurn)
 			score *= -1;
-		eT.insert(new ETEntry(pos.key, score, hashGen));
-		return score;
+		if (score < alpha - LAZY_EVAL_MAR || score > beta + LAZY_EVAL_MAR) {
+			return score;
+		}
+		extendedScore = 0;
+		// Tropism
+		// The maximum theoretical tropism value is 111.
+		whiteDistToBlackKing = 0;
+		whitePieces = BitOperations.serialize(pos.allWhiteOccupied & ~pos.whitePawns);
+		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
+		while (whitePieces.hasNext())
+			whiteDistToBlackKing += CHEBYSEV_DISTANCE[whitePieces.next()][blackKingInd];
+		blackDistToWhiteKing = 0;
+		blackPieces = BitOperations.serialize(pos.allBlackOccupied & ~pos.blackPawns);
+		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
+		while (blackPieces.hasNext())
+			blackDistToWhiteKing += CHEBYSEV_DISTANCE[blackPieces.next()][whiteKingInd];
+		extendedScore -= whiteDistToBlackKing;
+		extendedScore += blackDistToWhiteKing;
+		// Trapped pieces @!TODO
+		
+		if (!isWhitesTurn)
+			extendedScore *= -1;
+		extendedScore += score;
+		eT.insert(new ETEntry(pos.key, extendedScore, hashGen));
+		return extendedScore;
 	}
 }

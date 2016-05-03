@@ -13,8 +13,8 @@ import engine.Board.*;
  */
 public final class Sliders {
 	
-	private final static long ANTIFRAME_VERTICAL = ~(File.A.bitmap | File.H.bitmap);
-	private final static long ANTIFRAME_HORIZONTAL = ~(Rank.R1.bitmap | Rank.R8.bitmap);
+	private final static long ANTIFRAME_VERTICAL = ~(File.A.bits | File.H.bits);
+	private final static long ANTIFRAME_HORIZONTAL = ~(Rank.R1.bits | Rank.R8.bits);
 	private final static long ANTIFRAME = (ANTIFRAME_VERTICAL & ANTIFRAME_HORIZONTAL);
 	
 	private Sliders() {
@@ -31,12 +31,12 @@ public final class Sliders {
 	public static long getRankAttackSet(Square sqr, long relevantOccupancy) {
 		Rank rank = Rank.getBySquareIndex(sqr.ind);
 		long forward, reverse;
-		forward  = rank.bitmap & relevantOccupancy;
+		forward  = rank.bits & relevantOccupancy;
 		reverse  = BitOperations.reverse(relevantOccupancy);
-		forward -= 2*sqr.bitmap;
-		reverse -= 2*BitOperations.reverse(sqr.bitmap);
+		forward -= 2*sqr.bit;
+		reverse -= 2*BitOperations.reverse(sqr.bit);
 		forward ^= BitOperations.reverse(reverse);
-		return forward & rank.bitmap;
+		return forward & rank.bits;
 	}
 	/**
 	 * Returns the file-wise attack set for the relevant occupancy from the defined square.
@@ -49,12 +49,12 @@ public final class Sliders {
 	public static long getFileAttackSet(Square sqr, long relevantOccupancy) {
 		File file = File.getBySquareIndex(sqr.ind);
 		long forward, reverse;
-		forward  = file.bitmap & relevantOccupancy;
+		forward  = file.bits & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
-		forward -= sqr.bitmap;
-		reverse -= BitOperations.reverseBytes(sqr.bitmap);
+		forward -= sqr.bit;
+		reverse -= BitOperations.reverseBytes(sqr.bit);
 		forward ^= BitOperations.reverseBytes(reverse);
-		return forward & file.bitmap;
+		return forward & file.bits;
 	}
 	/**
 	 * Returns the diagonal-wise attack set for the relevant occupancy from the defined square.
@@ -67,12 +67,12 @@ public final class Sliders {
 	public static long getDiagonalAttackSet(Square sqr, long relevantOccupancy) {
 		Diagonal diagonal = Diagonal.getBySquareIndex(sqr.ind);
 		long forward, reverse;
-		forward  = diagonal.bitmap & relevantOccupancy;
+		forward  = diagonal.bits & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
-		forward -= sqr.bitmap;
-		reverse -= BitOperations.reverseBytes(sqr.bitmap);
+		forward -= sqr.bit;
+		reverse -= BitOperations.reverseBytes(sqr.bit);
 		forward ^= BitOperations.reverseBytes(reverse);
-		return forward & diagonal.bitmap;
+		return forward & diagonal.bits;
 	}
 	/**
 	 * Returns the anti-diagonal-wise attack set for the relevant occupancy from the defined square.
@@ -85,12 +85,12 @@ public final class Sliders {
 	public static long getAntiDiagonalAttackSet(Square sqr, long relevantOccupancy) {
 		AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqr.ind);
 		long forward, reverse;
-		forward  = antiDiagonal.bitmap & relevantOccupancy;
+		forward  = antiDiagonal.bits & relevantOccupancy;
 		reverse  = BitOperations.reverseBytes(forward);
-		forward -= sqr.bitmap;
-		reverse -= BitOperations.reverseBytes(sqr.bitmap);
+		forward -= sqr.bit;
+		reverse -= BitOperations.reverseBytes(sqr.bit);
 		forward ^= BitOperations.reverseBytes(reverse);
-		return forward & antiDiagonal.bitmap;
+		return forward & antiDiagonal.bits;
 	}
 	/**
 	 * Returns a rook's attack set from the defined square with the given occupancy.
@@ -121,8 +121,8 @@ public final class Sliders {
 	 * @return
 	 */
 	public static long getRookOccupancyMask(Square sqr) {
-		return ((Rank.getBySquare(sqr).bitmap^sqr.bitmap) & ANTIFRAME_VERTICAL) |
-				((File.getBySquare(sqr).bitmap^sqr.bitmap) & ANTIFRAME_HORIZONTAL);
+		return ((Rank.getBySquare(sqr).bits^sqr.bit) & ANTIFRAME_VERTICAL) |
+				((File.getBySquare(sqr).bits^sqr.bit) & ANTIFRAME_HORIZONTAL);
 	}
 	/**
 	 * Generates a bitmap of the relevant occupancy mask for a bishop on the square specified by 'sqr'.
@@ -131,7 +131,7 @@ public final class Sliders {
 	 * @return
 	 */
 	public static long getBishopOccupancyMask(Square sqr) {
-		return ((Diagonal.getBySquare(sqr).bitmap^sqr.bitmap) | (AntiDiagonal.getBySquare(sqr).bitmap^sqr.bitmap)) & ANTIFRAME;
+		return ((Diagonal.getBySquare(sqr).bits^sqr.bit) | (AntiDiagonal.getBySquare(sqr).bits^sqr.bit)) & ANTIFRAME;
 	}
 	/**
 	 * Returns a rook's attack set variations from the given square for all occupancy variations specified.

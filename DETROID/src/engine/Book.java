@@ -242,19 +242,19 @@ public class Book implements AutoCloseable {
 		fromRank = "" + (int)(((polyglotMove >>> 9) & 7) + 1);
 		pacn = fromFile + fromRank + toFile + toRank;
 		if (pacn.equals("e1h1")) {
-			if (pos.whiteKing == Square.E1.bitmap)
+			if (pos.whiteKing == Square.E1.bit)
 				return "e1g1";
 		}
 		else if (pacn.equals("e1a1")) {
-			if (pos.whiteKing == Square.E1.bitmap)
+			if (pos.whiteKing == Square.E1.bit)
 				return "e1c1";
 		}
 		else if (pacn.equals("e8h8")) {
-			if (pos.blackKing == Square.E8.bitmap)
+			if (pos.blackKing == Square.E8.bit)
 				return "e8g8";
 		}
 		else if (pacn.equals("e8a8")) {
-			if (pos.blackKing == Square.E8.bitmap)
+			if (pos.blackKing == Square.E8.bit)
 				return "e8c8";
 		}
 		switch (polyglotMove >>> 12) {

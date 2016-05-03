@@ -57,21 +57,21 @@ public class TTEntry implements HashTable.Entry<TTEntry> {
 	 * Returns whether this entry is more valuable for storing than the input parameter entry.
 	 */
 	@Override
-	public boolean betterThan(TTEntry e) {
+	public int compareTo(TTEntry e) {
 		if (generation < e.generation || depth < e.depth)
-			return false;
+			return -1;
 		if (type == e.type) {
 			// To increase the chances of the score being greater than any beta and thus produce more frequent ready-to-return hash hits...
 			if (type == NodeType.FAIL_HIGH.ind)
-				return score >= e.score;
+				return score - e.score;
 			// To increase the chances of the score being lower than any alpha.
 			else if (type == NodeType.FAIL_LOW.ind)
-				return score <= e.score;
+				return e.score - score;
 			else
-				return true;
+				return 1;
 		}
 		else
-			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind;
+			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind ? 1 : -1;
 	}
 	/**
 	 * Returns a 64-bit hash code identifying this object.

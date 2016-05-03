@@ -37,8 +37,8 @@ public class PTEntry implements HashTable.Entry<PTEntry> {
 		this.generation = generation;
 	}
 	@Override
-	public boolean betterThan(PTEntry e) {
-		return generation >= e.generation;
+	public int compareTo(PTEntry e) {
+		return generation - e.generation;
 	}
 	/**Returns the Zobrist pawn hash key. */
 	@Override

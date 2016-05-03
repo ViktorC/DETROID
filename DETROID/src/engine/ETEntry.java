@@ -39,8 +39,8 @@ public class ETEntry implements HashTable.Entry<ETEntry> {
 	 * Returns whether this entry is more valuable for storing than the input parameter entry.
 	 */
 	@Override
-	public boolean betterThan(ETEntry e) {
-		return generation >= e.generation;
+	public int compareTo(ETEntry e) {
+		return generation - e.generation;
 	}
 	/**
 	 * Returns a 64-bit hash code identifying this object.

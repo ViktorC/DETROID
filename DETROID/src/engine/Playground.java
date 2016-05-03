@@ -36,12 +36,12 @@ public class Playground {
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
-		HashTable<PTEntry> pT = new HashTable<>(4);
+		HashTable<PTEntry> pT = new HashTable<>(16);
 		Book book = Book.getInstance();
 		Scanner in = new Scanner(System.in);
 		boolean outOfBook = false;
 		while (p.getMoves().length() != 0) {
-			if (p.isWhitesTurn) {
+			if (!p.isWhitesTurn) {
 				if (!outOfBook) {
 					bookMove = book.getMove(p, SelectionModel.STOCHASTIC);
 					if (bookMove != null) {
@@ -68,7 +68,7 @@ public class Playground {
 				else {
 					tT.remove(e -> e.generation <= gen);
 					eT.remove(e -> e.generation <= gen);
-					pT.remove(e -> e.generation <= gen);
+					pT.remove(e -> e.generation <= gen - 3);
 				}
 				hT.decrementCurrentValues();
 				gen++;

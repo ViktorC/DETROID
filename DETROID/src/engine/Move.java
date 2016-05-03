@@ -1,7 +1,6 @@
 package engine;
 
 import util.List;
-import util.Comparable;
 
 /**
  * A simple class that provides objects for storing information about moves necessary for making them.
@@ -19,14 +18,14 @@ public class Move implements Comparable<Move> {
 	 */
 	private enum ToInt {
 		
-		SHIFT_TO 			(6),
-		SHIFT_MOVED			(12),
-		SHIFT_CAPTURED		(16),
-		SHIFT_TYPE			(20),
-		MASK_FROM			(63),
-		MASK_TO				(63),
-		MASK_MOVED			(15),
-		MASK_CAPTURED		(15);
+		SHIFT_TO (6),
+		SHIFT_MOVED (12),
+		SHIFT_CAPTURED (16),
+		SHIFT_TYPE (20),
+		MASK_FROM (63),
+		MASK_TO (63),
+		MASK_MOVED (15),
+		MASK_CAPTURED (15);
 		
 		final byte value;
 		
@@ -92,13 +91,8 @@ public class Move implements Comparable<Move> {
 	}
 	/**Returns whether the owner Move instance's value field holds a greater number than the parameter Move instance's.*/
 	@Override
-	public boolean betterThan(Move m) throws NullPointerException {
-		return (value > m.value);
-	}
-	/**Returns whether the owner Move instance's value field holds a smaller number than the parameter Move instance's.*/
-	@Override
-	public boolean worseThan(Move m) throws NullPointerException {
-		return (value < m.value);
+	public int compareTo(Move m) throws NullPointerException {
+		return value - m.value;
 	}
 	/**Returns a move as a String in Pure Algebraic Coordinate Notation for better human-readability.
 	 *

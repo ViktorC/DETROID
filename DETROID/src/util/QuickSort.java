@@ -67,9 +67,9 @@ public final class QuickSort {
 		int index, partLeft = left, partRight = right;
 		T temp, pivot = array[(left + right)/2];
 		while (partLeft <= partRight) {
-			while (array[partLeft].betterThan(pivot))
+			while (array[partLeft].compareTo(pivot) > 0)
 				partLeft++;
-			while (array[partRight].worseThan(pivot))
+			while (array[partRight].compareTo(pivot) < 0)
 				partRight--;
 			if (partLeft <= partRight) {
 				temp = array[partLeft];

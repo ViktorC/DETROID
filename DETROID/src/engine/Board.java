@@ -27,11 +27,11 @@ public final class Board {
 		A8, B8, C8, D8, E8, F8, G8, H8;
 
 		public final byte ind;
-		public final long bitmap;
+		public final long bit;
 
 		private Square() {
 			ind = (byte)ordinal();
-			bitmap = 1L << ind;
+			bit = 1L << ind;
 		}
 		/**
 		 * Returns a String representation of the square.
@@ -72,10 +72,10 @@ public final class Board {
 		
 		A, B, C, D, E, F, G, H;
 		
-		public final long bitmap;
+		public final long bits;
 		
 		private File() {
-			bitmap = 0b0000000100000001000000010000000100000001000000010000000100000001L << ordinal();
+			bits = 0b0000000100000001000000010000000100000001000000010000000100000001L << ordinal();
 		}
 		/**
 		 * Returns the file 'fileInd' to the right from the file A.
@@ -124,10 +124,10 @@ public final class Board {
 		
 		R1, R2, R3, R4, R5, R6, R7, R8;
 		
-		public final long bitmap;
+		public final long bits;
 		
 		private Rank() {
-			bitmap = 0b0000000000000000000000000000000000000000000000000000000011111111L << (8*ordinal());
+			bits = 0b0000000000000000000000000000000000000000000000000000000011111111L << (8*ordinal());
 		}
 		/**
 		 * Returns the 'rnkInd'th rank.
@@ -176,12 +176,12 @@ public final class Board {
 		
 		DG1, DG2, DG3, DG4, DG5, DG6, DG7, DG8, DG9, DG10, DG11, DG12, DG13, DG14, DG15;
 		
-		public final long bitmap;
+		public final long bits;
 		
 		private Diagonal() {
 			long base = 0b0000000100000010000001000000100000010000001000000100000010000000L;
 			int shift = 7 - ordinal();
-			bitmap = shift > 0 ? base >>> 8*shift : base << 8*-shift;
+			bits = shift > 0 ? base >>> 8*shift : base << 8*-shift;
 				
 		}
 		/**
@@ -238,12 +238,12 @@ public final class Board {
 		
 		ADG1, ADG2, ADG3, ADG4, ADG5, ADG6, ADG7, ADG8, ADG9, ADG10, ADG11, ADG12, ADG13, ADG14, ADG15;
 		
-		public final long bitmap;
+		public final long bits;
 		
 		private AntiDiagonal() {
 			long base = 0b1000000001000000001000000001000000001000000001000000001000000001L;
 			int shift = 7 - ordinal();
-			bitmap = shift > 0 ? base << 8*shift : base >>> 8*-shift;
+			bits = shift > 0 ? base << 8*shift : base >>> 8*-shift;
 		}
 		/**
 		 * Returns the anti-diagonal indexed by the input parameter.
@@ -315,19 +315,19 @@ public final class Board {
 		
 		private Ray( ) {
 			int sqrInd = this.ordinal();
-			long sqrBit = Square.getByIndex(sqrInd).bitmap;
+			long sqrBit = Square.getByIndex(sqrInd).bit;
 			Rank rank = Rank.getBySquareIndex(sqrInd);
 			File file = File.getBySquareIndex(sqrInd);
 			Diagonal diagonal = Diagonal.getBySquareIndex(sqrInd);
 			AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
-			rankPos = rank.bitmap & ~((sqrBit << 1) - 1);
-			rankNeg = rank.bitmap & (sqrBit - 1);
-			filePos = file.bitmap & ~((sqrBit << 1) - 1);
-			fileNeg = file.bitmap & (sqrBit - 1);
-			diagonalPos = diagonal.bitmap & ~((sqrBit << 1) - 1);
-			diagonalNeg = diagonal.bitmap & (sqrBit - 1);
-			antiDiagonalPos = antiDiagonal.bitmap & ~((sqrBit << 1) - 1);
-			antiDiagonalNeg = antiDiagonal.bitmap & (sqrBit - 1);
+			rankPos = rank.bits & ~((sqrBit << 1) - 1);
+			rankNeg = rank.bits & (sqrBit - 1);
+			filePos = file.bits & ~((sqrBit << 1) - 1);
+			fileNeg = file.bits & (sqrBit - 1);
+			diagonalPos = diagonal.bits & ~((sqrBit << 1) - 1);
+			diagonalNeg = diagonal.bits & (sqrBit - 1);
+			antiDiagonalPos = antiDiagonal.bits & ~((sqrBit << 1) - 1);
+			antiDiagonalNeg = antiDiagonal.bits & (sqrBit - 1);
 		}
 		/**
 		 * Returns a Ray enum instance that holds the ray masks for the square specified by the given square index, sqrInd.
