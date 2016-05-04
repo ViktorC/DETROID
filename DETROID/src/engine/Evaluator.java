@@ -19,7 +19,7 @@ public final class Evaluator {
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
 	// The margin for lazy evaluation. The extended score should never differ by more than this value form the core score.
-	private final static int LAZY_EVAL_MAR = (int)(1.6*Material.PAWN.score);
+	private final static int LAZY_EVAL_MAR = 151;
 	
 	// Distance tables for tropism.
 	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];
@@ -97,7 +97,7 @@ public final class Evaluator {
 		  -5, -5, -5, -5, -5, -5, -5, -5,
 		  -5, -5, -5, -5, -5, -5, -5, -5,
 		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  20, -5,  0, 25,  5, 25, -5, 20};
+		  20, -5,  0, 35,  5, 35, -5, 20};
 	private final static byte[] PST_W_ROOK_ENDGAME =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		   5, 10, 10, 10, 10, 10, 10,  5,
@@ -124,7 +124,7 @@ public final class Evaluator {
 		 -20,-30,-30,-40,-40,-30,-30,-20,
 		 -10,-20,-20,-20,-20,-20,-20,-10,
 		  20, 20,  0,  0,  0,  0, 20, 20,
-		  10, 20, 10,-10,  0,-10, 40, 20};
+		  20, 30, 20,-10,  0,-10, 50, 20};
 	private final static byte[] PST_W_KING_ENDGAME =
 		{-50,-40,-30,-20,-20,-30,-40,-50,
 		 -30,-20,-10,  0,  0,-10,-20,-30,
@@ -377,7 +377,8 @@ public final class Evaluator {
 	 * @param pos
 	 * @return
 	 */
-	private static short pawnKingStructureScore(Position pos) {
+	private static short pawnKingStructureScore(Position pos, int phaseScore) {
+		int score, materialScore;
 		long whitePawnAttacks, blackPawnAttacks;
 		long whiteFrontSpans, blackFrontSpans;
 		long whitePawnNeighbours, blackPawnNeighbours;
@@ -385,9 +386,12 @@ public final class Evaluator {
 		int whiteKingInd, blackKingInd;
 		int mostAdvPasserInd, squareOfPromotion, distFromPromotion;
 		long whiteKingZone, blackKingZone;
+		score = 0;
 		// Base pawn material score.
-		int score = (BitOperations.getHammingWeight(pos.whitePawns) -
+		materialScore = (BitOperations.getHammingWeight(pos.whitePawns) -
 				BitOperations.getHammingWeight(pos.blackPawns))*Material.PAWN.score;
+		// Pawns are worth more towards the end of the game.
+		score += taperedEvalScore(materialScore, (int)(materialScore*1.2), phaseScore);
 		// Pawn chain.
 		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bits) | ((pos.whitePawns << 9) & ~File.A.bits);
 		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bits) | ((pos.blackPawns >>> 9) & ~File.H.bits);
@@ -430,43 +434,43 @@ public final class Evaluator {
 		// King safety.
 		// Pawn shield and pawn storm.
 		if (pos.whiteKing == Square.G1.bit || pos.whiteKing == Square.H1.bit) {
-			if ((pos.whitePawns & Square.G2.bit) == 0)
-				score -= 30;
-			if ((pos.whitePawns & Square.H2.bit) == 0)
-				score -= 30;
-			if ((pos.whitePawns & Square.F2.bit) == 0)
-				score -= 15;
-			score -= 35*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit | Square.H4.bit) & pos.blackPawns);
+			if ((pos.whitePawns & Square.G2.bit) != 0)
+				score += 15;
+			if ((pos.whitePawns & Square.H2.bit) != 0)
+				score += 15;
+			if ((pos.whitePawns & Square.F2.bit) != 0)
+				score += 10;
+			score -= 25*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit | Square.H4.bit) & pos.blackPawns);
 			score -= 10*BitOperations.getHammingWeight((Square.F3.bit | Square.F4.bit) & pos.blackPawns);
 		}
 		else if (pos.whiteKing == Square.A1.bit || pos.whiteKing == Square.B1.bit || pos.whiteKing == Square.C1.bit) {
-			if ((pos.whitePawns & Square.A2.bit) == 0)
-				score -= 30;
-			if ((pos.whitePawns & Square.B2.bit) == 0)
-				score -= 30;
-			if ((pos.whitePawns & Square.C2.bit) == 0)
-				score -= 20;
+			if ((pos.whitePawns & Square.A2.bit) != 0)
+				score += 15;
+			if ((pos.whitePawns & Square.B2.bit) != 0)
+				score += 15;
+			if ((pos.whitePawns & Square.C2.bit) != 0)
+				score += 10;
 			score -= 25*BitOperations.getHammingWeight((Square.A3.bit | Square.A4.bit | Square.B3.bit | Square.B4.bit |
 					Square.C3.bit | Square.C4.bit) & pos.blackPawns);
 			score -= 5*BitOperations.getHammingWeight((Square.D3.bit | Square.D4.bit) & pos.blackPawns);
 		}
 		if (pos.blackKing == Square.G8.bit || pos.blackKing == Square.H8.bit) {
-			if ((pos.blackPawns & Square.G7.bit) == 0)
-				score += 30;
-			if ((pos.blackPawns & Square.H7.bit) == 0)
-				score += 30;
-			if ((pos.blackPawns & Square.F7.bit) == 0)
-				score += 15;
-			score += 35*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit | Square.H6.bit) & pos.whitePawns);
+			if ((pos.blackPawns & Square.G7.bit) != 0)
+				score -= 15;
+			if ((pos.blackPawns & Square.H7.bit) != 0)
+				score -= 15;
+			if ((pos.blackPawns & Square.F7.bit) != 0)
+				score -= 10;
+			score += 25*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit | Square.H6.bit) & pos.whitePawns);
 			score += 10*BitOperations.getHammingWeight((Square.F5.bit | Square.F6.bit) & pos.whitePawns);
 		}
 		else if (pos.blackKing == Square.A8.bit || pos.blackKing == Square.B8.bit || pos.blackKing == Square.C8.bit) {
-			if ((pos.blackPawns & Square.A7.bit) == 0)
-				score += 30;
-			if ((pos.blackPawns & Square.B7.bit) == 0)
-				score += 30;
-			if ((pos.blackPawns & Square.C7.bit) == 0)
-				score += 20;
+			if ((pos.blackPawns & Square.A7.bit) != 0)
+				score -= 15;
+			if ((pos.blackPawns & Square.B7.bit) != 0)
+				score -= 15;
+			if ((pos.blackPawns & Square.C7.bit) != 0)
+				score -= 10;
 			score += 25*BitOperations.getHammingWeight((Square.A5.bit | Square.A6.bit | Square.B5.bit | Square.B6.bit |
 					Square.C5.bit | Square.C6.bit) & pos.whitePawns);
 			score += 5*BitOperations.getHammingWeight((Square.D5.bit | Square.D6.bit) & pos.whitePawns);
@@ -570,7 +574,7 @@ public final class Evaluator {
 		}
 		// Evaluate pawn structure.
 		else {
-			pawnScore = pawnKingStructureScore(pos);
+			pawnScore = pawnKingStructureScore(pos, phase);
 			pT.insert(new PTEntry(pos.pawnKey, pawnScore, hashGen));
 		}
 		baseScore += pawnScore;

@@ -126,10 +126,7 @@ public class Position implements Hashable, Copiable<Position> {
 		if (fenFields.length == 6) {
 			try {
 				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
-				if (fiftyMoveRuleClock >= 0)
-					pos.fiftyMoveRuleClock = (short)fiftyMoveRuleClock;
-				else
-					pos.fiftyMoveRuleClock = 0;
+				pos.fiftyMoveRuleClock = (short)Math.max(0, fiftyMoveRuleClock);
 			}
 			catch (NumberFormatException e) {
 				throw new ChessParseException("The fifty-move rule clock field of the FEN-string does not conform to the standards. " +
@@ -267,8 +264,8 @@ public class Position implements Hashable, Copiable<Position> {
 		pos.checkers = pos.getCheckers();
 		pos.isInCheck = pos.checkers != 0;
 		pos.gen.setHashKeys(pos);
-		pos.keyHistory[0] = pos.key;
-		pos.pawnKeyHistory[0] = pos.pawnKey;
+		pos.keyHistory[pos.halfMoveIndex] = pos.key;
+		pos.pawnKeyHistory[pos.halfMoveIndex] = pos.pawnKey;
 		pos.repetitions = 0;
 		return pos;
 	}
