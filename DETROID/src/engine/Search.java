@@ -204,7 +204,6 @@ public class Search implements Runnable {
 		 * @return The score of the position searched.
 		 */
 		private int pVsearch(int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
-			final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 			final int distFromRoot = ply - depth/FULL_PLY;
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 			final int origAlpha = alpha;
@@ -256,9 +255,9 @@ public class Search implements Runnable {
 					// the score if the entry stored a PV node. 
 					if (!isPvNode && e.depth >= depth/FULL_PLY) {
 						// Mate score adjustment to root distance.
-						if (e.score <= checkMateLim)
+						if (e.score <= L_CHECK_MATE_LIMIT)
 							score = e.score + distFromRoot;
-						else if (e.score >= -checkMateLim)
+						else if (e.score >= W_CHECK_MATE_LIMIT)
 							score = e.score - distFromRoot;
 						else
 							score = e.score;
@@ -399,7 +398,7 @@ public class Search implements Runnable {
 					if (depth/FULL_PLY == NMR) {
 						score = -pVsearch(depth - NMR*FULL_PLY, -beta, -beta + 1, false, qDepth);
 						// Mate threat extension.
-						if (score <= checkMateLim)
+						if (score <= L_CHECK_MATE_LIMIT)
 							depth += FULL_PLY;
 					}
 					else
@@ -671,7 +670,7 @@ public class Search implements Runnable {
 					razRed = 0;
 					// Futility pruning, extended futility pruning, and razoring.
 					if (!isPvNode && depth/FULL_PLY <= 3) {
-						if (alpha > checkMateLim && beta < -checkMateLim && !isInCheck && !pos.givesCheck(move)) {
+						if (alpha > L_CHECK_MATE_LIMIT && beta < W_CHECK_MATE_LIMIT && !isInCheck && !pos.givesCheck(move)) {
 							if (evalScore == Integer.MIN_VALUE)
 								evalScore = eval.score(pos, alpha, beta);
 							if (depth/FULL_PLY == 1) {
@@ -737,9 +736,9 @@ public class Search implements Runnable {
 			if (qDepth < 0)
 				return bestScore;
 			// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
-			if (bestScore <= checkMateLim)
+			if (bestScore <= L_CHECK_MATE_LIMIT)
 				score = bestScore - distFromRoot;
-			else if (bestScore >= -checkMateLim)
+			else if (bestScore >= W_CHECK_MATE_LIMIT)
 				score = bestScore + distFromRoot;
 			else
 				score = bestScore;
@@ -928,6 +927,8 @@ public class Search implements Runnable {
 	
 	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
 	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
+	private final static int L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
+	private final static int W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
 	private final static int LMR = 1;													// Late move reduction.
@@ -1053,7 +1054,6 @@ public class Search implements Runnable {
 	 */
 	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
-		final int checkMateLim = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		Stack<Future<Integer>> futures;
 		compService = new ExecutorCompletionService<Integer>(threadPool);
 		nodes = new AtomicLong(0);
@@ -1080,7 +1080,7 @@ public class Search implements Runnable {
 			}
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
-				if (score <= checkMateLim) {
+				if (score <= L_CHECK_MATE_LIMIT) {
 					alpha = Termination.CHECK_MATE.score;
 					beta = -Termination.CHECK_MATE.score;
 					failLow = 2;
@@ -1095,7 +1095,7 @@ public class Search implements Runnable {
 				continue;
 			}
 			if (score >= beta) {
-				if (score >= -checkMateLim) {
+				if (score >= W_CHECK_MATE_LIMIT) {
 					alpha = Termination.CHECK_MATE.score;
 					beta = -Termination.CHECK_MATE.score;
 					failLow = 2;
@@ -1111,8 +1111,8 @@ public class Search implements Runnable {
 			}
 			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
 			failHigh = failLow = 0;
-			alpha = score >= -checkMateLim ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
-			beta = score <= checkMateLim ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
+			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
+			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
 		}
 	}
 	@Override
