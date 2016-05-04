@@ -248,8 +248,6 @@ public class Search implements Runnable {
 					  if (beta <= mateScore)
 						  return mateScore;
 				}
-				// Check extension (less than a whole ply because the quiescence search handles checks).
-				depth = isInCheck && qDepth == 0 ? depth + FULL_PLY/4 : depth;
 				// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 				e = tT.lookUp(pos.key);
 				if (e != null) {
@@ -293,17 +291,8 @@ public class Search implements Runnable {
 						isThereHashMove = true;
 					}
 				}
-				// Return the score from the quiescence search in case a leaf node has been reached.
-				if (depth/FULL_PLY <= 0) {
-					score = quiescence(qDepth, alpha, beta);
-					if (score > bestScore) {
-						bestMove = null;
-						bestScore = score;
-						if (score > alpha)
-							alpha = score;
-					}
-					break Search;
-				}
+				// Check extension (less than a whole ply because the quiescence search handles checks).
+				depth = isInCheck && qDepth == 0 ? depth + FULL_PLY/4 : depth;
 				lastMove = pos.getLastMove();
 				if (lastMove != null) {
 					lastMoveIsMaterial = lastMove.isMaterial();
@@ -319,6 +308,17 @@ public class Search implements Runnable {
 				}
 				else
 					lastMoveIsMaterial = false;
+				// Return the score from the quiescence search in case a leaf node has been reached.
+				if (depth/FULL_PLY <= 0) {
+					score = quiescence(qDepth, alpha, beta);
+					if (score > bestScore) {
+						bestMove = null;
+						bestScore = score;
+						if (score > alpha)
+							alpha = score;
+					}
+					break Search;
+				}
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
 				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= 5) {
 					extPly = ply;
