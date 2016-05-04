@@ -931,7 +931,7 @@ public class Search implements Runnable {
 	
 	private final static int NMR = 2;													// Null move pruning reduction.
 	private final static int LMR = 1;													// Late move reduction.
-	private final static int LMRMSM = 5;												// Min. number of searched moves for late move reduction
+	private final static int LMRMSM = 4;												// Min. number of searched moves for late move reduction
 	private final static int FMAR1 = Material.KNIGHT.score;								// Futility margin.
 	private final static int FMAR2 = Material.ROOK.score;								// Extended futility margin.
 	private final static int FMAR3 = Material.QUEEN.score;								// Razoring margin.
