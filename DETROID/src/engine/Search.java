@@ -204,7 +204,7 @@ public class Search implements Runnable {
 		 * @return The score of the position searched.
 		 */
 		private int pVsearch(int depth, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
-			final int distFromRoot = ply - depth/FULL_PLY;
+			final int distFromRoot = ply - (depth/FULL_PLY + qDepth);
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 			final int origAlpha = alpha;
 			final boolean isInCheck = pos.isInCheck;
@@ -251,8 +251,7 @@ public class Search implements Runnable {
 				e = tT.lookUp(pos.key);
 				if (e != null) {
 					e.generation = hashEntryGen;
-					// If the hashed entry's depth is greater than or equal to the current search depth, adjust alpha and beta accordingly or return
-					// the score if the entry stored a PV node. 
+					// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
 					if (!isPvNode && e.depth >= depth/FULL_PLY) {
 						// Mate score adjustment to root distance.
 						if (e.score <= L_CHECK_MATE_LIMIT)
@@ -732,9 +731,8 @@ public class Search implements Runnable {
 						break Search;
 				}
 			}
-			// If the search has been invoked from quiescence search, do not store entries in the TT.
-			if (qDepth < 0)
-				return bestScore;
+			// If the search has been invoked from quiescence search, adjust depth.
+			depth += qDepth*FULL_PLY;
 			// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
 			if (bestScore <= L_CHECK_MATE_LIMIT)
 				score = bestScore - distFromRoot;
@@ -767,15 +765,19 @@ public class Search implements Runnable {
 		public int quiescence(int depth, int alpha, int beta) {
 			final int distFromRoot = ply - depth;
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
+			final int origAlpha = alpha;
 			final boolean isInCheck = pos.isInCheck;
 			List<Move> materialMoves, allMoves;
 			Move[] moves;
-			Move move;
-			int bestScore, searchScore;
+			TTEntry e;
+			boolean isThereHashMove;
+			Move move, bestMove, hashMove;
+			int bestMoveInt;
+			int score, bestScore, searchScore;
 			if (depth != 0)
 				nodes.incrementAndGet();
 			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
-				doStopSearch.set(true);;
+				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
 			if (boundsChanged) {
@@ -790,79 +792,132 @@ public class Search implements Runnable {
 			// Just for my peace of mind.
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
-			// If the side to move is in check, stand-pat does not hold and the main search will be called later on so no moves need to be generated.
-			if (isInCheck) {
-				materialMoves = null;
-				bestScore = mateScore;
-			}
-			// Set lower bound.
-			else {
-				materialMoves = pos.getTacticalMoves();
-				if (materialMoves.length() == 0) {
-					allMoves = pos.getQuietMoves();
-					allMoves.addAll(materialMoves);
-				}
-				else
-					allMoves = null;
-				if (allMoves != null && allMoves.length() == 0)
-					bestScore = isInCheck ? mateScore : Termination.STALE_MATE.score;
-				// Check for the fifty-move rule; return a draw score if it applies.
-				else if (pos.fiftyMoveRuleClock >= 100)
-					return Termination.DRAW_CLAIMED.score;
-				else {
-					// Stand pat.
-					if (nullMoveObservHolds)
-						bestScore = eval.score(pos, alpha, beta);
-					// If the null move observation does not hold, the lower bound is the mate score; evaluate only if the position is quiet.
-					else
-						bestScore = materialMoves.length() == 0 ? eval.score(pos, alpha, beta) : mateScore;
-				}
-			}
-			// Fail soft.
-			if (bestScore > alpha) {
-				alpha = bestScore;
-				if (bestScore >= beta)
-					return bestScore;
-			}
 			// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
 			if (isInCheck) {
+				// If the side to move is in check, stand-pat does not hold and it's not enough to just search the material moves.
 				nodes.decrementAndGet();
-				searchScore = pVsearch(FULL_PLY, alpha, beta, false, depth - 1);
-				if (searchScore > bestScore) {
-					bestScore = searchScore;
-					if (bestScore > alpha)
-						alpha = bestScore;
-				}
+				return pVsearch(FULL_PLY, alpha, beta, false, depth - 1);
 			}
 			// Quiescence search.
 			else {
-				moves = orderMaterialMovesSEE(pos, materialMoves);
-				for (int i = 0; i < moves.length; i++) {
-					move = moves[i];
-					// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-					if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - Q_DELTA))
-						break;
-					pos.makeMove(move);
-					searchScore = -quiescence(depth - 1, -beta, -alpha);
-					pos.unmakeMove();
-					if (boundsChanged) {
-						if (this.alpha > alpha)
-							alpha = this.alpha;
-						if (this.beta < beta)
-							beta = this.beta;
-					}
-					if (searchScore > bestScore) {
-						bestScore = searchScore;
-						if (bestScore > alpha) {
-							alpha = bestScore;
-							if (alpha >= beta)
-								break;
+				QSearch: {
+					bestScore = mateScore;
+					isThereHashMove = false;
+					hashMove = null;
+					bestMove = null;
+					e = tT.lookUp(pos.key);
+					if (e != null) {
+						e.generation = hashEntryGen;
+						if (e.depth >= depth/FULL_PLY) {
+							// Mate score adjustment to root distance.
+							if (e.score <= L_CHECK_MATE_LIMIT)
+								score = e.score + distFromRoot;
+							else if (e.score >= W_CHECK_MATE_LIMIT)
+								score = e.score - distFromRoot;
+							else
+								score = e.score;
+							if (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_HIGH.ind && score >= beta) ||
+									(e.type == NodeType.FAIL_LOW.ind && score <= alpha))
+								return score;
+						}
+						if (e.bestMove != 0 && (!nullMoveObservHolds || e.score >= alpha - Q_DELTA)) {
+							hashMove = Move.toMove(e.bestMove);
+							isThereHashMove = true;
+							// If there is a hash move, search that first.
+							if (isThereHashMove) {
+								pos.makeMove(hashMove);
+								score = -quiescence(depth - 1, -beta, -alpha);
+								pos.unmakeMove();
+								if (score > bestScore) {
+									bestMove = hashMove;
+									bestScore = score;
+									if (score > alpha) {
+										alpha = score;
+										if (alpha >= beta)
+											break QSearch;
+									}
+								}
+							}
 						}
 					}
-					if (doStopSearch.get() || doStopThread)
-						break;
+					materialMoves = pos.getTacticalMoves();
+					if (materialMoves.length() == 0) {
+						allMoves = pos.getQuietMoves();
+						allMoves.addAll(materialMoves);
+					}
+					else
+						allMoves = null;
+					if (allMoves != null && allMoves.length() == 0) {
+						bestScore = Termination.STALE_MATE.score;
+						break QSearch;
+					}
+					// Check for the fifty-move rule; return a draw score if it applies.
+					else if (pos.fiftyMoveRuleClock >= 100)
+						return Termination.DRAW_CLAIMED.score;
+					else {
+						// Stand pat.
+						if (nullMoveObservHolds)
+							bestScore = eval.score(pos, alpha, beta);
+						// If the null move observation does not hold, the lower bound is the mate score; evaluate only if the position is quiet.
+						else
+							bestScore = materialMoves.length() == 0 ? eval.score(pos, alpha, beta) : mateScore;
+					}
+					// Fail soft.
+					if (bestScore > alpha) {
+						alpha = bestScore;
+						if (bestScore >= beta)
+							break QSearch;
+					}
+					moves = orderMaterialMovesSEE(pos, materialMoves);
+					for (int i = 0; i < moves.length; i++) {
+						move = moves[i];
+						// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
+						if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - Q_DELTA))
+							break;
+						// If this move was the hash move, skip it.
+						if (isThereHashMove && move.equals(hashMove)) {
+							isThereHashMove = false;
+							continue;
+						}
+						pos.makeMove(move);
+						searchScore = -quiescence(depth - 1, -beta, -alpha);
+						pos.unmakeMove();
+						if (boundsChanged) {
+							if (this.alpha > alpha)
+								alpha = this.alpha;
+							if (this.beta < beta)
+								beta = this.beta;
+						}
+						if (searchScore > bestScore) {
+							bestScore = searchScore;
+							if (bestScore > alpha) {
+								alpha = bestScore;
+								bestMove = move;
+								if (alpha >= beta)
+									break;
+							}
+						}
+						if (doStopSearch.get() || doStopThread)
+							break;
+					}
 				}
 			}
+			// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
+			if (bestScore <= L_CHECK_MATE_LIMIT)
+				score = bestScore - distFromRoot;
+			else if (bestScore >= W_CHECK_MATE_LIMIT)
+				score = bestScore + distFromRoot;
+			else
+				score = bestScore;
+			bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
+			//	Add new entry to the transposition table.
+			if (bestScore <= origAlpha)
+				tT.insert(new TTEntry(pos.key, (short)depth, NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, hashEntryGen));
+			else if (bestScore >= beta)
+				tT.insert(new TTEntry(pos.key, (short)depth, NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, hashEntryGen));
+			else
+				tT.insert(new TTEntry(pos.key, (short)depth, NodeType.EXACT.ind, (short)score, bestMoveInt, hashEntryGen));
+			// Return the unadjusted best score.
 			return bestScore;
 		}
 		/**
