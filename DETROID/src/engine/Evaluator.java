@@ -20,7 +20,7 @@ public final class Evaluator {
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
 	// The margin for lazy evaluation. The extended score should never differ by more than this value form the core score.
-	private final static int LAZY_EVAL_MAR = 399;
+	private final static int LAZY_EVAL_MAR = 479;
 	
 	// Distance tables for tropism.
 	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];
@@ -125,7 +125,7 @@ public final class Evaluator {
 		 -20,-30,-30,-40,-40,-30,-30,-20,
 		 -10,-20,-20,-20,-20,-20,-20,-10,
 		  20, 20,  0,  0,  0,  0, 20, 20,
-		  20, 30, 30,-10,  0,-10, 40, 20};
+		  20, 20, 20,-10,  0,-10, 40, 20};
 	private final static byte[] PST_W_KING_ENDGAME =
 		{-50,-40,-30,-20,-20,-30,-40,-50,
 		 -30,-20,-10,  0,  0,-10,-20,-30,
@@ -676,6 +676,9 @@ public final class Evaluator {
 		blackCoverage |= BitParallelMoveSets.getKingMoveSet(pos.blackKing, pos.allNonBlackOccupied);
 		extendedScore += 2*BitOperations.getHammingWeight(whiteCoverage);
 		extendedScore -= 2*BitOperations.getHammingWeight(blackCoverage);
+		// Piece attack. Max theoretical value: 80
+		extendedScore += 5*BitOperations.getHammingWeight(whiteCoverage & pos.allBlackOccupied);
+		extendedScore -= 5*BitOperations.getHammingWeight(blackCoverage & pos.allWhiteOccupied);
 		// Piece-king attack and defense. Max theoretical value: 40.
 		whiteKingZone = BitParallelMoveSets.getKingMoveSet(pos.whiteKing, -1);
 		blackKingZone = BitParallelMoveSets.getKingMoveSet(pos.blackKing, -1);
