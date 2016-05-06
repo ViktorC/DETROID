@@ -3,18 +3,18 @@ package engine;
 import engine.Board.File;
 
 /**
- * A class for set-wise move set and move mask generation.
+ * A class for bit parallel move set generation.
  * 
  * @author Viktor
  *
  */
-public final class MoveSet {
+public final class BitParallelMoveSet {
 	
-	private MoveSet() {
+	private BitParallelMoveSet() {
 		
 	}
 	/**
-	 * Generates a bitboard of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.
+	 * Generates a bitboard of the basic king's move set. Does not include target squares of castling; handles the wrap-around effect.
 	 * 
 	 * @param bitboard
 	 * @param allNonSameColorOccupied
@@ -26,7 +26,7 @@ public final class MoveSet {
 				(((king << 9) | (king >>> 7) | (king << 1)) & ~File.A.bits)) & allNonSameColorOccupied;
 	}
 	/**
-	 * Generates a bitboard of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.
+	 * Generates a bitboard of the basic knight's move set. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param knight
 	 * @param allNonSameColorOccupied
@@ -39,7 +39,7 @@ public final class MoveSet {
 				(((knight << 17) | (knight >>> 15)) & ~File.A.bits)) & allNonSameColorOccupied;
 	}
 	/**
-	 * Generates a bitboard of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
+	 * Generates a bitboard of the basic white pawn's capture set. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param whitePawns
 	 * @param allOpponentOccupied
@@ -49,7 +49,7 @@ public final class MoveSet {
 		return (((whitePawns << 7) & ~File.H.bits) | ((whitePawns << 9) & ~File.A.bits)) & allOpponentOccupied;
 	}
 	/**
-	 * Generates a bitboard of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
+	 * Generates a bitboard of the basic black pawn's capture set. Occupancies are disregarded. It handles the wrap-around effect.
 	 * 
 	 * @param blackPawns
 	 * @param allOpponentOccupied
@@ -59,7 +59,7 @@ public final class MoveSet {
 		return (((blackPawns >>> 9) & ~File.H.bits) | ((blackPawns >>> 7) & ~File.A.bits)) & allOpponentOccupied;
 	}
 	/**
-	 * Generates a bitboard of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It
+	 * Generates a bitboard of the basic white pawn's advance set. Double advance from initial square is included. Occupancies are disregarded. It
 	 * handles the wrap-around effect.
 	 * 
 	 * @param whitePawns
@@ -70,7 +70,7 @@ public final class MoveSet {
 		return (whitePawns << 8) & allEmpty;
 	}
 	/**
-	 * Generates a bitboard of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It
+	 * Generates a bitboard of the basic black pawn's advance set. Double advance from initial square is included. Occupancies are disregarded. It
 	 * handles the wrap-around effect.
 	 * 
 	 * @param blackPawns
@@ -139,7 +139,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long northFill(long generator, long propagator) {
+	final static long northFill(long generator, long propagator) {
 		generator  |= (generator  << 8)  & propagator;
 		propagator &= (propagator << 8);
 		generator  |= (generator  << 16) & propagator;
@@ -155,7 +155,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long southFill(long generator, long propagator) {
+	final static long southFill(long generator, long propagator) {
 		generator  |= (generator  >>> 8)  & propagator;
 		propagator &= (propagator >>> 8);
 		generator  |= (generator  >>> 16) & propagator;
@@ -172,7 +172,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long westFill(long generator, long propagator) {
+	final static long westFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
 		generator  |= (generator  >>> 1) & propagator;
 		propagator &= (propagator >>> 1);
@@ -190,7 +190,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long eastFill(long generator, long propagator) {
+	final static long eastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
 		generator  |= (generator  << 1) & propagator;
 		propagator &= (propagator << 1);
@@ -208,7 +208,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long northWestFill(long generator, long propagator) {
+	final static long northWestFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
 		generator  |= (generator  << 7)  & propagator;
 		propagator &= (propagator << 7);
@@ -226,7 +226,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long northEastFill(long generator, long propagator) {
+	final static long northEastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
 		generator  |= (generator  << 9)  & propagator;
 		propagator &= (propagator << 9);
@@ -244,7 +244,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long southWestFill(long generator, long propagator) {
+	final static long southWestFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
 		generator  |= (generator  >>> 9)  & propagator;
 		propagator &= (propagator >>> 9);
@@ -262,7 +262,7 @@ public final class MoveSet {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	static long southEastFill(long generator, long propagator) {
+	final static long southEastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
 		generator  |= (generator  >>> 7)  & propagator;
 		propagator &= (propagator >>> 7);

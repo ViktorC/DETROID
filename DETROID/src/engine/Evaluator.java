@@ -332,7 +332,7 @@ public final class Evaluator {
 		return false;
 	}
 	/**
-	 * Returns a phaseScore between 0 and 256 á la Fruit.
+	 * Returns a phaseScore between 0 and 256 ï¿½ la Fruit.
 	 * 
 	 * @param numOfQueens
 	 * @param numOfRooks
@@ -394,8 +394,8 @@ public final class Evaluator {
 		// Pawns are worth more towards the end of the game.
 		score += taperedEvalScore(materialScore, (int)(materialScore*1.5), phaseScore);
 		// Pawn chain.
-		whitePawnAttacks = ((pos.whitePawns << 7) & ~File.H.bits) | ((pos.whitePawns << 9) & ~File.A.bits);
-		blackPawnAttacks = ((pos.blackPawns >>> 7) & ~File.A.bits) | ((pos.blackPawns >>> 9) & ~File.H.bits);
+		whitePawnAttacks = BitParallelMoveSet.getWhitePawnCaptureSet(pos.whitePawns, -1);
+		blackPawnAttacks = BitParallelMoveSet.getBlackPawnCaptureSet(pos.blackPawns, -1);
 		score += 15*BitOperations.getHammingWeight(whitePawnAttacks & pos.whitePawns);
 		score -= 15*BitOperations.getHammingWeight(blackPawnAttacks & pos.blackPawns);
 		// Blocked pawns.
@@ -411,7 +411,7 @@ public final class Evaluator {
 		whiteFrontSpans |= whiteFrontSpans << 16;
 		whiteFrontSpans |= whiteFrontSpans << 32;
 		whitePawnNeighbours = whiteFrontSpans;
-		whiteFrontSpans = whiteFrontSpans | ((whiteFrontSpans << 7) & ~File.H.bits) | ((whiteFrontSpans << 9) & ~File.A.bits);
+		whiteFrontSpans = whiteFrontSpans | BitParallelMoveSet.getWhitePawnCaptureSet(whiteFrontSpans, -1);
 		whitePawnNeighbours |= whitePawnNeighbours >>> 8;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 16;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 32;
@@ -421,7 +421,7 @@ public final class Evaluator {
 		blackFrontSpans |= blackFrontSpans >>> 16;
 		blackFrontSpans |= blackFrontSpans >>> 32;
 		blackPawnNeighbours = blackFrontSpans;
-		blackFrontSpans = blackFrontSpans | ((blackFrontSpans >>> 7) & ~File.A.bits) | ((blackFrontSpans >>> 9) & ~File.H.bits);
+		blackFrontSpans = blackFrontSpans | BitParallelMoveSet.getBlackPawnCaptureSet(blackFrontSpans, -1);
 		blackPawnNeighbours |= blackPawnNeighbours << 8;
 		blackPawnNeighbours |= blackPawnNeighbours << 16;
 		blackPawnNeighbours |= blackPawnNeighbours << 32;
