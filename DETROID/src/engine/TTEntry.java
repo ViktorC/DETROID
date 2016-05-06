@@ -2,7 +2,6 @@ package engine;
 
 import util.HashTable;
 import util.SizeOf;
-import engine.Search.NodeType;
 
 /**
  * A transposition table entry that stores information about searched positions identified by the key such as the depth of the search, the best move from this

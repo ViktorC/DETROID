@@ -1,5 +1,7 @@
 package engine;
 
+import util.BitOperations;
+
 /*
  * A class to group together objects/enums exclusive to the chess board itself such as the squares, files, and ranks.
  * 
@@ -355,5 +357,22 @@ public final class Board {
 	
 	private Board() {
 		
+	}
+	/**
+	 * Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.
+	 * 
+	 * @param bitmap
+	 * @return
+	 */
+	public static String drawBitboard(long bitmap) {
+		String out = "";
+		String board = BitOperations.toBinaryString(bitmap);
+		for (int i = 0; i < 64; i += 8) {
+			for (int j = i + 7; j >= i; j--)
+				out += board.charAt(j);
+			out += "\n";
+		}
+		out += "\n";
+		return out;
 	}
 }

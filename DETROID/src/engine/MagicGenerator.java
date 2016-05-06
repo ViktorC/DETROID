@@ -26,14 +26,14 @@ public final class MagicGenerator {
 	 * @author Viktor
 	 *
 	 */
-	public static class Magics {
+	public static class Numbers {
 		
 		public final boolean rook;
 		public final byte sqrInd;
 		public final long magicNumber;
 		public final byte magicShift;
 		
-		public Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
+		public Numbers(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
 			this.rook = rook;
 			this.sqrInd = sqrInd;
 			this.magicNumber = magicNumber;
@@ -51,32 +51,52 @@ public final class MagicGenerator {
 		}
 	}
 	
-	private static long[][] rookOccupancyVariations;
-	private static long[][] bishopOccupancyVariations;
-	private static long[][] rookAttackSetVariations;
-	private static long[][] bishopAttackSetVariations;
+	private static MagicGenerator INSTANCE;
+	
+	private long[][] rookOccupancyVariations;
+	private long[][] bishopOccupancyVariations;
+	private long[][] rookAttackSetVariations;
+	private long[][] bishopAttackSetVariations;
 	
 	static {
-		rookOccupancyVariations = new long[64][];
-		for (Square sqr : Square.values())
-			rookOccupancyVariations[sqr.ordinal()] = BitOperations.getAllSubsets(Sliders.getRookOccupancyMask(sqr));
-		bishopOccupancyVariations = new long[64][];
-		for (Square sqr : Square.values())
-			bishopOccupancyVariations[sqr.ordinal()] = BitOperations.getAllSubsets(Sliders.getBishopOccupancyMask(sqr));
-		rookAttackSetVariations = new long[64][];
-		for (Square sqr : Square.values())
-			rookAttackSetVariations[sqr.ind] = Sliders.getRookAttackSetVariations(sqr, rookOccupancyVariations[sqr.ind]);
-		bishopAttackSetVariations = new long[64][];
-		for (Square sqr : Square.values())
-			bishopAttackSetVariations[sqr.ind] = Sliders.getBishopAttackSetVariations(sqr, bishopOccupancyVariations[sqr.ind]);
+		INSTANCE = new MagicGenerator();
 	}
 	
-	public MagicGenerator() {
-		
+	private MagicGenerator() {
+		long bit;
+		long[] bishopOccupancyMask, rookOccupancyMask;
+		bishopOccupancyMask = new long[64];
+		rookOccupancyMask = new long[64];
+		bishopOccupancyVariations = new long[64][];
+		rookOccupancyVariations = new long[64][];
+		bishopAttackSetVariations = new long[64][];
+		rookAttackSetVariations = new long[64][];
+		for (int i = 0; i < 64; i++) {
+			bit = 1L << i;
+			bishopOccupancyMask[i] = MoveSet.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
+			rookOccupancyMask[i] = (MoveSet.northFill(bit, ~Rank.R8.bits) | MoveSet.southFill(bit, ~Rank.R1.bits) |
+					MoveSet.westFill(bit, ~File.A.bits) | MoveSet.eastFill(bit, ~File.H.bits))^bit;
+			bishopOccupancyVariations[i] = BitOperations.getAllSubsets(bishopOccupancyMask[i]);
+			rookOccupancyVariations[i] = BitOperations.getAllSubsets(rookOccupancyMask[i]);
+			bishopAttackSetVariations[i] = new long[bishopOccupancyVariations[i].length];
+			rookAttackSetVariations[i] = new long[rookOccupancyVariations[i].length];
+			for (int j = 0; j < bishopOccupancyVariations[i].length; j++)
+				bishopAttackSetVariations[i][j] = MoveSet.getBishopMoveSet(bit, 0, ~bishopOccupancyVariations[i][j]);
+			for (int j = 0; j < rookOccupancyVariations[i].length; j++)
+				rookAttackSetVariations[i][j] = MoveSet.getRookMoveSet(bit, 0, ~rookOccupancyVariations[i][j]);
+		}
+	}
+	/**
+	 * Returns a {@link #engine.MagicGenerator MagicGenerator} instance.
+	 * 
+	 * @return
+	 */
+	public static MagicGenerator getInstance() {
+		return INSTANCE;
 	}
 	/**
 	 * Generates a magic number for the square specified by 'sqrInd' either for a rook or for a bishop depending on 'rook' and returns it in a
-	 * {@link #engine.MagicNumberGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right
+	 * {@link #engine.MagicGenerator.Magics Magics} instance. If enhanced is set true, it will try to find a magic that can be right
 	 * shifted by one more than the usual value resulting in denser tables.
 	 * called on.
 	 * 
@@ -85,7 +105,7 @@ public final class MagicGenerator {
 	 * @param enhanced
 	 * @return
 	 */
-	public Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+	public Numbers generateMagics(int sqrInd, boolean rook, boolean enhanced) {
 		long[] magicDatabase;
 		Random random = new Random();
 		long magicNumber;
@@ -121,7 +141,7 @@ public final class MagicGenerator {
 			}
 		}
 		while (collision);
-		return new Magics(rook, (byte)sqrInd, magicNumber, (byte)shift);
+		return new Numbers(rook, (byte)sqrInd, magicNumber, (byte)shift);
 	}
 	/**
 	 * Generates magic numbers for each square either for a rook or a bishop depending on 'rook' and returns them in a
@@ -133,8 +153,8 @@ public final class MagicGenerator {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
-		Magics[] allMagics = new Magics[64];
+	public Numbers[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
+		Numbers[] allMagics = new Numbers[64];
 		OuterLoop: for (int i = 0; i < 64; i++) {
 			for (int sqr : enhancedSquares) {
 				if (sqr == i) {
@@ -146,7 +166,7 @@ public final class MagicGenerator {
 		}
 		if (print) {
 			System.out.format("%-6s %-3s %-21s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
-			for (Magics m : allMagics)
+			for (Numbers m : allMagics)
 				System.out.println(m);
 		}
 		return allMagics;

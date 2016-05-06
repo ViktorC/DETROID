@@ -108,6 +108,9 @@ public enum MoveSetDatabase {
 	 */
 	private MoveSetDatabase(long rookMagicNumber, long bishopMagicNumber, int rookMagicShift, int bishopMagicShift) {
 		int index;
+		long bit;
+		long[] bishopOccupancyVariations, rookOccupancyVariations;
+		long[] bishopAttackSetVariations, rookAttackSetVariations;
 		this.rookMagicNumber = rookMagicNumber;
 		this.bishopMagicNumber = bishopMagicNumber;
 		this.rookMagicShift = (byte)rookMagicShift;
@@ -115,124 +118,35 @@ public enum MoveSetDatabase {
 		sqrInd = (byte)ordinal();
 		rookMoveSets = new long[1 << (64 - rookMagicShift)];
 		bishopMoveSets = new long[1 << (64 - bishopMagicShift)];
-		Square sqr = Square.getByIndex(sqrInd);
-		rookOccupancyMask = Sliders.getRookOccupancyMask(sqr);
-		bishopOccupancyMask = Sliders.getBishopOccupancyMask(sqr);
-		long[] rookOccVar = BitOperations.getAllSubsets(rookOccupancyMask);
-		long[] bishopOccVar = BitOperations.getAllSubsets(bishopOccupancyMask);
-		long[] rookAttVar = Sliders.getRookAttackSetVariations(sqr, rookOccVar);
-		long[] bishopAttVar = Sliders.getBishopAttackSetVariations(sqr, bishopOccVar);
-		for (int i = 0; i < rookOccVar.length; i++) {
-			index = (int)((rookOccVar[i]*rookMagicNumber) >>> rookMagicShift);
-			rookMoveSets[index] = rookAttVar[i];
+		bit = 1L << sqrInd;
+		bishopOccupancyMask = MoveSet.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
+		rookOccupancyMask = (MoveSet.northFill(bit, ~Rank.R8.bits) | MoveSet.southFill(bit, ~Rank.R1.bits) |
+				MoveSet.westFill(bit, ~File.A.bits) | MoveSet.eastFill(bit, ~File.H.bits))^bit;
+		bishopOccupancyVariations = BitOperations.getAllSubsets(bishopOccupancyMask);
+		rookOccupancyVariations = BitOperations.getAllSubsets(rookOccupancyMask);
+		bishopAttackSetVariations = new long[bishopOccupancyVariations.length];
+		rookAttackSetVariations = new long[rookOccupancyVariations.length];
+		for (int i = 0; i < bishopOccupancyVariations.length; i++)
+			bishopAttackSetVariations[i] = MoveSet.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i]);
+		for (int i = 0; i < rookOccupancyVariations.length; i++) {
+			rookAttackSetVariations[i] = MoveSet.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i]);
+			System.out.println(Board.drawBitboard(rookOccupancyVariations[i]));
+			System.out.println(Board.drawBitboard(rookAttackSetVariations[i]));
 		}
-		for (int i = 0; i < bishopOccVar.length; i++) {
-			index = (int)((bishopOccVar[i]*bishopMagicNumber) >>> bishopMagicShift);
-			bishopMoveSets[index] = bishopAttVar[i];
+		for (int i = 0; i < rookOccupancyVariations.length; i++) {
+			index = (int)((rookOccupancyVariations[i]*rookMagicNumber) >>> rookMagicShift);
+			rookMoveSets[index] = rookAttackSetVariations[i];
 		}
-		kingMoveMask = kingMoveMask(sqr);
-		knightMoveMask = knightMoveMask(sqr);
-		pawnWhiteAdvanceMoveMask = whitePawnAdvanceMask(sqr);
-		pawnWhiteCaptureMoveMask = whitePawnCaptureMask(sqr);
-		pawnBlackAdvanceMoveMask = blackPawnAdvanceMask(sqr);
-		pawnBlackCaptureMoveMask = blackPawnCaptureMask(sqr);
-	}
-	/**
-	 * Generates a bitmap of the basic king's move mask. Does not include target squares of castling; handles the wrap-around effect.
-	 * 
-	 * @param sqr
-	 * @return
-	 */
-	private final static long kingMoveMask(Square sqr) {
-		long mask;
-		mask =	(sqr.bit << 7)  | (sqr.bit << 8)  | (sqr.bit << 9)  |
-				(sqr.bit << 1)    			    	| (sqr.bit >>> 1) |
-				(sqr.bit >>> 9) | (sqr.bit >>> 8) | (sqr.bit >>> 7) ;
-		if (sqr.ind%8 == 0)
-			mask &= ~File.H.bits;
-		else if ((sqr.ind + 1)%8 == 0)
-			mask &= ~File.A.bits;
-		return mask;
-	}
-	/**
-	 * Generates a bitmap of the basic knight's move mask. Occupancies are disregarded. It handles the wrap-around effect.
-	 * 
-	 * @param sqr
-	 * @return
-	 */
-	private final static long knightMoveMask(Square sqr) {
-		long mask;
-		mask =		 	(sqr.bit << 15)	| (sqr.bit << 17) |
-				(sqr.bit << 6)			| 		  (sqr.bit << 10)   |
-				(sqr.bit >>> 10)			|		  (sqr.bit >>> 6)   |
-						(sqr.bit >>> 17)	| (sqr.bit >>> 15);
-		if (sqr.ind%8 == 0)
-			mask &= ~(File.H.bits | File.G.bits);
-		else if ((sqr.ind - 1)%8 == 0)
-			mask &= ~File.H.bits;
-		else if ((sqr.ind + 1)%8 == 0)
-			mask &= ~(File.A.bits | File.B.bits);
-		else if ((sqr.ind + 2)%8 == 0)
-			mask &= ~File.A.bits;
-		return mask;
-	}
-	/**
-	 * Generates a bitmap of the basic white pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
-	 * 
-	 * @param sqr
-	 * @return
-	 */
-	private final static long whitePawnCaptureMask(Square sqr) {
-		long mask;
-		if (sqr.ind > 55)
-				return 0;
-		mask = (sqr.bit << 7) | (sqr.bit << 9);
-		if (sqr.ind%8 == 0)
-			mask &= ~File.H.bits;
-		else if ((sqr.ind + 1)%8 == 0)
-			mask &= ~File.A.bits;
-		return mask;
-	}
-	/**
-	 * Generates a bitmap of the basic black pawn's capture mask. Occupancies are disregarded. It handles the wrap-around effect.
-	 * 
-	 * @param sqr
-	 * @return
-	 */
-	private final static long blackPawnCaptureMask(Square sqr) {
-		long mask;
-		if (sqr.ind < 8)
-				return 0;
-		mask = (sqr.bit >>> 9) | (sqr.bit >>> 7);
-		if (sqr.ind%8 == 0)
-			mask &= ~File.H.bits;
-		else if ((sqr.ind + 1)%8 == 0)
-			mask &= ~File.A.bits;
-		return mask;
-	}
-	/**
-	 * Generates a bitmap of the basic white pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It
-	 * handles the wrap-around effect.
-	 * 
-	 * @param sqr
-	 * @return
-	 */
-	private final static long whitePawnAdvanceMask(Square sqr) {
-		if (sqr.ind < 8 || sqr.ind > 55)
-			return 0;
-		return sqr.bit << 8;
-	}
-	/**
-	 * Generates a bitmap of the basic black pawn's advance mask. Double advance from initial square is included. Occupancies are disregarded. It
-	 * handles the wrap-around effect.
-	 * 
-	 * @param sqr
-	 * @return
-	 */
-	private final static long blackPawnAdvanceMask(Square sqr) {
-		if (sqr.ind < 8 || sqr.ind > 55)
-			return 0;
-		return sqr.bit >>> 8;
+		for (int i = 0; i < bishopOccupancyVariations.length; i++) {
+			index = (int)((bishopOccupancyVariations[i]*bishopMagicNumber) >>> bishopMagicShift);
+			bishopMoveSets[index] = bishopAttackSetVariations[i];
+		}
+		kingMoveMask = MoveSet.getKingMoveSet(bit, 0);
+		knightMoveMask = MoveSet.getKnightMoveSet(bit, 0);
+		pawnWhiteAdvanceMoveMask = MoveSet.getWhitePawnAdvanceSet(bit, -1);
+		pawnWhiteCaptureMoveMask = MoveSet.getWhitePawnCaptureSet(bit, -1);
+		pawnBlackAdvanceMoveMask = MoveSet.getBlackPawnAdvanceSet(bit, -1);
+		pawnBlackCaptureMoveMask = MoveSet.getBlackPawnCaptureSet(bit, -1);
 	}
 	/**
 	 * Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.
@@ -262,20 +176,20 @@ public enum MoveSetDatabase {
 	/**
 	 * Returns a king's pseudo-legal move set.
 	 * 
-	 * @param allNonSameColorOccupied
+	 * @param allOpponentOccupied
 	 * @return
 	 */
-	public long getKingMoveSet(long allNonSameColorOccupied) {
-		return kingMoveMask & allNonSameColorOccupied;
+	public long getKingMoveSet(long allOpponentOccupied) {
+		return kingMoveMask & allOpponentOccupied;
 	}
 	/**
 	 * Returns a knight's pseudo-legal move set.
 	 * 
-	 * @param allNonSameColorOccupied
+	 * @param allOpponentOccupied
 	 * @return
 	 */
-	public long getKnightMoveSet(long allNonSameColorOccupied) {
-		return knightMoveMask & allNonSameColorOccupied;
+	public long getKnightMoveSet(long allOpponentOccupied) {
+		return knightMoveMask & allOpponentOccupied;
 	}
 	/**
 	 * Returns a white pawn's pseudo-legal attack set.
@@ -348,34 +262,34 @@ public enum MoveSetDatabase {
 	/**
 	 * Returns a rook's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allNonSameColorOccupied
+	 * @param allOpponentOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getRookMoveSet(long allNonSameColorOccupied, long allOccupied) {
-		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonSameColorOccupied;
+	public long getRookMoveSet(long allOpponentOccupied, long allOccupied) {
+		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allOpponentOccupied;
 	}
 	
 	/**
 	 * Returns a bishop's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allNonSameColorOccupied
+	 * @param allOpponentOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getBishopMoveSet(long allNonSameColorOccupied, long allOccupied) {
-		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonSameColorOccupied;
+	public long getBishopMoveSet(long allOpponentOccupied, long allOccupied) {
+		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allOpponentOccupied;
 	}
 	/**
 	 * Returns a queen's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allNonSameColorOccupied
+	 * @param allOpponentOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getQueenMoveSet(long allNonSameColorOccupied, long allOccupied) {
+	public long getQueenMoveSet(long allOpponentOccupied, long allOccupied) {
 		return (rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
-			    bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonSameColorOccupied;
+			    bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allOpponentOccupied;
 	}
 	/**
 	 * Returns a MoveDatabase enum instance that holds the preinitialized move sets for the square specified by the given square index, sqrInd.
