@@ -8,9 +8,9 @@ import engine.Board.File;
  * @author Viktor
  *
  */
-public final class BitParallelMoveSet {
+public final class BitParallelMoveSets {
 	
-	private BitParallelMoveSet() {
+	private BitParallelMoveSets() {
 		
 	}
 	/**

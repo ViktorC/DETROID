@@ -119,17 +119,17 @@ public enum MoveSetDatabase {
 		rookMoveSets = new long[1 << (64 - rookMagicShift)];
 		bishopMoveSets = new long[1 << (64 - bishopMagicShift)];
 		bit = 1L << sqrInd;
-		bishopOccupancyMask = BitParallelMoveSet.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
-		rookOccupancyMask = (BitParallelMoveSet.northFill(bit, ~Rank.R8.bits) | BitParallelMoveSet.southFill(bit, ~Rank.R1.bits) |
-				BitParallelMoveSet.westFill(bit, ~File.A.bits) | BitParallelMoveSet.eastFill(bit, ~File.H.bits))^bit;
+		bishopOccupancyMask = BitParallelMoveSets.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
+		rookOccupancyMask = (BitParallelMoveSets.northFill(bit, ~Rank.R8.bits) | BitParallelMoveSets.southFill(bit, ~Rank.R1.bits) |
+				BitParallelMoveSets.westFill(bit, ~File.A.bits) | BitParallelMoveSets.eastFill(bit, ~File.H.bits))^bit;
 		bishopOccupancyVariations = BitOperations.getAllSubsets(bishopOccupancyMask);
 		rookOccupancyVariations = BitOperations.getAllSubsets(rookOccupancyMask);
 		bishopAttackSetVariations = new long[bishopOccupancyVariations.length];
 		rookAttackSetVariations = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < bishopOccupancyVariations.length; i++)
-			bishopAttackSetVariations[i] = BitParallelMoveSet.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i]);
+			bishopAttackSetVariations[i] = BitParallelMoveSets.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i]);
 		for (int i = 0; i < rookOccupancyVariations.length; i++) {
-			rookAttackSetVariations[i] = BitParallelMoveSet.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i]);
+			rookAttackSetVariations[i] = BitParallelMoveSets.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i]);
 			System.out.println(Board.drawBitboard(rookOccupancyVariations[i]));
 			System.out.println(Board.drawBitboard(rookAttackSetVariations[i]));
 		}
@@ -141,12 +141,12 @@ public enum MoveSetDatabase {
 			index = (int)((bishopOccupancyVariations[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishopMoveSets[index] = bishopAttackSetVariations[i];
 		}
-		kingMoveMask = BitParallelMoveSet.getKingMoveSet(bit, 0);
-		knightMoveMask = BitParallelMoveSet.getKnightMoveSet(bit, 0);
-		pawnWhiteAdvanceMoveMask = BitParallelMoveSet.getWhitePawnAdvanceSet(bit, -1);
-		pawnWhiteCaptureMoveMask = BitParallelMoveSet.getWhitePawnCaptureSet(bit, -1);
-		pawnBlackAdvanceMoveMask = BitParallelMoveSet.getBlackPawnAdvanceSet(bit, -1);
-		pawnBlackCaptureMoveMask = BitParallelMoveSet.getBlackPawnCaptureSet(bit, -1);
+		kingMoveMask = BitParallelMoveSets.getKingMoveSet(bit, 0);
+		knightMoveMask = BitParallelMoveSets.getKnightMoveSet(bit, 0);
+		pawnWhiteAdvanceMoveMask = BitParallelMoveSets.getWhitePawnAdvanceSet(bit, -1);
+		pawnWhiteCaptureMoveMask = BitParallelMoveSets.getWhitePawnCaptureSet(bit, -1);
+		pawnBlackAdvanceMoveMask = BitParallelMoveSets.getBlackPawnAdvanceSet(bit, -1);
+		pawnBlackCaptureMoveMask = BitParallelMoveSets.getBlackPawnCaptureSet(bit, -1);
 	}
 	/**
 	 * Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.

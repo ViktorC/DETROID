@@ -521,11 +521,11 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @param forWhite
 	 * @return
 	 */
-	public long getPinnedPieces() {
+	public long getPinnedPieces(boolean forWhite) {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders, pinnedPiece, pinnedPieces = 0;
 		Ray attRayMask;
-		if (isWhitesTurn) {
+		if (forWhite) {
 			attRayMask = Ray.getByIndex(BitOperations.indexOfBit(whiteKing));
 			rankPos = attRayMask.rankPos & allOccupied;
 			rankNeg = attRayMask.rankNeg & allOccupied;
@@ -1736,7 +1736,7 @@ public class Position implements Hashable, Copiable<Position> {
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.isWhitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			movablePieces = ~getPinnedPieces();
+			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allBlackOccupied);
 			if (BitOperations.resetLSBit(checkers) == 0) {
@@ -1913,7 +1913,7 @@ public class Position implements Hashable, Copiable<Position> {
 	}
 	else {
 		king = BitOperations.indexOfBit(blackKing);
-		movablePieces = ~getPinnedPieces();
+		movablePieces = ~getPinnedPieces(isWhitesTurn);
 		kingDb = MoveSetDatabase.getByIndex(king);
 		kingMoveSet = kingDb.getKingMoveSet(allWhiteOccupied);
 		if (BitOperations.resetLSBit(checkers) == 0) {
@@ -2105,7 +2105,7 @@ public class Position implements Hashable, Copiable<Position> {
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.isWhitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			movablePieces = ~getPinnedPieces();
+			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allEmpty);
 			if (BitOperations.resetLSBit(checkers) == 0) {
@@ -2229,7 +2229,7 @@ public class Position implements Hashable, Copiable<Position> {
 		}
 		else {
 			king = BitOperations.indexOfBit(blackKing);
-			movablePieces = ~getPinnedPieces();
+			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allEmpty);
 			if (BitOperations.resetLSBit(checkers) == 0) {

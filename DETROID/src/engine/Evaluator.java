@@ -381,9 +381,12 @@ public final class Evaluator {
 		int score, materialScore;
 		byte numOfWhitePawns, numOfBlackPawns;
 		long whitePawnAttacks, blackPawnAttacks;
+		long whiteAdvanceSpans, blackAdvanceSpans;
+		long whiteAttackSpans, blackAttackSpans;
 		long whiteFrontSpans, blackFrontSpans;
 		long whitePawnNeighbours, blackPawnNeighbours;
 		long whitePassers, blackPassers;
+		long whiteBackwardPawns, blackBackwardPawns;
 		long whiteKingZone, blackKingZone;
 		byte[] whitePawns, blackPawns;
 		score = 0;
@@ -393,45 +396,55 @@ public final class Evaluator {
 		materialScore = (numOfWhitePawns - numOfBlackPawns)*Material.PAWN.score;
 		// Pawns are worth more towards the end of the game.
 		score += taperedEvalScore(materialScore, (int)(materialScore*1.5), phaseScore);
-		// Pawn chain.
-		whitePawnAttacks = BitParallelMoveSet.getWhitePawnCaptureSet(pos.whitePawns, -1);
-		blackPawnAttacks = BitParallelMoveSet.getBlackPawnCaptureSet(pos.blackPawns, -1);
-		score += 15*BitOperations.getHammingWeight(whitePawnAttacks & pos.whitePawns);
-		score -= 15*BitOperations.getHammingWeight(blackPawnAttacks & pos.blackPawns);
+		// Pawn defense.
+		whitePawnAttacks = BitParallelMoveSets.getWhitePawnCaptureSet(pos.whitePawns, -1);
+		blackPawnAttacks = BitParallelMoveSets.getBlackPawnCaptureSet(pos.blackPawns, -1);
+		score += 20*BitOperations.getHammingWeight(whitePawnAttacks & pos.whitePawns);
+		score -= 20*BitOperations.getHammingWeight(blackPawnAttacks & pos.blackPawns);
 		// Blocked pawns.
-		score -= 25*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.whitePawns);
-		score -= 10*BitOperations.getHammingWeight((pos.whitePawns << 16) & pos.whitePawns);
-		score -= 5*BitOperations.getHammingWeight((pos.whitePawns << 24) & pos.whitePawns);
-		score += 25*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.blackPawns);
-		score += 10*BitOperations.getHammingWeight((pos.blackPawns >>> 16) & pos.blackPawns);
-		score += 5*BitOperations.getHammingWeight((pos.blackPawns >>> 24) & pos.blackPawns);
-		// Isolated and passed pawns.
-		whiteFrontSpans = pos.whitePawns;
-		whiteFrontSpans |= whiteFrontSpans << 8;
-		whiteFrontSpans |= whiteFrontSpans << 16;
-		whiteFrontSpans |= whiteFrontSpans << 32;
-		whitePawnNeighbours = whiteFrontSpans;
-		whiteFrontSpans = whiteFrontSpans | BitParallelMoveSet.getWhitePawnCaptureSet(whiteFrontSpans, -1);
+		score -= 30*BitOperations.getHammingWeight((pos.whitePawns << 8) & pos.whitePawns);
+		score -= 20*BitOperations.getHammingWeight((pos.whitePawns << 16) & pos.whitePawns);
+		score -= 10*BitOperations.getHammingWeight((pos.whitePawns << 24) & pos.whitePawns);
+		score += 30*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & pos.blackPawns);
+		score += 20*BitOperations.getHammingWeight((pos.blackPawns >>> 16) & pos.blackPawns);
+		score += 10*BitOperations.getHammingWeight((pos.blackPawns >>> 24) & pos.blackPawns);
+		// Passed pawns.
+		whiteAdvanceSpans = pos.whitePawns << 8;
+		whiteAdvanceSpans |= whiteAdvanceSpans << 16;
+		whiteAdvanceSpans |= whiteAdvanceSpans << 32;
+		whiteAttackSpans = ((whiteAdvanceSpans >>> 1) & ~File.H.bits) | ((whiteAdvanceSpans << 1) & ~File.A.bits);
+		whiteFrontSpans = whiteAdvanceSpans | whiteAttackSpans;
+		blackAdvanceSpans = pos.blackPawns >>> 8;
+		blackAdvanceSpans |= blackAdvanceSpans >>> 16;
+		blackAdvanceSpans |= blackAdvanceSpans >>> 32;
+		blackAttackSpans = ((blackAdvanceSpans >>> 1) & ~File.H.bits) | ((blackAdvanceSpans << 1) & ~File.A.bits);
+		blackFrontSpans = blackAdvanceSpans | blackAttackSpans;
+		// Only count one even if there are multiple pawns on the passer's file.
+		whitePassers = BitOperations.getHammingWeight(pos.whitePawns & ~blackFrontSpans & ~whiteAdvanceSpans);
+		blackPassers = BitOperations.getHammingWeight(pos.blackPawns & ~whiteFrontSpans & ~blackAdvanceSpans);
+		score += 40*whitePassers;
+		score -= 40*blackPassers;
+		// Isolated pawns.
+		whitePawnNeighbours = whiteAdvanceSpans;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 8;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 16;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 32;
-		whitePawnNeighbours = whitePawnNeighbours | ((whitePawnNeighbours >>> 1) & ~File.H.bits) | ((whitePawnNeighbours << 1) & ~File.A.bits);
-		blackFrontSpans = pos.blackPawns;
-		blackFrontSpans |= blackFrontSpans >>> 8;
-		blackFrontSpans |= blackFrontSpans >>> 16;
-		blackFrontSpans |= blackFrontSpans >>> 32;
-		blackPawnNeighbours = blackFrontSpans;
-		blackFrontSpans = blackFrontSpans | BitParallelMoveSet.getBlackPawnCaptureSet(blackFrontSpans, -1);
+		blackPawnNeighbours = blackAdvanceSpans;
 		blackPawnNeighbours |= blackPawnNeighbours << 8;
 		blackPawnNeighbours |= blackPawnNeighbours << 16;
 		blackPawnNeighbours |= blackPawnNeighbours << 32;
-		blackPawnNeighbours = blackPawnNeighbours | ((blackPawnNeighbours >>> 1) & ~File.H.bits) | ((blackPawnNeighbours << 1) & ~File.A.bits);
-		score -= 5*BitOperations.getHammingWeight(~whitePawnNeighbours & pos.whitePawns); // Isolated pawns.
-		score += 5*BitOperations.getHammingWeight(~blackPawnNeighbours & pos.blackPawns);
-		whitePassers = BitOperations.getHammingWeight(pos.whitePawns & ~((whiteFrontSpans & ~pos.whitePawns) | blackFrontSpans)); // Passed pawns.
-		blackPassers = BitOperations.getHammingWeight(pos.blackPawns & ~((blackFrontSpans & ~pos.blackPawns) | whiteFrontSpans));
-		score += 35*whitePassers;
-		score -= 35*blackPassers;
+		score -= 10*BitOperations.getHammingWeight(~whitePawnNeighbours & pos.whitePawns);
+		score += 10*BitOperations.getHammingWeight(~blackPawnNeighbours & pos.blackPawns);
+		// Backward pawns.
+		whiteBackwardPawns = (pos.whitePawns << 8) & blackAttackSpans & ~whiteFrontSpans;
+		score -= 25*BitOperations.getHammingWeight(whiteBackwardPawns);
+		// Extra penalty if already stopped by the sentry and if it is an open pawn.
+		score -= 15*BitOperations.getHammingWeight(BitParallelMoveSets.getBlackPawnCaptureSet(pos.blackPawns, whiteBackwardPawns));
+		score -= 10*BitOperations.getHammingWeight(whiteBackwardPawns & ~blackAdvanceSpans);
+		blackBackwardPawns = (pos.blackPawns >>> 8) & whiteAttackSpans & ~blackFrontSpans;
+		score += 25*BitOperations.getHammingWeight(blackBackwardPawns);
+		score += 15*BitOperations.getHammingWeight(BitParallelMoveSets.getWhitePawnCaptureSet(pos.whitePawns, blackBackwardPawns));
+		score += 10*BitOperations.getHammingWeight(blackBackwardPawns & ~whiteAdvanceSpans);
 		// King safety.
 		// Pawn shield and pawn storm.
 		if (pos.whiteKing == Square.G1.bit || pos.whiteKing == Square.H1.bit) {
@@ -523,9 +536,12 @@ public final class Evaluator {
 			numOfBlackKnights, numOfAllPieces;
 		int bishopField, bishopColor, newBishopColor, phase, piece;
 		int whiteDistToBlackKing, blackDistToWhiteKing, whiteKingInd, blackKingInd;
+		long whitePinnedPieces, blackPinnedPieces;
+		long whiteMovablePieces, blackMovablePieces;
+		long whiteCoverage, blackCoverage;
 		ByteList whitePieces, blackPieces;
 		short pawnScore, baseScore, openingScore, endgameScore, score, extendedScore;
-		byte[] bishopSqrArr, offsetBoard;;
+		byte[] bishopSqrArr, offsetBoard;
 		boolean isWhitesTurn;
 		ETEntry eE;
 		PTEntry pE;
@@ -614,7 +630,7 @@ public final class Evaluator {
 			blackKingInd = BitOperations.indexOfBit(pos.blackKing);
 		}
 		// Coverage
-		
+		whitePinnedPieces = pos.getPinnedPieces();
 		// Piece-king attack and defense
 		
 		// Piece-king tropism

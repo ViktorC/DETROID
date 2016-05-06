@@ -73,17 +73,17 @@ public final class MagicGenerator {
 		rookAttackSetVariations = new long[64][];
 		for (int i = 0; i < 64; i++) {
 			bit = 1L << i;
-			bishopOccupancyMask[i] = BitParallelMoveSet.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
-			rookOccupancyMask[i] = (BitParallelMoveSet.northFill(bit, ~Rank.R8.bits) | BitParallelMoveSet.southFill(bit, ~Rank.R1.bits) |
-					BitParallelMoveSet.westFill(bit, ~File.A.bits) | BitParallelMoveSet.eastFill(bit, ~File.H.bits))^bit;
+			bishopOccupancyMask[i] = BitParallelMoveSets.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
+			rookOccupancyMask[i] = (BitParallelMoveSets.northFill(bit, ~Rank.R8.bits) | BitParallelMoveSets.southFill(bit, ~Rank.R1.bits) |
+					BitParallelMoveSets.westFill(bit, ~File.A.bits) | BitParallelMoveSets.eastFill(bit, ~File.H.bits))^bit;
 			bishopOccupancyVariations[i] = BitOperations.getAllSubsets(bishopOccupancyMask[i]);
 			rookOccupancyVariations[i] = BitOperations.getAllSubsets(rookOccupancyMask[i]);
 			bishopAttackSetVariations[i] = new long[bishopOccupancyVariations[i].length];
 			rookAttackSetVariations[i] = new long[rookOccupancyVariations[i].length];
 			for (int j = 0; j < bishopOccupancyVariations[i].length; j++)
-				bishopAttackSetVariations[i][j] = BitParallelMoveSet.getBishopMoveSet(bit, 0, ~bishopOccupancyVariations[i][j]);
+				bishopAttackSetVariations[i][j] = BitParallelMoveSets.getBishopMoveSet(bit, 0, ~bishopOccupancyVariations[i][j]);
 			for (int j = 0; j < rookOccupancyVariations[i].length; j++)
-				rookAttackSetVariations[i][j] = BitParallelMoveSet.getRookMoveSet(bit, 0, ~rookOccupancyVariations[i][j]);
+				rookAttackSetVariations[i][j] = BitParallelMoveSets.getRookMoveSet(bit, 0, ~rookOccupancyVariations[i][j]);
 		}
 	}
 	/**
