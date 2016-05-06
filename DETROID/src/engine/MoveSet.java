@@ -91,13 +91,13 @@ public final class MoveSet {
 	public final static long getBishopMoveSet(long bishops, long allOpponentOccupied, long allEmpty) {
 		long gen, attackSet = 0;
 		gen = northWestFill(bishops, allEmpty);
-		attackSet |= gen | (((gen << 7) & File.H.bits) & allOpponentOccupied);
+		attackSet |= gen | (((gen << 7) & ~File.H.bits) & allOpponentOccupied);
 		gen = southWestFill(bishops, allEmpty);
-		attackSet |= gen | (((gen >>> 9) & File.H.bits) & allOpponentOccupied);
+		attackSet |= gen | (((gen >>> 9) & ~File.H.bits) & allOpponentOccupied);
 		gen = northEastFill(bishops, allEmpty);
-		attackSet |= gen | (((gen << 9) & File.A.bits) & allOpponentOccupied);
+		attackSet |= gen | (((gen << 9) & ~File.A.bits) & allOpponentOccupied);
 		gen = southEastFill(bishops, allEmpty);
-		attackSet |= gen | (((gen >>> 7) & File.A.bits) & allOpponentOccupied);
+		attackSet |= gen | (((gen >>> 7) & ~File.A.bits) & allOpponentOccupied);
 		return attackSet^bishops;
 	}
 	/**
@@ -115,9 +115,9 @@ public final class MoveSet {
 		gen = southFill(rooks, allEmpty);
 		attackSet |= gen | ((gen >>> 8) & allOpponentOccupied);
 		gen = westFill(rooks, allEmpty);
-		attackSet |= gen | (((gen >>> 1) & File.H.bits) & allOpponentOccupied);
+		attackSet |= gen | (((gen >>> 1) & ~File.H.bits) & allOpponentOccupied);
 		gen = eastFill(rooks, allEmpty);
-		attackSet |= gen | (((gen << 1) & File.A.bits) & allOpponentOccupied);
+		attackSet |= gen | (((gen << 1) & ~File.A.bits) & allOpponentOccupied);
 		return attackSet^rooks;
 	}
 	/**
