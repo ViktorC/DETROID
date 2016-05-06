@@ -41,7 +41,7 @@ public class Playground {
 		Scanner in = new Scanner(System.in);
 		boolean outOfBook = false;
 		while (p.getMoves().length() != 0) {
-			if (p.isWhitesTurn) {
+			if (!p.isWhitesTurn) {
 				if (!outOfBook) {
 					bookMove = book.getMove(p, SelectionModel.STOCHASTIC);
 					if (bookMove != null) {
@@ -53,7 +53,7 @@ public class Playground {
 						outOfBook = true;
 					}
 				}
-				Search s = new Search(p, 0, 0, 10000, 0, 0, moveRestrictions, hT, gen, tT, eT, pT, 1);
+				Search s = new Search(p, 0, 0, outOfBook ? 20000 : 5000, 0, 0, moveRestrictions, hT, gen, tT, eT, pT, 1);
 				r = s.getResults();
 				r.addObserver(new PVO());
 				s.run();
@@ -67,8 +67,8 @@ public class Playground {
 				//!FIXME If the tables are not cleared after each search, the PVs are cut short.
 				else {
 					tT.remove(e -> e.generation <= gen);
-					eT.remove(e -> e.generation <= gen);
-					pT.remove(e -> e.generation <= gen - 3);
+					eT.remove(e -> e.generation <= gen - 2);
+					pT.remove(e -> e.generation <= gen - 4);
 				}
 				hT.decrementCurrentValues();
 				gen++;
