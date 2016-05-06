@@ -128,11 +128,8 @@ public enum MoveSetDatabase {
 		rookAttackSetVariations = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < bishopOccupancyVariations.length; i++)
 			bishopAttackSetVariations[i] = BitParallelMoveSets.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i]);
-		for (int i = 0; i < rookOccupancyVariations.length; i++) {
+		for (int i = 0; i < rookOccupancyVariations.length; i++)
 			rookAttackSetVariations[i] = BitParallelMoveSets.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i]);
-			System.out.println(Board.drawBitboard(rookOccupancyVariations[i]));
-			System.out.println(Board.drawBitboard(rookAttackSetVariations[i]));
-		}
 		for (int i = 0; i < rookOccupancyVariations.length; i++) {
 			index = (int)((rookOccupancyVariations[i]*rookMagicNumber) >>> rookMagicShift);
 			rookMoveSets[index] = rookAttackSetVariations[i];
@@ -141,8 +138,8 @@ public enum MoveSetDatabase {
 			index = (int)((bishopOccupancyVariations[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishopMoveSets[index] = bishopAttackSetVariations[i];
 		}
-		kingMoveMask = BitParallelMoveSets.getKingMoveSet(bit, 0);
-		knightMoveMask = BitParallelMoveSets.getKnightMoveSet(bit, 0);
+		kingMoveMask = BitParallelMoveSets.getKingMoveSet(bit, -1);
+		knightMoveMask = BitParallelMoveSets.getKnightMoveSet(bit, -1);
 		pawnWhiteAdvanceMoveMask = BitParallelMoveSets.getWhitePawnAdvanceSet(bit, -1);
 		pawnWhiteCaptureMoveMask = BitParallelMoveSets.getWhitePawnCaptureSet(bit, -1);
 		pawnBlackAdvanceMoveMask = BitParallelMoveSets.getBlackPawnAdvanceSet(bit, -1);
@@ -179,17 +176,17 @@ public enum MoveSetDatabase {
 	 * @param allOpponentOccupied
 	 * @return
 	 */
-	public long getKingMoveSet(long allOpponentOccupied) {
-		return kingMoveMask & allOpponentOccupied;
+	public long getKingMoveSet(long allNonSameColorOccupied) {
+		return kingMoveMask & allNonSameColorOccupied;
 	}
 	/**
 	 * Returns a knight's pseudo-legal move set.
 	 * 
-	 * @param allOpponentOccupied
+	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public long getKnightMoveSet(long allOpponentOccupied) {
-		return knightMoveMask & allOpponentOccupied;
+	public long getKnightMoveSet(long allNonSameColorOccupied) {
+		return knightMoveMask & allNonSameColorOccupied;
 	}
 	/**
 	 * Returns a white pawn's pseudo-legal attack set.
@@ -262,34 +259,34 @@ public enum MoveSetDatabase {
 	/**
 	 * Returns a rook's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allOpponentOccupied
+	 * @param allNonSameColorOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getRookMoveSet(long allOpponentOccupied, long allOccupied) {
-		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allOpponentOccupied;
+	public long getRookMoveSet(long allNonSameColorOccupied, long allOccupied) {
+		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonSameColorOccupied;
 	}
 	
 	/**
 	 * Returns a bishop's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allOpponentOccupied
+	 * @param allNonSameColorOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getBishopMoveSet(long allOpponentOccupied, long allOccupied) {
-		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allOpponentOccupied;
+	public long getBishopMoveSet(long allNonSameColorOccupied, long allOccupied) {
+		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonSameColorOccupied;
 	}
 	/**
 	 * Returns a queen's pseudo-legal move set given the occupancies fed to the method.
 	 * 
-	 * @param allOpponentOccupied
+	 * @param allNonSameColorOccupied
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getQueenMoveSet(long allOpponentOccupied, long allOccupied) {
+	public long getQueenMoveSet(long allNonSameColorOccupied, long allOccupied) {
 		return (rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
-			    bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allOpponentOccupied;
+			    bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonSameColorOccupied;
 	}
 	/**
 	 * Returns a MoveDatabase enum instance that holds the preinitialized move sets for the square specified by the given square index, sqrInd.

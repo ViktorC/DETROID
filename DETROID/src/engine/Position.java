@@ -3197,7 +3197,7 @@ public class Position implements Hashable, Copiable<Position> {
 			return null;
 		try {
 			chars = san.toCharArray();
-			movablePieces = ~getPinnedPieces();
+			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			if (san.matches("^O-O[+#]?[//?!]{0,2}$")) {
 				if (isWhitesTurn) {
 					to = Square.G1.ind;
@@ -3583,7 +3583,7 @@ public class Position implements Hashable, Copiable<Position> {
 			movedPiece  = Character.toString(mPiece.letter).toUpperCase();
 		capture = move.capturedPiece == Piece.NULL.ind ? "" : "x";
 		mT = MoveSetDatabase.getByIndex(move.to);
-		movablePieces = ~getPinnedPieces();
+		movablePieces = ~getPinnedPieces(isWhitesTurn);
 		switch (mPiece) {
 			case W_KING: {
 				possOriginSqrs = 0;

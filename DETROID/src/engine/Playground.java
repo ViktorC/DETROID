@@ -32,8 +32,7 @@ public class Playground {
 		Results r;
 		Move playerMove, bookMove;
 		List<Move> moveRestrictions = null;
-		Position p = Position.parse(Position.START_POSITION_FEN);
-		System.out.println(p.quickPerft(6));
+		Position p = Position.parse(tP2);
 		RelativeHistoryTable hT = new RelativeHistoryTable();
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);

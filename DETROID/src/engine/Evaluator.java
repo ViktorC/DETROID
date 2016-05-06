@@ -7,7 +7,8 @@ import engine.Board.Square;
 import util.*;
 
 /**
- * A class for evaluating chess positions.
+ * A class for evaluating chess positions. It uses an evaluation hash table and a pawn hash table to improve performance. It also offers a static
+ * exchange evaluation function.
  * 
  * @author Viktor
  *
@@ -19,7 +20,7 @@ public final class Evaluator {
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
 	// The margin for lazy evaluation. The extended score should never differ by more than this value form the core score.
-	private final static int LAZY_EVAL_MAR = 151;
+	private final static int LAZY_EVAL_MAR = 399;
 	
 	// Distance tables for tropism.
 	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];
@@ -375,6 +376,9 @@ public final class Evaluator {
 	 * A simple evaluation of the pawn structure.
 	 * 
 	 * @param pos
+	 * @param whiteKingInd
+	 * @param blackKingInd
+	 * @param phaseScore
 	 * @return
 	 */
 	private static short pawnKingStructureScore(Position pos, int whiteKingInd, int blackKingInd, int phaseScore) {
@@ -524,7 +528,8 @@ public final class Evaluator {
 		return (short)score;
 	}
 	/**
-	 * Rates the chess position from the color to move's point of view. It considers material imbalance, mobility, and king safety.
+	 * Rates the chess position from the color to move's point of view. It considers material imbalance, coverage, pawn structure, king safety, king
+	 * tropism, and trapped pieces.
 	 * 
 	 * @param pos The position to evaluate.
 	 * @param allMoves A list of all the legal moves for the side to move.
@@ -539,21 +544,29 @@ public final class Evaluator {
 		long whitePinnedPieces, blackPinnedPieces;
 		long whiteMovablePieces, blackMovablePieces;
 		long whiteCoverage, blackCoverage;
+		long whiteKingZone, blackKingZone;
 		ByteList whitePieces, blackPieces;
 		short pawnScore, baseScore, openingScore, endgameScore, score, extendedScore;
 		byte[] bishopSqrArr, offsetBoard;
 		boolean isWhitesTurn;
 		ETEntry eE;
 		PTEntry pE;
+		score = 0;
+		// Probe evaluation hash table.
 		eE = eT.lookUp(pos.key);
 		if (eE != null) {
 			eE.generation = hashGen;
-			return eE.score;
+			score = eE.score;
+			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
+			if (eE.type == NodeType.EXACT.ind || (eE.type == NodeType.FAIL_HIGH.ind && score >= beta + LAZY_EVAL_MAR) ||
+					(eE.type == NodeType.FAIL_LOW.ind && score <= alpha - LAZY_EVAL_MAR))
+				return eE.score;
 		}
-		score = 0;
 		isWhitesTurn = pos.isWhitesTurn;
 		whiteKingInd = blackKingInd = -1;
+		// In case of no hash hit, calculate the base score from scratch.
 		if (eE == null) {
+			score = 0;
 			numOfWhiteQueens = BitOperations.getHammingWeight(pos.whiteQueens);
 			numOfWhiteRooks = BitOperations.getHammingWeight(pos.whiteRooks);
 			numOfWhiteBishops = BitOperations.getHammingWeight(pos.whiteBishops);
@@ -620,21 +633,53 @@ public final class Evaluator {
 			score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
 			if (!isWhitesTurn)
 				score *= -1;
-			if (score < alpha - LAZY_EVAL_MAR || score > beta + LAZY_EVAL_MAR) {
+			if (score < alpha - LAZY_EVAL_MAR) {
+				eT.insert(new ETEntry(pos.key, score, NodeType.FAIL_LOW.ind, hashGen));
+				return score;
+			}
+			else if (score > beta + LAZY_EVAL_MAR) {
+				eT.insert(new ETEntry(pos.key, score, NodeType.FAIL_HIGH.ind, hashGen));
 				return score;
 			}
 		}
+		// Max total extended score: 399.
 		extendedScore = 0;
 		if (whiteKingInd == -1) {
 			whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
 			blackKingInd = BitOperations.indexOfBit(pos.blackKing);
 		}
-		// Coverage
-		whitePinnedPieces = pos.getPinnedPieces();
-		// Piece-king attack and defense
-		
-		// Piece-king tropism
-		// The maximum theoretical tropism value is 111.
+		// Pinned pieces. Max theoretical value: 80
+		whitePinnedPieces = pos.getPinnedPieces(true);
+		whiteMovablePieces = ~whitePinnedPieces;
+		score -= 10*BitOperations.getHammingWeight(pos.whiteQueens & whitePinnedPieces);
+		score -= 5*BitOperations.getHammingWeight(pos.whiteRooks & whitePinnedPieces);
+		score -= 2*BitOperations.getHammingWeight((pos.whiteBishops | pos.whiteKnights) & whitePinnedPieces);
+		blackPinnedPieces = pos.getPinnedPieces(false);
+		blackMovablePieces = ~blackPinnedPieces;
+		score -= 10*BitOperations.getHammingWeight(pos.blackQueens & blackPinnedPieces);
+		score -= 5*BitOperations.getHammingWeight(pos.blackRooks & blackPinnedPieces);
+		score -= 2*BitOperations.getHammingWeight((pos.blackBishops | pos.blackKnights) & blackPinnedPieces);
+		// Coverage. Max theoretical value: 128.
+		whiteCoverage = BitParallelMoveSets.getRookMoveSet((pos.whiteRooks | pos.whiteQueens) & whiteMovablePieces,
+				pos.allBlackOccupied, pos.allEmpty);
+		whiteCoverage |= BitParallelMoveSets.getBishopMoveSet((pos.whiteBishops | pos.whiteQueens) & whiteMovablePieces,
+				pos.allBlackOccupied, pos.allEmpty);
+		whiteCoverage |= BitParallelMoveSets.getKnightMoveSet(pos.whiteKnights & whiteMovablePieces, pos.allNonWhiteOccupied);
+		whiteCoverage |= BitParallelMoveSets.getKingMoveSet(pos.whiteKing, pos.allNonWhiteOccupied);
+		blackCoverage = BitParallelMoveSets.getRookMoveSet((pos.blackRooks | pos.blackQueens) & blackMovablePieces,
+				pos.allWhiteOccupied, pos.allEmpty);
+		blackCoverage |= BitParallelMoveSets.getBishopMoveSet((pos.blackBishops | pos.blackQueens) & blackMovablePieces,
+				pos.allWhiteOccupied, pos.allEmpty);
+		blackCoverage |= BitParallelMoveSets.getKnightMoveSet(pos.blackKnights & blackMovablePieces, pos.allNonBlackOccupied);
+		blackCoverage |= BitParallelMoveSets.getKingMoveSet(pos.blackKing, pos.allNonBlackOccupied);
+		score += 2*BitOperations.getHammingWeight(whiteCoverage);
+		score -= 2*BitOperations.getHammingWeight(blackCoverage);
+		// Piece-king attack and defense. Max theoretical value: 40.
+		whiteKingZone = BitParallelMoveSets.getKingMoveSet(pos.whiteKing, -1);
+		blackKingZone = BitParallelMoveSets.getKingMoveSet(pos.blackKing, -1);
+		score += 5*BitOperations.getHammingWeight(blackKingZone & whiteCoverage);
+		score -= 5*BitOperations.getHammingWeight(whiteKingZone & blackCoverage);
+		// Piece-king tropism. Max theoretical value: 111.
 		whiteDistToBlackKing = 0;
 		whitePieces = BitOperations.serialize(pos.allWhiteOccupied & ~pos.whitePawns);
 		while (whitePieces.hasNext())
@@ -645,8 +690,7 @@ public final class Evaluator {
 			blackDistToWhiteKing += CHEBYSHEV_DISTANCE[blackPieces.next()][whiteKingInd];
 		extendedScore -= whiteDistToBlackKing;
 		extendedScore += blackDistToWhiteKing;
-		// Trapped pieces
-		// Maximum theoretical value is 40.
+		// Trapped pieces. Max theoretical value: 40.
 		extendedScore -= 5*BitOperations.getHammingWeight((pos.whitePawns << 8) & (pos.allBlackOccupied^pos.blackPawns)); // Stopped pawns.
 		extendedScore += 5*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & (pos.allWhiteOccupied^pos.whitePawns));
 		if (!isWhitesTurn)

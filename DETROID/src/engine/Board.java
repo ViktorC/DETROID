@@ -361,12 +361,12 @@ public final class Board {
 	/**
 	 * Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.
 	 * 
-	 * @param bitmap
+	 * @param bitboard
 	 * @return
 	 */
-	public static String drawBitboard(long bitmap) {
+	public static String bitboardToString(long bitboard) {
 		String out = "";
-		String board = BitOperations.toBinaryString(bitmap);
+		String board = BitOperations.toBinaryString(bitboard);
 		for (int i = 0; i < 64; i += 8) {
 			for (int j = i + 7; j >= i; j--)
 				out += board.charAt(j);

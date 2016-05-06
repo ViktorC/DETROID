@@ -81,9 +81,9 @@ public final class MagicGenerator {
 			bishopAttackSetVariations[i] = new long[bishopOccupancyVariations[i].length];
 			rookAttackSetVariations[i] = new long[rookOccupancyVariations[i].length];
 			for (int j = 0; j < bishopOccupancyVariations[i].length; j++)
-				bishopAttackSetVariations[i][j] = BitParallelMoveSets.getBishopMoveSet(bit, 0, ~bishopOccupancyVariations[i][j]);
+				bishopAttackSetVariations[i][j] = BitParallelMoveSets.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i][j]);
 			for (int j = 0; j < rookOccupancyVariations[i].length; j++)
-				rookAttackSetVariations[i][j] = BitParallelMoveSets.getRookMoveSet(bit, 0, ~rookOccupancyVariations[i][j]);
+				rookAttackSetVariations[i][j] = BitParallelMoveSets.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i][j]);
 		}
 	}
 	/**
