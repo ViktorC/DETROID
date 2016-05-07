@@ -19,8 +19,8 @@ public final class Evaluator {
 	private final static int TOTAL_PHASE_WEIGHTS = 4*(Material.KNIGHT.phaseWeight + Material.BISHOP.phaseWeight +
 			Material.ROOK.phaseWeight) + 2*Material.QUEEN.phaseWeight;
 	
-	// The margin for lazy evaluation. The extended score should never differ by more than this value form the core score.
-	private final static int LAZY_EVAL_MAR = 479;
+	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
+	private final static int LAZY_EVAL_MAR = 270;
 	
 	// Distance tables for tropism.
 	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];
@@ -639,20 +639,20 @@ public final class Evaluator {
 				return score;
 			}
 		}
-		// Max total extended score: 399.
+		// Max total extended score: 540.
 		extendedScore = 0;
-		// Pinned pieces. Max theoretical value: 128.
+		// Pinned pieces. Max theoretical value: 120.
 		whitePinnedPieces = pos.getPinnedPieces(true);
 		whiteMovablePieces = ~whitePinnedPieces;
-		extendedScore -= 16*BitOperations.getHammingWeight(pos.whiteQueens & whitePinnedPieces);
-		extendedScore -= 12*BitOperations.getHammingWeight(pos.whiteRooks & whitePinnedPieces);
-		extendedScore -= 8*BitOperations.getHammingWeight((pos.whiteBishops | pos.whiteKnights) & whitePinnedPieces);
+		extendedScore -= 15*BitOperations.getHammingWeight(pos.whiteQueens & whitePinnedPieces);
+		extendedScore -= 10*BitOperations.getHammingWeight(pos.whiteRooks & whitePinnedPieces);
+		extendedScore -= 5*BitOperations.getHammingWeight((pos.whiteBishops | pos.whiteKnights) & whitePinnedPieces);
 		blackPinnedPieces = pos.getPinnedPieces(false);
 		blackMovablePieces = ~blackPinnedPieces;
-		extendedScore += 16*BitOperations.getHammingWeight(pos.blackQueens & blackPinnedPieces);
-		extendedScore += 12*BitOperations.getHammingWeight(pos.blackRooks & blackPinnedPieces);
-		extendedScore += 8*BitOperations.getHammingWeight((pos.blackBishops | pos.blackKnights) & blackPinnedPieces);
-		// Piece coverage. Max theoretical value: 128.
+		extendedScore += 15*BitOperations.getHammingWeight(pos.blackQueens & blackPinnedPieces);
+		extendedScore += 10*BitOperations.getHammingWeight(pos.blackRooks & blackPinnedPieces);
+		extendedScore += 5*BitOperations.getHammingWeight((pos.blackBishops | pos.blackKnights) & blackPinnedPieces);
+		// Piece mobility and coverage. Max theoretical value: 144.
 		whitePawnAttacks = BitParallelMoveSets.getWhitePawnCaptureSet(pos.whitePawns, -1);
 		blackPawnAttacks = BitParallelMoveSets.getBlackPawnCaptureSet(pos.blackPawns, -1);
 		whiteCoverage = BitParallelMoveSets.getRookMoveSet((pos.whiteRooks | pos.whiteQueens) & whiteMovablePieces,
@@ -660,15 +660,22 @@ public final class Evaluator {
 		whiteCoverage |= BitParallelMoveSets.getBishopMoveSet((pos.whiteBishops | pos.whiteQueens) & whiteMovablePieces,
 				pos.allOccupied, pos.allEmpty);
 		whiteCoverage |= BitParallelMoveSets.getKnightMoveSet(pos.whiteKnights & whiteMovablePieces, -1);
+		whiteCoverage |= BitParallelMoveSets.getKingMoveSet(pos.whiteKing, -1);
 		blackCoverage = BitParallelMoveSets.getRookMoveSet((pos.blackRooks | pos.blackQueens) & blackMovablePieces,
 				pos.allWhiteOccupied, pos.allEmpty);
 		blackCoverage |= BitParallelMoveSets.getBishopMoveSet((pos.blackBishops | pos.blackQueens) & blackMovablePieces,
 				pos.allWhiteOccupied, pos.allEmpty);
 		blackCoverage |= BitParallelMoveSets.getKnightMoveSet(pos.blackKnights & blackMovablePieces, -1);
-		extendedScore += BitOperations.getHammingWeight(whiteCoverage);
+		blackCoverage |= BitParallelMoveSets.getKingMoveSet(pos.blackKing, -1);
+		extendedScore += 2*BitOperations.getHammingWeight(whiteCoverage);
 		extendedScore += BitOperations.getHammingWeight(whiteCoverage & pos.allWhiteOccupied);
-		extendedScore -= BitOperations.getHammingWeight(blackCoverage);
+		extendedScore -= 2*BitOperations.getHammingWeight(blackCoverage);
 		extendedScore -= BitOperations.getHammingWeight(blackCoverage & pos.allBlackOccupied);
+		// Pawn-piece defense. Max theoretical value: 80.
+		whitePawnAttacks = BitParallelMoveSets.getWhitePawnCaptureSet(pos.whitePawns, -1);
+		blackPawnAttacks = BitParallelMoveSets.getBlackPawnCaptureSet(pos.blackPawns, -1);
+		score += 10*BitOperations.getHammingWeight(whitePawnAttacks & (pos.allWhiteOccupied^pos.whiteKing^pos.whitePawns));
+		score -= 10*BitOperations.getHammingWeight(blackPawnAttacks & (pos.allBlackOccupied^pos.blackKing^pos.blackPawns));
 		// Piece-king tropism. Max theoretical value: 111.
 		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
 		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
