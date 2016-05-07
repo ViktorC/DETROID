@@ -4,9 +4,9 @@ import util.BitOperations;
 import engine.Board.*;
 
 /**
- * A preinitialized move set database that saves the time costs of calculating move sets on the fly at the cost of about 850KBytes. It contains
+ * A preinitialized move set database that saves the time costs of calculating move sets on the fly at the price of about 850KBytes. It contains
  * a so called fancy magic move tablebase for sliding piece attack set derivation with all the necessary masks and magic numbers included so the
- * desired move sets can be retrieved by simply invoking one of this database's functions and feeding it an occupancy bitmap or two. Beside the
+ * desired move sets can be retrieved by simply invoking one of this database's functions and feeding it an occupancy bitboard or two. Beside the
  * sliding pieces' attack sets, all the other pieces masks have been preinitialized too, for the sake of simplicity.
  * 
  * @author Viktor
