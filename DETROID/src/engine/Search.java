@@ -209,12 +209,12 @@ public class Search implements Runnable {
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
-			if (boundsChanged) {
+			/*if (boundsChanged) {
 				if (this.alpha > alpha)
 					alpha = this.alpha;
 				if (this.beta < beta)
 					beta = this.beta;
-			}
+			}*/
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
 				if (pos.repetitions >= 3)
@@ -272,21 +272,6 @@ public class Search implements Runnable {
 				}
 				// Check extension (less than a whole ply because the quiescence search handles checks).
 				depth = isInCheck && qDepth == 0 ? depth + FULL_PLY/4 : depth;
-				lastMove = pos.getLastMove();
-				if (lastMove != null) {
-					lastMoveIsMaterial = lastMove.isMaterial();
-					// Passed pawn extension.
-					if (lastMove.movedPiece == Piece.W_PAWN.ind) {
-						if (lastMove.to >= 36 && lastMove.to < 48)
-							depth += lastMove.to >= 40 ? FULL_PLY : FULL_PLY/2;
-					}
-					else if (lastMove.movedPiece == Piece.B_PAWN.ind) {
-						if (lastMove.to <= 31 && lastMove.to > 15)
-							depth += lastMove.to <= 23 ? FULL_PLY : FULL_PLY/2;
-					}
-				}
-				else
-					lastMoveIsMaterial = false;
 				// Return the score from the quiescence search in case a leaf node has been reached.
 				if (depth/FULL_PLY <= 0) {
 					score = quiescence(qDepth, alpha, beta);
@@ -312,6 +297,8 @@ public class Search implements Runnable {
 						isThereHashMove = true;
 					}
 				}
+				lastMove = pos.getLastMove();
+				lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
 				// If there is a hash move, search that first.
 				if (isThereHashMove) {
 					moveAllowed = true;
@@ -430,14 +417,14 @@ public class Search implements Runnable {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					if (boundsChanged) {
+					/*if (boundsChanged) {
 						if (this.alpha > alpha)
 							alpha = this.alpha;
 						if (this.beta < beta)
 							beta = this.beta;
 						if (depth == 0)
 							boundsChanged = false;
-					}
+					}*/
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -478,14 +465,14 @@ public class Search implements Runnable {
 						}
 						pos.unmakeMove();
 						searchedMoves++;
-						if (boundsChanged) {
+						/*if (boundsChanged) {
 							if (this.alpha > alpha)
 								alpha = this.alpha;
 							if (this.beta < beta)
 								beta = this.beta;
 							if (depth == 0)
 								boundsChanged = false;
-						}
+						}*/
 						if (score > bestScore) {
 							bestMove = killerMove1;
 							bestScore = score;
@@ -529,14 +516,14 @@ public class Search implements Runnable {
 						}
 						pos.unmakeMove();
 						searchedMoves++;
-						if (boundsChanged) {
+						/*if (boundsChanged) {
 							if (this.alpha > alpha)
 								alpha = this.alpha;
 							if (this.beta < beta)
 								beta = this.beta;
 							if (depth == 0)
 								boundsChanged = false;
-						}
+						}*/
 						if (score > bestScore) {
 							bestMove = killerMove2;
 							bestScore = score;
@@ -588,14 +575,14 @@ public class Search implements Runnable {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					if (boundsChanged) {
+					/*if (boundsChanged) {
 						if (this.alpha > alpha)
 							alpha = this.alpha;
 						if (this.beta < beta)
 							beta = this.beta;
 						if (depth == 0)
 							boundsChanged = false;
-					}
+					}*/
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -649,27 +636,26 @@ public class Search implements Runnable {
 					}
 					razRed = 0;
 					// Futility pruning, extended futility pruning, and razoring.
-					if (!isPvNode && depth/FULL_PLY <= 3) {
-						if (alpha > L_CHECK_MATE_LIMIT && beta < W_CHECK_MATE_LIMIT && !isInCheck && !pos.givesCheck(move)) {
-							if (evalScore == Integer.MIN_VALUE)
-								evalScore = eval.score(pos, alpha, beta);
-							if (depth/FULL_PLY == 1) {
-								if (evalScore + FMAR1 <= alpha)
-									continue;
-							}
-							else if (depth/FULL_PLY == 2) {
-								if (evalScore + FMAR2 <= alpha)
-									continue;
-							}
-							else {
-								if (evalScore + FMAR3 <= alpha)
-									razRed = 1;
-							}
+					if (!isPvNode && depth/FULL_PLY <= 3 && !isInCheck && !pos.givesCheck(move)) {
+						if (evalScore == Integer.MIN_VALUE)
+							evalScore = eval.score(pos, alpha, beta);
+						if (depth/FULL_PLY == 1) {
+							if (evalScore + FMAR1 <= alpha)
+								continue;
+						}
+						else if (depth/FULL_PLY == 2) {
+							if (evalScore + FMAR2 <= alpha)
+								continue;
+						}
+						else {
+							if (evalScore + FMAR3 <= alpha)
+								razRed = 1;
 						}
 					}
 					pos.makeMove(move);
 					// Try late move reduction if not within the PV.
-					if (!isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > LMRMSM && pos.getUnmakeRegister().checkers == 0) {
+					if (razRed == 0 && !isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > LMRMSM &&
+							pos.getUnmakeRegister().checkers == 0) {
 						score = -pVsearch(depth - (LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 						// If it does not fail low, research with full window.
 						if (score > alpha)
@@ -685,14 +671,14 @@ public class Search implements Runnable {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					if (boundsChanged) {
+					/*if (boundsChanged) {
 						if (this.alpha > alpha)
 							alpha = this.alpha;
 						if (this.beta < beta)
 							beta = this.beta;
 						if (depth == 0)
 							boundsChanged = false;
-					}
+					}*/
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -758,12 +744,12 @@ public class Search implements Runnable {
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
-			if (boundsChanged) {
+			/*if (boundsChanged) {
 				if (this.alpha > alpha)
 					alpha = this.alpha;
 				if (this.beta < beta)
 					beta = this.beta;
-			}
+			}*/
 			// Check for the repetition rule; return a draw score if it applies.
 			if (pos.repetitions >= 3)
 				return Termination.DRAW_CLAIMED.score;
@@ -781,21 +767,17 @@ public class Search implements Runnable {
 				materialMoves = pos.getTacticalMoves();
 				if (materialMoves.length() == 0) {
 					quietMoves = pos.getQuietMoves();
+					if (quietMoves.length() == 0)
+						return Termination.STALE_MATE.score;
 				}
-				else
-					quietMoves = null;
-				if (quietMoves != null && quietMoves.length() == 0)
-					return Termination.STALE_MATE.score;
 				// Check for the fifty-move rule; return a draw score if it applies.
-				else if (pos.fiftyMoveRuleClock >= 100)
+				if (pos.fiftyMoveRuleClock >= 100)
 					return Termination.DRAW_CLAIMED.score;
+				if (materialMoves.length() == 0)
+					return eval.score(pos, alpha, beta);
 				else {
-					// Stand pat.
-					if (nullMoveObservHolds)
-						bestScore = eval.score(pos, alpha, beta);
-					// If the null move observation does not hold, the lower bound is the mate score; evaluate only if the position is quiet.
-					else
-						bestScore = materialMoves.length() == 0 ? eval.score(pos, alpha, beta) : mateScore;
+					// Stand pat if the null move observation holds; otherwise the mate score is the lower bound.
+					bestScore = nullMoveObservHolds ? eval.score(pos, alpha, beta) : mateScore;
 				}
 				// Fail soft.
 				if (bestScore > alpha) {
@@ -812,12 +794,12 @@ public class Search implements Runnable {
 					pos.makeMove(move);
 					searchScore = -quiescence(depth - 1, -beta, -alpha);
 					pos.unmakeMove();
-					if (boundsChanged) {
+					/*if (boundsChanged) {
 						if (this.alpha > alpha)
 							alpha = this.alpha;
 						if (this.beta < beta)
 							beta = this.beta;
-					}
+					}*/
 					if (searchScore > bestScore) {
 						bestScore = searchScore;
 						if (bestScore > alpha) {
@@ -900,7 +882,7 @@ public class Search implements Runnable {
 	private final static int NMR = 2;													// Null move pruning reduction.
 	private final static int LMR = 1;													// Late move reduction.
 	private final static int LMRMSM = 4;												// Min. number of searched moves for late move reduction
-	private final static int FMAR1 = Material.KNIGHT.score;								// Futility margin.
+	private final static int FMAR1 = Material.BISHOP.score;								// Futility margin.
 	private final static int FMAR2 = Material.ROOK.score;								// Extended futility margin.
 	private final static int FMAR3 = Material.QUEEN.score;								// Razoring margin.
 	private final static int A_DELTA = Material.PAWN.score;								// The aspiration delta within iterative deepening.
@@ -1040,6 +1022,7 @@ public class Search implements Runnable {
 			} catch (InterruptedException | ExecutionException e) {
 				score = alpha;
 				doStopSearch.set(true);
+				e.printStackTrace();
 			}
 			if (doStopSearch.get() || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
 				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
