@@ -9,18 +9,8 @@ package util;
  */
 public final class QuickSort {
 	
-	private final static QuickSort INSTANCE = new QuickSort();
-	
 	private QuickSort() {
 		
-	}
-	/**
-	 * Returns the single QuickSort instance.
-	 * 
-	 * @return
-	 */
-	public static QuickSort getInstance() {
-		return INSTANCE;
 	}
 	/**
 	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
@@ -29,7 +19,7 @@ public final class QuickSort {
 	 * @param container The list to be sorted.
 	 * @return A sorted array.
 	 */
-	public <T extends Comparable<T>> T[] sort(List<T> container) {
+	public static <T extends Comparable<T>> T[] sort(List<T> container) {
 		int left, right;
 		T[] array;
 		if (container.length() != 0) {
@@ -47,7 +37,7 @@ public final class QuickSort {
 	 * @param array The array to be sorted.
 	 * @return The sorted array.
 	 */
-	public <T extends Comparable<T>> T[] sort(T[] array) {
+	public static <T extends Comparable<T>> T[] sort(T[] array) {
 		int left, right;
 		if (array.length != 0) {
 			left = 0;
@@ -63,7 +53,7 @@ public final class QuickSort {
 	 * @param left
 	 * @param right
 	 */
-	private <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
+	private static <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
 		int index, partLeft = left, partRight = right;
 		T temp, pivot = array[(left + right)/2];
 		while (partLeft <= partRight) {

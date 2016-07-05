@@ -3,7 +3,7 @@ package engine;
 import java.util.Random;
 
 import util.BitOperations;
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**
  * A class whose instance generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move
@@ -73,17 +73,17 @@ public final class MagicGenerator {
 		rookAttackSetVariations = new long[64][];
 		for (int i = 0; i < 64; i++) {
 			bit = 1L << i;
-			bishopOccupancyMask[i] = BitParallelMoveSets.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
-			rookOccupancyMask[i] = (BitParallelMoveSets.northFill(bit, ~Rank.R8.bits) | BitParallelMoveSets.southFill(bit, ~Rank.R1.bits) |
-					BitParallelMoveSets.westFill(bit, ~File.A.bits) | BitParallelMoveSets.eastFill(bit, ~File.H.bits))^bit;
+			bishopOccupancyMask[i] = MultiMoveSets.bishopMoveSets(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
+			rookOccupancyMask[i] = (Bitboard.northFill(bit, ~Rank.R8.bits) | Bitboard.southFill(bit, ~Rank.R1.bits) |
+					Bitboard.westFill(bit, ~File.A.bits) | Bitboard.eastFill(bit, ~File.H.bits))^bit;
 			bishopOccupancyVariations[i] = BitOperations.getAllSubsets(bishopOccupancyMask[i]);
 			rookOccupancyVariations[i] = BitOperations.getAllSubsets(rookOccupancyMask[i]);
 			bishopAttackSetVariations[i] = new long[bishopOccupancyVariations[i].length];
 			rookAttackSetVariations[i] = new long[rookOccupancyVariations[i].length];
 			for (int j = 0; j < bishopOccupancyVariations[i].length; j++)
-				bishopAttackSetVariations[i][j] = BitParallelMoveSets.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i][j]);
+				bishopAttackSetVariations[i][j] = MultiMoveSets.bishopMoveSets(bit, -1, ~bishopOccupancyVariations[i][j]);
 			for (int j = 0; j < rookOccupancyVariations[i].length; j++)
-				rookAttackSetVariations[i][j] = BitParallelMoveSets.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i][j]);
+				rookAttackSetVariations[i][j] = MultiMoveSets.rookMoveSets(bit, -1, ~rookOccupancyVariations[i][j]);
 		}
 	}
 	/**

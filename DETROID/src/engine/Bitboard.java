@@ -8,7 +8,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public final class Board {
+public final class Bitboard {
 	
 	/**
 	 * An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
@@ -355,8 +355,148 @@ public final class Board {
 		}
 	}
 	
-	private Board() {
+	private Bitboard() {
 		
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north of multiple sliding pieces at the same
+	 * time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long northFill(long generator, long propagator) {
+		generator  |= (generator  << 8)  & propagator;
+		propagator &= (propagator << 8);
+		generator  |= (generator  << 16) & propagator;
+		propagator &= (propagator << 16);
+		generator  |= (generator  << 32) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction south of multiple sliding pieces at the same
+	 * time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long southFill(long generator, long propagator) {
+		generator  |= (generator  >>> 8)  & propagator;
+		propagator &= (propagator >>> 8);
+		generator  |= (generator  >>> 16) & propagator;
+		propagator &= (propagator >>> 16);
+		generator  |= (generator  >>> 32) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction west of multiple sliding pieces at the same
+	 * time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is
+	 * handled by the method.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long westFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  >>> 1) & propagator;
+		propagator &= (propagator >>> 1);
+		generator  |= (generator  >>> 2) & propagator;
+		propagator &= (propagator >>> 2);
+		generator  |= (generator  >>> 4) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction east of multiple sliding pieces at the same
+	 * time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect is
+	 * handled by the method.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long eastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  << 1) & propagator;
+		propagator &= (propagator << 1);
+		generator  |= (generator  << 2) & propagator;
+		propagator &= (propagator << 2);
+		generator  |= (generator  << 4) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north-west of multiple sliding pieces at the
+	 * same time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect
+	 * is handled by the method.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long northWestFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  << 7)  & propagator;
+		propagator &= (propagator << 7);
+		generator  |= (generator  << 14) & propagator;
+		propagator &= (propagator << 14);
+		generator  |= (generator  << 28) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north-east of multiple sliding pieces at the
+	 * same time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect
+	 * is handled by the method.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long northEastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  << 9)  & propagator;
+		propagator &= (propagator << 9);
+		generator  |= (generator  << 18) & propagator;
+		propagator &= (propagator << 18);
+		generator  |= (generator  << 36) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction south-west of multiple sliding pieces at the
+	 * same time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect
+	 * is handled by the method.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long southWestFill(long generator, long propagator) {
+		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
+		generator  |= (generator  >>> 9)  & propagator;
+		propagator &= (propagator >>> 9);
+		generator  |= (generator  >>> 18) & propagator;
+		propagator &= (propagator >>> 18);
+		generator  |= (generator  >>> 36) & propagator;
+		return generator;
+	}
+	/**
+	 * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction south-east of multiple sliding pieces at the
+	 * same time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares. The wrap around effect
+	 * is handled by the method.
+	 * 
+	 * @param generator Piece squares.
+	 * @param propagator All empty squares.
+	 * @return
+	 */
+	public static long southEastFill(long generator, long propagator) {
+		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
+		generator  |= (generator  >>> 7)  & propagator;
+		propagator &= (propagator >>> 7);
+		generator  |= (generator  >>> 14) & propagator;
+		propagator &= (propagator >>> 14);
+		generator  |= (generator  >>> 28) & propagator;
+		return generator;
 	}
 	/**
 	 * Returns a long in binary form aligned like a chess board with one byte per row, in a human-readable way.

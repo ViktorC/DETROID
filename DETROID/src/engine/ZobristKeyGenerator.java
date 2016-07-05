@@ -2,7 +2,7 @@ package engine;
 
 import java.util.Random;
 
-import engine.Board.Square;
+import engine.Bitboard.Square;
 
 /**
  * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.

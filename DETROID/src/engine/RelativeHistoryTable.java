@@ -11,16 +11,19 @@ package engine;
  */
 public class RelativeHistoryTable {
 
+	private Parameters params;
+	
 	/**The maximum score a move can have. */
-	public final static short MAX_SCORE = (short)(2*(Material.QUEEN.score - Material.PAWN.score));
-	private final static byte DECREMENT_FACTOR = 4;
+	public final short MAX_SCORE;
 	
 	private int[][] historyT;	// A [piece][destination square] table for the history heuristic.
 	private int[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
 	
 	private Object[][] locks;	// Lock objects for synchronization.
 	
-	public RelativeHistoryTable() {
+	public RelativeHistoryTable(Parameters params) {
+		this.params = params;
+		MAX_SCORE = (short)(2*(params.QUEEN_VALUE - params.PAWN_VALUE));
 		/* The numbering of the pieces starts from one, so each table has a redundant first row to save
 		 * the expenses of always subtracting one from the moved piece numeral both on read and write. */
 		historyT = new int[13][64];
@@ -60,8 +63,8 @@ public class RelativeHistoryTable {
 		for (int i = 1; i < historyT.length; i++) {
 			for (int j = 0; j < 64; j++) {
 				synchronized(locks[i][j]) {
-					historyT[i][j] /= DECREMENT_FACTOR;
-					butterflyT[i][j] /= DECREMENT_FACTOR;
+					historyT[i][j] /= params.RHT_DECREMENT_FACTOR;
+					butterflyT[i][j] /= params.RHT_DECREMENT_FACTOR;
 				}
 			}
 		}

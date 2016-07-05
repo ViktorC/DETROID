@@ -29,6 +29,7 @@ public class Engine implements UCI {
 	
 	private Observer searchResultObserver;
 	
+	private Parameters params;
 	private Game game;
 	private Book book;
 	private RelativeHistoryTable hT;
@@ -47,7 +48,8 @@ public class Engine implements UCI {
 		setInputStream(DEFAULT_INPUT_STREAM);
 		setOutputStream(DEFAULT_OUTPUT_STREAM);
 		setHashSize(DEFAULT_HASH_SIZE);
-		hT = new RelativeHistoryTable();
+		params = new Parameters();
+		hT = new RelativeHistoryTable(params);
 		tT = new HashTable<>(maxHashMemory/2, TTEntry.SIZE);
 		eT = new HashTable<>(maxHashMemory*15/32, ETEntry.SIZE);
 		pT = new HashTable<>(maxHashMemory/32);
@@ -85,7 +87,7 @@ public class Engine implements UCI {
 		Position copy = game.getPosition().deepCopy();
 		if (move != null && copy.isLegalSoft(move))
 			copy.makeMove(move);
-		search = new Search(copy, 0, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
+		search = new Search(copy, 0, 0, 0, -1, 0, null, hT, gen, tT, eT, pT, params, Math.max(numOfCores - 1, 1));
 		search.run();
 	}
 	private Move search(long wTimeLeft, long bTimeLeft, long searchTime, int maxDepth, long maxNodes, List<Move> moves) {
@@ -93,9 +95,9 @@ public class Engine implements UCI {
 		Results res;
 		search = game.getPosition().isWhitesTurn ?
 			new Search(game.getPosition(), wTimeLeft, bTimeLeft, searchTime, maxDepth, maxNodes, moves,
-					hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1)) :
+					hT, gen, tT, eT, pT, params, Math.max(numOfCores - 1, 1)) :
 			new Search(game.getPosition(), bTimeLeft, wTimeLeft, searchTime, maxDepth, maxNodes, moves,
-					hT, gen, tT, eT, pT, Math.max(numOfCores - 1, 1));
+					hT, gen, tT, eT, pT, params, Math.max(numOfCores - 1, 1));
 		res = search.getResults();
 		if (searchResultObserver != null)
 			res.addObserver(searchResultObserver);

@@ -1,7 +1,7 @@
 package engine;
 
 import util.*;
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**
  * A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,

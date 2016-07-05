@@ -7,7 +7,7 @@ import java.nio.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-import engine.Board.Square;
+import engine.Bitboard.Square;
 
 /**
  * A class for reading and selecting moves from PolyGlot opening books. It allows for using an alternative book once out of the main book.

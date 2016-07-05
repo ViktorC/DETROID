@@ -1,7 +1,7 @@
 package engine;
 
 import util.*;
-import engine.Board.Square;
+import engine.Bitboard.Square;
 
 /**
  * Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers,

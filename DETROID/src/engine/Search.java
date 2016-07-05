@@ -359,17 +359,17 @@ public class Search implements Runnable {
 				if (pos.fiftyMoveRuleClock >= 100)
 					return Termination.DRAW_CLAIMED.score;
 				// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && !isPvNode && depth/FULL_PLY >= NMR) {
+				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && !isPvNode && depth/FULL_PLY >= params.NMR) {
 					pos.makeNullMove();
 					// Do not allow consecutive null moves.
-					if (depth/FULL_PLY == NMR) {
-						score = -pVsearch(depth - NMR*FULL_PLY, -beta, -beta + 1, false, qDepth);
+					if (depth/FULL_PLY == params.NMR) {
+						score = -pVsearch(depth - params.NMR*FULL_PLY, -beta, -beta + 1, false, qDepth);
 						// Mate threat extension.
 						if (score <= L_CHECK_MATE_LIMIT)
 							depth += FULL_PLY;
 					}
 					else
-						score = -pVsearch(depth - (NMR + 1)*FULL_PLY, -beta, -beta + 1, false, qDepth);
+						score = -pVsearch(depth - (params.NMR + 1)*FULL_PLY, -beta, -beta + 1, false, qDepth);
 					pos.unmakeMove();
 					if (score >= beta) {
 						return score;
@@ -640,23 +640,23 @@ public class Search implements Runnable {
 						if (evalScore == Integer.MIN_VALUE)
 							evalScore = eval.score(pos, alpha, beta);
 						if (depth/FULL_PLY == 1) {
-							if (evalScore + FMAR1 <= alpha)
+							if (evalScore + params.FMAR1 <= alpha)
 								continue;
 						}
 						else if (depth/FULL_PLY == 2) {
-							if (evalScore + FMAR2 <= alpha)
+							if (evalScore + params.FMAR2 <= alpha)
 								continue;
 						}
 						else {
-							if (evalScore + FMAR3 <= alpha)
+							if (evalScore + params.FMAR3 <= alpha)
 								razRed = 1;
 						}
 					}
 					pos.makeMove(move);
 					// Try late move reduction if not within the PV.
-					if (razRed == 0 && !isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > LMRMSM &&
+					if (razRed == 0 && !isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > params.LMRMSM &&
 							pos.getUnmakeRegister().checkers == 0) {
-						score = -pVsearch(depth - (LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
+						score = -pVsearch(depth - (params.LMR + 1)*FULL_PLY, -alpha - 1, -alpha, true, qDepth);
 						// If it does not fail low, research with full window.
 						if (score > alpha)
 							score = -pVsearch(depth - FULL_PLY, -beta, -alpha, true, qDepth);
@@ -789,7 +789,7 @@ public class Search implements Runnable {
 				for (int i = 0; i < moves.length; i++) {
 					move = moves[i];
 					// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-					if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - Q_DELTA))
+					if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - params.Q_DELTA))
 						break;
 					pos.makeMove(move);
 					searchScore = -quiescence(depth - 1, -beta, -alpha);
@@ -827,10 +827,10 @@ public class Search implements Runnable {
 			int i = 0;
 			while (moves.hasNext()) {
 				move = moves.next();
-				move.value = Evaluator.SEE(pos, move);	// Static exchange evaluation.
+				move.value = eval.SEE(pos, move);	// Static exchange evaluation.
 				arr[i++] = move;
 			}
-			return quick.sort(arr);
+			return QuickSort.sort(arr);
 		}
 		/**
 		 * Orders captures and promotions according to the MVV-LVA principle; in case of a promotion, add the standard value of a queen to the score.
@@ -845,15 +845,15 @@ public class Search implements Runnable {
 			while (moves.hasNext()) {
 				move = moves.next();
 				if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
-					move.value = (short)(Material.QUEEN.score - Material.PAWN.score);
+					move.value = (short)(params.QUEEN_VALUE - params.PAWN_VALUE);
 					if (move.capturedPiece != Piece.NULL.ind)
-						move.value += Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score;
+						move.value += eval.materialValueByPieceInd(move.capturedPiece) - eval.materialValueByPieceInd(move.movedPiece);
 				}
 				else
-					move.value = (short)(Material.getByPieceInd(move.capturedPiece).score - Material.getByPieceInd(move.movedPiece).score);
+					move.value = (short)(eval.materialValueByPieceInd(move.capturedPiece) - eval.materialValueByPieceInd(move.movedPiece));
 				arr[i++] = move;
 			}
-			return quick.sort(arr);
+			return QuickSort.sort(arr);
 		}
 		/**
 		 * Orders non-material moves according to the relative history heuristic.
@@ -870,7 +870,7 @@ public class Search implements Runnable {
 				move.value = hT.score(move);
 				arr[i++] = move;
 			}
-			return quick.sort(arr);
+			return QuickSort.sort(arr);
 		}
 	}
 	
@@ -879,16 +879,9 @@ public class Search implements Runnable {
 	private final static int L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 	private final static int W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
 	
-	private final static int NMR = 2;													// Null move pruning reduction.
-	private final static int LMR = 1;													// Late move reduction.
-	private final static int LMRMSM = 4;												// Min. number of searched moves for late move reduction
-	private final static int FMAR1 = Material.BISHOP.score;								// Futility margin.
-	private final static int FMAR2 = Material.ROOK.score;								// Extended futility margin.
-	private final static int FMAR3 = Material.QUEEN.score;								// Razoring margin.
-	private final static int A_DELTA = Material.PAWN.score;								// The aspiration delta within iterative deepening.
-	private final static int Q_DELTA = Material.KNIGHT.score - Material.PAWN.score/2;	// The margin for delta-pruning in the quiescence search.
-	
 	private final static int FULL_PLY = 4;	// For fractional ply extensions.
+	
+	private Parameters params;
 	
 	private ThreadPoolExecutor threadPool;
 	private ExecutorCompletionService<Integer> compService;
@@ -904,7 +897,6 @@ public class Search implements Runnable {
 	private byte hashEntryGen;		// Entry generation.
 	
 	private Evaluator eval;
-	private QuickSort quick;
 	
 	private boolean pondering;
 	private long searchTime;
@@ -935,11 +927,13 @@ public class Search implements Runnable {
 	 */
 	public Search(Position position, long timeLeft, long oppTimeLeft, long searchTime, int maxDepth, long maxNodes, List<Move> moves,
 			RelativeHistoryTable historyTable, byte hashEntryGen, HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable,
-			HashTable<PTEntry> pawnTable, int numOfSearchThreads) {
+			HashTable<PTEntry> pawnTable, Parameters params, int numOfSearchThreads) {
+		this.params = params;
+		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
 		numOfThreads = numOfSearchThreads;
 		this.position = position.deepCopy();
-		int phaseScore = Evaluator.phaseScore(position);
-		nullMoveObservHolds = GamePhase.getByPhaseScore(phaseScore) != GamePhase.END_GAME;
+		int phaseScore = eval.phaseScore(position);
+		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_END_GAME_LOWER;
 		if (timeLeft <= 0 && searchTime <= 0 && maxDepth <= 0 && maxNodes <= 0) {
 			pondering = true;
 			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
@@ -957,9 +951,7 @@ public class Search implements Runnable {
 		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
-		eval = new Evaluator(evalTable, pawnTable, hashEntryGen);
 		results = new Results();
-		quick = QuickSort.getInstance();
 	}
 	/**
 	 * Returns an observable container class for the results of the search.
@@ -1001,7 +993,7 @@ public class Search implements Runnable {
 	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
 	 * depth has been reached.
 	 */
-	private void iterativeDeepening() {
+	private void searchRoot() {
 		int alpha, beta, score, failHigh, failLow;
 		Stack<Future<Integer>> futures;
 		compService = new ExecutorCompletionService<Integer>(threadPool);
@@ -1009,6 +1001,7 @@ public class Search implements Runnable {
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
+		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
 			futures = new Stack<>();
 			for (int j = 0; j < numOfThreads; j++)
@@ -1037,8 +1030,8 @@ public class Search implements Runnable {
 					failHigh = 2;
 				}
 				else {
-					alpha = failLow == 0 ? Math.max(score - 2*A_DELTA, Termination.CHECK_MATE.score) :
-						failLow == 1 ? Math.max(score - 4*A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
+					alpha = failLow == 0 ? Math.max(score - 2*params.A_DELTA, Termination.CHECK_MATE.score) :
+						failLow == 1 ? Math.max(score - 4*params.A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
 					failLow++;
 				}
 				i--;
@@ -1052,8 +1045,8 @@ public class Search implements Runnable {
 					failHigh = 2;
 				}
 				else {
-					beta = failHigh == 0 ? Math.min(score + 2*A_DELTA, -Termination.CHECK_MATE.score) :
-						failHigh == 1 ? Math.min(score + 4*A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
+					beta = failHigh == 0 ? Math.min(score + 2*params.A_DELTA, -Termination.CHECK_MATE.score) :
+						failHigh == 1 ? Math.min(score + 4*params.A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 					failHigh++;
 				}
 				i--;
@@ -1061,15 +1054,15 @@ public class Search implements Runnable {
 			}
 			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
 			failHigh = failLow = 0;
-			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - A_DELTA, Termination.CHECK_MATE.score);
-			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + A_DELTA, -Termination.CHECK_MATE.score);
+			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
+			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
 		}
 	}
 	@Override
 	public void run() {
 		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numOfThreads);
 		deadLine = System.currentTimeMillis() + searchTime;
-		iterativeDeepening();
+		searchRoot();
 		threadPool.shutdown();
 	}
 }

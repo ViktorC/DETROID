@@ -1,7 +1,7 @@
 package engine;
 
 import util.BitOperations;
-import engine.Board.*;
+import engine.Bitboard.*;
 
 /**
  * A preinitialized move set database that saves the time costs of calculating move sets on the fly at the price of about 850KBytes. It contains
@@ -119,17 +119,17 @@ public enum MoveSetDatabase {
 		rookMoveSets = new long[1 << (64 - rookMagicShift)];
 		bishopMoveSets = new long[1 << (64 - bishopMagicShift)];
 		bit = 1L << sqrInd;
-		bishopOccupancyMask = BitParallelMoveSets.getBishopMoveSet(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
-		rookOccupancyMask = (BitParallelMoveSets.northFill(bit, ~Rank.R8.bits) | BitParallelMoveSets.southFill(bit, ~Rank.R1.bits) |
-				BitParallelMoveSets.westFill(bit, ~File.A.bits) | BitParallelMoveSets.eastFill(bit, ~File.H.bits))^bit;
+		bishopOccupancyMask = MultiMoveSets.bishopMoveSets(bit, 0, -1) & ~(File.A.bits | File.H.bits | Rank.R1.bits | Rank.R8.bits);
+		rookOccupancyMask = (Bitboard.northFill(bit, ~Rank.R8.bits) | Bitboard.southFill(bit, ~Rank.R1.bits) |
+				Bitboard.westFill(bit, ~File.A.bits) | Bitboard.eastFill(bit, ~File.H.bits))^bit;
 		bishopOccupancyVariations = BitOperations.getAllSubsets(bishopOccupancyMask);
 		rookOccupancyVariations = BitOperations.getAllSubsets(rookOccupancyMask);
 		bishopAttackSetVariations = new long[bishopOccupancyVariations.length];
 		rookAttackSetVariations = new long[rookOccupancyVariations.length];
 		for (int i = 0; i < bishopOccupancyVariations.length; i++)
-			bishopAttackSetVariations[i] = BitParallelMoveSets.getBishopMoveSet(bit, -1, ~bishopOccupancyVariations[i]);
+			bishopAttackSetVariations[i] = MultiMoveSets.bishopMoveSets(bit, -1, ~bishopOccupancyVariations[i]);
 		for (int i = 0; i < rookOccupancyVariations.length; i++)
-			rookAttackSetVariations[i] = BitParallelMoveSets.getRookMoveSet(bit, -1, ~rookOccupancyVariations[i]);
+			rookAttackSetVariations[i] = MultiMoveSets.rookMoveSets(bit, -1, ~rookOccupancyVariations[i]);
 		for (int i = 0; i < rookOccupancyVariations.length; i++) {
 			index = (int)((rookOccupancyVariations[i]*rookMagicNumber) >>> rookMagicShift);
 			rookMoveSets[index] = rookAttackSetVariations[i];
@@ -138,12 +138,12 @@ public enum MoveSetDatabase {
 			index = (int)((bishopOccupancyVariations[i]*bishopMagicNumber) >>> bishopMagicShift);
 			bishopMoveSets[index] = bishopAttackSetVariations[i];
 		}
-		kingMoveMask = BitParallelMoveSets.getKingMoveSet(bit, -1);
-		knightMoveMask = BitParallelMoveSets.getKnightMoveSet(bit, -1);
-		pawnWhiteAdvanceMoveMask = BitParallelMoveSets.getWhitePawnAdvanceSet(bit, -1);
-		pawnWhiteCaptureMoveMask = BitParallelMoveSets.getWhitePawnCaptureSet(bit, -1);
-		pawnBlackAdvanceMoveMask = BitParallelMoveSets.getBlackPawnAdvanceSet(bit, -1);
-		pawnBlackCaptureMoveMask = BitParallelMoveSets.getBlackPawnCaptureSet(bit, -1);
+		kingMoveMask = MultiMoveSets.kingMoveSets(bit, -1);
+		knightMoveMask = MultiMoveSets.knightMoveSets(bit, -1);
+		pawnWhiteAdvanceMoveMask = MultiMoveSets.whitePawnAdvanceSets(bit, -1);
+		pawnWhiteCaptureMoveMask = MultiMoveSets.whitePawnCaptureSets(bit, -1);
+		pawnBlackAdvanceMoveMask = MultiMoveSets.blackPawnAdvanceSets(bit, -1);
+		pawnBlackCaptureMoveMask = MultiMoveSets.blackPawnCaptureSets(bit, -1);
 	}
 	/**
 	 * Returns a simple rook move mask, i.e. the file and rank that cross each other on the square indexed by this enum instance.

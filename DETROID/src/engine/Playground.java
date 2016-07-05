@@ -33,7 +33,8 @@ public class Playground {
 		Move playerMove, bookMove;
 		List<Move> moveRestrictions = null;
 		Position p = Position.parse(Position.START_POSITION_FEN);
-		RelativeHistoryTable hT = new RelativeHistoryTable();
+		Parameters params = new Parameters();
+		RelativeHistoryTable hT = new RelativeHistoryTable(params);
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
 		HashTable<PTEntry> pT = new HashTable<>(16);
@@ -53,7 +54,7 @@ public class Playground {
 						outOfBook = true;
 					}
 				}
-				Search s = new Search(p, 0, 0, 20000, outOfBook ? 0 : 1, 0, moveRestrictions, hT, gen, tT, eT, pT, 1);
+				Search s = new Search(p, 0, 0, 20000, outOfBook ? 0 : 1, 0, moveRestrictions, hT, gen, tT, eT, pT, params, 1);
 				r = s.getResults();
 				r.addObserver(new PVO());
 				s.run();
