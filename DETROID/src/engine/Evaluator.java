@@ -399,14 +399,14 @@ public final class Evaluator {
 		// King-pawn defense and attack.
 		whiteKingInd = BitOperations.indexOfBit(whiteKing);
 		whiteKingZone = MoveSetDatabase.getByIndex(whiteKingInd).kingMoveMask;
-		score -= params.DEFEDED_KING_AREA_SQUARE_WEIGHT1*BitOperations.getHammingWeight(blackPawnAttacks & whiteKingZone);
-		score += params.DEFEDED_KING_AREA_SQUARE_WEIGHT2*BitOperations.getHammingWeight(whitePawnAttacks & whiteKingZone);
-		score += params.DEFEDED_KING_AREA_SQUARE_WEIGHT3*BitOperations.getHammingWeight(whitePawns & whiteKingZone);
+		score -= params.DEFENDED_KING_AREA_SQUARE_WEIGHT1*BitOperations.getHammingWeight(blackPawnAttacks & whiteKingZone);
+		score += params.DEFENDED_KING_AREA_SQUARE_WEIGHT2*BitOperations.getHammingWeight(whitePawnAttacks & whiteKingZone);
+		score += params.DEFENDED_KING_AREA_SQUARE_WEIGHT3*BitOperations.getHammingWeight(whitePawns & whiteKingZone);
 		blackKingInd = BitOperations.indexOfBit(blackKing);
 		blackKingZone = MoveSetDatabase.getByIndex(blackKingInd).kingMoveMask;
-		score += params.DEFEDED_KING_AREA_SQUARE_WEIGHT1*BitOperations.getHammingWeight(whitePawnAttacks & blackKingZone);
-		score -= params.DEFEDED_KING_AREA_SQUARE_WEIGHT2*BitOperations.getHammingWeight(blackPawnAttacks & blackKingZone);
-		score -= params.DEFEDED_KING_AREA_SQUARE_WEIGHT3*BitOperations.getHammingWeight(blackPawns & blackKingZone);
+		score += params.DEFENDED_KING_AREA_SQUARE_WEIGHT1*BitOperations.getHammingWeight(whitePawnAttacks & blackKingZone);
+		score -= params.DEFENDED_KING_AREA_SQUARE_WEIGHT2*BitOperations.getHammingWeight(blackPawnAttacks & blackKingZone);
+		score -= params.DEFENDED_KING_AREA_SQUARE_WEIGHT3*BitOperations.getHammingWeight(blackPawns & blackKingZone);
 		// King-pawn tropism.
 		whitePawnInds = BitOperations.serialize(whitePawns, numOfWhitePawns);
 		whiteTropism = 0;

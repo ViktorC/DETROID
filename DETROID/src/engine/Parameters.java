@@ -1,5 +1,14 @@
 package engine;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.Random;
+
 public final class Parameters {
 
 	// Piece values.
@@ -30,9 +39,9 @@ public final class Parameters {
 	byte SHIELDING_PAWN_WEIGHT3 = 10;
 	byte SHIELD_THREATENING_PAWN_WEIGHT1 = 15;
 	byte SHIELD_THREATENING_PAWN_WEIGHT2 = 10;
-	byte DEFEDED_KING_AREA_SQUARE_WEIGHT1 = 15;
-	byte DEFEDED_KING_AREA_SQUARE_WEIGHT2 = 10;
-	byte DEFEDED_KING_AREA_SQUARE_WEIGHT3 = 5;
+	byte DEFENDED_KING_AREA_SQUARE_WEIGHT1 = 15;
+	byte DEFENDED_KING_AREA_SQUARE_WEIGHT2 = 10;
+	byte DEFENDED_KING_AREA_SQUARE_WEIGHT3 = 5;
 	byte KING_PAWN_TROPISM_WEIGHT = 4;
 	byte PINNED_QUEEN_WEIGHT = 10;
 	byte PINNED_ROOK_WEIGHT = 6;
@@ -171,7 +180,71 @@ public final class Parameters {
 	byte[] PST_B_KING_OPENING = new byte[64];
 	byte[] PST_B_KING_ENDGAME = new byte[64];
 	
-	{
+	private long id;
+	
+	public final static String DEFAULT_PARAMTERS_FILE_PATH = "params.txt";
+	
+	@SuppressWarnings("unused")
+	private Parameters(boolean noIo) {
+		setChangedPieceSquareArrays();
+	}
+	public Parameters(String filePath) {
+		setParameters(filePath);
+		Random rand = new Random();
+		id = rand.nextLong();
+	}
+	public Parameters() {
+		this(DEFAULT_PARAMTERS_FILE_PATH);
+	}
+	public long getId() {
+		return id;
+	}
+	private boolean setParameters(String filePath) {
+		String line;
+		String name;
+		String value;
+		String[] arrayValues;
+		byte[] byteArray;
+		Class<? extends Parameters> clazz = this.getClass();
+		Field field;
+		int indexOfClosingNameTag;
+		try (BufferedReader reader = new BufferedReader(new FileReader(filePath));) {
+			while ((line = reader.readLine()) != null) {
+				indexOfClosingNameTag = line.indexOf(']');
+				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
+				field = clazz.getDeclaredField(name);
+				if (line.charAt(indexOfClosingNameTag + 3) == '(') {
+					value = line.substring(indexOfClosingNameTag + 4, line.indexOf(')'));
+					arrayValues = value.split(",");
+					byteArray = new byte[64];
+					for (int i = 0; i < 64; i++)
+						byteArray[i] = Byte.parseByte(arrayValues[i]);
+					field.set(this, byteArray);
+				}
+				else {
+					value = line.substring(indexOfClosingNameTag + 4, line.length());
+					switch (field.get(this).getClass().getSimpleName()) {
+					case "Byte":
+						field.set(this, Byte.parseByte(value));
+						break;
+					case "Short":
+						field.set(this, Short.parseShort(value));
+						break;
+					case "Integer":
+						field.set(this, Integer.parseInt(value));
+					}
+				}
+			}
+			return true;
+		}
+		catch (Exception e) {
+			return false;
+		}
+	}
+	/**
+	 * Recreates the mirrored piece square arrays. Should be called when one of the originals is changed.
+	 */
+	public void setChangedPieceSquareArrays() {
 		int c1, c2;
 		// Due to the reversed order of the rows in the definition of the white piece-square tables,
 		// they are just right for black with negated values.
@@ -204,5 +277,68 @@ public final class Parameters {
 				PST_W_KING_ENDGAME[c1] = (byte)-PST_B_KING_ENDGAME[c2];
 			}
 		}
+	}
+	/**
+	 * Overwrites the default parameters file, params.txt, with the state of this instance.
+	 * 
+	 * @return
+	 */
+	public boolean writeToFile() {
+		return writeToFile(DEFAULT_PARAMTERS_FILE_PATH);
+	}
+	/**
+	 * Writes the parameters to the specified file.
+	 * 
+	 * @param fileName
+	 * @return
+	 */
+	public boolean writeToFile(String fileName) {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+			writer.write(toString());
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
+	@Override
+	public String toString() {
+		String out = "";
+		String subString;
+		@SuppressWarnings("rawtypes")
+		Class fieldClass;
+		Object fieldValue;
+		int length;
+		Object arrayElement;
+		Class<? extends Parameters> clazz = this.getClass();
+		Field[] fields = clazz.getDeclaredFields();
+		for (Field f : fields) {
+			subString = "";
+			try {
+				fieldClass = f.getType();
+				if (fieldClass.isArray()) {
+					fieldValue = f.get(this);
+					subString += "[" + f.getName() + "] =(";
+					length = Array.getLength(fieldValue);
+				    for (int i = 0; i < length; i ++) {
+				        arrayElement = Array.get(fieldValue, i);
+				        subString += arrayElement.toString();
+				        if (i != length - 1)
+				        	subString += ",";
+				    }
+				    subString += ")";
+				}
+				else {
+					subString += "[" + f.getName() + "] = " + f.get(this).toString();
+				}
+				subString += "\n";
+			}
+			catch (IllegalArgumentException | IllegalAccessException e) {
+				System.out.println(subString);
+				e.printStackTrace();
+				subString = "";
+			}
+			out += subString;
+		}
+		return out;
 	}
 }
