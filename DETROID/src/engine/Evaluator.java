@@ -43,6 +43,28 @@ public final class Evaluator {
 	private final int TOTAL_PHASE_WEIGHTS;
 	private final int PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT;
 	
+	byte[] PST_W_PAWN_OPENING;
+	byte[] PST_W_PAWN_ENDGAME;
+	byte[] PST_W_KNIGHT_OPENING;
+	byte[] PST_W_KNIGHT_ENDGAME;
+	byte[] PST_W_BISHOP;
+	byte[] PST_W_ROOK_OPENING;
+	byte[] PST_W_ROOK_ENDGAME;
+	byte[] PST_W_QUEEN;
+	byte[] PST_W_KING_OPENING;
+	byte[] PST_W_KING_ENDGAME;
+	
+	byte[] PST_B_PAWN_OPENING;
+	byte[] PST_B_PAWN_ENDGAME;
+	byte[] PST_B_KNIGHT_OPENING;
+	byte[] PST_B_KNIGHT_ENDGAME;
+	byte[] PST_B_BISHOP;
+	byte[] PST_B_ROOK_OPENING;
+	byte[] PST_B_ROOK_ENDGAME;
+	byte[] PST_B_QUEEN;
+	byte[] PST_B_KING_OPENING;
+	byte[] PST_B_KING_ENDGAME;
+	
 	private byte[][] PST_OPENING;
 	private byte[][] PST_ENDGAME;
 	
@@ -55,15 +77,71 @@ public final class Evaluator {
 		this.params = params;
 		TOTAL_PHASE_WEIGHTS = 4*(params.KNIGHT_PHASE_WEIGHT + params.BISHOP_PHASE_WEIGHT + params.ROOK_PHASE_WEIGHT) + 2*params.QUEEN_PHASE_WEIGHT;
 		PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT = Math.min(phaseScore(0, 0, 2, 0), phaseScore(0, 0, 0, 2));
-		PST_OPENING = new byte[][]{params.PST_W_KING_OPENING, params.PST_W_QUEEN, params.PST_W_ROOK_OPENING, params.PST_W_BISHOP,
-			params.PST_W_KNIGHT_OPENING, params.PST_W_PAWN_OPENING, params.PST_B_KING_OPENING, params.PST_B_QUEEN, params.PST_B_ROOK_OPENING,
-			params.PST_B_BISHOP, params.PST_B_KNIGHT_OPENING, params.PST_B_PAWN_OPENING};
-		PST_ENDGAME = new byte[][]{params.PST_W_KING_ENDGAME, params.PST_W_QUEEN, params.PST_W_ROOK_ENDGAME, params.PST_W_BISHOP,
-			params.PST_W_KNIGHT_ENDGAME, params.PST_W_PAWN_ENDGAME, params.PST_B_KING_ENDGAME, params.PST_B_QUEEN, params.PST_B_ROOK_ENDGAME,
-			params.PST_B_BISHOP, params.PST_B_KNIGHT_ENDGAME, params.PST_B_PAWN_ENDGAME};
+		initPieceSquareArrays();
+		PST_OPENING = new byte[][]{PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK_OPENING, PST_W_BISHOP, PST_W_KNIGHT_OPENING, PST_W_PAWN_OPENING,
+			PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK_OPENING, PST_B_BISHOP, PST_B_KNIGHT_OPENING, PST_B_PAWN_OPENING};
+		PST_ENDGAME = new byte[][]{PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT_ENDGAME, PST_W_PAWN_ENDGAME,
+			PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT_ENDGAME, PST_B_PAWN_ENDGAME};
 		eT = evalTable;
 		pT = pawnTable;
 		hashGen = hashEntryGeneration;
+	}
+	/**
+	 * Initializes the piece square arrays with the correct order of values.
+	 */
+	public void initPieceSquareArrays() {
+		int c1, c2;
+		PST_W_PAWN_OPENING = new byte[64];
+		PST_W_PAWN_ENDGAME = new byte[64];
+		PST_W_KNIGHT_OPENING = new byte[64];
+		PST_W_KNIGHT_ENDGAME = new byte[64];
+		PST_W_BISHOP = new byte[64];
+		PST_W_ROOK_OPENING = new byte[64];
+		PST_W_ROOK_ENDGAME = new byte[64];
+		PST_W_QUEEN = new byte[64];
+		PST_W_KING_OPENING = new byte[64];
+		PST_W_KING_ENDGAME = new byte[64];
+		PST_B_PAWN_OPENING = new byte[64];
+		PST_B_PAWN_ENDGAME = new byte[64];
+		PST_B_KNIGHT_OPENING = new byte[64];
+		PST_B_KNIGHT_ENDGAME = new byte[64];
+		PST_B_BISHOP = new byte[64];
+		PST_B_ROOK_OPENING = new byte[64];
+		PST_B_ROOK_ENDGAME = new byte[64];
+		PST_B_QUEEN = new byte[64];
+		PST_B_KING_OPENING = new byte[64];
+		PST_B_KING_ENDGAME = new byte[64];
+		// Due to the reversed order of the rows in the definition of the white piece-square tables,
+		// they are just right for black with negated values.
+		for (int i = 0; i < 64; i++) {
+			PST_B_PAWN_OPENING[i] = (byte)-params.PST_PAWN_OPENING[i];
+			PST_B_PAWN_ENDGAME[i] = (byte)-params.PST_PAWN_ENDGAME[i];
+			PST_B_KNIGHT_OPENING[i] = (byte)-params.PST_KNIGHT_OPENING[i];
+			PST_B_KNIGHT_ENDGAME[i] = (byte)-params.PST_KNIGHT_ENDGAME[i];
+			PST_B_BISHOP[i] = (byte)-params.PST_BISHOP[i];
+			PST_B_ROOK_OPENING[i] = (byte)-params.PST_ROOK_OPENING[i];
+			PST_B_ROOK_ENDGAME[i] = (byte)-params.PST_ROOK_ENDGAME[i];
+			PST_B_QUEEN[i] = (byte)-params.PST_QUEEN[i];
+			PST_B_KING_OPENING[i] = (byte)-params.PST_KING_OPENING[i];
+			PST_B_KING_ENDGAME[i] = (byte)-params.PST_KING_ENDGAME[i];
+		}
+		// To get the right values for the white piece-square tables, we vertically mirror and negate the ones for black
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				c1 = i*8 + j;
+				c2 = ((7 - i)*8) + j;
+				PST_W_PAWN_OPENING[c1] = (byte)-PST_B_PAWN_OPENING[c2];
+				PST_W_PAWN_ENDGAME[c1] = (byte)-PST_B_PAWN_ENDGAME[c2];
+				PST_W_KNIGHT_OPENING[c1] = (byte)-PST_B_KNIGHT_OPENING[c2];
+				PST_W_KNIGHT_ENDGAME[c1] = (byte)-PST_B_KNIGHT_ENDGAME[c2];
+				PST_W_BISHOP[c1] = (byte)-PST_B_BISHOP[c2];
+				PST_W_ROOK_OPENING[c1] = (byte)-PST_B_ROOK_OPENING[c2];
+				PST_W_ROOK_ENDGAME[c1] = (byte)-PST_B_ROOK_ENDGAME[c2];
+				PST_W_QUEEN[c1] = (byte)-PST_B_QUEEN[c2];
+				PST_W_KING_OPENING[c1] = (byte)-PST_B_KING_OPENING[c2];
+				PST_W_KING_ENDGAME[c1] = (byte)-PST_B_KING_ENDGAME[c2];
+			}
+		}
 	}
 	/**
 	 * Returns the value of a piece type defined by a piece index according to {@link #engine.Piece Piece}.

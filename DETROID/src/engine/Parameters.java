@@ -78,7 +78,7 @@ public final class Parameters {
 	int LAZY_EVAL_MAR = 187;
 	
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation" tables.
-	byte[] PST_W_PAWN_OPENING =
+	byte[] PST_PAWN_OPENING =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		  50, 50, 50, 50, 50, 50, 50, 50,
 		  10, 20, 25, 30, 30, 25, 20, 10,
@@ -87,7 +87,7 @@ public final class Parameters {
 		   0,  8, 10, 10, 10, 10,  8,  0,
 		   5,  5,  5,  0,  0,  5,  5,  5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
-	byte[] PST_W_PAWN_ENDGAME =
+	byte[] PST_PAWN_ENDGAME =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		  70, 75, 80, 80, 80, 80, 75, 70,
 		  20, 30, 40, 45, 45, 40, 30, 20,
@@ -96,7 +96,7 @@ public final class Parameters {
 		   0,  0, -5, -5, -5, -5,  0,  0,
 		  -5,-10,-10,-20,-20,-10,-10, -5,
 		   0,  0,  0,  0,  0,  0,  0,  0};
-	byte[] PST_W_KNIGHT_OPENING =
+	byte[] PST_KNIGHT_OPENING =
 		{-15,-10, -5, -5, -5, -5,-10,-15,
 		 -10,-10,  0,  0,  0,  0,-10,-10,
 		  -5,  0,  5, 10, 10,  5,  0, -5,
@@ -105,7 +105,7 @@ public final class Parameters {
 		  -5,  0,  5, 10, 10,  5,  0, -5,
 		 -10, -5,  0,  0,  0,  0, -5,-10,
 		 -15,-10, -5, -5, -5, -5,-10,-15};
-	byte[] PST_W_KNIGHT_ENDGAME =
+	byte[] PST_KNIGHT_ENDGAME =
 		{-50,-40,-30,-30,-30,-30,-40,-50,
 		 -40,-20, -5,  0,  0, -5,-20,-40,
 		 -30,  0,  0,  0,  0,  0, -5,-30,
@@ -114,7 +114,7 @@ public final class Parameters {
 		 -30,  0,  0,  0,  0,  0,  0,-30,
 		 -40,-20, -5,  0,  0, -5,-20,-40,
 		 -50,-40,-30,-30,-30,-30,-40,-50};
-	byte[] PST_W_BISHOP =
+	byte[] PST_BISHOP =
 		{-20,-10,-10,-10,-10,-10,-10,-20,
 		 -10,  0,  0,  0,  0,  0,  0,-10,
 		 -10,  0,  5, 10, 10,  5,  0,-10,
@@ -123,7 +123,7 @@ public final class Parameters {
 		 -10, 10, 10, 10, 10, 10, 10,-10,
 		 -10,  5,  0,  0,  0,  0,  5,-10,
 		 -20,-10,-10,-10,-10,-10,-10,-20};
-	byte[] PST_W_ROOK_OPENING =
+	byte[] PST_ROOK_OPENING =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		   5, 10, 10, 10, 10, 10, 10,  5,
 		  -5, -5, -5, -5, -5, -5, -5, -5,
@@ -132,7 +132,7 @@ public final class Parameters {
 		  -5, -5, -5, -5, -5, -5, -5, -5,
 		  -5, -5, -5, -5, -5, -5, -5, -5,
 		  10, -5,  0, 20,  5, 20, -5, 10};
-	byte[] PST_W_ROOK_ENDGAME =
+	byte[] PST_ROOK_ENDGAME =
 		{  0,  0,  0,  0,  0,  0,  0,  0,
 		   5, 10, 10, 10, 10, 10, 10,  5,
 		  -5,  0,  0,  0,  0,  0,  0, -5,
@@ -141,7 +141,7 @@ public final class Parameters {
 		  -5,  0,  0,  0,  0,  0,  0, -5,
 		  -5,  0,  0,  0,  0,  0,  0, -5,
 		   0,  0,  5,  5,  5,  5,  0,  0};
-	byte[] PST_W_QUEEN =
+	byte[] PST_QUEEN =
 		{-20,-10,-10, -5, -5,-10,-10,-20,
 		 -10,  0,  0,  0,  0,  0,  0,-10,
 		 -10,  0,  5,  5,  5,  5,  0,-10,
@@ -150,7 +150,7 @@ public final class Parameters {
 		 -10,  0,  5,  5,  5,  5,  0,-10,
 		 -10,  0,  0,  0,  0,  0,  0,-10,
 		 -20,-10,-10, -5, -5,-10,-10,-20};
-	byte[] PST_W_KING_OPENING =
+	byte[] PST_KING_OPENING =
 		{-30,-40,-40,-50,-50,-40,-40,-30,
 		 -30,-40,-40,-50,-50,-40,-40,-30,
 		 -30,-40,-40,-50,-50,-40,-40,-30,
@@ -159,7 +159,7 @@ public final class Parameters {
 		 -10,-20,-20,-20,-20,-20,-20,-10,
 		  10, 10,-10,-10,-10,-10, 10, 10,
 		  20, 30, 30,-20,  0,-20, 40, 30};
-	byte[] PST_W_KING_ENDGAME =
+	byte[] PST_KING_ENDGAME =
 		{-50,-40,-30,-20,-20,-30,-40,-50,
 		 -30,-20,-10,  0,  0,-10,-20,-30,
 		 -30,-10, 20, 30, 30, 20,-10,-30,
@@ -169,25 +169,12 @@ public final class Parameters {
 		 -30,-30,  0,  0,  0,  0,-30,-30,
 		 -50,-30,-30,-30,-30,-30,-30,-50};
 	
-	byte[] PST_B_PAWN_OPENING = new byte[64];
-	byte[] PST_B_PAWN_ENDGAME = new byte[64];
-	byte[] PST_B_KNIGHT_OPENING = new byte[64];
-	byte[] PST_B_KNIGHT_ENDGAME = new byte[64];
-	byte[] PST_B_BISHOP = new byte[64];
-	byte[] PST_B_ROOK_OPENING = new byte[64];
-	byte[] PST_B_ROOK_ENDGAME = new byte[64];
-	byte[] PST_B_QUEEN = new byte[64];
-	byte[] PST_B_KING_OPENING = new byte[64];
-	byte[] PST_B_KING_ENDGAME = new byte[64];
-	
 	private long id;
 	
 	public final static String DEFAULT_PARAMTERS_FILE_PATH = "params.txt";
 	
 	@SuppressWarnings("unused")
-	private Parameters(boolean noIo) {
-		setChangedPieceSquareArrays();
-	}
+	private Parameters(boolean noIo) { }
 	public Parameters(String filePath) {
 		setParameters(filePath);
 		Random rand = new Random();
@@ -239,43 +226,6 @@ public final class Parameters {
 		}
 		catch (Exception e) {
 			return false;
-		}
-	}
-	/**
-	 * Recreates the mirrored piece square arrays. Should be called when one of the originals is changed.
-	 */
-	public void setChangedPieceSquareArrays() {
-		int c1, c2;
-		// Due to the reversed order of the rows in the definition of the white piece-square tables,
-		// they are just right for black with negated values.
-		for (int i = 0; i < 64; i++) {
-			PST_B_PAWN_OPENING[i] = (byte)-PST_W_PAWN_OPENING[i];
-			PST_B_PAWN_ENDGAME[i] = (byte)-PST_W_PAWN_ENDGAME[i];
-			PST_B_KNIGHT_OPENING[i] = (byte)-PST_W_KNIGHT_OPENING[i];
-			PST_B_KNIGHT_ENDGAME[i] = (byte)-PST_W_KNIGHT_ENDGAME[i];
-			PST_B_BISHOP[i] = (byte)-PST_W_BISHOP[i];
-			PST_B_ROOK_OPENING[i] = (byte)-PST_W_ROOK_OPENING[i];
-			PST_B_ROOK_ENDGAME[i] = (byte)-PST_W_ROOK_ENDGAME[i];
-			PST_B_QUEEN[i] = (byte)-PST_W_QUEEN[i];
-			PST_B_KING_OPENING[i] = (byte)-PST_W_KING_OPENING[i];
-			PST_B_KING_ENDGAME[i] = (byte)-PST_W_KING_ENDGAME[i];
-		}
-		// To get the right values for the white piece-square tables, we vertically mirror and negate the ones for black
-		for (int i = 0; i < 8; i++) {
-			for (int j = 0; j < 8; j++) {
-				c1 = i*8 + j;
-				c2 = ((7 - i)*8) + j;
-				PST_W_PAWN_OPENING[c1] = (byte)-PST_B_PAWN_OPENING[c2];
-				PST_W_PAWN_ENDGAME[c1] = (byte)-PST_B_PAWN_ENDGAME[c2];
-				PST_W_KNIGHT_OPENING[c1] = (byte)-PST_B_KNIGHT_OPENING[c2];
-				PST_W_KNIGHT_ENDGAME[c1] = (byte)-PST_B_KNIGHT_ENDGAME[c2];
-				PST_W_BISHOP[c1] = (byte)-PST_B_BISHOP[c2];
-				PST_W_ROOK_OPENING[c1] = (byte)-PST_B_ROOK_OPENING[c2];
-				PST_W_ROOK_ENDGAME[c1] = (byte)-PST_B_ROOK_ENDGAME[c2];
-				PST_W_QUEEN[c1] = (byte)-PST_B_QUEEN[c2];
-				PST_W_KING_OPENING[c1] = (byte)-PST_B_KING_OPENING[c2];
-				PST_W_KING_ENDGAME[c1] = (byte)-PST_B_KING_ENDGAME[c2];
-			}
 		}
 	}
 	/**
