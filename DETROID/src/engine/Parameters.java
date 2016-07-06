@@ -333,8 +333,6 @@ public final class Parameters {
 				subString += "\n";
 			}
 			catch (IllegalArgumentException | IllegalAccessException e) {
-				System.out.println(subString);
-				e.printStackTrace();
 				subString = "";
 			}
 			out += subString;
