@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import communication.UCI;
 import engine.Book.SelectionModel;
 import engine.Search.Results;
 import util.*;
@@ -22,12 +23,12 @@ public class Engine implements UCI {
 	private final static Engine INSTANCE = new Engine();
 	
 	private ExecutorService background;
-	private Future<?> backgroundTask;
+	private List<Future<?>> backgroundTasks;
 	
 	private Scanner in;
 	private PrintStream out;
 	
-	private Observer searchResultObserver;
+	private List<Observer> observers;
 	
 	private Parameters params;
 	private Game game;
@@ -44,7 +45,9 @@ public class Engine implements UCI {
 	boolean verbose;
 	
 	private Engine() {
-		background = Executors.newFixedThreadPool(1);
+		background = Executors.newCachedThreadPool();
+		backgroundTasks = new Queue<>();
+		observers = new Queue<>();
 		setInputStream(DEFAULT_INPUT_STREAM);
 		setOutputStream(DEFAULT_OUTPUT_STREAM);
 		setHashSize(DEFAULT_HASH_SIZE);
@@ -69,15 +72,12 @@ public class Engine implements UCI {
 			this.out.close();
 		this.out = new PrintStream(out);
 	}
-	public void setHashSize(int maxHashSizeMb) {
+	public void subscribe(Observer obs) {
+		observers.add(obs);
+	}
+	private void setHashSize(int maxHashSizeMb) {
 		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.5*Runtime.getRuntime().maxMemory()/(1 << 20) ?
 				(int)(0.5*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
-	}
-	public void setObserver(Observer obs) {
-		searchResultObserver = obs;
-	}
-	private Future<?> submitTask(Runnable task) {
-		return background.submit(task);
 	}
 	private Move tryBook() {
 		return book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
@@ -99,8 +99,6 @@ public class Engine implements UCI {
 			new Search(game.getPosition(), bTimeLeft, wTimeLeft, searchTime, maxDepth, maxNodes, moves,
 					hT, gen, tT, eT, pT, params, Math.max(numOfCores - 1, 1));
 		res = search.getResults();
-		if (searchResultObserver != null)
-			res.addObserver(searchResultObserver);
 		search.run();
 		if (!Thread.currentThread().isInterrupted()) {
 			if (gen == 127) {
@@ -119,10 +117,69 @@ public class Engine implements UCI {
 		}
 		return res.getPvLine() == null ? null : res.getPvLine().getHead();
 	}
-	public void listen() {
-		String command;
-		while (in.hasNextLine()) {
-			command = in.nextLine();
-		}
+	@Override
+	public String uci() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String id() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void debug(boolean on) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public String isReady() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public KeyValuePair<String, String>[] options() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void setOption(KeyValuePair<String, String> option) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public String register() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void uciNewGame() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void position(String fen) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public String go(KeyValuePair<String, String>[] params) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void stop() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void ponderHit() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void quit() {
+		// TODO Auto-generated method stub
+		
 	}
 }

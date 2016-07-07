@@ -123,6 +123,8 @@ public class Position implements Hashable, Copiable<Position> {
 		pos.enPassantRights = EnPassantRights.NONE.ind;
 		pos.whiteCastlingRights = CastlingRights.ALL.ind;
 		pos.blackCastlingRights = CastlingRights.ALL.ind;
+		if (fen.equals("startpos") || fen.equals("startposition"))
+			return parse(START_POSITION_FEN);
 		if (fenFields.length == 6) {
 			try {
 				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
