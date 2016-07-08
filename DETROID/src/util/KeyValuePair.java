@@ -10,8 +10,8 @@ package util;
  */
 public class KeyValuePair<K, V> {
 
-	final K key;
-	final V value;
+	private final K key;
+	private final V value;
 	
 	public KeyValuePair(K key, V value) {
 		this.key = key;
@@ -22,5 +22,11 @@ public class KeyValuePair<K, V> {
 	}
 	public V getValue() {
 		return value;
+	}
+
+	@Override
+	public String toString()
+	{
+		return key.toString() + " " + value.toString();
 	}
 }
