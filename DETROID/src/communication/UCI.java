@@ -1,5 +1,7 @@
 package communication;
 
+import java.util.Observer;
+
 import util.KeyValuePair;
 
 /**
@@ -17,18 +19,20 @@ public interface UCI {
 	 *
 	 */
 	public enum SearchAttributes {
-		searchmoves,
-		ponder,
-		wtime,
-		btime,
-		winc,
-		binc,
-		movestogo,
-		depth,
-		nodes,
-		mate,
-		movetime,
-		infinite
+		
+		SEARCHMOVES,
+		PONDER,
+		WTIME,
+		BTIME,
+		WINC,
+		BINC,
+		MOVESTOGO,
+		DEPTH,
+		NODES,
+		MATE,
+		MOVETIME,
+		INFINITE
+		
 	}
 	/**
 	 * The possible parameters sent to the GUI in info strings when in debug mode.
@@ -37,22 +41,24 @@ public interface UCI {
 	 *
 	 */
 	public enum InfoAttributes {
-		depth,
-		seldepth,
-		time,
-		nodes,
-		pv,
-		multipv,
-		score,
-		currmove,
-		currmovenumber,
-		hashfull,
-		nps,
-		tbhits,
-		cpuload,
-		string,
-		refutation,
-		currline
+		
+		DEPTH,
+		SELDEPTH,
+		TIME,
+		NODES,
+		PV,
+		MULTIPV,
+		SCORE,
+		CURRMOVE,
+		CURRMOVENUMBER,
+		HASHFULL,
+		NPS,
+		TBHITS,
+		CPULOAD,
+		STRING,
+		REFUTATION,
+		CURRLINE
+		
 	}
 	/**
 	 * The possible types of the score attribute from the info attributes.
@@ -61,24 +67,28 @@ public interface UCI {
 	 *
 	 */
 	public enum InfoScoreTypes {
-		cp,
-		mate,
-		lowerbound,
-		upperbound
+		
+		CP,
+		MATE,
+		LOWERBOUND,
+		UPPERBOUND
+		
 	}
 	/**
-	 * The attributes that can and have to be specified (according to the type of the option) in the 'option' command.
+	 * The attributes that can and have to be specified (depending on the type of the option) in the 'option' command.
 	 * 
 	 * @author Viktor
 	 *
 	 */
 	public enum OptionAttributes {
-		name,
-		type,
-		default_,
-		min,
-		max,
-		var
+		
+		NAME,
+		TYPE,
+		DEFAULT_,
+		MIN,
+		MAX,
+		VAR
+		
 	}
 	/**
 	 * The different values the 'type' attribute from the option attributes can take on.
@@ -87,11 +97,13 @@ public interface UCI {
 	 *
 	 */
 	public enum OptionTypes {
-		check,
-		spin,
-		combo,
-		button,
-		string
+		
+		CHECK,
+		SPIN,
+		COMBO,
+		BUTTON,
+		STRING
+		
 	}
 	
 	/**
@@ -113,6 +125,12 @@ public interface UCI {
 	 */
 	String getAuthor();
 	/**
+	 * Necessary for the GUI to be provided with up to date info strings in debug mode.
+	 * 
+	 * @param observer
+	 */
+	void subscribe(Observer observer);
+	/**
 	 * Sets whether the engine should run in debug mode. In debug mode, the engine can (and is expected to) send detailed info strings
 	 * such as search statistics to the GUI.
 	 * 
@@ -131,14 +149,14 @@ public interface UCI {
 	 * 
 	 * @return
 	 */
-	KeyValuePair<String, ?>[][] options();
+	Iterable<Iterable<KeyValuePair<OptionAttributes, ?>>> options();
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
 	 * @param optionName
 	 * @param value
 	 */
-	void setOption(String optionName, Object value);
+	void setOption(OptionAttributes option, Object value);
 	/**
 	 * Resets the game to a new instance.
 	 */
@@ -155,7 +173,7 @@ public interface UCI {
 	 * @param params
 	 * @return The best move found in long algebraic notation.
 	 */
-	String go(KeyValuePair<String, ?>[] params);
+	String go(Iterable<KeyValuePair<SearchAttributes, ?>> params);
 	/**
 	 * Asks the engine to stop searching and return the best move found up until that point.
 	 * 
