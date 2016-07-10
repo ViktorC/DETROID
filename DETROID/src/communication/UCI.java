@@ -3,6 +3,7 @@ package communication;
 import java.util.Observer;
 
 import util.KeyValuePair;
+import util.Setting;
 
 /**
  * An interface supporting the UCI protocol as specified by Stefan-Meyer Kahlen.
@@ -74,37 +75,6 @@ public interface UCI {
 		UPPERBOUND
 		
 	}
-	/**
-	 * The attributes that can and have to be specified (depending on the type of the option) in the 'option' command.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public enum OptionAttributes {
-		
-		NAME,
-		TYPE,
-		DEFAULT_,
-		MIN,
-		MAX,
-		VAR
-		
-	}
-	/**
-	 * The different values the 'type' attribute from the option attributes can take on.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public enum OptionTypes {
-		
-		CHECK,
-		SPIN,
-		COMBO,
-		BUTTON,
-		STRING
-		
-	}
 	
 	/**
 	 * Tells the engine to switch to UCI mode.
@@ -149,14 +119,15 @@ public interface UCI {
 	 * 
 	 * @return
 	 */
-	Iterable<Iterable<KeyValuePair<OptionAttributes, ?>>> options();
+	Iterable<Setting<?>> options();
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
 	 * @param optionName
 	 * @param value
+	 * @throws IllegalArgumentException
 	 */
-	void setOption(OptionAttributes option, Object value);
+	void setOption(String name, Object value);
 	/**
 	 * Resets the game to a new instance.
 	 */

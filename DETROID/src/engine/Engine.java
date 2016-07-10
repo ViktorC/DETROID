@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.HashMap;
 import java.util.Observer;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -7,7 +8,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import communication.UCI;
-
 import engine.Book.SelectionModel;
 import engine.Search.Results;
 import util.*;
@@ -18,7 +18,6 @@ public class Engine implements UCI {
 	
 	private final static String NAME = "DETROID";
 	private final static String AUTHOR = "Viktor Csomor";
-	private final static int DEFAULT_HASH_SIZE = 64;
 	
 	private boolean debug;
 	
@@ -29,11 +28,13 @@ public class Engine implements UCI {
 	
 	private List<Observer> observers;
 	
+	private HashMap<String, Setting<?>> settings;
+	
 	private Parameters params;
 	private Game game;
+	private boolean useBook;
 	private Book book;
 	private RelativeHistoryTable hT;
-	private int maxHashMemory;
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private HashTable<ETEntry> eT;		// Evaluation hash table.
 	private HashTable<PTEntry> pT;		// Pawn hash table.
@@ -46,38 +47,48 @@ public class Engine implements UCI {
 	private Engine() {
 		background = Executors.newCachedThreadPool();
 		backgroundTasks = new Queue<>();
-		observers = new Queue<>();
-		in = new Scanner(System.in);
 		params = new Parameters();
-		hT = new RelativeHistoryTable(params);
-		tT = new HashTable<>(maxHashMemory/2, TTEntry.SIZE);
-		eT = new HashTable<>(maxHashMemory*15/32, ETEntry.SIZE);
-		pT = new HashTable<>(maxHashMemory/32);
 		book = Book.getInstance();
+		observers = new Queue<>();
+		settings = new HashMap<>();
+		in = new Scanner(System.in);
+		SettingFactory factory = new SettingFactory();
+		settings.put("Hash", factory.buildNumberSetting("Hash", 64, 8, 512));
+		settings.put("UseOwnBook", factory.buildBoolSetting("OwnBook", false));
+		settings.put("OwnBookPath", factory.buildStringSetting("OwnBookPath", Book.DEFAULT_BOOK_FILE_PATH));
+		settings.put("UseOwnBookAsSecondary", factory.buildBoolSetting("UseOwnBookAsSecondary", false));
+		hT = new RelativeHistoryTable(params);
+		setHashSize((int)settings.get("Hash").getValue());
 		numOfCores = Runtime.getRuntime().availableProcessors();
 	}
 	public Engine getInstance() {
 		return INSTANCE;
 	}
-	private void setHashSize(int maxHashSizeMb) {
-		maxHashMemory = maxHashSizeMb <= 64 ? 64 : maxHashSizeMb >= 0.5*Runtime.getRuntime().maxMemory()/(1 << 20) ?
-				(int)(0.5*Runtime.getRuntime().maxMemory()/(1 << 20)) : maxHashSizeMb;
+	private void setHashSize(int hashSize) {
+		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
+		tT = new HashTable<>(hashSize*params.TT_SHARE/totalHashShares, TTEntry.SIZE);
+		eT = new HashTable<>(hashSize*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
+		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 	}
-	private Move tryBook() {
-		return book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+	private boolean setBookPath(String path) {
+		if ((boolean)settings.get("UseOwnBookAsSecondary").getValue())
+			book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH);
+		return book.setMainBookPath(path);
 	}
 	@Override
 	public boolean uci() {
-		// The engine supports UCI mode by default.
-		return true;
+		// TODO Auto-generated method stub
+		return false;
 	}
 	@Override
 	public String getName() {
-		return NAME;
+		// TODO Auto-generated method stub
+		return null;
 	}
 	@Override
 	public String getAuthor() {
-		return AUTHOR;
+		// TODO Auto-generated method stub
+		return null;
 	}
 	@Override
 	public void subscribe(Observer observer) {
@@ -86,7 +97,8 @@ public class Engine implements UCI {
 	}
 	@Override
 	public void debug(boolean on) {
-		debug = on;
+		// TODO Auto-generated method stub
+		
 	}
 	@Override
 	public boolean isReady() {
@@ -94,12 +106,12 @@ public class Engine implements UCI {
 		return false;
 	}
 	@Override
-	public Iterable<Iterable<KeyValuePair<OptionAttributes, ?>>> options() {
+	public Iterable<Setting<?>> options() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	@Override
-	public void setOption(OptionAttributes option, Object value) {
+	public void setOption(String name, Object value) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -133,5 +145,4 @@ public class Engine implements UCI {
 		// TODO Auto-generated method stub
 		
 	}
-	
 }

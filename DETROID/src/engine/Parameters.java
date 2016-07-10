@@ -74,6 +74,11 @@ public final class Parameters {
 	// The relative history table's value depreciation factor.
 	byte RHT_DECREMENT_FACTOR = 4;
 	
+	// The shares of the different hash tables of the total hash size.
+	byte TT_SHARE = 16;
+	byte ET_SHARE = 15;
+	byte PT_SHARE = 1;
+	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
 	int LAZY_EVAL_MAR = 187;
 	
