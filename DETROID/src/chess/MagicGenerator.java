@@ -1,9 +1,9 @@
-package engine;
+package chess;
 
 import java.util.Random;
 
+import chess.Bitboard.*;
 import util.BitOperations;
-import engine.Bitboard.*;
 
 /**
  * A class whose instance generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move

@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 import util.List;
 
@@ -143,9 +143,7 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public boolean equals(Move m) {
-		if (from == m.from && to == m.to && movedPiece == m.movedPiece && capturedPiece == m.capturedPiece && type == m.type)
-			return true;
-		return false;
+		return (from == m.from && to == m.to && movedPiece == m.movedPiece && capturedPiece == m.capturedPiece && type == m.type);
 	}
 	/**Returns whether this move is equal to the input parameter 'compressed' move.
 	 * 
@@ -153,12 +151,10 @@ public class Move implements Comparable<Move> {
 	 * @return
 	 */
 	public boolean equals(int m) {
-		if (from == (m & ToInt.MASK_FROM.value) && to == ((m >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM.value) &&
+		return (from == (m & ToInt.MASK_FROM.value) && to == ((m >>> ToInt.SHIFT_TO.value) & ToInt.MASK_FROM.value) &&
 			movedPiece == ((m >>> ToInt.SHIFT_MOVED.value) & ToInt.MASK_MOVED.value) &&
 			capturedPiece == ((m >>> ToInt.SHIFT_CAPTURED.value) & ToInt.MASK_CAPTURED.value) &&
-			type == (m >>> ToInt.SHIFT_TYPE.value))
-			return true;
-		return false;
+			type == (m >>> ToInt.SHIFT_TYPE.value));
 	}
 	/**Prints all moves contained in the input parameter to the console.
 	 * 

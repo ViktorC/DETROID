@@ -1,8 +1,8 @@
-package engine;
+package chess;
 
 import java.util.Random;
 
-import engine.Bitboard.Square;
+import chess.Bitboard.Square;
 
 /**
  * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
@@ -285,7 +285,7 @@ public final class ZobristKeyGenerator {
 		long[] movedRow;
 		long key = p.key, pawnKey = p.pawnKey;
 		Move move = p.getLastMove();
-		UnmakeRegister unmakeReg = p.getUnmakeRegister();
+		UnmakeMoveRegister unmakeReg = p.getUnmakeRegister();
 		key ^= turn;
 		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];
 		key ^= blackCastlingRights[unmakeReg.blackCastlingRights];

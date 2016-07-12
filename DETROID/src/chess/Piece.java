@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 /**
  * An enum type for the different chess pieces. Each piece has an id number by which it is represented in the array of the auxiliary offset board, and

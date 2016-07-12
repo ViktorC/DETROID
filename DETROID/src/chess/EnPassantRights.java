@@ -1,6 +1,6 @@
-package engine;
+package chess;
 
-import engine.Bitboard.Square;
+import chess.Bitboard.Square;
 
 /**
  * A simple enum type for the representation of a side's en passant rights in a position.

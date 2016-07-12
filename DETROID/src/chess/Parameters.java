@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -187,6 +187,210 @@ public final class Parameters {
 	}
 	public Parameters() {
 		this(DEFAULT_PARAMTERS_FILE_PATH);
+	}
+	public short getKING_VALUE() {
+		return KING_VALUE;
+	}
+	public short getKING_PHASE_WEIGHT() {
+		return KING_PHASE_WEIGHT;
+	}
+	public short getQUEEN_VALUE() {
+		return QUEEN_VALUE;
+	}
+	public short getQUEEN_PHASE_WEIGHT() {
+		return QUEEN_PHASE_WEIGHT;
+	}
+	public short getROOK_VALUE() {
+		return ROOK_VALUE;
+	}
+	public short getROOK_PHASE_WEIGHT() {
+		return ROOK_PHASE_WEIGHT;
+	}
+	public short getBISHOP_VALUE() {
+		return BISHOP_VALUE;
+	}
+	public short getBISHOP_PHASE_WEIGHT() {
+		return BISHOP_PHASE_WEIGHT;
+	}
+	public short getKNIGHT_VALUE() {
+		return KNIGHT_VALUE;
+	}
+	public short getKNIGHT_PHASE_WEIGHT() {
+		return KNIGHT_PHASE_WEIGHT;
+	}
+	public short getPAWN_VALUE() {
+		return PAWN_VALUE;
+	}
+	public short getPAWN_PHASE_WEIGHT() {
+		return PAWN_PHASE_WEIGHT;
+	}
+	public byte getDEFENDED_PAWN_WEIGHT() {
+		return DEFENDED_PAWN_WEIGHT;
+	}
+	public byte getBLOCKED_PAWN_WEIGHT1() {
+		return BLOCKED_PAWN_WEIGHT1;
+	}
+	public byte getBLOCKED_PAWN_WEIGHT2() {
+		return BLOCKED_PAWN_WEIGHT2;
+	}
+	public byte getBLOCKED_PAWN_WEIGHT3() {
+		return BLOCKED_PAWN_WEIGHT3;
+	}
+	public byte getPASSED_PAWN_WEIGHT() {
+		return PASSED_PAWN_WEIGHT;
+	}
+	public byte getISOLATED_PAWN_WEIGHT() {
+		return ISOLATED_PAWN_WEIGHT;
+	}
+	public byte getBACKWARD_PAWN_WEIGHT1() {
+		return BACKWARD_PAWN_WEIGHT1;
+	}
+	public byte getBACKWARD_PAWN_WEIGHT2() {
+		return BACKWARD_PAWN_WEIGHT2;
+	}
+	public byte getSHIELDING_PAWN_WEIGHT1() {
+		return SHIELDING_PAWN_WEIGHT1;
+	}
+	public byte getSHIELDING_PAWN_WEIGHT2() {
+		return SHIELDING_PAWN_WEIGHT2;
+	}
+	public byte getSHIELDING_PAWN_WEIGHT3() {
+		return SHIELDING_PAWN_WEIGHT3;
+	}
+	public byte getSHIELD_THREATENING_PAWN_WEIGHT1() {
+		return SHIELD_THREATENING_PAWN_WEIGHT1;
+	}
+	public byte getSHIELD_THREATENING_PAWN_WEIGHT2() {
+		return SHIELD_THREATENING_PAWN_WEIGHT2;
+	}
+	public byte getDEFENDED_KING_AREA_SQUARE_WEIGHT1() {
+		return DEFENDED_KING_AREA_SQUARE_WEIGHT1;
+	}
+	public byte getDEFENDED_KING_AREA_SQUARE_WEIGHT2() {
+		return DEFENDED_KING_AREA_SQUARE_WEIGHT2;
+	}
+	public byte getDEFENDED_KING_AREA_SQUARE_WEIGHT3() {
+		return DEFENDED_KING_AREA_SQUARE_WEIGHT3;
+	}
+	public byte getKING_PAWN_TROPISM_WEIGHT() {
+		return KING_PAWN_TROPISM_WEIGHT;
+	}
+	public byte getPINNED_QUEEN_WEIGHT() {
+		return PINNED_QUEEN_WEIGHT;
+	}
+	public byte getPINNED_ROOK_WEIGHT() {
+		return PINNED_ROOK_WEIGHT;
+	}
+	public byte getPINNED_BISHOP_WEIGHT() {
+		return PINNED_BISHOP_WEIGHT;
+	}
+	public byte getPINNED_KNIGHT_WEIGHT() {
+		return PINNED_KNIGHT_WEIGHT;
+	}
+	public byte getCOVERED_SQUARE_WEIGHT() {
+		return COVERED_SQUARE_WEIGHT;
+	}
+	public byte getCOVERED_FRIENDLY_OCCUPIED_SQUARE_WEIGHT() {
+		return COVERED_FRIENDLY_OCCUPIED_SQUARE_WEIGHT;
+	}
+	public byte getPAWN_DEFENDED_PIECE_WEIGHT() {
+		return PAWN_DEFENDED_PIECE_WEIGHT;
+	}
+	public byte getPIECE_KING_TROPISM_WEIGHT() {
+		return PIECE_KING_TROPISM_WEIGHT;
+	}
+	public byte getSTOPPED_PAWN_WEIGHT() {
+		return STOPPED_PAWN_WEIGHT;
+	}
+	public short getGAME_PHASE_OPENING_LOWER() {
+		return GAME_PHASE_OPENING_LOWER;
+	}
+	public short getGAME_PHASE_OPENING_UPPER() {
+		return GAME_PHASE_OPENING_UPPER;
+	}
+	public short getGAME_PHASE_MIDDLE_GAME_LOWER() {
+		return GAME_PHASE_MIDDLE_GAME_LOWER;
+	}
+	public short getGAME_PHASE_MIDDLE_GAME_UPPER() {
+		return GAME_PHASE_MIDDLE_GAME_UPPER;
+	}
+	public short getGAME_PHASE_END_GAME_LOWER() {
+		return GAME_PHASE_END_GAME_LOWER;
+	}
+	public short getGAME_PHASE_END_GAME_UPPER() {
+		return GAME_PHASE_END_GAME_UPPER;
+	}
+	public int getNMR() {
+		return NMR;
+	}
+	public int getLMR() {
+		return LMR;
+	}
+	public int getLMRMSM() {
+		return LMRMSM;
+	}
+	public int getFMAR1() {
+		return FMAR1;
+	}
+	public int getFMAR2() {
+		return FMAR2;
+	}
+	public int getFMAR3() {
+		return FMAR3;
+	}
+	public int getA_DELTA() {
+		return A_DELTA;
+	}
+	public int getQ_DELTA() {
+		return Q_DELTA;
+	}
+	public byte getRHT_DECREMENT_FACTOR() {
+		return RHT_DECREMENT_FACTOR;
+	}
+	public byte getTT_SHARE() {
+		return TT_SHARE;
+	}
+	public byte getET_SHARE() {
+		return ET_SHARE;
+	}
+	public byte getPT_SHARE() {
+		return PT_SHARE;
+	}
+	public int getLAZY_EVAL_MAR() {
+		return LAZY_EVAL_MAR;
+	}
+	public byte[] getPST_PAWN_OPENING() {
+		return PST_PAWN_OPENING;
+	}
+	public byte[] getPST_PAWN_ENDGAME() {
+		return PST_PAWN_ENDGAME;
+	}
+	public byte[] getPST_KNIGHT_OPENING() {
+		return PST_KNIGHT_OPENING;
+	}
+	public byte[] getPST_KNIGHT_ENDGAME() {
+		return PST_KNIGHT_ENDGAME;
+	}
+	public byte[] getPST_BISHOP() {
+		return PST_BISHOP;
+	}
+	public byte[] getPST_ROOK_OPENING() {
+		return PST_ROOK_OPENING;
+	}
+	public byte[] getPST_ROOK_ENDGAME() {
+		return PST_ROOK_ENDGAME;
+	}
+	public byte[] getPST_QUEEN() {
+		return PST_QUEEN;
+	}
+	public byte[] getPST_KING_OPENING() {
+		return PST_KING_OPENING;
+	}
+	public byte[] getPST_KING_ENDGAME() {
+		return PST_KING_ENDGAME;
+	}
+	public static String getDefaultParamtersFilePath() {
+		return DEFAULT_PARAMTERS_FILE_PATH;
 	}
 	public long getId() {
 		return id;

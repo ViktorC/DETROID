@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 /**
  * A simple enum for game tree node and hash table entry types based on the relation of their values to alpha and beta.

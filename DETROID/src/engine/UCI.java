@@ -1,6 +1,4 @@
-package communication;
-
-import java.util.Observer;
+package engine;
 
 import util.KeyValuePair;
 import util.Setting;
@@ -94,12 +92,6 @@ public interface UCI {
 	 * @return
 	 */
 	String getAuthor();
-	/**
-	 * Necessary for the GUI to be provided with up to date info strings in debug mode.
-	 * 
-	 * @param observer
-	 */
-	void subscribe(Observer observer);
 	/**
 	 * Sets whether the engine should run in debug mode. In debug mode, the engine can (and is expected to) send detailed info strings
 	 * such as search statistics to the GUI.

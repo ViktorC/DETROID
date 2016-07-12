@@ -1,7 +1,7 @@
-package engine;
+package chess;
 
+import chess.Bitboard.Square;
 import util.*;
-import engine.Bitboard.Square;
 
 /**
  * Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers,
@@ -11,7 +11,7 @@ import engine.Bitboard.Square;
  * @author Viktor
  *
  */
-public class UnmakeRegister {
+public class UnmakeMoveRegister {
 
 	public final byte whiteCastlingRights;
 	public final byte blackCastlingRights;
@@ -20,7 +20,7 @@ public class UnmakeRegister {
 	public final byte repetitions;
 	public final long checkers;
 	
-	public UnmakeRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
+	public UnmakeMoveRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
 	short fiftyMoveRuleClock, byte repetitions, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;

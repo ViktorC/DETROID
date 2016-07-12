@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 /**
  * An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.

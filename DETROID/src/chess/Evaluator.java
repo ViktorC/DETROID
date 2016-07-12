@@ -1,9 +1,9 @@
-package engine;
+package chess;
 
-import engine.Bitboard.Diagonal;
-import engine.Bitboard.File;
-import engine.Bitboard.Rank;
-import engine.Bitboard.Square;
+import chess.Bitboard.Diagonal;
+import chess.Bitboard.File;
+import chess.Bitboard.Rank;
+import chess.Bitboard.Square;
 import util.*;
 
 /**

@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 /**
  * A simple enum type for the representation of a side's castling rights in a position.

@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 import util.BitOperations;
 

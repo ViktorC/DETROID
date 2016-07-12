@@ -14,14 +14,12 @@ public class Setting<T> {
 	private final T defaultValue;
 	private final Number min;
 	private final Number max;
-	private T value;
 	
 	protected Setting(String name, T defaultValue, Number min, Number max) {
 		this.name = name;
 		this.defaultValue = defaultValue;
 		this.min = min;
 		this.max = max;
-		this.value = defaultValue;
 	}
 	/**
 	 * Returns the name ID of the setting.
@@ -54,21 +52,5 @@ public class Setting<T> {
 	 */
 	public Number getMax() {
 		return max;
-	}
-	/**
-	 * Returns the actual value of the setting.
-	 * 
-	 * @return
-	 */
-	public T getValue() {
-		return value;
-	}
-	/**
-	 * Sets the actual value of the setting.
-	 * 
-	 * @param value
-	 */
-	public void setValue(T value) {
-		this.value = value;
 	}
 }

@@ -1,7 +1,7 @@
-package engine;
+package chess;
 
+import chess.Bitboard.*;
 import util.*;
-import engine.Bitboard.*;
 
 /**
  * A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
@@ -82,7 +82,7 @@ public class Position implements Hashable, Copiable<Position> {
 	/**A stack of all the moves made so far. */
 	Stack<Move> moveList;
 	/**A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info. */
-	Stack<UnmakeRegister> unmakeRegisterHistory;
+	Stack<UnmakeMoveRegister> unmakeRegisterHistory;
 	
 	/**A Zobrist key generator instance. */
 	ZobristKeyGenerator gen;
@@ -274,7 +274,7 @@ public class Position implements Hashable, Copiable<Position> {
 	/**Initializes a default, empty Position instance.*/
 	private Position() {
 		moveList = new Stack<Move>();
-		unmakeRegisterHistory = new Stack<UnmakeRegister>();
+		unmakeRegisterHistory = new Stack<UnmakeMoveRegister>();
 		gen = ZobristKeyGenerator.getInstance();
 		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
 		 * - one third of that is used as the initial length of the history array. */
@@ -283,7 +283,7 @@ public class Position implements Hashable, Copiable<Position> {
 	}
 	private Position(Position pos) {
 		Stack<Move> reverseMoves;
-		Stack<UnmakeRegister> reverseUnmake;
+		Stack<UnmakeMoveRegister> reverseUnmake;
 		whiteKing = pos.whiteKing;
 		whiteQueens = pos.whiteQueens;
 		whiteRooks = pos.whiteRooks;
@@ -365,7 +365,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	UnmakeRegister getUnmakeRegister() {
+	UnmakeMoveRegister getUnmakeRegister() {
 		return unmakeRegisterHistory.getHead();
 	}
 	/**
@@ -3053,7 +3053,7 @@ public class Position implements Hashable, Copiable<Position> {
 		long[] temp;
 		makeMoveOnBoard(move);
 		moveList.add(move);
-		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
+		unmakeRegisterHistory.add(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
 				repetitions, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
@@ -3101,7 +3101,7 @@ public class Position implements Hashable, Copiable<Position> {
 	public void makeNullMove() {
 		if (moveList.getHead() == null && moveList.length() != 0)
 			throw new IllegalStateException("Consecutive null moves are not supported.");
-		unmakeRegisterHistory.add(new UnmakeRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
+		unmakeRegisterHistory.add(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
 				repetitions, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
@@ -3123,7 +3123,7 @@ public class Position implements Hashable, Copiable<Position> {
 		Move move = moveList.pop();
 		isWhitesTurn = !isWhitesTurn;
 		if (move != null) unmakeMoveOnBoard(move);
-		UnmakeRegister positionInfo = unmakeRegisterHistory.pop();
+		UnmakeMoveRegister positionInfo = unmakeRegisterHistory.pop();
 		whiteCastlingRights = positionInfo.whiteCastlingRights;
 		blackCastlingRights = positionInfo.blackCastlingRights;
 		enPassantRights = positionInfo.enPassantRights;

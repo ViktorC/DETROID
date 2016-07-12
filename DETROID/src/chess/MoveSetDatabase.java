@@ -1,7 +1,7 @@
-package engine;
+package chess;
 
+import chess.Bitboard.*;
 import util.BitOperations;
-import engine.Bitboard.*;
 
 /**
  * A preinitialized move set database that saves the time costs of calculating move sets on the fly at the price of about 850KBytes. It contains

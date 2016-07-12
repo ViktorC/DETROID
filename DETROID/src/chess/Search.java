@@ -1,6 +1,5 @@
-package engine;
+package chess;
 
-import java.util.Observable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -10,7 +9,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import engine.KillerTable.KillerTableEntry;
+import chess.ETEntry;
+import chess.Evaluator;
+import chess.KillerTable;
+import chess.NodeType;
+import chess.PTEntry;
+import chess.Parameters;
+import chess.RelativeHistoryTable;
+import chess.Termination;
+import chess.KillerTable.KillerTableEntry;
 import util.*;
 
 /**
@@ -22,114 +29,6 @@ import util.*;
  *
  */
 public class Search implements Runnable {
-	
-	/**
-	 * An observable class for the principal variation of a search.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public class Results extends Observable {
-		
-		private Queue<Move> pVline;	// Principal variation.
-		private short nominalDepth;	// The depth to which the PV has been searched.
-		private short score;		// The result score of the search.
-		private long nodes;			// The number of nodes searched.
-		private long time;			// Time spent on the search.
-		private boolean isFinal;	// Whether it is the final result of the search.
-		
-		private Results() {
-			
-		}
-		/**
-		 * Returns the principal variation of the search as a queue of moves.
-		 * 
-		 * @return
-		 */
-		public Queue<Move> getPvLine() {
-			return pVline;
-		}
-		/**
-		 * Returns the greatest nominal depth of the search. It does not necessarily mean that the whole ply has been searched.
-		 * 
-		 * @return
-		 */
-		public short getNominalDepth() {
-			return nominalDepth;
-		}
-		/**
-		 * Returns the result score of the search for the side to move.
-		 * 
-		 * @return
-		 */
-		public short getScore() {
-			return score;
-		}
-		/**
-		 * Returns the number of nodes searched to reach this result.
-		 * 
-		 * @return
-		 */
-		public long getNodes() {
-			return nodes;
-		}
-		/**
-		 * Returns the time spent on the search to reach this result in milliseconds.
-		 * 
-		 * @return
-		 */
-		public long getTime() {
-			return time;
-		}
-		/**
-		 * Returns whether the result is final, i.e. it will not be updated anymore in this run of the search.
-		 * 
-		 * @return
-		 */
-		public boolean isFinal() {
-			return isFinal;
-		}
-		private void set(Queue<Move> PVline, short nominalDepth, short score, long nodes, long time, boolean isFinal) {
-			this.pVline = PVline;
-			this.nominalDepth = nominalDepth;
-			this.score = score;
-			this.nodes = nodes;
-			this.time = time;
-			this.isFinal = isFinal;
-			setChanged();
-			notifyObservers();
-		}
-		/**
-		 * Returns a one-line String representation of the principal variation result.
-		 * 
-		 * @return
-		 */
-		public String getPvString() {
-			String out = "";
-			for (Move m : pVline)
-				out += m.toString() + " ";
-			out += "\n";
-			return out;
-		}
-		/**
-		 * Returns a String of some search statistics such as greatest nominal depth, score, search speed, etc.
-		 * 
-		 * @return
-		 */
-		public String getStatString() {
-			String out = "";
-			out += "Nominal depth: " + nominalDepth + "\n";
-			out += "Score: " + score + "\n";
-			out += String.format("Time: %.2fs\n", (float)time/1000);
-			out += "Nodes: " + nodes + "\n";
-			out += "Search speed: " + nodes/Math.max(time, 1) + "kNps\n";
-			return out;
-		}
-		@Override
-		public String toString() {
-			return getPvString() + getStatString();
-		}
-	}
 	
 	/**
 	 * A thread-task for parallel search.
@@ -889,7 +788,7 @@ public class Search implements Runnable {
 	
 	private Position position;
 	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
-	private Results results;
+	private SearchStatistics stats;
 	
 	private KillerTable kT;			// Killer heuristic table.
 	private RelativeHistoryTable hT;// History heuristic table.
@@ -925,41 +824,42 @@ public class Search implements Runnable {
 	 * @param evalTable Evaluation hash table.
 	 * @param pawnTable Pawn hash table.
 	 */
-	public Search(Position position, long timeLeft, long oppTimeLeft, long searchTime, int maxDepth, long maxNodes, List<Move> moves,
-			RelativeHistoryTable historyTable, byte hashEntryGen, HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable,
-			HashTable<PTEntry> pawnTable, Parameters params, int numOfSearchThreads) {
+	public Search(Position position, SearchArguments args, SearchStatistics stats, RelativeHistoryTable historyTable, final byte hashEntryGen,
+			HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params,
+			int numOfSearchThreads) {
 		this.params = params;
+		this.stats = stats;
 		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
 		numOfThreads = numOfSearchThreads;
 		this.position = position.deepCopy();
 		int phaseScore = eval.phaseScore(position);
 		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_END_GAME_LOWER;
-		if (timeLeft <= 0 && searchTime <= 0 && maxDepth <= 0 && maxNodes <= 0) {
-			pondering = true;
-			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
-		}
-		else {
-			pondering = false;
-			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.position, phaseScore, timeLeft, oppTimeLeft);
-			this.maxDepth = maxDepth > 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
-			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
-		}
-		allowedRootMoves = moves;
-		areMovesRestricted = allowedRootMoves != null;
+//		if (timeLeft <= 0 && searchTime <= 0 && maxDepth <= 0 && maxNodes <= 0) {
+//			pondering = true;
+//			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
+//		}
+//		else {
+//			pondering = false;
+//			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.position, phaseScore, timeLeft, oppTimeLeft);
+//			this.maxDepth = maxDepth > 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
+//			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
+//		}
+//		allowedRootMoves = moves;
+//		areMovesRestricted = allowedRootMoves != null;
 		doStopSearch = new AtomicBoolean(false);
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
 		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
-		results = new Results();
+		stats = new SearchStatistics();
 	}
 	/**
 	 * Returns an observable container class for the results of the search.
 	 * 
 	 * @return
 	 */
-	public Results getResults() {
-		return results;
+	public SearchStatistics getStats() {
+		return stats;
 	}
 	/**
 	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
@@ -994,7 +894,8 @@ public class Search implements Runnable {
 	 * depth has been reached.
 	 */
 	private void searchRoot() {
-		int alpha, beta, score, failHigh, failLow;
+		int alpha, beta, score, resultScore, failHigh, failLow;
+		boolean isMate;
 		Stack<Future<Integer>> futures;
 		compService = new ExecutorCompletionService<Integer>(threadPool);
 		nodes = new AtomicLong(0);
@@ -1017,8 +918,21 @@ public class Search implements Runnable {
 				doStopSearch.set(true);
 				e.printStackTrace();
 			}
+			// Determining if the result is a mate score.
+			if (score <= L_CHECK_MATE_LIMIT) {
+				resultScore = Termination.CHECK_MATE.score - score;
+				isMate = true;
+			}
+			else if (score >= W_CHECK_MATE_LIMIT) {
+				resultScore = -Termination.CHECK_MATE.score - score;
+				isMate = true;
+			}
+			else {
+				resultScore = score;
+				isMate = false;
+			}
 			if (doStopSearch.get() || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
-				results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
+				stats.set(extractPv(i), i, (short)resultScore, isMate, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
 				break;
 			}
 			// Aspiration windows with gradual widening.
@@ -1052,7 +966,8 @@ public class Search implements Runnable {
 				i--;
 				continue;
 			}
-			results.set(extractPv(i), i, (short)score, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
+			stats.set(extractPv(i), i, (short)resultScore, isMate, nodes.get(),
+					System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
 			failHigh = failLow = 0;
 			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
 			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);

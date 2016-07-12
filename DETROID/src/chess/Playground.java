@@ -1,11 +1,10 @@
-  package engine;
+  package chess;
 
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
 
-import engine.Book.SelectionModel;
-import engine.Search.Results;
+import chess.Book.SelectionModel;
 import util.HashTable;
 import util.List;
 import util.Stack;
@@ -20,7 +19,7 @@ public class Playground {
 
 		@Override
 		public void update(Observable arg0, Object arg1) {
-			Results res = (Results)arg0;
+			SearchStatistics res = (SearchStatistics)arg1;
 			System.out.print(res.getPvString() + (res.isFinal() ? res.getStatString() : ""));
 		}
 		
@@ -29,7 +28,7 @@ public class Playground {
 	static byte gen = 0;
 	
 	public static void main(String[] args) throws ChessParseException {
-		Results r;
+		SearchStatistics r;
 		Move playerMove, bookMove;
 		List<Move> moveRestrictions = null;
 		Position p = Position.parse(Position.START_POSITION_FEN);
@@ -54,8 +53,9 @@ public class Playground {
 						outOfBook = true;
 					}
 				}
-				Search s = new Search(p, 0, 0, 20000, outOfBook ? 0 : 1, 0, moveRestrictions, hT, gen, tT, eT, pT, params, 1);
-				r = s.getResults();
+				Search s = new Search(p, new SearchArguments(moveRestrictions, false, null, null, null, null, null, null,
+						null, null, (long) 10000, false), new SearchStatistics(), hT, gen, tT, eT, pT, params, 1);
+				r = s.getStats();
 				r.addObserver(new PVO());
 				s.run();
 				p.makeMove(r.getPvLine().getHead());

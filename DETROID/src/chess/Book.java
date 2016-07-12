@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 import java.nio.channels.*;
 import java.nio.file.*;
@@ -7,7 +7,7 @@ import java.nio.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-import engine.Bitboard.Square;
+import chess.Bitboard.Square;
 
 /**
  * A class for reading and selecting moves from PolyGlot opening books. It allows for using an alternative book once out of the main book.

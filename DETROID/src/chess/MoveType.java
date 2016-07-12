@@ -1,4 +1,4 @@
-package engine;
+package chess;
 
 /**
  * An enum type defining the seven move types the engine handles differently.

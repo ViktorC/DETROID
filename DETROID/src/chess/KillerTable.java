@@ -1,4 +1,5 @@
-package engine;
+package chess;
+
 
 /**
  * A thread-safe table implementation for the killer heuristic.

@@ -1,6 +1,6 @@
-package engine;
+package chess;
 
-import engine.Bitboard.File;
+import chess.Bitboard.File;
 
 /**
  * A class for bit parallel move set generation.
