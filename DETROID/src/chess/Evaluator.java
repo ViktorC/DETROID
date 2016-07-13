@@ -427,8 +427,8 @@ public final class Evaluator {
 				score += params.SHIELDING_PAWN_WEIGHT2;
 			if ((whitePawns & Square.F2.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT2;
-			score -= params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit | Square.H4.bit)
-					& blackPawns);
+			score -= params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit |
+					Square.H4.bit) & blackPawns);
 			score -= params.SHIELD_THREATENING_PAWN_WEIGHT2*BitOperations.getHammingWeight((Square.F3.bit | Square.F4.bit) & blackPawns);
 		}
 		else if (whiteKing == Square.A1.bit || whiteKing == Square.B1.bit || whiteKing == Square.C1.bit) {
@@ -442,8 +442,8 @@ public final class Evaluator {
 				score += params.SHIELDING_PAWN_WEIGHT2;
 			if ((whitePawns & Square.C2.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT3;
-			score -= params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.A3.bit | Square.A4.bit | Square.B3.bit | Square.B4.bit |
-					Square.C3.bit | Square.C4.bit) & blackPawns);
+			score -= params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.A3.bit | Square.A4.bit | Square.B3.bit |
+					Square.B4.bit | Square.C3.bit | Square.C4.bit) & blackPawns);
 		}
 		if (blackKing == Square.G8.bit || blackKing == Square.H8.bit) {
 			if ((blackPawns & Square.G7.bit) != 0)
@@ -456,8 +456,8 @@ public final class Evaluator {
 				score -= params.SHIELDING_PAWN_WEIGHT2;
 			if ((blackPawns & Square.F7.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT2;
-			score += params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit | Square.H6.bit)
-					& whitePawns);
+			score += params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit |
+					Square.H6.bit) & whitePawns);
 			score += params.SHIELD_THREATENING_PAWN_WEIGHT2*BitOperations.getHammingWeight((Square.F5.bit | Square.F6.bit) & whitePawns);
 		}
 		else if (blackKing == Square.A8.bit || blackKing == Square.B8.bit || blackKing == Square.C8.bit) {
@@ -471,8 +471,8 @@ public final class Evaluator {
 				score -= params.SHIELDING_PAWN_WEIGHT2;
 			if ((blackPawns & Square.C7.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT3;
-			score += params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.A5.bit | Square.A6.bit | Square.B5.bit | Square.B6.bit |
-					Square.C5.bit | Square.C6.bit) & whitePawns);
+			score += params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.A5.bit | Square.A6.bit | Square.B5.bit |
+					Square.B6.bit | Square.C5.bit | Square.C6.bit) & whitePawns);
 		}
 		// King-pawn defense and attack.
 		whiteKingInd = BitOperations.indexOfBit(whiteKing);

@@ -1,6 +1,6 @@
 package util;
 
-import java.lang.reflect.Array;
+import java.util.Collection;
 import java.util.Iterator;
 
 /**
@@ -10,7 +10,7 @@ import java.util.Iterator;
  *
  * @param <T>
  */
-public abstract class List<T> implements Iterable<T>, Iterator<T> {
+public abstract class List<T> implements Collection<T>, Iterator<T> {
 
 	/**
 	 * A list entry containing two fields, 'data' that holds the data, and 'next' referencing the subsequent element in the list
@@ -46,9 +46,13 @@ public abstract class List<T> implements Iterable<T>, Iterator<T> {
 	 * 
 	 * @param list
 	 */
-	public void addAll(List<T> list) {
-		while (list.hasNext())
-			add(list.next());
+	@Override
+	public boolean addAll(Collection<? extends T> collection) {
+		if (collection == null)
+			return false;
+		for (T e : collection)
+			add(e);
+		return true;
 	}
 	/**
 	 * Returns whether the pointer/iterator has more nodes to process or has already reached the end of the list. Once the iterator has no more
@@ -100,31 +104,94 @@ public abstract class List<T> implements Iterable<T>, Iterator<T> {
 		}
 		return null;
 	}
-	/**
-	 * For for-each loops.
-	 */
 	@Override
 	public Iterator<T> iterator() {
 		return this;
 	}
-	/**
-	 * Copies references to the nodes of the list into an array in order, and returns the array.
-	 *
-	 * If the list is empty, it returns null.
-	 *
-	 * @return
-	 */
-	public T[] toArray() {
+	@SuppressWarnings("unchecked")
+	@Override
+	public <S> S[] toArray(S[] a) {
 		int i = 0;
 		if (head == null)
 			return null;
-		@SuppressWarnings({"unchecked"})
-		T[] arr = (T[])Array.newInstance(head.data.getClass(), length());
 		while (hasNext()) {
-			arr[i] = next();
+			a[i] = (S) next();
 			i++;
 		}
-		return arr;
+		return a;
+	}
+	@SuppressWarnings("unchecked")
+	@Override
+	public T[] toArray() {
+		Object[] a = new Object[size()];
+		return (T[]) toArray(a);
+	}
+	@Override
+	public void clear() {
+		head = null;
+		reset();
+	}
+	@Override
+	public boolean contains(Object o) {
+		while (hasNext()) {
+			if (next().equals(o))
+				return true;
+		}
+		return false;
+	}
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		for (Object e : c) {
+			if (!contains(e))
+				return false;
+		}
+		return true;
+	}
+	@Override
+	public boolean isEmpty() {
+		return head == null;
+	}
+	@Override
+	public boolean remove(Object o) {
+		ListItem item, prevItem;
+		if (head == null)
+			return false;
+		item = head;
+		prevItem = null;
+		do {
+			if (item.data.equals(o)) {
+				if (prevItem != null)
+					prevItem.next = item.next;
+				else
+					head = item.next;
+				return true;
+			}
+			item = item.next;
+		}
+		while (item != null);
+		return false;
+	}
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		for (Object e : c) {
+			if (!remove(e))
+				return false;
+		}
+		return true;
+	}
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		T e;
+		for (Object o : c) {
+			if (!contains(o))
+				return false;
+		}
+		while (hasNext()) {
+			e = next();
+			if (!c.contains(e))
+				remove(e);
+		}
+		return true;
 	}
 	/**
 	 * Returns the data held in the last element of the list. If the list is empty, it returns null.
@@ -132,16 +199,4 @@ public abstract class List<T> implements Iterable<T>, Iterator<T> {
 	 * @return
 	 */
 	public abstract T getTail();
-	/**
-	 * Creates a node for the input data and adds it to the list.
-	 * 
-	 * @param data
-	 */
-	public abstract void add(T data);
-	/**
-	 * Returns the number of nodes in the list.
-	 * 
-	 * @return
-	 */
-	public abstract int length();
 }

@@ -23,7 +23,6 @@ public class KeyValuePair<K, V> {
 	public V getValue() {
 		return value;
 	}
-
 	@Override
 	public String toString()
 	{

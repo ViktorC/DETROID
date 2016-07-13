@@ -2,7 +2,7 @@ package chess;
 
 import java.util.Observable;
 
-import util.Queue;
+import util.List;
 
 /**
  * An observable class for the results and statistics of a search.
@@ -12,13 +12,14 @@ import util.Queue;
  */
 public class SearchStatistics extends Observable {
 	
-	private Queue<Move> pVline;	// Principal variation.
-	private short nominalDepth;	// The depth to which the PV has been searched.
-	private short score;		// The result score of the search.
-	private boolean isMate;		// Whether it is a mate score, in which case the score denotes the mate distance.
-	private long nodes;			// The number of nodes searched.
-	private long time;			// Time spent on the search.
-	private boolean isFinal;	// Whether it is the final result of the search.
+	private List<Move> pVline;		// Principal variation.
+	private short nominalDepth;		// The depth to which the PV has been searched.
+	private short score;			// The result score of the search.
+	private ScoreType scoreType;	// Whether it is a mate score, in which case the score denotes the mate distance,
+									// an exact score or a lower/upper bound.
+	private long nodes;				// The number of nodes searched.
+	private long time;				// Time spent on the search.
+	private boolean isFinal;		// Whether it is the final result of the search.
 	
 	SearchStatistics() {
 		
@@ -28,7 +29,7 @@ public class SearchStatistics extends Observable {
 	 * 
 	 * @return
 	 */
-	public Queue<Move> getPvLine() {
+	public List<Move> getPvLine() {
 		return pVline;
 	}
 	/**
@@ -48,13 +49,13 @@ public class SearchStatistics extends Observable {
 		return score;
 	}
 	/**
-	 * Returns hether it is a mate score, in which case the score denotes the mate distance. If the side to move in the root position is
-	 * going to get mated, the negative distance is returned.
+	 * Returns whether it is an exact score, a lower bound, an upper bound, or a mate score, in which case the score denotes the mate
+	 * distance. If the side to move in the root position is going to get mated, the negative distance is returned.
 	 * 
 	 * @return
 	 */
-	public boolean isMate() {
-		return isMate;
+	public ScoreType getScoreType() {
+		return scoreType;
 	}
 	/**
 	 * Returns the number of nodes searched to reach this result.
@@ -80,11 +81,11 @@ public class SearchStatistics extends Observable {
 	public boolean isFinal() {
 		return isFinal;
 	}
-	void set(Queue<Move> PVline, short nominalDepth, short score, boolean isMate, long nodes, long time, boolean isFinal) {
+	void set(List<Move> PVline, short nominalDepth, short score, ScoreType scoreType, long nodes, long time, boolean isFinal) {
 		this.pVline = PVline;
 		this.nominalDepth = nominalDepth;
 		this.score = score;
-		this.isMate = isMate;
+		this.scoreType = scoreType;
 		this.nodes = nodes;
 		this.time = time;
 		this.isFinal = isFinal;
@@ -111,7 +112,7 @@ public class SearchStatistics extends Observable {
 	public String getStatString() {
 		String out = "";
 		out += "Nominal depth: " + nominalDepth + "\n";
-		out += "Score: " + score + "\n";
+		out += "Score: " + score + "; Type: " + scoreType + "\n";
 		out += String.format("Time: %.2fs\n", (float)time/1000);
 		out += "Nodes: " + nodes + "\n";
 		out += "Search speed: " + nodes/Math.max(time, 1) + "kNps\n";

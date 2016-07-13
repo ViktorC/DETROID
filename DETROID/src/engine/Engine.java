@@ -1,5 +1,7 @@
 package engine;
 
+import java.util.Collection;
+
 import chess.Move;
 import chess.SearchArguments;
 import chess.SearchStatistics;
@@ -31,7 +33,7 @@ public interface Engine {
 	 * 
 	 * @return
 	 */
-	Iterable<Setting<?>> getOptions();
+	Collection<Setting<?>> getOptions();
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
@@ -39,7 +41,7 @@ public interface Engine {
 	 * @param value
 	 * @throws IllegalArgumentException
 	 */
-	<T> void setOption(Setting<T> setting, T value);
+	<T> boolean setOption(Setting<T> setting, T value);
 	/**
 	 * Resets the game to a new instance.
 	 */

@@ -22,7 +22,7 @@ public final class QuickSort {
 	public static <T extends Comparable<T>> T[] sort(List<T> container) {
 		int left, right;
 		T[] array;
-		if (container.length() != 0) {
+		if (container.size() != 0) {
 			array = container.toArray();
 			left = 0;
 			right = array.length - 1;

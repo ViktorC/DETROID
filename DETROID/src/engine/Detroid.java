@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Observer;
 import java.util.Scanner;
@@ -23,7 +24,7 @@ public class Detroid implements Engine {
 
 	private final static Detroid INSTANCE = new Detroid();
 	
-	private final static String NAME = "DETROID";
+	private final static String NAME = "DETROID v1.00";
 	private final static String AUTHOR = "Viktor Csomor";
 	
 	private boolean debug;
@@ -35,21 +36,20 @@ public class Detroid implements Engine {
 	
 	private List<Observer> observers;
 	
+	private Setting<?> hashSize;
+	private Setting<?> useBook;
+	private Setting<?> bookPath;
+	private Setting<?> useOwnBookAsSecondary;
 	private HashMap<Setting<?>, Object> settings;
 	
 	private Parameters params;
 	private Game game;
-	private boolean useBook;
 	private Book book;
 	private RelativeHistoryTable hT;
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private HashTable<ETEntry> eT;		// Evaluation hash table.
 	private HashTable<PTEntry> pT;		// Pawn hash table.
 	private byte gen = 0;
-	
-	private int numOfCores;
-	
-	boolean verbose;
 	
 	private Detroid() {
 		background = Executors.newCachedThreadPool();
@@ -59,38 +59,39 @@ public class Detroid implements Engine {
 		observers = new Queue<>();
 		settings = new HashMap<>();
 		in = new Scanner(System.in);
-//		SettingFactory factory = new SettingFactory();
-//		settings.put(factory.buildNumberSetting("Hash", 64, 8, 512), 8);
-//		settings.put(factory.buildBoolSetting("UseOwnBook", false), false);
-//		settings.put(factory.buildStringSetting("OwnBookPath", Book.DEFAULT_BOOK_FILE_PATH), Book.DEFAULT_BOOK_FILE_PATH);
-//		settings.put(factory.buildBoolSetting("UseOwnBookAsSecondary", false), false);
-//		hT = new RelativeHistoryTable(params);
-//		setHashSize((int)settings..getValue());
-		numOfCores = Runtime.getRuntime().availableProcessors();
+		SettingFactory factory = new SettingFactory();
+		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);
+		useBook = factory.buildBoolSetting("UseOwnBook", false);
+		bookPath = factory.buildStringSetting("OwnBookPath", Book.DEFAULT_BOOK_FILE_PATH);
+		useOwnBookAsSecondary = factory.buildBoolSetting("UseOwnBookAsSecondary", false);
+		settings.put(hashSize, hashSize.getDefaultValue());
+		settings.put(useBook, useBook.getDefaultValue());
+		settings.put(bookPath, bookPath.getDefaultValue());
+		settings.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
+		setHashSize((int)settings.get(hashSize));
+		hT = new RelativeHistoryTable(params);
 	}
 	public Detroid getInstance() {
 		return INSTANCE;
 	}
 	private void setHashSize(int hashSize) {
-		int totalHashShares = params.getTT_SHARE() + params.getET_SHARE() + params.getPT_SHARE();
-		tT = new HashTable<>(hashSize*params.getTT_SHARE()/totalHashShares, TTEntry.SIZE);
-		eT = new HashTable<>(hashSize*params.getET_SHARE()/totalHashShares, ETEntry.SIZE);
-		pT = new HashTable<>(hashSize*params.getPT_SHARE()/totalHashShares, PTEntry.SIZE);
+		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
+		tT = new HashTable<>(hashSize*params.TT_SHARE/totalHashShares, TTEntry.SIZE);
+		eT = new HashTable<>(hashSize*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
+		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 	}
-//	private boolean setBookPath(String path) {
-//		if ((boolean)settings.get("UseOwnBookAsSecondary").getValue())
-//			book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH);
-//		return book.setMainBookPath(path);
-//	}
+	private boolean setBookPath(String path) {
+		if ((boolean)settings.get(useOwnBookAsSecondary))
+			book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH);
+		return book.setMainBookPath(path);
+	}
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return NAME;
 	}
 	@Override
 	public String getAuthor() {
-		// TODO Auto-generated method stub
-		return null;
+		return AUTHOR;
 	}
 	@Override
 	public float getHashLoad() {
@@ -98,14 +99,13 @@ public class Detroid implements Engine {
 		return 0;
 	}
 	@Override
-	public Iterable<Setting<?>> getOptions() {
-		// TODO Auto-generated method stub
-		return null;
+	public Collection<Setting<?>> getOptions() {
+		return settings.keySet();
 	}
 	@Override
-	public <T> void setOption(Setting<T> setting, T value) {
+	public <T> boolean setOption(Setting<T> setting, T value) {
 		// TODO Auto-generated method stub
-		
+		return false;
 	}
 	@Override
 	public void newGame() {

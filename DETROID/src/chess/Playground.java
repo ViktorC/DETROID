@@ -40,7 +40,7 @@ public class Playground {
 		Book book = Book.getInstance();
 		Scanner in = new Scanner(System.in);
 		boolean outOfBook = false;
-		while (p.getMoves().length() != 0) {
+		while (p.getMoves().size() != 0) {
 			if (!p.isWhitesTurn) {
 				if (!outOfBook) {
 					bookMove = book.getMove(p, SelectionModel.STOCHASTIC);
@@ -53,10 +53,9 @@ public class Playground {
 						outOfBook = true;
 					}
 				}
-				Search s = new Search(p, new SearchArguments(moveRestrictions, false, null, null, null, null, null, null,
-						null, null, (long) 10000, false), new SearchStatistics(), hT, gen, tT, eT, pT, params, 1);
-				r = s.getStats();
+				r = new SearchStatistics();
 				r.addObserver(new PVO());
+				Search s = new Search(p, r, false, 10, Long.MAX_VALUE, moveRestrictions, hT, gen, tT, eT, pT, params, 1);
 				s.run();
 				p.makeMove(r.getPvLine().getHead());
 				if (gen == 127) {

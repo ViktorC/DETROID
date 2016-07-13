@@ -28,7 +28,201 @@ import util.*;
  * @author Viktor
  *
  */
-public class Search implements Runnable {
+public class Search extends Thread {
+	
+	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
+	// Including extensions and quiescence search.
+	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;
+	private final static int L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
+	private final static int W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
+	
+	private final static int NUM_OF_PARALLEL_ROOT_SEARCHES = 1;
+	
+	// For fractional ply extensions.
+	private final static int FULL_PLY = 4;
+	
+	private Parameters params;
+	
+	private ThreadPoolExecutor threadPool;
+	private ExecutorCompletionService<Integer> compService;
+	
+	private Position position;
+	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
+	private boolean nullMoveObservHolds;
+	
+	private SearchStatistics stats;
+	
+	private KillerTable kT;				// Killer heuristic table.
+	private RelativeHistoryTable hT;	// History heuristic table.
+	private HashTable<TTEntry> tT;		// Transposition table.
+	private byte hashEntryGen;			// Entry generation.
+	
+	private Evaluator eval;
+	
+	private boolean ponder;
+	private int maxDepth;
+	private long maxNodes;
+	private List<Move> allowedRootMoves;	// The only moves to search at the root.
+	private boolean areMovesRestricted;
+	
+	private AtomicLong nodes;				// Number of searched positions.
+	
+	private AtomicBoolean doStopSearch;
+	
+	/**
+	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
+	 * moves to search; if maxNodes is <= 0, the engine will ponder on the position once the search thread is started, and will not stop until
+	 * it is interrupted.
+	 * 
+	 * @param pos The position to search.
+	 * @param timeLeft Time left until the end of the time control.
+	 * @param maxNodes Max number of searched nodes.
+	 * @param moves Moves to search.
+	 * @param gamePhase The game phase in which the position is.
+	 * @param historyTable History table.
+	 * @param hashEntryGen Hash entry generation.
+	 * @param transposTable Transposition table.
+	 * @param evalTable Evaluation hash table.
+	 * @param pawnTable Pawn hash table.
+	 */
+	public Search(Position position, SearchStatistics stats, boolean ponder, int maxDepth, long maxNodes, List<Move> moves,
+			RelativeHistoryTable historyTable, final byte hashEntryGen, HashTable<TTEntry> transposTable,
+			HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params, int numOfSearchThreads) {
+		this.params = params;
+		this.stats = stats;
+		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
+		this.position = position.deepCopy();
+		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_END_GAME_LOWER;
+		this.ponder = ponder;
+		if (!ponder) {
+			this.maxDepth = maxDepth;
+			this.maxNodes = maxNodes;
+		}
+		allowedRootMoves = moves;
+		areMovesRestricted = allowedRootMoves != null;
+		doStopSearch = new AtomicBoolean(false);
+		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
+		this.hT = historyTable;
+		this.tT = transposTable;
+		this.hashEntryGen = hashEntryGen;
+	}
+	/**
+	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
+	 * 
+	 * @param ply
+	 * @return
+	 */
+	private Queue<Move> extractPv(int ply) {
+		Move[] pVarr = new Move[ply];
+		Queue<Move> pV = new Queue<>();
+		TTEntry e;
+		Move bestMove;
+		int i, j;
+		i = j = 0;
+		while ((e = tT.lookUp(position.key)) != null && e.bestMove != 0 && e.type == NodeType.EXACT.ind && i < ply) {
+			bestMove = Move.toMove(e.bestMove);
+			position.makeMove(bestMove);
+			pVarr[i++] = bestMove;
+		}
+		for (int k = 0; k < i; k++)
+			position.unmakeMove();
+		while (j < pVarr.length && pVarr[j] != null)
+			pV.add(pVarr[j++]);
+		return pV;
+	}
+	/**
+	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
+	 * depth has been reached.
+	 */
+	private void searchRoot() {
+		int alpha, beta, score, resultScore, failHigh, failLow;
+		long start = System.currentTimeMillis();
+		ScoreType scoreType;
+		Stack<Future<Integer>> futures;
+		compService = new ExecutorCompletionService<Integer>(threadPool);
+		nodes = new AtomicLong(0);
+		alpha = Termination.CHECK_MATE.score;
+		beta = -alpha;
+		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
+		// Iterative deepening.
+		for (short i = 1; i <= maxDepth; i++) {
+			futures = new Stack<>();
+			for (int j = 0; j < NUM_OF_PARALLEL_ROOT_SEARCHES; j++)
+				futures.add(compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0)));
+			try {
+				score = compService.take().get();
+				if (i == maxDepth) {
+					for (Future<Integer> f : futures)
+						f.cancel(true);
+				}
+			} catch (InterruptedException | ExecutionException e) {
+				score = alpha;
+				doStopSearch.set(true);
+				e.printStackTrace();
+			}
+			// Aspiration windows with gradual widening.
+			if (score <= alpha) {
+				if (score <= L_CHECK_MATE_LIMIT) {
+					alpha = Termination.CHECK_MATE.score;
+					beta = -Termination.CHECK_MATE.score;
+					failLow = 2;
+					failHigh = 2;
+				}
+				else {
+					alpha = failLow == 0 ? Math.max(score - 2*params.A_DELTA, Termination.CHECK_MATE.score) :
+						failLow == 1 ? Math.max(score - 4*params.A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
+					failLow++;
+				}
+				resultScore = score;
+				scoreType = ScoreType.UPPER_BOUND;
+				i--;
+			}
+			else if (score >= beta) {
+				if (score >= W_CHECK_MATE_LIMIT) {
+					alpha = Termination.CHECK_MATE.score;
+					beta = -Termination.CHECK_MATE.score;
+					failLow = 2;
+					failHigh = 2;
+				}
+				else {
+					beta = failHigh == 0 ? Math.min(score + 2*params.A_DELTA, -Termination.CHECK_MATE.score) :
+						failHigh == 1 ? Math.min(score + 4*params.A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
+					failHigh++;
+				}
+				resultScore = score;
+				scoreType = ScoreType.LOWER_BOUND;
+				i--;
+			}
+			else {
+				// Determining if the result is a mate score.
+				if (score <= L_CHECK_MATE_LIMIT) {
+					resultScore = Termination.CHECK_MATE.score - score;
+					scoreType = ScoreType.MATE;
+				}
+				else if (score >= W_CHECK_MATE_LIMIT) {
+					resultScore = -Termination.CHECK_MATE.score - score;
+					scoreType = ScoreType.MATE;
+				}
+				else {
+					resultScore = score;
+					scoreType = ScoreType.EXACT;
+				}
+			}
+			stats.set(extractPv(i), i, (short)resultScore, scoreType, nodes.get(),
+					System.currentTimeMillis() - start, i == maxDepth);
+			if (doStopSearch.get() || isInterrupted())
+				break;
+			failHigh = failLow = 0;
+			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
+			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
+		}
+	}
+	@Override
+	public void run() {
+		threadPool = (ThreadPoolExecutor)Executors.newCachedThreadPool();
+		searchRoot();
+		threadPool.shutdown();
+	}
 	
 	/**
 	 * A thread-task for parallel search.
@@ -104,7 +298,7 @@ public class Search implements Runnable {
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
-			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
+			if (!ponder && nodes.get() >= maxNodes || isInterrupted())
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
@@ -241,9 +435,9 @@ public class Search implements Runnable {
 				// Generate material moves.
 				matMoves = pos.getTacticalMoves();
 				// If there was no hash move or material moves, perform a mate check.
-				if (!isThereHashMove && matMoves.length() == 0) {
+				if (!isThereHashMove && matMoves.size() == 0) {
 					nonMatMoves = pos.getQuietMoves();
-					if (nonMatMoves.length() == 0) {
+					if (nonMatMoves.size() == 0) {
 						score = isInCheck ? mateScore : Termination.STALE_MATE.score;
 						if (score > bestScore) {
 							bestMove = null;
@@ -498,7 +692,7 @@ public class Search implements Runnable {
 				if (nonMatMoves == null)
 					nonMatMoves = pos.getQuietMoves();
 				// One reply extension.
-				if (matMoves.length() == 0 && nonMatMoves.length() == 1)
+				if (matMoves.size() == 0 && nonMatMoves.size() == 1)
 					depth += FULL_PLY/2;
 				evalScore = Integer.MIN_VALUE;
 				// Order and search the non-material moves.
@@ -639,7 +833,7 @@ public class Search implements Runnable {
 			int bestScore, searchScore;
 			if (depth != 0)
 				nodes.incrementAndGet();
-			if (!pondering && (System.currentTimeMillis() >= deadLine || nodes.get() >= maxNodes))
+			if (!ponder && nodes.get() >= maxNodes || isInterrupted())
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
@@ -664,15 +858,15 @@ public class Search implements Runnable {
 			// Quiescence search.
 			else {
 				materialMoves = pos.getTacticalMoves();
-				if (materialMoves.length() == 0) {
+				if (materialMoves.size() == 0) {
 					quietMoves = pos.getQuietMoves();
-					if (quietMoves.length() == 0)
+					if (quietMoves.size() == 0)
 						return Termination.STALE_MATE.score;
 				}
 				// Check for the fifty-move rule; return a draw score if it applies.
 				if (pos.fiftyMoveRuleClock >= 100)
 					return Termination.DRAW_CLAIMED.score;
-				if (materialMoves.length() == 0)
+				if (materialMoves.size() == 0)
 					return eval.score(pos, alpha, beta);
 				else {
 					// Stand pat if the null move observation holds; otherwise the mate score is the lower bound.
@@ -721,7 +915,7 @@ public class Search implements Runnable {
 		 * @return
 		 */
 		private Move[] orderMaterialMovesSEE(Position pos, List<Move> moves) {
-			Move[] arr = new Move[moves.length()];
+			Move[] arr = new Move[moves.size()];
 			Move move;
 			int i = 0;
 			while (moves.hasNext()) {
@@ -738,7 +932,7 @@ public class Search implements Runnable {
 		 * @return
 		 */
 		private Move[] orderMaterialMovesMVVLVA(List<Move> moves) {
-			Move[] arr = new Move[moves.length()];
+			Move[] arr = new Move[moves.size()];
 			Move move;
 			int i = 0;
 			while (moves.hasNext()) {
@@ -761,7 +955,7 @@ public class Search implements Runnable {
 		 * @return
 		 */
 		private Move[] orderNonMaterialMoves(List<Move> moves) {
-			Move[] arr = new Move[moves.length()];
+			Move[] arr = new Move[moves.size()];
 			Move move;
 			int i = 0;
 			while (moves.hasNext()) {
@@ -771,213 +965,5 @@ public class Search implements Runnable {
 			}
 			return QuickSort.sort(arr);
 		}
-	}
-	
-	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
-	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;	// Including extensions and quiescence search.
-	private final static int L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
-	private final static int W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
-	
-	private final static int FULL_PLY = 4;	// For fractional ply extensions.
-	
-	private Parameters params;
-	
-	private ThreadPoolExecutor threadPool;
-	private ExecutorCompletionService<Integer> compService;
-	private int numOfThreads;
-	
-	private Position position;
-	private boolean nullMoveObservHolds;	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
-	private SearchStatistics stats;
-	
-	private KillerTable kT;			// Killer heuristic table.
-	private RelativeHistoryTable hT;// History heuristic table.
-	private HashTable<TTEntry> tT;	// Transposition table.
-	private byte hashEntryGen;		// Entry generation.
-	
-	private Evaluator eval;
-	
-	private boolean pondering;
-	private long searchTime;
-	private long deadLine;
-	private int maxDepth;
-	private long maxNodes;
-	private AtomicLong nodes;	// Number of searched positions.
-	private List<Move> allowedRootMoves;	// The only moves to search at the root.
-	private boolean areMovesRestricted;
-	
-	private AtomicBoolean doStopSearch;
-	
-	/**
-	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
-	 * moves to search; if maxNodes is <= 0, the engine will ponder on the position once the search thread is started, and will not stop until
-	 * it is interrupted.
-	 * 
-	 * @param pos The position to search.
-	 * @param timeLeft Time left until the end of the time control.
-	 * @param maxNodes Max number of searched nodes.
-	 * @param moves Moves to search.
-	 * @param gamePhase The game phase in which the position is.
-	 * @param historyTable History table.
-	 * @param hashEntryGen Hash entry generation.
-	 * @param transposTable Transposition table.
-	 * @param evalTable Evaluation hash table.
-	 * @param pawnTable Pawn hash table.
-	 */
-	public Search(Position position, SearchArguments args, SearchStatistics stats, RelativeHistoryTable historyTable, final byte hashEntryGen,
-			HashTable<TTEntry> transposTable, HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params,
-			int numOfSearchThreads) {
-		this.params = params;
-		this.stats = stats;
-		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
-		numOfThreads = numOfSearchThreads;
-		this.position = position.deepCopy();
-		int phaseScore = eval.phaseScore(position);
-		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_END_GAME_LOWER;
-//		if (timeLeft <= 0 && searchTime <= 0 && maxDepth <= 0 && maxNodes <= 0) {
-//			pondering = true;
-//			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
-//		}
-//		else {
-//			pondering = false;
-//			this.searchTime = searchTime > 0 ? searchTime : allocateSearchTime(this.position, phaseScore, timeLeft, oppTimeLeft);
-//			this.maxDepth = maxDepth > 0 ? maxDepth : MAX_NOMINAL_SEARCH_DEPTH;
-//			this.maxNodes = maxNodes > 0 ? maxNodes : Long.MAX_VALUE;
-//		}
-//		allowedRootMoves = moves;
-//		areMovesRestricted = allowedRootMoves != null;
-		doStopSearch = new AtomicBoolean(false);
-		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
-		this.hT = historyTable;
-		this.tT = transposTable;
-		this.hashEntryGen = hashEntryGen;
-		stats = new SearchStatistics();
-	}
-	/**
-	 * Returns an observable container class for the results of the search.
-	 * 
-	 * @return
-	 */
-	public SearchStatistics getStats() {
-		return stats;
-	}
-	/**
-	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
-	 * 
-	 * @param ply
-	 * @return
-	 */
-	private Queue<Move> extractPv(int ply) {
-		Move[] pVarr = new Move[ply];
-		Queue<Move> pV = new Queue<>();
-		TTEntry e;
-		Move bestMove;
-		int i, j;
-		i = j = 0;
-		while ((e = tT.lookUp(position.key)) != null && e.bestMove != 0 && e.type == NodeType.EXACT.ind && i < ply) {
-			bestMove = Move.toMove(e.bestMove);
-			position.makeMove(bestMove);
-			pVarr[i++] = bestMove;
-		}
-		for (int k = 0; k < i; k++)
-			position.unmakeMove();
-		while (j < pVarr.length && pVarr[j] != null)
-			pV.add(pVarr[j++]);
-		return pV;
-	}
-	private long allocateSearchTime(Position pos, int phaseScore, long timeLeft, long oppTimeLeft) {
-		// !FIXME
-		return 3600*1000;
-	}
-	/**
-	 * Starts searching the current position until the allocated search time has passed, or the thread is interrupted, or the maximum search
-	 * depth has been reached.
-	 */
-	private void searchRoot() {
-		int alpha, beta, score, resultScore, failHigh, failLow;
-		boolean isMate;
-		Stack<Future<Integer>> futures;
-		compService = new ExecutorCompletionService<Integer>(threadPool);
-		nodes = new AtomicLong(0);
-		alpha = Termination.CHECK_MATE.score;
-		beta = -alpha;
-		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
-		// Iterative deepening.
-		for (short i = 1; i <= maxDepth; i++) {
-			futures = new Stack<>();
-			for (int j = 0; j < numOfThreads; j++)
-				futures.add(compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0)));
-			try {
-				score = compService.take().get();
-				if (i == maxDepth) {
-					for (Future<Integer> f : futures)
-						f.cancel(true);
-				}
-			} catch (InterruptedException | ExecutionException e) {
-				score = alpha;
-				doStopSearch.set(true);
-				e.printStackTrace();
-			}
-			// Determining if the result is a mate score.
-			if (score <= L_CHECK_MATE_LIMIT) {
-				resultScore = Termination.CHECK_MATE.score - score;
-				isMate = true;
-			}
-			else if (score >= W_CHECK_MATE_LIMIT) {
-				resultScore = -Termination.CHECK_MATE.score - score;
-				isMate = true;
-			}
-			else {
-				resultScore = score;
-				isMate = false;
-			}
-			if (doStopSearch.get() || Thread.currentThread().isInterrupted() || (!pondering && System.currentTimeMillis() >= deadLine)) {
-				stats.set(extractPv(i), i, (short)resultScore, isMate, nodes.get(), System.currentTimeMillis() - (deadLine - searchTime), true);
-				break;
-			}
-			// Aspiration windows with gradual widening.
-			if (score <= alpha) {
-				if (score <= L_CHECK_MATE_LIMIT) {
-					alpha = Termination.CHECK_MATE.score;
-					beta = -Termination.CHECK_MATE.score;
-					failLow = 2;
-					failHigh = 2;
-				}
-				else {
-					alpha = failLow == 0 ? Math.max(score - 2*params.A_DELTA, Termination.CHECK_MATE.score) :
-						failLow == 1 ? Math.max(score - 4*params.A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
-					failLow++;
-				}
-				i--;
-				continue;
-			}
-			if (score >= beta) {
-				if (score >= W_CHECK_MATE_LIMIT) {
-					alpha = Termination.CHECK_MATE.score;
-					beta = -Termination.CHECK_MATE.score;
-					failLow = 2;
-					failHigh = 2;
-				}
-				else {
-					beta = failHigh == 0 ? Math.min(score + 2*params.A_DELTA, -Termination.CHECK_MATE.score) :
-						failHigh == 1 ? Math.min(score + 4*params.A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
-					failHigh++;
-				}
-				i--;
-				continue;
-			}
-			stats.set(extractPv(i), i, (short)resultScore, isMate, nodes.get(),
-					System.currentTimeMillis() - (deadLine - searchTime), i == maxDepth);
-			failHigh = failLow = 0;
-			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
-			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
-		}
-	}
-	@Override
-	public void run() {
-		threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numOfThreads);
-		deadLine = System.currentTimeMillis() + searchTime;
-		searchRoot();
-		threadPool.shutdown();
 	}
 }

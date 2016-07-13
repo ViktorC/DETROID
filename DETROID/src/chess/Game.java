@@ -46,8 +46,12 @@ public class Game {
 	private String blackPlayerName;
 	private State state;
 
-	public String getStartPos() {
-		return startPos;
+	public Position getStartPos() {
+		try {
+			return Position.parse(startPos);
+		} catch (ChessParseException e) {
+			return null;
+		}
 	}
 	public Position getPosition() {
 		return position;
@@ -72,6 +76,10 @@ public class Game {
 	}
 	public State getState() {
 		return state;
+	}
+	public void setState() {
+		state = position.getMoves().size() == 0 ? position.isInCheck ? position.isWhitesTurn ? State.BLACK_WIN : State.WHITE_WIN :
+			State.DRAW : State.IN_PROGRESS;
 	}
 	public void setPosition(Position position) {
 		this.position = position;
@@ -190,21 +198,15 @@ public class Game {
 	/**
 	 * Returns a game instance according to the parameter values.
 	 * 
-	 * @param position
+	 * @param fen
 	 * @param event
 	 * @param site
 	 * @param whitePlayerName
 	 * @param blackPlayerName
 	 */
-	public Game(String position, String event, String site, String whitePlayerName,
-			String blackPlayerName) {
-		startPos = position;
-		try {
-			this.position = Position.parse(position);
-		} catch (ChessParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public Game(Position position, String event, String site, String whitePlayerName, String blackPlayerName) {
+		startPos = position.toString();
+		this.position = position;
 		this.event = event;
 		this.site = site;
 		date = new Date();

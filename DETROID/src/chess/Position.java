@@ -3099,7 +3099,7 @@ public class Position implements Hashable, Copiable<Position> {
 	 * @throws IllegalStateException In case of consecutive null moves.
 	 */
 	public void makeNullMove() {
-		if (moveList.getHead() == null && moveList.length() != 0)
+		if (moveList.getHead() == null && moveList.size() != 0)
 			throw new IllegalStateException("Consecutive null moves are not supported.");
 		unmakeRegisterHistory.add(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, fiftyMoveRuleClock,
 				repetitions, checkers));
@@ -3172,7 +3172,7 @@ public class Position implements Hashable, Copiable<Position> {
 		long leafNodes = 0;
 		moves = getMoves();
 		if (depth == 1)
-			return moves.length();
+			return moves.size();
 		while (moves.hasNext()) {
 			move = moves.next();
 			makeMove(move);

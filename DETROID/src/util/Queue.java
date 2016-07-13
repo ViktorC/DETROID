@@ -39,14 +39,14 @@ public class Queue<T> extends List<T> {
 	 * @return
 	 */
 	@Override
-	public int length() {
+	public int size() {
 		return length;
 	}
 	/**
 	 * Enqueues a new node storing the input parameter data.
 	 */
 	@Override
-	public void add(T data) {
+	public boolean add(T data) {
 		if (head == null) {
 			head = new ListItem(data);
 			tail = head;
@@ -57,6 +57,7 @@ public class Queue<T> extends List<T> {
 			tail = tail.next;
 		}
 		length++;
+		return true;
 	}
 	/**
 	 * Removes the head node form the list and returns the data stored in it.

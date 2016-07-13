@@ -20,13 +20,15 @@ public class Stack<T> extends List<T> {
 	}
 	/**
 	 * Pushes a new node storing the input parameter data onto the stack.
+	 * @return 
 	 */
 	@Override
-	public void add(T data) {
+	public boolean add(T data) {
 		ListItem temp = head;
 		head = new ListItem(data);
 		head.next = temp;
 		reset();
+		return true;
 	}
 	/**
 	 * Returns the data held in the last element of the list. If the list is empty, it returns null.
@@ -52,7 +54,7 @@ public class Stack<T> extends List<T> {
 	 * @return
 	 */
 	@Override
-	public int length() {
+	public int size() {
 		int c = 0;
 		while (hasNext()) {
 			next();

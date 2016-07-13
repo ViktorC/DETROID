@@ -1,8 +1,8 @@
 package util;
 
 /**
- * A parameterized type for storing a name, a default value, and an actual value for different setting types. For number based settings, a minimum
- * and a maximum value can be specified as well.
+ * A parameterized type for storing a name, a default value, and an actual value for different setting types. For number based settings, a
+ * minimum and a maximum value can be specified as well.
  * 
  * @author Viktor
  *

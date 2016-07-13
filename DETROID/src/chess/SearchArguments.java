@@ -11,7 +11,7 @@ import util.Queue;
  */
 public class SearchArguments {
 
-	private final Iterable<Move> searchMoves;
+	private final List<Move> searchMoves;
 	private final Boolean ponder;
 	private final Long whiteTime;
 	private final Long blackTime;
@@ -24,7 +24,7 @@ public class SearchArguments {
 	private final Long searchTime;
 	private final Boolean infinite;
 	
-	public SearchArguments(Iterable<Move> searchMoves, Boolean ponder,
+	public SearchArguments(List<Move> searchMoves, Boolean ponder,
 			Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo, Integer depth, Long nodes,
 			Short mateDistance, Long searchTime, Boolean infinite) {
@@ -42,7 +42,7 @@ public class SearchArguments {
 		this.searchTime = searchTime;
 		this.infinite = infinite;
 	}
-	public Iterable<Move> getSearchMoves() {
+	public List<Move> getSearchMoves() {
 		List<Move> list = new Queue<>();
 		for (Move m : searchMoves) {
 			list.add(m);
