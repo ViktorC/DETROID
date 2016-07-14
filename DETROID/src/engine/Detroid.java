@@ -4,12 +4,7 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Observer;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import util.*;
 
@@ -51,11 +46,6 @@ public class Detroid implements Engine {
 		eT = new HashTable<>(hashSize*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
 		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 		System.gc();
-	}
-	private boolean setBookPath(String path) {
-		if ((boolean)settings.get(useOwnBookAsSecondary))
-			book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH);
-		return book.setMainBookPath(path);
 	}
 	@Override
 	public void init() {
@@ -105,16 +95,31 @@ public class Detroid implements Engine {
 					hashSize.getMax().intValue() >= ((Number)value).intValue()) {
 				settings.put(hashSize, value);
 				setHashSize(((Number)value).intValue());
+				return true;
 			}
 		}
 		else if (useBook.equals(setting)) {
-			
+			settings.put(useBook, value);
+			return true;
 		}
 		else if (bookPath.equals(setting)) {
-			
+			if (book.setMainBookPath((String)value)) {
+				settings.put(bookPath, value);
+				return true;
+			}
 		}
 		else if (useOwnBookAsSecondary.equals(setting)) {
-			
+			if ((Boolean)value == true) {
+				if (book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH)) {
+					settings.put(useOwnBookAsSecondary, value);
+					return true;
+				}
+			}
+			else {
+				book.setSecondaryBookPath(null);
+				settings.put(useOwnBookAsSecondary, value);
+				return true;
+			}
 		}
 		return false;
 	}

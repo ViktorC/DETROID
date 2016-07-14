@@ -151,6 +151,13 @@ class Book implements AutoCloseable {
 	 * @return Whether the book could be successfully set to the file.
 	 */
 	public boolean setSecondaryBookPath(String filePath) {
+		if (filePath == null) {
+			try {
+				secondaryBook.close();
+			} catch (Exception e) { }
+			secondaryBook = null;
+			return true;
+		}
 		if (secondaryBook == null) {
 			try {
 				secondaryBook = new Book(filePath);
