@@ -28,10 +28,10 @@ public class Detroid implements Engine {
 	private HashMap<Setting<?>, Object> settings;
 	
 
-	private Thread backgroundThread;
 	private Parameters params;
 	private Game game;
 	private Book book;
+	private Search search;
 	private SearchStatistics searchStats;
 	private RelativeHistoryTable hT;
 	private HashTable<TTEntry> tT;		// Transposition table.
@@ -64,8 +64,8 @@ public class Detroid implements Engine {
 		settings = new HashMap<>();
 		SettingFactory factory = new SettingFactory();
 		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);
-		useBook = factory.buildBoolSetting("UseOwnBook", false);
-		bookPath = factory.buildStringSetting("OwnBookPath", Book.DEFAULT_BOOK_FILE_PATH);
+		useBook = factory.buildBoolSetting("UseBook", false);
+		bookPath = factory.buildStringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
 		useOwnBookAsSecondary = factory.buildBoolSetting("UseOwnBookAsSecondary", false);
 		settings.put(hashSize, hashSize.getDefaultValue());
 		settings.put(useBook, useBook.getDefaultValue());
@@ -104,10 +104,7 @@ public class Detroid implements Engine {
 			if (hashSize.getMin().intValue() <= ((Number)value).intValue() &&
 					hashSize.getMax().intValue() >= ((Number)value).intValue()) {
 				settings.put(hashSize, value);
-				backgroundThread = new Thread(() -> {
-					setHashSize(((Number)value).intValue());
-				});
-				backgroundThread.start();
+				setHashSize(((Number)value).intValue());
 			}
 		}
 		else if (useBook.equals(setting)) {
@@ -149,8 +146,12 @@ public class Detroid implements Engine {
 	}
 	@Override
 	public String stop() {
-		if (backgroundThread != null) {
-			return searchStats.getPv().iterator().next();
+		if (search != null && search.isAlive()) {
+			search.interrupt();
+			try {
+				search.join();
+			} catch (InterruptedException e) { }
+			return searchStats.getPvLine() != null ? searchStats.getPvLine().getHead().toString() : null;
 		}
 		return null;
 	}
