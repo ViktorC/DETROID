@@ -119,13 +119,13 @@ public class Detroid implements Engine {
 		return false;
 	}
 	@Override
-	public boolean setGame(String pgn) {
-		try {
-			game = Game.parse(pgn);
-			return true;
-		} catch (ChessParseException e) {
-			return false;
-		}
+	public void newGame() {
+		tT.clear();
+		eT.clear();
+		pT.clear();
+		hT.reset();
+		gen = 0;
+		System.gc();
 	}
 	@Override
 	public boolean position(String fen) {

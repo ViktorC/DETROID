@@ -47,12 +47,9 @@ public interface Engine {
 	 */
 	<T> boolean setOption(Setting<T> setting, T value);
 	/**
-	 * Sets the game according to the PGN definition.
-	 * 
-	 * @param pgn
-	 * @return
+	 * Resets the game. It might be a good idea for the engine to wipe the hash tables at this point.
 	 */
-	boolean setGame(String pgn);
+	void newGame();
 	/**
 	 * Sends the current position to the engine.
 	 * 

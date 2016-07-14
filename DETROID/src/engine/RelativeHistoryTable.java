@@ -87,4 +87,17 @@ class RelativeHistoryTable {
 				return 0;
 		}
 	}
+	/**
+	 * Resets all values in the tables to zero.
+	 */
+	public void reset() {
+		for (int i = 1; i < historyT.length; i++) {
+			for (int j = 0; j < 64; j++) {
+				synchronized(locks[i][j]) {
+					historyT[i][j] = 0;
+					butterflyT[i][j] = 0;
+				}
+			}
+		}
+	}
 }
