@@ -1,6 +1,6 @@
-package chess;
+package engine;
 
-import chess.Bitboard.*;
+import engine.Bitboard.*;
 import util.BitOperations;
 
 /**
@@ -12,7 +12,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public enum MoveSetDatabase {
+enum MoveSetDatabase {
 	
 	A1 (0x0880011080400121L, 0x0C40100582028020L, 52, 58),
 	B1 (0x0840034020031004L, 0x00B0018301120000L, 53, 59),

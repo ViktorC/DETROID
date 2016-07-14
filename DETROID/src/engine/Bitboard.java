@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import util.BitOperations;
 
@@ -8,7 +8,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public final class Bitboard {
+final class Bitboard {
 	
 	/**
 	 * An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on

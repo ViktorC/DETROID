@@ -1,6 +1,6 @@
-package chess;
+package engine;
 
-import chess.Bitboard.File;
+import engine.Bitboard.File;
 
 /**
  * A class for bit parallel move set generation.
@@ -8,7 +8,7 @@ import chess.Bitboard.File;
  * @author Viktor
  *
  */
-public final class MultiMoveSets {
+final class MultiMoveSets {
 	
 	private MultiMoveSets() {
 		

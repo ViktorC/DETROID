@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import util.HashTable;
 import util.SizeOf;
@@ -11,7 +11,7 @@ import util.SizeOf;
  * @author Viktor
  *
  */
-public class TTEntry implements HashTable.Entry<TTEntry> {
+class TTEntry implements HashTable.Entry<TTEntry> {
 	
 	/**
 	 * The 64-bit position hash key.

@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import util.List;
 
@@ -8,7 +8,7 @@ import util.List;
  * @author Viktor
  *
  */
-public class Move implements Comparable<Move> {
+class Move implements Comparable<Move> {
 	
 	/**
 	 * Mask and shift values for encoding contents of a Move object into an int; and vica versa.

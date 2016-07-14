@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 /**
  * A simple enum type for the representation of a side's castling rights in a position.
@@ -6,7 +6,7 @@ package chess;
  * @author Viktor
  *
  */
-public enum CastlingRights {
+enum CastlingRights {
 	
 	NONE,
 	SHORT,

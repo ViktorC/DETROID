@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 
 
@@ -10,7 +10,7 @@ package chess;
  * @author Viktor
  *
  */
-public class RelativeHistoryTable {
+class RelativeHistoryTable {
 
 	private Parameters params;
 	

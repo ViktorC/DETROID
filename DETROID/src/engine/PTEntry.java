@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import util.HashTable;
 import util.SizeOf;
@@ -10,7 +10,7 @@ import util.SizeOf;
  * @author Viktor
  *
  */
-public class PTEntry implements HashTable.Entry<PTEntry> {
+class PTEntry implements HashTable.Entry<PTEntry> {
 
 	/**
 	 * The Zobrist pawn key used to hash pawn positions.

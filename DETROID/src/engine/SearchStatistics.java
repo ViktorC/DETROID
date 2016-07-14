@@ -1,8 +1,10 @@
-package chess;
+package engine;
 
-import java.util.Observable;
+import java.util.Collection;
 
+import engine.Engine.SearchInfo;
 import util.List;
+import util.Queue;
 
 /**
  * An observable class for the results and statistics of a search.
@@ -10,7 +12,7 @@ import util.List;
  * @author Viktor
  *
  */
-public class SearchStatistics extends Observable {
+public class SearchStatistics extends SearchInfo {
 	
 	private List<Move> pVline;		// Principal variation.
 	private short nominalDepth;		// The depth to which the PV has been searched.
@@ -32,44 +34,46 @@ public class SearchStatistics extends Observable {
 	public List<Move> getPvLine() {
 		return pVline;
 	}
-	/**
-	 * Returns the greatest nominal depth of the search. It does not necessarily mean that the whole ply has been searched.
-	 * 
-	 * @return
+
+	@Override
+	public Collection<String> getPv() {
+		List<String> list = new Queue<>();
+		for (Move m : pVline)
+			list.add(m.toString());
+		return list;
+	}
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getNominalDepth()
 	 */
-	public short getNominalDepth() {
+	@Override
+	public short getDepth() {
 		return nominalDepth;
 	}
-	/**
-	 * Returns the result score of the search for the side to move.
-	 * 
-	 * @return
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getScore()
 	 */
+	@Override
 	public short getScore() {
 		return score;
 	}
-	/**
-	 * Returns whether it is an exact score, a lower bound, an upper bound, or a mate score, in which case the score denotes the mate
-	 * distance. If the side to move in the root position is going to get mated, the negative distance is returned.
-	 * 
-	 * @return
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getScoreType()
 	 */
+	@Override
 	public ScoreType getScoreType() {
 		return scoreType;
 	}
-	/**
-	 * Returns the number of nodes searched to reach this result.
-	 * 
-	 * @return
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getNodes()
 	 */
+	@Override
 	public long getNodes() {
 		return nodes;
 	}
-	/**
-	 * Returns the time spent on the search to reach this result in milliseconds.
-	 * 
-	 * @return
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getTime()
 	 */
+	@Override
 	public long getTime() {
 		return time;
 	}

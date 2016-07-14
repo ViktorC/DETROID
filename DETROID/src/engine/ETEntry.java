@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import util.HashTable;
 import util.SizeOf;
@@ -9,7 +9,7 @@ import util.SizeOf;
  * @author Viktor
  *
  */
-public class ETEntry implements HashTable.Entry<ETEntry> {
+class ETEntry implements HashTable.Entry<ETEntry> {
 
 	/**
 	 * The 64-bit position hash key.

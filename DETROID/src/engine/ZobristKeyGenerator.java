@@ -1,8 +1,8 @@
-package chess;
+package engine;
 
 import java.util.Random;
 
-import chess.Bitboard.Square;
+import engine.Bitboard.Square;
 
 /**
  * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
@@ -21,7 +21,7 @@ import chess.Bitboard.Square;
  * @author Viktor
  *
  */
-public final class ZobristKeyGenerator {
+final class ZobristKeyGenerator {
 	
 	private static final ZobristKeyGenerator INSTANCE = new ZobristKeyGenerator();
 	

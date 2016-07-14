@@ -1,9 +1,9 @@
-package chess;
+package engine;
 
-import chess.Bitboard.Diagonal;
-import chess.Bitboard.File;
-import chess.Bitboard.Rank;
-import chess.Bitboard.Square;
+import engine.Bitboard.Diagonal;
+import engine.Bitboard.File;
+import engine.Bitboard.Rank;
+import engine.Bitboard.Square;
 import util.*;
 
 /**
@@ -13,7 +13,7 @@ import util.*;
  * @author Viktor
  *
  */
-public final class Evaluator {
+final class Evaluator {
 	
 	// Distance tables for tropism.
 	private final static byte[][] MANHATTAN_DISTANCE = new byte[64][64];

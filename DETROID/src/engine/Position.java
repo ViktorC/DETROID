@@ -1,6 +1,6 @@
-package chess;
+package engine;
 
-import chess.Bitboard.*;
+import engine.Bitboard.*;
 import util.*;
 
 /**
@@ -17,7 +17,7 @@ import util.*;
  * @author Viktor
  * 
  */
-public class Position implements Hashable, Copiable<Position> {
+class Position implements Hashable, Copiable<Position> {
 	
 	/**
 	 * A FEN string for the starting chess position.

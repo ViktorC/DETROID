@@ -1,40 +1,25 @@
 package engine;
 
-import java.util.Collection;
+import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Observer;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import chess.Book;
-import chess.ETEntry;
-import chess.Game;
-import chess.Move;
-import chess.PTEntry;
-import chess.Parameters;
-import chess.RelativeHistoryTable;
-import chess.SearchArguments;
-import chess.SearchStatistics;
-import chess.TTEntry;
 import util.*;
 
-public class Detroid implements Engine {
+public class Detroid implements Engine {	
+	
+	private final static float VERSION_NUMBER = 1.00f;
+	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
+	private final static String AUTHOR = "Viktor Csomor";
 
 	private final static Detroid INSTANCE = new Detroid();
-	
-	private final static String NAME = "DETROID v1.00";
-	private final static String AUTHOR = "Viktor Csomor";
-	
-	private boolean debug;
-	
-	private ExecutorService background;
-	private List<Future<?>> backgroundTasks;
-	
-	private Scanner in;
-	
-	private List<Observer> observers;
 	
 	private Setting<?> hashSize;
 	private Setting<?> useBook;
@@ -42,9 +27,12 @@ public class Detroid implements Engine {
 	private Setting<?> useOwnBookAsSecondary;
 	private HashMap<Setting<?>, Object> settings;
 	
+
+	private Thread backgroundThread;
 	private Parameters params;
 	private Game game;
 	private Book book;
+	private SearchStatistics searchStats;
 	private RelativeHistoryTable hT;
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private HashTable<ETEntry> eT;		// Evaluation hash table.
@@ -52,24 +40,7 @@ public class Detroid implements Engine {
 	private byte gen = 0;
 	
 	private Detroid() {
-		background = Executors.newCachedThreadPool();
-		backgroundTasks = new Queue<>();
-		params = new Parameters();
-		book = Book.getInstance();
-		observers = new Queue<>();
-		settings = new HashMap<>();
-		in = new Scanner(System.in);
-		SettingFactory factory = new SettingFactory();
-		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);
-		useBook = factory.buildBoolSetting("UseOwnBook", false);
-		bookPath = factory.buildStringSetting("OwnBookPath", Book.DEFAULT_BOOK_FILE_PATH);
-		useOwnBookAsSecondary = factory.buildBoolSetting("UseOwnBookAsSecondary", false);
-		settings.put(hashSize, hashSize.getDefaultValue());
-		settings.put(useBook, useBook.getDefaultValue());
-		settings.put(bookPath, bookPath.getDefaultValue());
-		settings.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
-		setHashSize((int)settings.get(hashSize));
-		hT = new RelativeHistoryTable(params);
+		
 	}
 	public Detroid getInstance() {
 		return INSTANCE;
@@ -79,11 +50,30 @@ public class Detroid implements Engine {
 		tT = new HashTable<>(hashSize*params.TT_SHARE/totalHashShares, TTEntry.SIZE);
 		eT = new HashTable<>(hashSize*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
 		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
+		System.gc();
 	}
 	private boolean setBookPath(String path) {
 		if ((boolean)settings.get(useOwnBookAsSecondary))
 			book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH);
 		return book.setMainBookPath(path);
+	}
+	@Override
+	public void init() {
+		params = new Parameters();
+		book = Book.getInstance();
+		settings = new HashMap<>();
+		SettingFactory factory = new SettingFactory();
+		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);
+		useBook = factory.buildBoolSetting("UseOwnBook", false);
+		bookPath = factory.buildStringSetting("OwnBookPath", Book.DEFAULT_BOOK_FILE_PATH);
+		useOwnBookAsSecondary = factory.buildBoolSetting("UseOwnBookAsSecondary", false);
+		settings.put(hashSize, hashSize.getDefaultValue());
+		settings.put(useBook, useBook.getDefaultValue());
+		settings.put(bookPath, bookPath.getDefaultValue());
+		settings.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
+		searchStats = new SearchStatistics();
+		setHashSize((int)settings.get(hashSize));
+		hT = new RelativeHistoryTable(params);
 	}
 	@Override
 	public String getName() {
@@ -95,46 +85,77 @@ public class Detroid implements Engine {
 	}
 	@Override
 	public float getHashLoad() {
-		// TODO Auto-generated method stub
-		return 0;
+		long load, capacity;
+		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
+		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
+		return load/capacity;
 	}
 	@Override
-	public Collection<Setting<?>> getOptions() {
-		return settings.keySet();
+	public Set<Map.Entry<Setting<?>, Object>> getOptions() {
+		Set<Map.Entry<Setting<?>, Object>> set = new HashSet<>();
+		for (Map.Entry<Setting<?>, Object> e : settings.entrySet())
+			set.add(new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()));
+		return set;
 	}
 	@Override
 	public <T> boolean setOption(Setting<T> setting, T value) {
-		// TODO Auto-generated method stub
+		if (value == null) return false;
+		if (hashSize.equals(setting)) {
+			if (hashSize.getMin().intValue() <= ((Number)value).intValue() &&
+					hashSize.getMax().intValue() >= ((Number)value).intValue()) {
+				settings.put(hashSize, value);
+				backgroundThread = new Thread(() -> {
+					setHashSize(((Number)value).intValue());
+				});
+				backgroundThread.start();
+			}
+		}
+		else if (useBook.equals(setting)) {
+			
+		}
+		else if (bookPath.equals(setting)) {
+			
+		}
+		else if (useOwnBookAsSecondary.equals(setting)) {
+			
+		}
 		return false;
 	}
 	@Override
-	public void newGame() {
-		// TODO Auto-generated method stub
-		
+	public boolean setGame(String pgn) {
+		try {
+			game = Game.parse(pgn);
+			return true;
+		} catch (ChessParseException e) {
+			return false;
+		}
 	}
 	@Override
-	public void setGame(String pgn) {
-		// TODO Auto-generated method stub
-		
+	public boolean position(String fen) {
+		try {
+			if (!game.getPosition().toString().equals(fen))
+				game.setPosition(Position.parse(fen));
+			return true;
+		} catch (ChessParseException e) {
+			return false;
+		}
 	}
 	@Override
-	public void position(String fen) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public Move search(SearchArguments args) {
+	public String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
+			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
+			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	@Override
-	public Move stop() {
-		// TODO Auto-generated method stub
+	public String stop() {
+		if (backgroundThread != null) {
+			return searchStats.getPv().iterator().next();
+		}
 		return null;
 	}
 	@Override
-	public SearchStatistics getSearchStats() {
-		// TODO Auto-generated method stub
-		return null;
+	public SearchInfo getInfo() {
+		return searchStats;
 	}
 }

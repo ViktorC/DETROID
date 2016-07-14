@@ -1,15 +1,15 @@
-  package chess;
+  package engine;
 
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
 
-import chess.Book.SelectionModel;
+import engine.Book.SelectionModel;
 import util.HashTable;
 import util.List;
 import util.Stack;
 
-public class Playground {
+class Playground {
 
 	final static String tP1 = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 	final static String tP2 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -";

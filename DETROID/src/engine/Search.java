@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -9,15 +9,16 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import chess.ETEntry;
-import chess.Evaluator;
-import chess.KillerTable;
-import chess.NodeType;
-import chess.PTEntry;
-import chess.Parameters;
-import chess.RelativeHistoryTable;
-import chess.Termination;
-import chess.KillerTable.KillerTableEntry;
+import engine.ETEntry;
+import engine.Engine.SearchInfo.ScoreType;
+import engine.Evaluator;
+import engine.KillerTable;
+import engine.NodeType;
+import engine.PTEntry;
+import engine.Parameters;
+import engine.RelativeHistoryTable;
+import engine.Termination;
+import engine.KillerTable.KillerTableEntry;
 import util.*;
 
 /**
@@ -28,7 +29,7 @@ import util.*;
  * @author Viktor
  *
  */
-public class Search extends Thread {
+class Search extends Thread {
 	
 	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
 	// Including extensions and quiescence search.

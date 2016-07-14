@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 /**
  * An enumeration type for different game state scores such as check mate, stale mate, and draw due to different reasons.
@@ -6,7 +6,7 @@ package chess;
  * @author Viktor
  *
  */
-public enum Termination {
+enum Termination {
 	
 	CHECK_MATE				(Short.MIN_VALUE + 1),
 	STALE_MATE				(0),

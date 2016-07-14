@@ -1,8 +1,8 @@
-package chess;
+package engine;
 
 import java.util.Random;
 
-import chess.Bitboard.*;
+import engine.Bitboard.*;
 import util.BitOperations;
 
 /**
@@ -18,7 +18,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-public final class MagicGenerator {
+final class MagicGenerator {
 	
 	/**
 	 * A simple class for returning both the magic number and the magic shift value.

@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -13,7 +13,7 @@ import util.Queue;
  * @author Viktor
  *
  */
-public class Game {
+class Game {
 	
 	
 	/**
@@ -213,7 +213,7 @@ public class Game {
 		round = 1;
 		this.whitePlayerName = whitePlayerName;
 		this.blackPlayerName = blackPlayerName;
-		state = State.IN_PROGRESS;
+		setState();
 	}
 	/**
 	 * Returns a string of the game in PGN.

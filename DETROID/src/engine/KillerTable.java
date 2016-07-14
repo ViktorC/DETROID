@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 
 /**
@@ -7,7 +7,7 @@ package chess;
  * @author Viktor
  *
  */
-public class KillerTable {
+class KillerTable {
 
 	/**
 	 * A killer heuristic table entry for storing two killer moves compressed into two integers.

@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 /**
  * An enum type for the different chess pieces. Each piece has an id number by which it is represented in the array of the auxiliary offset board, and
@@ -7,7 +7,7 @@ package chess;
  * @author Viktor
  *
  */
-public enum Piece {
+enum Piece {
 	
 	NULL	(' '),
 	

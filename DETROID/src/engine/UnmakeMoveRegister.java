@@ -1,6 +1,6 @@
-package chess;
+package engine;
 
-import chess.Bitboard.Square;
+import engine.Bitboard.Square;
 import util.*;
 
 /**
@@ -11,7 +11,7 @@ import util.*;
  * @author Viktor
  *
  */
-public class UnmakeMoveRegister {
+class UnmakeMoveRegister {
 
 	public final byte whiteCastlingRights;
 	public final byte blackCastlingRights;

@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import java.text.ParseException;
 
@@ -8,7 +8,7 @@ import java.text.ParseException;
  * @author Viktor
  *
  */
-public class ChessParseException extends ParseException {
+class ChessParseException extends ParseException {
 
 	/**
 	 * Generated serial version UID.

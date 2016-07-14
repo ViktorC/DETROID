@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 /**
  * An enum type defining the seven move types the engine handles differently.
@@ -6,7 +6,7 @@ package chess;
  * @author Viktor
  *
  */
-public enum MoveType {
+enum MoveType {
 	
 	NORMAL,
 	SHORT_CASTLING,

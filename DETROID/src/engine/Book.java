@@ -1,4 +1,4 @@
-package chess;
+package engine;
 
 import java.nio.channels.*;
 import java.nio.file.*;
@@ -7,7 +7,7 @@ import java.nio.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-import chess.Bitboard.Square;
+import engine.Bitboard.Square;
 
 /**
  * A class for reading and selecting moves from PolyGlot opening books. It allows for using an alternative book once out of the main book.
@@ -15,7 +15,7 @@ import chess.Bitboard.Square;
  * @author Viktor
  *
  */
-public class Book implements AutoCloseable {
+class Book implements AutoCloseable {
 	
 	/**
 	 * A simple container class for Polyglot book entries. Only stores relevant information, i.e. move and weight.
