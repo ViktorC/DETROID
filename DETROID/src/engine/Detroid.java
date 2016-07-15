@@ -26,7 +26,7 @@ public class Detroid implements Engine {
 	private Parameters params;
 	private Game game;
 	private Book book;
-	private Search search;
+	private Thread search;
 	private SearchStatistics searchStats;
 	private RelativeHistoryTable hT;
 	private HashTable<TTEntry> tT;		// Transposition table.
