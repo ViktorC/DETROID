@@ -186,6 +186,8 @@ class Book implements AutoCloseable {
 			low = 0;
 			hi = bookStream.size();
 			while ((mid = (((hi + low)/2)/ENTRY_SIZE)*ENTRY_SIZE) != temp) {
+				if (Thread.currentThread().isInterrupted())
+					return entries;
 				bookStream.position(mid);
 				bookStream.read(buff);
 				buff.clear();
@@ -200,6 +202,8 @@ class Book implements AutoCloseable {
 						buff.clear();
 						bookStream.read(buff);
 						buff.clear();
+						if (Thread.currentThread().isInterrupted())
+							return entries;
 					}
 					while (buff.getLong() == key && readerPos >= 0);
 					readerPos = mid + ENTRY_SIZE;
@@ -211,6 +215,8 @@ class Book implements AutoCloseable {
 						entries.add(new Entry(buff.getShort(), buff.getShort()));
 						bookStream.position((readerPos += ENTRY_SIZE));
 						buff.clear();
+						if (Thread.currentThread().isInterrupted())
+							return entries;
 					}
 					return entries;
 				}

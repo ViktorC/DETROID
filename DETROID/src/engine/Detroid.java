@@ -28,6 +28,7 @@ public class Detroid implements Engine {
 	private Book book;
 	private Thread search;
 	private SearchStatistics searchStats;
+	private Move searchResult;
 	private RelativeHistoryTable hT;
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private HashTable<ETEntry> eT;		// Evaluation hash table.
@@ -47,8 +48,13 @@ public class Detroid implements Engine {
 		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 		System.gc();
 	}
+	private void searchGameTree(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
+			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
+			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
+				
+	}
 	@Override
-	public void init() {
+	public synchronized void init() {
 		params = new Parameters();
 		book = Book.getInstance();
 		settings = new HashMap<>();
@@ -88,7 +94,7 @@ public class Detroid implements Engine {
 		return set;
 	}
 	@Override
-	public <T> boolean setOption(Setting<T> setting, T value) {
+	public synchronized <T> boolean setOption(Setting<T> setting, T value) {
 		if (value == null) return false;
 		if (hashSize.equals(setting)) {
 			if (hashSize.getMin().intValue() <= ((Number)value).intValue() &&
@@ -124,7 +130,7 @@ public class Detroid implements Engine {
 		return false;
 	}
 	@Override
-	public void newGame() {
+	public synchronized void newGame() {
 		tT.clear();
 		eT.clear();
 		pT.clear();
@@ -133,7 +139,7 @@ public class Detroid implements Engine {
 		System.gc();
 	}
 	@Override
-	public boolean position(String fen) {
+	public synchronized boolean position(String fen) {
 		try {
 			if (!game.getPosition().toString().equals(fen))
 				game.setPosition(Position.parse(fen));
@@ -143,10 +149,19 @@ public class Detroid implements Engine {
 		}
 	}
 	@Override
-	public String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
+	public synchronized String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
 			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
-		// TODO Auto-generated method stub
+		if ((Boolean)settings.get(useBook)) {
+			search = new Thread(() -> { searchResult = book.getMove(game.getPosition(), Book.SelectionModel.STOCHASTIC); });
+			search.start();
+			try {
+				search.join();
+			}
+			catch (InterruptedException e) { }
+			if (
+		}
+		
 		return null;
 	}
 	@Override
@@ -156,7 +171,7 @@ public class Detroid implements Engine {
 			try {
 				search.join();
 			} catch (InterruptedException e) { }
-			return searchStats.getPvLine() != null ? searchStats.getPvLine().getHead().toString() : null;
+			return searchResult == null ? null : searchResult.toString();
 		}
 		return null;
 	}
