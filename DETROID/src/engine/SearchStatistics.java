@@ -94,7 +94,7 @@ public class SearchStatistics extends SearchInfo {
 		this.time = time;
 		this.isFinal = isFinal;
 		setChanged();
-		notifyObservers(this);
+		notifyObservers();
 	}
 	/**
 	 * Returns a one-line String representation of the principal variation result.

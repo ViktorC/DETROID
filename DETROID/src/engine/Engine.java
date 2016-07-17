@@ -3,11 +3,12 @@ package engine;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Observable;
+import java.util.Observer;
 import java.util.Set;
 
 import util.Setting;
 
-public interface Engine {
+public interface Engine extends Observer {
 	
 	/**
 	 * Initialize the engine; e.g. set up the tables, load parameters, etc.

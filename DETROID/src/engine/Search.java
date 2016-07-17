@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -86,9 +87,9 @@ class Search extends Thread {
 	 * @param evalTable Evaluation hash table.
 	 * @param pawnTable Pawn hash table.
 	 */
-	public Search(Position position, SearchStatistics stats, boolean ponder, int maxDepth, long maxNodes, List<Move> moves,
+	public Search(Position position, SearchStatistics stats, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
 			RelativeHistoryTable historyTable, final byte hashEntryGen, HashTable<TTEntry> transposTable,
-			HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params, int numOfSearchThreads) {
+			HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params) {
 		this.params = params;
 		this.stats = stats;
 		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
@@ -99,7 +100,9 @@ class Search extends Thread {
 			this.maxDepth = maxDepth;
 			this.maxNodes = maxNodes;
 		}
-		allowedRootMoves = moves;
+		allowedRootMoves = new Stack<>();
+		for (Move m : moves)
+			allowedRootMoves.add(m);
 		areMovesRestricted = allowedRootMoves != null;
 		doStopSearch = new AtomicBoolean(false);
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.

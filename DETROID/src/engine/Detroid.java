@@ -4,8 +4,10 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Observable;
 import java.util.Set;
 
+import engine.Book.SelectionModel;
 import util.*;
 
 public class Detroid implements Engine {	
@@ -48,10 +50,13 @@ public class Detroid implements Engine {
 		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 		System.gc();
 	}
-	private void searchGameTree(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
-			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
-			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
-				
+	private long computeSearchTime() {
+		// @!TODO
+		return 0;
+	}
+	private long computeSearchTimeExtension() {
+		// @!TODO
+		return 0;
 	}
 	@Override
 	public synchronized void init() {
@@ -68,6 +73,7 @@ public class Detroid implements Engine {
 		settings.put(bookPath, bookPath.getDefaultValue());
 		settings.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
 		searchStats = new SearchStatistics();
+		searchStats.addObserver(this);
 		setHashSize((int)settings.get(hashSize));
 		hT = new RelativeHistoryTable(params);
 	}
@@ -145,6 +151,7 @@ public class Detroid implements Engine {
 				game.setPosition(Position.parse(fen));
 			return true;
 		} catch (ChessParseException e) {
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -152,17 +159,45 @@ public class Detroid implements Engine {
 	public synchronized String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
 			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
+		Set<Move> moves;
+		long time;
 		if ((Boolean)settings.get(useBook)) {
-			search = new Thread(() -> { searchResult = book.getMove(game.getPosition(), Book.SelectionModel.STOCHASTIC); });
+			search = new Thread(() -> {
+				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+			});
+			search.run();
+		}
+		else {
+			if (searchMoves != null && !searchMoves.isEmpty()) {
+				moves = new HashSet<>();
+				try {
+					for (String s : searchMoves)
+						moves.add(game.getPosition().parsePACN(s));
+				} catch (ChessParseException | NullPointerException e) {
+					e.printStackTrace();
+					return null;
+				}
+			}
+			else
+				moves = null;
+			search = new Search(game.getPosition(), searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
+					moves, hT, gen, tT, eT, pT, params);
 			search.start();
+			time = searchTime == null || searchTime == 0 ? computeSearchTime() : searchTime;
+			try {
+				wait(time);
+			} catch (InterruptedException e) { e.printStackTrace(); }
+			if (searchTime == null || searchTime == 0) {
+				try {
+					wait(computeSearchTimeExtension());
+				} catch (InterruptedException e) { e.printStackTrace(); }
+			}
+			search.interrupt();
 			try {
 				search.join();
-			}
-			catch (InterruptedException e) { }
-			if (
+			} catch (InterruptedException e) { e.printStackTrace(); }
 		}
-		
-		return null;
+		return searchResult == null ? null : searchResult.toString();
 	}
 	@Override
 	public String stop() {
@@ -170,7 +205,9 @@ public class Detroid implements Engine {
 			search.interrupt();
 			try {
 				search.join();
-			} catch (InterruptedException e) { }
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			return searchResult == null ? null : searchResult.toString();
 		}
 		return null;
@@ -178,5 +215,11 @@ public class Detroid implements Engine {
 	@Override
 	public SearchInfo getInfo() {
 		return searchStats;
+	}
+	@Override
+	public void update(Observable o, Object arg) {
+		SearchStatistics stats = (SearchStatistics)o;
+		if (stats.getPvLine() != null && !stats.getPvLine().isEmpty())
+			searchResult = stats.getPvLine().getHead();
 	}
 }

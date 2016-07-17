@@ -42,16 +42,14 @@ class Game {
 	private String site;
 	private Date date;
 	private short round;
+	private long whiteTimeLeft;
+	private long blackTimeLeft;
 	private String whitePlayerName;
 	private String blackPlayerName;
 	private State state;
 
-	public Position getStartPos() {
-		try {
-			return Position.parse(startPos);
-		} catch (ChessParseException e) {
-			return null;
-		}
+	public String getStartPos() {
+		return startPos;
 	}
 	public Position getPosition() {
 		return position;

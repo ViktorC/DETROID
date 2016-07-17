@@ -1,8 +1,10 @@
   package engine;
 
+import java.util.HashSet;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
+import java.util.Set;
 
 import engine.Book.SelectionModel;
 import util.HashTable;
@@ -30,7 +32,7 @@ class Playground {
 	public static void main(String[] args) throws ChessParseException {
 		SearchStatistics r;
 		Move playerMove, bookMove;
-		List<Move> moveRestrictions = null;
+		Set<Move> moveRestrictions = null;
 		Position p = Position.parse(Position.START_POSITION_FEN);
 		Parameters params = new Parameters();
 		RelativeHistoryTable hT = new RelativeHistoryTable(params);
@@ -46,7 +48,8 @@ class Playground {
 					bookMove = book.getMove(p, SelectionModel.STOCHASTIC);
 					if (bookMove != null) {
 						System.out.println("Book move found: " + bookMove);
-						moveRestrictions = new Stack<>(bookMove);
+						moveRestrictions = new HashSet<>();
+						moveRestrictions.add(bookMove);
 					}
 					else {
 						moveRestrictions = null;
@@ -55,7 +58,7 @@ class Playground {
 				}
 				r = new SearchStatistics();
 				r.addObserver(new PVO());
-				Search s = new Search(p, r, false, 10, Long.MAX_VALUE, moveRestrictions, hT, gen, tT, eT, pT, params, 1);
+				Search s = new Search(p, r, false, 10, Long.MAX_VALUE, moveRestrictions, hT, gen, tT, eT, pT, params);
 				s.run();
 				p.makeMove(r.getPvLine().getHead());
 				if (gen == 127) {
