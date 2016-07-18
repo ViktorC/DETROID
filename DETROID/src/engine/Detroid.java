@@ -8,9 +8,10 @@ import java.util.Observable;
 import java.util.Set;
 
 import engine.Book.SelectionModel;
+import engine.Engine.SearchInfo.ScoreType;
 import util.*;
 
-public class Detroid implements Engine {	
+public class Detroid implements Engine {
 	
 	private final static float VERSION_NUMBER = 1.00f;
 	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
@@ -24,7 +25,6 @@ public class Detroid implements Engine {
 	private Setting<?> useOwnBookAsSecondary;
 	private HashMap<Setting<?>, Object> settings;
 	
-
 	private Parameters params;
 	private Position position;
 	private Book book;
@@ -54,12 +54,33 @@ public class Detroid implements Engine {
 		System.gc();
 	}
 	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement, Long blackIncrement, Integer movesToGo) {
-		// @!TODO
-		return 0;
+		int phaseScore;
+		final int avgNumOfMovesPerGame = 40;
+		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
+		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
+		if (movesToGo == null) {
+			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(position);
+			movesToGo = avgNumOfMovesPerGame - avgNumOfMovesPerGame*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
+		}
+		return position.isWhitesTurn ? ((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + movesToGo*whiteIncrement)/movesToGo :
+			((blackTime <= 12000 ? blackTime : blackTime - 10000) + movesToGo*blackIncrement)/movesToGo;
 	}
-	private long computeSearchTimeExtension(Long origSearchTimeLong, Long whiteTime, Long blackTime, Long whiteIncrement,
+	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
 		// @!TODO
+		if (searchStats.getScoreType() != ScoreType.LOWER_BOUND || searchStats.getScoreType() != ScoreType.UPPER_BOUND) {
+			
+		}
+		if (scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT) {
+			
+		}
+		if (timeOfLastSearchResChange >= System.currentTimeMillis() -
+				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT) {
+			
+		}
+		if (numOfSearchResChanges/(origSearchTime/1000) >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
+			
+		}
 		return 0;
 	}
 	@Override
@@ -163,8 +184,8 @@ public class Detroid implements Engine {
 	}
 	@Override
 	public synchronized String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
-			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
-			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
+			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Short mateDistance,
+			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
 		long time;
 		searchResult = null;
@@ -206,10 +227,12 @@ public class Detroid implements Engine {
 					wait(computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo));
 				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
-			search.interrupt();
-			try {
-				search.join();
-			} catch (InterruptedException e) { e.printStackTrace(); }
+			if (search.isAlive()) {
+				search.interrupt();
+				try {
+					search.join();
+				} catch (InterruptedException e) { e.printStackTrace(); }
+			}
 		}
 		return searchResult == null ? null : searchResult.toString();
 	}

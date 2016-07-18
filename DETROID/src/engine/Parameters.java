@@ -62,14 +62,14 @@ public final class Parameters {
 	public short GAME_PHASE_END_GAME_UPPER = 256;
 	
 	// Search parameters.
-	public int NMR = 2;		// Null move pruning reduction.
-	public int LMR = 1;		// Late move reduction.
-	public int LMRMSM = 4;		// Min. number of searched moves for late move reduction
-	public int FMAR1 = 330;	// Futility margin.
-	public int FMAR2 = 500;	// Extended futility margin.
-	public int FMAR3 = 900;	// Razoring margin.
-	public int A_DELTA = 100;	// The aspiration delta within iterative deepening.
-	public int Q_DELTA = 270;	// The margin for delta-pruning in the quiescence search.
+	public short NMR = 2;		// Null move pruning reduction.
+	public short LMR = 1;		// Late move reduction.
+	public short LMRMSM = 4;		// Min. number of searched moves for late move reduction
+	public short FMAR1 = 330;	// Futility margin.
+	public short FMAR2 = 500;	// Extended futility margin.
+	public short FMAR3 = 900;	// Razoring margin.
+	public short A_DELTA = 100;	// The aspiration delta within iterative deepening.
+	public short Q_DELTA = 270;	// The margin for delta-pruning in the quiescence search.
 	
 	// The relative history table's value depreciation factor.
 	public byte RHT_DECREMENT_FACTOR = 4;
@@ -79,8 +79,13 @@ public final class Parameters {
 	public byte ET_SHARE = 15;
 	public byte PT_SHARE = 1;
 	
+	// The values considered when calculating search time extensions.
+	public short SCORE_FLUCTUATION_LIMIT = 250;
+	public short FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT = 10;
+	public short RESULT_CHANGES_PER_SECOND_LIMIT = 2;
+	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	public int LAZY_EVAL_MAR = 187;
+	public short LAZY_EVAL_MAR = 187;
 	
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation" tables.
 	public byte[] PST_PAWN_OPENING =

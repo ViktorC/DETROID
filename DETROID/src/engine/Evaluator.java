@@ -300,7 +300,7 @@ final class Evaluator {
 		return false;
 	}
 	/**
-	 * Returns a phaseScore between 0 and 256 � la Fruit.
+	 * Returns a phaseScore between 0 and 256 a la Fruit.
 	 * 
 	 * @param numOfQueens
 	 * @param numOfRooks
