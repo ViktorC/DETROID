@@ -15,7 +15,7 @@ public class Setting<T> {
 	private final Number min;
 	private final Number max;
 	
-	protected Setting(String name, T defaultValue, Number min, Number max) {
+	private Setting(String name, T defaultValue, Number min, Number max) {
 		this.name = name;
 		this.defaultValue = defaultValue;
 		this.min = min;
@@ -52,5 +52,47 @@ public class Setting<T> {
 	 */
 	public Number getMax() {
 		return max;
+	}
+	
+	/**
+	 * A factory class for building different parameterized setting types.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static class Builder {
+
+		/**
+		 * Constructs and returns a boolean setting.
+		 * 
+		 * @param name
+		 * @param defaultValue
+		 * @return
+		 */
+		public Setting<Boolean> buildBoolSetting(String name, Boolean defaultValue) {
+			return new Setting<>(name, defaultValue, null, null);
+		}
+		/**
+		 * Constructs and returns a string setting.
+		 * 
+		 * @param name
+		 * @param defaultValue
+		 * @return
+		 */
+		public Setting<String> buildStringSetting(String name, String defaultValue) {
+			return new Setting<>(name, defaultValue, null, null);
+		}
+		/**
+		 * Constructs and returns a number setting.
+		 * 
+		 * @param name
+		 * @param defaultValue
+		 * @param min
+		 * @param max
+		 * @return
+		 */
+		public Setting<Number> buildNumberSetting(String name, Number defaultValue, Number min, Number max) {
+			return new Setting<>(name, defaultValue, min, max);
+		}
 	}
 }

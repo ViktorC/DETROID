@@ -26,7 +26,7 @@ public class Detroid implements Engine {
 	
 
 	private Parameters params;
-	private Game game;
+	private Position position;
 	private Book book;
 	private Thread search;
 	private SearchStatistics searchStats;
@@ -61,9 +61,12 @@ public class Detroid implements Engine {
 	@Override
 	public synchronized void init() {
 		params = new Parameters();
+		try {
+			position = Position.parse(Position.START_POSITION_FEN);
+		} catch (ChessParseException e) { }
 		book = Book.getInstance();
 		settings = new HashMap<>();
-		SettingFactory factory = new SettingFactory();
+		Setting.Builder factory = new Setting.Builder();
 		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);
 		useBook = factory.buildBoolSetting("UseBook", false);
 		bookPath = factory.buildStringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
@@ -147,8 +150,7 @@ public class Detroid implements Engine {
 	@Override
 	public synchronized boolean position(String fen) {
 		try {
-			if (!game.getPosition().toString().equals(fen))
-				game.setPosition(Position.parse(fen));
+			position = Position.parse(fen);
 			return true;
 		} catch (ChessParseException e) {
 			e.printStackTrace();
@@ -163,16 +165,19 @@ public class Detroid implements Engine {
 		long time;
 		if ((Boolean)settings.get(useBook)) {
 			search = new Thread(() -> {
-				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+				searchResult = book.getMove(position, SelectionModel.STOCHASTIC);
 			});
-			search.run();
+			search.start();
+			try {
+				search.join();
+			} catch (InterruptedException e) { e.printStackTrace(); }
 		}
 		else {
 			if (searchMoves != null && !searchMoves.isEmpty()) {
 				moves = new HashSet<>();
 				try {
 					for (String s : searchMoves)
-						moves.add(game.getPosition().parsePACN(s));
+						moves.add(position.parsePACN(s));
 				} catch (ChessParseException | NullPointerException e) {
 					e.printStackTrace();
 					return null;
@@ -180,7 +185,7 @@ public class Detroid implements Engine {
 			}
 			else
 				moves = null;
-			search = new Search(game.getPosition(), searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
+			search = new Search(position, searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
 					moves, hT, gen, tT, eT, pT, params);
 			search.start();
 			time = searchTime == null || searchTime == 0 ? computeSearchTime() : searchTime;
