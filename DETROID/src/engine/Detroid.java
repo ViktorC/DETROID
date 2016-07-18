@@ -31,9 +31,7 @@ public class Detroid implements Engine {
 	private Thread search;
 	private SearchStatistics searchStats;
 	private Move searchResult;
-	private Long whiteTimeLeft;
-	private Long blackTimeLeft;
-	private Integer movesToGo;
+	private Short scoreFluctuation;
 	private Long timeOfLastSearchResChange;
 	private Integer numOfSearchResChanges;
 	private RelativeHistoryTable hT;
@@ -55,11 +53,12 @@ public class Detroid implements Engine {
 		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 		System.gc();
 	}
-	private long computeSearchTime() {
+	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement, Long blackIncrement, Integer movesToGo) {
 		// @!TODO
 		return 0;
 	}
-	private long computeSearchTimeExtension() {
+	private long computeSearchTimeExtension(Long origSearchTimeLong, Long whiteTime, Long blackTime, Long whiteIncrement,
+			Long blackIncrement, Integer movesToGo) {
 		// @!TODO
 		return 0;
 	}
@@ -168,6 +167,10 @@ public class Detroid implements Engine {
 			Long nodes, Short mateDistance, Long searchTime, Boolean infinite) {
 		Set<Move> moves;
 		long time;
+		searchResult = null;
+		scoreFluctuation = null;
+		timeOfLastSearchResChange = null;
+		numOfSearchResChanges = 0;
 		if ((Boolean)settings.get(useBook)) {
 			search = new Thread(() -> {
 				searchResult = book.getMove(position, SelectionModel.STOCHASTIC);
@@ -193,13 +196,14 @@ public class Detroid implements Engine {
 			search = new Search(position, searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
 					moves, hT, gen, tT, eT, pT, params);
 			search.start();
-			time = searchTime == null || searchTime == 0 ? computeSearchTime() : searchTime;
+			time = searchTime == null || searchTime == 0 ?
+					computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
 			try {
 				wait(time);
 			} catch (InterruptedException e) { e.printStackTrace(); }
 			if (searchTime == null || searchTime == 0) {
 				try {
-					wait(computeSearchTimeExtension());
+					wait(computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo));
 				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
 			search.interrupt();
@@ -229,7 +233,15 @@ public class Detroid implements Engine {
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchStatistics stats = (SearchStatistics)o;
-		if (stats.getPvLine() != null && !stats.getPvLine().isEmpty())
-			searchResult = stats.getPvLine().getHead();
+		Move newSearchRes = stats.getPvLine() != null ? stats.getPvLine().getHead() : null;
+		if ((searchResult != null && newSearchRes == null) || (searchResult == null && newSearchRes != null) ||
+				(searchResult != null && newSearchRes != null && !searchResult.equals(newSearchRes))) {
+			if (searchResult != null)
+				scoreFluctuation = (short) (stats.getScore() - searchResult.value);
+			searchResult = newSearchRes;
+			searchResult.value = stats.getScore();
+			timeOfLastSearchResChange = System.currentTimeMillis();
+			numOfSearchResChanges++;
+		}
 	}
 }

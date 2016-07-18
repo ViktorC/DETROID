@@ -1,6 +1,7 @@
+package engine;
 
 /**
- * An enumeration type for different time controls used in computer chess games.
+ * An enumeration type for different time controls used in chess games.
  * 
  * @author Viktor
  *
