@@ -31,6 +31,11 @@ public class Detroid implements Engine {
 	private Thread search;
 	private SearchStatistics searchStats;
 	private Move searchResult;
+	private Long whiteTimeLeft;
+	private Long blackTimeLeft;
+	private Integer movesToGo;
+	private Long timeOfLastSearchResChange;
+	private Integer numOfSearchResChanges;
 	private RelativeHistoryTable hT;
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private HashTable<ETEntry> eT;		// Evaluation hash table.
