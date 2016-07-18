@@ -10,8 +10,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import protocols.UCIEngine.SearchInfo.ScoreType;
 import engine.ETEntry;
-import engine.Engine.SearchInfo.ScoreType;
 import engine.Evaluator;
 import engine.KillerTable;
 import engine.NodeType;

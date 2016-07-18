@@ -7,11 +7,12 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Set;
 
+import protocols.UCIEngine;
+import protocols.UCIEngine.SearchInfo.ScoreType;
 import engine.Book.SelectionModel;
-import engine.Engine.SearchInfo.ScoreType;
 import util.*;
 
-public class Detroid implements Engine {
+public class Detroid implements UCIEngine {
 	
 	private final static float VERSION_NUMBER = 1.00f;
 	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
@@ -38,7 +39,7 @@ public class Detroid implements Engine {
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private HashTable<ETEntry> eT;		// Evaluation hash table.
 	private HashTable<PTEntry> pT;		// Pawn hash table.
-	private byte gen = 0;
+	private byte gen;
 	
 	private Detroid() {
 		
@@ -175,9 +176,25 @@ public class Detroid implements Engine {
 	@Override
 	public synchronized boolean position(String fen) {
 		try {
-			position = Position.parse(fen);
+			if (!Position.parse(fen).toString().equals(position.toString())) {
+				position = Position.parse(fen);
+				gen++;
+				if (gen == 127) {
+					tT.clear();
+					eT.clear();
+					pT.clear();
+					gen = 0;
+				}
+				else {
+					tT.remove(e -> e.generation < gen - 1);
+					eT.remove(e -> e.generation < gen - 1);
+					pT.remove(e -> e.generation < gen - 3);
+				}
+				hT.decrementCurrentValues();
+				System.gc();
+			}
 			return true;
-		} catch (ChessParseException e) {
+		} catch (ChessParseException | NullPointerException e) {
 			e.printStackTrace();
 			return false;
 		}

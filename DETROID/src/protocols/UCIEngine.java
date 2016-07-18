@@ -1,4 +1,4 @@
-package engine;
+package protocols;
 
 import java.util.Collection;
 import java.util.Map;
@@ -8,7 +8,7 @@ import java.util.Set;
 
 import util.Setting;
 
-public interface Engine extends Observer {
+public interface UCIEngine extends Observer {
 	
 	/**
 	 * Initialize the engine; e.g. set up the tables, load parameters, etc.
