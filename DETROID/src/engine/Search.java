@@ -6,7 +6,6 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import protocols.UCIEngine.SearchInfo.ScoreType;
 import engine.ETEntry;
 import engine.Evaluator;
 import engine.KillerTable;
@@ -16,6 +15,7 @@ import engine.Parameters;
 import engine.RelativeHistoryTable;
 import engine.Termination;
 import engine.KillerTable.KillerTableEntry;
+import uci.Engine.SearchInfo.ScoreType;
 import util.*;
 
 /**

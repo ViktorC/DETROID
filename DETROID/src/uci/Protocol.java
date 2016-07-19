@@ -1,4 +1,4 @@
-package protocols;
+package uci;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,13 +12,13 @@ import java.util.Scanner;
  * @author Viktor
  *
  */
-public class UCI implements Runnable {
+public class Protocol implements Runnable {
 
-	UCIEngine engine;
+	Engine engine;
 	Scanner in;
 	PrintWriter out;
 	
-	public UCI(UCIEngine engine, InputStream in, OutputStream out) {
+	public Protocol(Engine engine, InputStream in, OutputStream out) {
 		this.engine = engine;
 		this.in = new Scanner(in);
 		this.out = new PrintWriter(out);
@@ -26,8 +26,12 @@ public class UCI implements Runnable {
 	@Override
 	public void run() {
 		String input = "";
+		String[] tokens;
+		String header;
 		do {
-			
+			input = in.nextLine().trim();
+			tokens = input.split("\\s+");
+			header = tokens[0];
 		} while (input.equals("quit"));
 	}
 

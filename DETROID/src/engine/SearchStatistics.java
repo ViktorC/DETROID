@@ -2,7 +2,7 @@ package engine;
 
 import java.util.Collection;
 
-import protocols.UCIEngine.SearchInfo;
+import uci.Engine.SearchInfo;
 import util.List;
 import util.Queue;
 

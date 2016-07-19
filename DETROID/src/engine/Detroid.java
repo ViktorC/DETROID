@@ -5,14 +5,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Observable;
+import java.util.Observer;
 import java.util.Set;
 
-import protocols.UCIEngine;
-import protocols.UCIEngine.SearchInfo.ScoreType;
 import engine.Book.SelectionModel;
+import uci.Engine;
+import uci.Engine.SearchInfo.ScoreType;
 import util.*;
 
-public class Detroid implements UCIEngine {
+public class Detroid implements Engine, Observer {
 	
 	private final static float VERSION_NUMBER = 1.00f;
 	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
@@ -68,19 +69,12 @@ public class Detroid implements UCIEngine {
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
-		// @!TODO
-		if (searchStats.getScoreType() != ScoreType.LOWER_BOUND || searchStats.getScoreType() != ScoreType.UPPER_BOUND) {
-			
-		}
-		if (scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT) {
-			
-		}
-		if (timeOfLastSearchResChange >= System.currentTimeMillis() -
-				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT) {
-			
-		}
-		if (numOfSearchResChanges/(origSearchTime/1000) >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
-			
+		if (searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
+				scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
+				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
+				numOfSearchResChanges/(origSearchTime/1000) >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
+			return computeSearchTime(position.isWhitesTurn ? whiteTime - origSearchTime : whiteTime, position.isWhitesTurn ? blackTime :
+				blackTime - origSearchTime, whiteIncrement, blackIncrement, movesToGo);
 		}
 		return 0;
 	}

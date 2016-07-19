@@ -1,14 +1,13 @@
-package protocols;
+package uci;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Observable;
-import java.util.Observer;
 import java.util.Set;
 
 import util.Setting;
 
-public interface UCIEngine extends Observer {
+public interface Engine {
 	
 	/**
 	 * Initialize the engine; e.g. set up the tables, load parameters, etc.
