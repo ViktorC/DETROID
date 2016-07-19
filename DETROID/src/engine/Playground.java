@@ -21,7 +21,7 @@ class Playground {
 
 		@Override
 		public void update(Observable arg0, Object arg1) {
-			SearchStatistics res = (SearchStatistics)arg1;
+			SearchStatistics res = (SearchStatistics)arg0;
 			System.out.print(res.getPvString() + (res.isFinal() ? res.getStatString() : ""));
 		}
 		

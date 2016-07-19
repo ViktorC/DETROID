@@ -1,5 +1,8 @@
 package protocols;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Scanner;
 
 /**
@@ -11,13 +14,21 @@ import java.util.Scanner;
  */
 public class UCI implements Runnable {
 
-	Scanner in;
 	UCIEngine engine;
+	Scanner in;
+	PrintWriter out;
 	
+	public UCI(UCIEngine engine, InputStream in, OutputStream out) {
+		this.engine = engine;
+		this.in = new Scanner(in);
+		this.out = new PrintWriter(out);
+	}
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-		
+		String input = "";
+		do {
+			
+		} while (input.equals("quit"));
 	}
 
 }

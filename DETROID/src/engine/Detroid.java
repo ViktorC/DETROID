@@ -56,12 +56,12 @@ public class Detroid implements UCIEngine {
 	}
 	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement, Long blackIncrement, Integer movesToGo) {
 		int phaseScore;
-		final int avgNumOfMovesPerGame = 40;
+		final int AVG_MOVES_PER_GAME = 40;
 		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
 		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
 		if (movesToGo == null) {
 			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(position);
-			movesToGo = avgNumOfMovesPerGame - avgNumOfMovesPerGame*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
+			movesToGo = AVG_MOVES_PER_GAME - AVG_MOVES_PER_GAME*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
 		}
 		return position.isWhitesTurn ? ((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + movesToGo*whiteIncrement)/movesToGo :
 			((blackTime <= 12000 ? blackTime : blackTime - 10000) + movesToGo*blackIncrement)/movesToGo;

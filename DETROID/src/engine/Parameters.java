@@ -62,14 +62,20 @@ public final class Parameters {
 	public short GAME_PHASE_END_GAME_UPPER = 256;
 	
 	// Search parameters.
-	public short NMR = 2;		// Null move pruning reduction.
-	public short LMR = 1;		// Late move reduction.
-	public short LMRMSM = 4;		// Min. number of searched moves for late move reduction
-	public short FMAR1 = 330;	// Futility margin.
-	public short FMAR2 = 500;	// Extended futility margin.
-	public short FMAR3 = 900;	// Razoring margin.
-	public short A_DELTA = 100;	// The aspiration delta within iterative deepening.
-	public short Q_DELTA = 270;	// The margin for delta-pruning in the quiescence search.
+	public short NMR = 2;							// Null move pruning reduction.
+	public short LMR = 1;							// Late move reduction.
+	public short LMRMSM = 4;						// Min. number of searched moves for late move reduction
+	public short FMAR1 = 330;						// Futility margin.
+	public short FMAR2 = 500;						// Extended futility margin.
+	public short FMAR3 = 900;						// Razoring margin.
+	public short A_DELTA = 100;						// The aspiration delta within iterative deepening.
+	public short Q_DELTA = 270;						// The margin for delta-pruning in the quiescence search.
+	public short CHECK_EXT = 2;						// Fractional check extension.
+	public short RECAP_EXT = 4;						// Fractional recapture extension.
+	public short SINGLE_REPLY_EXT = 4; 				// Fractional single reply extension.
+	public short MATE_THREAT_EXT = 8;				// Fractional mate threat extension.
+	public short IID_MIN_ACTIVATION_DEPTH = 5;		// The minimum depth at which IID is activated.
+	public float IID_REL_DEPTH = 3/5f;				// The portion of the total depth to which the position will be searched with IID.
 	
 	// The relative history table's value depreciation factor.
 	public byte RHT_DECREMENT_FACTOR = 4;

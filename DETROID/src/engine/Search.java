@@ -1,12 +1,8 @@
 package engine;
 
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,42 +29,30 @@ import util.*;
 class Search extends Thread {
 	
 	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
-	// Including extensions and quiescence search.
-	private final static int MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*3*MAX_NOMINAL_SEARCH_DEPTH;
-	private final static int L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
-	private final static int W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
-	
-	private final static int NUM_OF_PARALLEL_ROOT_SEARCHES = 1;
-	
 	// For fractional ply extensions.
-	private final static int FULL_PLY = 4;
+	private final static int FULL_PLY = 8;
+	// Including extensions and quiescence search.
+	private final int MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
+	private final int L_CHECK_MATE_LIMIT;
+	private final int W_CHECK_MATE_LIMIT;
 	
+	private ForkJoinPool threadPool;
 	private Parameters params;
-	
-	private ThreadPoolExecutor threadPool;
-	private ExecutorCompletionService<Integer> compService;
-	
 	private Position position;
 	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
-	private boolean nullMoveObservHolds;
-	
+	private boolean nullMoveObservHolds;	
 	private SearchStatistics stats;
-	
 	private KillerTable kT;				// Killer heuristic table.
 	private RelativeHistoryTable hT;	// History heuristic table.
 	private HashTable<TTEntry> tT;		// Transposition table.
 	private byte hashEntryGen;			// Entry generation.
-	
 	private Evaluator eval;
-	
 	private boolean ponder;
 	private int maxDepth;
 	private long maxNodes;
 	private List<Move> allowedRootMoves;	// The only moves to search at the root.
 	private boolean areMovesRestricted;
-	
 	private AtomicLong nodes;				// Number of searched positions.
-	
 	private AtomicBoolean doStopSearch;
 	
 	/**
@@ -91,6 +75,10 @@ class Search extends Thread {
 			RelativeHistoryTable historyTable, final byte hashEntryGen, HashTable<TTEntry> transposTable,
 			HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params) {
 		this.params = params;
+		MAX_EXPECTED_TOTAL_SEARCH_DEPTH =
+				8*(params.CHECK_EXT + params.RECAP_EXT + params.SINGLE_REPLY_EXT + params.MATE_THREAT_EXT)*MAX_NOMINAL_SEARCH_DEPTH;
+		L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
+		W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
 		this.stats = stats;
 		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
 		this.position = position.deepCopy();
@@ -100,9 +88,11 @@ class Search extends Thread {
 			this.maxDepth = maxDepth;
 			this.maxNodes = maxNodes;
 		}
-		allowedRootMoves = new Stack<>();
-		for (Move m : moves)
-			allowedRootMoves.add(m);
+		if (moves != null) {
+			allowedRootMoves = new Stack<>();
+			for (Move m : moves)
+				allowedRootMoves.add(m);
+		}
 		areMovesRestricted = allowedRootMoves != null;
 		doStopSearch = new AtomicBoolean(false);
 		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
@@ -141,29 +131,17 @@ class Search extends Thread {
 	private void searchRoot() {
 		int alpha, beta, score, resultScore, failHigh, failLow;
 		long start = System.currentTimeMillis();
+		SearchThread searchThread;
 		ScoreType scoreType;
-		Stack<Future<Integer>> futures;
-		compService = new ExecutorCompletionService<Integer>(threadPool);
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
-			futures = new Stack<>();
-			for (int j = 0; j < NUM_OF_PARALLEL_ROOT_SEARCHES; j++)
-				futures.add(compService.submit(new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0)));
-			try {
-				score = compService.take().get();
-				if (i == maxDepth) {
-					for (Future<Integer> f : futures)
-						f.cancel(true);
-				}
-			} catch (InterruptedException | ExecutionException e) {
-				score = alpha;
-				doStopSearch.set(true);
-				e.printStackTrace();
-			}
+			searchThread = new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0);
+			threadPool.invoke(searchThread);
+			score = searchThread.join();
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= L_CHECK_MATE_LIMIT) {
@@ -223,7 +201,7 @@ class Search extends Thread {
 	}
 	@Override
 	public void run() {
-		threadPool = (ThreadPoolExecutor)Executors.newCachedThreadPool();
+		threadPool = new ForkJoinPool();
 		searchRoot();
 		threadPool.shutdown();
 	}
@@ -234,7 +212,9 @@ class Search extends Thread {
 	 * @author Viktor
 	 *
 	 */
-	private class SearchThread implements Callable<Integer> {
+	private class SearchThread extends RecursiveTask<Integer> {
+		
+		private static final long serialVersionUID = 6351992983920986212L;
 		
 		private Position pos;
 		private short ply;
@@ -258,7 +238,7 @@ class Search extends Thread {
 			doStopThread = false;
 		}
 		@Override
-		public Integer call() {
+		protected Integer compute() {
 			return pVsearch(depth, alpha, beta, nullMoveAllowed, qDepth);
 		}
 		/**
@@ -368,7 +348,7 @@ class Search extends Thread {
 					}
 				}
 				// Check extension (less than a whole ply because the quiescence search handles checks).
-				depth = isInCheck && qDepth == 0 ? depth + FULL_PLY/4 : depth;
+				depth = isInCheck && qDepth == 0 ? depth + params.CHECK_EXT : depth;
 				// Return the score from the quiescence search in case a leaf node has been reached.
 				if (depth/FULL_PLY <= 0) {
 					score = quiescence(qDepth, alpha, beta);
@@ -381,9 +361,9 @@ class Search extends Thread {
 					break Search;
 				}
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
-				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= 5) {
+				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
 					extPly = ply;
-					for (short i = 1; i < depth/FULL_PLY*3/5; i++) {
+					for (short i = 1; i < depth/FULL_PLY*params.IID_REL_DEPTH; i++) {
 						ply = i;
 						pVsearch(ply*FULL_PLY, alpha, beta, true, qDepth);
 					}
@@ -412,7 +392,8 @@ class Search extends Thread {
 					}
 					if (moveAllowed) {
 						// Recapture extension (includes capturing newly promoted pieces).
-						extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? FULL_PLY/2 : 0;
+						extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ?
+								params.RECAP_EXT : 0;
 						pos.makeMove(hashMove);
 						score = -pVsearch(depth + extension - FULL_PLY, -beta, -alpha, true, qDepth);
 						pos.unmakeMove();
@@ -463,7 +444,7 @@ class Search extends Thread {
 						score = -pVsearch(depth - params.NMR*FULL_PLY, -beta, -beta + 1, false, qDepth);
 						// Mate threat extension.
 						if (score <= L_CHECK_MATE_LIMIT)
-							depth += FULL_PLY;
+							depth += params.MATE_THREAT_EXT;
 					}
 					else
 						score = -pVsearch(depth - (params.NMR + 1)*FULL_PLY, -beta, -beta + 1, false, qDepth);
@@ -502,7 +483,8 @@ class Search extends Thread {
 						break;
 					}
 					// Recapture extension (includes capturing newly promoted pieces).
-					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? FULL_PLY/2 : 0;
+					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
+							params.RECAP_EXT : 0;
 					pos.makeMove(move);
 					// PVS.
 					if (i == 0)
@@ -660,7 +642,8 @@ class Search extends Thread {
 							continue;
 					}
 					// Recapture extension.
-					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? FULL_PLY/2 : 0;
+					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
+							params.RECAP_EXT : 0;
 					pos.makeMove(move);
 					// PVS.
 					if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
@@ -697,7 +680,7 @@ class Search extends Thread {
 					nonMatMoves = pos.getQuietMoves();
 				// One reply extension.
 				if (matMoves.size() == 0 && nonMatMoves.size() == 1)
-					depth += FULL_PLY/2;
+					depth += params.SINGLE_REPLY_EXT;
 				evalScore = Integer.MIN_VALUE;
 				// Order and search the non-material moves.
 				nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
