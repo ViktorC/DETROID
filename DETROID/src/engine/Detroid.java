@@ -18,8 +18,6 @@ public class Detroid implements Engine, Observer {
 	private final static float VERSION_NUMBER = 1.00f;
 	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
 	private final static String AUTHOR = "Viktor Csomor";
-
-	private final static Detroid INSTANCE = new Detroid();
 	
 	private Setting<?> hashSize;
 	private Setting<?> useBook;
@@ -42,11 +40,8 @@ public class Detroid implements Engine, Observer {
 	private HashTable<PTEntry> pT;		// Pawn hash table.
 	private byte gen;
 	
-	private Detroid() {
+	public Detroid() {
 		
-	}
-	public Detroid getInstance() {
-		return INSTANCE;
 	}
 	private void setHashSize(int hashSize) {
 		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
@@ -84,7 +79,7 @@ public class Detroid implements Engine, Observer {
 		try {
 			position = Position.parse(Position.START_POSITION_FEN);
 		} catch (ChessParseException e) { }
-		book = Book.getInstance();
+		book = Book.getNewInstance();
 		settings = new HashMap<>();
 		Setting.Builder factory = new Setting.Builder();
 		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);

@@ -69,7 +69,7 @@ class Book implements AutoCloseable {
 	 * 
 	 * @return
 	 */
-	public static Book getInstance() {
+	public static Book getNewInstance() {
 		try {
 			return new Book(DEFAULT_BOOK_FILE_PATH);
 		}
@@ -84,7 +84,7 @@ class Book implements AutoCloseable {
 	 * @param filePath
 	 * @return
 	 */
-	public static Book getInstance(String filePath) {
+	public static Book getNewInstance(String filePath) {
 		try {
 			return new Book(filePath);
 		}
@@ -100,7 +100,7 @@ class Book implements AutoCloseable {
 	 * @param filePath
 	 * @return
 	 */
-	public static Book getInstance(String filePath, String secondaryBookFilePath) {
+	public static Book getNewInstance(String filePath, String secondaryBookFilePath) {
 		Book book;
 		try {
 			book = new Book(filePath);

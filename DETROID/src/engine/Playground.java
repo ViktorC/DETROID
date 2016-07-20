@@ -39,7 +39,7 @@ class Playground {
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
 		HashTable<PTEntry> pT = new HashTable<>(16);
-		Book book = Book.getInstance();
+		Book book = Book.getNewInstance();
 		Scanner in = new Scanner(System.in);
 		boolean outOfBook = false;
 		while (p.getMoves().size() != 0) {
