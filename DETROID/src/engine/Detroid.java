@@ -1,16 +1,18 @@
 package engine;
 
-import java.util.AbstractMap;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 
 import engine.Book.SelectionModel;
+import engine.Game.Side;
 import uci.Engine;
-import uci.Engine.SearchInfo.ScoreType;
+import uci.ScoreType;
+import uci.SearchInfo;
+import uci.Setting;
 import util.*;
 
 public class Detroid implements Engine, Observer {
@@ -20,15 +22,19 @@ public class Detroid implements Engine, Observer {
 	private final static String AUTHOR = "Viktor Csomor";
 	
 	private Setting<?> hashSize;
-	private Setting<?> useBook;
+	private Setting<?> ponder;
+	private Setting<?> ownBook;
 	private Setting<?> bookPath;
 	private Setting<?> useOwnBookAsSecondary;
+	private Setting<?> uciOpponent;
 	private HashMap<Setting<?>, Object> settings;
 	
 	private Parameters params;
-	private Position position;
+	private Game game;
+	private boolean newGame;
 	private Book book;
 	private Thread search;
+	private boolean ponderhit;
 	private SearchStatistics searchStats;
 	private Move searchResult;
 	private Short scoreFluctuation;
@@ -56,10 +62,11 @@ public class Detroid implements Engine, Observer {
 		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
 		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
 		if (movesToGo == null) {
-			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(position);
+			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(game.getPosition());
 			movesToGo = AVG_MOVES_PER_GAME - AVG_MOVES_PER_GAME*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
 		}
-		return position.isWhitesTurn ? ((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + movesToGo*whiteIncrement)/movesToGo :
+		return game.getSideToMove() == Side.WHITE ?
+			((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + movesToGo*whiteIncrement)/movesToGo :
 			((blackTime <= 12000 ? blackTime : blackTime - 10000) + movesToGo*blackIncrement)/movesToGo;
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
@@ -68,8 +75,8 @@ public class Detroid implements Engine, Observer {
 				scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
 				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
 				numOfSearchResChanges/(origSearchTime/1000) >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
-			return computeSearchTime(position.isWhitesTurn ? whiteTime - origSearchTime : whiteTime, position.isWhitesTurn ? blackTime :
-				blackTime - origSearchTime, whiteIncrement, blackIncrement, movesToGo);
+			return computeSearchTime(game.getSideToMove() == Side.WHITE ? whiteTime - origSearchTime : whiteTime,
+				game.getSideToMove() == Side.WHITE ? blackTime : blackTime - origSearchTime, whiteIncrement, blackIncrement, movesToGo);
 		}
 		return 0;
 	}
@@ -77,19 +84,25 @@ public class Detroid implements Engine, Observer {
 	public synchronized void init() {
 		params = new Parameters();
 		try {
-			position = Position.parse(Position.START_POSITION_FEN);
+			game = new Game(Position.START_POSITION_FEN);
 		} catch (ChessParseException e) { }
-		book = Book.getNewInstance();
+		try {
+			book = new Book();
+		} catch (IOException e) { e.printStackTrace(); }
 		settings = new HashMap<>();
 		Setting.Builder factory = new Setting.Builder();
-		hashSize = factory.buildNumberSetting("Hash", 64, 8, 512);
-		useBook = factory.buildBoolSetting("UseBook", false);
+		hashSize = factory.buildIntegerSetting("Hash", 64, 8, 512);
+		ponder = factory.buildBooleanSetting("Ponder", true);
+		ownBook = factory.buildBooleanSetting("OwnBook", false);
 		bookPath = factory.buildStringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
-		useOwnBookAsSecondary = factory.buildBoolSetting("UseOwnBookAsSecondary", false);
+		useOwnBookAsSecondary = factory.buildBooleanSetting("UseOwnBookAsSecondary", false);
+		uciOpponent = factory.buildStringSetting("UCI_Opponent", null);
 		settings.put(hashSize, hashSize.getDefaultValue());
-		settings.put(useBook, useBook.getDefaultValue());
+		settings.put(ponder, ponder.getDefaultValue());
+		settings.put(ownBook, ownBook.getDefaultValue());
 		settings.put(bookPath, bookPath.getDefaultValue());
 		settings.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
+		settings.put(uciOpponent, uciOpponent.getDefaultValue());
 		searchStats = new SearchStatistics();
 		searchStats.addObserver(this);
 		setHashSize((int)settings.get(hashSize));
@@ -111,25 +124,29 @@ public class Detroid implements Engine, Observer {
 		return load/capacity;
 	}
 	@Override
-	public Set<Map.Entry<Setting<?>, Object>> getOptions() {
-		Set<Map.Entry<Setting<?>, Object>> set = new HashSet<>();
-		for (Map.Entry<Setting<?>, Object> e : settings.entrySet())
-			set.add(new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue()));
+	public Set<Setting<?>> getOptions() {
+		Set<Setting<?>> set = new HashSet<>();
+		for (Setting<?> e : settings.keySet())
+			set.add(e);
 		return set;
 	}
 	@Override
 	public synchronized <T> boolean setOption(Setting<T> setting, T value) {
 		if (value == null) return false;
 		if (hashSize.equals(setting)) {
-			if (hashSize.getMin().intValue() <= ((Number)value).intValue() &&
-					hashSize.getMax().intValue() >= ((Number)value).intValue()) {
+			if (hashSize.getMin().intValue() <= ((Integer)value).intValue() &&
+					hashSize.getMax().intValue() >= ((Integer)value).intValue()) {
 				settings.put(hashSize, value);
-				setHashSize(((Number)value).intValue());
+				setHashSize(((Integer)value).intValue());
 				return true;
 			}
 		}
-		else if (useBook.equals(setting)) {
-			settings.put(useBook, value);
+		else if (ponder.equals(setting)) {
+			settings.put(ponder, value);
+			return true;
+		}
+		else if (ownBook.equals(setting)) {
+			settings.put(ownBook, value);
 			return true;
 		}
 		else if (bookPath.equals(setting)) {
@@ -151,6 +168,10 @@ public class Detroid implements Engine, Observer {
 				return true;
 			}
 		}
+		else if (uciOpponent.equals(setting)) {
+			settings.put(uciOpponent, value);
+			return true;
+		}
 		return false;
 	}
 	@Override
@@ -165,8 +186,13 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public synchronized boolean position(String fen) {
 		try {
-			if (!Position.parse(fen).toString().equals(position.toString())) {
-				position = Position.parse(fen);
+			Position pos = Position.parse(fen);
+			if (!game.getStartPos().equals(pos.toString())) {
+				newGame();
+				newGame = true;
+				game = new Game(pos.toString());
+			}
+			else {
 				gen++;
 				if (gen == 127) {
 					tT.clear();
@@ -181,12 +207,18 @@ public class Detroid implements Engine, Observer {
 				}
 				hT.decrementCurrentValues();
 				System.gc();
+				newGame = false;
+				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
 			}
 			return true;
 		} catch (ChessParseException | NullPointerException e) {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	@Override
+	public boolean play(String pacn) {
+		return game.play(pacn);
 	}
 	@Override
 	public synchronized String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
@@ -198,9 +230,23 @@ public class Detroid implements Engine, Observer {
 		scoreFluctuation = null;
 		timeOfLastSearchResChange = null;
 		numOfSearchResChanges = 0;
-		if ((Boolean)settings.get(useBook)) {
+		if (ponder) {
+			if (!(Boolean)settings.get(ponder))
+				return null;
+		}
+		else if (newGame){
+			if (game.getSideToMove() == Side.WHITE) {
+				game.setWhitePlayerName(NAME);
+				game.setBlackPlayerName((String)settings.get(uciOpponent));
+			}
+			else {
+				game.setWhitePlayerName((String)settings.get(uciOpponent));
+				game.setBlackPlayerName(NAME);
+			}
+		}
+		if ((Boolean)settings.get(ownBook)) {
 			search = new Thread(() -> {
-				searchResult = book.getMove(position, SelectionModel.STOCHASTIC);
+				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
 			});
 			search.start();
 			try {
@@ -212,7 +258,7 @@ public class Detroid implements Engine, Observer {
 				moves = new HashSet<>();
 				try {
 					for (String s : searchMoves)
-						moves.add(position.parsePACN(s));
+						moves.add(game.getPosition().parsePACN(s));
 				} catch (ChessParseException | NullPointerException e) {
 					e.printStackTrace();
 					return null;
@@ -220,17 +266,26 @@ public class Detroid implements Engine, Observer {
 			}
 			else
 				moves = null;
-			search = new Search(position, searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
+			search = new Search(game.getPosition(), searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
 					moves, hT, gen, tT, eT, pT, params);
 			search.start();
+			if (ponder) {
+				while (!ponderhit) {
+					try {
+						search.join(200);
+					} catch (InterruptedException e) { e.printStackTrace(); }
+				}
+				if (ponderhit)
+					ponderhit = false;
+			}
 			time = searchTime == null || searchTime == 0 ?
 					computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
 			try {
-				wait(time);
+				search.join(time);
 			} catch (InterruptedException e) { e.printStackTrace(); }
 			if (searchTime == null || searchTime == 0) {
 				try {
-					wait(computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo));
+					search.join(computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo));
 				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
 			if (search.isAlive()) {
@@ -243,17 +298,17 @@ public class Detroid implements Engine, Observer {
 		return searchResult == null ? null : searchResult.toString();
 	}
 	@Override
-	public String stop() {
+	public void stop() {
 		if (search != null && search.isAlive()) {
 			search.interrupt();
 			try {
 				search.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return searchResult == null ? null : searchResult.toString();
+			} catch (InterruptedException e) { e.printStackTrace(); }
 		}
-		return null;
+	}
+	@Override
+	public void ponderhit() {
+		ponderhit = true;
 	}
 	@Override
 	public SearchInfo getInfo() {

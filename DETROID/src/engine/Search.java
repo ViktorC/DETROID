@@ -15,7 +15,7 @@ import engine.Parameters;
 import engine.RelativeHistoryTable;
 import engine.Termination;
 import engine.KillerTable.KillerTableEntry;
-import uci.Engine.SearchInfo.ScoreType;
+import uci.ScoreType;
 import util.*;
 
 /**

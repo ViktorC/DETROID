@@ -35,53 +35,29 @@ class Game {
 			this.pgnNotation = pgnNotation;
 		}
 	}
+	/**
+	 * A simple enum for the two sides/colors in a chess game.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public enum Side {
+		
+		WHITE,
+		BLACK;
+		
+	}
 	
 	private String startPos;
 	private Position position;
 	private String event;
 	private String site;
 	private Date date;
-	private short round;
-	private long whiteTimeLeft;
-	private long blackTimeLeft;
+	private float round;
 	private String whitePlayerName;
 	private String blackPlayerName;
 	private State state;
 
-	public String getStartPos() {
-		return startPos;
-	}
-	public Position getPosition() {
-		return position;
-	}
-	public String getEvent() {
-		return event;
-	}
-	public String getSite() {
-		return site;
-	}
-	public Date getDate() {
-		return date;
-	}
-	public short getRound() {
-		return round;
-	}
-	public String getWhitePlayerName() {
-		return whitePlayerName;
-	}
-	public String getBlackPlayerName() {
-		return blackPlayerName;
-	}
-	public State getState() {
-		return state;
-	}
-	public void setState() {
-		state = position.getMoves().size() == 0 ? position.isInCheck ? position.isWhitesTurn ? State.BLACK_WIN : State.WHITE_WIN :
-			State.DRAW : State.IN_PROGRESS;
-	}
-	public void setPosition(Position position) {
-		this.position = position;
-	}
 	/**
 	 * Parses a game in PGN notation and returns a Game instance.
 	 * 
@@ -166,6 +142,7 @@ class Game {
 					throw new ChessParseException();
 			}
 			out.position = fen == null ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
+			out.startPos = out.position.toString();
 			if (moveDescStartInd < pgn.length())
 				pgn = pgn.substring(moveDescStartInd);
 			pgn = pgn.trim();
@@ -196,15 +173,16 @@ class Game {
 	/**
 	 * Returns a game instance according to the parameter values.
 	 * 
-	 * @param fen
+	 * @param position The position in FEN.
 	 * @param event
 	 * @param site
 	 * @param whitePlayerName
 	 * @param blackPlayerName
+	 * @throws ChessParseException 
 	 */
-	public Game(Position position, String event, String site, String whitePlayerName, String blackPlayerName) {
-		startPos = position.toString();
-		this.position = position;
+	public Game(String position, String event, String site, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+		this.position = Position.parse(position);
+		startPos = this.position.toString();
 		this.event = event;
 		this.site = site;
 		date = new Date();
@@ -214,14 +192,108 @@ class Game {
 		setState();
 	}
 	/**
+	 * Returns a game instance with the site and event values being "N/A".
+	 * 
+	 * @param position The position in FEN.
+	 * @param whitePlayerName
+	 * @param blackPlayerName
+	 * @throws ChessParseException 
+	 */
+	public Game(String position, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+		this(position, null, null, whitePlayerName, blackPlayerName);
+	}
+	/**
+	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being "N/A".
+	 * 
+	 * @param position The position in FEN.
+	 * @throws ChessParseException 
+	 */
+	public Game(String position) throws ChessParseException {
+		this(position, null, null, null, null);
+	}
+	public String getStartPos() {
+		return startPos;
+	}
+	/**
+	 * Returns a deep copy of the current position. Changes made to the object are not reflected in the Game instance.
+	 * 
+	 * @return
+	 */
+	public Position getPosition() {
+		return position.deepCopy();
+	}
+	public String getEvent() {
+		return event;
+	}
+	public String getSite() {
+		return site;
+	}
+	public Date getDate() {
+		return date;
+	}
+	public short getRound() {
+		return (short)round;
+	}
+	public String getWhitePlayerName() {
+		return whitePlayerName;
+	}
+	public String getBlackPlayerName() {
+		return blackPlayerName;
+	}
+	public Side getSideToMove() {
+		return position.isWhitesTurn ? Side.WHITE : Side.BLACK;
+	}
+	public State getState() {
+		return state;
+	}
+	public void setEvent(String event) {
+		this.event = event;
+	}
+	public void setSite(String site) {
+		this.site = site;
+	}
+	public void setWhitePlayerName(String whitePlayerName) {
+		this.whitePlayerName = whitePlayerName;
+	}
+	public void setBlackPlayerName(String blackPlayerName) {
+		this.blackPlayerName = blackPlayerName;
+	}
+	private void setState() {
+		state = position.getMoves().size() == 0 || position.fiftyMoveRuleClock >= 100 || position.repetitions >= 3 ?
+			position.isInCheck ? position.isWhitesTurn ? State.BLACK_WIN : State.WHITE_WIN : State.DRAW : State.IN_PROGRESS;
+	}
+	/**
+	 * Plays a move defined either in PACN or SAN on the board if legal.
+	 * 
+	 * @param move The move to make defined either in pure algebraic coordinate notation or standard algebraic notation.
+	 * @return Whether the move was legal and of valid format.
+	 */
+	public boolean play(String move) {
+		Move m;
+		try {
+			m = position.parsePACN(move);
+		} catch (ChessParseException | NullPointerException e) {
+			try {
+				m = position.parseSAN(move);
+			} catch (ChessParseException | NullPointerException e1) { return false; }
+		}
+		if (position.isLegal(m)) {
+			position.makeMove(m);
+			setState();
+			round += 0.5f;
+			return true;
+		}
+		return false;
+	}
+	/**
 	 * Returns a string of the game in PGN.
 	 */
 	@Override
 	public String toString() {
 		String pgn = "", date;
 		Calendar cal = Calendar.getInstance();
-		pgn += "[Event \"" + event + "\"]\n";
-		pgn += "[Site \"" + site + "\"]\n";
+		pgn += "[Event \"" + event == null ? "N/A" : event + "\"]\n";
+		pgn += "[Site \"" + site == null ? "N/A" : site + "\"]\n";
 		if (this.date == null)
 			date = "??";
 		else {
@@ -230,12 +302,12 @@ class Game {
 		}
 		pgn += "[Date \"" + date + "\"]\n";
 		pgn += "[Round \"" + round + "\"]\n";
-		pgn += "[White \"" + whitePlayerName + "\"]\n";
-		pgn += "[Black \"" + blackPlayerName + "\"]\n";
+		pgn += "[White \"" + whitePlayerName == null ? "N/A" : whitePlayerName + "\"]\n";
+		pgn += "[Black \"" + blackPlayerName == null ? "N/A" : blackPlayerName + "\"]\n";
 		pgn += "[Result \"" + state.pgnNotation + "\"]\n";
 		pgn += "[FEN \"" + startPos + "\"]\n";
 		pgn += "\n";
-		pgn += position.getMoveListInSAN();
+		pgn += position.getMoveListStringInSAN();
 		return pgn;
 	}
 }

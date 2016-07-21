@@ -123,8 +123,6 @@ class Position implements Hashable, Copiable<Position> {
 		pos.enPassantRights = EnPassantRights.NONE.ind;
 		pos.whiteCastlingRights = CastlingRights.ALL.ind;
 		pos.blackCastlingRights = CastlingRights.ALL.ind;
-		if (fen.equals("startpos") || fen.equals("startposition"))
-			return parse(START_POSITION_FEN);
 		if (fenFields.length == 6) {
 			try {
 				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
@@ -3124,6 +3122,7 @@ class Position implements Hashable, Copiable<Position> {
 		isWhitesTurn = !isWhitesTurn;
 		if (move != null) unmakeMoveOnBoard(move);
 		UnmakeMoveRegister positionInfo = unmakeRegisterHistory.pop();
+		if (positionInfo == null) return null;
 		whiteCastlingRights = positionInfo.whiteCastlingRights;
 		blackCastlingRights = positionInfo.blackCastlingRights;
 		enPassantRights = positionInfo.enPassantRights;
@@ -3697,7 +3696,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	String getMoveListInSAN() {
+	String getMoveListStringInSAN() {
 		String moveListSAN = "";
 		boolean printRound = true;
 		int roundNum = 0;
@@ -3785,7 +3784,7 @@ class Position implements Hashable, Copiable<Position> {
 		out += String.format("%-23s " + halfMoveIndex + "\n", "Half-move index: ");
 		out += String.format("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock: ");
 		out += String.format("%-23s " + BitOperations.toHexLiteral(key) + "\n", "Hash key: ");
-		out += String.format("%-23s ", "Move history: " + getMoveListInSAN() + "\n");
+		out += String.format("%-23s ", "Move history: " + getMoveListStringInSAN() + "\n");
 		return out;
 	}
 	/**

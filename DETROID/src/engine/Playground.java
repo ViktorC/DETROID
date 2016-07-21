@@ -1,5 +1,6 @@
   package engine;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Observable;
 import java.util.Observer;
@@ -29,7 +30,7 @@ class Playground {
 	
 	static byte gen = 0;
 	
-	public static void main(String[] args) throws ChessParseException {
+	public static void main(String[] args) throws ChessParseException, IOException {
 		SearchStatistics r;
 		Move playerMove, bookMove;
 		Set<Move> moveRestrictions = null;
@@ -39,7 +40,7 @@ class Playground {
 		HashTable<TTEntry> tT = new HashTable<>(64);
 		HashTable<ETEntry> eT = new HashTable<>(60);
 		HashTable<PTEntry> pT = new HashTable<>(16);
-		Book book = Book.getNewInstance();
+		Book book = new Book();
 		Scanner in = new Scanner(System.in);
 		boolean outOfBook = false;
 		while (p.getMoves().size() != 0) {

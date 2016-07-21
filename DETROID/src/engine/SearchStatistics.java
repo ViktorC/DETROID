@@ -2,7 +2,8 @@ package engine;
 
 import java.util.Collection;
 
-import uci.Engine.SearchInfo;
+import uci.ScoreType;
+import uci.SearchInfo;
 import util.List;
 import util.Queue;
 

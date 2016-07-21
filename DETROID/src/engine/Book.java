@@ -60,66 +60,37 @@ class Book implements AutoCloseable {
 	private Book secondaryBook;
 	private ZobristKeyGenerator gen;
 	
-	private Book(String filePath) throws IOException {
+	/**
+	 * It instantiates a Book object on the opening book file specified by filePath; if the file cannot be accessed,
+	 * an IOException is thrown.
+	 * 
+	 * @param filePath
+	 * @throws IOException
+	 */
+	public Book(String filePath) throws IOException {
 		gen = ZobristKeyGenerator.getInstance();
 		bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
 	}
 	/**
-	 * It instantiates and returns a Book object on the default opening book or null if the default book file can not be accessed.
+	 * It instantiatesa Book object on the default opening book; if the default book file cannot be accessed, an IOException is thrown.
 	 * 
-	 * @return
+	 * @throws IOException
 	 */
-	public static Book getNewInstance() {
-		try {
-			return new Book(DEFAULT_BOOK_FILE_PATH);
-		}
-		catch (IOException e) {
-			System.out.println("Default book file missing: " + DEFAULT_BOOK_FILE_PATH);
-			return null;
-		}
+	public Book() throws IOException {
+		this(DEFAULT_BOOK_FILE_PATH);
 	}
 	/**
-	 * It instantiates and returns a Book object on the opening book file specified by filePath or null if the file can not be accessed.
+	 * It instantiates a Book object on the opening book files specified by filePath and secondaryBookFilePath (as an alternative
+	 * book for when out of the main book); if the main opening book file cannot be accessed, an IOException is thrown, if the secondary
+	 * opening book file cannot be accessed, it is not set.
 	 * 
 	 * @param filePath
-	 * @return
+	 * @param secondaryBookFilePath
+	 * @throws IOException
 	 */
-	public static Book getNewInstance(String filePath) {
-		try {
-			return new Book(filePath);
-		}
-		catch (IOException e) {
-			System.out.println("File not found: " + filePath);
-			return null;
-		}
-	}
-	/**
-	 * It instantiates and returns a Book object on the opening book files specified by filePath and secondaryBookFilePath (as an alternative
-	 * book for when out of the main book) or null if any of the files can not be accessed.
-	 * 
-	 * @param filePath
-	 * @return
-	 */
-	public static Book getNewInstance(String filePath, String secondaryBookFilePath) {
-		Book book;
-		try {
-			book = new Book(filePath);
-		}
-		catch (IOException e1) {
-			System.out.println("File not found: " + filePath);
-			return null;
-		}
-		try {
-			book.secondaryBook = new Book(secondaryBookFilePath);
-		}
-		catch (IOException e2) {
-			System.out.println("File not found: " + secondaryBookFilePath);
-			try {
-				book.bookStream.close();
-			} catch (IOException e3) { }
-			return null;
-		}
-		return book;
+	public Book(String filePath, String secondaryBookFilePath) throws IOException {
+		this(filePath);
+		secondaryBook = new Book(secondaryBookFilePath);
 	}
 	/**
 	 * Tries and sets/changes the main book to the file specified by the path.
