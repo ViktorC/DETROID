@@ -34,7 +34,7 @@ public class Detroid implements Engine, Observer {
 	private boolean newGame;
 	private Book book;
 	private Thread search;
-	private boolean ponderhit;
+	private boolean ponderHit;
 	private SearchStatistics searchStats;
 	private Move searchResult;
 	private Short scoreFluctuation;
@@ -176,6 +176,7 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public synchronized void newGame() {
+		newGame = true;
 		tT.clear();
 		eT.clear();
 		pT.clear();
@@ -189,7 +190,6 @@ public class Detroid implements Engine, Observer {
 			Position pos = Position.parse(fen);
 			if (!game.getStartPos().equals(pos.toString())) {
 				newGame();
-				newGame = true;
 				game = new Game(pos.toString());
 			}
 			else {
@@ -207,7 +207,6 @@ public class Detroid implements Engine, Observer {
 				}
 				hT.decrementCurrentValues();
 				System.gc();
-				newGame = false;
 				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
 			}
 			return true;
@@ -243,6 +242,7 @@ public class Detroid implements Engine, Observer {
 				game.setWhitePlayerName((String)settings.get(uciOpponent));
 				game.setBlackPlayerName(NAME);
 			}
+			newGame = false;
 		}
 		if ((Boolean)settings.get(ownBook)) {
 			search = new Thread(() -> {
@@ -270,13 +270,13 @@ public class Detroid implements Engine, Observer {
 					moves, hT, gen, tT, eT, pT, params);
 			search.start();
 			if (ponder) {
-				while (!ponderhit) {
+				while (search.isAlive() && !ponderHit) {
 					try {
-						search.join(200);
+						wait(200);
 					} catch (InterruptedException e) { e.printStackTrace(); }
 				}
-				if (ponderhit)
-					ponderhit = false;
+				if (ponderHit)
+					ponderHit = false;
 			}
 			time = searchTime == null || searchTime == 0 ?
 					computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
@@ -299,16 +299,12 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public void stop() {
-		if (search != null && search.isAlive()) {
+		if (search != null && search.isAlive())
 			search.interrupt();
-			try {
-				search.join();
-			} catch (InterruptedException e) { e.printStackTrace(); }
-		}
 	}
 	@Override
 	public void ponderhit() {
-		ponderhit = true;
+		ponderHit = true;
 	}
 	@Override
 	public SearchInfo getInfo() {

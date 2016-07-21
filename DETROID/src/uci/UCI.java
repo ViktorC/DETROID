@@ -28,32 +28,6 @@ public final class UCI implements Observer {
 		this.in = new Scanner(in);
 		this.out = new PrintWriter(out);
 	}
-	@Override
-	public void update(Observable p1, Object p2)
-	{
-		SearchInfo stats = (SearchInfo)p1;
-		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " pv ";
-		for (String s : stats.getPv())
-			info = s + " ";
-		info += "score ";
-		switch (stats.getScoreType()) {
-		case EXACT:
-			info += "cp ";
-			break;
-		case MATE:
-			info += "mate ";
-			break;
-		case LOWER_BOUND:
-			info += "lowerbound ";
-			break;
-		case UPPER_BOUND:
-			info += "upperbound ";
-			break;
-		}
-		info += stats.getScore();
-		out.println(info);
-		out.println("info hashfull " + (int)(1000*engine.getHashLoad()));
-	}
 	/**
 	 * Runs the UCI protocol on the standard input and output streams controlling the specified UCI compatible engine.
 	 * 
@@ -148,5 +122,30 @@ public final class UCI implements Observer {
 		this.engine = null;
 		exec.shutdown();
 	}
-
+	@Override
+	public void update(Observable p1, Object p2)
+	{
+		SearchInfo stats = (SearchInfo)p1;
+		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " pv ";
+		for (String s : stats.getPv())
+			info = s + " ";
+		info += "score ";
+		switch (stats.getScoreType()) {
+		case EXACT:
+			info += "cp ";
+			break;
+		case MATE:
+			info += "mate ";
+			break;
+		case LOWER_BOUND:
+			info += "lowerbound ";
+			break;
+		case UPPER_BOUND:
+			info += "upperbound ";
+			break;
+		}
+		info += stats.getScore();
+		out.println(info);
+		out.println("info hashfull " + (int)(1000*engine.getHashLoad()));
+	}
 }
