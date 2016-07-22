@@ -105,13 +105,40 @@ public final class UCI implements Observer {
 						this.engine.play(tokens[i]);
 				} break;
 				case "go": {
-					
+					Set<String> searchMoves;
+					Boolean ponder;
+					Long whiteTime, blackTime;
+					Long whiteIncrement, blackIncrement;
+					Integer movesToGo;
+					Integer depth;
+					Long nodes;
+					Short mateDistance;
+					Long searchTime;
+					Boolean infinite;
+					boolean moves = false;
+					searchMoves = null;
+					for (int i = 1; i < tokens.length; i++) {
+						switch (tokens[i]) {
+							case "searchmoves": {
+								searchMoves = new HashSet<>();
+								moves = true;
+							} break;
+							case "ponder": {
+								
+								moves = false;
+							} break;
+							default: {
+								if (moves)
+									searchMoves.add(tokens[i]);
+							}
+						}
+					}
 				} break;
 				case "stop": {
 					this.engine.stop();
 				} break;
 				case "ponderhit": {
-					
+					this.engine.ponderhit();
 				} break;
 				case "quit": {
 					over = true;
@@ -144,7 +171,7 @@ public final class UCI implements Observer {
 			info += "upperbound ";
 			break;
 		}
-		info += stats.getScore();
+		info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/stats.getTime();
 		out.println(info);
 		out.println("info hashfull " + (int)(1000*engine.getHashLoad()));
 	}

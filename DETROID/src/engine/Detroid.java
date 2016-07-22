@@ -91,7 +91,7 @@ public class Detroid implements Engine, Observer {
 		} catch (IOException e) { e.printStackTrace(); }
 		settings = new HashMap<>();
 		Setting.Builder factory = new Setting.Builder();
-		hashSize = factory.buildIntegerSetting("Hash", 64, 8, 512);
+		hashSize = factory.buildIntegerSetting("Hash", 16, 1, 512);
 		ponder = factory.buildBooleanSetting("Ponder", true);
 		ownBook = factory.buildBooleanSetting("OwnBook", false);
 		bookPath = factory.buildStringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
@@ -229,11 +229,7 @@ public class Detroid implements Engine, Observer {
 		scoreFluctuation = null;
 		timeOfLastSearchResChange = null;
 		numOfSearchResChanges = 0;
-		if (ponder) {
-			if (!(Boolean)settings.get(ponder))
-				return null;
-		}
-		else if (newGame){
+		if (newGame) {
 			if (game.getSideToMove() == Side.WHITE) {
 				game.setWhitePlayerName(NAME);
 				game.setBlackPlayerName((String)settings.get(uciOpponent));
@@ -254,6 +250,10 @@ public class Detroid implements Engine, Observer {
 			} catch (InterruptedException e) { e.printStackTrace(); }
 		}
 		else {
+			if (ponder) {
+				if (!(Boolean)settings.get(ponder))
+					return null;
+			}
 			if (searchMoves != null && !searchMoves.isEmpty()) {
 				moves = new HashSet<>();
 				try {
@@ -266,8 +266,8 @@ public class Detroid implements Engine, Observer {
 			}
 			else
 				moves = null;
-			search = new Search(game.getPosition(), searchStats, ponder || infinite, depth == null ? 0 : depth, nodes == null ? 0 : nodes,
-					moves, hT, gen, tT, eT, pT, params);
+			search = new Search(game.getPosition(), searchStats, ponder || infinite, depth == null ? (mateDistance == null ?  0 : mateDistance) : depth,
+					nodes == null ? 0 : nodes, moves, hT, gen, tT, eT, pT, params);
 			search.start();
 			if (ponder) {
 				while (search.isAlive() && !ponderHit) {
