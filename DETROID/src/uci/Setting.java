@@ -18,7 +18,7 @@ public class Setting<T> {
 	private final Integer min;
 	private final Integer max;
 	
-	private Setting(String name, T defaultValue, Set<T> allowedValues, Integer min, Integer max) {
+	protected Setting(String name, T defaultValue, Set<T> allowedValues, Integer min, Integer max) {
 		this.name = name;
 		this.defaultValue = defaultValue;
 		this.allowedValues = allowedValues;
@@ -65,58 +65,53 @@ public class Setting<T> {
 	public Number getMax() {
 		return max;
 	}
-	
+
 	/**
-	 * A factory class for building different parameterized setting types.
+	 * A boolean setting subclassing Setting with a Boolean type parameter.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class Builder {
-
-		/**
-		 * Constructs and returns a boolean setting.
-		 * 
-		 * @param name
-		 * @param defaultValue
-		 * @return
-		 */
-		public Setting<Boolean> buildBooleanSetting(String name, Boolean defaultValue) {
-			return new Setting<>(name, defaultValue, null, null, null);
+	public static class BooleanSetting extends Setting<Boolean> {
+		
+		public BooleanSetting(String name, Boolean defaultValue) {
+			super(name, defaultValue, null, null, null);
 		}
-		/**
-		 * Constructs and returns a string setting.
-		 * 
-		 * @param name
-		 * @param defaultValue
-		 * @return
-		 */
-		public Setting<String> buildStringSetting(String name, String defaultValue) {
-			return new Setting<>(name, defaultValue, null, null, null);
+	}
+	/**
+	 * An integer setting with minimum and maximum values subclassing Setting with an Integer type parameter.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static class IntegerSetting extends Setting<Integer> {
+		
+		public IntegerSetting(String name, Integer defaultValue, Integer min, Integer max) {
+			super(name, defaultValue, null, min, max);
 		}
-		/**
-		 * Constructs and returns an integer setting.
-		 * 
-		 * @param name
-		 * @param defaultValue
-		 * @param min
-		 * @param max
-		 * @return
-		 */
-		public Setting<Integer> buildIntegerSetting(String name, Integer defaultValue, Integer min, Integer max) {
-			return new Setting<>(name, defaultValue, null, min, max);
+	}
+	/**
+	 * A simple string setting subclassing Setting with a String type parameter.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static class StringSetting extends Setting<String> {
+		
+		public StringSetting(String name, String defaultValue) {
+			super(name, defaultValue, null, null, null);
 		}
-		/**
-		 * Constructs and returns string combobox setting.
-		 * 
-		 * @param name
-		 * @param defaultValue
-		 * @param min
-		 * @param max
-		 * @return
-		 */
-		public Setting<String> buildStringComboSetting(String name, String defaultValue, Set<String> possibleValues) {
-			return new Setting<>(name, defaultValue, possibleValues, null, null);
+	}
+	/**
+	 * A combo string setting with a set of allowed values subclassing Setting with a String type parameter.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static class StringComboSetting extends Setting<String> {
+		
+		public StringComboSetting(String name, String defaultValue, Set<String> allowedValues) {
+			super(name, defaultValue, allowedValues, null, null);
 		}
 	}
 }

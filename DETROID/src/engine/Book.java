@@ -15,7 +15,7 @@ import engine.Bitboard.Square;
  * @author Viktor
  *
  */
-class Book implements AutoCloseable {
+class Book implements Closeable {
 	
 	/**
 	 * A simple container class for Polyglot book entries. Only stores relevant information, i.e. move and weight.
@@ -317,7 +317,7 @@ class Book implements AutoCloseable {
 		}
 	}
 	@Override
-	public void close() throws Exception {
+	public void close() throws IOException {
 		bookStream.close();
 		if (secondaryBook != null)
 			secondaryBook.close();

@@ -77,7 +77,7 @@ public interface Engine {
 	 */
 	String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
-			Long nodes, Short mateDistance, Long searchTime, Boolean infinite);
+			Long nodes, Integer mateDistance, Long searchTime, Boolean infinite);
 	/**
 	 * Asks the engine to stop searching and return the best move found up until that point.
 	 */

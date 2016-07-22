@@ -167,9 +167,6 @@ class Game {
 		}
 		return out;
 	}
-	Game() {
-		
-	}
 	/**
 	 * Returns a game instance according to the parameter values.
 	 * 
@@ -192,7 +189,7 @@ class Game {
 		setState();
 	}
 	/**
-	 * Returns a game instance with the site and event values being "N/A".
+	 * Returns a game instance with the site and event values being null.
 	 * 
 	 * @param position The position in FEN.
 	 * @param whitePlayerName
@@ -203,13 +200,25 @@ class Game {
 		this(position, null, null, whitePlayerName, blackPlayerName);
 	}
 	/**
-	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being "N/A".
+	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being null.
 	 * 
 	 * @param position The position in FEN.
 	 * @throws ChessParseException 
 	 */
 	public Game(String position) throws ChessParseException {
 		this(position, null, null, null, null);
+	}
+	/**
+	 * Returns a game instance set to the start position with the site, event, whitePlayerName, and blackPlayerName values being null.
+	 */
+	public Game() {
+		try {
+			position = Position.parse(Position.START_POSITION_FEN);
+		} catch (ChessParseException e) { }
+		startPos = Position.START_POSITION_FEN;
+		date = new Date();
+		round = 1;
+		state = State.IN_PROGRESS;
 	}
 	public String getStartPos() {
 		return startPos;

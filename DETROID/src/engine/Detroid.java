@@ -3,6 +3,7 @@ package engine;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
@@ -17,7 +18,7 @@ import util.*;
 
 public class Detroid implements Engine, Observer {
 	
-	private final static float VERSION_NUMBER = 1.00f;
+	private final static float VERSION_NUMBER = 0.80f;
 	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
 	private final static String AUTHOR = "Viktor Csomor";
 	
@@ -66,8 +67,8 @@ public class Detroid implements Engine, Observer {
 			movesToGo = AVG_MOVES_PER_GAME - AVG_MOVES_PER_GAME*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
 		}
 		return game.getSideToMove() == Side.WHITE ?
-			((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + movesToGo*whiteIncrement)/movesToGo :
-			((blackTime <= 12000 ? blackTime : blackTime - 10000) + movesToGo*blackIncrement)/movesToGo;
+			((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + (movesToGo - 1)*whiteIncrement)/movesToGo :
+			((blackTime <= 12000 ? blackTime : blackTime - 10000) + (movesToGo - 1)*blackIncrement)/movesToGo;
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
@@ -83,20 +84,17 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public synchronized void init() {
 		params = new Parameters();
-		try {
-			game = new Game(Position.START_POSITION_FEN);
-		} catch (ChessParseException e) { }
+		game = new Game();
 		try {
 			book = new Book();
 		} catch (IOException e) { e.printStackTrace(); }
 		settings = new HashMap<>();
-		Setting.Builder factory = new Setting.Builder();
-		hashSize = factory.buildIntegerSetting("Hash", 16, 1, 512);
-		ponder = factory.buildBooleanSetting("Ponder", true);
-		ownBook = factory.buildBooleanSetting("OwnBook", false);
-		bookPath = factory.buildStringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
-		useOwnBookAsSecondary = factory.buildBooleanSetting("UseOwnBookAsSecondary", false);
-		uciOpponent = factory.buildStringSetting("UCI_Opponent", null);
+		hashSize = new Setting.IntegerSetting("Hash", 16, 1, 512);
+		ponder = new Setting.BooleanSetting("Ponder", true);
+		ownBook = new Setting.BooleanSetting("OwnBook", false);
+		bookPath = new Setting.StringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
+		useOwnBookAsSecondary = new Setting.BooleanSetting("UseOwnBookAsSecondary", false);
+		uciOpponent = new Setting.StringSetting("UCI_Opponent", null);
 		settings.put(hashSize, hashSize.getDefaultValue());
 		settings.put(ponder, ponder.getDefaultValue());
 		settings.put(ownBook, ownBook.getDefaultValue());
@@ -126,8 +124,7 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public Set<Setting<?>> getOptions() {
 		Set<Setting<?>> set = new HashSet<>();
-		for (Setting<?> e : settings.keySet())
-			set.add(e);
+		settings.forEach((s, o) -> set.add(s));
 		return set;
 	}
 	@Override
@@ -188,7 +185,9 @@ public class Detroid implements Engine, Observer {
 	public synchronized boolean position(String fen) {
 		try {
 			Position pos = Position.parse(fen);
-			if (!game.getStartPos().equals(pos.toString())) {
+			if (newGame)
+				game = new Game(pos.toString());
+			else if (!game.getStartPos().equals(pos.toString())) {
 				newGame();
 				game = new Game(pos.toString());
 			}
@@ -221,7 +220,7 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public synchronized String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
-			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Short mateDistance,
+			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
 		long time;
