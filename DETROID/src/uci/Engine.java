@@ -21,11 +21,11 @@ public interface Engine {
 	 */
 	String getAuthor();
 	/**
-	 * Returns the load factor of the hash tables.
+	 * Returns the load factor of the hash tables in permills.
 	 * 
 	 * @return
 	 */
-	float getHashLoad();
+	short getHashLoadPermill();
 	/**
 	 * Returns the setting option the engine offers. Each option is defined by a Setting instanceand the value..
 	 * 
@@ -45,7 +45,7 @@ public interface Engine {
 	 */
 	void newGame();
 	/**
-	 * Sends the current position to the engine.
+	 * Sends the current position to the engine. The string "startpos" denotes the starting position and should be handled by the engine.
 	 * 
 	 * @param fen
 	 * @return

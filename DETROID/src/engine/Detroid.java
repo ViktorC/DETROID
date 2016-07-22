@@ -115,11 +115,8 @@ public class Detroid implements Engine, Observer {
 		return AUTHOR;
 	}
 	@Override
-	public float getHashLoad() {
-		long load, capacity;
-		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
-		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
-		return load/capacity;
+	public short getHashLoadPermill() {
+		return (short)(1000*(double)(tT.getLoad() + eT.getLoad() + pT.getLoad())/(double)(tT.getCapacity() + eT.getCapacity() + pT.getCapacity()));
 	}
 	@Override
 	public Set<Setting<?>> getOptions() {
@@ -184,7 +181,7 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public synchronized boolean position(String fen) {
 		try {
-			Position pos = Position.parse(fen);
+			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 			if (newGame)
 				game = new Game(pos.toString());
 			else if (!game.getStartPos().equals(pos.toString())) {
@@ -224,6 +221,7 @@ public class Detroid implements Engine, Observer {
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
 		long time;
+		boolean doPonder = ponder != null && ponder.booleanValue();
 		searchResult = null;
 		scoreFluctuation = null;
 		timeOfLastSearchResChange = null;
@@ -249,7 +247,7 @@ public class Detroid implements Engine, Observer {
 			} catch (InterruptedException e) { e.printStackTrace(); }
 		}
 		else {
-			if (ponder) {
+			if (doPonder) {
 				if (!(Boolean)settings.get(ponder))
 					return null;
 			}
@@ -265,10 +263,11 @@ public class Detroid implements Engine, Observer {
 			}
 			else
 				moves = null;
-			search = new Search(game.getPosition(), searchStats, ponder || infinite, depth == null ? (mateDistance == null ?  0 : mateDistance) : depth,
-					nodes == null ? 0 : nodes, moves, hT, gen, tT, eT, pT, params);
+			search = new Search(game.getPosition(), searchStats, doPonder || (infinite != null && infinite.booleanValue()),
+					depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
+					nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params);
 			search.start();
-			if (ponder) {
+			if (doPonder) {
 				while (search.isAlive() && !ponderHit) {
 					try {
 						wait(200);

@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -20,7 +20,7 @@ public final class UCI implements Observer, Closeable {
 	private static UCI INSTANCE = new UCI(System.in, System.out);
 	
 	private Scanner in;
-	private PrintWriter out;
+	private PrintStream out;
 	private Engine engine;
 	
 	public static UCI getInstance() {
@@ -28,7 +28,7 @@ public final class UCI implements Observer, Closeable {
 	}
 	private UCI(InputStream in, OutputStream out) {
 		this.in = new Scanner(in);
-		this.out = new PrintWriter(out);
+		this.out = new PrintStream(out);
 	}
 	/**
 	 * Runs the UCI protocol on the standard input and output streams controlling the specified UCI compatible engine.
@@ -101,8 +101,13 @@ public final class UCI implements Observer, Closeable {
 					this.engine.newGame();
 				} break;
 				case "position": {
-					this.engine.position(tokens[1]);
-					for (int i = 3; i < tokens.length; i++)
+					String pos = tokens[1];
+					int i = 2;
+					for (; i < tokens.length && !tokens[i].equals("moves"); i++) {
+						pos += " " + tokens[i];
+					}
+					this.engine.position(pos);
+					for (; i < tokens.length; i++)
 						this.engine.play(tokens[i]);
 				} break;
 				case "go": {
@@ -211,7 +216,7 @@ public final class UCI implements Observer, Closeable {
 		SearchInfo stats = (SearchInfo)p1;
 		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " pv ";
 		for (String s : stats.getPv())
-			info = s + " ";
+			info += s + " ";
 		info += "score ";
 		switch (stats.getScoreType()) {
 		case EXACT:
@@ -227,9 +232,9 @@ public final class UCI implements Observer, Closeable {
 			info += "upperbound ";
 			break;
 		}
-		info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/stats.getTime();
+		info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/Math.max(1, stats.getTime());
 		out.println(info);
-		out.println("info hashfull " + (int)(1000*engine.getHashLoad()));
+		out.println("info hashfull " + engine.getHashLoadPermill());
 	}
 	@Override
 	public void close() throws IOException {

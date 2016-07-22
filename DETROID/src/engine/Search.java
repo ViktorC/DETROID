@@ -85,7 +85,7 @@ class Search extends Thread {
 		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_END_GAME_LOWER;
 		this.ponder = ponder;
 		if (!ponder) {
-			this.maxDepth = maxDepth;
+			this.maxDepth = Math.min(MAX_NOMINAL_SEARCH_DEPTH, maxDepth);
 			this.maxNodes = maxNodes;
 		}
 		if (moves != null) {
@@ -140,8 +140,7 @@ class Search extends Thread {
 		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
 			searchThread = new SearchThread(position.deepCopy(), i, i*FULL_PLY, alpha, beta, true, 0);
-			threadPool.invoke(searchThread);
-			score = searchThread.join();
+			score = threadPool.invoke(searchThread);
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= L_CHECK_MATE_LIMIT) {
@@ -282,7 +281,7 @@ class Search extends Thread {
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
-			if (!ponder && nodes.get() >= maxNodes || isInterrupted())
+			if (!ponder && (nodes.get() >= maxNodes || isInterrupted()))
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
@@ -820,7 +819,7 @@ class Search extends Thread {
 			int bestScore, searchScore;
 			if (depth != 0)
 				nodes.incrementAndGet();
-			if (!ponder && nodes.get() >= maxNodes || isInterrupted())
+			if (!ponder && (nodes.get() >= maxNodes || isInterrupted()))
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
