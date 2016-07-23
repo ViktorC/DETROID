@@ -103,9 +103,9 @@ public final class UCI implements Observer, Closeable {
 				case "position": {
 					String pos = tokens[1];
 					int i = 2;
-					for (; i < tokens.length && !tokens[i].equals("moves"); i++) {
+					for (; i < tokens.length && !tokens[i].equals("moves"); i++)
 						pos += " " + tokens[i];
-					}
+					i++;
 					this.engine.position(pos);
 					for (; i < tokens.length; i++)
 						this.engine.play(tokens[i]);
