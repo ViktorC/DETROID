@@ -12,7 +12,7 @@ import engine.Game.Side;
 import uci.Engine;
 import uci.ScoreType;
 import uci.SearchInfo;
-import uci.Setting;
+import uci.Option;
 import util.*;
 
 public class Detroid implements Engine, Observer {
@@ -21,13 +21,13 @@ public class Detroid implements Engine, Observer {
 	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
 	private final static String AUTHOR = "Viktor Csomor";
 	
-	private Setting<?> hashSize;
-	private Setting<?> ponder;
-	private Setting<?> ownBook;
-	private Setting<?> bookPath;
-	private Setting<?> useOwnBookAsSecondary;
-	private Setting<?> uciOpponent;
-	private HashMap<Setting<?>, Object> settings;
+	private Option<?> hashSize;
+	private Option<?> ponder;
+	private Option<?> ownBook;
+	private Option<?> bookPath;
+	private Option<?> useOwnBookAsSecondary;
+	private Option<?> uciOpponent;
+	private HashMap<Option<?>, Object> options;
 	
 	private Parameters params;
 	private Game game;
@@ -88,22 +88,22 @@ public class Detroid implements Engine, Observer {
 		try {
 			book = new Book();
 		} catch (IOException e) { e.printStackTrace(); }
-		settings = new HashMap<>();
-		hashSize = new Setting.IntegerSetting("Hash", 32, 1, 512);
-		ponder = new Setting.BooleanSetting("Ponder", true);
-		ownBook = new Setting.BooleanSetting("OwnBook", false);
-		bookPath = new Setting.StringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
-		useOwnBookAsSecondary = new Setting.BooleanSetting("UseOwnBookAsSecondary", false);
-		uciOpponent = new Setting.StringSetting("UCI_Opponent", null);
-		settings.put(hashSize, hashSize.getDefaultValue());
-		settings.put(ponder, ponder.getDefaultValue());
-		settings.put(ownBook, ownBook.getDefaultValue());
-		settings.put(bookPath, bookPath.getDefaultValue());
-		settings.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
-		settings.put(uciOpponent, uciOpponent.getDefaultValue());
+		options = new HashMap<>();
+		hashSize = new Option.SpinOption("Hash", 32, 1, 512);
+		ponder = new Option.CheckOption("Ponder", true);
+		ownBook = new Option.CheckOption("OwnBook", false);
+		bookPath = new Option.StringOption("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
+		useOwnBookAsSecondary = new Option.CheckOption("UseOwnBookAsSecondary", false);
+		uciOpponent = new Option.StringOption("UCI_Opponent", null);
+		options.put(hashSize, hashSize.getDefaultValue());
+		options.put(ponder, ponder.getDefaultValue());
+		options.put(ownBook, ownBook.getDefaultValue());
+		options.put(bookPath, bookPath.getDefaultValue());
+		options.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
+		options.put(uciOpponent, uciOpponent.getDefaultValue());
 		searchStats = new SearchStatistics();
 		searchStats.addObserver(this);
-		setHashSize((int)settings.get(hashSize));
+		setHashSize((int)options.get(hashSize));
 		hT = new RelativeHistoryTable(params);
 	}
 	@Override
@@ -122,51 +122,51 @@ public class Detroid implements Engine, Observer {
 		return (short) (1000*load/capacity);
 	}
 	@Override
-	public Set<Setting<?>> getOptions() {
-		Set<Setting<?>> set = new HashSet<>();
-		settings.forEach((s, o) -> set.add(s));
+	public Set<Option<?>> getOptions() {
+		Set<Option<?>> set = new HashSet<>();
+		options.forEach((s, o) -> set.add(s));
 		return set;
 	}
 	@Override
-	public synchronized <T> boolean setOption(Setting<T> setting, T value) {
+	public synchronized <T> boolean setOption(Option<T> setting, T value) {
 		if (value == null) return false;
 		if (hashSize.equals(setting)) {
 			if (hashSize.getMin().intValue() <= ((Integer)value).intValue() &&
 					hashSize.getMax().intValue() >= ((Integer)value).intValue()) {
-				settings.put(hashSize, value);
+				options.put(hashSize, value);
 				setHashSize(((Integer)value).intValue());
 				return true;
 			}
 		}
 		else if (ponder.equals(setting)) {
-			settings.put(ponder, value);
+			options.put(ponder, value);
 			return true;
 		}
 		else if (ownBook.equals(setting)) {
-			settings.put(ownBook, value);
+			options.put(ownBook, value);
 			return true;
 		}
 		else if (bookPath.equals(setting)) {
 			if (book.setMainBookPath((String)value)) {
-				settings.put(bookPath, value);
+				options.put(bookPath, value);
 				return true;
 			}
 		}
 		else if (useOwnBookAsSecondary.equals(setting)) {
 			if ((Boolean)value == true) {
 				if (book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH)) {
-					settings.put(useOwnBookAsSecondary, value);
+					options.put(useOwnBookAsSecondary, value);
 					return true;
 				}
 			}
 			else {
 				book.setSecondaryBookPath(null);
-				settings.put(useOwnBookAsSecondary, value);
+				options.put(useOwnBookAsSecondary, value);
 				return true;
 			}
 		}
 		else if (uciOpponent.equals(setting)) {
-			settings.put(uciOpponent, value);
+			options.put(uciOpponent, value);
 			return true;
 		}
 		return false;
@@ -233,15 +233,15 @@ public class Detroid implements Engine, Observer {
 		if (newGame) {
 			if (game.getSideToMove() == Side.WHITE) {
 				game.setWhitePlayerName(NAME);
-				game.setBlackPlayerName((String)settings.get(uciOpponent));
+				game.setBlackPlayerName((String)options.get(uciOpponent));
 			}
 			else {
-				game.setWhitePlayerName((String)settings.get(uciOpponent));
+				game.setWhitePlayerName((String)options.get(uciOpponent));
 				game.setBlackPlayerName(NAME);
 			}
 			newGame = false;
 		}
-		if ((Boolean)settings.get(ownBook)) {
+		if ((Boolean)options.get(ownBook)) {
 			search = new Thread(() -> {
 				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
 			});
@@ -252,7 +252,7 @@ public class Detroid implements Engine, Observer {
 		}
 		else {
 			if (doPonder) {
-				if (!(Boolean)settings.get(ponder))
+				if (!(Boolean)options.get(ponder))
 					return null;
 			}
 			if (searchMoves != null && !searchMoves.isEmpty()) {
@@ -309,7 +309,7 @@ public class Detroid implements Engine, Observer {
 		ponderHit = true;
 	}
 	@Override
-	public SearchInfo getInfo() {
+	public SearchInfo getSearchInfo() {
 		return searchStats;
 	}
 	@Override

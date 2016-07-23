@@ -27,11 +27,11 @@ public interface Engine {
 	 */
 	short getHashLoadPermill();
 	/**
-	 * Returns the setting option the engine offers. Each option is defined by a Setting instanceand the value..
+	 * Returns the options the engine offers.
 	 * 
 	 * @return
 	 */
-	Set<Setting<?>> getOptions();
+	Set<Option<?>> getOptions();
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
@@ -39,7 +39,7 @@ public interface Engine {
 	 * @param value
 	 * @return Whether the setting was successfully set to the value, e.g. it was an allowed value.
 	 */
-	<T> boolean setOption(Setting<T> setting, T value);
+	<T> boolean setOption(Option<T> setting, T value);
 	/**
 	 * Resets the game. It might be a good idea for the engine to wipe the hash tables at this point.
 	 */
@@ -91,5 +91,5 @@ public interface Engine {
 	 * 
 	 * @return
 	 */
-	SearchInfo getInfo();
+	SearchInfo getSearchInfo();
 }

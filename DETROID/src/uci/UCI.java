@@ -49,18 +49,18 @@ public final class UCI implements Observer, Closeable {
 		while (!in.nextLine().trim().equals("uci"));
 		out.println("id name " + this.engine.getName());
 		out.println("id author " + this.engine.getAuthor());
-		for (Setting<?> s : engine.getOptions()) {
-			option = "option " + s.getName() + " type ";
-			c = s.getClass();
-			if (c == Setting.BooleanSetting.class)
-				option += "check default " + (boolean)s.getDefaultValue();
-			else if (c == Setting.IntegerSetting.class)
-				option += "spin default " + (Integer)s.getDefaultValue() + " min " + s.getMin() + " max " + s.getMax();
-			else if (c == Setting.StringSetting.class)
-				option += "string default " + (String)s.getDefaultValue();
-			else if (c == Setting.StringComboSetting.class) {
-				option += "combo default " + (String)s.getDefaultValue() + " var";
-				for (Object v : s.getAllowedValues())
+		for (Option<?> o : engine.getOptions()) {
+			option = "option " + o.getName() + " type ";
+			c = o.getClass();
+			if (c == Option.CheckOption.class)
+				option += "check default " + (boolean)o.getDefaultValue();
+			else if (c == Option.SpinOption.class)
+				option += "spin default " + (Integer)o.getDefaultValue() + " min " + o.getMin() + " max " + o.getMax();
+			else if (c == Option.StringOption.class)
+				option += "string default " + (String)o.getDefaultValue();
+			else if (c == Option.ComboOption.class) {
+				option += "combo default " + (String)o.getDefaultValue() + " var";
+				for (Object v : o.getAllowedValues())
 					option += " " + v;
 			}
 			out.println(option);
@@ -73,23 +73,23 @@ public final class UCI implements Observer, Closeable {
 			switch (header) {
 				case "debug": {
 					if (tokens[1].equals("on"))
-						this.engine.getInfo().addObserver(this);
+						this.engine.getSearchInfo().addObserver(this);
 					else
-						this.engine.getInfo().deleteObserver(this);
+						this.engine.getSearchInfo().deleteObserver(this);
 				} break;
 				case "isready": {
 					out.println("readyok");
 				} break;
 				case "setoption": {
-					for (Setting<?> e : engine.getOptions()) {
+					for (Option<?> e : engine.getOptions()) {
 						if (e.getName().equals(tokens[1])) {
 							c = e.getDefaultValue().getClass();
 							if (c == Boolean.class)
-								this.engine.setOption((Setting<Boolean>)e, Boolean.parseBoolean(tokens[2]));
+								this.engine.setOption((Option<Boolean>)e, Boolean.parseBoolean(tokens[2]));
 							else if (c == String.class)
-								this.engine.setOption((Setting<String>)e, tokens[2]);
+								this.engine.setOption((Option<String>)e, tokens[2]);
 							else if (c == Integer.class)
-								this.engine.setOption((Setting<Integer>)e, Integer.parseInt(tokens[2]));
+								this.engine.setOption((Option<Integer>)e, Integer.parseInt(tokens[2]));
 							break;
 						}
 					}
@@ -206,7 +206,7 @@ public final class UCI implements Observer, Closeable {
 				}
 			}
 		}
-		this.engine.getInfo().deleteObserver(this);
+		this.engine.getSearchInfo().deleteObserver(this);
 		this.engine = null;
 		exec.shutdown();
 	}

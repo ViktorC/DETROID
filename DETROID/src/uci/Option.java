@@ -10,7 +10,7 @@ import java.util.Set;
  *
  * @param <T>
  */
-public class Setting<T> {
+public class Option<T> {
 	
 	private final String name;
 	private final T defaultValue;
@@ -18,7 +18,7 @@ public class Setting<T> {
 	private final Integer min;
 	private final Integer max;
 	
-	protected Setting(String name, T defaultValue, Set<T> allowedValues, Integer min, Integer max) {
+	private Option(String name, T defaultValue, Set<T> allowedValues, Integer min, Integer max) {
 		this.name = name;
 		this.defaultValue = defaultValue;
 		this.allowedValues = allowedValues;
@@ -67,50 +67,50 @@ public class Setting<T> {
 	}
 
 	/**
-	 * A boolean setting subclassing Setting with a Boolean type parameter.
+	 * A check option subclassing Setting with a Boolean type parameter.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class BooleanSetting extends Setting<Boolean> {
+	public static class CheckOption extends Option<Boolean> {
 		
-		public BooleanSetting(String name, Boolean defaultValue) {
+		public CheckOption(String name, Boolean defaultValue) {
 			super(name, defaultValue, null, null, null);
 		}
 	}
 	/**
-	 * An integer setting with minimum and maximum values subclassing Setting with an Integer type parameter.
+	 * A spin option with minimum and maximum values subclassing Setting with an Integer type parameter.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class IntegerSetting extends Setting<Integer> {
+	public static class SpinOption extends Option<Integer> {
 		
-		public IntegerSetting(String name, Integer defaultValue, Integer min, Integer max) {
+		public SpinOption(String name, Integer defaultValue, Integer min, Integer max) {
 			super(name, defaultValue, null, min, max);
 		}
 	}
 	/**
-	 * A simple string setting subclassing Setting with a String type parameter.
+	 * A simple string option subclassing Setting with a String type parameter.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class StringSetting extends Setting<String> {
+	public static class StringOption extends Option<String> {
 		
-		public StringSetting(String name, String defaultValue) {
+		public StringOption(String name, String defaultValue) {
 			super(name, defaultValue, null, null, null);
 		}
 	}
 	/**
-	 * A combo string setting with a set of allowed values subclassing Setting with a String type parameter.
+	 * A combo option with a set of allowed values subclassing Setting with a String type parameter.
 	 * 
 	 * @author Viktor
 	 *
 	 */
-	public static class StringComboSetting extends Setting<String> {
+	public static class ComboOption extends Option<String> {
 		
-		public StringComboSetting(String name, String defaultValue, Set<String> allowedValues) {
+		public ComboOption(String name, String defaultValue, Set<String> allowedValues) {
 			super(name, defaultValue, allowedValues, null, null);
 		}
 	}
