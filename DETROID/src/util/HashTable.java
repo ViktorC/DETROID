@@ -47,9 +47,9 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	private final static double T2_SHARE = 0.4F;
 	
 	/**
-	 * The default maximum hash table size in megabytes.
+	 * The default maximum hash table size in bytes.
 	 */
-	public final static int DEFAULT_SIZE = 1 << 6;
+	public final static long DEFAULT_SIZE = 1L << 14;
 	
 	private final static long MAX_CAPACITY = 2L << 30;	// The maximum number of slots.
 	private final static long MIN_CAPACITY = 2L << 7;	// The minimum number of slots.
@@ -69,19 +69,19 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 * type's instance. The size has to be at least 1024 (2^10) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the
 	 * entry size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*1024 bytes < 1MB).
 	 * 
-	 * @param sizeMB Maximum hash table size in megabytes. It can not not be guaranteed to be completely accurately reflected, but will be very
-	 * closely approximated. The minimum maximum size is 1MB. If sizeMB is 0 or less, the hash table defaults to 64MB.
+	 * @param size Maximum hash table size in bytes. It can not not be guaranteed to be completely accurately reflected, but will be very
+	 * closely approximated. If size is 0 or less, the hash table defaults to 16MB.
 	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
 	@SuppressWarnings({"unchecked"})
-	public HashTable(int sizeMB, final int entrySizeB) {
+	public HashTable(long size, final int entrySizeB) {
 		long tL1, tL2;
 		MillerRabin prim;
 		ReadWriteLock lock;
 		entrySize = entrySizeB;
-		if (sizeMB <= 0)
-			sizeMB = DEFAULT_SIZE;
-		capacity = ((long)sizeMB*(1 << 20))/entrySize;
+		if (size <= 0)
+			size = DEFAULT_SIZE;
+		capacity = size/entrySize;
 		if (capacity < MIN_CAPACITY)
 			throw new IllegalArgumentException("The size has to be great enough for the hash table " +
 					"to be able to accommodate at least 1024 (2^10) entries of the specified entry size.");

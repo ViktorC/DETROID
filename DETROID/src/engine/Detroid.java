@@ -51,10 +51,11 @@ public class Detroid implements Engine, Observer {
 		
 	}
 	private void setHashSize(int hashSize) {
+		long sizeInBytes = hashSize*1024*1024;
 		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
-		tT = new HashTable<>(hashSize*params.TT_SHARE/totalHashShares, TTEntry.SIZE);
-		eT = new HashTable<>(hashSize*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
-		pT = new HashTable<>(hashSize*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
+		tT = new HashTable<>(sizeInBytes*params.TT_SHARE/totalHashShares, TTEntry.SIZE);
+		eT = new HashTable<>(sizeInBytes*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
+		pT = new HashTable<>(sizeInBytes*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
 		System.gc();
 	}
 	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement, Long blackIncrement, Integer movesToGo) {
@@ -89,7 +90,7 @@ public class Detroid implements Engine, Observer {
 			book = new Book();
 		} catch (IOException e) { e.printStackTrace(); }
 		settings = new HashMap<>();
-		hashSize = new Setting.IntegerSetting("Hash", 16, 1, 512);
+		hashSize = new Setting.IntegerSetting("Hash", 32, 1, 512);
 		ponder = new Setting.BooleanSetting("Ponder", true);
 		ownBook = new Setting.BooleanSetting("OwnBook", false);
 		bookPath = new Setting.StringSetting("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
@@ -116,7 +117,10 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public short getHashLoadPermill() {
-		return (short)(1000*(double)(tT.getLoad() + eT.getLoad() + pT.getLoad())/(double)(tT.getCapacity() + eT.getCapacity() + pT.getCapacity()));
+		long load, capacity;
+		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
+		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
+		return (short) (1000*load/capacity);
 	}
 	@Override
 	public Set<Setting<?>> getOptions() {
@@ -189,6 +193,7 @@ public class Detroid implements Engine, Observer {
 				game = new Game(pos.toString());
 			}
 			else {
+				System.out.println("Bitch");
 				gen++;
 				if (gen == 127) {
 					tT.clear();
