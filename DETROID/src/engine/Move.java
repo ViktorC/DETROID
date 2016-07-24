@@ -100,23 +100,23 @@ class Move implements Comparable<Move> {
 	 */
 	@Override
 	public String toString() {
-		String lan, originFile, originRank, destFile, destRank;
+		String pacn, originFile, originRank, destFile, destRank;
 		originRank = Integer.toString(from/8 + 1);
 		originFile = Character.toString((char)(from%8 + 'a'));
 		destRank = Integer.toString(to/8 + 1);
 		destFile = Character.toString((char)(to%8 + 'a'));
-		lan = originFile + originRank + destFile + destRank;
+		pacn = originFile + originRank + destFile + destRank;
 		switch (type) {
 			case 4:
-				return lan + "=Q";
+				return pacn + "q";
 			case 5:
-				return lan + "=R";
+				return pacn + "r";
 			case 6:
-				return lan + "=B";
+				return pacn + "b";
 			case 7:
-				return lan + "=N";
+				return pacn + "n";
 			default:
-				return lan;
+				return pacn;
 		}
 	}
 	/**Returns a move as a 32 bit integer with information on the state of the object stored in designated bits, except for the score.
