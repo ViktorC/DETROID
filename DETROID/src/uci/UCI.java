@@ -189,9 +189,7 @@ public final class UCI implements Observer, Closeable {
 					Integer p9 = mateDistance;
 					Long p10 = searchTime;
 					Boolean p11 = infinite;
-					exec.submit(() -> {
-						out.println(this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11));
-					});
+					exec.submit(() -> this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11));
 				} break;
 				case "stop": {
 					this.engine.stop();
@@ -212,9 +210,22 @@ public final class UCI implements Observer, Closeable {
 	public void update(Observable p1, Object p2)
 	{
 		SearchInfo stats = (SearchInfo)p1;
-		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " pv ";
-		for (String s : stats.getPv())
-			info += s + " ";
+		String finalRes;
+		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
+		String[] pV = stats.getPv();
+		boolean first, pVexists;
+		pVexists = false;
+		if (pV != null && pV.length > 0) {
+			first = true;
+			pVexists = true;
+			for (String s : pV) {
+				if (first) {
+					info += "currmove " + s + " pv ";
+					first = false;
+				}
+				info += s + " ";
+			}
+		}
 		info += "score ";
 		switch (stats.getScoreType()) {
 		case EXACT:
@@ -233,6 +244,12 @@ public final class UCI implements Observer, Closeable {
 		info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/Math.max(1, stats.getTime());
 		out.println(info);
 		out.println("info hashfull " + engine.getHashLoadPermill());
+		if (stats.isFinal() && pVexists) {
+			finalRes = "bestmove " + pV[0];
+			if (pV.length > 1)
+				finalRes += " ponder " + pV[1];
+			out.println(finalRes);
+		}
 	}
 	@Override
 	public void close() throws IOException {

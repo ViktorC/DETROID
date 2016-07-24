@@ -1,16 +1,15 @@
 package uci;
 
-import java.util.Collection;
 import java.util.Observable;
 
 public abstract class SearchInfo extends Observable {
 
 	/**
-	 * Returns a collection of the prinicipal variation with the moves in pure algebraic coordinate notation.
+	 * Returns an array of the prinicipal variation with the moves in pure algebraic coordinate notation.
 	 * 
 	 * @return
 	 */
-	public abstract Collection<String> getPv();
+	public abstract String[] getPv();
 	/**
 	 * Returns the greatest nominal depth of the search.
 	 * 
@@ -42,5 +41,11 @@ public abstract class SearchInfo extends Observable {
 	 * @return
 	 */
 	public abstract long getTime();
+	/**
+	 * Returns whether the result is final, i.e. it will not be updated anymore in this run of the search.
+	 * 
+	 * @return
+	 */
+	public abstract boolean isFinal();
 
 }

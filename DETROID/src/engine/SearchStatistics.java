@@ -1,11 +1,8 @@
 package engine;
 
-import java.util.Collection;
-
 import uci.ScoreType;
 import uci.SearchInfo;
 import util.List;
-import util.Queue;
 
 /**
  * An observable class for the results and statistics of a search.
@@ -32,16 +29,20 @@ public class SearchStatistics extends SearchInfo {
 	 * 
 	 * @return
 	 */
-	public List<Move> getPvLine() {
+	public List<Move> getPvMoveList() {
 		return pVline;
 	}
-
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getPv()
+	 */
 	@Override
-	public Collection<String> getPv() {
-		List<String> list = new Queue<>();
-		for (Move m : pVline)
-			list.add(m.toString());
-		return list;
+	public String[] getPv() {
+		String[] arr = new String[pVline.size()];
+		int i = 0;
+		for (Move m : pVline) {
+			arr[i++] = m.toString();
+		}
+		return arr;
 	}
 	/* (non-Javadoc)
 	 * @see chess.SearchInfo#getNominalDepth()
@@ -78,11 +79,10 @@ public class SearchStatistics extends SearchInfo {
 	public long getTime() {
 		return time;
 	}
-	/**
-	 * Returns whether the result is final, i.e. it will not be updated anymore in this run of the search.
-	 * 
-	 * @return
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#isFinal()
 	 */
+	@Override
 	public boolean isFinal() {
 		return isFinal;
 	}

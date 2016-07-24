@@ -87,7 +87,7 @@ public interface Engine {
 	 */
 	void ponderhit();
 	/**
-	 * Returns an observable object containing information about the results and statistics of the ongoing search.
+	 * Returns an observable object containing information about the results and statistics of the ongoing or if none, last search.
 	 * 
 	 * @return
 	 */

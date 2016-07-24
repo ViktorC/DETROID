@@ -330,7 +330,7 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchStatistics stats = (SearchStatistics)o;
-		Move newSearchRes = stats.getPvLine() != null ? stats.getPvLine().getHead() : null;
+		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : null;
 		if ((searchResult != null && newSearchRes == null) || (searchResult == null && newSearchRes != null) ||
 				(searchResult != null && newSearchRes != null && !searchResult.equals(newSearchRes))) {
 			if (searchResult != null)
