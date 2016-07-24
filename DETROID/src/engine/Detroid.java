@@ -67,8 +67,8 @@ public class Detroid implements Engine, Observer {
 			movesToGo = AVG_MOVES_PER_GAME - AVG_MOVES_PER_GAME*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
 		}
 		return game.getSideToMove() == Side.WHITE ?
-			((whiteTime <= 12000 ? whiteTime : whiteTime - 10000) + (movesToGo - 1)*whiteIncrement)/movesToGo :
-			((blackTime <= 12000 ? blackTime : blackTime - 10000) + (movesToGo - 1)*blackIncrement)/movesToGo;
+			((whiteTime <= 13000 ? whiteTime : whiteTime - 10000) + Math.max(0, (movesToGo - 1)*whiteIncrement))/movesToGo :
+			((blackTime <= 13000 ? blackTime : blackTime - 10000) + Math.max(0, (movesToGo - 1)*blackIncrement))/movesToGo;
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
@@ -225,9 +225,9 @@ public class Detroid implements Engine, Observer {
 		Set<Move> moves;
 		long time, extraTime;
 		boolean doPonder = ponder != null && ponder.booleanValue();
-		searchResult = null;
-		scoreFluctuation = null;
-		timeOfLastSearchResChange = null;
+		searchResult = new Move();
+		scoreFluctuation = 0;
+		timeOfLastSearchResChange = System.currentTimeMillis();
 		numOfSearchResChanges = 0;
 		if (newGame) {
 			if (game.getSideToMove() == Side.WHITE) {
@@ -243,6 +243,7 @@ public class Detroid implements Engine, Observer {
 		if ((Boolean)options.get(ownBook)) {
 			search = new Thread(() -> {
 				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+				searchResult = searchResult == null ? new Move() : searchResult;
 			});
 			search.start();
 			try {
@@ -289,7 +290,7 @@ public class Detroid implements Engine, Observer {
 					extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo);
 					if (extraTime > 0)
 						search.join(extraTime);
-				} catch (InterruptedException e) { e.printStackTrace(); }
+				} catch (Exception e) { e.printStackTrace(); }
 			}
 			if (search.isAlive()) {
 				search.interrupt();
@@ -298,7 +299,7 @@ public class Detroid implements Engine, Observer {
 				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
 		}
-		return searchResult == null ? null : searchResult.toString();
+		return searchResult.equals(new Move()) ? null : searchResult.toString();
 	}
 	@Override
 	public void stop() {
@@ -330,15 +331,11 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchStatistics stats = (SearchStatistics)o;
-		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : null;
-		if ((searchResult != null && newSearchRes == null) || (searchResult == null && newSearchRes != null) ||
-				(searchResult != null && newSearchRes != null && !searchResult.equals(newSearchRes))) {
-			if (searchResult != null)
-				scoreFluctuation = (short) (stats.getScore() - searchResult.value);
-			searchResult = newSearchRes;
-			searchResult.value = stats.getScore();
-			timeOfLastSearchResChange = System.currentTimeMillis();
-			numOfSearchResChanges++;
-		}
+		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : new Move();
+		scoreFluctuation = (short) (stats.getScore() - searchResult.value);
+		searchResult = newSearchRes;
+		searchResult.value = stats.getScore();
+		timeOfLastSearchResChange = System.currentTimeMillis();
+		numOfSearchResChanges++;
 	}
 }

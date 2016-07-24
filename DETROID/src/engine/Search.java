@@ -130,6 +130,7 @@ class Search extends Thread {
 	 */
 	private void searchRoot() {
 		int alpha, beta, score, resultScore, failHigh, failLow;
+		boolean stopSearch = false;
 		long start = System.currentTimeMillis();
 		SearchThread searchThread;
 		ScoreType scoreType;
@@ -190,9 +191,10 @@ class Search extends Thread {
 				alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
 				beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
 			}
+			stopSearch = doStopSearch.get() || isInterrupted();
 			stats.set(extractPv(i), i, (short)resultScore, scoreType, nodes.get(),
-					System.currentTimeMillis() - start, i == maxDepth);
-			if (doStopSearch.get() || isInterrupted())
+					System.currentTimeMillis() - start, stopSearch || i == maxDepth);
+			if (stopSearch)
 				break;
 		}
 	}
