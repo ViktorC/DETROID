@@ -46,6 +46,7 @@ public final class UCI implements Observer, Closeable {
 		Class<?> c;
 		this.engine = engine;
 		this.engine.init();
+		this.engine.getSearchInfo().addObserver(this);
 		while (!in.nextLine().trim().equals("uci"));
 		out.println("id name " + this.engine.getName());
 		out.println("id author " + this.engine.getAuthor());
@@ -72,10 +73,7 @@ public final class UCI implements Observer, Closeable {
 			header = tokens[0];
 			switch (header) {
 				case "debug": {
-					if (tokens[1].equals("on"))
-						this.engine.getSearchInfo().addObserver(this);
-					else
-						this.engine.getSearchInfo().deleteObserver(this);
+					// Ignore it.
 				} break;
 				case "isready": {
 					out.println("readyok");
@@ -206,7 +204,7 @@ public final class UCI implements Observer, Closeable {
 				}
 			}
 		}
-		this.engine.getSearchInfo().deleteObserver(this);
+		this.engine.quit();
 		this.engine = null;
 		exec.shutdown();
 	}

@@ -92,4 +92,8 @@ public interface Engine {
 	 * @return
 	 */
 	SearchInfo getSearchInfo();
+	/**
+	 * Signals the engine that it should clean up and free the resources it has been using.
+	 */
+	void quit();
 }

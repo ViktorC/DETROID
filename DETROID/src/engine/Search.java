@@ -156,7 +156,6 @@ class Search extends Thread {
 				}
 				resultScore = score;
 				scoreType = ScoreType.UPPER_BOUND;
-				i--;
 			}
 			else if (score >= beta) {
 				if (score >= W_CHECK_MATE_LIMIT) {
@@ -172,7 +171,6 @@ class Search extends Thread {
 				}
 				resultScore = score;
 				scoreType = ScoreType.LOWER_BOUND;
-				i--;
 			}
 			else {
 				// Determining if the result is a mate score.
@@ -188,14 +186,14 @@ class Search extends Thread {
 					resultScore = score;
 					scoreType = ScoreType.EXACT;
 				}
+				failHigh = failLow = 0;
+				alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
+				beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
 			}
 			stats.set(extractPv(i), i, (short)resultScore, scoreType, nodes.get(),
 					System.currentTimeMillis() - start, i == maxDepth);
 			if (doStopSearch.get() || isInterrupted())
 				break;
-			failHigh = failLow = 0;
-			alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
-			beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
 		}
 	}
 	@Override

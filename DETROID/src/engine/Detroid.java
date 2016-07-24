@@ -192,7 +192,6 @@ public class Detroid implements Engine, Observer {
 				game = new Game(pos.toString());
 			}
 			else {
-				System.out.println("Bitch");
 				gen++;
 				if (gen == 127) {
 					tT.clear();
@@ -224,7 +223,7 @@ public class Detroid implements Engine, Observer {
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
-		long time;
+		long time, extraTime;
 		boolean doPonder = ponder != null && ponder.booleanValue();
 		searchResult = null;
 		scoreFluctuation = null;
@@ -287,7 +286,9 @@ public class Detroid implements Engine, Observer {
 			} catch (InterruptedException e) { e.printStackTrace(); }
 			if (searchTime == null || searchTime == 0) {
 				try {
-					search.join(computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo));
+					extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo);
+					if (extraTime > 0)
+						search.join(extraTime);
 				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
 			if (search.isAlive()) {
@@ -311,6 +312,20 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public SearchInfo getSearchInfo() {
 		return searchStats;
+	}
+	@Override
+	public void quit() {
+		try {
+			book.close();
+		} catch (IOException e) { e.printStackTrace(); }
+		if (search.isAlive())
+			search.interrupt();
+		searchStats.deleteObservers();
+		hT = null;
+		tT = null;
+		eT = null;
+		pT = null;
+		System.gc();
 	}
 	@Override
 	public void update(Observable o, Object arg) {
