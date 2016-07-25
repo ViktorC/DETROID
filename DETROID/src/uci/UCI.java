@@ -35,7 +35,6 @@ public final class UCI implements Observer, Closeable {
 	 * 
 	 * @param engine
 	 */
-	@SuppressWarnings("unchecked")
 	public synchronized void run(Engine engine) {
 		ExecutorService exec = Executors.newFixedThreadPool(1);
 		boolean over = false;
@@ -43,7 +42,6 @@ public final class UCI implements Observer, Closeable {
 		String[] tokens;
 		String header;
 		String option;
-		Class<?> c;
 		this.engine = engine;
 		this.engine.init();
 		this.engine.getSearchInfo().addObserver(this);
@@ -53,14 +51,13 @@ public final class UCI implements Observer, Closeable {
 		out.println("id author " + this.engine.getAuthor());
 		for (Option<?> o : engine.getOptions()) {
 			option = "option " + o.getName() + " type ";
-			c = o.getClass();
-			if (c == Option.CheckOption.class)
+			if (o instanceof Option.CheckOption)
 				option += "check default " + (boolean)o.getDefaultValue();
-			else if (c == Option.SpinOption.class)
+			else if (o instanceof Option.SpinOption)
 				option += "spin default " + (Integer)o.getDefaultValue() + " min " + o.getMin() + " max " + o.getMax();
-			else if (c == Option.StringOption.class)
+			else if (o instanceof Option.StringOption)
 				option += "string default " + (String)o.getDefaultValue();
-			else if (c == Option.ComboOption.class) {
+			else if (o instanceof Option.ComboOption) {
 				option += "combo default " + (String)o.getDefaultValue() + " var";
 				for (Object v : o.getAllowedValues())
 					option += " " + v;
@@ -82,13 +79,14 @@ public final class UCI implements Observer, Closeable {
 				case "setoption": {
 					for (Option<?> e : engine.getOptions()) {
 						if (e.getName().equals(tokens[1])) {
-							c = e.getDefaultValue().getClass();
-							if (c == Boolean.class)
-								this.engine.setOption((Option<Boolean>)e, Boolean.parseBoolean(tokens[2]));
-							else if (c == String.class)
-								this.engine.setOption((Option<String>)e, tokens[2]);
-							else if (c == Integer.class)
-								this.engine.setOption((Option<Integer>)e, Integer.parseInt(tokens[2]));
+							if (e instanceof Option.CheckOption)
+								this.engine.setOption((Option.CheckOption)e, Boolean.parseBoolean(tokens[2]));
+							else if (e instanceof Option.SpinOption)
+								this.engine.setOption((Option.SpinOption)e, Integer.parseInt(tokens[2]));
+							else if (e instanceof Option.StringOption)
+								this.engine.setOption((Option.StringOption)e, tokens[2]);
+							else if (e instanceof Option.ComboOption)
+								this.engine.setOption((Option.ComboOption)e, tokens[2]);
 							break;
 						}
 					}
