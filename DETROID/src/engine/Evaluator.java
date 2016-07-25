@@ -325,10 +325,6 @@ final class Evaluator {
 		numOfRooks = BitOperations.getHammingWeight(pos.whiteRooks | pos.blackRooks);
 		numOfBishops = BitOperations.getHammingWeight(pos.whiteBishops | pos.blackBishops);
 		numOfKnights = BitOperations.getHammingWeight(pos.whiteKnights | pos.blackKnights);
-		System.out.println("info string num of queens: " + numOfQueens);
-		System.out.println("info string num of rooks: " + numOfRooks);
-		System.out.println("info string num of bishops: " + numOfBishops);
-		System.out.println("info string num of knights: " + numOfKnights);
 		return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
 	}
 	/**
