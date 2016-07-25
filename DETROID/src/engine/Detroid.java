@@ -119,7 +119,7 @@ public class Detroid implements Engine, Observer {
 			if (debug) debugInfo.set("Book successfully initialized");
 		} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		options = new HashMap<>();
-		hashSize = new Option.SpinOption("Hash", 32, 1, 512);
+		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)));
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
 		bookPath = new Option.StringOption("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
