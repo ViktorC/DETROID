@@ -1,6 +1,6 @@
 package engine;
 
-import util.HashTable;
+import util.LossyHashTable;
 import util.SizeOf;
 
 /**
@@ -10,7 +10,7 @@ import util.SizeOf;
  * @author Viktor
  *
  */
-class PTEntry implements HashTable.Entry<PTEntry> {
+class PTEntry implements LossyHashTable.Entry<PTEntry> {
 
 	/**
 	 * The Zobrist pawn key used to hash pawn positions.

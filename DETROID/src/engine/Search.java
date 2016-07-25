@@ -44,7 +44,7 @@ class Search extends Thread {
 	private SearchInformation stats;
 	private KillerTable kT;				// Killer heuristic table.
 	private RelativeHistoryTable hT;	// History heuristic table.
-	private HashTable<TTEntry> tT;		// Transposition table.
+	private LossyHashTable<TTEntry> tT;		// Transposition table.
 	private byte hashEntryGen;			// Entry generation.
 	private Evaluator eval;
 	private boolean ponder;
@@ -72,8 +72,8 @@ class Search extends Thread {
 	 * @param pawnTable Pawn hash table.
 	 */
 	public Search(Position position, SearchInformation stats, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
-			RelativeHistoryTable historyTable, final byte hashEntryGen, HashTable<TTEntry> transposTable,
-			HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params) {
+			RelativeHistoryTable historyTable, final byte hashEntryGen, LossyHashTable<TTEntry> transposTable,
+			LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, Parameters params) {
 		this.params = params;
 		MAX_EXPECTED_TOTAL_SEARCH_DEPTH =
 				8*(params.CHECK_EXT + params.RECAP_EXT + params.SINGLE_REPLY_EXT + params.MATE_THREAT_EXT)*MAX_NOMINAL_SEARCH_DEPTH;

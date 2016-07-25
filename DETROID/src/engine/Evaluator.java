@@ -68,12 +68,12 @@ final class Evaluator {
 	private byte[][] PST_OPENING;
 	private byte[][] PST_ENDGAME;
 	
-	private HashTable<ETEntry> eT;	// Evaluation score hash table.
-	private HashTable<PTEntry> pT;	// Pawn hash table.
+	private LossyHashTable<ETEntry> eT;	// Evaluation score hash table.
+	private LossyHashTable<PTEntry> pT;	// Pawn hash table.
 	
 	private byte hashGen;	// Entry generation.
 	
-	public Evaluator(Parameters params, HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, byte hashEntryGeneration) {
+	public Evaluator(Parameters params, LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, byte hashEntryGeneration) {
 		this.params = params;
 		TOTAL_PHASE_WEIGHTS = 4*(params.KNIGHT_PHASE_WEIGHT + params.BISHOP_PHASE_WEIGHT + params.ROOK_PHASE_WEIGHT) + 2*params.QUEEN_PHASE_WEIGHT;
 		PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT = Math.min(phaseScore(0, 0, 2, 0), phaseScore(0, 0, 0, 2));

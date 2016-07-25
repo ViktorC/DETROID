@@ -13,5 +13,5 @@ public interface Estimable {
 	 * 
 	 * @return The estimated memory the object consumes in the heap.
 	 */
-	long size();
+	long sizeInBytes();
 }

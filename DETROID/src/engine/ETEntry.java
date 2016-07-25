@@ -1,6 +1,6 @@
 package engine;
 
-import util.HashTable;
+import util.LossyHashTable;
 import util.SizeOf;
 
 /**
@@ -9,7 +9,7 @@ import util.SizeOf;
  * @author Viktor
  *
  */
-class ETEntry implements HashTable.Entry<ETEntry> {
+class ETEntry implements LossyHashTable.Entry<ETEntry> {
 
 	/**
 	 * The 64-bit position hash key.

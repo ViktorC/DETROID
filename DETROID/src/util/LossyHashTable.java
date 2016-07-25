@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  *
  * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
-public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Estimable {
+public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterable<T>, Estimable {
 	
 	/**
 	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
@@ -37,7 +37,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 *
 	 * @param <T> The type of the hash table entry that implements this interface.
 	 */
-	public static interface Entry<T extends HashTable.Entry<T>> extends Comparable<T>, Hashable {
+	public static interface Entry<T extends LossyHashTable.Entry<T>> extends Comparable<T>, Hashable {
 		
 	}
 	
@@ -74,7 +74,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
 	@SuppressWarnings({"unchecked"})
-	public HashTable(long size, final int entrySizeB) {
+	public LossyHashTable(long size, final int entrySizeB) {
 		long tL1, tL2;
 		MillerRabin prim;
 		ReadWriteLock lock;
@@ -111,7 +111,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 * 
 	 * @param entrySizeB The size of an instance of the entry class in bytes.
 	 */
-	public HashTable(final int entrySizeB) {
+	public LossyHashTable(final int entrySizeB) {
 		this(0, entrySizeB);
 	}
 	/**
@@ -333,7 +333,7 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	 * @return The size of the underlying hash table structure.
 	 */
 	@Override
-	public long size() {
+	public long sizeInBytes() {
 		readLock.lock();
 		try {
 			// Total size of entries and empty slots
@@ -361,6 +361,6 @@ public class HashTable<T extends HashTable.Entry<T>> implements Iterable<T>, Est
 	public String toString() {
 		return "Load/Capacity: " + load.get() + "/" + capacity + "; " +
 				String.format("Factor: %.1f", (load.get()*100)/(double)capacity) + "%\n" +
-				String.format("Size: %.2fMB", size()/(double)(1 << 20));
+				String.format("Size: %.2fMB", sizeInBytes()/(double)(1 << 20));
 	}
 }
