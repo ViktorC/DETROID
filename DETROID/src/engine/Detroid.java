@@ -71,7 +71,8 @@ public class Detroid implements Engine, Observer {
 		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
 		if (movesToGo == null) {
 			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(game.getPosition());
-			movesToGo = Math.max(10, Game.AVG_MOVES_PER_GAME - Game.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_END_GAME_UPPER);
+			movesToGo = Math.max(params.MOVES_TO_GO_SAFETY_MARGIN,
+					Game.AVG_MOVES_PER_GAME - Game.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_END_GAME_UPPER);
 			if (debug) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);
