@@ -78,8 +78,8 @@ public class Detroid implements Engine, Observer {
 					"Expected number of moves left until end - " + movesToGo);
 		}
 		return game.getSideToMove() == Side.WHITE ?
-			((whiteTime <= 13000 ? whiteTime : whiteTime - 10000) + Math.max(0, (movesToGo - 1)*whiteIncrement))/movesToGo :
-			((blackTime <= 13000 ? blackTime : blackTime - 10000) + Math.max(0, (movesToGo - 1)*blackIncrement))/movesToGo;
+				(long) (Math.max(1, (whiteTime*0.95d)) + Math.max(0, (movesToGo - 1)*whiteIncrement))/(movesToGo + 1):
+				(long) (Math.max(1, (blackTime*0.95d)) + Math.max(0, (movesToGo - 1)*blackIncrement))/(movesToGo + 1);
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
@@ -87,7 +87,7 @@ public class Detroid implements Engine, Observer {
 				whiteTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN :
 				blackTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN) &&
 				(searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
-				scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
+				Math.abs(scoreFluctuation) >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
 				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
 				(numOfSearchResChanges/Math.max(1, origSearchTime))*1000 >= params.RESULT_CHANGES_PER_SECOND_LIMIT)) {
 			if (debug)

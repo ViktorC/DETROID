@@ -156,7 +156,7 @@ class Search extends Thread {
 					failLow++;
 				}
 				resultScore = score;
-				scoreType = ScoreType.UPPER_BOUND;
+				scoreType = ScoreType.LOWER_BOUND;
 			}
 			else if (score >= beta) {
 				if (score >= W_CHECK_MATE_LIMIT) {
@@ -171,7 +171,7 @@ class Search extends Thread {
 					failHigh++;
 				}
 				resultScore = score;
-				scoreType = ScoreType.LOWER_BOUND;
+				scoreType = ScoreType.UPPER_BOUND;
 			}
 			else {
 				// Determining if the result is a mate score.
@@ -309,7 +309,7 @@ class Search extends Thread {
 				if (e != null) {
 					e.generation = hashEntryGen;
 					// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
-					if (!isPvNode && e.depth >= depth/FULL_PLY) {
+					if (!isPvNode && e.depth >= depth/FULL_PLY && pos.repetitions < 2) {
 						// Mate score adjustment to root distance.
 						if (e.score <= L_CHECK_MATE_LIMIT)
 							score = e.score + distFromRoot;
