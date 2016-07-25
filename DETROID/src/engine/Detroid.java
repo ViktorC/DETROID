@@ -67,12 +67,11 @@ public class Detroid implements Engine, Observer {
 	}
 	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement, Long blackIncrement, Integer movesToGo) {
 		int phaseScore;
-		final int AVG_MOVES_PER_GAME = 40;
 		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
 		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
 		if (movesToGo == null) {
 			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(game.getPosition());
-			movesToGo = AVG_MOVES_PER_GAME - AVG_MOVES_PER_GAME*(phaseScore/params.GAME_PHASE_END_GAME_UPPER);
+			movesToGo = Math.max(10, Game.AVG_MOVES_PER_GAME - Game.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_END_GAME_UPPER);
 			if (debug) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);

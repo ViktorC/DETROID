@@ -48,12 +48,17 @@ class Game {
 		
 	}
 	
+	/**
+	 * The average number of full moves a chess game usually lasts.
+	 */
+	public final static int AVG_MOVES_PER_GAME = 40;
+	
 	private String startPos;
 	private Position position;
 	private String event;
 	private String site;
 	private Date date;
-	private float round;
+	private int round;
 	private String whitePlayerName;
 	private String blackPlayerName;
 	private State state;
@@ -175,21 +180,36 @@ class Game {
 	 * @param site
 	 * @param whitePlayerName
 	 * @param blackPlayerName
+	 * @param round
 	 * @throws ChessParseException 
 	 */
-	public Game(String position, String event, String site, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+	public Game(String position, String event, String site,
+			String whitePlayerName, String blackPlayerName, int round) throws ChessParseException {
 		this.position = Position.parse(position);
 		startPos = this.position.toString();
 		this.event = event;
 		this.site = site;
 		date = new Date();
-		round = 1;
+		this.round = round;
 		this.whitePlayerName = whitePlayerName;
 		this.blackPlayerName = blackPlayerName;
 		setState();
 	}
 	/**
-	 * Returns a game instance with the site and event values being null.
+	 * Returns a game instance according to the parameter values with the round number set to 1.
+	 * 
+	 * @param position The position in FEN.
+	 * @param event
+	 * @param site
+	 * @param whitePlayerName
+	 * @param blackPlayerName
+	 * @throws ChessParseException 
+	 */
+	public Game(String position, String event, String site, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+		this(position, event, site, whitePlayerName, blackPlayerName, 1);
+	}
+	/**
+	 * Returns a game instance with the site and event values being null and round set to 1.
 	 * 
 	 * @param position The position in FEN.
 	 * @param whitePlayerName
@@ -197,19 +217,20 @@ class Game {
 	 * @throws ChessParseException 
 	 */
 	public Game(String position, String whitePlayerName, String blackPlayerName) throws ChessParseException {
-		this(position, null, null, whitePlayerName, blackPlayerName);
+		this(position, null, null, whitePlayerName, blackPlayerName, 1);
 	}
 	/**
-	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being null.
+	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being null and round set to 1.
 	 * 
 	 * @param position The position in FEN.
 	 * @throws ChessParseException 
 	 */
 	public Game(String position) throws ChessParseException {
-		this(position, null, null, null, null);
+		this(position, null, null, null, null, 1);
 	}
 	/**
-	 * Returns a game instance set to the start position with the site, event, whitePlayerName, and blackPlayerName values being null.
+	 * Returns a game instance set to the start position with the site, event, whitePlayerName, and blackPlayerName values being null
+	 * and round set to 1.
 	 */
 	public Game() {
 		try {
@@ -240,8 +261,8 @@ class Game {
 	public Date getDate() {
 		return date;
 	}
-	public short getRound() {
-		return (short)round;
+	public int getRound() {
+		return round;
 	}
 	public String getWhitePlayerName() {
 		return whitePlayerName;
@@ -289,7 +310,6 @@ class Game {
 		if (position.isLegal(m)) {
 			position.makeMove(m);
 			setState();
-			round += 0.5f;
 			return true;
 		}
 		return false;

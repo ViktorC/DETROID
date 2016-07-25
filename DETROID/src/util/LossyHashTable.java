@@ -49,10 +49,10 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	/**
 	 * The default maximum hash table size in bytes.
 	 */
-	public final static long DEFAULT_SIZE = 1L << 14;
+	public final static long DEFAULT_SIZE = 1L << 24;
 	
-	private final static long MAX_CAPACITY = 2L << 30;	// The maximum number of slots.
-	private final static long MIN_CAPACITY = 2L << 7;	// The minimum number of slots.
+	private final static long MAX_CAPACITY = 1L << 30;	// The maximum number of slots.
+	private final static long MIN_CAPACITY = 1L << 10;	// The minimum number of slots.
 	
 	private long entrySize;	// The size of a hash entry, including all overheads, in bytes.
 	private long capacity;	// The number of hash table slots.

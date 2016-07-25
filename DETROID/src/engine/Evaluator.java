@@ -321,10 +321,14 @@ final class Evaluator {
 	 */
 	public int phaseScore(Position pos) {
 		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
-		numOfQueens = BitOperations.getHammingWeight(pos.whiteQueens | pos.blackQueens)*params.QUEEN_PHASE_WEIGHT;
-		numOfRooks = BitOperations.getHammingWeight(pos.whiteRooks | pos.blackRooks)*params.ROOK_PHASE_WEIGHT;
-		numOfBishops = BitOperations.getHammingWeight(pos.whiteBishops | pos.blackBishops)*params.BISHOP_PHASE_WEIGHT;
-		numOfKnights = BitOperations.getHammingWeight(pos.whiteKnights | pos.blackKnights)*params.KNIGHT_PHASE_WEIGHT;
+		numOfQueens = BitOperations.getHammingWeight(pos.whiteQueens | pos.blackQueens);
+		numOfRooks = BitOperations.getHammingWeight(pos.whiteRooks | pos.blackRooks);
+		numOfBishops = BitOperations.getHammingWeight(pos.whiteBishops | pos.blackBishops);
+		numOfKnights = BitOperations.getHammingWeight(pos.whiteKnights | pos.blackKnights);
+		System.out.println("info string num of queens: " + numOfQueens);
+		System.out.println("info string num of rooks: " + numOfRooks);
+		System.out.println("info string num of bishops: " + numOfBishops);
+		System.out.println("info string num of knights: " + numOfKnights);
 		return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
 	}
 	/**

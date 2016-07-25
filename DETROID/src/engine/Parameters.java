@@ -9,6 +9,14 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Random;
 
+/**
+ * A class for parameter definitions used in the evaluation, search, and time management. It initializes instances by reading the values
+ * from a txt file. The state of the instances can freely be changed and then written to txt files as well. It's main purpose is to provide
+ * the infrastructure necessary for automated tuning.
+ * 
+ * @author Viktor
+ *
+ */
 public final class Parameters {
 
 	// Piece values.
@@ -89,6 +97,7 @@ public final class Parameters {
 	public short SCORE_FLUCTUATION_LIMIT = 250;
 	public short FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT = 10;
 	public short RESULT_CHANGES_PER_SECOND_LIMIT = 2;
+	public short MOVES_TO_GO_SAFETY_MARGIN = 12;
 	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
 	public short LAZY_EVAL_MAR = 187;
