@@ -494,8 +494,8 @@ final class Evaluator {
 		blackTropism = 0;
 		for (int i = 0; i < numOfBlackPawns; i++)
 			blackTropism += MANHATTAN_DISTANCE[blackKingInd][blackPawnInds[i]];
-		score -= (params.KING_PAWN_TROPISM_WEIGHT*whiteTropism)/numOfWhitePawns;
-		score += (params.KING_PAWN_TROPISM_WEIGHT*blackTropism)/numOfBlackPawns;
+		score -= (params.KING_PAWN_TROPISM_WEIGHT*whiteTropism)/Math.max(1, numOfWhitePawns);
+		score += (params.KING_PAWN_TROPISM_WEIGHT*blackTropism)/Math.max(1, numOfBlackPawns);
 		return (short)score;
 	}
 	/**

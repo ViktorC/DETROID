@@ -73,9 +73,9 @@ public interface Engine {
 	 * @param mateDistance Search for a mate in x.
 	 * @param searchTime Search exactly this number of ms.
 	 * @param infinite Whether the position should be searched infinitely.
-	 * @return The best move found in pure algebraic coordinate notation.
+	 * @return The best move found and optionally the suggested ponder move in pure algebraic coordinate notation.
 	 */
-	String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
+	SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,
 			Long nodes, Integer mateDistance, Long searchTime, Boolean infinite);
 	/**

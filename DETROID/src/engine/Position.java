@@ -3497,13 +3497,13 @@ class Position implements Hashable, Copiable<Position> {
 	public Move parsePACN(String pacn) throws ChessParseException, NullPointerException {
 		byte from, to, movedPiece, capturedPiece, type;
 		String input = pacn.trim().toLowerCase();
-		if (input.length() != 4 && input.length() != 6)
-			throw new ChessParseException("The input does not pass the formal requirements of a PACN String. Its length is neither 4 nor 6");
+		if (input.length() != 4 && input.length() != 5)
+			throw new ChessParseException("The input does not pass the formal requirements of a PACN String. Its length is neither 4 nor 5");
 		from = (byte)((int)(input.charAt(0) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(1))) - 1));
 		to = (byte)((int)(input.charAt(2) - 'a') + 8*(Integer.parseInt(Character.toString(input.charAt(3))) - 1));
 		movedPiece = offsetBoard[from];
-		if (input.length() == 6) {
-			switch (input.charAt(5)) {
+		if (input.length() == 5) {
+			switch (input.charAt(4)) {
 				case 'q' : type = MoveType.PROMOTION_TO_QUEEN.ind;
 				break;
 				case 'r' : type = MoveType.PROMOTION_TO_ROOK.ind;

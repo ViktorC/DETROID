@@ -341,10 +341,8 @@ class Search extends Thread {
 						
 					}
 					// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
-					if (e.bestMove != 0) {
-						hashMove = Move.toMove(e.bestMove);
+					if (e.bestMove != 0 && position.isLegalSoft(hashMove = Move.toMove(e.bestMove)))
 						isThereHashMove = true;
-					}
 				}
 				// Check extension (less than a whole ply because the quiescence search handles checks).
 				depth = isInCheck && qDepth == 0 ? depth + params.CHECK_EXT : depth;

@@ -189,7 +189,14 @@ public final class UCI implements Observer, Closeable {
 					Integer p9 = mateDistance;
 					Long p10 = searchTime;
 					Boolean p11 = infinite;
-					exec.submit(() -> this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11));
+					exec.submit(() -> {
+						String resultString;
+						SearchResults results = this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
+						resultString = "bestmove " + results.getBestMove();
+						if (results.getSuggestedPonderMove() != null)
+							resultString += " ponder " + results.getSuggestedPonderMove();
+						out.println(resultString);
+					});
 				} break;
 				case "stop": {
 					this.engine.stop();
@@ -210,14 +217,11 @@ public final class UCI implements Observer, Closeable {
 	public void update(Observable p1, Object p2)
 	{
 		SearchInfo stats = (SearchInfo)p1;
-		String finalRes;
 		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
 		String[] pV = stats.getPv();
-		boolean first, pVexists;
-		pVexists = false;
+		boolean first;
 		if (pV != null && pV.length > 0) {
 			first = true;
-			pVexists = true;
 			for (String s : pV) {
 				if (first) {
 					info += "currmove " + s + " pv ";
@@ -244,12 +248,6 @@ public final class UCI implements Observer, Closeable {
 		info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/Math.max(1, stats.getTime());
 		out.println(info);
 		out.println("info hashfull " + engine.getHashLoadPermill());
-		if (stats.isFinal() && pVexists) {
-			finalRes = "bestmove " + pV[0];
-			if (pV.length > 1)
-				finalRes += " ponder " + pV[1];
-			out.println(finalRes);
-		}
 	}
 	@Override
 	public void close() throws IOException {

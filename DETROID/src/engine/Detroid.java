@@ -10,6 +10,7 @@ import java.util.Set;
 import engine.Book.SelectionModel;
 import engine.Game.Side;
 import uci.Engine;
+import uci.SearchResults;
 import uci.ScoreType;
 import uci.SearchInfo;
 import uci.Option;
@@ -72,14 +73,21 @@ public class Detroid implements Engine, Observer {
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
-		if (searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
-				scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
+		if (searchResult.equals(new Move()) || searchStats.getScoreType() == ScoreType.LOWER_BOUND ||
+				searchStats.getScoreType() == ScoreType.UPPER_BOUND || scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT ||
+				timeOfLastSearchResChange >= System.currentTimeMillis() -
 				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
-				numOfSearchResChanges/(origSearchTime/1000) >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
+				numOfSearchResChanges/Math.max(1, (origSearchTime/1000)) >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
 			return computeSearchTime(game.getSideToMove() == Side.WHITE ? whiteTime - origSearchTime : whiteTime,
 				game.getSideToMove() == Side.WHITE ? blackTime : blackTime - origSearchTime, whiteIncrement, blackIncrement, movesToGo);
 		}
 		return 0;
+	}
+	@SuppressWarnings("unused")
+	private String getRandomMove() {
+		List<Move> moves = game.getPosition().getMoves();
+		String[] arr = new String[moves.size()];
+		return arr[(int) (Math.random()*arr.length)];
 	}
 	@Override
 	public synchronized void init() {
@@ -143,8 +151,10 @@ public class Detroid implements Engine, Observer {
 			return true;
 		}
 		else if (ownBook.equals(setting)) {
-			options.put(ownBook, value);
-			return true;
+			if (book != null) {
+				options.put(ownBook, value);
+				return true;
+			}
 		}
 		else if (bookPath.equals(setting)) {
 			if (book.setMainBookPath((String)value)) {
@@ -219,10 +229,12 @@ public class Detroid implements Engine, Observer {
 		return game.play(pacn);
 	}
 	@Override
-	public synchronized String search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
+	public synchronized SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
+		String[] pV;
+		String bestMove, ponderMove;
 		long time, extraTime;
 		boolean doPonder = ponder != null && ponder.booleanValue();
 		searchResult = new Move();
@@ -282,16 +294,20 @@ public class Detroid implements Engine, Observer {
 			}
 			time = searchTime == null || searchTime == 0 ?
 					computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
+			System.out.println(time);
 			try {
 				search.join(time);
 			} catch (InterruptedException e) { e.printStackTrace(); }
+			System.out.println("time up");
 			if (searchTime == null || searchTime == 0) {
 				try {
 					extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo);
+					System.out.println(extraTime);
 					if (extraTime > 0)
 						search.join(extraTime);
-				} catch (Exception e) { e.printStackTrace(); }
+				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
+			System.out.println("extra time up");
 			if (search.isAlive()) {
 				search.interrupt();
 				try {
@@ -299,7 +315,10 @@ public class Detroid implements Engine, Observer {
 				} catch (InterruptedException e) { e.printStackTrace(); }
 			}
 		}
-		return searchResult.equals(new Move()) ? null : searchResult.toString();
+		pV = searchStats.getPv();
+		ponderMove = pV.length > 1 ? pV[1] : null;
+		bestMove = searchResult.equals(new Move()) ? null : searchResult.toString();
+		return new SearchResults(bestMove, ponderMove);
 	}
 	@Override
 	public void stop() {
@@ -331,9 +350,9 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchStatistics stats = (SearchStatistics)o;
-		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : new Move();
+		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : null;
 		scoreFluctuation = (short) (stats.getScore() - searchResult.value);
-		searchResult = newSearchRes;
+		searchResult = newSearchRes != null ? newSearchRes : searchResult;
 		searchResult.value = stats.getScore();
 		timeOfLastSearchResChange = System.currentTimeMillis();
 		numOfSearchResChanges++;
