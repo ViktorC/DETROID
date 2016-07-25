@@ -83,11 +83,13 @@ public class Detroid implements Engine, Observer {
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
-		if (searchResult.equals(new Move()) || searchStats.getScoreType() == ScoreType.LOWER_BOUND ||
-				searchStats.getScoreType() == ScoreType.UPPER_BOUND || scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT ||
-				timeOfLastSearchResChange >= System.currentTimeMillis() -
+		if (searchResult.equals(new Move()) || (game.getSideToMove() == Side.WHITE ?
+				whiteTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN :
+				blackTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN) &&
+				(searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
+				scoreFluctuation >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
 				origSearchTime/params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
-				(numOfSearchResChanges/Math.max(1, origSearchTime))*1000 >= params.RESULT_CHANGES_PER_SECOND_LIMIT) {
+				(numOfSearchResChanges/Math.max(1, origSearchTime))*1000 >= params.RESULT_CHANGES_PER_SECOND_LIMIT)) {
 			if (debug)
 				debugInfo.set("Search time extension data\n" +
 						"PV root move invalid - " + searchResult.equals(new Move()) + "\n" +
@@ -100,7 +102,6 @@ public class Detroid implements Engine, Observer {
 		}
 		return 0;
 	}
-	@SuppressWarnings("unused")
 	private String getRandomMove() {
 		List<Move> moves = game.getPosition().getMoves();
 		String[] arr = new String[moves.size()];
@@ -368,8 +369,9 @@ public class Detroid implements Engine, Observer {
 		pV = searchStats.getPv();
 		ponderMove = pV.length > 1 ? pV[1] : null;
 		if (searchResult.equals(new Move())) {
-			if (debug) debugInfo.set("No valid PV root move found");
-			bestMove = null;
+			bestMove = getRandomMove();
+			if (debug) debugInfo.set("No valid PV root move found\n" +
+					"Random move selected");
 		}
 		else
 			bestMove = searchResult.toString();
