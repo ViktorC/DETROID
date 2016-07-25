@@ -2,10 +2,17 @@ package uci;
 
 import java.util.Set;
 
+/**
+ * The interface needed to be implemented by an engine to ensure it is UCI compliant.
+ * 
+ * @author Viktor
+ *
+ */
 public interface Engine {
 	
 	/**
-	 * Initialize the engine; e.g. set up the tables, load parameters, etc.
+	 * Initialize the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
+	 * this method on the instance first.
 	 */
 	void init();
 	/**
@@ -21,17 +28,18 @@ public interface Engine {
 	 */
 	String getAuthor();
 	/**
-	 * Returns the load factor of the hash tables in permills.
-	 * 
-	 * @return
-	 */
-	short getHashLoadPermill();
-	/**
 	 * Returns the options the engine offers.
 	 * 
 	 * @return
 	 */
 	Set<Option<?>> getOptions();
+	/**
+	 * Tells the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
+	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.
+	 * 
+	 * @param on
+	 */
+	void debug(boolean on);
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
@@ -92,6 +100,18 @@ public interface Engine {
 	 * @return
 	 */
 	SearchInfo getSearchInfo();
+	/**
+	 * Returns the load factor of the hash tables in permills.
+	 * 
+	 * @return
+	 */
+	short getHashLoadPermill();
+	/**
+	 * Returns an observable object containing information that is not related to the game but can help detecting bugs in debug mode.
+	 * 
+	 * @return
+	 */
+	DebugInfo getDebugInfo();
 	/**
 	 * Signals the engine that it should clean up and free the resources it has been using.
 	 */

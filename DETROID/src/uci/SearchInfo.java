@@ -2,6 +2,12 @@ package uci;
 
 import java.util.Observable;
 
+/**
+ * An observable abstract class for containing search information and notifying the observers on changes.
+ * 
+ * @author Viktor
+ *
+ */
 public abstract class SearchInfo extends Observable {
 
 	/**

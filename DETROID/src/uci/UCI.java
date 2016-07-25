@@ -47,6 +47,7 @@ public final class UCI implements Observer, Closeable {
 		this.engine = engine;
 		this.engine.init();
 		this.engine.getSearchInfo().addObserver(this);
+		this.engine.getDebugInfo().addObserver(this);
 		while (!in.nextLine().trim().equals("uci"));
 		out.println("id name " + this.engine.getName());
 		out.println("id author " + this.engine.getAuthor());
@@ -73,7 +74,7 @@ public final class UCI implements Observer, Closeable {
 			header = tokens[0];
 			switch (header) {
 				case "debug": {
-					// Ignore it.
+					this.engine.debug(tokens[1].equals("on"));
 				} break;
 				case "isready": {
 					out.println("readyok");
@@ -216,38 +217,47 @@ public final class UCI implements Observer, Closeable {
 	@Override
 	public void update(Observable p1, Object p2)
 	{
-		SearchInfo stats = (SearchInfo)p1;
-		String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
-		String[] pV = stats.getPv();
-		boolean first;
-		if (pV != null && pV.length > 0) {
-			first = true;
-			for (String s : pV) {
-				if (first) {
-					info += "currmove " + s + " pv ";
-					first = false;
+		if (p1 instanceof SearchInfo) {
+			SearchInfo stats = (SearchInfo)p1;
+			String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
+			String[] pV = stats.getPv();
+			boolean first;
+			if (pV != null && pV.length > 0) {
+				first = true;
+				for (String s : pV) {
+					if (first) {
+						info += "currmove " + s + " pv ";
+						first = false;
+					}
+					info += s + " ";
 				}
-				info += s + " ";
 			}
+			info += "score ";
+			switch (stats.getScoreType()) {
+			case EXACT:
+				info += "cp ";
+				break;
+			case MATE:
+				info += "mate ";
+				break;
+			case LOWER_BOUND:
+				info += "lowerbound ";
+				break;
+			case UPPER_BOUND:
+				info += "upperbound ";
+				break;
+			}
+			info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/Math.max(1, stats.getTime());
+			out.println(info);
+			out.println("info hashfull " + engine.getHashLoadPermill());
 		}
-		info += "score ";
-		switch (stats.getScoreType()) {
-		case EXACT:
-			info += "cp ";
-			break;
-		case MATE:
-			info += "mate ";
-			break;
-		case LOWER_BOUND:
-			info += "lowerbound ";
-			break;
-		case UPPER_BOUND:
-			info += "upperbound ";
-			break;
+		else if (p1 instanceof DebugInfo) {
+			DebugInfo debugInfo = (DebugInfo)p1;
+			String content = debugInfo.getContent();
+			String[] lines = content.split("\\r?\\n");
+			for (String s : lines)
+				out.println("info string " + s);
 		}
-		info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/Math.max(1, stats.getTime());
-		out.println(info);
-		out.println("info hashfull " + engine.getHashLoadPermill());
 	}
 	@Override
 	public void close() throws IOException {

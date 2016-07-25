@@ -41,7 +41,7 @@ class Search extends Thread {
 	private Position position;
 	// Whether heuristics based on the null move observation such as stand-pat and NMP are applicable.
 	private boolean nullMoveObservHolds;	
-	private SearchStatistics stats;
+	private SearchInformation stats;
 	private KillerTable kT;				// Killer heuristic table.
 	private RelativeHistoryTable hT;	// History heuristic table.
 	private HashTable<TTEntry> tT;		// Transposition table.
@@ -71,7 +71,7 @@ class Search extends Thread {
 	 * @param evalTable Evaluation hash table.
 	 * @param pawnTable Pawn hash table.
 	 */
-	public Search(Position position, SearchStatistics stats, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
+	public Search(Position position, SearchInformation stats, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
 			RelativeHistoryTable historyTable, final byte hashEntryGen, HashTable<TTEntry> transposTable,
 			HashTable<ETEntry> evalTable, HashTable<PTEntry> pawnTable, Parameters params) {
 		this.params = params;

@@ -9,6 +9,7 @@ import java.util.Set;
 
 import engine.Book.SelectionModel;
 import engine.Game.Side;
+import uci.DebugInfo;
 import uci.Engine;
 import uci.SearchResults;
 import uci.ScoreType;
@@ -33,10 +34,12 @@ public class Detroid implements Engine, Observer {
 	private Parameters params;
 	private Game game;
 	private boolean newGame;
+	private DebugInformation debugInfo;
+	private boolean debug;
 	private Book book;
 	private Thread search;
 	private boolean ponderHit;
-	private SearchStatistics searchStats;
+	private SearchInformation searchStats;
 	private Move searchResult;
 	private Short scoreFluctuation;
 	private Long timeOfLastSearchResChange;
@@ -93,9 +96,11 @@ public class Detroid implements Engine, Observer {
 	public synchronized void init() {
 		params = new Parameters();
 		game = new Game();
+		debug = false;
+		debugInfo = new DebugInformation();
 		try {
 			book = new Book();
-		} catch (IOException e) { e.printStackTrace(); }
+		} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		options = new HashMap<>();
 		hashSize = new Option.SpinOption("Hash", 32, 1, 512);
 		ponder = new Option.CheckOption("Ponder", true);
@@ -109,7 +114,7 @@ public class Detroid implements Engine, Observer {
 		options.put(bookPath, bookPath.getDefaultValue());
 		options.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
-		searchStats = new SearchStatistics();
+		searchStats = new SearchInformation();
 		searchStats.addObserver(this);
 		setHashSize((int)options.get(hashSize));
 		hT = new RelativeHistoryTable(params);
@@ -123,11 +128,8 @@ public class Detroid implements Engine, Observer {
 		return AUTHOR;
 	}
 	@Override
-	public short getHashLoadPermill() {
-		long load, capacity;
-		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
-		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
-		return (short) (1000*load/capacity);
+	public void debug(boolean on) {
+		debug = on;
 	}
 	@Override
 	public Set<Option<?>> getOptions() {
@@ -195,13 +197,17 @@ public class Detroid implements Engine, Observer {
 	public synchronized boolean position(String fen) {
 		try {
 			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
-			if (newGame)
+			if (newGame) {
+				if (debug) debugInfo.set("new game set.");
 				game = new Game(pos.toString());
+			}
 			else if (!game.getStartPos().equals(pos.toString())) {
 				newGame();
+				if (debug) debugInfo.set("new game to different start position.");
 				game = new Game(pos.toString());
 			}
 			else {
+				if (debug) debugInfo.set("same game, new position.");
 				gen++;
 				if (gen == 127) {
 					tT.clear();
@@ -220,7 +226,7 @@ public class Detroid implements Engine, Observer {
 			}
 			return true;
 		} catch (ChessParseException | NullPointerException e) {
-			e.printStackTrace();
+			if (debug) debugInfo.set(e.getMessage());
 			return false;
 		}
 	}
@@ -250,6 +256,7 @@ public class Detroid implements Engine, Observer {
 				game.setWhitePlayerName((String)options.get(uciOpponent));
 				game.setBlackPlayerName(NAME);
 			}
+			if (debug) debugInfo.set("players' names set.\nw: " + game.getWhitePlayerName() + "\nb: " + game.getBlackPlayerName());
 			newGame = false;
 		}
 		if ((Boolean)options.get(ownBook)) {
@@ -260,7 +267,7 @@ public class Detroid implements Engine, Observer {
 			search.start();
 			try {
 				search.join();
-			} catch (InterruptedException e) { e.printStackTrace(); }
+			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
 		else {
 			if (doPonder) {
@@ -273,7 +280,7 @@ public class Detroid implements Engine, Observer {
 					for (String s : searchMoves)
 						moves.add(game.getPosition().parsePACN(s));
 				} catch (ChessParseException | NullPointerException e) {
-					e.printStackTrace();
+					if (debug) debugInfo.set(e.getMessage());
 					return null;
 				}
 			}
@@ -283,37 +290,43 @@ public class Detroid implements Engine, Observer {
 					depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
 					nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params);
 			search.start();
+			if (debug) debugInfo.set("search started.");
 			if (doPonder) {
+				if (debug) debugInfo.set("ponder mode.");
 				while (search.isAlive() && !ponderHit) {
 					try {
 						wait(200);
-					} catch (InterruptedException e) { e.printStackTrace(); }
+					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 				}
-				if (ponderHit)
+				if (debug) debugInfo.set("ponder stopped.");
+				if (ponderHit) {
+					if (debug) debugInfo.set("it was a ponderhit.");
 					ponderHit = false;
+				}
 			}
 			time = searchTime == null || searchTime == 0 ?
 					computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
-			System.out.println(time);
+			if (debug) debugInfo.set("orig search time: " + time);
 			try {
 				search.join(time);
-			} catch (InterruptedException e) { e.printStackTrace(); }
-			System.out.println("time up");
+			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+			if (debug) debugInfo.set("orig time up.");
 			if (searchTime == null || searchTime == 0) {
 				try {
 					extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo);
-					System.out.println(extraTime);
+					if (debug) debugInfo.set("extra search time: " + extraTime);
 					if (extraTime > 0)
 						search.join(extraTime);
-				} catch (InterruptedException e) { e.printStackTrace(); }
+				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			}
-			System.out.println("extra time up");
+			if (debug) debugInfo.set("extra time up");
 			if (search.isAlive()) {
 				search.interrupt();
 				try {
 					search.join();
-				} catch (InterruptedException e) { e.printStackTrace(); }
+				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			}
+			if (debug) debugInfo.set("search stopped.");
 		}
 		pV = searchStats.getPv();
 		ponderMove = pV.length > 1 ? pV[1] : null;
@@ -334,6 +347,17 @@ public class Detroid implements Engine, Observer {
 		return searchStats;
 	}
 	@Override
+	public short getHashLoadPermill() {
+		long load, capacity;
+		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
+		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
+		return (short) (1000*load/capacity);
+	}
+	@Override
+	public DebugInfo getDebugInfo() {
+		return debugInfo;
+	}
+	@Override
 	public void quit() {
 		try {
 			book.close();
@@ -349,7 +373,7 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public void update(Observable o, Object arg) {
-		SearchStatistics stats = (SearchStatistics)o;
+		SearchInformation stats = (SearchInformation)o;
 		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : null;
 		scoreFluctuation = (short) (stats.getScore() - searchResult.value);
 		searchResult = newSearchRes != null ? newSearchRes : searchResult;

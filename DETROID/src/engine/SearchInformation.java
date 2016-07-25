@@ -10,7 +10,7 @@ import util.List;
  * @author Viktor
  *
  */
-public class SearchStatistics extends SearchInfo {
+public class SearchInformation extends SearchInfo {
 	
 	private List<Move> pVline;		// Principal variation.
 	private short nominalDepth;		// The depth to which the PV has been searched.
@@ -21,7 +21,7 @@ public class SearchStatistics extends SearchInfo {
 	private long time;				// Time spent on the search.
 	private boolean isFinal;		// Whether it is the final result of the search.
 	
-	SearchStatistics() {
+	SearchInformation() {
 		
 	}
 	/**
