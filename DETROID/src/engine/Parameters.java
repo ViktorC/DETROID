@@ -21,17 +21,19 @@ public final class Parameters {
 
 	// Piece values.
 	public short KING_VALUE = 20000;
-	public short KING_PHASE_WEIGHT = 0;
 	public short QUEEN_VALUE = 900;
-	public short QUEEN_PHASE_WEIGHT = 4;
 	public short ROOK_VALUE = 500;
-	public short ROOK_PHASE_WEIGHT = 2;
 	public short BISHOP_VALUE = 330;
-	public short BISHOP_PHASE_WEIGHT = 1;
 	public short KNIGHT_VALUE = 320;
-	public short KNIGHT_PHASE_WEIGHT = 1;
 	public short PAWN_VALUE = 100;
-	public short PAWN_PHASE_WEIGHT = 0;
+	
+	// Piece phase weights
+	public byte KING_PHASE_WEIGHT = 0;
+	public byte QUEEN_PHASE_WEIGHT = 4;
+	public byte ROOK_PHASE_WEIGHT = 2;
+	public byte BISHOP_PHASE_WEIGHT = 1;
+	public byte KNIGHT_PHASE_WEIGHT = 1;
+	public byte PAWN_PHASE_WEIGHT = 0;
 	
 	// Evaluation weights.
 	public byte DEFENDED_PAWN_WEIGHT = 20;
@@ -70,20 +72,20 @@ public final class Parameters {
 	public short GAME_PHASE_END_GAME_UPPER = 256;
 	
 	// Search parameters.
-	public short NMR = 2;							// Null move pruning reduction.
-	public short LMR = 1;							// Late move reduction.
-	public short LMRMSM = 4;						// Min. number of searched moves for late move reduction
-	public short FMAR1 = 330;						// Futility margin.
-	public short FMAR2 = 500;						// Extended futility margin.
-	public short FMAR3 = 900;						// Razoring margin.
-	public short A_DELTA = 100;						// The aspiration delta within iterative deepening.
-	public short Q_DELTA = 270;						// The margin for delta-pruning in the quiescence search.
-	public short CHECK_EXT = 2;						// Fractional check extension.
-	public short RECAP_EXT = 4;						// Fractional recapture extension.
-	public short SINGLE_REPLY_EXT = 4; 				// Fractional single reply extension.
-	public short MATE_THREAT_EXT = 8;				// Fractional mate threat extension.
-	public short IID_MIN_ACTIVATION_DEPTH = 5;		// The minimum depth at which IID is activated.
-	public float IID_REL_DEPTH = 3/5f;				// The portion of the total depth to which the position will be searched with IID.
+	public byte NMR = 2;						// Null move pruning reduction.
+	public byte LMR = 1;						// Late move reduction.
+	public byte LMRMSM = 4;						// Min. number of searched moves for late move reduction
+	public short FMAR1 = 330;					// Futility margin.
+	public short FMAR2 = 500;					// Extended futility margin.
+	public short FMAR3 = 900;					// Razoring margin.
+	public short A_DELTA = 100;					// The aspiration delta within iterative deepening.
+	public short Q_DELTA = 270;					// The margin for delta-pruning in the quiescence search.
+	public byte CHECK_EXT = 2;					// Fractional check extension.
+	public byte RECAP_EXT = 4;					// Fractional recapture extension.
+	public byte SINGLE_REPLY_EXT = 4; 			// Fractional single reply extension.
+	public byte MATE_THREAT_EXT = 8;			// Fractional mate threat extension.
+	public byte IID_MIN_ACTIVATION_DEPTH = 5;	// The minimum depth at which IID is activated.
+	public float IID_REL_DEPTH = 0.6f;			// The portion of the total depth to which the position will be searched with IID.
 	
 	// The relative history table's value depreciation factor.
 	public byte RHT_DECREMENT_FACTOR = 4;
@@ -95,9 +97,10 @@ public final class Parameters {
 	
 	// The values considered when calculating search time extensions.
 	public short SCORE_FLUCTUATION_LIMIT = 250;
-	public short FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT = 10;
-	public short RESULT_CHANGES_PER_SECOND_LIMIT = 2;
-	public short MOVES_TO_GO_SAFETY_MARGIN = 12;
+	public float FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT = 0.1f;
+	public byte RESULT_CHANGES_PER_SECOND_LIMIT = 2;
+	public byte MOVES_TO_GO_SAFETY_MARGIN = 12;
+	public float FRACTION_OF_TOTAL_TIME_TO_USE = 0.9f;
 	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
 	public short LAZY_EVAL_MAR = 187;

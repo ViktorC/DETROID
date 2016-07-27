@@ -137,6 +137,10 @@ class Move implements Comparable<Move> {
 	public boolean isMaterial() {
 		return capturedPiece != Piece.NULL.ind || type >= MoveType.PROMOTION_TO_QUEEN.ind;
 	}
+	@Override
+	public boolean equals(Object o) {
+		return o instanceof Move ? equals((Move) o) : false;
+	}
 	/**Returns whether this move is equal to the input parameter move. The assigned theoretical value is disregarded as it is highly
 	 * context dependent.
 	 * 
