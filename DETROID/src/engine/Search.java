@@ -1,14 +1,8 @@
 package engine;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -44,7 +38,6 @@ class Search extends Thread {
 	private final int W_CHECK_MATE_LIMIT;
 	
 	private ForkJoinPool threadPool;
-	private ExecutorCompletionService<Integer> completionService;
 	private Parameters params;
 	private Position position;
 	private Long startTime;
@@ -241,7 +234,7 @@ class Search extends Thread {
 	 * @param distFromRoot
 	 * @param depth
 	 */
-	private void insertNodeIntoTransposTable(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
+	private void insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
 		int score;
 		int bestMoveInt;
 		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
@@ -274,7 +267,7 @@ class Search extends Thread {
 		final int origAlpha = alpha;
 		int depth, score, bestScore, tacticalMovesBreakInd, extension, numOfMoves;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean lastMoveIsMaterial;
+		boolean lastMoveIsMaterial, doStop;
 		List<Move> tacticalMoves, quietMoves;
 		Set<Move> allMoves;
 		Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
@@ -367,20 +360,17 @@ class Search extends Thread {
 			// Recapture extension.
 			extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ?
 				params.RECAP_EXT : 0;
+			position.makeMove(move);
 			// Full window search for the first move...
-			if (i == 0) {
-				position.makeMove(move);
+			if (i == 0)
 				score = -threadPool.invoke(new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0));
-				position.unmakeMove();
-			}
 			// PVS for the rest.
 			else {
-				position.makeMove(move);
 				score = -threadPool.invoke(new SearchThread(position, ply, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0));
 				if (score > alpha && score < beta)
 					score = -threadPool.invoke(new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0));
-				position.unmakeMove();
 			}
+			position.unmakeMove();
 			// Score check.
 			if (score > bestScore) {
 				bestMove = move;
@@ -391,9 +381,9 @@ class Search extends Thread {
 						break;
 				}
 				// Inser into TT.
-				insertNodeIntoTransposTable(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/ FULL_PLY));
+				insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/ FULL_PLY));
 				// Update stats with the new best move found if applicable.
-				if (!internal && ply > 5)
+				if (!internal && ply > 5 && i < allMovesArr.length - 1 && !isInterrupted() && !doStopSearch.get())
 					updateInfo(ply, origAlpha, beta, bestScore, false);
 			}
 			if (isInterrupted() || doStopSearch.get())
@@ -456,7 +446,6 @@ class Search extends Thread {
 	public void run() {
 		startTime = System.currentTimeMillis();
 		threadPool = new ForkJoinPool();
-		completionService = new ExecutorCompletionService<>(threadPool);
 		iterativeDeepening();
 		threadPool.shutdown();
 		startTime = null;
@@ -516,7 +505,7 @@ class Search extends Thread {
 		 * @param beta
 		 * @param nullMoveAllowed
 		 * @param qDepth The depth with which quiescence search should be called.
-		 * @return The score of the position searched.
+		 * @return
 		 */
 		private int pVsearch(int depth, int distFromRoot, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
 			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
@@ -947,7 +936,7 @@ class Search extends Thread {
 			if (qDepth < 0)
 				return bestScore;
 			// Add new entry to the transposition table.
-			insertNodeIntoTransposTable(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
+			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
 			// Return the unadjusted best score.
 			return bestScore;
 		}
@@ -976,12 +965,12 @@ class Search extends Thread {
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
-			/*if (boundsChanged) {
-				if (this.alpha > alpha)
-					alpha = this.alpha;
-				if (this.beta < beta)
-					beta = this.beta;
-			}*/
+//			if (boundsChanged) {
+//				beta = this.beta;
+//				if (alpha >= beta)
+//					break Search;
+//				boundsChanged = false;
+//			}
 			// Check for the repetition rule; return a draw score if it applies.
 			if (pos.repetitions >= 3)
 				return Termination.DRAW_CLAIMED.score;
@@ -1026,12 +1015,12 @@ class Search extends Thread {
 					pos.makeMove(move);
 					searchScore = -quiescence(depth - 1, distFromRoot + 1, -beta, -alpha);
 					pos.unmakeMove();
-					/*if (boundsChanged) {
-						if (this.alpha > alpha)
-							alpha = this.alpha;
-						if (this.beta < beta)
-							beta = this.beta;
-					}*/
+//					if (boundsChanged) {
+//						beta = this.beta;
+//						if (alpha >= beta)
+//							break Search;
+//						boundsChanged = false;
+//					}
 					if (searchScore > bestScore) {
 						bestScore = searchScore;
 						if (bestScore > alpha) {

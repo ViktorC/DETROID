@@ -78,29 +78,30 @@ public class Detroid implements Engine, Observer {
 					"Expected number of moves left until end - " + movesToGo);
 		}
 		return game.getSideToMove() == Side.WHITE ?
-				(long) (Math.max(1, (whiteTime*params.FRACTION_OF_TOTAL_TIME_TO_USE)) +
-						Math.max(0, (movesToGo - 1)*whiteIncrement))/(movesToGo + 1):
-				(long) (Math.max(1, (blackTime*params.FRACTION_OF_TOTAL_TIME_TO_USE)) +
-						Math.max(0, (movesToGo - 1)*blackIncrement))/(movesToGo + 1);
+				(long) (Math.max(1, (whiteTime*params.FRACTION_OF_TOTAL_TIME_TO_USE) +
+						Math.max(0, (movesToGo - 1)*whiteIncrement))/(movesToGo + 1)) :
+				(long) (Math.max(1, (blackTime*params.FRACTION_OF_TOTAL_TIME_TO_USE) +
+						Math.max(0, (movesToGo - 1)*blackIncrement))/(movesToGo + 1));
 	}
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
+		if (debug)
+			debugInfo.set("Search time extension data\n" +
+					"PV root move invalid - " + searchResult.equals(new Move()) + "\n" +
+					"Score fluctuation - " + Math.abs(scoreFluctuation) + "\n" +
+					"Score type - " + searchStats.getScoreType() + "\n" +
+					"Last PV root change " + (System.currentTimeMillis() - timeOfLastSearchResChange) + "ms ago\n" +
+					"Number of PV root changes per second - " + numOfSearchResChanges*1000/Math.max(1, origSearchTime));
 		if (searchResult.equals(new Move()) || (game.getSideToMove() == Side.WHITE ?
 				whiteTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN :
 				blackTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN) &&
 				(searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
 				Math.abs(scoreFluctuation) >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
 				origSearchTime*params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
-				(numOfSearchResChanges/Math.max(1, origSearchTime))*1000 >= params.RESULT_CHANGES_PER_SECOND_LIMIT)) {
-			if (debug)
-				debugInfo.set("Search time extension data\n" +
-						"PV root move invalid - " + searchResult.equals(new Move()) + "\n" +
-						"Score fluctuation - " + scoreFluctuation + "\n" +
-						"Score type - " + searchStats.getScoreType() + "\n" +
-						"Last PV root change " + (System.currentTimeMillis() - timeOfLastSearchResChange) + "ms ago\n" +
-						"Number of PV root changes per second - " + (numOfSearchResChanges/Math.max(1, origSearchTime))*1000);
-			return computeSearchTime(game.getSideToMove() == Side.WHITE ? whiteTime - origSearchTime : whiteTime,
-				game.getSideToMove() == Side.WHITE ? blackTime : blackTime - origSearchTime, whiteIncrement, blackIncrement, movesToGo);
+				numOfSearchResChanges*1000/Math.max(1, origSearchTime) >= params.RESULT_CHANGES_PER_SECOND_LIMIT)) {
+			return computeSearchTime(game.getSideToMove() == Side.WHITE ?  new Long(whiteTime - origSearchTime) : whiteTime,
+					game.getSideToMove() == Side.WHITE ? blackTime : new Long(blackTime - origSearchTime),
+					whiteIncrement, blackIncrement, movesToGo);
 		}
 		return 0;
 	}
@@ -357,7 +358,7 @@ public class Detroid implements Engine, Observer {
 					if (debug) debugInfo.set("Extra search time - " + extraTime);
 					if (extraTime > 0)
 						search.join(extraTime);
-				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+				} catch (Exception e) { e.printStackTrace(); if (debug) debugInfo.set(e.getMessage()); }
 			}
 			if (debug) debugInfo.set("Extra time up");
 			if (search.isAlive()) {
@@ -425,11 +426,13 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchInformation stats = (SearchInformation)o;
-		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : null;
+		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : new Move();
+		if (!searchResult.equals(newSearchRes)) {
+			timeOfLastSearchResChange = System.currentTimeMillis();
+			numOfSearchResChanges++;
+		}
 		scoreFluctuation = (short) (stats.getScore() - searchResult.value);
-		searchResult = newSearchRes != null ? newSearchRes : searchResult;
+		searchResult = !newSearchRes.equals(new Move()) ? newSearchRes : searchResult;
 		searchResult.value = stats.getScore();
-		timeOfLastSearchResChange = System.currentTimeMillis();
-		numOfSearchResChanges++;
 	}
 }
