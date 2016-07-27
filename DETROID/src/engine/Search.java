@@ -541,12 +541,10 @@ class Search extends Thread {
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
-			/*if (boundsChanged) {
-				if (this.beta > alpha)
-					alpha = this.alpha;
-				if (this.beta < beta)
-					beta = this.beta;
-			}*/
+//			if (boundsChanged) {
+//				beta = this.beta;
+//				boundsChanged = false;
+//			}
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
 				if (pos.repetitions >= 3)
@@ -720,14 +718,12 @@ class Search extends Thread {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					/*if (boundsChanged) {
-						if (this.alpha > alpha)
-							alpha = this.alpha;
-						if (this.beta < beta)
-							beta = this.beta;
-						if (depth == 0)
-							boundsChanged = false;
-					}*/
+//					if (boundsChanged) {
+//						beta = this.beta;
+//						if (alpha >= beta)
+//							break Search;
+//						boundsChanged = false;
+//					}
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -756,14 +752,12 @@ class Search extends Thread {
 						}
 						pos.unmakeMove();
 						searchedMoves++;
-						/*if (boundsChanged) {
-							if (this.alpha > alpha)
-								alpha = this.alpha;
-							if (this.beta < beta)
-								beta = this.beta;
-							if (depth == 0)
-								boundsChanged = false;
-						}*/
+//						if (boundsChanged) {
+//							beta = this.beta;
+//							if (alpha >= beta)
+//								break Search;
+//							boundsChanged = false;
+//						}
 						if (score > bestScore) {
 							bestMove = killerMove1;
 							bestScore = score;
@@ -796,14 +790,12 @@ class Search extends Thread {
 						}
 						pos.unmakeMove();
 						searchedMoves++;
-						/*if (boundsChanged) {
-							if (this.alpha > alpha)
-								alpha = this.alpha;
-							if (this.beta < beta)
-								beta = this.beta;
-							if (depth == 0)
-								boundsChanged = false;
-						}*/
+//						if (boundsChanged) {
+//							beta = this.beta;
+//							if (alpha >= beta)
+//								break Search;
+//							boundsChanged = false;
+//						}
 						if (score > bestScore) {
 							bestMove = killerMove2;
 							bestScore = score;
@@ -844,14 +836,12 @@ class Search extends Thread {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					/*if (boundsChanged) {
-						if (this.alpha > alpha)
-							alpha = this.alpha;
-						if (this.beta < beta)
-							beta = this.beta;
-						if (depth == 0)
-							boundsChanged = false;
-					}*/
+//					if (boundsChanged) {
+//						beta = this.beta;
+//						if (alpha >= beta)
+//							break Search;
+//						boundsChanged = false;
+//					}
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
@@ -927,14 +917,12 @@ class Search extends Thread {
 					}
 					pos.unmakeMove();
 					searchedMoves++;
-					/*if (boundsChanged) {
-						if (this.alpha > alpha)
-							alpha = this.alpha;
-						if (this.beta < beta)
-							beta = this.beta;
-						if (depth == 0)
-							boundsChanged = false;
-					}*/
+//					if (boundsChanged) {
+//						beta = this.beta;
+//						if (alpha >= beta)
+//							break Search;
+//						boundsChanged = false;
+//					}
 					if (score > bestScore) {
 						bestMove = move;
 						bestScore = score;
