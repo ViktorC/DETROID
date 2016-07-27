@@ -530,7 +530,7 @@ class Search extends Thread {
 			final int origAlpha = alpha;
 			final boolean isInCheck = pos.isInCheck;
 			final boolean isPvNode = beta > origAlpha + 1;
-			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, bestMoveInt, evalScore, razRed, extension;
+			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, evalScore, razRed, extension;
 			Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 			boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
 			Queue<Move> matMoves, nonMatMoves;
@@ -567,6 +567,8 @@ class Search extends Thread {
 					  if (beta <= mateScore)
 						  return mateScore;
 				}
+				// Check extension (less than a whole ply because the quiescence search handles checks).
+				depth = isInCheck && qDepth == 0 ? depth + params.CHECK_EXT : depth;
 				// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 				e = tT.lookUp(pos.key);
 				if (e != null) {
@@ -607,8 +609,6 @@ class Search extends Thread {
 					if (e.bestMove != 0 && position.isLegalSoft(hashMove = Move.toMove(e.bestMove)))
 						isThereHashMove = true;
 				}
-				// Check extension (less than a whole ply because the quiescence search handles checks).
-				depth = isInCheck && qDepth == 0 ? depth + params.CHECK_EXT : depth;
 				// Return the score from the quiescence search in case a leaf node has been reached.
 				if (depth/FULL_PLY <= 0) {
 					score = quiescence(qDepth, distFromRoot, alpha, beta);
