@@ -99,8 +99,8 @@ public final class Parameters {
 	public short SCORE_FLUCTUATION_LIMIT = 250;
 	public float FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT = 0.1f;
 	public byte RESULT_CHANGES_PER_SECOND_LIMIT = 2;
-	public byte MOVES_TO_GO_SAFETY_MARGIN = 12;
-	public float FRACTION_OF_TOTAL_TIME_TO_USE = 0.6f;
+	public byte MOVES_TO_GO_SAFETY_MARGIN = 20;
+	public float FRACTION_OF_TOTAL_TIME_TO_USE = 0.5f;
 	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
 	public short LAZY_EVAL_MAR = 187;

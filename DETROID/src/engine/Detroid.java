@@ -358,7 +358,7 @@ public class Detroid implements Engine, Observer {
 					if (debug) debugInfo.set("Extra search time - " + extraTime);
 					if (extraTime > 0)
 						search.join(extraTime);
-				} catch (Exception e) { e.printStackTrace(); if (debug) debugInfo.set(e.getMessage()); }
+				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			}
 			if (debug) debugInfo.set("Extra time up");
 			if (search.isAlive()) {

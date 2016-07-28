@@ -2,7 +2,6 @@ package engine;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -114,7 +113,7 @@ class Search extends Thread {
 		Move bestMove;
 		int i, j;
 		i = j = 0;
-		while ((e = tT.lookUp(position.key)) != null && e.bestMove != 0 && e.type == NodeType.EXACT.ind && i < ply) {
+		while ((e = tT.lookUp(position.hashKey())) != null && e.bestMove != 0 && e.type == NodeType.EXACT.ind && i < ply) {
 			bestMove = Move.toMove(e.bestMove);
 			position.makeMove(bestMove);
 			pVarr[i++] = bestMove;
@@ -232,8 +231,9 @@ class Search extends Thread {
 	 * @param bestScore
 	 * @param distFromRoot
 	 * @param depth
+	 * @return
 	 */
-	private void insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
+	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
 		int score;
 		int bestMoveInt;
 		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
@@ -246,11 +246,11 @@ class Search extends Thread {
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
 		//	Add new entry to the transposition table.
 		if (bestScore <= alpha)
-			tT.insert(new TTEntry(key, depth, NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, hashEntryGen));
+			return tT.insert(new TTEntry(key, depth, NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, hashEntryGen));
 		else if (bestScore >= beta)
-			tT.insert(new TTEntry(key, depth, NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, hashEntryGen));
+			return tT.insert(new TTEntry(key, depth, NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, hashEntryGen));
 		else
-			tT.insert(new TTEntry(key, depth, NodeType.EXACT.ind, (short)score, bestMoveInt, hashEntryGen));
+			return tT.insert(new TTEntry(key, depth, NodeType.EXACT.ind, (short)score, bestMoveInt, hashEntryGen));
 		
 	}
 	/**
@@ -374,19 +374,26 @@ class Search extends Thread {
 			if (score > bestScore) {
 				bestMove = move;
 				bestScore = score;
+				// Inser into TT.
+				insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
+				// Update stats with the new best move found if applicable.
+				if (!internal && ply > 6 && !isInterrupted() && !doStopSearch.get())
+					updateInfo(ply, origAlpha, beta, score, false);
 				if (score > alpha) {
 					alpha = score;
 					if (alpha >= beta)
 						break;
 				}
-				// Inser into TT.
-				insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/ FULL_PLY));
-				// Update stats with the new best move found if applicable.
-				if (!internal && ply > 5 && i < allMovesArr.length - 1 && !isInterrupted() && !doStopSearch.get())
-					updateInfo(ply, origAlpha, beta, bestScore, false);
 			}
 			if (isInterrupted() || doStopSearch.get())
 				break;
+		}
+		if (!internal) {
+			if (doStopSearch.get() || isInterrupted() || ply == maxDepth) {
+				updateInfo(ply, origAlpha, beta, bestScore, true);
+			}
+			else if (ply <= 6 || bestScore <= origAlpha)
+				updateInfo(ply, origAlpha, beta, bestScore, false);
 		}
 		return bestScore;
 	}
@@ -395,7 +402,6 @@ class Search extends Thread {
 	 */
 	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
-		boolean doStop = false;
 		nodes = new AtomicLong(0);
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
@@ -403,10 +409,6 @@ class Search extends Thread {
 		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
 			score = rootSearch(i, alpha, beta, false);
-			doStop = doStopSearch.get() || isInterrupted() || i == maxDepth;
-			updateInfo(i, alpha, beta, score, doStop);
-			if (doStop)
-				break;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= L_CHECK_MATE_LIMIT) {
@@ -439,6 +441,8 @@ class Search extends Thread {
 				alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
 				beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
 			}
+			if (doStopSearch.get() || isInterrupted())
+				break;
 		}
 	}
 	@Override
