@@ -49,18 +49,18 @@ public final class Parameters {
 	public byte SHIELDING_PAWN_WEIGHT3 = 10;
 	public byte SHIELD_THREATENING_PAWN_WEIGHT1 = 15;
 	public byte SHIELD_THREATENING_PAWN_WEIGHT2 = 10;
-	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT1 = 15;
-	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT2 = 10;
-	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT3 = 5;
-	public byte KING_PAWN_TROPISM_WEIGHT = 4;
+	public byte ATTACKED_KING_AREA_SQUARE_WEIGHT = 15;
+	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT = 10;
+	public byte KING_PAWN_TROPISM_WEIGHT = 2;
 	public byte PINNED_QUEEN_WEIGHT = 10;
 	public byte PINNED_ROOK_WEIGHT = 6;
 	public byte PINNED_BISHOP_WEIGHT = 4;
 	public byte PINNED_KNIGHT_WEIGHT = 4;
 	public byte COVERED_SQUARE_WEIGHT = 1;
 	public byte COVERED_FRIENDLY_OCCUPIED_SQUARE_WEIGHT = 1;
-	public byte PAWN_DEFENDED_PIECE_WEIGHT = 10;
-	public byte PIECE_KING_TROPISM_WEIGHT = 4;
+	public byte PAWN_DEFENDED_PIECE_WEIGHT = 15;
+	public byte PAWN_ATTACKED_PIECE_WEIGHT = 15;
+	public byte PIECE_KING_TROPISM_WEIGHT = 2;
 	public byte STOPPED_PAWN_WEIGHT = 10;
 	
 	// Game phase intervals.
@@ -103,7 +103,7 @@ public final class Parameters {
 	public float FRACTION_OF_TOTAL_TIME_TO_USE = 0.5f;
 	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	public short LAZY_EVAL_MAR = 187;
+	public short LAZY_EVAL_MAR = 200;
 	
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation" tables.
 	public byte[] PST_PAWN_OPENING =
