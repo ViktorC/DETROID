@@ -20,182 +20,105 @@ import java.util.Random;
 public final class Parameters {
 
 	// Piece values.
-	public short KING_VALUE = 20000;
-	public short QUEEN_VALUE = 900;
-	public short ROOK_VALUE = 500;
-	public short BISHOP_VALUE = 330;
-	public short KNIGHT_VALUE = 320;
-	public short PAWN_VALUE = 100;
+	public short KING_VALUE;
+	public short QUEEN_VALUE;
+	public short ROOK_VALUE;
+	public short BISHOP_VALUE;
+	public short KNIGHT_VALUE;
+	public short PAWN_VALUE;
 	
 	// Piece phase weights
-	public byte KING_PHASE_WEIGHT = 0;
-	public byte QUEEN_PHASE_WEIGHT = 4;
-	public byte ROOK_PHASE_WEIGHT = 2;
-	public byte BISHOP_PHASE_WEIGHT = 1;
-	public byte KNIGHT_PHASE_WEIGHT = 1;
-	public byte PAWN_PHASE_WEIGHT = 0;
+	public byte KING_PHASE_WEIGHT;
+	public byte QUEEN_PHASE_WEIGHT;
+	public byte ROOK_PHASE_WEIGHT;
+	public byte BISHOP_PHASE_WEIGHT;
+	public byte KNIGHT_PHASE_WEIGHT;
+	public byte PAWN_PHASE_WEIGHT;
 	
 	// Evaluation weights.
-	public byte DEFENDED_PAWN_WEIGHT = 20;
-	public byte BLOCKED_PAWN_WEIGHT1 = 30;
-	public byte BLOCKED_PAWN_WEIGHT2 = 15;
-	public byte BLOCKED_PAWN_WEIGHT3 = 5;
-	public byte PASSED_PAWN_WEIGHT = 40;
-	public byte ISOLATED_PAWN_WEIGHT = 10;
-	public byte BACKWARD_PAWN_WEIGHT1 = 20;
-	public byte BACKWARD_PAWN_WEIGHT2 = 10;
-	public byte SHIELDING_PAWN_WEIGHT1 = 15;
-	public byte SHIELDING_PAWN_WEIGHT2 = 5;
-	public byte SHIELDING_PAWN_WEIGHT3 = 10;
-	public byte SHIELD_THREATENING_PAWN_WEIGHT1 = 15;
-	public byte SHIELD_THREATENING_PAWN_WEIGHT2 = 10;
-	public byte ATTACKED_KING_AREA_SQUARE_WEIGHT = 15;
-	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT = 10;
-	public byte KING_PAWN_TROPISM_WEIGHT = 2;
-	public byte PINNED_QUEEN_WEIGHT = 10;
-	public byte PINNED_ROOK_WEIGHT = 6;
-	public byte PINNED_BISHOP_WEIGHT = 4;
-	public byte PINNED_KNIGHT_WEIGHT = 4;
-	public byte COVERED_SQUARE_WEIGHT = 1;
-	public byte COVERED_FRIENDLY_OCCUPIED_SQUARE_WEIGHT = 1;
-	public byte PAWN_DEFENDED_PIECE_WEIGHT = 15;
-	public byte PAWN_ATTACKED_PIECE_WEIGHT = 15;
-	public byte PIECE_KING_TROPISM_WEIGHT = 2;
-	public byte STOPPED_PAWN_WEIGHT = 10;
+	public byte DEFENDED_PAWN_WEIGHT;
+	public byte BLOCKED_PAWN_WEIGHT1;
+	public byte BLOCKED_PAWN_WEIGHT2;
+	public byte BLOCKED_PAWN_WEIGHT3;
+	public byte PASSED_PAWN_WEIGHT;
+	public byte ISOLATED_PAWN_WEIGHT;
+	public byte BACKWARD_PAWN_WEIGHT1;
+	public byte BACKWARD_PAWN_WEIGHT2;
+	public byte SHIELDING_PAWN_WEIGHT1;
+	public byte SHIELDING_PAWN_WEIGHT2;
+	public byte SHIELDING_PAWN_WEIGHT3;
+	public byte SHIELD_THREATENING_PAWN_WEIGHT1;
+	public byte SHIELD_THREATENING_PAWN_WEIGHT2;
+	public byte ATTACKED_KING_AREA_SQUARE_WEIGHT;
+	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT;
+	public byte KING_PAWN_TROPISM_WEIGHT;
+	public byte PINNED_QUEEN_WEIGHT;
+	public byte PINNED_ROOK_WEIGHT;
+	public byte PINNED_BISHOP_WEIGHT;
+	public byte PINNED_KNIGHT_WEIGHT;
+	public byte QUEEN_COVERED_SQUARE_WEIGHT;
+	public byte ROOK_COVERED_SQUARE_WEIGHT;
+	public byte BISHOP_COVERED_SQUARE_WEIGHT;
+	public byte KNIGHT_COVERED_SQUARE_WEIGHT;
+	public byte PAWN_DEFENDED_PIECE_WEIGHT;
+	public byte PAWN_ATTACKED_PIECE_WEIGHT;
+	public byte STOPPED_PAWN_WEIGHT;
+	public byte PIECE_KING_TROPISM_WEIGHT;
+	public byte KING_MOBILITY_WEIGHT;
 	
 	// Game phase intervals.
-	public short GAME_PHASE_OPENING_LOWER = 0;
-	public short GAME_PHASE_OPENING_UPPER = 22;
-	public short GAME_PHASE_MIDDLE_GAME_LOWER = 23;
-	public short GAME_PHASE_MIDDLE_GAME_UPPER = 170;
-	public short GAME_PHASE_END_GAME_LOWER = 171;
-	public short GAME_PHASE_END_GAME_UPPER = 256;
+	public short GAME_PHASE_OPENING_LOWER;
+	public short GAME_PHASE_OPENING_UPPER;
+	public short GAME_PHASE_MIDGAME_LOWER;
+	public short GAME_PHASE_MIDGAME_UPPER;
+	public short GAME_PHASE_ENDGAME_LOWER;
+	public short GAME_PHASE_ENDGAME_UPPER;
 	
 	// Search parameters.
-	public byte NMR = 2;						// Null move pruning reduction.
-	public byte LMR = 1;						// Late move reduction.
-	public byte LMRMSM = 4;						// Min. number of searched moves for late move reduction
-	public short FMAR1 = 330;					// Futility margin.
-	public short FMAR2 = 500;					// Extended futility margin.
-	public short FMAR3 = 900;					// Razoring margin.
-	public short A_DELTA = 100;					// The aspiration delta within iterative deepening.
-	public short Q_DELTA = 270;					// The margin for delta-pruning in the quiescence search.
-	public byte CHECK_EXT = 2;					// Fractional check extension.
-	public byte RECAP_EXT = 4;					// Fractional recapture extension.
-	public byte SINGLE_REPLY_EXT = 4; 			// Fractional single reply extension.
-	public byte MATE_THREAT_EXT = 8;			// Fractional mate threat extension.
-	public byte IID_MIN_ACTIVATION_DEPTH = 5;	// The minimum depth at which IID is activated.
-	public float IID_REL_DEPTH = 0.6f;			// The portion of the total depth to which the position will be searched with IID.
+	public byte NMR;						// Null move pruning reduction.
+	public byte LMR;						// Late move reduction.
+	public byte LMRMSM;						// Min. number of searched moves for late move reduction
+	public short FMAR1;						// Futility margin.
+	public short FMAR2;						// Extended futility margin.
+	public short FMAR3;						// Razoring margin.
+	public short A_DELTA;					// The aspiration delta within iterative deepening.
+	public short Q_DELTA;					// The margin for delta-pruning in the quiescence search.
+	public byte CHECK_EXT;					// Fractional check extension.
+	public byte RECAP_EXT;					// Fractional recapture extension.
+	public byte SINGLE_REPLY_EXT; 			// Fractional single reply extension.
+	public byte MATE_THREAT_EXT;			// Fractional mate threat extension.
+	public byte IID_MIN_ACTIVATION_DEPTH;	// The minimum depth at which IID is activated.
+	public float IID_REL_DEPTH;				// The portion of the total depth to which the position will be searched with IID.
 	
 	// The relative history table's value depreciation factor.
-	public byte RHT_DECREMENT_FACTOR = 4;
+	public byte RHT_DECREMENT_FACTOR;
 	
 	// The shares of the different hash tables of the total hash size.
-	public byte TT_SHARE = 16;
-	public byte ET_SHARE = 15;
-	public byte PT_SHARE = 1;
+	public byte TT_SHARE;
+	public byte ET_SHARE;
+	public byte PT_SHARE;
 	
 	// The values considered when calculating search time extensions.
-	public short SCORE_FLUCTUATION_LIMIT = 250;
-	public float FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT = 0.1f;
-	public byte RESULT_CHANGES_PER_SECOND_LIMIT = 2;
-	public byte MOVES_TO_GO_SAFETY_MARGIN = 20;
-	public float FRACTION_OF_TOTAL_TIME_TO_USE = 0.5f;
+	public short SCORE_FLUCTUATION_LIMIT;
+	public float FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT;
+	public byte RESULT_CHANGES_PER_SECOND_LIMIT;
+	public byte MOVES_TO_GO_SAFETY_MARGIN;
+	public float FRACTION_OF_TOTAL_TIME_TO_USE;
 	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	public short LAZY_EVAL_MAR = 200;
+	public short LAZY_EVAL_MAR;
 	
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation" tables.
-	public byte[] PST_PAWN_OPENING =
-		{  0,  0,  0,  0,  0,  0,  0,  0,
-		  50, 50, 50, 50, 50, 50, 50, 50,
-		  10, 20, 25, 30, 30, 25, 20, 10,
-		   5, 15, 20, 20, 20, 20, 15,  5,
-		   0, 10, 15, 15, 15, 15, 10,  0,
-		   0,  8, 10, 10, 10, 10,  8,  0,
-		   5,  5,  5,  0,  0,  5,  5,  5,
-		   0,  0,  0,  0,  0,  0,  0,  0};
-	public byte[] PST_PAWN_ENDGAME =
-		{  0,  0,  0,  0,  0,  0,  0,  0,
-		  70, 75, 80, 80, 80, 80, 75, 70,
-		  20, 30, 40, 45, 45, 40, 30, 20,
-		  10, 20, 25, 30, 30, 25, 20, 10,
-		   5, 10, 10, 15, 15, 10, 10,  5,
-		   0,  0, -5, -5, -5, -5,  0,  0,
-		  -5,-10,-10,-20,-20,-10,-10, -5,
-		   0,  0,  0,  0,  0,  0,  0,  0};
-	public byte[] PST_KNIGHT_OPENING =
-		{-15,-10, -5, -5, -5, -5,-10,-15,
-		 -10,-10,  0,  0,  0,  0,-10,-10,
-		  -5,  0,  5, 10, 10,  5,  0, -5,
-		  -5,  0, 10, 15, 15, 10,  0, -5,
-		  -5,  0, 10, 15, 15, 10,  0, -5,
-		  -5,  0,  5, 10, 10,  5,  0, -5,
-		 -10, -5,  0,  0,  0,  0, -5,-10,
-		 -15,-10, -5, -5, -5, -5,-10,-15};
-	public byte[] PST_KNIGHT_ENDGAME =
-		{-50,-40,-30,-30,-30,-30,-40,-50,
-		 -40,-20, -5,  0,  0, -5,-20,-40,
-		 -30,  0,  0,  0,  0,  0, -5,-30,
-		 -30,  0,  5,  5,  5,  5,  0,-30,
-		 -30, -5,  5,  5,  5,  5, -5,-30,
-		 -30,  0,  0,  0,  0,  0,  0,-30,
-		 -40,-20, -5,  0,  0, -5,-20,-40,
-		 -50,-40,-30,-30,-30,-30,-40,-50};
-	public byte[] PST_BISHOP =
-		{-20,-10,-10,-10,-10,-10,-10,-20,
-		 -10,  0,  0,  0,  0,  0,  0,-10,
-		 -10,  0,  5, 10, 10,  5,  0,-10,
-		 -10,  5,  5, 15, 15,  5,  5,-10,
-		 -10,  0, 10, 15, 15, 10,  0,-10,
-		 -10, 10, 10, 10, 10, 10, 10,-10,
-		 -10,  5,  0,  0,  0,  0,  5,-10,
-		 -20,-10,-10,-10,-10,-10,-10,-20};
-	public byte[] PST_ROOK_OPENING =
-		{  0,  0,  0,  0,  0,  0,  0,  0,
-		   5, 10, 10, 10, 10, 10, 10,  5,
-		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  -5, -5, -5, -5, -5, -5, -5, -5,
-		  10, -5,  0, 20,  5, 20, -5, 10};
-	public byte[] PST_ROOK_ENDGAME =
-		{  0,  0,  0,  0,  0,  0,  0,  0,
-		   5, 10, 10, 10, 10, 10, 10,  5,
-		  -5,  0,  0,  0,  0,  0,  0, -5,
-		  -5,  0,  0,  0,  0,  0,  0, -5,
-		  -5,  0,  0,  0,  0,  0,  0, -5,
-		  -5,  0,  0,  0,  0,  0,  0, -5,
-		  -5,  0,  0,  0,  0,  0,  0, -5,
-		   0,  0,  5,  5,  5,  5,  0,  0};
-	public byte[] PST_QUEEN =
-		{-20,-10,-10, -5, -5,-10,-10,-20,
-		 -10,  0,  0,  0,  0,  0,  0,-10,
-		 -10,  0,  5,  5,  5,  5,  0,-10,
-		  -5,  0,  5,  5,  5,  5,  0, -5,
-		   0,  0,  5,  5,  5,  5,  0, -5,
-		 -10,  0,  5,  5,  5,  5,  0,-10,
-		 -10,  0,  0,  0,  0,  0,  0,-10,
-		 -20,-10,-10, -5, -5,-10,-10,-20};
-	public byte[] PST_KING_OPENING =
-		{-30,-40,-40,-50,-50,-40,-40,-30,
-		 -30,-40,-40,-50,-50,-40,-40,-30,
-		 -30,-40,-40,-50,-50,-40,-40,-30,
-		 -30,-40,-40,-50,-50,-40,-40,-30,
-		 -20,-30,-30,-40,-40,-30,-30,-20,
-		 -10,-20,-20,-20,-20,-20,-20,-10,
-		  10, 10,-10,-10,-10,-10, 10, 10,
-		  20, 30, 30,-20,  0,-20, 40, 30};
-	public byte[] PST_KING_ENDGAME =
-		{-50,-40,-30,-20,-20,-30,-40,-50,
-		 -30,-20,-10,  0,  0,-10,-20,-30,
-		 -30,-10, 20, 30, 30, 20,-10,-30,
-		 -30,-10, 30, 40, 40, 30,-10,-30,
-		 -30,-10, 30, 40, 40, 30,-10,-30,
-		 -30,-10, 20, 30, 30, 20,-10,-30,
-		 -30,-30,  0,  0,  0,  0,-30,-30,
-		 -50,-30,-30,-30,-30,-30,-30,-50};
+	public byte[] PST_PAWN_OPENING;
+	public byte[] PST_PAWN_ENDGAME;
+	public byte[] PST_KNIGHT_OPENING;
+	public byte[] PST_KNIGHT_ENDGAME;
+	public byte[] PST_BISHOP;
+	public byte[] PST_ROOK_OPENING;
+	public byte[] PST_ROOK_ENDGAME;
+	public byte[] PST_QUEEN;
+	public byte[] PST_KING_OPENING;
+	public byte[] PST_KING_ENDGAME;
 	
 	private long id;
 	

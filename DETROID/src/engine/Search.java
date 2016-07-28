@@ -82,7 +82,7 @@ class Search extends Thread {
 		this.stats = stats;
 		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
 		this.position = position.deepCopy();
-		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_END_GAME_LOWER;
+		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_ENDGAME_LOWER;
 		this.ponder = ponder;
 		if (!ponder) {
 			this.maxDepth = Math.min(MAX_NOMINAL_SEARCH_DEPTH, maxDepth);
