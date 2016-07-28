@@ -427,6 +427,7 @@ public class Detroid implements Engine, Observer {
 	public void update(Observable o, Object arg) {
 		SearchInformation stats = (SearchInformation)o;
 		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : new Move();
+		newSearchRes = newSearchRes == null ? new Move() : newSearchRes;
 		if (!searchResult.equals(newSearchRes)) {
 			timeOfLastSearchResChange = System.currentTimeMillis();
 			numOfSearchResChanges++;

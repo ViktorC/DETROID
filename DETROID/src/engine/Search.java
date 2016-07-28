@@ -37,7 +37,6 @@ class Search extends Thread {
 	private final int L_CHECK_MATE_LIMIT;
 	private final int W_CHECK_MATE_LIMIT;
 	
-	private ForkJoinPool threadPool;
 	private Parameters params;
 	private Position position;
 	private Long startTime;
@@ -267,7 +266,7 @@ class Search extends Thread {
 		final int origAlpha = alpha;
 		int depth, score, bestScore, tacticalMovesBreakInd, extension, numOfMoves;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean lastMoveIsMaterial, doStop;
+		boolean lastMoveIsMaterial;
 		List<Move> tacticalMoves, quietMoves;
 		Set<Move> allMoves;
 		Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
@@ -358,17 +357,17 @@ class Search extends Thread {
 		for (int i = 0; i < allMovesArr.length; i++) {
 			move = allMovesArr[i];
 			// Recapture extension.
-			extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ?
+			extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
 				params.RECAP_EXT : 0;
 			position.makeMove(move);
 			// Full window search for the first move...
 			if (i == 0)
-				score = -threadPool.invoke(new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0));
+				score = -new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
 			// PVS for the rest.
 			else {
-				score = -threadPool.invoke(new SearchThread(position, ply, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0));
+				score = -new SearchThread(position, ply, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0).compute();
 				if (score > alpha && score < beta)
-					score = -threadPool.invoke(new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0));
+					score = -new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
 			}
 			position.unmakeMove();
 			// Score check.
@@ -445,9 +444,7 @@ class Search extends Thread {
 	@Override
 	public void run() {
 		startTime = System.currentTimeMillis();
-		threadPool = new ForkJoinPool();
 		iterativeDeepening();
-		threadPool.shutdown();
 		startTime = null;
 	}
 	
