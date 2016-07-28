@@ -381,7 +381,7 @@ class Search extends Thread {
 					// Insert into TT.
 					insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, score, (short) 0, (short) (depth/FULL_PLY));
 					// Update stats with the new best move found if applicable.
-					if (!internal && ply > 5 && !isInterrupted() && !doStopSearch.get())
+					if (!internal && ply > 5 && !isInterrupted() || !doStopSearch.get())
 						updateInfo(ply, origAlpha, beta, score, false);
 				}
 			}
@@ -391,13 +391,8 @@ class Search extends Thread {
 		// Insert into TT.
 		insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
 		// Update stats.
-		if (!internal) {
-			if (doStopSearch.get() || isInterrupted() || ply == maxDepth) {
-				updateInfo(ply, origAlpha, beta, bestScore, true);
-			}
-			else if (ply <= 5 || bestScore <= origAlpha || bestScore >= beta)
-				updateInfo(ply, origAlpha, beta, bestScore, false);
-		}
+		if (!internal && doStopSearch.get() || isInterrupted() || ply == maxDepth || ply <= 5 || bestScore <= origAlpha || bestScore >= beta)
+			updateInfo(ply, origAlpha, beta, bestScore, doStopSearch.get() || isInterrupted() || ply == maxDepth);
 		return bestScore;
 	}
 	/**
