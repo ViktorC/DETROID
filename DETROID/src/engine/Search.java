@@ -113,7 +113,7 @@ class Search extends Thread {
 		Move bestMove;
 		int i, j;
 		i = j = 0;
-		while ((e = tT.lookUp(position.hashKey())) != null && e.bestMove != 0 && e.type == NodeType.EXACT.ind && i < ply) {
+		while ((e = tT.lookUp(position.hashKey())) != null && e.bestMove != 0 && i < ply) {
 			bestMove = Move.toMove(e.bestMove);
 			position.makeMove(bestMove);
 			pVarr[i++] = bestMove;
@@ -362,37 +362,40 @@ class Search extends Thread {
 			position.makeMove(move);
 			// Full window search for the first move...
 			if (i == 0)
-				score = -new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
+				score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
 			// PVS for the rest.
 			else {
-				score = -new SearchThread(position, ply, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0).compute();
+				score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0).compute();
 				if (score > alpha && score < beta)
-					score = -new SearchThread(position, ply, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
+					score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
 			}
 			position.unmakeMove();
 			// Score check.
 			if (score > bestScore) {
 				bestMove = move;
 				bestScore = score;
-				// Inser into TT.
-				insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
-				// Update stats with the new best move found if applicable.
-				if (!internal && ply > 6 && !isInterrupted() && !doStopSearch.get())
-					updateInfo(ply, origAlpha, beta, score, false);
 				if (score > alpha) {
 					alpha = score;
 					if (alpha >= beta)
 						break;
+					// Insert into TT.
+					insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, score, (short) 0, (short) (depth/FULL_PLY));
+					// Update stats with the new best move found if applicable.
+					if (!internal && ply > 5 && !isInterrupted() && !doStopSearch.get())
+						updateInfo(ply, origAlpha, beta, score, false);
 				}
 			}
 			if (isInterrupted() || doStopSearch.get())
 				break;
 		}
+		// Insert into TT.
+		insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
+		// Update stats.
 		if (!internal) {
 			if (doStopSearch.get() || isInterrupted() || ply == maxDepth) {
 				updateInfo(ply, origAlpha, beta, bestScore, true);
 			}
-			else if (ply <= 6 || bestScore <= origAlpha)
+			else if (ply <= 5 || bestScore <= origAlpha || bestScore >= beta)
 				updateInfo(ply, origAlpha, beta, bestScore, false);
 		}
 		return bestScore;
