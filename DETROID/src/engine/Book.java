@@ -69,7 +69,8 @@ class Book implements Closeable {
 	 */
 	public Book(String filePath) throws IOException {
 		gen = ZobristKeyGenerator.getInstance();
-		bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
+		if (!setMainBookPath(filePath))
+			throw new IOException();
 	}
 	/**
 	 * It instantiatesa Book object on the default opening book; if the default book file cannot be accessed, an IOException is thrown.

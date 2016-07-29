@@ -26,8 +26,6 @@ public class Detroid implements Engine, Observer {
 	private Option<?> hashSize;
 	private Option<?> ponder;
 	private Option<?> ownBook;
-	private Option<?> bookPath;
-	private Option<?> useOwnBookAsSecondary;
 	private Option<?> uciOpponent;
 	private HashMap<Option<?>, Object> options;
 	
@@ -37,6 +35,7 @@ public class Detroid implements Engine, Observer {
 	private DebugInformation debugInfo;
 	private boolean debug;
 	private Book book;
+	private boolean outOfBook;
 	private Thread search;
 	private boolean ponderHit;
 	private SearchInformation searchStats;
@@ -121,18 +120,15 @@ public class Detroid implements Engine, Observer {
 			book = new Book();
 			if (debug) debugInfo.set("Book successfully initialized");
 		} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
+		outOfBook = false;
 		options = new HashMap<>();
 		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
-		bookPath = new Option.StringOption("BookPath", Book.DEFAULT_BOOK_FILE_PATH);
-		useOwnBookAsSecondary = new Option.CheckOption("UseOwnBookAsSecondary", false);
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
 		options.put(hashSize, hashSize.getDefaultValue());
 		options.put(ponder, ponder.getDefaultValue());
 		options.put(ownBook, ownBook.getDefaultValue());
-		options.put(bookPath, bookPath.getDefaultValue());
-		options.put(useOwnBookAsSecondary, useOwnBookAsSecondary.getDefaultValue());
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
 		if (debug) debugInfo.set("Options successfully set up");
 		searchStats = new SearchInformation();
@@ -182,28 +178,6 @@ public class Detroid implements Engine, Observer {
 				return true;
 			}
 		}
-		else if (bookPath.equals(setting)) {
-			if (book.setMainBookPath((String)value)) {
-				options.put(bookPath, value);
-				if (debug) debugInfo.set("Book path successfully set to " + value);
-				return true;
-			}
-		}
-		else if (useOwnBookAsSecondary.equals(setting)) {
-			if ((Boolean)value == true) {
-				if (book.setSecondaryBookPath(Book.DEFAULT_BOOK_FILE_PATH)) {
-					options.put(useOwnBookAsSecondary, value);
-					if (debug) debugInfo.set("Use of own book as secondary book successfully set to " + value);
-					return true;
-				}
-			}
-			else {
-				book.setSecondaryBookPath(null);
-				options.put(useOwnBookAsSecondary, value);
-				if (debug) debugInfo.set("Secondary book path successfully set to " + value);
-				return true;
-			}
-		}
 		else if (uciOpponent.equals(setting)) {
 			options.put(uciOpponent, value);
 			if (debug) debugInfo.set("Opponent name successfully set to " + value);
@@ -215,6 +189,7 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public synchronized void newGame() {
 		newGame = true;
+		outOfBook = false;
 		tT.clear();
 		eT.clear();
 		pT.clear();
@@ -276,7 +251,7 @@ public class Detroid implements Engine, Observer {
 		Set<Move> moves;
 		String[] pV;
 		String bestMove, ponderMove;
-		long time, extraTime;
+		long time, extraTime, bookSearchStart;
 		boolean doPonder = ponder != null && ponder.booleanValue();
 		searchResult = new Move();
 		scoreFluctuation = 0;
@@ -296,10 +271,11 @@ public class Detroid implements Engine, Observer {
 					"Black - " + game.getBlackPlayerName());
 			newGame = false;
 		}
-		if ((Boolean)options.get(ownBook)) {
+		if ((Boolean)options.get(ownBook) && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
+				mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
+			bookSearchStart = System.currentTimeMillis();
 			search = new Thread(() -> {
 				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
-				searchResult = searchResult == null ? new Move() : searchResult;
 			});
 			search.start();
 			if (debug) debugInfo.set("Book search started");
@@ -307,6 +283,13 @@ public class Detroid implements Engine, Observer {
 				search.join();
 			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			if (debug) debugInfo.set("Book search done");
+			if (searchResult == null) {
+				if (debug) debugInfo.set("No book move found. Out of book.");
+				outOfBook = true;
+				search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? whiteTime - (System.currentTimeMillis() - bookSearchStart) : whiteTime,
+				game.getSideToMove() == Side.WHITE ? blackTime : blackTime - (System.currentTimeMillis() - bookSearchStart), whiteIncrement,
+				blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
+			}
 		}
 		else {
 			if (doPonder) {
@@ -401,7 +384,8 @@ public class Detroid implements Engine, Observer {
 		long load, capacity;
 		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
 		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
-		if (debug) debugInfo.set("Total hash size in MB - " + (tT.sizeInBytes() + eT.sizeInBytes() + pT.sizeInBytes())/(2L << 20));
+		if (debug) debugInfo.set("Total hash size in MB - " +
+				String.format("%.2f", (float)((double)(tT.sizeInBytes() + eT.sizeInBytes() + pT.sizeInBytes()))/(2L << 20)));
 		return (short) (1000*load/capacity);
 	}
 	@Override

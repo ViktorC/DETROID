@@ -2,7 +2,7 @@ package engine;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -265,13 +265,12 @@ class Search extends Thread {
 		final int origAlpha = alpha;
 		int depth, score, bestScore, tacticalMovesBreakInd, extension, numOfMoves;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean lastMoveIsMaterial, newPv;
+		boolean lastMoveIsMaterial;
 		List<Move> tacticalMoves, quietMoves;
 		Set<Move> allMoves;
 		Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
-		newPv = false;
 		bestScore = Integer.MIN_VALUE;
 		bestMove = null;
 		hashMove = killerMove1 = killerMove2 = null;
@@ -351,12 +350,12 @@ class Search extends Thread {
 			position.makeMove(move);
 			// Full window search for the first move...
 			if (i == 0)
-				score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
+				score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -beta, -alpha, true, 0).call();
 			// PVS for the rest.
 			else {
-				score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0).compute();
+				score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -alpha - 1, -alpha, true, 0).call();
 				if (score > alpha && score < beta)
-					score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -beta, -alpha, true, 0).compute();
+					score = -new SearchThread(position, 1, depth - FULL_PLY + extension, -beta, -alpha, true, 0).call();
 			}
 			position.unmakeMove();
 			// Score check.
@@ -365,20 +364,22 @@ class Search extends Thread {
 				bestScore = score;
 				if (score > alpha) {
 					alpha = score;
-					// Insert into TT.
-					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY))) {
-						newPv = true;
-						// Update stats.
+					if (score >= beta)
+						break;
+					// Insert into TT and update stats if applicable.
+					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY)) ||
+							(hashMove != null && i == 0))
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
-					}
 				}
 			}
 			if (isInterrupted() || doStopSearch.get())
 				break;
 		}
-		// If there was no new PV line found (due to the aspiration windows), update the stats with the hashed one cut to the correct depth
-		if (!newPv)
+		// If the searched failed due to the asp. windows, try inserting the best move into the TT and update the stats with a bound
+		if (bestScore <= origAlpha || bestScore >= beta) {
+			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
 			updateInfo(null, 0, ply, origAlpha, beta, e.score);
+		}
 		return bestScore;
 	}
 	/**
@@ -442,7 +443,7 @@ class Search extends Thread {
 	 * @author Viktor
 	 *
 	 */
-	private class SearchThread extends RecursiveTask<Integer> {
+	private class SearchThread implements Callable<Integer> {
 		
 		private static final long serialVersionUID = 6351992983920986212L;
 		
@@ -468,7 +469,7 @@ class Search extends Thread {
 			doStopThread = false;
 		}
 		@Override
-		protected Integer compute() {
+		public Integer call() {
 			return pVsearch(depth, distFromRoot, alpha, beta, nullMoveAllowed, qDepth);
 		}
 		/**
