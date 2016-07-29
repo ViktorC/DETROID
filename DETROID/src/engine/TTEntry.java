@@ -57,7 +57,7 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 	 */
 	@Override
 	public int compareTo(TTEntry e) {
-		if (generation < e.generation)
+		if (generation < e.generation || depth < e.depth)
 			return -1;
 		if (type == e.type) {
 			// To increase the chances of the score being greater than any beta and thus produce more frequent ready-to-return hash hits...

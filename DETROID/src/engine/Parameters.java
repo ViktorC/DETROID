@@ -102,7 +102,7 @@ public final class Parameters {
 	// The values considered when calculating search time extensions.
 	public short SCORE_FLUCTUATION_LIMIT;
 	public float FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT;
-	public byte RESULT_CHANGES_PER_SECOND_LIMIT;
+	public byte RESULT_CHANGES_PER_DEPTH_LIMIT;
 	public byte MOVES_TO_GO_SAFETY_MARGIN;
 	public float FRACTION_OF_TOTAL_TIME_TO_USE;
 	

@@ -91,14 +91,14 @@ public class Detroid implements Engine, Observer {
 					"Score fluctuation - " + Math.abs(scoreFluctuation) + "\n" +
 					"Score type - " + searchStats.getScoreType() + "\n" +
 					"Last PV root change " + (System.currentTimeMillis() - timeOfLastSearchResChange) + "ms ago\n" +
-					"Number of PV root changes per second - " + numOfSearchResChanges*1000/Math.max(1, origSearchTime));
+					"Number of PV root changes per depth - " + numOfSearchResChanges/searchStats.getDepth());
 		if (searchResult.equals(new Move()) || (game.getSideToMove() == Side.WHITE ?
 				whiteTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN :
 				blackTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN) &&
 				(searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
 				Math.abs(scoreFluctuation) >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
 				origSearchTime*params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT ||
-				numOfSearchResChanges*1000/Math.max(1, origSearchTime) >= params.RESULT_CHANGES_PER_SECOND_LIMIT)) {
+				numOfSearchResChanges/searchStats.getDepth() >= params.RESULT_CHANGES_PER_DEPTH_LIMIT)) {
 			return computeSearchTime(game.getSideToMove() == Side.WHITE ?  new Long(whiteTime - origSearchTime) : whiteTime,
 					game.getSideToMove() == Side.WHITE ? blackTime : new Long(blackTime - origSearchTime),
 					whiteIncrement, blackIncrement, movesToGo);

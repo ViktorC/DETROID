@@ -259,19 +259,19 @@ class Search extends Thread {
 	 * @param ply
 	 * @param alpha
 	 * @param beta
-	 * @param internal
 	 * @return
 	 */
-	private int rootSearch(short ply, int alpha, int beta, boolean internal) {
+	private int rootSearch(short ply, int alpha, int beta) {
 		final int origAlpha = alpha;
 		int depth, score, bestScore, tacticalMovesBreakInd, extension, numOfMoves;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean lastMoveIsMaterial;
+		boolean lastMoveIsMaterial, newPv;
 		List<Move> tacticalMoves, quietMoves;
 		Set<Move> allMoves;
 		Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
+		newPv = false;
 		bestScore = Integer.MIN_VALUE;
 		bestMove = null;
 		hashMove = killerMove1 = killerMove2 = null;
@@ -302,17 +302,6 @@ class Search extends Thread {
 			if (e.bestMove != 0) {
 				hashMove = Move.toMove(e.bestMove);
 				hashMove = position.isLegalSoft(hashMove) ? hashMove : null;
-			}
-		}
-		// Internal iterative deepening if no hash move was found.
-		if (hashMove == null && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
-			for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
-				rootSearch(i, alpha, beta, true);
-			e = tT.lookUp(position.hashKey());
-			if (e != null && e.bestMove != 0) {
-				hashMove = Move.toMove(e.bestMove);
-				hashMove = position.isLegalSoft(hashMove) && (!areMovesRestricted || allowedRootMoves.contains(hashMove)) ?
-					hashMove : null;
 			}
 		}
 		// Killer moves look-up.
@@ -377,15 +366,19 @@ class Search extends Thread {
 				if (score > alpha) {
 					alpha = score;
 					// Insert into TT.
-					insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
-					// Update stats.
-					if (!internal)
+					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY))) {
+						newPv = true;
+						// Update stats.
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
+					}
 				}
 			}
 			if (isInterrupted() || doStopSearch.get())
 				break;
 		}
+		// If there was no new PV line found (due to the aspiration windows), update the stats with the hashed one cut to the correct depth
+		if (!newPv)
+			updateInfo(null, 0, ply, origAlpha, beta, e.score);
 		return bestScore;
 	}
 	/**
@@ -399,7 +392,7 @@ class Search extends Thread {
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
-			score = rootSearch(i, alpha, beta, false);
+			score = rootSearch(i, alpha, beta);
 			if (doStopSearch.get() || isInterrupted())
 				break;
 			// Aspiration windows with gradual widening.
@@ -415,7 +408,6 @@ class Search extends Thread {
 						failLow == 1 ? Math.max(score - 4*params.A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
 					failLow++;
 				}
-				i--;
 			}
 			else if (score >= beta) {
 				if (score >= W_CHECK_MATE_LIMIT) {
@@ -429,7 +421,6 @@ class Search extends Thread {
 						failHigh == 1 ? Math.min(score + 4*params.A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 					failHigh++;
 				}
-				i--;
 			}
 			else {
 				failHigh = failLow = 0;
