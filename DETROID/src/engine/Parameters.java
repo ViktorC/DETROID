@@ -2,9 +2,10 @@ package engine;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Random;
@@ -122,7 +123,7 @@ public final class Parameters {
 	
 	private long id;
 	
-	public final static String DEFAULT_PARAMTERS_FILE_PATH = "params.txt";
+	public final static String DEFAULT_PARAMTERS_FILE_PATH = "resources/params.txt";
 	
 	@SuppressWarnings("unused")
 	private Parameters(boolean noIo) { }
@@ -146,7 +147,7 @@ public final class Parameters {
 		Class<? extends Parameters> clazz = this.getClass();
 		Field field;
 		int indexOfClosingNameTag;
-		try (BufferedReader reader = new BufferedReader(new FileReader(filePath));) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(filePath)));) {
 			while ((line = reader.readLine()) != null) {
 				indexOfClosingNameTag = line.indexOf(']');
 				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
@@ -170,6 +171,15 @@ public final class Parameters {
 						break;
 					case "Integer":
 						field.set(this, Integer.parseInt(value));
+						break;
+					case "Long":
+						field.set(this, Long.parseLong(value));
+						break;
+					case "Float":
+						field.set(this, Float.parseFloat(value));
+						break;
+					case "Double":
+						field.set(this, Double.parseDouble(value));
 					}
 				}
 			}

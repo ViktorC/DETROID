@@ -191,7 +191,7 @@ class Search extends Thread {
 	 * @param score
 	 * @param isFinal
 	 */
-	private void updateInfo(short ply, int alpha, int beta, int score, boolean isFinal) {
+	private void updateInfo(Move currentMove, int moveNumber, short ply, int alpha, int beta, int score) {
 		int resultScore;
 		ScoreType scoreType;
 		// Determine score type and value in case it's a mate score.
@@ -218,8 +218,8 @@ class Search extends Thread {
 			}
 		}
 		// Update stats.
-		stats.set(extractPv(ply), ply, (short)resultScore, scoreType, nodes.get(),
-				  System.currentTimeMillis() - startTime, isFinal);
+		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short)resultScore, scoreType, nodes.get(),
+				  System.currentTimeMillis() - startTime);
 	}
 	/**
 	 * Inserts a node into the transposition table according to the specified parameters.
@@ -287,12 +287,12 @@ class Search extends Thread {
 		// Mate check.
 		if (numOfMoves == 0)
 			return position.isInCheck ? Termination.CHECK_MATE.score : Termination.STALE_MATE.score;
-		// One reply extension.
-		else if (numOfMoves == 1)
-			depth += params.SINGLE_REPLY_EXT;
 		// Check for the 50 move rule.
 		if (position.fiftyMoveRuleClock >= 100)
 			return Termination.DRAW_CLAIMED.score;
+		// One reply extension.
+		else if (numOfMoves == 1)
+			depth += params.SINGLE_REPLY_EXT;
 		// Check extension.
 		depth = position.isInCheck ? depth + params.CHECK_EXT : depth;
 		// Hash look-up.
@@ -306,7 +306,7 @@ class Search extends Thread {
 		}
 		// Internal iterative deepening if no hash move was found.
 		if (hashMove == null && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
-			for (short i = 1; i < depth/FULL_PLY*params.IID_REL_DEPTH; i++)
+			for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
 				rootSearch(i, alpha, beta, true);
 			e = tT.lookUp(position.hashKey());
 			if (e != null && e.bestMove != 0) {
@@ -376,23 +376,16 @@ class Search extends Thread {
 				bestScore = score;
 				if (score > alpha) {
 					alpha = score;
-					if (alpha >= beta)
-						break;
 					// Insert into TT.
-					insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, score, (short) 0, (short) (depth/FULL_PLY));
-					// Update stats with the new best move found if applicable.
-					if (!internal && ply > 5 && !isInterrupted() || !doStopSearch.get())
-						updateInfo(ply, origAlpha, beta, score, false);
+					insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
+					// Update stats.
+					if (!internal)
+						updateInfo(move, i + 1, ply, origAlpha, beta, score);
 				}
 			}
 			if (isInterrupted() || doStopSearch.get())
 				break;
 		}
-		// Insert into TT.
-		insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
-		// Update stats.
-		if (!internal && doStopSearch.get() || isInterrupted() || ply == maxDepth || ply <= 5 || bestScore <= origAlpha || bestScore >= beta)
-			updateInfo(ply, origAlpha, beta, bestScore, doStopSearch.get() || isInterrupted() || ply == maxDepth);
 		return bestScore;
 	}
 	/**
@@ -407,6 +400,8 @@ class Search extends Thread {
 		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
 			score = rootSearch(i, alpha, beta, false);
+			if (doStopSearch.get() || isInterrupted())
+				break;
 			// Aspiration windows with gradual widening.
 			if (score <= alpha) {
 				if (score <= L_CHECK_MATE_LIMIT) {
@@ -420,6 +415,7 @@ class Search extends Thread {
 						failLow == 1 ? Math.max(score - 4*params.A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
 					failLow++;
 				}
+				i--;
 			}
 			else if (score >= beta) {
 				if (score >= W_CHECK_MATE_LIMIT) {
@@ -433,14 +429,13 @@ class Search extends Thread {
 						failHigh == 1 ? Math.min(score + 4*params.A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 					failHigh++;
 				}
+				i--;
 			}
 			else {
 				failHigh = failLow = 0;
 				alpha = score >= W_CHECK_MATE_LIMIT ? alpha : Math.max(score - params.A_DELTA, Termination.CHECK_MATE.score);
 				beta = score <= L_CHECK_MATE_LIMIT ? beta : Math.min(score + params.A_DELTA, -Termination.CHECK_MATE.score);
 			}
-			if (doStopSearch.get() || isInterrupted())
-				break;
 		}
 	}
 	@Override
@@ -574,15 +569,8 @@ class Search extends Thread {
 								 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
 								 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
 								 */
-								(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
-							if (score >= beta && e.bestMove != 0 && !(bestMove = Move.toMove(e.bestMove)).isMaterial()) {
-								// Only if not in the quiescence search's check extension.
-								if (qDepth == 0)
-									kT.add(distFromRoot, bestMove);
-							}
+								(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha))
 							return score;
-						}
-						
 					}
 					// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
 					if (e.bestMove != 0 && position.isLegalSoft(hashMove = Move.toMove(e.bestMove)))
@@ -601,7 +589,7 @@ class Search extends Thread {
 				}
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
 				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
-					for (short i = 1; i < depth/FULL_PLY*params.IID_REL_DEPTH; i++) {
+					for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++) {
 						pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true, qDepth);
 					}
 					e = tT.lookUp(pos.key);
@@ -627,11 +615,9 @@ class Search extends Thread {
 						if (score > alpha) {
 							alpha = score;
 							if (alpha >= beta) {
-								if (!hashMove.isMaterial()) {
-									if (qDepth == 0) {
-										kT.add(distFromRoot, hashMove);	// Add to killer moves.
-										hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
-									}
+								if (!hashMove.isMaterial() && qDepth == 0) {
+									kT.add(distFromRoot, hashMove);	// Add to killer moves.
+									hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
 								}
 								break Search;
 							}
@@ -977,7 +963,7 @@ class Search extends Thread {
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
 			// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
-			if (isInCheck) {
+			if (isInCheck && qDepth >= 1) {
 				// If the side to move is in check, stand-pat does not hold and it's not enough to just search the material moves.
 				nodes.decrementAndGet();
 				return pVsearch(FULL_PLY, distFromRoot, alpha, beta, false, depth - 1);
@@ -993,6 +979,7 @@ class Search extends Thread {
 				// Check for the fifty-move rule; return a draw score if it applies.
 				if (pos.fiftyMoveRuleClock >= 100)
 					return Termination.DRAW_CLAIMED.score;
+				// The position is quiet, evaluate it statically.
 				if (materialMoves.size() == 0)
 					return eval.score(pos, alpha, beta);
 				else {

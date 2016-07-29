@@ -13,13 +13,14 @@ import util.List;
 public class SearchInformation extends SearchInfo {
 	
 	private List<Move> pVline;		// Principal variation.
+	private Move currentMove;		// The root move currently being searched.
+	private int currentMoveNumber;	// The ordinal of the move currently being searched in the root position's move list.
 	private short nominalDepth;		// The depth to which the PV has been searched.
 	private short score;			// The result score of the search.
 	private ScoreType scoreType;	// Whether it is a mate score, in which case the score denotes the mate distance,
 									// an exact score or a lower/upper bound.
 	private long nodes;				// The number of nodes searched.
 	private long time;				// Time spent on the search.
-	private boolean isFinal;		// Whether it is the final result of the search.
 	
 	SearchInformation() {
 		
@@ -43,6 +44,20 @@ public class SearchInformation extends SearchInfo {
 			arr[i++] = m.toString();
 		}
 		return arr;
+	}
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getPv()
+	 */
+	@Override
+	public String getCurrentMove() {
+		return currentMove == null ? null : currentMove.toString();
+	}
+	/* (non-Javadoc)
+	 * @see chess.SearchInfo#getPv()
+	 */
+	@Override
+	public int getCurrentMoveNumber() {
+		return currentMoveNumber;
 	}
 	/* (non-Javadoc)
 	 * @see chess.SearchInfo#getNominalDepth()
@@ -79,21 +94,16 @@ public class SearchInformation extends SearchInfo {
 	public long getTime() {
 		return time;
 	}
-	/* (non-Javadoc)
-	 * @see chess.SearchInfo#isFinal()
-	 */
-	@Override
-	public boolean isFinal() {
-		return isFinal;
-	}
-	void set(List<Move> PVline, short nominalDepth, short score, ScoreType scoreType, long nodes, long time, boolean isFinal) {
+	void set(List<Move> PVline, Move currentMove, int currentMoveNumber, short nominalDepth,
+			short score, ScoreType scoreType, long nodes, long time) {
 		this.pVline = PVline;
+		this.currentMove = currentMove;
+		this.currentMoveNumber = currentMoveNumber;
 		this.nominalDepth = nominalDepth;
 		this.score = score;
 		this.scoreType = scoreType;
 		this.nodes = nodes;
 		this.time = time;
-		this.isFinal = isFinal;
 		setChanged();
 		notifyObservers();
 	}

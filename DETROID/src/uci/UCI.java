@@ -43,14 +43,14 @@ public final class UCI implements Observer, Closeable {
 		String header;
 		String option;
 		this.engine = engine;
+		while (!in.nextLine().trim().equals("uci"));
 		this.engine.init();
 		this.engine.getSearchInfo().addObserver(this);
 		this.engine.getDebugInfo().addObserver(this);
-		while (!in.nextLine().trim().equals("uci"));
 		out.println("id name " + this.engine.getName());
 		out.println("id author " + this.engine.getAuthor());
 		for (Option<?> o : engine.getOptions()) {
-			option = "option " + o.getName() + " type ";
+			option = "option name " + o.getName() + " type ";
 			if (o instanceof Option.CheckOption)
 				option += "check default " + (boolean)o.getDefaultValue();
 			else if (o instanceof Option.SpinOption)
@@ -218,17 +218,12 @@ public final class UCI implements Observer, Closeable {
 		if (p1 instanceof SearchInfo) {
 			SearchInfo stats = (SearchInfo)p1;
 			String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
+			info += "currmove " + stats.getCurrentMove() + " currmovenumber " + stats.getCurrentMoveNumber() + " ";
 			String[] pV = stats.getPv();
-			boolean first;
 			if (pV != null && pV.length > 0) {
-				first = true;
-				for (String s : pV) {
-					if (first) {
-						info += "currmove " + s + " pv ";
-						first = false;
-					}
+				info += "pv ";
+				for (String s : pV)
 					info += s + " ";
-				}
 			}
 			info += "score ";
 			switch (stats.getScoreType()) {

@@ -52,7 +52,7 @@ class Book implements Closeable {
 	 * An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w. Located in the root folder of the project by the name
 	 * "default.bin".
 	 */
-	public final static String DEFAULT_BOOK_FILE_PATH = "default.bin";
+	public final static String DEFAULT_BOOK_FILE_PATH = "resources/default.bin";
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 	

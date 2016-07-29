@@ -17,6 +17,18 @@ public abstract class SearchInfo extends Observable {
 	 */
 	public abstract String[] getPv();
 	/**
+	 * Returns the currently searched root move in pure algebraic coordinate notation.
+	 * 
+	 * @return
+	 */
+	public abstract String getCurrentMove();
+	/**
+	 * Returns the number of the currently searched move in the move list of the root position.
+	 * 
+	 * @return
+	 */
+	public abstract int getCurrentMoveNumber();
+	/**
 	 * Returns the greatest nominal depth of the search.
 	 * 
 	 * @return
@@ -47,11 +59,4 @@ public abstract class SearchInfo extends Observable {
 	 * @return
 	 */
 	public abstract long getTime();
-	/**
-	 * Returns whether the result is final, i.e. it will not be updated anymore in this run of the search.
-	 * 
-	 * @return
-	 */
-	public abstract boolean isFinal();
-
 }

@@ -607,9 +607,6 @@ final class Evaluator {
 				openingScore += PST_OPENING[piece][i];
 				endgameScore += PST_ENDGAME[piece][i];
 			}
-			// @!FIXME A make-shift solution for reducing the weight of the piece-square tables.
-			openingScore /= 2;
-			endgameScore /= 2;
 			score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
 			if (!isWhitesTurn)
 				score *= -1;
