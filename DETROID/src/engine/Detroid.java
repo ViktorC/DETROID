@@ -1,5 +1,6 @@
 package engine;
 
+import java.net.URISyntaxException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -123,7 +124,7 @@ public class Detroid implements Engine, Observer {
 		try {
 			book = new Book();
 			if (debug) debugInfo.set("Book successfully initialized");
-		} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
+		} catch (IOException | URISyntaxException e) { if (debug) debugInfo.set(e.getMessage()); }
 		outOfBook = false;
 		options = new HashMap<>();
 		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
@@ -288,17 +289,16 @@ public class Detroid implements Engine, Observer {
 				search.join();
 			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			if (debug) debugInfo.set("Book search done");
+			ponderMove = null;
 			if (!stop) {
 				if (searchResult.equals(new Move())) {
 					if (debug) debugInfo.set("No book move found. Out of book.");
 					outOfBook = true;
 					search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? whiteTime - (System.currentTimeMillis() - bookSearchStart) :
-						whiteTime,
-					game.getSideToMove() == Side.WHITE ? blackTime : blackTime - (System.currentTimeMillis() - bookSearchStart), whiteIncrement,
-					blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
+						whiteTime, game.getSideToMove() == Side.WHITE ? blackTime : blackTime - (System.currentTimeMillis() - bookSearchStart),
+						whiteIncrement, blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
 				}
 			}
-			ponderMove = null;
 		}
 		else {
 			if (ponder != null && ponder) {

@@ -71,18 +71,36 @@ class Book implements Closeable {
 	 * 
 	 * @param filePath
 	 * @throws IOException
+	 * @throws URISyntaxException
 	 */
-	public Book(String filePath) throws IOException {
+	public Book(String filePath) throws IOException, URISyntaxException {
+		Path realPath;
+		String[] uriParts;
+		Map<String, String> env;
+		String uri;
+		if (new File(filePath).isAbsolute())
+			realPath = Paths.get(filePath);
+		else {
+			uri = ClassLoader.getSystemResource(filePath).toURI().toString();
+			if (uri.startsWith("jar:file")) {
+				uriParts = uri.split("!");
+				env = new HashMap<>();
+				fileSys = FileSystems.newFileSystem(URI.create(uriParts[0]), env);
+				realPath = fileSys.getPath(uriParts[1]);
+			}
+			else
+				realPath = Paths.get(ClassLoader.getSystemResource(path).toURI().getPath().substring(1));
+		}
+		bookStream = Files.newByteChannel(realPath, StandardOpenOption.READ);
 		gen = ZobristKeyGenerator.getInstance();
-		if (!setMainBookPath(filePath))
-			throw new IOException();
 	}
 	/**
-	 * It instantiatesa Book object on the default opening book; if the default book file cannot be accessed, an IOException is thrown.
+	 * It instantiates a Book object on the default opening book; if the default book file cannot be accessed, an IOException is thrown.
 	 * 
 	 * @throws IOException
+	 * @throws URISyntaxException
 	 */
-	public Book() throws IOException {
+	public Book() throws IOException, URISyntaxException {
 		this(DEFAULT_BOOK_FILE_PATH);
 	}
 	/**
@@ -93,83 +111,11 @@ class Book implements Closeable {
 	 * @param filePath
 	 * @param secondaryBookFilePath
 	 * @throws IOException
+	 * @throws URISyntaxException
 	 */
-	public Book(String filePath, String secondaryBookFilePath) throws IOException {
+	public Book(String filePath, String secondaryBookFilePath) throws IOException, URISyntaxException {
 		this(filePath);
 		secondaryBook = new Book(secondaryBookFilePath);
-	}
-	/**
-	 * Returns the real path to a file that depending on whether or not the program is run within a jar.
-	 * 
-	 * @param path
-	 * @return
-	 * @throws IOException
-	 * @throws URISyntaxException 
-	 */
-	private Path determineRealPath(String path) throws IOException, URISyntaxException {
-		Path realPath;
-		String uri;
-		String[] uriParts;
-		Map<String, String> env;
-		uri = ClassLoader.getSystemResource(path).toURI().toString();
-		if (uri.startsWith("jar:file")) {
-			uriParts = uri.split("!");
-			env = new HashMap<>();
-			if (fileSys != null)
-				fileSys.close();
-			fileSys = FileSystems.newFileSystem(URI.create(uriParts[0]), env);
-			realPath = fileSys.getPath(uriParts[1]);
-		}
-		else
-			realPath = Paths.get(ClassLoader.getSystemResource(path).toURI().getPath().substring(1));
-		return realPath;
-	}
-	/**
-	 * Tries and sets/changes the main book to the file specified by the path.
-	 * 
-	 * @param filePath
-	 * @return Whether the book could be successfully set to the file.
-	 */
-	public boolean setMainBookPath(String filePath) {
-		if (bookStream != null) {
-			try {
-				bookStream.close();
-			} catch (IOException e) {
-				System.out.println("Could not close stream: " + bookStream.toString());
-			}
-		}
-		try {
-			bookStream = Files.newByteChannel(determineRealPath(filePath), StandardOpenOption.READ);
-			return true;
-		}
-		catch (IOException | URISyntaxException e) {
-			System.out.println("Invalid path: " + filePath);
-			return false;
-		}
-	}
-	/**
-	 * Tries and sets/changes the secondary book to the file specified by the path.
-	 * 
-	 * @param filePath
-	 * @return Whether the book could be successfully set to the file.
-	 */
-	public boolean setSecondaryBookPath(String filePath) {
-		if (filePath == null) {
-			try {
-				secondaryBook.close();
-			} catch (Exception e) { }
-			secondaryBook = null;
-			return true;
-		}
-		if (secondaryBook == null) {
-			try {
-				secondaryBook = new Book(filePath);
-			} catch (IOException e) {
-				System.out.println("File not found: " + filePath);
-				return false;
-			}
-		}
-		return secondaryBook.setMainBookPath(filePath);
 	}
 	/**
 	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search through
@@ -350,9 +296,9 @@ class Book implements Closeable {
 	}
 	@Override
 	public void close() throws IOException {
+		fileSys.close();
 		bookStream.close();
 		if (secondaryBook != null)
 			secondaryBook.close();
-		fileSys.close();
 	}
 }

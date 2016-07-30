@@ -231,11 +231,13 @@ class Search extends Thread {
 	 * @param bestScore
 	 * @param distFromRoot
 	 * @param depth
+	 * @param forceExact
 	 * @return
 	 */
-	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
+	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth, boolean forceExact) {
 		int score;
 		int bestMoveInt;
+		byte type;
 		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
 		if (bestScore <= L_CHECK_MATE_LIMIT)
 			score = bestScore - distFromRoot;
@@ -244,14 +246,17 @@ class Search extends Thread {
 		else
 			score = bestScore;
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
-		//	Add new entry to the transposition table.
-		if (bestScore <= alpha)
-			return tT.insert(new TTEntry(key, depth, NodeType.FAIL_LOW.ind, (short)score, bestMoveInt, hashEntryGen));
+		// Determine node type.
+		if (forceExact)
+			type = NodeType.EXACT.ind;
+		else if (bestScore <= alpha)
+			type = NodeType.FAIL_LOW.ind;
 		else if (bestScore >= beta)
-			return tT.insert(new TTEntry(key, depth, NodeType.FAIL_HIGH.ind, (short)score, bestMoveInt, hashEntryGen));
+			type = NodeType.FAIL_HIGH.ind;
 		else
-			return tT.insert(new TTEntry(key, depth, NodeType.EXACT.ind, (short)score, bestMoveInt, hashEntryGen));
-		
+			type = NodeType.EXACT.ind;
+		//	Add new entry to the transposition table.
+		return tT.insert(new TTEntry(key, depth, type, (short)score, bestMoveInt, hashEntryGen));
 	}
 	/**
 	 * Searches a root position and returns its score.
@@ -261,7 +266,7 @@ class Search extends Thread {
 	 * @param beta
 	 * @return
 	 */
-	private int rootSearch(short ply, int alpha, int beta) {
+	private int search(short ply, int alpha, int beta) {
 		final int origAlpha = alpha;
 		int depth, score, bestScore, tacticalMovesBreakInd, extension, numOfMoves;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
@@ -368,7 +373,7 @@ class Search extends Thread {
 					if (score >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
-					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY)) ||
+					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY), false) ||
 							(hashMove != null && move.equals(hashMove))) {
 						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
@@ -380,8 +385,8 @@ class Search extends Thread {
 		}
 		// If the seach stats have not been updated yet, try inserting the best move into the TT and update the stats
 		if (!statsUpdated) {
-			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
-			updateInfo(null, 0, ply, origAlpha, beta, bestScore);
+			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY), false);
+			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
 		}
 		return bestScore;
 	}
@@ -396,7 +401,7 @@ class Search extends Thread {
 		failHigh = failLow = 0; // The number of consecutive fail highs/fail lows.
 		// Iterative deepening.
 		for (short i = 1; i <= maxDepth; i++) {
-			score = rootSearch(i, alpha, beta);
+			score = search(i, alpha, beta);
 			if (doStopSearch.get() || isInterrupted())
 				break;
 			// Aspiration windows with gradual widening.
@@ -503,7 +508,7 @@ class Search extends Thread {
 			final boolean isPvNode = beta > origAlpha + 1;
 			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, evalScore, razRed, extension;
 			Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-			boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
+			boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial, forceExact;
 			Queue<Move> matMoves, nonMatMoves;
 			Move[] matMovesArr, nonMatMovesArr;
 			TTEntry e;
@@ -512,7 +517,7 @@ class Search extends Thread {
 			bestMove = null;
 			searchedMoves = 0;
 			hashMove = killerMove1 = killerMove2 = null;
-			isThereHashMove = isThereKM1 = isThereKM2 = false;
+			isThereHashMove = isThereKM1 = isThereKM2 = forceExact = false;
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
 			if ((!ponder && nodes.get() >= maxNodes) || isInterrupted())
@@ -525,8 +530,11 @@ class Search extends Thread {
 //			}
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
-				if (pos.repetitions >= 3)
-					return Termination.DRAW_CLAIMED.score;
+				if (pos.repetitions >= 3) {
+					bestScore = Termination.DRAW_CLAIMED.score;
+					forceExact = true;
+					break Search;
+				}
 				// Mate distance pruning.
 				if (-mateScore < beta) {
 					if (alpha >= -mateScore)
@@ -543,7 +551,7 @@ class Search extends Thread {
 				if (e != null) {
 					e.generation = hashEntryGen;
 					// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
-					if (!isPvNode && e.depth >= depth/FULL_PLY && pos.repetitions < 2) {
+					if (!isPvNode && e.depth >= depth/FULL_PLY) {
 						// Mate score adjustment to root distance.
 						if (e.score <= L_CHECK_MATE_LIMIT)
 							score = e.score + distFromRoot;
@@ -557,8 +565,8 @@ class Search extends Thread {
 								/* To make sure that a score that might not have been the exact score for the subtree below the node regardless of the
 								 * alpha-beta boundaries is not treated as an exact score in the current context, we can not allow it to fall between
 								 * the current alpha and beta. If it was a fail high node, the score is a lower boundary of the exact score of the
-								 * node due to there possibly being siblings to the right of the child node that raised alpha higher than beta and
-								 * caused a cut-off that could raise alpha even higher. If it was a fail low node, the score is a higher boundary for
+								 * node due to there possibly being siblings to the right of the child node [that raised alpha higher than beta and
+								 * caused a cut-off] that could raise alpha even higher. If it was a fail low node, the score is a higher boundary for
 								 * the exact score of the node, because all children of a fail low node are fail high nodes (-score <= alpha ->
 								 * score >= -alpha [-alpha = beta in the child node]). To keep the interval of values the exact score could take on
 								 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
@@ -638,8 +646,11 @@ class Search extends Thread {
 					}
 				}
 				// Check for the fifty-move rule; return a draw score if it applies.
-				if (pos.fiftyMoveRuleClock >= 100)
-					return Termination.DRAW_CLAIMED.score;
+				if (pos.fiftyMoveRuleClock >= 100) {
+					bestScore = Termination.DRAW_CLAIMED.score;
+					forceExact = true;
+					break Search;
+				}
 				// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
 				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && !isPvNode && depth/FULL_PLY >= params.NMR) {
 					pos.makeNullMove();
@@ -916,7 +927,7 @@ class Search extends Thread {
 			if (qDepth < 0)
 				return bestScore;
 			// Add new entry to the transposition table.
-			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
+			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY), forceExact);
 			// Return the unadjusted best score.
 			return bestScore;
 		}
