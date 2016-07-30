@@ -1,10 +1,14 @@
 package engine;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.*;
 import java.nio.file.*;
 import java.io.*;
 import java.nio.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import engine.Bitboard.Square;
@@ -56,6 +60,7 @@ class Book implements Closeable {
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 	
+	private FileSystem fileSys;
 	private SeekableByteChannel bookStream;
 	private Book secondaryBook;
 	private ZobristKeyGenerator gen;
@@ -94,6 +99,32 @@ class Book implements Closeable {
 		secondaryBook = new Book(secondaryBookFilePath);
 	}
 	/**
+	 * Returns the real path to a file that depending on whether or not the program is run within a jar.
+	 * 
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 * @throws URISyntaxException 
+	 */
+	private Path determineRealPath(String path) throws IOException, URISyntaxException {
+		Path realPath;
+		String uri;
+		String[] uriParts;
+		Map<String, String> env;
+		uri = ClassLoader.getSystemResource(path).toURI().toString();
+		if (uri.startsWith("jar:file")) {
+			uriParts = uri.split("!");
+			env = new HashMap<>();
+			if (fileSys != null)
+				fileSys.close();
+			fileSys = FileSystems.newFileSystem(URI.create(uriParts[0]), env);
+			realPath = fileSys.getPath(uriParts[1]);
+		}
+		else
+			realPath = Paths.get(ClassLoader.getSystemResource(path).toURI().getPath().substring(1));
+		return realPath;
+	}
+	/**
 	 * Tries and sets/changes the main book to the file specified by the path.
 	 * 
 	 * @param filePath
@@ -103,16 +134,16 @@ class Book implements Closeable {
 		if (bookStream != null) {
 			try {
 				bookStream.close();
-			} catch (IOException e1) {
+			} catch (IOException e) {
 				System.out.println("Could not close stream: " + bookStream.toString());
 			}
 		}
 		try {
-			bookStream = Files.newByteChannel(Paths.get(filePath), StandardOpenOption.READ);
+			bookStream = Files.newByteChannel(determineRealPath(filePath), StandardOpenOption.READ);
 			return true;
 		}
-		catch (IOException e2) {
-			System.out.println("Could not change to file path: " + filePath);
+		catch (IOException | URISyntaxException e) {
+			System.out.println("Invalid path: " + filePath);
 			return false;
 		}
 	}
@@ -322,5 +353,6 @@ class Book implements Closeable {
 		bookStream.close();
 		if (secondaryBook != null)
 			secondaryBook.close();
+		fileSys.close();
 	}
 }

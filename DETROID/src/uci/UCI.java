@@ -78,15 +78,15 @@ public final class UCI implements Observer, Closeable {
 				} break;
 				case "setoption": {
 					for (Option<?> e : engine.getOptions()) {
-						if (e.getName().equals(tokens[1])) {
+						if (e.getName().equals(tokens[2])) {
 							if (e instanceof Option.CheckOption)
-								this.engine.setOption((Option.CheckOption)e, Boolean.parseBoolean(tokens[2]));
+								this.engine.setOption((Option.CheckOption)e, Boolean.parseBoolean(tokens[4]));
 							else if (e instanceof Option.SpinOption)
-								this.engine.setOption((Option.SpinOption)e, Integer.parseInt(tokens[2]));
+								this.engine.setOption((Option.SpinOption)e, Integer.parseInt(tokens[4]));
 							else if (e instanceof Option.StringOption)
-								this.engine.setOption((Option.StringOption)e, tokens[2]);
+								this.engine.setOption((Option.StringOption)e, tokens[4]);
 							else if (e instanceof Option.ComboOption)
-								this.engine.setOption((Option.ComboOption)e, tokens[2]);
+								this.engine.setOption((Option.ComboOption)e, tokens[4]);
 							break;
 						}
 					}

@@ -265,12 +265,13 @@ class Search extends Thread {
 		final int origAlpha = alpha;
 		int depth, score, bestScore, tacticalMovesBreakInd, extension, numOfMoves;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean lastMoveIsMaterial;
+		boolean lastMoveIsMaterial, statsUpdated;
 		List<Move> tacticalMoves, quietMoves;
 		Set<Move> allMoves;
 		Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
+		statsUpdated = false;
 		bestScore = Integer.MIN_VALUE;
 		bestMove = null;
 		hashMove = killerMove1 = killerMove2 = null;
@@ -368,17 +369,19 @@ class Search extends Thread {
 						break;
 					// Insert into TT and update stats if applicable.
 					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY)) ||
-							(hashMove != null && i == 0))
+							(hashMove != null && move.equals(hashMove))) {
+						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
+					}
 				}
 			}
 			if (isInterrupted() || doStopSearch.get())
 				break;
 		}
-		// If the searched failed due to the asp. windows, try inserting the best move into the TT and update the stats with a bound
-		if (bestScore <= origAlpha || bestScore >= beta) {
+		// If the seach stats have not been updated yet, try inserting the best move into the TT and update the stats
+		if (!statsUpdated) {
 			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
-			updateInfo(null, 0, ply, origAlpha, beta, e.score);
+			updateInfo(null, 0, ply, origAlpha, beta, bestScore);
 		}
 		return bestScore;
 	}
@@ -512,7 +515,7 @@ class Search extends Thread {
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
-			if (!ponder && (nodes.get() >= maxNodes || isInterrupted()))
+			if ((!ponder && nodes.get() >= maxNodes) || isInterrupted())
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;
@@ -938,7 +941,7 @@ class Search extends Thread {
 			int bestScore, searchScore;
 			if (depth != 0)
 				nodes.incrementAndGet();
-			if (!ponder && (nodes.get() >= maxNodes || isInterrupted()))
+			if ((!ponder && nodes.get() >= maxNodes) || isInterrupted())
 				doStopSearch.set(true);
 			if (Thread.currentThread().isInterrupted())
 				doStopThread = true;

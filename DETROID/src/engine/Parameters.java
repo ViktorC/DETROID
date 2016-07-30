@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Random;
@@ -147,7 +146,7 @@ public final class Parameters {
 		Class<? extends Parameters> clazz = this.getClass();
 		Field field;
 		int indexOfClosingNameTag;
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(filePath)));) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream(filePath)));) {
 			while ((line = reader.readLine()) != null) {
 				indexOfClosingNameTag = line.indexOf(']');
 				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
