@@ -231,10 +231,10 @@ class Search extends Thread {
 	 * @param bestScore
 	 * @param distFromRoot
 	 * @param depth
-	 * @param forceExact
+	 * @param tryForce
 	 * @return
 	 */
-	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth, boolean forceExact) {
+	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth, boolean tryForce) {
 		int score;
 		int bestMoveInt;
 		byte type;
@@ -247,7 +247,7 @@ class Search extends Thread {
 			score = bestScore;
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
 		// Determine node type.
-		if (forceExact)
+		if (tryForce)
 			type = NodeType.EXACT.ind;
 		else if (bestScore <= alpha)
 			type = NodeType.FAIL_LOW.ind;
@@ -256,7 +256,7 @@ class Search extends Thread {
 		else
 			type = NodeType.EXACT.ind;
 		//	Add new entry to the transposition table.
-		return tT.insert(new TTEntry(key, depth, type, (short)score, bestMoveInt, hashEntryGen));
+		return tT.insert(new TTEntry(key, tryForce ? Short.MAX_VALUE : depth, type, (short) score, bestMoveInt, hashEntryGen));
 	}
 	/**
 	 * Searches a root position and returns its score.
