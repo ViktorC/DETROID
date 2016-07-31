@@ -116,15 +116,15 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public synchronized void init() {
+		debugInfo = new DebugInformation();
+		debug = true;
 		params = new Parameters();
 		if (debug) debugInfo.set("Parameters successfully initialized");
 		game = new Game();
-		debug = false;
-		debugInfo = new DebugInformation();
 		try {
 			book = new Book();
 			if (debug) debugInfo.set("Book successfully initialized");
-		} catch (IOException | URISyntaxException e) { if (debug) debugInfo.set(e.getMessage()); }
+		} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		outOfBook = false;
 		options = new HashMap<>();
 		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
@@ -226,8 +226,8 @@ public class Detroid implements Engine, Observer {
 					gen = 0;
 				}
 				else {
-					tT.remove(e -> e.generation < gen - 1);
-					eT.remove(e -> e.generation < gen - 1);
+					tT.remove(e -> e.generation < gen);
+					eT.remove(e -> e.generation < gen);
 					pT.remove(e -> e.generation < gen - 3);
 				}
 				hT.decrementCurrentValues();

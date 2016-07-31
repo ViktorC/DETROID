@@ -71,9 +71,8 @@ class Book implements Closeable {
 	 * 
 	 * @param filePath
 	 * @throws IOException
-	 * @throws URISyntaxException
 	 */
-	public Book(String filePath) throws IOException, URISyntaxException {
+	public Book(String filePath) throws IOException {
 		Path realPath;
 		String[] uriParts;
 		Map<String, String> env;
@@ -81,15 +80,19 @@ class Book implements Closeable {
 		if (new File(filePath).isAbsolute())
 			realPath = Paths.get(filePath);
 		else {
-			uri = ClassLoader.getSystemResource(filePath).toURI().toString();
-			if (uri.startsWith("jar:file")) {
-				uriParts = uri.split("!");
-				env = new HashMap<>();
-				fileSys = FileSystems.newFileSystem(URI.create(uriParts[0]), env);
-				realPath = fileSys.getPath(uriParts[1]);
+			try {
+				uri = ClassLoader.getSystemResource(filePath).toURI().toString();
+				if (uri.startsWith("jar:file")) {
+					uriParts = uri.split("!");
+					env = new HashMap<>();
+					fileSys = FileSystems.newFileSystem(URI.create(uriParts[0]), env);
+					realPath = fileSys.getPath(uriParts[1]);
+				}
+				else
+					realPath = Paths.get(ClassLoader.getSystemResource(filePath).toURI().getPath().substring(1));
+			} catch (URISyntaxException e) {
+				throw new IOException(e);
 			}
-			else
-				realPath = Paths.get(ClassLoader.getSystemResource(path).toURI().getPath().substring(1));
 		}
 		bookStream = Files.newByteChannel(realPath, StandardOpenOption.READ);
 		gen = ZobristKeyGenerator.getInstance();
@@ -98,9 +101,8 @@ class Book implements Closeable {
 	 * It instantiates a Book object on the default opening book; if the default book file cannot be accessed, an IOException is thrown.
 	 * 
 	 * @throws IOException
-	 * @throws URISyntaxException
 	 */
-	public Book() throws IOException, URISyntaxException {
+	public Book() throws IOException {
 		this(DEFAULT_BOOK_FILE_PATH);
 	}
 	/**
@@ -111,9 +113,8 @@ class Book implements Closeable {
 	 * @param filePath
 	 * @param secondaryBookFilePath
 	 * @throws IOException
-	 * @throws URISyntaxException
 	 */
-	public Book(String filePath, String secondaryBookFilePath) throws IOException, URISyntaxException {
+	public Book(String filePath, String secondaryBookFilePath) throws IOException {
 		this(filePath);
 		secondaryBook = new Book(secondaryBookFilePath);
 	}
