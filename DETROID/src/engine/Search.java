@@ -231,11 +231,9 @@ class Search extends Thread {
 	 * @param bestScore
 	 * @param distFromRoot
 	 * @param depth
-	 * @param exactForce
 	 * @return
 	 */
-	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore,
-			short distFromRoot, short depth, boolean exactForce) {
+	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
 		int score;
 		int bestMoveInt;
 		byte type;
@@ -248,9 +246,7 @@ class Search extends Thread {
 			score = bestScore;
 		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
 		// Determine node type.
-		if (exactForce)
-			type = NodeType.EXACT.ind;
-		else if (bestScore <= alpha)
+		if (bestScore <= alpha)
 			type = NodeType.FAIL_LOW.ind;
 		else if (bestScore >= beta)
 			type = NodeType.FAIL_HIGH.ind;
@@ -374,7 +370,7 @@ class Search extends Thread {
 					if (score >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
-					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY), false) ||
+					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY)) ||
 							(hashMove != null && move.equals(hashMove))) {
 						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
@@ -386,7 +382,7 @@ class Search extends Thread {
 		}
 		// If the seach stats have not been updated yet, try inserting the best move into the TT and update the stats
 		if (!statsUpdated) {
-			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY), false);
+			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
 			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
 		}
 		return bestScore;
@@ -509,7 +505,7 @@ class Search extends Thread {
 			final boolean isPvNode = beta > origAlpha + 1;
 			int bestScore, score, searchedMoves, matMoveBreakInd, kMove, evalScore, razRed, extension;
 			Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-			boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial, forceExact;
+			boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial;
 			Queue<Move> matMoves, nonMatMoves;
 			Move[] matMovesArr, nonMatMovesArr;
 			TTEntry e;
@@ -518,7 +514,7 @@ class Search extends Thread {
 			bestMove = null;
 			searchedMoves = 0;
 			hashMove = killerMove1 = killerMove2 = null;
-			isThereHashMove = isThereKM1 = isThereKM2 = forceExact = false;
+			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			matMoves = nonMatMoves = null;
 			nodes.incrementAndGet();
 			if ((!ponder && nodes.get() >= maxNodes) || isInterrupted())
@@ -531,11 +527,8 @@ class Search extends Thread {
 //			}
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
-				if (pos.repetitions >= 3) {
-					bestScore = Termination.DRAW_CLAIMED.score;
-					forceExact = true;
-					break Search;
-				}
+				if (pos.repetitions >= 3)
+					return Termination.DRAW_CLAIMED.score;
 				// Mate distance pruning.
 				if (-mateScore < beta) {
 					if (alpha >= -mateScore)
@@ -552,7 +545,7 @@ class Search extends Thread {
 				if (e != null) {
 					e.generation = hashEntryGen;
 					// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
-					if (!isPvNode && e.depth >= depth/FULL_PLY) {
+					if (!isPvNode && e.depth >= depth/FULL_PLY && pos.repetitions < 2) {
 						// Mate score adjustment to root distance.
 						if (e.score <= L_CHECK_MATE_LIMIT)
 							score = e.score + distFromRoot;
@@ -647,11 +640,8 @@ class Search extends Thread {
 					}
 				}
 				// Check for the fifty-move rule; return a draw score if it applies.
-				if (pos.fiftyMoveRuleClock >= 100) {
-					bestScore = Termination.DRAW_CLAIMED.score;
-					forceExact = true;
-					break Search;
-				}
+				if (pos.fiftyMoveRuleClock >= 100)
+					return Termination.DRAW_CLAIMED.score;
 				// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
 				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && !isPvNode && depth/FULL_PLY >= params.NMR) {
 					pos.makeNullMove();
@@ -928,7 +918,7 @@ class Search extends Thread {
 			if (qDepth < 0)
 				return bestScore;
 			// Add new entry to the transposition table.
-			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY), forceExact);
+			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
 			// Return the unadjusted best score.
 			return bestScore;
 		}
