@@ -57,9 +57,11 @@ class Book implements Closeable {
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 	
+	private Path file;
+	private boolean isTemp;
 	private SeekableByteChannel bookStream;
-	private Book secondaryBook;
 	private ZobristKeyGenerator gen;
+	private Book secondaryBook;
 	
 	/**
 	 * It instantiates a Book object on the opening book file specified by filePath; if the file cannot be accessed,
@@ -69,24 +71,25 @@ class Book implements Closeable {
 	 * @throws IOException
 	 */
 	public Book(String filePath) throws IOException {
-		Path realPath;
 		String uri;
+		isTemp = false;
 		if (new File(filePath).isAbsolute())
-			realPath = Paths.get(filePath);
+			file = Paths.get(filePath);
 		else {
 			try {
 				uri = ClassLoader.getSystemResource(filePath).toURI().toString();
 				if (uri.startsWith("jar:file")) {
-					realPath = Files.createTempFile("tempBook", ".bin");
-					Files.copy(ClassLoader.getSystemResourceAsStream(filePath), realPath, StandardCopyOption.REPLACE_EXISTING);
+					file = Files.createTempFile("detroid_openingbook", ".bin");
+					Files.copy(ClassLoader.getSystemResourceAsStream(filePath), file, StandardCopyOption.REPLACE_EXISTING);
+					isTemp = true;
 				}
 				else
-					realPath = Paths.get(ClassLoader.getSystemResource(filePath).toURI().getPath().substring(1));
+					file = Paths.get(ClassLoader.getSystemResource(filePath).toURI().getPath().substring(1));
 			} catch (URISyntaxException e) {
 				throw new IOException(e.fillInStackTrace());
 			}
 		}
-		bookStream = Files.newByteChannel(realPath, StandardOpenOption.READ);
+		bookStream = Files.newByteChannel(file, StandardOpenOption.READ);
 		gen = ZobristKeyGenerator.getInstance();
 	}
 	/**
@@ -112,14 +115,21 @@ class Book implements Closeable {
 			secondaryBook = new Book(secondaryBookFilePath);
 	}
 	/**
+	 * Returns the path to the book file this object has been instantiated on.
+	 * 
+	 * @return
+	 */
+	public String getFilePath() {
+		return file.toRealPath().toString();
+	}
+	/**
 	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search
 	 * through the entries.
 	 * 
 	 * @param p The position for which the entries are to be returned.
 	 * @return
-	 * @throws NullPointerException If the book stream is not initialized.
 	 */
-	private ArrayList<Entry> getRelevantEntries(Position p) throws NullPointerException {
+	private ArrayList<Entry> getRelevantEntries(Position p) {
 		long low, mid, hi, temp = -1;
 		long readerPos, currKey, key = gen.getPolyglotHashKey(p);
 		ArrayList<Entry> entries = new ArrayList<>();
@@ -290,6 +300,8 @@ class Book implements Closeable {
 	@Override
 	public void close() throws IOException {
 		bookStream.close();
+		if (isTemp)
+			Files.deleteIfExists(file);
 		if (secondaryBook != null)
 			secondaryBook.close();
 	}

@@ -75,8 +75,9 @@ class Search extends Thread {
 			RelativeHistoryTable historyTable, final byte hashEntryGen, LossyHashTable<TTEntry> transposTable,
 			LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, Parameters params) {
 		this.params = params;
-		MAX_EXPECTED_TOTAL_SEARCH_DEPTH =
-				8*(params.CHECK_EXT + params.RECAP_EXT + params.SINGLE_REPLY_EXT + params.MATE_THREAT_EXT)*MAX_NOMINAL_SEARCH_DEPTH;
+ 		// In case all the extensions are activated during the search.
+  		final int maxDepthPerPly = FULL_PLY + params.CHECK_EXT + params.RECAP_EXT + params.SINGLE_REPLY_EXT + params.MATE_THREAT_EXT;
+		MAX_EXPECTED_TOTAL_SEARCH_DEPTH = 8*MAX_NOMINAL_SEARCH_DEPTH*maxDepthPerPly/FULL_PLY;
 		L_CHECK_MATE_LIMIT = Termination.CHECK_MATE.score + MAX_EXPECTED_TOTAL_SEARCH_DEPTH;
 		W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
 		this.stats = stats;
@@ -97,7 +98,7 @@ class Search extends Thread {
 		}
 		areMovesRestricted = allowedRootMoves != null;
 		doStopSearch = new AtomicBoolean(false);
-		kT = new KillerTable(3*this.maxDepth);	// In case all the extensions are activated during the search.
+  		kT = new KillerTable(this.maxDepth*maxDepthPerPly/FULL_PLY);
 		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
@@ -291,12 +292,12 @@ class Search extends Thread {
 		// Mate check.
 		if (numOfMoves == 0)
 			return position.isInCheck ? Termination.CHECK_MATE.score : Termination.STALE_MATE.score;
-		// Check for the 50 move rule.
-		if (position.fiftyMoveRuleClock >= 100)
-			return Termination.DRAW_CLAIMED.score;
 		// One reply extension.
 		else if (numOfMoves == 1)
 			depth += params.SINGLE_REPLY_EXT;
+		// Check for the 50 move rule.
+		if (position.fiftyMoveRuleClock >= 100)
+			return Termination.DRAW_CLAIMED.score;
 		// Check extension.
 		depth = position.isInCheck ? depth + params.CHECK_EXT : depth;
 		// Hash look-up.
@@ -416,6 +417,7 @@ class Search extends Thread {
 						failLow == 1 ? Math.max(score - 4*params.A_DELTA, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
 					failLow++;
 				}
+				i--;
 			}
 			else if (score >= beta) {
 				if (score >= W_CHECK_MATE_LIMIT) {
@@ -429,6 +431,7 @@ class Search extends Thread {
 						failHigh == 1 ? Math.min(score + 4*params.A_DELTA, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
 					failHigh++;
 				}
+				i--;
 			}
 			else {
 				failHigh = failLow = 0;
@@ -540,7 +543,7 @@ class Search extends Thread {
 					  if (beta <= mateScore)
 						  return mateScore;
 				}
-				// Check extension (less than a whole ply because the quiescence search handles checks).
+				// Check extension.
 				depth = isInCheck && qDepth == 0 ? depth + params.CHECK_EXT : depth;
 				// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 				e = tT.lookUp(pos.key);
@@ -602,8 +605,8 @@ class Search extends Thread {
 				// If there is a hash move, search that first.
 				if (isThereHashMove) {
 					// Recapture extension (includes capturing newly promoted pieces).
-					extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ?
-						params.RECAP_EXT : 0;
+					extension = lastMoveIsMaterial && qDepth == 0 && hashMove.capturedPiece != Piece.NULL.ind &&
+							hashMove.to == lastMove.to ? params.RECAP_EXT : 0;
 					pos.makeMove(hashMove);
 					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
 					pos.unmakeMove();
@@ -796,8 +799,8 @@ class Search extends Thread {
 						continue;
 					}
 					// Recapture extension.
-					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
-							params.RECAP_EXT : 0;
+					extension = lastMoveIsMaterial && qDepth == 0 && move.capturedPiece != Piece.NULL.ind &&
+							move.to == lastMove.to ? params.RECAP_EXT : 0;
 					pos.makeMove(move);
 					// PVS.
 					if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
@@ -831,7 +834,7 @@ class Search extends Thread {
 				if (nonMatMoves == null)
 					nonMatMoves = pos.getQuietMoves();
 				// One reply extension.
-				if (matMoves.size() == 0 && nonMatMoves.size() == 1)
+				if (matMoves.size() == 0 && nonMatMoves.size() == 1 && qDepth == 0)
 					depth += params.SINGLE_REPLY_EXT;
 				evalScore = Integer.MIN_VALUE;
 				// Order and search the non-material moves.
@@ -880,7 +883,7 @@ class Search extends Thread {
 						if (score > alpha)
 								score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
 					}
-					// Else PVS.
+					// Else PVS with razoring.
 					else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && matMovesArr.length == 0)
 						score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
 					else {
@@ -917,7 +920,7 @@ class Search extends Thread {
 				}
 			}
 			// If the search has been invoked from quiescence search, do not store entries in the TT.
-			if (qDepth < 0 || pos.repetitions == 2)
+			if (qDepth < 0)
 				return bestScore;
 			// Add new entry to the transposition table.
 			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
@@ -925,7 +928,7 @@ class Search extends Thread {
 			return bestScore;
 		}
 		/**
-		 * A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keep searching until
+		 * A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keeps searching until
 		 * the side to move is not in check and does not have any legal winning captures according to SEE.
 		 * 
 		 * In the first two plies (unless it has been extended due to the side to move being in chess), it also searches moves that give check.
@@ -962,7 +965,7 @@ class Search extends Thread {
 			if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
 				return eval.score(pos, alpha, beta);
 			// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
-			if (isInCheck && qDepth >= 1) {
+			if (isInCheck) {
 				// If the side to move is in check, stand-pat does not hold and it's not enough to just search the material moves.
 				nodes.decrementAndGet();
 				return pVsearch(FULL_PLY, distFromRoot, alpha, beta, false, depth - 1);
