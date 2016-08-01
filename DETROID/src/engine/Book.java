@@ -1,14 +1,11 @@
 package engine;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.*;
 import java.nio.file.*;
 import java.io.*;
 import java.nio.*;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import engine.Bitboard.Square;
@@ -60,7 +57,6 @@ class Book implements Closeable {
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 	
-	private FileSystem fileSys;
 	private SeekableByteChannel bookStream;
 	private Book secondaryBook;
 	private ZobristKeyGenerator gen;
@@ -74,8 +70,6 @@ class Book implements Closeable {
 	 */
 	public Book(String filePath) throws IOException {
 		Path realPath;
-		String[] uriParts;
-		Map<String, String> env;
 		String uri;
 		if (new File(filePath).isAbsolute())
 			realPath = Paths.get(filePath);
@@ -83,15 +77,13 @@ class Book implements Closeable {
 			try {
 				uri = ClassLoader.getSystemResource(filePath).toURI().toString();
 				if (uri.startsWith("jar:file")) {
-					uriParts = uri.split("!");
-					env = new HashMap<>();
-					fileSys = FileSystems.newFileSystem(URI.create(uriParts[0]), env);
-					realPath = fileSys.getPath(uriParts[1]);
+					realPath = Files.createTempFile("tempBook", ".bin");
+					Files.copy(ClassLoader.getSystemResourceAsStream(filePath), realPath, StandardCopyOption.REPLACE_EXISTING);
 				}
 				else
 					realPath = Paths.get(ClassLoader.getSystemResource(filePath).toURI().getPath().substring(1));
 			} catch (URISyntaxException e) {
-				throw new IOException(e);
+				throw new IOException(e.fillInStackTrace());
 			}
 		}
 		bookStream = Files.newByteChannel(realPath, StandardOpenOption.READ);
@@ -116,11 +108,12 @@ class Book implements Closeable {
 	 */
 	public Book(String filePath, String secondaryBookFilePath) throws IOException {
 		this(filePath);
-		secondaryBook = new Book(secondaryBookFilePath);
+		if (secondaryBookFilePath != null)
+			secondaryBook = new Book(secondaryBookFilePath);
 	}
 	/**
-	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search through
-	 * the entries.
+	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search
+	 * through the entries.
 	 * 
 	 * @param p The position for which the entries are to be returned.
 	 * @return
@@ -290,14 +283,12 @@ class Book implements Closeable {
 		try {
 			return p.parsePACN(polyglotMoveToPACN(p, e.move));
 		} catch (ChessParseException | NullPointerException | IllegalArgumentException ex) {
-			// TODO Auto-generated catch block
 			ex.printStackTrace();
 			return null;
 		}
 	}
 	@Override
 	public void close() throws IOException {
-		fileSys.close();
 		bookStream.close();
 		if (secondaryBook != null)
 			secondaryBook.close();

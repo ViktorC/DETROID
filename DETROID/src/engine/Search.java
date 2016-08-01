@@ -88,6 +88,8 @@ class Search extends Thread {
 			this.maxDepth = Math.min(MAX_NOMINAL_SEARCH_DEPTH, maxDepth);
 			this.maxNodes = maxNodes;
 		}
+		else
+			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
 		if (moves != null) {
 			allowedRootMoves = new Stack<>();
 			for (Move m : moves)
@@ -915,7 +917,7 @@ class Search extends Thread {
 				}
 			}
 			// If the search has been invoked from quiescence search, do not store entries in the TT.
-			if (qDepth < 0)
+			if (qDepth < 0 || pos.repetitions == 2)
 				return bestScore;
 			// Add new entry to the transposition table.
 			insertNodeIntoTt(pos.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));

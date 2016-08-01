@@ -598,22 +598,22 @@ final class Evaluator {
 //			}
 //			baseScore += pawnScore;
 			// Piece-square scores.
-//			openingScore = endgameScore = 0;
-//			offsetBoard = pos.offsetBoard;
-//			for (int i = 0; i < offsetBoard.length; i++) {
-//				piece = offsetBoard[i] - 1;
-//				if (piece < Piece.NULL.ind)
-//					continue;
-//				openingScore += PST_OPENING[piece][i];
-//				endgameScore += PST_ENDGAME[piece][i];
-//			}
-//			score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
+			openingScore = endgameScore = 0;
+			offsetBoard = pos.offsetBoard;
+			for (int i = 0; i < offsetBoard.length; i++) {
+				piece = offsetBoard[i] - 1;
+				if (piece < Piece.NULL.ind)
+					continue;
+				openingScore += PST_OPENING[piece][i];
+				endgameScore += PST_ENDGAME[piece][i];
+			}
+			score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
 			if (!isWhitesTurn)
 				score *= -1;
-			if (score <= alpha - params.LAZY_EVAL_MAR || score >= beta + params.LAZY_EVAL_MAR) {
-				eT.insert(new ETEntry(pos.key, score, false, hashGen));
-				return score;
-			}
+//			if (score <= alpha - params.LAZY_EVAL_MAR || score >= beta + params.LAZY_EVAL_MAR) {
+//				eT.insert(new ETEntry(pos.key, score, false, hashGen));
+//				return score;
+//			}
 //		}
 //		extendedScore = 0;
 //		// Pinned pieces.

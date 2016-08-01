@@ -120,11 +120,10 @@ public abstract class List<T> implements Collection<T>, Iterator<T> {
 		}
 		return a;
 	}
-	@SuppressWarnings("unchecked")
 	@Override
-	public T[] toArray() {
+	public Object[] toArray() {
 		Object[] a = new Object[size()];
-		return (T[]) toArray(a);
+		return toArray(a);
 	}
 	@Override
 	public void clear() {
