@@ -89,14 +89,14 @@ public final class UCI implements Observer, Closeable {
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.StringOption)e, value);
+								this.engine.setOption((Option.StringOption)e, value.equals("null") ? null : value);
 							}
 							else if (e instanceof Option.ComboOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.ComboOption)e, value);
+								this.engine.setOption((Option.ComboOption)e, value.equals("null") ? null : value);
 							}
 							break;
 						}

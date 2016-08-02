@@ -53,12 +53,12 @@ class Book implements Closeable {
 	 * An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w. Located in the root folder of the project by the name
 	 * "default.bin".
 	 */
-	public final static String DEFAULT_BOOK_FILE_PATH = "resources/default.bin";
+	public final static String DEFAULT_BOOK_FILE_PATH = "/book.bin";
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 	
-	private Path file;
-	private boolean isTemp;
+	private String originalPathDefinition;
+	private Path tempFile;
 	private SeekableByteChannel bookStream;
 	private ZobristKeyGenerator gen;
 	private Book secondaryBook;
@@ -72,19 +72,20 @@ class Book implements Closeable {
 	 */
 	public Book(String filePath) throws IOException {
 		String uri;
-		isTemp = false;
-		if (new File(filePath).isAbsolute())
+		Path file;
+		originalPathDefinition = filePath;
+		if (new File(filePath).exists())
 			file = Paths.get(filePath);
 		else {
 			try {
-				uri = ClassLoader.getSystemResource(filePath).toURI().toString();
+				uri = getClass().getResource(filePath).toURI().toString();
 				if (uri.startsWith("jar:file")) {
-					file = Files.createTempFile("detroid_openingbook", ".bin");
-					Files.copy(ClassLoader.getSystemResourceAsStream(filePath), file, StandardCopyOption.REPLACE_EXISTING);
-					isTemp = true;
+					tempFile = Files.createTempFile("detroid_book_", ".bin");
+					Files.copy(Book.class.getResourceAsStream(filePath), tempFile, StandardCopyOption.REPLACE_EXISTING);
+					file = tempFile;
 				}
 				else
-					file = Paths.get(ClassLoader.getSystemResource(filePath).toURI().getPath().substring(1));
+					file = Paths.get(getClass().getResource(filePath).toURI().getPath().substring(1));
 			} catch (URISyntaxException e) {
 				throw new IOException(e.fillInStackTrace());
 			}
@@ -115,12 +116,20 @@ class Book implements Closeable {
 			secondaryBook = new Book(secondaryBookFilePath);
 	}
 	/**
-	 * Returns the path to the book file this object has been instantiated on.
+	 * Returns the path to the main book file this object has been instantiated on.
 	 * 
 	 * @return
 	 */
-	public String getFilePath() {
-		return file.toRealPath().toString();
+	public String getPrimaryFilePath() {
+		return originalPathDefinition;
+	}
+	/**
+	 * Returns the path to the secondary book file.
+	 * 
+	 * @return
+	 */
+	public String getSecondaryFilePath() {
+		return secondaryBook == null ? null : secondaryBook.getPrimaryFilePath();
 	}
 	/**
 	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search
@@ -300,8 +309,8 @@ class Book implements Closeable {
 	@Override
 	public void close() throws IOException {
 		bookStream.close();
-		if (isTemp)
-			Files.deleteIfExists(file);
+		if (tempFile != null)
+			Files.deleteIfExists(tempFile);
 		if (secondaryBook != null)
 			secondaryBook.close();
 	}

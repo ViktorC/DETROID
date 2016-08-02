@@ -192,7 +192,6 @@ class Search extends Thread {
 	 * @param alpha
 	 * @param beta
 	 * @param score
-	 * @param isFinal
 	 */
 	private void updateInfo(Move currentMove, int moveNumber, short ply, int alpha, int beta, int score) {
 		int resultScore;
@@ -591,9 +590,8 @@ class Search extends Thread {
 				}
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
 				if (isPvNode && !isThereHashMove && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
-					for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++) {
+					for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
 						pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true, qDepth);
-					}
 					e = tT.lookUp(pos.key);
 					if (e != null && e.bestMove != 0) {
 						hashMove = Move.toMove(e.bestMove);
@@ -651,18 +649,16 @@ class Search extends Thread {
 				if (nullMoveAllowed && nullMoveObservHolds && !isInCheck && !isPvNode && depth/FULL_PLY >= params.NMR) {
 					pos.makeNullMove();
 					// Do not allow consecutive null moves.
-					if (depth/FULL_PLY == params.NMR) {
+					if (depth/FULL_PLY == params.NMR)
 						score = -pVsearch(depth - params.NMR*FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false, qDepth);
-						// Mate threat extension.
-						if (score <= L_CHECK_MATE_LIMIT)
-							depth += params.MATE_THREAT_EXT;
-					}
 					else
-						score = -pVsearch(depth - (params.NMR + 1)*FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false, qDepth);
+						score = -pVsearch(depth - params.NMR*FULL_PLY - FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false, qDepth);
 					pos.unmakeMove();
-					if (score >= beta) {
+					if (score >= beta)
 						return score;
-					}
+					// Mate threat extension.
+					if (score <= L_CHECK_MATE_LIMIT)
+						depth += params.MATE_THREAT_EXT;
 				}
 				// Sort the material moves.
 				matMovesArr = orderMaterialMovesMVVLVA(matMoves);
@@ -858,7 +854,8 @@ class Search extends Thread {
 					}
 					razRed = 0;
 					// Futility pruning, extended futility pruning, and razoring.
-					if (!isPvNode && depth/FULL_PLY <= 3 && !isInCheck && !pos.givesCheck(move)) {
+					if (!isPvNode && !isInCheck && alpha > L_CHECK_MATE_LIMIT && beta < W_CHECK_MATE_LIMIT &&
+							depth/FULL_PLY <= 3 && !pos.givesCheck(move)) {
 						if (evalScore == Integer.MIN_VALUE)
 							evalScore = eval.score(pos, alpha, beta);
 						if (depth/FULL_PLY == 1) {

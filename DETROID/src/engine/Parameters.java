@@ -122,7 +122,7 @@ public final class Parameters {
 	
 	private long id;
 	
-	public final static String DEFAULT_PARAMTERS_FILE_PATH = "resources/params.txt";
+	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
 	
 	@SuppressWarnings("unused")
 	private Parameters(boolean noIo) { }
@@ -132,7 +132,7 @@ public final class Parameters {
 		id = rand.nextLong();
 	}
 	public Parameters() {
-		this(DEFAULT_PARAMTERS_FILE_PATH);
+		this(DEFAULT_PARAMETERS_FILE_PATH);
 	}
 	public long getId() {
 		return id;
@@ -146,7 +146,7 @@ public final class Parameters {
 		Class<? extends Parameters> clazz = this.getClass();
 		Field field;
 		int indexOfClosingNameTag;
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream(filePath)));) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(filePath)));) {
 			while ((line = reader.readLine()) != null) {
 				indexOfClosingNameTag = line.indexOf(']');
 				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
@@ -194,7 +194,7 @@ public final class Parameters {
 	 * @return
 	 */
 	public boolean writeToFile() {
-		return writeToFile(DEFAULT_PARAMTERS_FILE_PATH);
+		return writeToFile(DEFAULT_PARAMETERS_FILE_PATH);
 	}
 	/**
 	 * Writes the parameters to the specified file.

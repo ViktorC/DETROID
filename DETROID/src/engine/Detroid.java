@@ -103,10 +103,10 @@ public class Detroid implements Engine, Observer {
 					"Expected number of moves left until end - " + movesToGo);
 		}
 		return game.getSideToMove() == Side.WHITE ?
-				(long) (Math.max(1, (whiteTime*params.FRACTION_OF_TOTAL_TIME_TO_USE) +
-						Math.max(0, (movesToGo - 1)*whiteIncrement))/(movesToGo + 1)) :
-				(long) (Math.max(1, (blackTime*params.FRACTION_OF_TOTAL_TIME_TO_USE) +
-						Math.max(0, (movesToGo - 1)*blackIncrement))/(movesToGo + 1));
+				(long) (Math.max(1, (whiteTime + Math.max(0, (movesToGo - 1)*whiteIncrement))*
+						params.FRACTION_OF_TOTAL_TIME_TO_USE)/(movesToGo + 1)) :
+				(long) (Math.max(1, (blackTime + Math.max(0, (movesToGo - 1)*blackIncrement))*
+						params.FRACTION_OF_TOTAL_TIME_TO_USE)/(movesToGo + 1));
 	}
 	/**
 	 * Computes and returns the search time extension in milliseconds if the search should be extended at all.
@@ -171,7 +171,7 @@ public class Detroid implements Engine, Observer {
 		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
-		primaryBookPath = new Option.StringOption("PrimaryBookPath", Book.DEFAULT_BOOK_FILE_PATH);
+		primaryBookPath = new Option.StringOption("PrimaryBookPath", book.getPrimaryFilePath());
 		secondaryBookPath = new Option.StringOption("SecondaryBookPath", null);
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
 		options.put(hashSize, hashSize.getDefaultValue());
@@ -205,13 +205,14 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public synchronized <T> boolean setOption(Option<T> setting, T value) {
-		if (value == null)
-			return false;
+		if (value == null) return false;
 		if (hashSize.equals(setting)) {
 			if (hashSize.getMin().intValue() <= ((Integer)value).intValue() &&
 					hashSize.getMax().intValue() >= ((Integer)value).intValue()) {
-				options.put(hashSize, value);
-				setHashSize(((Integer)value).intValue());
+				if (((Integer)value).intValue() != ((Integer)options.get(hashSize)).intValue()) {
+					options.put(hashSize, value);
+					setHashSize(((Integer)value).intValue());
+				}
 				if (debug) debugInfo.set("Hash size successfully set to " + value);
 				return true;
 			}
@@ -230,20 +231,30 @@ public class Detroid implements Engine, Observer {
 		}
 		else if (primaryBookPath.equals(setting)) {
 			try {
-				Book newBook = new Book((String) value, (String) options.get(secondaryBookPath));
-				book.close();
-				book = newBook;
-				if (debug) debugInfo.set("Primary book path successfully set to " + value);
-				return true;
+				if ((value == null && options.get(primaryBookPath) == null) || value != null) {
+					if (value != null && !value.equals(options.get(primaryBookPath))) {
+						Book newBook = new Book((String) value, book.getSecondaryFilePath());
+						book.close();
+						book = newBook;
+						options.put(primaryBookPath, book.getPrimaryFilePath());
+					}
+					if (debug) debugInfo.set("Primary book path successfully set to " + value);
+					return true;
+				}
 			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
 		else if (secondaryBookPath.equals(setting)) {
 			try {
-				Book newBook = new Book((String) options.get(primaryBookPath), (String) value);
-				book.close();
-				book = newBook;
-				if (debug) debugInfo.set("Secondary book path successfully set to " + value);
-				return true;
+				if ((value == null && options.get(primaryBookPath) == null) || value != null) {
+					if (value != null && !value.equals(options.get(secondaryBookPath))) {
+						Book newBook = new Book(book.getPrimaryFilePath(), (String) value);
+						book.close();
+						book = newBook;
+						options.put(secondaryBookPath, book.getSecondaryFilePath());
+					}
+					if (debug) debugInfo.set("Secondary book path successfully set to " + value);
+					return true;
+				}
 			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
 		else if (uciOpponent.equals(setting)) {
@@ -270,6 +281,7 @@ public class Detroid implements Engine, Observer {
 	public synchronized boolean position(String fen) {
 		try {
 			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
+			// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
 			if (newGame) {
 				if (debug) debugInfo.set("New game set");
 				game = new Game(pos.toString());
@@ -279,6 +291,7 @@ public class Detroid implements Engine, Observer {
 				if (debug) debugInfo.set("New game set due to new start position");
 				game = new Game(pos.toString());
 			}
+			// Otherwise just clear the 'ancient' entries from the hash tables and decerement the history values.
 			else {
 				if (debug) debugInfo.set("Position set within the same game");
 				gen++;
@@ -320,11 +333,15 @@ public class Detroid implements Engine, Observer {
 		String[] pV;
 		String bestMove, ponderMove;
 		long time, extraTime, bookSearchStart;
-		boolean doPonder = false;
+		boolean doPonder, doInfinite;
+		doPonder = false;
+		doInfinite = infinite != null && infinite;
+		// Reset search stats.
 		searchResult = new Move();
 		scoreFluctuation = 0;
 		timeOfLastSearchResChange = System.currentTimeMillis();
 		numOfSearchResChanges = 0;
+		// Set the names of the players once it is known which color we are playing.
 		if (newGame) {
 			if (game.getSideToMove() == Side.WHITE) {
 				game.setWhitePlayerName(NAME);
@@ -339,8 +356,9 @@ public class Detroid implements Engine, Observer {
 					"Black - " + game.getBlackPlayerName());
 			newGame = false;
 		}
-		if ((Boolean)options.get(ownBook) && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
-				mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
+		// Search the book if possible.
+		if ((Boolean)options.get(ownBook) && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null &&
+				nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
 			search = new Thread(() -> {
 				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
@@ -353,6 +371,7 @@ public class Detroid implements Engine, Observer {
 			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			if (debug) debugInfo.set("Book search done");
 			ponderMove = null;
+			// If the book search has not been externally stopped, use the remaining time for a normal search.
 			if (!stop) {
 				if (searchResult.equals(new Move())) {
 					if (debug) debugInfo.set("No book move found. Out of book.");
@@ -363,7 +382,9 @@ public class Detroid implements Engine, Observer {
 				}
 			}
 		}
+		// Run a game tree search.
 		else {
+			// Check if pondering is possible.
 			if (ponder != null && ponder) {
 				if (!(Boolean)options.get(this.ponder)) {
 					if (debug) debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
@@ -372,6 +393,7 @@ public class Detroid implements Engine, Observer {
 				else
 					doPonder = true;
 			}
+			// Set root move restrictions if there are any.
 			if (searchMoves != null && !searchMoves.isEmpty()) {
 				moves = new HashSet<>();
 				try {
@@ -384,53 +406,72 @@ public class Detroid implements Engine, Observer {
 			}
 			else
 				moves = null;
-			search = new Search(game.getPosition(), searchStats, doPonder || (infinite != null && infinite),
-					depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-					nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params);
-			search.start();
-			if (debug) debugInfo.set("Search started");
-			if (doPonder) {
-				if (debug) debugInfo.set("In ponder mode");
-				while (search.isAlive() && !ponderHit) {
+			// Start the search.
+			Search: {
+				search = new Search(game.getPosition(), searchStats, doPonder || doInfinite,
+						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
+						nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params);
+				search.start();
+				if (debug) debugInfo.set("Search started");
+				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
+				if (doPonder) {
+					if (debug) debugInfo.set("In ponder mode");
+					while (search.isAlive() && !ponderHit) {
+						try {
+							wait(200);
+						} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+					}
+					if (debug) debugInfo.set("Ponder stopped");
+					// If the search terminated due to a ponderhit, keep searching...
+					if (ponderHit) {
+						if (debug) debugInfo.set("Ponderhit acknowledged");
+						ponderHit = false;
+					}
+					// If it did not, return the best move found.
+					else
+						return new SearchResults(searchResult == null || searchResult.equals(new Move()) ? getRandomMove().toString() :
+							searchResult.toString(), null);
+				}
+				// If in infinite mode, let the search run until it is externally stopped.
+				else if (doInfinite) {
+					if (debug) debugInfo.set("In infinite mode");
 					try {
-						wait(200);
+						search.join();
+					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+					break Search;
+				}
+				// Compute search time and wait for the search to terminate for the computed amount of time.
+				time = searchTime == null || searchTime == 0 ?
+						computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
+				if (debug) debugInfo.set("Base search time - " + time);
+				try {
+					search.join(time);
+					if (debug) debugInfo.set("Base search time up");
+				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+				// If time was up, check if the search should be extended.
+				if (!stop && (searchTime == null) && (depth == null) && (nodes == null) && (mateDistance == null)) {
+					try {
+						extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo);
+						if (debug) debugInfo.set("Extra search time - " + extraTime);
+						if (extraTime > 0)
+							search.join(extraTime);
+						if (debug) debugInfo.set("Extra time up");
 					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 				}
-				if (debug) debugInfo.set("Ponder stopped");
-				if (ponderHit) {
-					if (debug) debugInfo.set("Ponderhit acknowledged");
-					ponderHit = false;
+				// Time is up, stop the search.
+				if (search.isAlive()) {
+					search.interrupt();
+					try {
+						search.join();
+					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 				}
-				else
-					return new SearchResults(searchResult == null || searchResult.equals(new Move()) ? getRandomMove().toString() :
-						searchResult.toString(), null);
-			}
-			time = searchTime == null || searchTime == 0 ?
-					computeSearchTime(whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo) : searchTime;
-			if (debug) debugInfo.set("Base search time - " + time);
-			try {
-				search.join(time);
-				if (debug) debugInfo.set("Base search time up");
-			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
-			if (!stop && (searchTime == null) && (depth == null) && (nodes == null) && (mateDistance == null)) {
-				try {
-					extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, whiteIncrement, movesToGo);
-					if (debug) debugInfo.set("Extra search time - " + extraTime);
-					if (extraTime > 0)
-						search.join(extraTime);
-					if (debug) debugInfo.set("Extra time up");
-				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
-			}
-			if (search.isAlive()) {
-				search.interrupt();
-				try {
-					search.join();
-				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 			}
 			if (debug) debugInfo.set("Search stopped");
+			// Set ponder move based on the PV.
 			pV = searchStats.getPv();
 			ponderMove = pV.length > 1 ? pV[1] : null;
 		}
+		// Set final results.
 		if (searchResult.equals(new Move())) {
 			bestMove = getRandomMove();
 			if (debug) debugInfo.set("No valid PV root move found\n" +
