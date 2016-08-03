@@ -4,7 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * A generic abstract class for providing the basics for list data structures such as stacks and queues.
+ * A low level generic abstract class for providing the basics for list data structures such as stacks and queues. It is also an iterator itself
+ * and has to be manually reset when needed.
  * 
  * @author Viktor
  *
@@ -80,7 +81,7 @@ public abstract class List<T> implements Collection<T>, Iterator<T> {
 		return next;
 	}
 	/**
-	 * Resets the pointer to the head.
+	 * Resets the iterator to the head of the list.
 	 */
 	public void reset() {
 		iterator = head;
@@ -133,8 +134,10 @@ public abstract class List<T> implements Collection<T>, Iterator<T> {
 	@Override
 	public boolean contains(Object o) {
 		while (hasNext()) {
-			if (next().equals(o))
+			if (next().equals(o)) {
+				reset();
 				return true;
+			}
 		}
 		return false;
 	}

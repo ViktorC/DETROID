@@ -631,8 +631,8 @@ class Position implements Hashable, Copiable<Position> {
 		long moveSet = 0;
 		long toBit = (1L << move.to);
 		if (offsetBoard[move.from] == move.movedPiece) {
-			dB = MoveSetDatabase.getByIndex(move.to);
-			PseudoSwitch: {
+			dB = MoveSetDatabase.getByIndex(move.from);
+			Flow: {
 				if (isWhitesTurn) {
 					if (move.movedPiece == Piece.W_KING.ind) {
 						if (move.type == MoveType.SHORT_CASTLING.ind) {
@@ -673,7 +673,7 @@ class Position implements Hashable, Copiable<Position> {
 						if (move.type == MoveType.EN_PASSANT.ind && enPassantRights != EnPassantRights.NONE.ind &&
 								move.to == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights) {
 							moveSet |= toBit;
-							break PseudoSwitch;
+							break Flow;
 						}
 					}
 					else return false;
@@ -718,7 +718,7 @@ class Position implements Hashable, Copiable<Position> {
 						if (move.type == MoveType.EN_PASSANT.ind && enPassantRights != EnPassantRights.NONE.ind &&
 								move.to == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights) {
 							moveSet |= toBit;
-							break PseudoSwitch;
+							break Flow;
 						}
 					}
 					else return false;
@@ -730,7 +730,7 @@ class Position implements Hashable, Copiable<Position> {
 				makeMoveOnBoard(move);
 				checked = isAttacked(BitOperations.indexOfBit(isWhitesTurn ? whiteKing : blackKing), !isWhitesTurn);
 				unmakeMoveOnBoard(move);
-				if (!checked) return true;
+				return !checked;
 			}
 		}
 		return false;

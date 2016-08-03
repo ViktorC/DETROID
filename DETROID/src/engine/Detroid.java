@@ -231,30 +231,22 @@ public class Detroid implements Engine, Observer {
 		}
 		else if (primaryBookPath.equals(setting)) {
 			try {
-				if ((value == null && options.get(primaryBookPath) == null) || value != null) {
-					if (value != null && !value.equals(options.get(primaryBookPath))) {
-						Book newBook = new Book((String) value, book.getSecondaryFilePath());
-						book.close();
-						book = newBook;
-						options.put(primaryBookPath, book.getPrimaryFilePath());
-					}
-					if (debug) debugInfo.set("Primary book path successfully set to " + value);
-					return true;
-				}
+				Book newBook = new Book((String) value, book.getSecondaryFilePath());
+				book.close();
+				book = newBook;
+				options.put(primaryBookPath, book.getPrimaryFilePath());
+				if (debug) debugInfo.set("Primary book path successfully set to " + value);
+				return true;
 			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
 		else if (secondaryBookPath.equals(setting)) {
 			try {
-				if ((value == null && options.get(primaryBookPath) == null) || value != null) {
-					if (value != null && !value.equals(options.get(secondaryBookPath))) {
-						Book newBook = new Book(book.getPrimaryFilePath(), (String) value);
-						book.close();
-						book = newBook;
-						options.put(secondaryBookPath, book.getSecondaryFilePath());
-					}
-					if (debug) debugInfo.set("Secondary book path successfully set to " + value);
-					return true;
-				}
+				Book newBook = new Book(book.getPrimaryFilePath(), (String) value);
+				book.close();
+				book = newBook;
+				options.put(secondaryBookPath, book.getSecondaryFilePath());
+				if (debug) debugInfo.set("Secondary book path successfully set to " + value);
+				return true;
 			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
 		else if (uciOpponent.equals(setting)) {
