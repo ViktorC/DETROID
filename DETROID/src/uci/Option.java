@@ -114,4 +114,15 @@ public class Option<T> {
 			super(name, defaultValue, allowedValues, null, null);
 		}
 	}
+	/**
+	 * A button option which only has a name and serves as a parameterless command.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	public static class ButtonOption extends Option<Object> {
+		public ButtonOption(String name) {
+			super(name, null, null, null, null);
+		}
+	}
 }

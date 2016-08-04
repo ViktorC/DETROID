@@ -34,6 +34,7 @@ public class Detroid implements Engine, Observer {
 	private Option<?> primaryBookPath;
 	private Option<?> secondaryBookPath;
 	private Option<?> uciOpponent;
+	private Option<?> parametersPath;
 	private HashMap<Option<?>, Object> options;
 	
 	private Parameters params;
@@ -157,16 +158,18 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public synchronized void init() {
+		try {
+			params = new Parameters();
+		} catch (IOException e) { }
+		try {
+			book = new Book();
+		} catch (IOException e) { }
 		debugInfo = new DebugInformation();
 		debug = false;
 		ponderHit = false;
 		stop = false;
-		params = new Parameters();
-		game = new Game();
-		try {
-			book = new Book();
-		} catch (IOException e) { }
 		outOfBook = false;
+		game = new Game();
 		options = new HashMap<>();
 		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
 		ponder = new Option.CheckOption("Ponder", true);
@@ -174,12 +177,14 @@ public class Detroid implements Engine, Observer {
 		primaryBookPath = new Option.StringOption("PrimaryBookPath", book.getPrimaryFilePath());
 		secondaryBookPath = new Option.StringOption("SecondaryBookPath", null);
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
+		parametersPath = new Option.StringOption("ParametersPath", params.getFilePath());
 		options.put(hashSize, hashSize.getDefaultValue());
 		options.put(ponder, ponder.getDefaultValue());
 		options.put(ownBook, ownBook.getDefaultValue());
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue());
 		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue());
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
+		options.put(parametersPath, parametersPath.getDefaultValue());
 		searchStats = new SearchInformation();
 		searchStats.addObserver(this);
 		setHashSize((int)options.get(hashSize));
@@ -235,7 +240,7 @@ public class Detroid implements Engine, Observer {
 				book.close();
 				book = newBook;
 				options.put(primaryBookPath, book.getPrimaryFilePath());
-				if (debug) debugInfo.set("Primary book path successfully set to " + value);
+				if (debug) debugInfo.set("Primary book file path successfully set to " + value);
 				return true;
 			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
@@ -245,7 +250,7 @@ public class Detroid implements Engine, Observer {
 				book.close();
 				book = newBook;
 				options.put(secondaryBookPath, book.getSecondaryFilePath());
-				if (debug) debugInfo.set("Secondary book path successfully set to " + value);
+				if (debug) debugInfo.set("Secondary book file path successfully set to " + value);
 				return true;
 			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
@@ -254,7 +259,16 @@ public class Detroid implements Engine, Observer {
 			if (debug) debugInfo.set("Opponent name successfully set to " + value);
 			return true;
 		}
-		if (debug) debugInfo.set("The setting was denied");
+		else if (parametersPath.equals(setting)) {
+			try {
+				Parameters newParams = new Parameters((String) value);
+				params = newParams;
+				options.put(parametersPath, params.getFilePath());
+				if (debug) debugInfo.set("Parameters file path successfully set to " + value);
+				return true;
+			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
+		}
+		if (debug) debugInfo.set("The setting was not accepted");
 		return false;
 	}
 	@Override
@@ -294,7 +308,7 @@ public class Detroid implements Engine, Observer {
 					gen = 0;
 				}
 				else {
-					tT.remove(e -> e.generation < gen);
+					tT.remove(e -> e.generation < gen - 1);
 					eT.remove(e -> e.generation < gen - 1);
 					pT.remove(e -> e.generation < gen - 3);
 				}

@@ -375,11 +375,9 @@ final class Evaluator {
 		numOfWhitePawns = BitOperations.getHammingWeight(whitePawns);
 		numOfBlackPawns = BitOperations.getHammingWeight(blackPawns);
 		score += (numOfWhitePawns - numOfBlackPawns)*params.PAWN_VALUE;
-		// Pawn defense.
+		// Pawn attacks.
 		whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(whitePawns, -1);
 		blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(blackPawns, -1);
-		score += params.DEFENDED_PAWN_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks & whitePawns);
-		score -= params.DEFENDED_PAWN_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks & blackPawns);
 		// Blocked pawns.
 		score -= params.BLOCKED_PAWN_WEIGHT1*BitOperations.getHammingWeight((whitePawns << 8) & whitePawns);
 		score -= params.BLOCKED_PAWN_WEIGHT2*BitOperations.getHammingWeight((whitePawns << 16) & whitePawns);
@@ -389,34 +387,35 @@ final class Evaluator {
 		score += params.BLOCKED_PAWN_WEIGHT3*BitOperations.getHammingWeight((blackPawns >>> 24) & blackPawns);
 		// Passed pawns.
 		whiteAdvanceSpans = whitePawns << 8;
+		whiteAdvanceSpans |= whiteAdvanceSpans << 8;
 		whiteAdvanceSpans |= whiteAdvanceSpans << 16;
 		whiteAdvanceSpans |= whiteAdvanceSpans << 32;
 		whiteAttackSpans = ((whiteAdvanceSpans >>> 1) & ~File.H.bits) | ((whiteAdvanceSpans << 1) & ~File.A.bits);
 		whiteFrontSpans = whiteAdvanceSpans | whiteAttackSpans;
 		blackAdvanceSpans = blackPawns >>> 8;
+		blackAdvanceSpans |= blackAdvanceSpans >>> 8;
 		blackAdvanceSpans |= blackAdvanceSpans >>> 16;
 		blackAdvanceSpans |= blackAdvanceSpans >>> 32;
 		blackAttackSpans = ((blackAdvanceSpans >>> 1) & ~File.H.bits) | ((blackAdvanceSpans << 1) & ~File.A.bits);
 		blackFrontSpans = blackAdvanceSpans | blackAttackSpans;
-		// Only count one even if there are multiple pawns on the passer's file.
-		whitePassers = BitOperations.getHammingWeight(whitePawns & ~blackFrontSpans & ~whiteAdvanceSpans);
-		blackPassers = BitOperations.getHammingWeight(blackPawns & ~whiteFrontSpans & ~blackAdvanceSpans);
+		whitePassers = BitOperations.getHammingWeight(whitePawns & ~blackFrontSpans);
+		blackPassers = BitOperations.getHammingWeight(blackPawns & ~whiteFrontSpans);
 		score += params.PASSED_PAWN_WEIGHT*whitePassers;
 		score -= params.PASSED_PAWN_WEIGHT*blackPassers;
 		// Isolated pawns.
-		whitePawnNeighbours = whiteAdvanceSpans;
+		whitePawnNeighbours = whiteAttackSpans;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 8;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 16;
 		whitePawnNeighbours |= whitePawnNeighbours >>> 32;
-		blackPawnNeighbours = blackAdvanceSpans;
+		blackPawnNeighbours = blackAttackSpans;
 		blackPawnNeighbours |= blackPawnNeighbours << 8;
 		blackPawnNeighbours |= blackPawnNeighbours << 16;
 		blackPawnNeighbours |= blackPawnNeighbours << 32;
 		score -= params.ISOLATED_PAWN_WEIGHT*BitOperations.getHammingWeight(~whitePawnNeighbours & whitePawns);
 		score += params.ISOLATED_PAWN_WEIGHT*BitOperations.getHammingWeight(~blackPawnNeighbours & blackPawns);
 		// Backward pawns.
-		whiteBackwardPawns = whitePawns & blackAttackSpans & ~whiteFrontSpans;
-		blackBackwardPawns = blackPawns & whiteAttackSpans & ~blackFrontSpans;
+		whiteBackwardPawns = whitePawns & (blackPawnAttacks >>> 8) & ~(whiteAttackSpans | (whiteAttackSpans >>> 8));
+		blackBackwardPawns = blackPawns & (whiteAttackSpans << 8) & ~(blackAttackSpans | (blackAttackSpans << 8));
 		score -= params.BACKWARD_PAWN_WEIGHT1*BitOperations.getHammingWeight(whiteBackwardPawns);
 		score += params.BACKWARD_PAWN_WEIGHT1*BitOperations.getHammingWeight(blackBackwardPawns);
 		// Extra penalty if it is an open pawn.
@@ -434,23 +433,22 @@ final class Evaluator {
 			else if ((whitePawns & Square.H3.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT2;
 			if ((whitePawns & Square.F2.bit) != 0)
-				score += params.SHIELDING_PAWN_WEIGHT2;
-			score -= params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit |
-					Square.H4.bit) & blackPawns);
-			score -= params.SHIELD_THREATENING_PAWN_WEIGHT2*BitOperations.getHammingWeight((Square.F3.bit | Square.F4.bit) & blackPawns);
+				score += params.SHIELDING_PAWN_WEIGHT1;
+			score -= params.SHIELD_THREATENING_PAWN_WEIGHT*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit |
+					Square.H4.bit | Square.F3.bit | Square.F4.bit) & blackPawns);
 		}
 		else if (whiteKing == Square.A1.bit || whiteKing == Square.B1.bit || whiteKing == Square.C1.bit) {
 			if ((whitePawns & Square.A2.bit) != 0)
-				score += params.SHIELDING_PAWN_WEIGHT1;
-			else if ((whitePawns & Square.A3.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT2;
 			if ((whitePawns & Square.B2.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT1;
 			else if ((whitePawns & Square.B3.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT2;
 			if ((whitePawns & Square.C2.bit) != 0)
-				score += params.SHIELDING_PAWN_WEIGHT3;
-			score -= params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.A3.bit | Square.A4.bit | Square.B3.bit |
+				score += params.SHIELDING_PAWN_WEIGHT1;
+			else if ((whitePawns & Square.C3.bit) != 0)
+				score += params.SHIELDING_PAWN_WEIGHT2;
+			score -= params.SHIELD_THREATENING_PAWN_WEIGHT*BitOperations.getHammingWeight((Square.A3.bit | Square.A4.bit | Square.B3.bit |
 					Square.B4.bit | Square.C3.bit | Square.C4.bit) & blackPawns);
 		}
 		if (blackKing == Square.G8.bit || blackKing == Square.H8.bit) {
@@ -463,34 +461,31 @@ final class Evaluator {
 			else if ((whitePawns & Square.H6.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT2;
 			if ((blackPawns & Square.F7.bit) != 0)
-				score -= params.SHIELDING_PAWN_WEIGHT2;
-			score += params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit |
-					Square.H6.bit) & whitePawns);
-			score += params.SHIELD_THREATENING_PAWN_WEIGHT2*BitOperations.getHammingWeight((Square.F5.bit | Square.F6.bit) & whitePawns);
+				score -= params.SHIELDING_PAWN_WEIGHT1;
+			score += params.SHIELD_THREATENING_PAWN_WEIGHT*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit |
+					Square.H6.bit | Square.F5.bit | Square.F6.bit) & whitePawns);
 		}
 		else if (blackKing == Square.A8.bit || blackKing == Square.B8.bit || blackKing == Square.C8.bit) {
 			if ((blackPawns & Square.A7.bit) != 0)
-				score -= params.SHIELDING_PAWN_WEIGHT1;
-			else if ((whitePawns & Square.A6.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT2;
 			if ((blackPawns & Square.B7.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT1;
 			else if ((whitePawns & Square.B6.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT2;
 			if ((blackPawns & Square.C7.bit) != 0)
-				score -= params.SHIELDING_PAWN_WEIGHT3;
-			score += params.SHIELD_THREATENING_PAWN_WEIGHT1*BitOperations.getHammingWeight((Square.A5.bit | Square.A6.bit | Square.B5.bit |
+				score -= params.SHIELDING_PAWN_WEIGHT1;
+			else if ((blackPawns & Square.C6.bit) != 0)
+				score -= params.SHIELDING_PAWN_WEIGHT2;
+			score += params.SHIELD_THREATENING_PAWN_WEIGHT*BitOperations.getHammingWeight((Square.A5.bit | Square.A6.bit | Square.B5.bit |
 					Square.B6.bit | Square.C5.bit | Square.C6.bit) & whitePawns);
 		}
-		// King-pawn defense and attack.
+		// King-pawn attack.
 		whiteKingInd = BitOperations.indexOfBit(whiteKing);
 		whiteKingZone = MoveSetDatabase.getByIndex(whiteKingInd).kingMoveMask;
 		score -= params.ATTACKED_KING_AREA_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks & whiteKingZone);
-		score += params.DEFENDED_KING_AREA_SQUARE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks & whiteKingZone);
 		blackKingInd = BitOperations.indexOfBit(blackKing);
 		blackKingZone = MoveSetDatabase.getByIndex(blackKingInd).kingMoveMask;
 		score += params.ATTACKED_KING_AREA_SQUARE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks & blackKingZone);
-		score -= params.DEFENDED_KING_AREA_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks & blackKingZone);
 		// King-pawn tropism.
 		whitePawnInds = BitOperations.serialize(whitePawns, numOfWhitePawns);
 		whiteTropism = 0;
@@ -681,9 +676,9 @@ final class Evaluator {
 		while (blackPieces.hasNext())
 			blackDistToWhiteKing += CHEBYSHEV_DISTANCE[blackPieces.next()][whiteKingInd];
 		extendedScore -= (params.PIECE_KING_TROPISM_WEIGHT*whiteDistToBlackKing)/
-				BitOperations.getHammingWeight(pos.allWhiteOccupied^pos.whitePawns);
+				Math.max(1, BitOperations.getHammingWeight(pos.allWhiteOccupied^pos.whitePawns));
 		extendedScore += (params.PIECE_KING_TROPISM_WEIGHT*blackDistToWhiteKing)/
-				BitOperations.getHammingWeight(pos.allBlackOccupied^pos.blackPawns);
+				Math.max(1, BitOperations.getHammingWeight(pos.allBlackOccupied^pos.blackPawns));
 		// King mobility.
 		whiteKingMobility = MoveSetDatabase.getByIndex(whiteKingInd).getKingMoveSet(pos.allNonWhiteOccupied);
 		blackKingMobility = MoveSetDatabase.getByIndex(blackKingInd).getKingMoveSet(pos.allNonBlackOccupied);

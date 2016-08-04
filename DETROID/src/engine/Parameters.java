@@ -2,6 +2,9 @@ package engine;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,6 +22,8 @@ import java.util.Random;
  */
 public final class Parameters {
 
+	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
+	
 	// Piece values.
 	public short KING_VALUE;
 	public short QUEEN_VALUE;
@@ -36,7 +41,6 @@ public final class Parameters {
 	public byte PAWN_PHASE_WEIGHT;
 	
 	// Evaluation weights.
-	public byte DEFENDED_PAWN_WEIGHT;
 	public byte BLOCKED_PAWN_WEIGHT1;
 	public byte BLOCKED_PAWN_WEIGHT2;
 	public byte BLOCKED_PAWN_WEIGHT3;
@@ -46,11 +50,8 @@ public final class Parameters {
 	public byte BACKWARD_PAWN_WEIGHT2;
 	public byte SHIELDING_PAWN_WEIGHT1;
 	public byte SHIELDING_PAWN_WEIGHT2;
-	public byte SHIELDING_PAWN_WEIGHT3;
-	public byte SHIELD_THREATENING_PAWN_WEIGHT1;
-	public byte SHIELD_THREATENING_PAWN_WEIGHT2;
+	public byte SHIELD_THREATENING_PAWN_WEIGHT;
 	public byte ATTACKED_KING_AREA_SQUARE_WEIGHT;
-	public byte DEFENDED_KING_AREA_SQUARE_WEIGHT;
 	public byte KING_PAWN_TROPISM_WEIGHT;
 	public byte PINNED_QUEEN_WEIGHT;
 	public byte PINNED_ROOK_WEIGHT;
@@ -121,23 +122,44 @@ public final class Parameters {
 	public byte[] PST_KING_ENDGAME;
 	
 	private long id;
-	
-	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
+	private String filePath;
 	
 	@SuppressWarnings("unused")
 	private Parameters(boolean noIo) { }
-	public Parameters(String filePath) {
+	public Parameters(String filePath) throws IOException {
 		setParameters(filePath);
+		this.filePath = filePath;
 		Random rand = new Random();
 		id = rand.nextLong();
 	}
-	public Parameters() {
+	public Parameters() throws IOException {
 		this(DEFAULT_PARAMETERS_FILE_PATH);
 	}
+	/**
+	 * Returns the 64 bit ID number of the instance.
+	 * 
+	 * @return
+	 */
 	public long getId() {
 		return id;
 	}
-	private boolean setParameters(String filePath) {
+	/**
+	 * Returns the path to the file on which the object has been instantiated.
+	 * 
+	 * @return
+	 */
+	public String getFilePath() {
+		return filePath;
+	}
+	/**
+	 * Reads the parameter values from a file and sets them.
+	 * 
+	 * @param filePath
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean setParameters(String filePath) throws IOException {
+		File file;
 		String line;
 		String name;
 		String value;
@@ -146,7 +168,9 @@ public final class Parameters {
 		Class<? extends Parameters> clazz = this.getClass();
 		Field field;
 		int indexOfClosingNameTag;
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(filePath)));) {
+		file = new File(filePath);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.exists() ? new FileInputStream(filePath) : 
+			getClass().getResourceAsStream(filePath)));) {
 			while ((line = reader.readLine()) != null) {
 				indexOfClosingNameTag = line.indexOf(']');
 				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
@@ -184,7 +208,8 @@ public final class Parameters {
 			}
 			return true;
 		}
-		catch (Exception e) {
+		catch (FileNotFoundException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+			e.printStackTrace();
 			return false;
 		}
 	}

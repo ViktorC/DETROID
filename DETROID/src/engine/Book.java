@@ -81,7 +81,7 @@ class Book implements Closeable {
 				uri = getClass().getResource(filePath).toURI().toString();
 				if (uri.startsWith("jar:file")) {
 					tempFile = Files.createTempFile("detroid_book_", ".bin");
-					Files.copy(Book.class.getResourceAsStream(filePath), tempFile, StandardCopyOption.REPLACE_EXISTING);
+					Files.copy(getClass().getResourceAsStream(filePath), tempFile, StandardCopyOption.REPLACE_EXISTING);
 					file = tempFile;
 				}
 				else

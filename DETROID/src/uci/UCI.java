@@ -62,6 +62,8 @@ public final class UCI implements Observer, Closeable {
 				for (Object v : o.getAllowedValues())
 					option += " " + v;
 			}
+			else if (o instanceof Option.ButtonOption)
+				option += "button";
 			out.println(option);
 		}
 		out.println("uciok");
@@ -98,6 +100,8 @@ public final class UCI implements Observer, Closeable {
 								value = value.trim();
 								this.engine.setOption((Option.ComboOption)e, value.equals("null") ? null : value);
 							}
+							else if (e instanceof Option.ButtonOption)
+								this.engine.setOption((Option.ButtonOption)e, null);
 							break;
 						}
 					}

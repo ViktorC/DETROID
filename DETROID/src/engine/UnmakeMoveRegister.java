@@ -4,7 +4,7 @@ import engine.Bitboard.Square;
 import util.*;
 
 /**
- * Some position and move information--such as castling and en passant rights, fifty-move rule clock, repetitions, a bitmap representing checkers,
+ * Some position and move information--such as castling and en passant rights, fifty-move rule clock, a bitmap representing checkers,
  * and the moved and captured pieces--is stored in this unencapsulated class' instances so as to make reverting back to the previous position when
  * unmaking a move faster.
  * 
@@ -16,17 +16,15 @@ class UnmakeMoveRegister {
 	public final byte whiteCastlingRights;
 	public final byte blackCastlingRights;
 	public final byte enPassantRights;
-	public final short fiftyMoveRuleClock;
-	public final byte repetitions;
+	public final byte fiftyMoveRuleClock;
 	public final long checkers;
 	
 	public UnmakeMoveRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
-	short fiftyMoveRuleClock, byte repetitions, long checkers) {
+			byte fiftyMoveRuleClock, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;
 		this.enPassantRights = enPassantRights;
 		this.fiftyMoveRuleClock = fiftyMoveRuleClock;
-		this.repetitions = repetitions;
 		this.checkers = checkers;
 	}
 	/**
@@ -50,7 +48,6 @@ class UnmakeMoveRegister {
 		rep += String.format("%-23s ", "En passant rights:");
 		rep += EnPassantRights.getByIndex(enPassantRights).toString() + "\n";
 		rep += String.format("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
-		rep += String.format("%-23s " + repetitions + "\n", "Repetitions:");
 		return rep;
 	}
 }

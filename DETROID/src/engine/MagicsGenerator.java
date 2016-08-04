@@ -18,7 +18,7 @@ import util.BitOperations;
  * @author Viktor
  *
  */
-final class MagicGenerator {
+final class MagicsGenerator {
 	
 	/**
 	 * A simple class for returning both the magic number and the magic shift value.
@@ -26,14 +26,14 @@ final class MagicGenerator {
 	 * @author Viktor
 	 *
 	 */
-	public static class Numbers {
+	public static class Magics {
 		
 		public final boolean rook;
 		public final byte sqrInd;
 		public final long magicNumber;
 		public final byte magicShift;
 		
-		public Numbers(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
+		public Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
 			this.rook = rook;
 			this.sqrInd = sqrInd;
 			this.magicNumber = magicNumber;
@@ -51,7 +51,7 @@ final class MagicGenerator {
 		}
 	}
 	
-	private static MagicGenerator INSTANCE;
+	private static MagicsGenerator INSTANCE;
 	
 	private long[][] rookOccupancyVariations;
 	private long[][] bishopOccupancyVariations;
@@ -59,10 +59,10 @@ final class MagicGenerator {
 	private long[][] bishopAttackSetVariations;
 	
 	static {
-		INSTANCE = new MagicGenerator();
+		INSTANCE = new MagicsGenerator();
 	}
 	
-	private MagicGenerator() {
+	private MagicsGenerator() {
 		long bit;
 		long[] bishopOccupancyMask, rookOccupancyMask;
 		bishopOccupancyMask = new long[64];
@@ -91,7 +91,7 @@ final class MagicGenerator {
 	 * 
 	 * @return
 	 */
-	public static MagicGenerator getInstance() {
+	public static MagicsGenerator getInstance() {
 		return INSTANCE;
 	}
 	/**
@@ -105,7 +105,7 @@ final class MagicGenerator {
 	 * @param enhanced
 	 * @return
 	 */
-	public Numbers generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+	public Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
 		long[] magicDatabase;
 		Random random = new Random();
 		long magicNumber;
@@ -141,7 +141,7 @@ final class MagicGenerator {
 			}
 		}
 		while (collision);
-		return new Numbers(rook, (byte)sqrInd, magicNumber, (byte)shift);
+		return new Magics(rook, (byte)sqrInd, magicNumber, (byte)shift);
 	}
 	/**
 	 * Generates magic numbers for each square either for a rook or a bishop depending on 'rook' and returns them in a
@@ -153,8 +153,8 @@ final class MagicGenerator {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public Numbers[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
-		Numbers[] allMagics = new Numbers[64];
+	public Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
+		Magics[] allMagics = new Magics[64];
 		OuterLoop: for (int i = 0; i < 64; i++) {
 			for (int sqr : enhancedSquares) {
 				if (sqr == i) {
@@ -166,7 +166,7 @@ final class MagicGenerator {
 		}
 		if (print) {
 			System.out.format("%-6s %-3s %-21s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
-			for (Numbers m : allMagics)
+			for (Magics m : allMagics)
 				System.out.println(m);
 		}
 		return allMagics;

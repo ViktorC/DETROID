@@ -289,7 +289,8 @@ class Game {
 		this.blackPlayerName = blackPlayerName;
 	}
 	private void setState() {
-		state = position.getMoves().size() == 0 || position.fiftyMoveRuleClock >= 100 || position.repetitions >= 3 ?
+		state = position.getMoves().size() == 0 || position.fiftyMoveRuleClock >= 100 ||
+				position.getNumberOfRepetitions(0) >= 2 ?
 			position.isInCheck ? position.isWhitesTurn ? State.BLACK_WIN : State.WHITE_WIN : State.DRAW : State.IN_PROGRESS;
 	}
 	/**
