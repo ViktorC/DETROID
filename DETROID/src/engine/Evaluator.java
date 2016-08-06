@@ -534,14 +534,13 @@ final class Evaluator {
 			score = eE.score;
 			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
 			if (eE.isExact || score >= beta + params.LAZY_EVAL_MAR || score <= alpha - params.LAZY_EVAL_MAR)
-				return score;
+				return eE.score;
 		}
 		// In case of no hash hit, calculate the base score from scratch.
 		/* @!TODO Try storing only exact scores or remove lazy eval alltogether and use tapered eval for certain extended eval terms such as
 		 * king mobility and see how it affects performance
 		 */
 		else {
-			score = 0;
 			numOfWhiteQueens = BitOperations.getHammingWeight(pos.whiteQueens);
 			numOfWhiteRooks = BitOperations.getHammingWeight(pos.whiteRooks);
 			numOfWhiteBishops = BitOperations.getHammingWeight(pos.whiteBishops);
@@ -602,7 +601,7 @@ final class Evaluator {
 				openingScore += PST_OPENING[piece][i];
 				endgameScore += PST_ENDGAME[piece][i];
 			}
-			score = (short)(baseScore + taperedEvalScore(openingScore, endgameScore, phase));
+			score = (short) (baseScore + taperedEvalScore(openingScore, endgameScore, phase));
 			if (!isWhitesTurn)
 				score *= -1;
 			if (score <= alpha - params.LAZY_EVAL_MAR || score >= beta + params.LAZY_EVAL_MAR) {
@@ -649,17 +648,17 @@ final class Evaluator {
 		extendedScore -= params.ROOK_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackRookCoverage);
 		extendedScore -= params.BISHOP_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackBishopCoverage);
 		extendedScore -= params.KNIGHT_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackKnightCoverage);
-		// Pawn-piece defense.
+		// Pawn-piece defence.
 		whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & whiteMovablePieces, -1);
 		blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns & blackMovablePieces, -1);
-		score += params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
+		extendedScore += params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
 				((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
-		score -= params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
+		extendedScore -= params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
 				((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns));
 		// Pawn-piece attack.
-		score += params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
+		extendedScore += params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
 				((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns));
-		score -= params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
+		extendedScore -= params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
 				((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
 		// Stopped pawns.
 		extendedScore -= params.STOPPED_PAWN_WEIGHT*BitOperations.getHammingWeight((pos.whitePawns << 8) & (pos.allBlackOccupied^pos.blackPawns));

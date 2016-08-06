@@ -98,6 +98,10 @@ public final class Parameters {
 	public byte TT_SHARE;
 	public byte ET_SHARE;
 	public byte PT_SHARE;
+	// The number of turns for which the different hash table's entries are retained by default.
+	public byte TT_ENTRY_LIFECYCLE;
+	public byte ET_ENTRY_LIFECYCLE;
+	public byte PT_ENTRY_LIFECYCLE;
 	
 	// The values considered when calculating search time extensions.
 	public short SCORE_FLUCTUATION_LIMIT;

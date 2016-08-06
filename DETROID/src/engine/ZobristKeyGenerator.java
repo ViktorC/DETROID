@@ -258,13 +258,13 @@ final class ZobristKeyGenerator {
 	 * @param board
 	 */
 	public void setHashKeys(Position p) {
-		byte[] board64 = p.offsetBoard;
+		byte[] offsetBoard = p.offsetBoard;
 		long key = 0, pawnKey = 0;
 		int piece;
 		if (!p.isWhitesTurn)
 			key ^= turn;
-		for (int i = 0; i < board64.length; i++) {
-			piece = board64[i];
+		for (int i = 0; i < offsetBoard.length; i++) {
+			piece = offsetBoard[i];
 			key ^= board[piece][i];
 			if (piece == Piece.W_PAWN.ind || piece == Piece.B_PAWN.ind || piece == Piece.W_KING.ind || piece == Piece.B_KING.ind)
 				pawnKey ^= board[piece][i];
@@ -299,26 +299,21 @@ final class ZobristKeyGenerator {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				key ^= movedRow[move.to];
-				if (p.isWhitesTurn) {
-					if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.W_PAWN.ind) {
-						pawnKey ^= movedRow[move.from];
-						pawnKey ^= movedRow[move.to];
-					}
+				if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.W_PAWN.ind) {
+					pawnKey ^= movedRow[move.from];
+					pawnKey ^= movedRow[move.to];
 					if (move.capturedPiece == Piece.B_PAWN.ind)
 						pawnKey ^= board[move.capturedPiece][move.to];
 				}
-				else {
-					if (move.movedPiece == Piece.B_KING.ind || move.movedPiece == Piece.B_PAWN.ind) {
-						pawnKey ^= movedRow[move.from];
-						pawnKey ^= movedRow[move.to];
-					}
+				else if (move.movedPiece == Piece.B_KING.ind || move.movedPiece == Piece.B_PAWN.ind) {
+					pawnKey ^= movedRow[move.from];
+					pawnKey ^= movedRow[move.to];
 					if (move.capturedPiece == Piece.W_PAWN.ind)
 						pawnKey ^= board[move.capturedPiece][move.to];
 				}
 			}
 			else if (move.type == MoveType.SHORT_CASTLING.ind) {
 				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
 				key ^= movedRow[move.to];
 				pawnKey ^= movedRow[move.from];
 				pawnKey ^= movedRow[move.to];
@@ -333,7 +328,6 @@ final class ZobristKeyGenerator {
 			}
 			else if (move.type == MoveType.LONG_CASTLING.ind) {
 				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
 				key ^= movedRow[move.to];
 				pawnKey ^= movedRow[move.from];
 				pawnKey ^= movedRow[move.to];

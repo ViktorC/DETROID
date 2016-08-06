@@ -308,9 +308,9 @@ public class Detroid implements Engine, Observer {
 					gen = 0;
 				}
 				else {
-					tT.remove(e -> e.generation < gen - 1);
-					eT.remove(e -> e.generation < gen - 1);
-					pT.remove(e -> e.generation < gen - 3);
+					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
+					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
+					pT.remove(e -> e.generation < gen - params.PT_ENTRY_LIFECYCLE);
 				}
 				hT.decrementCurrentValues();
 				System.gc();
