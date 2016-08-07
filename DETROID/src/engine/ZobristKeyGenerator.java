@@ -302,15 +302,15 @@ final class ZobristKeyGenerator {
 				if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.W_PAWN.ind) {
 					pawnKey ^= movedRow[move.from];
 					pawnKey ^= movedRow[move.to];
-					if (move.capturedPiece == Piece.B_PAWN.ind)
-						pawnKey ^= board[move.capturedPiece][move.to];
 				}
 				else if (move.movedPiece == Piece.B_KING.ind || move.movedPiece == Piece.B_PAWN.ind) {
 					pawnKey ^= movedRow[move.from];
 					pawnKey ^= movedRow[move.to];
-					if (move.capturedPiece == Piece.W_PAWN.ind)
-						pawnKey ^= board[move.capturedPiece][move.to];
 				}
+				if (move.capturedPiece == Piece.B_PAWN.ind)
+					pawnKey ^= board[move.capturedPiece][move.to];
+				else if (move.capturedPiece == Piece.W_PAWN.ind)
+					pawnKey ^= board[move.capturedPiece][move.to];
 			}
 			else if (move.type == MoveType.SHORT_CASTLING.ind) {
 				key ^= movedRow[move.from];

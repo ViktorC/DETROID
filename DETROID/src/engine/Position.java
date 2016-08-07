@@ -366,7 +366,7 @@ class Position implements Hashable, Copiable<Position> {
 		return fiftyMoveRuleClock;
 	}
 	/**
-	 * Returns the number of times the current position has already occured before. If the position has already occured before within the last
+	 * Returns the number of times the current position has already occurred before. If the position has already occurred before within the last
 	 * x number of moves specified by sensitiveHalfMoveWindow, the maximum integer value is returned.
 	 * 
 	 * @param sensitiveHalfMoveWindow

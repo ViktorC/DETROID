@@ -336,6 +336,7 @@ public class Detroid implements Engine, Observer {
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
+		Position tempPos;
 		String[] pV;
 		String bestMove, ponderMove;
 		long time, extraTime, bookSearchStart;
@@ -414,9 +415,9 @@ public class Detroid implements Engine, Observer {
 				moves = null;
 			// Start the search.
 			Search: {
-				search = new Search(game.getPosition(), searchStats, doPonder || doInfinite,
+				search = new Thread(new Search(game.getPosition(), searchStats, doPonder || doInfinite,
 						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-						nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params);
+						nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params));
 				search.start();
 				if (debug) debugInfo.set("Search started");
 				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
@@ -475,7 +476,15 @@ public class Detroid implements Engine, Observer {
 			if (debug) debugInfo.set("Search stopped");
 			// Set ponder move based on the PV.
 			pV = searchStats.getPv();
-			ponderMove = pV.length > 1 ? pV[1] : null;
+			if (pV != null && pV.length > 1) {
+				try {
+					tempPos = game.getPosition();
+					tempPos.makeMove(tempPos.parsePACN(pV[0]));
+					ponderMove = tempPos.isLegal(tempPos.parsePACN(pV[1])) ? pV[1] : null;
+				} catch (ChessParseException | NullPointerException e) { ponderMove = null; }
+			}
+			else
+				ponderMove = null;
 		}
 		// Set final results.
 		if (searchResult.equals(new Move())) {
