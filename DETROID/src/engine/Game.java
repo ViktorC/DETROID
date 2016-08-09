@@ -6,6 +6,7 @@ import java.util.Date;
 
 import util.List;
 import util.Queue;
+import util.Stack;
 
 /**
  * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.
@@ -316,6 +317,34 @@ class Game {
 		return false;
 	}
 	/**
+	 * Returns a string representation of the position's move list in SAN with six full moves per line.
+	 * 
+	 * @param p
+	 * @return
+	 */
+	private String moveListToSAN() {
+		String moveListSAN = "";
+		boolean printRound = true;
+		int roundNum = 0;
+		Move move;
+		List<Move> moveStack = new Stack<>();
+		while (position.moveList.hasNext()) {
+			moveStack.add(position.moveList.next());
+			position.unmakeMove();
+		}
+		while (moveStack.hasNext()) {
+			if (printRound)
+				moveListSAN += ++roundNum + ". ";
+			move = moveStack.next();
+			moveListSAN += position.toSAN(move) + " ";
+			position.makeMove(move);
+			printRound = !printRound;
+			if (roundNum%6 == 0 && printRound)
+				moveListSAN += "\n";
+		}
+		return moveListSAN;
+	}
+	/**
 	 * Returns a string of the game in PGN.
 	 */
 	@Override
@@ -337,7 +366,7 @@ class Game {
 		pgn += "[Result \"" + state.pgnNotation + "\"]\n";
 		pgn += "[FEN \"" + startPos + "\"]\n";
 		pgn += "\n";
-		pgn += position.getMoveListStringInSAN();
+		pgn += moveListToSAN();
 		return pgn;
 	}
 }

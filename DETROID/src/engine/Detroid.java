@@ -1,6 +1,8 @@
 package engine;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Observable;
@@ -171,7 +173,7 @@ public class Detroid implements Engine, Observer {
 		outOfBook = false;
 		game = new Game();
 		options = new HashMap<>();
-		hashSize = new Option.SpinOption("Hash", 32, 1, (int) Math.min(512, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
+		hashSize = new Option.SpinOption("Hash", 128, 1, (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
 		primaryBookPath = new Option.StringOption("PrimaryBookPath", book.getPrimaryFilePath());
@@ -203,10 +205,16 @@ public class Detroid implements Engine, Observer {
 		debug = on;
 	}
 	@Override
-	public Set<Option<?>> getOptions() {
-		Set<Option<?>> set = new HashSet<>();
-		options.forEach((s, o) -> set.add(s));
-		return set;
+	public Collection<Option<?>> getOptions() {
+		Collection<Option<?>> list = new ArrayList<>();
+		list.add(hashSize);
+		list.add(ponder);
+		list.add(ownBook);
+		list.add(primaryBookPath);
+		list.add(secondaryBookPath);
+		list.add(uciOpponent);
+		list.add(parametersPath);
+		return list;
 	}
 	@Override
 	public synchronized <T> boolean setOption(Option<T> setting, T value) {
@@ -336,7 +344,6 @@ public class Detroid implements Engine, Observer {
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
-		Position tempPos;
 		String[] pV;
 		String bestMove, ponderMove;
 		long time, extraTime, bookSearchStart;
@@ -348,7 +355,7 @@ public class Detroid implements Engine, Observer {
 		scoreFluctuation = 0;
 		timeOfLastSearchResChange = System.currentTimeMillis();
 		numOfSearchResChanges = 0;
-		// Set the names of the players once it is known which color we are playing.
+		// Set the names of the players once it is known which colour we are playing.
 		if (newGame) {
 			if (game.getSideToMove() == Side.WHITE) {
 				game.setWhitePlayerName(NAME);
@@ -476,15 +483,7 @@ public class Detroid implements Engine, Observer {
 			if (debug) debugInfo.set("Search stopped");
 			// Set ponder move based on the PV.
 			pV = searchStats.getPv();
-			if (pV != null && pV.length > 1) {
-				try {
-					tempPos = game.getPosition();
-					tempPos.makeMove(tempPos.parsePACN(pV[0]));
-					ponderMove = tempPos.isLegal(tempPos.parsePACN(pV[1])) ? pV[1] : null;
-				} catch (ChessParseException | NullPointerException e) { ponderMove = null; }
-			}
-			else
-				ponderMove = null;
+			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
 		}
 		// Set final results.
 		if (searchResult.equals(new Move())) {

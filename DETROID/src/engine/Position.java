@@ -121,10 +121,8 @@ class Position implements Hashable, Copiable<Position> {
 				fiftyMoveRuleClock = Integer.parseInt(fenFields[4]);
 				pos.fiftyMoveRuleClock = (byte) Math.max(0, fiftyMoveRuleClock);
 			}
-			catch (NumberFormatException e) {
-				throw new ChessParseException("The fifty-move rule clock field of the FEN-string does not conform to the standards. " +
-						"Parsing not possible.");
-			}
+			catch (NumberFormatException e) { throw new ChessParseException("The fifty-move rule clock field of the FEN-string does not conform to the standards. " +
+						"Parsing not possible."); }
 			try {
 				moveIndex = (Integer.parseInt(fenFields[5]) - 1)*2;
 				if (!pos.isWhitesTurn)
@@ -160,53 +158,41 @@ class Position implements Hashable, Copiable<Position> {
 				else {
 					pos.offsetBoard[index] = Piece.parse(piece).ind;
 					switch (piece) {
-						case 'K': {
+						case 'K':
 							pos.whiteKing = Square.getByIndex(index).bit;
-						}
 						break;
-						case 'Q': {
+						case 'Q':
 							pos.whiteQueens	|= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'R': {
+						case 'R':
 							pos.whiteRooks |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'B': {
+						case 'B':
 							pos.whiteBishops |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'N': {
+						case 'N':
 							pos.whiteKnights |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'P': {
+						case 'P':
 							pos.whitePawns |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'k': {
+						case 'k':
 							pos.blackKing = Square.getByIndex(index).bit;
-						}
 						break;
-						case 'q': {
+						case 'q':
 							pos.blackQueens |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'r': {
+						case 'r':
 							pos.blackRooks |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'b': {
+						case 'b':
 							pos.blackBishops |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'n': {
+						case 'n':
 							pos.blackKnights |= Square.getByIndex(index).bit;
-						}
 						break;
-						case 'p': {
+						case 'p':
 							pos.blackPawns |= Square.getByIndex(index).bit;
-						}
 					}
 					index++;
 				}
@@ -414,29 +400,26 @@ class Position implements Hashable, Copiable<Position> {
 	boolean isAttacked(int sqrInd, boolean byWhite) {
 		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
 		if (byWhite) {
-			if ((whiteKing & dB.kingMoveMask) != 0 ||
+			return ((whiteKing & dB.kingMoveMask) != 0 ||
 					(whiteKnights & dB.knightMoveMask) != 0 ||
 					(whitePawns & dB.pawnBlackCaptureMoveMask) != 0 ||
 					((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) != 0 ||
 					((whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied)) != 0 || 
 					(offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind &&
-					sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights && (whitePawns & dB.kingMoveMask & Rank.R5.bits) != 0))
-				return true;
+					sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights && (whitePawns & dB.kingMoveMask & Rank.R5.bits) != 0));
 		}
 		else {
-			if ((blackKing & dB.kingMoveMask) != 0 ||
+			return ((blackKing & dB.kingMoveMask) != 0 ||
 					(blackKnights & dB.knightMoveMask) != 0 ||
 					(blackPawns & dB.pawnWhiteCaptureMoveMask) != 0 ||
 					((blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied)) != 0 ||
 					((blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied)) != 0 ||
 					(offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind &&
-					sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights && (blackPawns & dB.kingMoveMask & Rank.R4.bits) != 0))
-				return true;
+					sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights && (blackPawns & dB.kingMoveMask & Rank.R4.bits) != 0));
 		}
-		return false;
 	}
 	/**
-	 * Returns a bitmap representing all the squares on which the pieces are of the color defined by byWhite and in the current position could
+	 * Returns a bitmap representing all the squares on which the pieces are of the colour defined by byWhite and in the current position could
 	 * legally be moved to the supposedly enemy occupied square specified by sqrInd.
 	 * 
 	 * @param sqrInd
@@ -453,7 +436,7 @@ class Position implements Hashable, Copiable<Position> {
 			attackers |= (whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied);
 			attackers |= (whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied);
 			if (enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
-				attackers |=  whitePawns & dB.kingMoveMask & Rank.R5.bits;
+				attackers |= whitePawns & dB.kingMoveMask & Rank.R5.bits;
 		}
 		else {
 			attackers = blackKing & dB.kingMoveMask;
@@ -462,12 +445,12 @@ class Position implements Hashable, Copiable<Position> {
 			attackers |= (blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied);
 			attackers |= (blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied);
 			if (enPassantRights != EnPassantRights.NONE.ind && sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
-				attackers |=  blackPawns & dB.kingMoveMask & Rank.R4.bits;
+				attackers |= blackPawns & dB.kingMoveMask & Rank.R4.bits;
 		}
 		return attackers;
 	}
 	/**
-	 * Returns a long representing all the squares on which the pieces are of the color defined by byWhite and in the current position could
+	 * Returns a long representing all the squares on which the pieces are of the colour defined by byWhite and in the current position could
 	 * legally be moved to the supposedly empty square specified by sqrInd.
 	 * 
 	 * @param sqrInd
@@ -617,9 +600,7 @@ class Position implements Hashable, Copiable<Position> {
 		return pinnedPieces;
 	}
 	/**
-	 * Returns whether a move is legal or not in the current position. It expects the move to be possibly legal in some position at least, and
-	 * it checks if it still is in this one. That means, it does not check for inconsistency, such as a castling move with a capture, or an en
-	 * passant with a moved piece other than pawn, etc.
+	 * Returns whether a move is legal or not in the current position. It's only guaranteed to be correct if a position exists in which the move is legal.
 	 * 
 	 * @param move
 	 * @return
@@ -634,32 +615,15 @@ class Position implements Hashable, Copiable<Position> {
 			PseudoSwitch: {
 				if (isWhitesTurn) {
 					if (move.movedPiece == Piece.W_KING.ind) {
-						if (move.type == MoveType.SHORT_CASTLING.ind) {
-							if (!isInCheck && whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.F1.bit | Square.G1.bit) & allOccupied) == 0 &&
-										offsetBoard[Square.H1.ind] == Piece.W_ROOK.ind) {
-									if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
-										return true;
-								}
-							}
-							return false;
-						}
-						else if (move.type == MoveType.LONG_CASTLING.ind) {
-							if (!isInCheck && whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.B1.bit | Square.C1.bit | Square.D1.bit) & allOccupied) == 0 &&
-										offsetBoard[Square.A1.ind] == Piece.W_ROOK.ind) {
-									if (!isAttacked(Square.D1.ind, false) && !isAttacked(Square.C1.ind, false))
-										return true;
-								}
-							}
-							return false;
-						}
-						else {
-							moveSet = dB.getKingMoveSet(allNonWhiteOccupied);
-							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
-								return true;
-						}
-						return false;
+						if (move.type == MoveType.SHORT_CASTLING.ind)
+							return !isInCheck && (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) &&
+									((Square.F1.bit | Square.G1.bit) & allOccupied) == 0 && offsetBoard[Square.H1.ind] == Piece.W_ROOK.ind &&
+									!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false);
+						else if (move.type == MoveType.LONG_CASTLING.ind)
+							return !isInCheck && (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) &&
+									((Square.B1.bit | Square.C1.bit | Square.D1.bit) & allOccupied) == 0 && offsetBoard[Square.A1.ind] == Piece.W_ROOK.ind &&
+									!isAttacked(Square.C1.ind, false) && !isAttacked(Square.D1.ind, false);
+						else moveSet = dB.getKingMoveSet(allNonWhiteOccupied);
 					}
 					else if (move.movedPiece == Piece.W_QUEEN.ind)
 						moveSet = dB.getQueenMoveSet(allNonWhiteOccupied, allOccupied);
@@ -681,32 +645,15 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				else {
 					if (move.movedPiece == Piece.B_KING.ind) {
-						if (move.type == MoveType.SHORT_CASTLING.ind) {
-							if (!isInCheck && blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.F8.bit | Square.G8.bit) & allOccupied) == 0 &&
-										offsetBoard[Square.H8.ind] == Piece.B_ROOK.ind) {
-									if (!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
-										return true;
-								}
-							}
-							return false;
-						}
-						else if (move.type == MoveType.LONG_CASTLING.ind) {
-							if (!isInCheck && blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-								if (((Square.B8.bit | Square.C8.bit | Square.D8.bit) & allOccupied) == 0 &&
-										offsetBoard[Square.A8.ind] == Piece.B_ROOK.ind) {
-									if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
-										return true;
-								}
-							}
-							return false;
-						}
-						else {
-							moveSet = dB.getKingMoveSet(allNonBlackOccupied);
-							if ((moveSet & toBit) != 0 && !isAttacked(move.to, false))
-								return true;
-						}
-						return false;
+						if (move.type == MoveType.SHORT_CASTLING.ind)
+							return !isInCheck && (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) &&
+									((Square.F8.bit | Square.G8.bit) & allOccupied) == 0 && offsetBoard[Square.H8.ind] == Piece.B_ROOK.ind &&
+									!isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true);
+						else if (move.type == MoveType.LONG_CASTLING.ind)
+							return !isInCheck && (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) &&
+									((Square.B8.bit | Square.C8.bit | Square.D8.bit) & allOccupied) == 0 && offsetBoard[Square.A8.ind] == Piece.B_ROOK.ind &&
+									!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true);
+						else moveSet = dB.getKingMoveSet(allNonBlackOccupied);
 					}
 					else if (move.movedPiece == Piece.B_QUEEN.ind)
 						moveSet = dB.getQueenMoveSet(allNonBlackOccupied, allOccupied);
@@ -726,8 +673,7 @@ class Position implements Hashable, Copiable<Position> {
 					}
 					else return false;
 				}
-				if (offsetBoard[move.to] != move.capturedPiece)
-					return false;
+				if (offsetBoard[move.to] != move.capturedPiece) return false;
 			}
 			if ((moveSet & toBit) != 0) {
 				makeMoveOnBoard(move);
@@ -766,40 +712,39 @@ class Position implements Hashable, Copiable<Position> {
 		if (isWhitesTurn) {
 			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(blackKing));
 			if (move.movedPiece == Piece.W_QUEEN.ind) {
-				if ((db.getQueenMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
+				return (db.getQueenMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
 			}
 			else if (move.movedPiece == Piece.W_ROOK.ind) {
-				if ((db.getRookMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
+				return (db.getRookMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
 			}
 			else if (move.movedPiece == Piece.W_BISHOP.ind) {
-				if ((db.getBishopMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0) return true;
+				return (db.getBishopMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
 			}
 			else if (move.movedPiece == Piece.W_KNIGHT.ind) {
-				if ((db.getKnightMoveSet(allNonWhiteOccupied) & toBit) != 0) return true;
+				return (db.getKnightMoveSet(allNonWhiteOccupied) & toBit) != 0;
 			}
 			else {
-				if ((db.pawnBlackCaptureMoveMask & toBit) != 0) return true;
+				return (db.pawnBlackCaptureMoveMask & toBit) != 0;
 			}
 		}
 		else {
 			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(whiteKing));
 			if (move.movedPiece == Piece.B_QUEEN.ind) {
-				if ((db.getQueenMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
+				return (db.getQueenMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
 			}
 			else if (move.movedPiece == Piece.B_ROOK.ind) {
-				if ((db.getRookMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
+				return (db.getRookMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
 			}
 			else if (move.movedPiece == Piece.B_BISHOP.ind) {
-				if ((db.getBishopMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0) return true;
+				return (db.getBishopMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
 			}
 			else if (move.movedPiece == Piece.B_KNIGHT.ind) {
-				if ((db.getKnightMoveSet(allNonBlackOccupied) & toBit) != 0) return true;
+				return (db.getKnightMoveSet(allNonBlackOccupied) & toBit) != 0;
 			}
 			else {
-				if ((db.pawnWhiteCaptureMoveMask & toBit) != 0) return true;
+				return (db.pawnWhiteCaptureMoveMask & toBit) != 0;
 			}
 		}
-		return false;
 	}
 	/**
 	 * Generates and adds only the pinned-piece-moves that change the material balance on the board (captures/promotions) to the input
@@ -1577,18 +1522,13 @@ class Position implements Hashable, Copiable<Position> {
 				if (!isAttacked(to, false))
 					moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 			}
-			if (whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-				if (((Square.B1.bit | Square.C1.bit | Square.D1.bit) & allOccupied) == 0) {
-					if ((move = moves.getTail()) != null && move.to == Square.D1.ind && !isAttacked(Square.C1.ind, false))
-						moves.add(new Move(king, Square.C1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.ind));
-				}
-			}
-			if (whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) {
-				if (((Square.F1.bit | Square.G1.bit) & allOccupied) == 0) {
-					if (!isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
-						moves.add(new Move(king, Square.G1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.ind));
-				}
-			}
+			if ((whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) &&
+					((Square.B1.bit | Square.C1.bit | Square.D1.bit) & allOccupied) == 0 &&
+					(move = moves.getTail()) != null && move.to == Square.D1.ind && !isAttacked(Square.C1.ind, false))
+				moves.add(new Move(king, Square.C1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.ind));
+			if ((whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) &&
+					((Square.F1.bit | Square.G1.bit) & allOccupied) == 0 && !isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
+				moves.add(new Move(king, Square.G1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.ind));
 			movablePieces = ~addQuietPinnedPieceMoves(moves);
 			pieceSet = whiteKnights & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
@@ -1656,18 +1596,13 @@ class Position implements Hashable, Copiable<Position> {
 				if (!isAttacked(to, true))
 					moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
 			}
-			if (blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-				if (((Square.F8.bit | Square.G8.bit) & allOccupied) == 0) {
-					if ((move = moves.getHead()) != null && move.to == Square.F8.ind && !isAttacked(Square.G8.ind, true))
-						moves.add(new Move(king, Square.G8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.ind));
-				}
-			}
-			if (blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) {
-				if (((Square.B8.bit | Square.C8.bit | Square.D8.bit) & allOccupied) == 0) {
-					if (!isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
-						moves.add(new Move(king, Square.C8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.ind));
-				}
-			}
+			if ((blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) &&
+					((Square.F8.bit | Square.G8.bit) & allOccupied) == 0 && (move = moves.getHead()) != null && move.to == Square.F8.ind &&
+					!isAttacked(Square.G8.ind, true))
+				moves.add(new Move(king, Square.G8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.ind));
+			if ((blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) &&
+					((Square.B8.bit | Square.C8.bit | Square.D8.bit) & allOccupied) == 0 && !isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+				moves.add(new Move(king, Square.C8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.ind));
 			movablePieces = ~addQuietPinnedPieceMoves(moves);
 			pieceSet = blackKnights & movablePieces;
 			pieces = BitOperations.serialize(pieceSet);
@@ -1742,7 +1677,7 @@ class Position implements Hashable, Copiable<Position> {
 		Queue<Move> moves = new Queue<Move>();
 		MoveSetDatabase dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
-		if (this.isWhitesTurn) {
+		if (isWhitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
 			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
@@ -1765,8 +1700,8 @@ class Position implements Hashable, Copiable<Position> {
 							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.ind));
 							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.ind));
 						}
-						else if (enPassantRights != EnPassantRights.NONE.ind &&
-								checker1 == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights &&
+								((1L << checkerAttackerSquare) & ((checkers << 1) | (checkers >>> 1)) & Rank.R5.bits) != 0)
 							moves.add(new Move(checkerAttackerSquare, (byte)(checker1 + 8), movedPiece,
 									checkerPiece1, MoveType.EN_PASSANT.ind));
 						else
@@ -1775,101 +1710,90 @@ class Position implements Hashable, Copiable<Position> {
 					else
 						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.ind));
 				}
-				switch (checkerPiece1) {
-					case 8: {
-						if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
-							squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
-									kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
-							if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
-								promotionOnBlockPossible = true;
-						}
-						else
-							squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
-									kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == Piece.W_PAWN.ind) {
-									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
-									}
-									else if (enPassantRights != EnPassantRights.NONE.ind &&
-											squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
-								}
-							}
-						}
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
-					}
-					break;
-					case 9: {
-						if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
-							promotionOnBlockPossible = true;
+				if (checkerPiece1 == Piece.B_QUEEN.ind) {
+					if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
 						squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
 								kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == Piece.W_PAWN.ind) {
-									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
-									}
-									else if (enPassantRights != EnPassantRights.NONE.ind &&
-											squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
-								}
-							}
-						}
-						kingMoveSet &= ~dB.getRookMoveMask();
+						if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
+							promotionOnBlockPossible = true;
 					}
-					break;
-					case 10: {
+					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == Piece.W_PAWN.ind) {
-									if (enPassantRights != EnPassantRights.NONE.ind &&
-											squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
-								}
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & whitePawns & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = Piece.W_PAWN.ind;
+							if (promotionOnBlockPossible) {
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
 							}
+							else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
 						}
-						kingMoveSet &= ~dB.getBishopMoveMask();
 					}
+					kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
+				}
+				else if (checkerPiece1 == Piece.B_ROOK.ind) {
+					if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
+						promotionOnBlockPossible = true;
+					squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
+							kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & whitePawns & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = Piece.W_PAWN.ind;
+							if (promotionOnBlockPossible) {
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
+							}
+							else if (enPassantRights != EnPassantRights.NONE.ind &&
+									squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getRookMoveMask();
+				}
+				else if (checkerPiece1 == Piece.B_BISHOP.ind) {
+					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
+							kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & whitePawns & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = Piece.W_PAWN.ind;
+							if (enPassantRights != EnPassantRights.NONE.ind &&
+									squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
@@ -1884,33 +1808,15 @@ class Position implements Hashable, Copiable<Position> {
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = offsetBoard[checker2];
 				dB = MoveSetDatabase.getByIndex(checker1);
-				switch (checkerPiece1) {
-					case 8:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
-					break;
-					case 9:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 10:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 11:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece1 == Piece.B_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
+				else if (checkerPiece1 == Piece.B_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece1 == Piece.B_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece1 == Piece.B_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				dB = MoveSetDatabase.getByIndex(checker2);
-				switch (checkerPiece2) {
-					case 8:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
-					break;
-					case 9:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 10:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 11:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece2 == Piece.B_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
+				else if (checkerPiece2 == Piece.B_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece2 == Piece.B_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece2 == Piece.B_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
@@ -1942,7 +1848,8 @@ class Position implements Hashable, Copiable<Position> {
 							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_BISHOP.ind));
 							moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.PROMOTION_TO_KNIGHT.ind));
 						}
-						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
+						else if (enPassantRights != EnPassantRights.NONE.ind && checker1 == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights &&
+								((1L << checkerAttackerSquare) & ((checkers << 1) | (checkers >>> 1)) & Rank.R4.bits) != 0)
 							moves.add(new Move(checkerAttackerSquare, (byte)(checker1 - 8), movedPiece,
 									checkerPiece1, MoveType.EN_PASSANT.ind));
 						else
@@ -1951,101 +1858,91 @@ class Position implements Hashable, Copiable<Position> {
 					else
 						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.ind));
 				}
-				switch (checkerPiece1) {
-					case 2: {
-						if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
-							squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
-									kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
-							if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
-								promotionOnBlockPossible = true;
-						}
-						else
-							squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
-									kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == Piece.B_PAWN.ind) {
-									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
-									}
-									else if (enPassantRights != EnPassantRights.NONE.ind &&
-											squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
-								}
-							}
-						}
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
-					}
-					break;
-					case 3: {
-						if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
-							promotionOnBlockPossible = true;
+				if (checkerPiece1 == Piece.W_QUEEN.ind) {
+					if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
 						squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
 								kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == Piece.B_PAWN.ind) {
-									if (promotionOnBlockPossible) {
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
-									}
-									else if (enPassantRights != EnPassantRights.NONE.ind &&
-											squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
-								}
-							}
-						}
-						kingMoveSet &= ~dB.getRookMoveMask();
+						if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
+							promotionOnBlockPossible = true;
 					}
-					break;
-					case 4: {
+					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (movedPiece == Piece.B_PAWN.ind) {
-									if (enPassantRights != EnPassantRights.NONE.ind &&
-											squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
-										moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-												Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
-								}
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & blackPawns & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = Piece.B_PAWN.ind;
+							if (promotionOnBlockPossible) {
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
 							}
+							else if (enPassantRights != EnPassantRights.NONE.ind &&
+									squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
 						}
-						kingMoveSet &= ~dB.getBishopMoveMask();
 					}
+					kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
+				}
+				else if (checkerPiece1 == Piece.W_ROOK.ind) {
+					if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
+						promotionOnBlockPossible = true;
+					squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
+							kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & blackPawns & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = Piece.B_PAWN.ind;
+							if (promotionOnBlockPossible) {
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_QUEEN.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_ROOK.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_BISHOP.ind));
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
+							}
+							else if (enPassantRights != EnPassantRights.NONE.ind &&
+									squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getRookMoveMask();
+				}
+				else if (checkerPiece1 == Piece.W_BISHOP.ind) {
+					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
+							kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & blackPawns & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = Piece.B_PAWN.ind;
+							if (enPassantRights != EnPassantRights.NONE.ind &&
+									squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
@@ -2060,33 +1957,15 @@ class Position implements Hashable, Copiable<Position> {
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = this.offsetBoard[checker2];
 				dB = MoveSetDatabase.getByIndex(checker1);
-				switch (checkerPiece1) {
-					case 2:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
-					break;
-					case 3:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 4:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 5:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece1 == Piece.W_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
+				else if (checkerPiece1 == Piece.W_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece1 == Piece.W_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece1 == Piece.W_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				dB = MoveSetDatabase.getByIndex(checker2);
-				switch (checkerPiece2) {
-					case 2:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
-					break;
-					case 3:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 4:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 5:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece2 == Piece.W_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
+				else if (checkerPiece2 == Piece.W_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece2 == Piece.W_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece2 == Piece.W_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
@@ -2122,70 +2001,66 @@ class Position implements Hashable, Copiable<Position> {
 				dB = MoveSetDatabase.getByIndex(checker1);
 				if ((checkers & Rank.R8.bits) != 0)
 					promotionOnAttackPossible = true;
-				switch (checkerPiece1) {
-					case 8: {
-						if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
-							squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
-									kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
-							if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
-								promotionOnBlockPossible = true;
-						}
-						else
-							squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
-									kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-											Piece.NULL.ind, MoveType.NORMAL.ind));
-							}
-						}
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
-					}
-					break;
-					case 9: {
-						if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
-							promotionOnBlockPossible = true;
+				if (checkerPiece1 == Piece.B_QUEEN.ind) {
+					if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
 						squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
 								kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-											Piece.NULL.ind, MoveType.NORMAL.ind));
-							}
-						}
-						kingMoveSet &= ~dB.getRookMoveMask();
+						if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
+							promotionOnBlockPossible = true;
 					}
-					break;
-					case 10: {
+					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare],
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = offsetBoard[checkerBlockerSquare];
+							if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.NORMAL.ind));
-							}
 						}
-						kingMoveSet &= ~dB.getBishopMoveMask();
 					}
+					kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
+				}
+				else if (checkerPiece1 == Piece.B_ROOK.ind) {
+					if (promotionOnAttackPossible && (whiteKing & Rank.R8.bits) != 0)
+						promotionOnBlockPossible = true;
+					squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
+							kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = offsetBoard[checkerBlockerSquare];
+							if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.NORMAL.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getRookMoveMask();
+				}
+				else if (checkerPiece1 == Piece.B_BISHOP.ind) {
+					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
+							kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare],
+									Piece.NULL.ind, MoveType.NORMAL.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
@@ -2200,33 +2075,15 @@ class Position implements Hashable, Copiable<Position> {
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = offsetBoard[checker2];
 				dB = MoveSetDatabase.getByIndex(checker1);
-				switch (checkerPiece1) {
-					case 8:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
-					break;
-					case 9:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 10:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 11:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece1 == Piece.B_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
+				else if (checkerPiece1 == Piece.B_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece1 == Piece.B_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece1 == Piece.B_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				dB = MoveSetDatabase.getByIndex(checker2);
-				switch (checkerPiece2) {
-					case 8:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
-					break;
-					case 9:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 10:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 11:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece2 == Piece.B_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
+				else if (checkerPiece2 == Piece.B_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece2 == Piece.B_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece2 == Piece.B_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
@@ -2246,70 +2103,66 @@ class Position implements Hashable, Copiable<Position> {
 				dB = MoveSetDatabase.getByIndex(checker1);
 				if ((checkers & Rank.R1.bits) != 0)
 					promotionOnAttackPossible = true;
-				switch (checkerPiece1) {
-					case 2: {
-						if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
-							squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
-									kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
-							if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
-								promotionOnBlockPossible = true;
-						}
-						else
-							squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
-									kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-											Piece.NULL.ind, MoveType.NORMAL.ind));
-							}
-						}
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
-					}
-					break;
-					case 3: {
-						if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
-							promotionOnBlockPossible = true;
+				if (checkerPiece1 == Piece.W_QUEEN.ind) {
+					if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
 						squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
 								kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								movedPiece = offsetBoard[checkerBlockerSquare];
-								if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
-									moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
-											Piece.NULL.ind, MoveType.NORMAL.ind));
-							}
-						}
-						kingMoveSet &= ~dB.getRookMoveMask();
+						if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
+							promotionOnBlockPossible = true;
 					}
-					break;
-					case 4: {
+					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-						squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-						while (squaresOfIntervention.hasNext()) {
-							squareOfIntervention = squaresOfIntervention.next();
-							checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-							checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-							while (checkerBlockers.hasNext()) {
-								checkerBlockerSquare = checkerBlockers.next();
-								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare],
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = offsetBoard[checkerBlockerSquare];
+							if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.NORMAL.ind));
-							}
 						}
-						kingMoveSet &= ~dB.getBishopMoveMask();
 					}
+					kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
+				}
+				else if (checkerPiece1 == Piece.W_ROOK.ind) {
+					if (promotionOnAttackPossible && (blackKing & Rank.R1.bits) != 0)
+						promotionOnBlockPossible = true;
+					squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
+							kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							movedPiece = offsetBoard[checkerBlockerSquare];
+							if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
+								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
+										Piece.NULL.ind, MoveType.NORMAL.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getRookMoveMask();
+				}
+				else if (checkerPiece1 == Piece.W_BISHOP.ind) {
+					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
+							kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
+					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
+					while (squaresOfIntervention.hasNext()) {
+						squareOfIntervention = squaresOfIntervention.next();
+						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
+						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
+						while (checkerBlockers.hasNext()) {
+							checkerBlockerSquare = checkerBlockers.next();
+							moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare],
+									Piece.NULL.ind, MoveType.NORMAL.ind));
+						}
+					}
+					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
@@ -2324,33 +2177,15 @@ class Position implements Hashable, Copiable<Position> {
 				checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(checkers));
 				checkerPiece2 = this.offsetBoard[checker2];
 				dB = MoveSetDatabase.getByIndex(checker1);
-				switch (checkerPiece1) {
-					case 2:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
-					break;
-					case 3:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 4:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 5:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece1 == Piece.W_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
+				else if (checkerPiece1 == Piece.W_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece1 == Piece.W_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece1 == Piece.W_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				dB = MoveSetDatabase.getByIndex(checker2);
-				switch (checkerPiece2) {
-					case 2:
-						kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
-					break;
-					case 3:
-						kingMoveSet &= ~dB.getRookMoveMask();
-					break;
-					case 4:
-						kingMoveSet &= ~dB.getBishopMoveMask();
-					break;
-					case 5:
-						kingMoveSet &= ~dB.knightMoveMask;
-				}
+				if (checkerPiece2 == Piece.W_QUEEN.ind) kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
+				else if (checkerPiece2 == Piece.W_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
+				else if (checkerPiece2 == Piece.W_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
+				else if (checkerPiece2 == Piece.W_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
 				kingMoves = BitOperations.serialize(kingMoveSet);
 				while (kingMoves.hasNext()) {
 					to = kingMoves.next();
@@ -3093,12 +2928,8 @@ class Position implements Hashable, Copiable<Position> {
 	}
 	/**
 	 * Makes a null move that can be taken back with {@link #unmakeMove() unmakeMove}. Consecutive null moves are not supported.
-	 * 
-	 * @throws IllegalStateException In case of consecutive null moves.
 	 */
 	public void makeNullMove() {
-		if (moveList.getHead() == null && moveList.size() != 0)
-			throw new IllegalStateException("Consecutive null moves are not supported.");
 		unmakeRegisterHistory.add(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights,
 				fiftyMoveRuleClock, checkers));
 		isWhitesTurn = !isWhitesTurn;
@@ -3690,110 +3521,14 @@ class Position implements Hashable, Copiable<Position> {
 			return san;
 	}
 	/**
-	 * Returns a string representation of the position's move list in SAN with six full moves per line.
-	 * 
-	 * @return
-	 */
-	String getMoveListStringInSAN() {
-		String moveListSAN = "";
-		boolean printRound = true;
-		int roundNum = 0;
-		Move move;
-		List<Move> moveStack = new Stack<>();
-		while (moveList.hasNext()) {
-			moveStack.add(moveList.next());
-			unmakeMove();
-		}
-		while (moveStack.hasNext()) {
-			if (printRound)
-				moveListSAN += ++roundNum + ". ";
-			move = moveStack.next();
-			moveListSAN += toSAN(move) + " ";
-			makeMove(move);
-			printRound = !printRound;
-			if (roundNum%6 == 0 && printRound)
-				moveListSAN += "\n";
-		}
-		return moveListSAN;
-	}
-	/**
-	 * Draws and returns a detailed String of the chess board based on the offset board. Pieces are represented according to the standard
-	 * English piece-letter notation.
-	 * 
-	 * @param pos
-	 * @return
-	 */
-	private String toFancyBoardString() {
-		String out = "";
-		for (int i = 16; i >= 0; i--) {
-			if (i%2 == 0) {
-				out += "  ";
-				for (int j = 0; j < 17; j++) {
-					if (j%2 == 0)
-						out += "+";
-					else
-						out += "---";
-				}
-			}
-			else {
-				out += (i + 1)/2 + " ";
-				for (int j = 0; j < 17; j++) {
-					if (j%2 == 0)
-						out += "|";
-					else
-						out += " " + Piece.getByNumericNotation(offsetBoard[(i - 1)*4 + j/2]).letter + " ";
-				}
-			}
-			out += "\n";
-		}
-		out += "  ";
-		for (int i = 0; i < 8; i++) {
-			out += "  " + (char)('A' + i) + " ";
-		}
-		out += "\n";
-		return out;
-	}
-	/**
-	 * Returns a detailed String representation of a position objects state.
-	 * 
-	 * @param pos
-	 * @return
-	 */
-	public String toDetailedString() {
-		ByteStack checkers;
-		String out = "";
-		out += toFancyBoardString() + "\n";
-		out += String.format("%-23s ", "To move: ");
-		if (isWhitesTurn)
-			out += "white\n";
-		else
-			out += "black\n";
-		if (isInCheck) {
-			out += String.format("%-23s ", "Checker(s): ");
-			checkers = BitOperations.serialize(this.checkers);
-			while (checkers.hasNext())
-				out += Square.getByIndex(checkers.next()).toString() + " ";
-			out += "\n";
-		}
-		out += String.format("%-23s ", "Castling rights: ");
-		out += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights)) + "\n";
-		out += String.format("%-23s ", "En passant rights: ");
-		out += EnPassantRights.getByIndex(enPassantRights).toString() + "\n";
-		out += String.format("%-23s " + halfMoveIndex + "\n", "Half-move index: ");
-		out += String.format("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock: ");
-		out += String.format("%-23s " + BitOperations.toHexLiteral(key) + "\n", "Hash key: ");
-		out += String.format("%-23s ", "Move history: " + getMoveListStringInSAN() + "\n");
-		return out;
-	}
-	/**
 	 * Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated
 	 * by spaces. The six fields are as follows:
 	 * 		1. board position
-	 * 		2. color to move
+	 * 		2. colour to move
 	 * 		3. castling rights
 	 * 		4. en passant rights
 	 * 		5. fifty-move rule clock
-	 * 		6. fullmove number
+	 * 		6. full move number
 	 */
 	@Override
 	public String toString() {

@@ -11,7 +11,7 @@ import java.util.Observable;
 public abstract class SearchInfo extends Observable {
 
 	/**
-	 * Returns an array of the prinicipal variation with the moves in pure algebraic coordinate notation.
+	 * Returns an array of the principal variation with the moves in pure algebraic coordinate notation.
 	 * 
 	 * @return
 	 */

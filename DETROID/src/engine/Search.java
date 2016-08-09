@@ -15,9 +15,10 @@ import uci.ScoreType;
 import util.*;
 
 /**
- * A selectivity based search engine that traverses the game tree from a given position through legal steps until a given nominal depth. It
- * uses principal variation search with a transposition table and MVV-LVA and history heuristics based move ordering within an iterative
- * deepening framework.
+ * A chess game tree search based on the PVS algorithm supported by a transposition table within an iterative deepening framework with aspiration windows utilizing
+ * heuristics such as null move pruning; late move reductions; futility pruning; extended futility pruning; razoring; IID; quiescence search; and fractional depth
+ * extensions such as check extension, mate threat extension, recapture extension, and one reply extension. For move ordering, it further relies on a table for killer
+ * moves, a table for the relative history score of moves, and the MVVLVA and SEE heuristics.
  * 
  * @author Viktor
  *
@@ -35,20 +36,20 @@ class Search implements Runnable {
 	private Parameters params;
 	private Position position;
 	private Long startTime;
-	// Whether heuristics such as foraward pruning or those based on the null move observation such as stand-pat and NMP are applicable.
+	// Whether heuristics such as forward pruning or those based on the null move observation such as stand-pat and NMP are applicable.
 	private boolean nullMoveObservHolds;	
 	private SearchInformation stats;
 	private KillerTable kT;				// Killer heuristic table.
 	private RelativeHistoryTable hT;	// History heuristic table.
-	private LossyHashTable<TTEntry> tT;		// Transposition table.
-	private byte hashEntryGen;			// Entry generation.
+	private LossyHashTable<TTEntry> tT;	// Transposition table.
+	private byte hashEntryGen;
 	private Evaluator eval;
 	private boolean ponder;
 	private int maxDepth;
 	private long maxNodes;
-	private List<Move> allowedRootMoves;	// The only moves to search at the root.
+	private List<Move> allowedRootMoves;
 	private boolean areMovesRestricted;
-	private long nodes;				// Number of searched positions.
+	private long nodes;
 	private boolean doStopSearch;
 	
 	/**
@@ -78,7 +79,7 @@ class Search implements Runnable {
 		W_CHECK_MATE_LIMIT = -L_CHECK_MATE_LIMIT;
 		this.stats = stats;
 		eval = new Evaluator(params, evalTable, pawnTable, hashEntryGen);
-		this.position = position.deepCopy();
+		this.position = position;
 		nullMoveObservHolds = eval.phaseScore(position) < params.GAME_PHASE_ENDGAME_LOWER;
 		this.ponder = ponder;
 		if (!ponder) {
@@ -210,6 +211,8 @@ class Search implements Runnable {
 		allMoves = new Queue<>();
 		if (hashMove != null && (quietMoves.contains(hashMove) || tacticalMoves.contains(hashMove)))
 			allMoves.add(hashMove);
+		else
+			hashMove = null;
 		for (int i = 0; i < tacticalMovesArr.length; i++) {
 			if (!allMoves.contains(tacticalMovesArr[i]))
 				allMoves.add(tacticalMovesArr[i]);
@@ -260,7 +263,7 @@ class Search implements Runnable {
 			if (Thread.currentThread().isInterrupted())
 				break;
 		}
-		// If the seach stats have not been updated yet, probably due to failing low or high, do it now.
+		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
 			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
 			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
@@ -347,8 +350,7 @@ class Search implements Runnable {
 				// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
 				if (e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
-					if (position.isLegalSoft(hashMove))
-						isThereHashMove = true;
+					isThereHashMove = position.isLegalSoft(hashMove);
 				}
 			}
 			// Return the score from the quiescence search in case a leaf node has been reached.
@@ -363,13 +365,14 @@ class Search implements Runnable {
 				break Search;
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-			if (isPvNode && !isThereHashMove && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
+			if (isPvNode && !isThereHashMove && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH &&
+					(hashMove == null || e.depth <= depth*params.IID_REL_DEPTH/FULL_PLY)) {
 				for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
 					pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true, qDepth);
 				e = tT.lookUp(position.key);
 				if (e != null && e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
-					isThereHashMove = true;
+					isThereHashMove = position.isLegalSoft(hashMove);
 				}
 			}
 			lastMove = position.getLastMove();
@@ -625,8 +628,7 @@ class Search implements Runnable {
 				}
 				position.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (razRed == 0 && !isPvNode && !isInCheck && ! isThereMateThreat && depth/FULL_PLY > 2 &&
-						searchedMoves > params.LMRMSM && position.getUnmakeRegister().checkers == 0) {
+				if (razRed == 0 && !isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > params.LMRMSM && position.getUnmakeRegister().checkers == 0) {
 					score = -pVsearch(depth - (params.LMR + 1)*FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
 					// If it does not fail low, research with full window.
 					if (score > alpha)

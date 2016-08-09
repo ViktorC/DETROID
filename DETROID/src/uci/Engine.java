@@ -1,5 +1,6 @@
 package uci;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -32,7 +33,7 @@ public interface Engine {
 	 * 
 	 * @return
 	 */
-	Set<Option<?>> getOptions();
+	Collection<Option<?>> getOptions();
 	/**
 	 * Tells the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
 	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.

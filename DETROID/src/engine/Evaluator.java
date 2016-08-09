@@ -537,7 +537,7 @@ final class Evaluator {
 				return eE.score;
 		}
 		// In case of no hash hit, calculate the base score from scratch.
-		/* @!TODO Try storing only exact scores or remove lazy eval alltogether and use tapered eval for certain extended eval terms such as
+		/* @!TODO Try storing only exact scores or remove lazy eval altogether and use tapered eval for certain extended eval terms such as
 		 * king mobility and see how it affects performance
 		 */
 		else {
