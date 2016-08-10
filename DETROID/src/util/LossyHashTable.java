@@ -3,14 +3,10 @@ package util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 
 /**
- * A generic, concurrent hash table for statistical or turn-based game AI applications with massive storage requirements where losslessness is
+ * A generic hash table for statistical or turn-based game AI applications with massive storage requirements where losslessness is
  * inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and constant time insertion that, instead of pushing out
  * and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, just does the equivalent of
  * one and a half iterations of the standard cuckoo insertion loop in case of a hash conflict. Entries of the hash table implement
@@ -21,8 +17,6 @@ import java.util.function.Predicate;
  * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the first table.
  * 
  * The default size of the hash table is 64MB, the minimum is 1MB, and it can hold up to 2^30 entries.
- * 
- * The target application-context, when concurrent, involves moderate contention and more frequent reads than writes.
  * 
  * @author Viktor
  *
@@ -57,12 +51,9 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	private long entrySize;	// The size of a hash entry, including all overheads, in bytes.
 	private long capacity;	// The number of hash table slots.
 	
-	private AtomicLong load = new AtomicLong(0);	// Load counter.
+	private long load = 0;	// Load counter.
 	
 	private T[] t1, t2;	// The two hash tables.
-	
-	private Lock readLock;	// The reentrant read lock of a read-write lock for concurrency handling.
-	private Lock writeLock;	// The reentrant write lock of the read-write lock.
 	
 	/**
 	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
@@ -77,7 +68,6 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	public LossyHashTable(long size, final int entrySizeB) {
 		long tL1, tL2;
 		MillerRabin prim;
-		ReadWriteLock lock;
 		entrySize = entrySizeB;
 		if (size <= 0)
 			size = DEFAULT_SIZE;
@@ -88,9 +78,6 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		if (capacity > MAX_CAPACITY)
 			throw new IllegalArgumentException("The size has to be small enough for the hash table not " +
 					"to be able to accommodate more than 1073741824 (2^30) entries of the specified entry size.");
-		lock = new ReentrantReadWriteLock();
-		readLock = lock.readLock();
-		writeLock = lock.writeLock();
 		// Ensuring all tables have prime lengths.
 		tL1 = tL2 = 0;
 		prim = new MillerRabin();
@@ -120,7 +107,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * @return
 	 */
 	public long getLoad() {
-		return load.get();
+		return load;
 	}
 	/**
 	 * Returns the total number of slots in the hash tables.
@@ -143,96 +130,90 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		long key = e.hashKey();
 		boolean slot1IsEmpty, slot2IsEmpty, slot1IsInT1;
 		long altAbsKey, absKey = key & Long.MAX_VALUE;
-		writeLock.lock();
-		try {
-			slot1IsEmpty = slot2IsEmpty = true;
-			// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
-			if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
-				if (key == slot1.hashKey()) {
-					if (e.compareTo(slot1) > 0) {
-						t1[ind1] = e;
-						return true;
-					}
-					return false;
+		slot1IsEmpty = slot2IsEmpty = true;
+		// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
+		if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
+			if (key == slot1.hashKey()) {
+				if (e.compareTo(slot1) > 0) {
+					t1[ind1] = e;
+					return true;
 				}
-				slot1IsEmpty = false;
+				return false;
 			}
-			if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
-				if (key == slot2.hashKey()) {
-					if (e.compareTo(slot2) > 0) {
-						t2[ind2] = e;
-						return true;
-					}
-					return false;
+			slot1IsEmpty = false;
+		}
+		if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
+			if (key == slot2.hashKey()) {
+				if (e.compareTo(slot2) > 0) {
+					t2[ind2] = e;
+					return true;
 				}
-				slot2IsEmpty = false;
+				return false;
 			}
-			// If there was no entry with the same key, but there was at least one empty slot, insert the entry into it.
-			if (slot1IsEmpty) {
+			slot2IsEmpty = false;
+		}
+		// If there was no entry with the same key, but there was at least one empty slot, insert the entry into it.
+		if (slot1IsEmpty) {
+			t1[ind1] = e;
+			load++;
+			return true;
+		}
+		if (slot2IsEmpty) {
+			t2[ind2] = e;
+			load++;
+			return true;
+		}
+		/* If the method is still executing, there was no empty slot or an entry with an identical key, so we will check if the new entry is
+		 * better than any of the entries with different keys. To make sure that the least valuable entry gets pushed out, we first check the
+		 * new entry against the "weaker" old entry.
+		 */
+		if (slot1.compareTo(slot2) > 0) {
+			temp = slot1;
+			slot1 = slot2;
+			slot2 = temp;
+			slot1IsInT1 = false;
+		}
+		else
+			slot1IsInT1 = true;
+		if (e.compareTo(slot1) > 0) {
+			altAbsKey = slot1.hashKey() & Long.MAX_VALUE;
+			if (slot1IsInT1) {
 				t1[ind1] = e;
-				load.incrementAndGet();
-				return true;
+				// If the entry that is about to get pushed out's alternative slot is empty insert the entry there.
+				if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
+					t2[altInd] = slot1;
+					load++;
+				}
 			}
-			if (slot2IsEmpty) {
+			else {
 				t2[ind2] = e;
-				load.incrementAndGet();
-				return true;
-			}
-			/* If the method is still executing, there was no empty slot or an entry with an identical key, so we will check if the new entry is
-			 * better than any of the entries with different keys. To make sure that the least valuable entry gets pushed out, we first check the
-			 * new entry against the "weaker" old entry.
-			 */
-			if (slot1.compareTo(slot2) > 0) {
-				temp = slot1;
-				slot1 = slot2;
-				slot2 = temp;
-				slot1IsInT1 = false;
-			}
-			else
-				slot1IsInT1 = true;
-			if (e.compareTo(slot1) > 0) {
-				altAbsKey = slot1.hashKey() & Long.MAX_VALUE;
-				if (slot1IsInT1) {
-					t1[ind1] = e;
-					// If the entry that is about to get pushed out's alternative slot is empty insert the entry there.
-					if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
-						t2[altInd] = slot1;
-						load.incrementAndGet();
-					}
+				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
+					t1[altInd] = slot1;
+					load++;
 				}
-				else {
-					t2[ind2] = e;
-					if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
-						t1[altInd] = slot1;
-						load.incrementAndGet();
-					}
-				}
-				return true;
 			}
-			if (e.compareTo(slot2) > 0) {
-				altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
-				if (slot1IsInT1) {
-					t2[ind2] = e;
-					if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
-						t1[altInd] = slot2;
-						load.incrementAndGet();
-					}
-				}
-				else {
-					t1[ind1] = e;
-					if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
-						t2[altInd] = slot2;
-						load.incrementAndGet();
-					}
-				}
-				return true;
-			}
-			// The new entry is weaker than the old entries with colliding hash keys are.
-			return false;
+			return true;
 		}
-		finally {
-			writeLock.unlock();
+		if (e.compareTo(slot2) > 0) {
+			altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
+			if (slot1IsInT1) {
+				t2[ind2] = e;
+				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
+					t1[altInd] = slot2;
+					load++;
+				}
+			}
+			else {
+				t1[ind1] = e;
+				if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
+					t2[altInd] = slot2;
+					load++;
+				}
+			}
+			return true;
 		}
+		// The new entry is weaker than the old entries with colliding hash keys are.
+		return false;
 	}
 	/**
 	 * Return the entry identified by the input parameter key or null if it is not in the table.
@@ -243,17 +224,11 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	public T lookUp(long key) {
 		T e;
 		long absKey = key & Long.MAX_VALUE;
-		readLock.lock();
-		try {
-			if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
-				return e;
-			if ((e = t2[(int)(absKey%t2.length)]) != null && e.hashKey() == key)
-				return e;
-			return null;
-		}
-		finally {
-			readLock.unlock();
-		}
+		if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
+			return e;
+		if ((e = t2[(int)(absKey%t2.length)]) != null && e.hashKey() == key)
+			return e;
+		return null;
 	}
 	/**
 	 * Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table;
@@ -266,23 +241,17 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		int ind;
 		T e;
 		long absKey = key & Long.MAX_VALUE;
-		writeLock.lock();
-		try {
-			if ((e = t1[(ind = (int)(absKey%t1.length))]) != null && e.hashKey() == key) {
-				t1[ind] = null;
-				load.decrementAndGet();
-				return true;
-			}
-			if ((e = t2[(ind = (int)(absKey%t2.length))]) != null && e.hashKey() == key) {
-				t2[ind] = null;
-				load.decrementAndGet();
-				return true;
-			}
-			return false;
+		if ((e = t1[(ind = (int)(absKey%t1.length))]) != null && e.hashKey() == key) {
+			t1[ind] = null;
+			load--;
+			return true;
 		}
-		finally {
-			writeLock.unlock();
+		if ((e = t2[(ind = (int)(absKey%t2.length))]) != null && e.hashKey() == key) {
+			t2[ind] = null;
+			load--;
+			return true;
 		}
+		return false;
 	}
 	/**
 	 * Removes all the entries that match the condition specified in the argument.
@@ -291,25 +260,19 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 */
 	public void remove(Predicate<T> condition) throws NullPointerException {
 		T e;
-		writeLock.lock();
-		try {
-			for (int i = 0; i < t1.length; i++) {
-				e = t1[i];
-				if (e != null && condition.test(e)) {
-					t1[i] = null;
-					load.decrementAndGet();
-				}
-			}
-			for (int i = 0; i < t2.length; i++) {
-				e = t2[i];
-				if (e != null && condition.test(e)) {
-					t2[i] = null;
-					load.decrementAndGet();
-				}
+		for (int i = 0; i < t1.length; i++) {
+			e = t1[i];
+			if (e != null && condition.test(e)) {
+				t1[i] = null;
+				load--;
 			}
 		}
-		finally {
-			writeLock.unlock();
+		for (int i = 0; i < t2.length; i++) {
+			e = t2[i];
+			if (e != null && condition.test(e)) {
+				t2[i] = null;
+				load--;
+			}
 		}
 	}
 	/**
@@ -317,15 +280,9 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 */
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
-		writeLock.lock();
-		try {
-			load = new AtomicLong(0);
-			t1 = (T[])new Entry[t1.length];
-			t2 = (T[])new Entry[t2.length];
-		}
-		finally {
-			writeLock.unlock();
-		}
+		load = 0;
+		t1 = (T[])new Entry[t1.length];
+		t2 = (T[])new Entry[t2.length];
 	}
 	/**
 	 * Returns the base size of the HashTable instance in bytes.
@@ -334,33 +291,21 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 */
 	@Override
 	public long sizeInBytes() {
-		readLock.lock();
-		try {
-			// Total size of entries and empty slots
-			return SizeOf.roundedSize(capacity*SizeOf.OBJ_POINTER.numOfBytes + load.get()*(entrySize - SizeOf.OBJ_POINTER.numOfBytes));
-		}
-		finally {
-			readLock.unlock();
-		}
+		// Total size of entries and empty slots
+		return SizeOf.roundedSize(capacity*SizeOf.OBJ_POINTER.numOfBytes + load*(entrySize - SizeOf.OBJ_POINTER.numOfBytes));
 	}
 	@Override
 	public Iterator<T> iterator() {
 		ArrayList<T> list;
-		readLock.lock();
-		try {
-			list = new ArrayList<T>();
-			list.addAll(Arrays.asList(t1));
-			list.addAll(Arrays.asList(t2));
-			return list.iterator();
-		}
-		finally {
-			readLock.unlock();
-		}
+		list = new ArrayList<T>();
+		list.addAll(Arrays.asList(t1));
+		list.addAll(Arrays.asList(t2));
+		return list.iterator();
 	}
 	@Override
 	public String toString() {
-		return "Load/Capacity: " + load.get() + "/" + capacity + "; " +
-				String.format("Factor: %.1f", (load.get()*100)/(double)capacity) + "%\n" +
+		return "Load/Capacity: " + load + "/" + capacity + "; " +
+				String.format("Factor: %.1f", (load*100)/(double)capacity) + "%\n" +
 				String.format("Size: %.2fMB", sizeInBytes()/(double)(1 << 20));
 	}
 }

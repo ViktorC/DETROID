@@ -2,7 +2,7 @@ package engine;
 
 
 /**
- * A thread-safe table implementation for the killer heuristic.
+ * A table implementation for the killer heuristic.
  * 
  * @author Viktor
  *
@@ -50,11 +50,9 @@ class KillerTable {
 	public void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
 		int compM = m.toInt();
-		synchronized(e) {
-			if (e.move1 != compM) {
-				e.move2 = e.move1;
-				e.move1 = compM;
-			}
+		if (e.move1 != compM) {
+			e.move2 = e.move1;
+			e.move1 = compM;
 		}
 	}
 	/**

@@ -236,12 +236,12 @@ class Search implements Runnable {
 			position.makeMove(move);
 			// Full window search for the first move...
 			if (i == 0)
-				score = -pVsearch(depth - FULL_PLY + extension, 1, -beta, -alpha, true, 0);
+				score = -pVsearch(depth - FULL_PLY + extension, 1, -beta, -alpha, true);
 			// PVS for the rest.
 			else {
-				score = -pVsearch(depth - FULL_PLY + extension, 1, -alpha - 1, -alpha, true, 0);
+				score = -pVsearch(depth - FULL_PLY + extension, 1, -alpha - 1, -alpha, true);
 				if (score > alpha && score < beta)
-					score = -pVsearch(depth - FULL_PLY + extension, 1, -beta, -alpha, true, 0);
+					score = -pVsearch(depth - FULL_PLY + extension, 1, -beta, -alpha, true);
 			}
 			position.unmakeMove();
 			// Score check.
@@ -279,10 +279,9 @@ class Search implements Runnable {
 	 * @param alpha
 	 * @param beta
 	 * @param nullMoveAllowed
-	 * @param qDepth The depth with which quiescence search should be called.
 	 * @return
 	 */
-	private int pVsearch(int depth, int distFromRoot, int alpha, int beta, boolean nullMoveAllowed, int qDepth) {
+	private int pVsearch(int depth, int distFromRoot, int alpha, int beta, boolean nullMoveAllowed) {
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
 		final boolean isInCheck = position.isInCheck;
@@ -317,13 +316,13 @@ class Search implements Runnable {
 					  return mateScore;
 			}
 			// Check extension.
-			depth = isInCheck && qDepth == 0 ? depth + params.CHECK_EXT : depth;
+			depth = isInCheck ? depth + params.CHECK_EXT : depth;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.lookUp(position.key);
 			if (e != null) {
 				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
-				if (!isPvNode && e.depth >= depth/FULL_PLY) {
+				if (e.depth >= depth/FULL_PLY) {
 					// Mate score adjustment to root distance.
 					if (e.score <= L_CHECK_MATE_LIMIT)
 						score = e.score + distFromRoot;
@@ -333,7 +332,7 @@ class Search implements Runnable {
 						score = e.score;
 					/* If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
 					 * node and is greater than or equal to beta, return the score. */
-					if (e.type == NodeType.EXACT.ind ||
+					if (!isPvNode && (e.type == NodeType.EXACT.ind ||
 							/* To make sure that a score that might not have been the exact score for the subtree below the node regardless of the
 							 * alpha-beta boundaries is not treated as an exact score in the current context, we can not allow it to fall between
 							 * the current alpha and beta. If it was a fail high node, the score is a lower boundary of the exact score of the
@@ -344,7 +343,7 @@ class Search implements Runnable {
 							 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
 							 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
 							 */
-							(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha))
+							(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)))
 						return score;
 				}
 				// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
@@ -355,7 +354,8 @@ class Search implements Runnable {
 			}
 			// Return the score from the quiescence search in case a leaf node has been reached.
 			if (depth/FULL_PLY <= 0) {
-				score = quiescence(qDepth, distFromRoot, alpha, beta);
+				nodes--;
+				score = quiescence(distFromRoot, alpha, beta);
 				if (score > bestScore) {
 					bestMove = null;
 					bestScore = score;
@@ -368,7 +368,7 @@ class Search implements Runnable {
 			if (isPvNode && !isThereHashMove && depth/FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH &&
 					(hashMove == null || e.depth <= depth*params.IID_REL_DEPTH/FULL_PLY)) {
 				for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
-					pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true, qDepth);
+					pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true);
 				e = tT.lookUp(position.key);
 				if (e != null && e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
@@ -380,10 +380,9 @@ class Search implements Runnable {
 			// If there is a hash move, search that first.
 			if (isThereHashMove) {
 				// Recapture extension (includes capturing newly promoted pieces).
-				extension = lastMoveIsMaterial && qDepth == 0 && hashMove.capturedPiece != Piece.NULL.ind &&
-						hashMove.to == lastMove.to ? params.RECAP_EXT : 0;
+				extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? params.RECAP_EXT : 0;
 				position.makeMove(hashMove);
-				score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+				score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				position.unmakeMove();
 				searchedMoves++;
 				if (score > bestScore) {
@@ -392,13 +391,13 @@ class Search implements Runnable {
 					if (score > alpha) {
 						alpha = score;
 						if (alpha >= beta) {
-							if (!hashMove.isMaterial() && qDepth == 0) {
+							if (!hashMove.isMaterial()) {
 								kT.add(distFromRoot, hashMove);	// Add to killer moves.
 								hT.recordSuccessfulMove(hashMove);	// Record success in the relative history table.
 							}
 							break Search;
 						}
-						else if (!hashMove.isMaterial() && qDepth == 0)
+						else if (!hashMove.isMaterial())
 							hT.recordUnsuccessfulMove(hashMove);	// Record failure in the relative history table.
 					}
 				}
@@ -427,9 +426,9 @@ class Search implements Runnable {
 				position.makeNullMove();
 				// Do not allow consecutive null moves.
 				if (depth/FULL_PLY == params.NMR)
-					score = -pVsearch(depth - params.NMR*FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false, qDepth);
+					score = -pVsearch(depth - params.NMR*FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false);
 				else
-					score = -pVsearch(depth - params.NMR*FULL_PLY - FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false, qDepth);
+					score = -pVsearch(depth - params.NMR*FULL_PLY - FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false);
 				position.unmakeMove();
 				// Mate threat extension.
 				if (score <= L_CHECK_MATE_LIMIT)
@@ -459,11 +458,11 @@ class Search implements Runnable {
 				position.makeMove(move);
 				// PVS.
 				if (i == 0)
-					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				else {
-					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
 					if (score > alpha && score < beta)
-						score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+						score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				}
 				position.unmakeMove();
 				searchedMoves++;
@@ -480,73 +479,69 @@ class Search implements Runnable {
 					break Search;
 			}
 			// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
-			if (qDepth == 0) {
-				kE = kT.retrieve(distFromRoot);
-				if ((kMove = kE.getMove1()) != 0) {	// Killer move no. 1.
-					killerMove1 = Move.toMove(kMove);
-					if (position.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove))) {
-						isThereKM1 = true;
-						position.makeMove(killerMove1);
-						if (!isThereHashMove && matMoveBreakInd == 0)
-							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
-						else {
-							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
-							if (score > alpha && score < beta)
-								score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
-						}
-						position.unmakeMove();
-						searchedMoves++;
-						if (score > bestScore) {
-							bestMove = killerMove1;
-							bestScore = score;
-							if (score > alpha) {
-								alpha = score;
-								if (alpha >= beta) {
-									if (qDepth == 0)
-										hT.recordSuccessfulMove(killerMove1);	// Record success in the relative history table.
-									break Search;
-								}
-								else if (qDepth == 0)
-									hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
-							}
-						}
-						if (doStopSearch)
-							break Search;
+			kE = kT.retrieve(distFromRoot);
+			if ((kMove = kE.getMove1()) != 0) {	// Killer move no. 1.
+				killerMove1 = Move.toMove(kMove);
+				if (position.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove))) {
+					isThereKM1 = true;
+					position.makeMove(killerMove1);
+					if (!isThereHashMove && matMoveBreakInd == 0)
+						score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
+					else {
+						score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
+						if (score > alpha && score < beta)
+							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 					}
+					position.unmakeMove();
+					searchedMoves++;
+					if (score > bestScore) {
+						bestMove = killerMove1;
+						bestScore = score;
+						if (score > alpha) {
+							alpha = score;
+							if (alpha >= beta) {
+								hT.recordSuccessfulMove(killerMove1);	// Record success in the relative history table.
+								break Search;
+							}
+							else
+								hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
+						}
+					}
+					if (doStopSearch)
+						break Search;
 				}
-				if ((kMove = kE.getMove2()) != 0) {	// Killer move no. 2.
-					killerMove2 = Move.toMove(kMove);
-					if (position.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove))) {
-						isThereKM2 = true;
-						position.makeMove(killerMove2);
-						if (!isThereHashMove && !isThereKM1 && matMoveBreakInd == 0)
-							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
-						else {
-							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
-							if (score > alpha && score < beta)
-								score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
-						}
-						position.unmakeMove();
-						searchedMoves++;
-						if (score > bestScore) {
-							bestMove = killerMove2;
-							bestScore = score;
-							if (score > alpha) {
-								alpha = score;
-								if (alpha >= beta) {
-									if (qDepth == 0)
-										hT.recordSuccessfulMove(killerMove1);	// Record success in the relative history table.
-									break Search;
-								}
-								else if (qDepth == 0)
-									hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
-							}
-						}
-						if (doStopSearch)
-							break Search;
-					}
-				}	// Killer move check ending.
 			}
+			if ((kMove = kE.getMove2()) != 0) {	// Killer move no. 2.
+				killerMove2 = Move.toMove(kMove);
+				if (position.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove))) {
+					isThereKM2 = true;
+					position.makeMove(killerMove2);
+					if (!isThereHashMove && !isThereKM1 && matMoveBreakInd == 0)
+						score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
+					else {
+						score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
+						if (score > alpha && score < beta)
+							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
+					}
+					position.unmakeMove();
+					searchedMoves++;
+					if (score > bestScore) {
+						bestMove = killerMove2;
+						bestScore = score;
+						if (score > alpha) {
+							alpha = score;
+							if (alpha >= beta) {
+								hT.recordSuccessfulMove(killerMove1);	// Record success in the relative history table.
+								break Search;
+							}
+							else
+								hT.recordUnsuccessfulMove(killerMove1);	// Record failure in the relative history table.
+						}
+					}
+					if (doStopSearch)
+						break Search;
+				}
+			}	// Killer move check ending.
 			// Search losing captures if there are any.
 			for (int i = matMoveBreakInd; i < matMovesArr.length; i++) {
 				move = matMovesArr[i];
@@ -556,16 +551,15 @@ class Search implements Runnable {
 					continue;
 				}
 				// Recapture extension.
-				extension = lastMoveIsMaterial && qDepth == 0 && move.capturedPiece != Piece.NULL.ind &&
-						move.to == lastMove.to ? params.RECAP_EXT : 0;
+				extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.RECAP_EXT : 0;
 				position.makeMove(move);
 				// PVS.
 				if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
-					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				else {
-					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
 					if (score > alpha && score < beta)
-						score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+						score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				}
 				position.unmakeMove();
 				searchedMoves++;
@@ -585,7 +579,7 @@ class Search implements Runnable {
 			if (nonMatMoves == null)
 				nonMatMoves = position.getQuietMoves();
 			// One reply extension.
-			if (matMoves.size() == 0 && nonMatMoves.size() == 1 && qDepth == 0)
+			if (matMoves.size() == 0 && nonMatMoves.size() == 1)
 				depth += params.SINGLE_REPLY_EXT;
 			evalScore = Integer.MIN_VALUE;
 			// Order and search the non-material moves.
@@ -629,18 +623,18 @@ class Search implements Runnable {
 				position.makeMove(move);
 				// Try late move reduction if not within the PV.
 				if (razRed == 0 && !isPvNode && !isInCheck && depth/FULL_PLY > 2 && searchedMoves > params.LMRMSM && position.getUnmakeRegister().checkers == 0) {
-					score = -pVsearch(depth - (params.LMR + 1)*FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(depth - (params.LMR + 1)*FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
 					if (score > alpha)
-							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				}
 				// Else PVS with razoring.
 				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && matMovesArr.length == 0)
-					score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+					score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				else {
-					score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true, qDepth);
+					score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
 					if (score > alpha && score < beta)
-						score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -beta, -alpha, true, qDepth);
+						score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				}
 				position.unmakeMove();
 				searchedMoves++;
@@ -650,23 +644,17 @@ class Search implements Runnable {
 					if (score > alpha) {
 						alpha = score;
 						if (alpha >= beta) {	// Cutoff from a non-material move.
-							if (qDepth == 0) {
-								kT.add(distFromRoot, move);	// Add to killer moves.
-								hT.recordSuccessfulMove(move);	// Record success in the relative history table.
-							}
+							kT.add(distFromRoot, move);	// Add to killer moves.
+							hT.recordSuccessfulMove(move);	// Record success in the relative history table.
 							break Search;
 						}
-						else if (qDepth == 0)
-							hT.recordUnsuccessfulMove(move);	// Record failure in the relative history table.
+						hT.recordUnsuccessfulMove(move);	// Record failure in the relative history table.
 					}
 				}
 				if (doStopSearch)
 					break Search;
 			}
 		}
-		// If the search has been invoked from quiescence search, do not store entries in the TT.
-		if (qDepth < 0)
-			return bestScore;
 		// Add new entry to the transposition table.
 		insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
 		// Return the unadjusted best score.
@@ -678,30 +666,24 @@ class Search implements Runnable {
 	 * 
 	 * In the first two plies (unless it has been extended due to the side to move being in chess), it also searches moves that give check.
 	 * 
-	 * @param depth
 	 * @param distFromRoot
 	 * @param alpha
 	 * @param beta
 	 * @return
 	 */
-	private int quiescence(int depth, int distFromRoot, int alpha, int beta) {
+	private int quiescence(int distFromRoot, int alpha, int beta) {
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
-		final boolean isInCheck = position.isInCheck;
 		List<Move> materialMoves, quietMoves;
 		Move[] moves;
 		Move move;
 		TTEntry e;
 		int score, bestScore, searchScore;
-		if (depth != 0)
-			nodes++;
+		nodes++;
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = true;
 		// Check for the repetition rule; return a draw score if it applies.
 		if (position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
-		// Just for my peace of mind.
-		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
-			return eval.score(position, alpha, beta);
 		// Hash probe.
 		e = tT.lookUp(position.key);
 		if (e != null) {
@@ -717,56 +699,51 @@ class Search implements Runnable {
 					(e.type == NodeType.FAIL_LOW.ind && score <= alpha))
 				return score;
 		}
-		// If check, call the main search for one ply (while keeping the track of the quiescence search depth to avoid resetting it).
-		if (isInCheck) {
-			// If the side to move is in check, stand-pat does not hold and it's not enough to just search the material moves.
-			nodes++;
-			return pVsearch(FULL_PLY, distFromRoot, alpha, beta, false, depth - 1);
-		}
 		// Quiescence search.
+		materialMoves = position.getTacticalMoves();
+		if (materialMoves.size() == 0) {
+			quietMoves = position.getQuietMoves();
+			if (quietMoves.size() == 0)
+				return position.isInCheck ? mateScore : Termination.STALE_MATE.score;
+		}
+		// Check for the fifty-move rule; return a draw score if it applies.
+		if (position.fiftyMoveRuleClock >= 100)
+			return Termination.DRAW_CLAIMED.score;
+		// The position is quiet, evaluate it statically.
+		if (materialMoves.size() == 0)
+			return eval.score(position, alpha, beta);
 		else {
-			materialMoves = position.getTacticalMoves();
-			if (materialMoves.size() == 0) {
-				quietMoves = position.getQuietMoves();
-				if (quietMoves.size() == 0)
-					return Termination.STALE_MATE.score;
-			}
-			// Check for the fifty-move rule; return a draw score if it applies.
-			if (position.fiftyMoveRuleClock >= 100)
-				return Termination.DRAW_CLAIMED.score;
-			// The position is quiet, evaluate it statically.
-			if (materialMoves.size() == 0)
-				return eval.score(position, alpha, beta);
-			else {
-				// Stand pat if the null move observation holds; otherwise the mate score is the lower bound.
-				bestScore = nullMoveObservHolds ? eval.score(position, alpha, beta) : mateScore;
-			}
-			// Fail soft.
-			if (bestScore > alpha) {
-				alpha = bestScore;
-				if (bestScore >= beta)
-					return bestScore;
-			}
-			moves = orderMaterialMovesSEE(position, materialMoves);
-			for (int i = 0; i < moves.length; i++) {
-				move = moves[i];
-				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-				if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - params.Q_DELTA))
-					break;
-				position.makeMove(move);
-				searchScore = -quiescence(depth - 1, distFromRoot + 1, -beta, -alpha);
-				position.unmakeMove();
-				if (searchScore > bestScore) {
-					bestScore = searchScore;
-					if (bestScore > alpha) {
-						alpha = bestScore;
-						if (alpha >= beta)
-							break;
-					}
+			// Stand pat if the null move observation holds; otherwise the mate score is the lower bound.
+			bestScore = nullMoveObservHolds ? eval.score(position, alpha, beta) : mateScore;
+		}
+		// Fail soft.
+		if (bestScore > alpha) {
+			alpha = bestScore;
+			if (bestScore >= beta)
+				return bestScore;
+		}
+		// Just for my peace of mind.
+		if (distFromRoot >= MAX_EXPECTED_TOTAL_SEARCH_DEPTH)
+			return eval.score(position, alpha, beta);
+		moves = orderMaterialMovesSEE(position, materialMoves);
+		for (int i = 0; i < moves.length; i++) {
+			move = moves[i];
+			// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
+			if (nullMoveObservHolds && (move.value < 0 || move.value < alpha - params.Q_DELTA))
+				break;
+			position.makeMove(move);
+			searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);
+			position.unmakeMove();
+			if (searchScore > bestScore) {
+				bestScore = searchScore;
+				if (bestScore > alpha) {
+					alpha = bestScore;
+					if (alpha >= beta)
+						break;
 				}
-				if (doStopSearch)
-					break;
 			}
+			if (doStopSearch)
+				break;
 		}
 		return bestScore;
 	}
