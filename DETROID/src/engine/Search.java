@@ -318,7 +318,7 @@ class Search implements Runnable {
 			// Check extension.
 			depth = isInCheck ? depth + params.CHECK_EXT : depth;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
-			e = tT.lookUp(position.key);
+			e = tT.lookUp(position.hashKey());
 			if (e != null) {
 				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
@@ -369,7 +369,7 @@ class Search implements Runnable {
 					(hashMove == null || e.depth <= depth*params.IID_REL_DEPTH/FULL_PLY)) {
 				for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
 					pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true);
-				e = tT.lookUp(position.key);
+				e = tT.lookUp(position.hashKey());
 				if (e != null && e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
 					isThereHashMove = position.isLegalSoft(hashMove);
@@ -685,7 +685,7 @@ class Search implements Runnable {
 		if (position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
 		// Hash probe.
-		e = tT.lookUp(position.key);
+		e = tT.lookUp(position.hashKey());
 		if (e != null) {
 			// Mate score adjustment to root distance.
 			if (e.score <= L_CHECK_MATE_LIMIT)
@@ -802,12 +802,12 @@ class Search implements Runnable {
 		while (moves.hasNext()) {
 			move = moves.next();
 			if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
-				move.value = (short)(params.QUEEN_VALUE - params.PAWN_VALUE);
+				move.value = (short) (params.QUEEN_VALUE - params.PAWN_VALUE);
 				if (move.capturedPiece != Piece.NULL.ind)
 					move.value += eval.materialValueByPieceInd(move.capturedPiece) - eval.materialValueByPieceInd(move.movedPiece);
 			}
 			else
-				move.value = (short)(eval.materialValueByPieceInd(move.capturedPiece) - eval.materialValueByPieceInd(move.movedPiece));
+				move.value = (short) (eval.materialValueByPieceInd(move.capturedPiece) - eval.materialValueByPieceInd(move.movedPiece));
 			arr[i++] = move;
 		}
 		return QuickSort.sort(arr);
@@ -864,7 +864,7 @@ class Search implements Runnable {
 			}
 		}
 		// Update stats.
-		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short)resultScore, scoreType, nodes, System.currentTimeMillis() - startTime);
+		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType, nodes, System.currentTimeMillis() - startTime);
 	}
 	/**
 	 * Inserts a node into the transposition table according to the specified parameters.

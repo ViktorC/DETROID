@@ -1,9 +1,17 @@
 package engine;
 
 import java.util.Random;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Function;
 
 import engine.Bitboard.*;
 import util.BitOperations;
+import util.List;
+import util.Queue;
 
 /**
  * A class whose instance generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move
@@ -105,13 +113,15 @@ final class MagicsGenerator {
 	 * @param enhanced
 	 * @return
 	 */
-	public Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
-		long[] magicDatabase;
-		Random random = new Random();
-		long magicNumber;
-		int index, shift;
-		boolean collision = false;
+	public synchronized Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+		final Random random = new Random();
+		int shift;
 		long[] occVar, attVar;
+		Function<Integer, Long> gen;
+		CompletionService<Long> pool;
+		List<Future<Long>> futures;
+		int numOfProcessors;
+		long num;
 		if (rook) {
 			occVar = rookOccupancyVariations[sqrInd];
 			attVar = rookAttackSetVariations[sqrInd];
@@ -121,27 +131,46 @@ final class MagicsGenerator {
 			attVar = bishopAttackSetVariations[sqrInd];
 		}
 		int variations = occVar.length;
-		shift = 64 - BitOperations.indexOfBit(variations);
-		if (enhanced)
-			shift++; 
-		magicDatabase = new long[variations];
-		do {
-			for (int i = 0; i < variations; i++)
-				magicDatabase[i] = 0;
+		gen = (s) -> {
+			long[] magicDatabase;
+			long magicNumber;
+			boolean collision;
+			int index;
+			magicDatabase = new long[variations];
 			collision = false;
-			magicNumber = random.nextLong() & random.nextLong() & random.nextLong();
-			for (int i = 0; i < variations; i++) {
-				index = (int)((occVar[i]*magicNumber) >>> shift);
-				if (magicDatabase[index] == 0)
-					magicDatabase[index] = attVar[i];
-				else if (magicDatabase[index] != attVar[i]) {
-					collision = true;
-					break;
+			do {
+				for (int i = 0; i < variations; i++)
+					magicDatabase[i] = 0;
+				collision = false;
+				magicNumber = random.nextLong() & random.nextLong() & random.nextLong();
+				for (int i = 0; i < variations; i++) {
+					index = (int)((occVar[i]*magicNumber) >>> s);
+					if (magicDatabase[index] == 0)
+						magicDatabase[index] = attVar[i];
+					else if (magicDatabase[index] != attVar[i]) {
+						collision = true;
+						break;
+					}
 				}
-			}
+			} while (collision);
+			return magicNumber;
+		};
+		shift = 64 - BitOperations.indexOfBit(variations);
+		if (enhanced) {
+			numOfProcessors = Runtime.getRuntime().availableProcessors();
+			pool = new ExecutorCompletionService<Long>(Executors.newFixedThreadPool(numOfProcessors));
+			futures = new Queue<>();
+			for (int i = 0; i < numOfProcessors; i++)
+				futures.add(pool.submit(() -> gen.apply(shift + 1)));
+			try {
+				num = pool.take().get();
+			} catch (InterruptedException | ExecutionException e) { num = 0; e.printStackTrace(); }
+			for (Future<Long> f : futures)
+				f.cancel(true);
 		}
-		while (collision);
-		return new Magics(rook, (byte)sqrInd, magicNumber, (byte)shift);
+		else
+			num = gen.apply(shift);
+		return new Magics(rook, (byte)sqrInd, num, (byte)shift);
 	}
 	/**
 	 * Generates magic numbers for each square either for a rook or a bishop depending on 'rook' and returns them in a
@@ -153,20 +182,24 @@ final class MagicsGenerator {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
+	public synchronized Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
 		Magics[] allMagics = new Magics[64];
+		Magics m;
+		if (print)
+			System.out.format("%-6s %-3s %-21s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
 		OuterLoop: for (int i = 0; i < 64; i++) {
 			for (int sqr : enhancedSquares) {
 				if (sqr == i) {
-					allMagics[i] = generateMagics(i, rook, true);
+					m = generateMagics(i, rook, true);
+					allMagics[i] = m;
+					if (print)
+						System.out.println(m);
 					continue OuterLoop;
 				}
 			}
+			m = generateMagics(i, rook, false);
 			allMagics[i] = generateMagics(i, rook, false);
-		}
-		if (print) {
-			System.out.format("%-6s %-3s %-21s %s\n", "TYPE", "SQR", "MAGIC_NUMBER", "SHIFT");
-			for (Magics m : allMagics)
+			if (print)
 				System.out.println(m);
 		}
 		return allMagics;

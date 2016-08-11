@@ -31,6 +31,7 @@ public class Detroid implements Engine, Observer {
 	private final static String AUTHOR = "Viktor Csomor";
 	
 	private Option<?> hashSize;
+	private Option<?> clearHash;
 	private Option<?> ponder;
 	private Option<?> ownBook;
 	private Option<?> primaryBookPath;
@@ -79,6 +80,18 @@ public class Detroid implements Engine, Observer {
 				"Evaluation table capacity - " + eT.getCapacity() + "\n" +
 				"Pawn table capacity - " + pT.getCapacity());
 		System.gc();
+	}
+	/**
+	 * Clears the transposition, pawn, evaluation, and history tables.
+	 */
+	private void clearHash() {
+		tT.clear();
+		eT.clear();
+		pT.clear();
+		hT.reset();
+		System.gc();
+		gen = 0;
+		if (debug) debugInfo.set("Hash tables cleared");
 	}
 	/**
 	 * Computes and returns the number of milliseconds the engine should initially spend on searching the current position.
@@ -174,6 +187,7 @@ public class Detroid implements Engine, Observer {
 		game = new Game();
 		options = new HashMap<>();
 		hashSize = new Option.SpinOption("Hash", 128, 1, (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
+		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
 		primaryBookPath = new Option.StringOption("PrimaryBookPath", book.getPrimaryFilePath());
@@ -181,6 +195,7 @@ public class Detroid implements Engine, Observer {
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
 		parametersPath = new Option.StringOption("ParametersPath", params.getFilePath());
 		options.put(hashSize, hashSize.getDefaultValue());
+		options.put(clearHash, clearHash.getDefaultValue());
 		options.put(ponder, ponder.getDefaultValue());
 		options.put(ownBook, ownBook.getDefaultValue());
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue());
@@ -208,6 +223,7 @@ public class Detroid implements Engine, Observer {
 	public Collection<Option<?>> getOptions() {
 		Collection<Option<?>> list = new ArrayList<>();
 		list.add(hashSize);
+		list.add(clearHash);
 		list.add(ponder);
 		list.add(ownBook);
 		list.add(primaryBookPath);
@@ -229,6 +245,10 @@ public class Detroid implements Engine, Observer {
 				if (debug) debugInfo.set("Hash size successfully set to " + value);
 				return true;
 			}
+		}
+		else if (clearHash.equals(setting)) {
+			clearHash();
+			return true;
 		}
 		else if (ponder.equals(setting)) {
 			options.put(ponder, value);
@@ -283,13 +303,7 @@ public class Detroid implements Engine, Observer {
 	public synchronized void newGame() {
 		newGame = true;
 		outOfBook = false;
-		tT.clear();
-		eT.clear();
-		pT.clear();
-		hT.reset();
-		gen = 0;
-		if (debug) debugInfo.set("Hash tables cleared");
-		System.gc();
+		clearHash();
 	}
 	@Override
 	public synchronized boolean position(String fen) {
@@ -305,7 +319,7 @@ public class Detroid implements Engine, Observer {
 				if (debug) debugInfo.set("New game set due to new start position");
 				game = new Game(pos.toString());
 			}
-			// Otherwise just clear the 'ancient' entries from the hash tables and decerement the history values.
+			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
 			else {
 				if (debug) debugInfo.set("Position set within the same game");
 				gen++;

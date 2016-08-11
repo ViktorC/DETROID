@@ -627,27 +627,27 @@ final class Evaluator {
 		whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns, -1);
 		blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns, -1);
 		whiteQueenCoverage = MultiMoveSets.queenMoveSets(pos.whiteQueens & whiteMovablePieces,
-				pos.allOccupied, pos.allEmpty);
+				pos.allBlackOccupied, pos.allEmpty);
 		whiteRookCoverage = MultiMoveSets.rookMoveSets(pos.whiteRooks & whiteMovablePieces,
-				pos.allOccupied, pos.allEmpty);
+				pos.allBlackOccupied, pos.allEmpty);
 		whiteBishopCoverage = MultiMoveSets.bishopMoveSets(pos.whiteBishops & whiteMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		whiteKnightCoverage = MultiMoveSets.knightMoveSets(pos.whiteKnights & whiteMovablePieces, -1);
+				pos.allBlackOccupied, pos.allEmpty);
+		whiteKnightCoverage = MultiMoveSets.knightMoveSets(pos.whiteKnights & whiteMovablePieces, pos.allNonWhiteOccupied);
 		blackQueenCoverage = MultiMoveSets.queenMoveSets(pos.blackQueens & blackMovablePieces,
-				pos.allOccupied, pos.allEmpty);
+				pos.allWhiteOccupied, pos.allEmpty);
 		blackRookCoverage = MultiMoveSets.rookMoveSets(pos.blackRooks & blackMovablePieces,
-				pos.allOccupied, pos.allEmpty);
+				pos.allWhiteOccupied, pos.allEmpty);
 		blackBishopCoverage = MultiMoveSets.bishopMoveSets(pos.blackBishops & blackMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		blackKnightCoverage = MultiMoveSets.knightMoveSets(pos.blackKnights & blackMovablePieces, -1);
-		extendedScore += params.QUEEN_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteQueenCoverage);
-		extendedScore += params.ROOK_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteRookCoverage);
-		extendedScore += params.BISHOP_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteBishopCoverage);
-		extendedScore += params.KNIGHT_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteKnightCoverage);
-		extendedScore -= params.QUEEN_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackQueenCoverage);
-		extendedScore -= params.ROOK_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackRookCoverage);
-		extendedScore -= params.BISHOP_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackBishopCoverage);
-		extendedScore -= params.KNIGHT_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackKnightCoverage);
+				pos.allWhiteOccupied, pos.allEmpty);
+		blackKnightCoverage = MultiMoveSets.knightMoveSets(pos.blackKnights & blackMovablePieces, pos.allNonBlackOccupied);
+		extendedScore += params.QUEENS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteQueenCoverage);
+		extendedScore += params.ROOKS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteRookCoverage);
+		extendedScore += params.BISHOPS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteBishopCoverage);
+		extendedScore += params.KNIGHTS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteKnightCoverage);
+		extendedScore -= params.QUEENS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackQueenCoverage);
+		extendedScore -= params.ROOKS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackRookCoverage);
+		extendedScore -= params.BISHOPS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackBishopCoverage);
+		extendedScore -= params.KNIGHTS_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackKnightCoverage);
 		// Pawn-piece defence.
 		whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & whiteMovablePieces, -1);
 		blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns & blackMovablePieces, -1);
