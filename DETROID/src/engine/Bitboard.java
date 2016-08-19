@@ -10,6 +10,8 @@ import util.BitOperations;
  */
 final class Bitboard {
 	
+	public final static long FULL_BOARD = -1L;
+	
 	/**
 	 * An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
 	 * the respective square's index set.

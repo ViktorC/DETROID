@@ -1,5 +1,6 @@
 package engine;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,9 +27,15 @@ import util.*;
  */
 public class Detroid implements Engine, Observer {
 	
-	private final static float VERSION_NUMBER = 0.80f;
-	private final static String NAME = "DETROID" + " " + VERSION_NUMBER;
-	private final static String AUTHOR = "Viktor Csomor";
+	public final static float VERSION_NUMBER = 0.80f;
+	public final static String NAME = "DETROID" + " " + VERSION_NUMBER;
+	public final static String AUTHOR = "Viktor Csomor";
+	
+	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
+	public final static String DEFAULT_BOOK_FILE_PATH = new File(System.getProperty("java.class.path")).getAbsoluteFile().getParentFile().toString() +
+			File.separator + "book.bin";
+	// Search, evaluation, and time control parameters.
+	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
 	
 	private Option<?> hashSize;
 	private Option<?> clearHash;
@@ -174,10 +181,10 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public synchronized void init() {
 		try {
-			params = new Parameters();
+			params = new Parameters(DEFAULT_PARAMETERS_FILE_PATH);
 		} catch (IOException e) { }
 		try {
-			book = new Book();
+			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
 		} catch (IOException e) { }
 		debugInfo = new DebugInformation();
 		debug = false;
@@ -190,7 +197,7 @@ public class Detroid implements Engine, Observer {
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
-		primaryBookPath = new Option.StringOption("PrimaryBookPath", book.getPrimaryFilePath());
+		primaryBookPath = new Option.StringOption("PrimaryBookPath", book == null ? null : book.getPrimaryFilePath());
 		secondaryBookPath = new Option.StringOption("SecondaryBookPath", null);
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
 		parametersPath = new Option.StringOption("ParametersPath", params.getFilePath());
@@ -264,7 +271,7 @@ public class Detroid implements Engine, Observer {
 		}
 		else if (primaryBookPath.equals(setting)) {
 			try {
-				Book newBook = new Book((String) value, book.getSecondaryFilePath());
+				PolyglotBook newBook = new PolyglotBook((String) value, book.getSecondaryFilePath());
 				book.close();
 				book = newBook;
 				options.put(primaryBookPath, book.getPrimaryFilePath());
@@ -274,7 +281,7 @@ public class Detroid implements Engine, Observer {
 		}
 		else if (secondaryBookPath.equals(setting)) {
 			try {
-				Book newBook = new Book(book.getPrimaryFilePath(), (String) value);
+				PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
 				book.close();
 				book = newBook;
 				options.put(secondaryBookPath, book.getSecondaryFilePath());

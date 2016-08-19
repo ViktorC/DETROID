@@ -515,12 +515,14 @@ final class Evaluator {
 		int whiteDistToBlackKing, blackDistToWhiteKing, whiteKingInd, blackKingInd;
 		long whitePinnedPieces, blackPinnedPieces;
 		long whiteMovablePieces, blackMovablePieces;
+		long whiteKinglessOccupied, whiteKinglessEmpty, blackKinglessOccupied, blackKinglessEmpty;
 		long whiteKnightCoverage, whiteBishopCoverage, whiteRookCoverage, whiteQueenCoverage;
 		long blackKnightCoverage, blackBishopCoverage, blackRookCoverage, blackQueenCoverage;
 		long whitePawnAttacks, blackPawnAttacks;
 		long whiteKingMobility, blackKingMobility;
 		ByteList whitePieces, blackPieces;
-		short pawnScore, baseScore, openingScore, endgameScore, score, extendedScore;
+		@SuppressWarnings("unused")
+		short pawnScore, openingScore, endgameScore, score, extendedScore;
 		byte[] bishopSqrArr, offsetBoard;
 		boolean isWhitesTurn;
 		ETEntry eE;
@@ -537,9 +539,6 @@ final class Evaluator {
 				return eE.score;
 		}
 		// In case of no hash hit, calculate the base score from scratch.
-		/* @!TODO Try storing only exact scores or remove lazy eval altogether and use tapered eval for certain extended eval terms such as
-		 * king mobility and see how it affects performance
-		 */
 		else {
 			numOfWhiteQueens = BitOperations.getHammingWeight(pos.whiteQueens);
 			numOfWhiteRooks = BitOperations.getHammingWeight(pos.whiteRooks);
@@ -574,11 +573,10 @@ final class Evaluator {
 				}
 			}
 			// Basic material score.
-			baseScore = 0;
-			baseScore += (numOfWhiteQueens - numOfBlackQueens)*params.QUEEN_VALUE;
-			baseScore += (numOfWhiteRooks - numOfBlackRooks)*params.ROOK_VALUE;
-			baseScore += (numOfWhiteBishops - numOfBlackBishops)*params.BISHOP_VALUE;
-			baseScore += (numOfWhiteKnights - numOfBlackKnights)*params.KNIGHT_VALUE;
+			score += (numOfWhiteQueens - numOfBlackQueens)*params.QUEEN_VALUE;
+			score += (numOfWhiteRooks - numOfBlackRooks)*params.ROOK_VALUE;
+			score += (numOfWhiteBishops - numOfBlackBishops)*params.BISHOP_VALUE;
+			score += (numOfWhiteKnights - numOfBlackKnights)*params.KNIGHT_VALUE;
 			// Try for hashed pawn score.
 			pE = pT.lookUp(pos.pawnKey);
 			if (pE != null) {
@@ -590,7 +588,7 @@ final class Evaluator {
 				pawnScore = pawnKingStructureScore(pos.whiteKing, pos.blackKing, pos.whitePawns, pos.blackPawns);
 				pT.insert(new PTEntry(pos.pawnKey, pawnScore, hashGen));
 			}
-			baseScore += pawnScore;
+			score += pawnScore;
 			// Piece-square scores.
 			openingScore = endgameScore = 0;
 			offsetBoard = pos.offsetBoard;
@@ -601,95 +599,128 @@ final class Evaluator {
 				openingScore += PST_OPENING[piece][i];
 				endgameScore += PST_ENDGAME[piece][i];
 			}
-			score = (short) (baseScore + taperedEvalScore(openingScore, endgameScore, phase));
-			if (!isWhitesTurn)
-				score *= -1;
-			if (score <= alpha - params.LAZY_EVAL_MAR || score >= beta + params.LAZY_EVAL_MAR) {
-				eT.insert(new ETEntry(pos.key, score, false, hashGen));
-				return score;
+			score += (short) taperedEvalScore(openingScore, endgameScore, phase);
+			// Pinned pieces.
+			whitePinnedPieces = pos.getPinnedPieces(true);
+			whiteMovablePieces = ~whitePinnedPieces;
+			score -= params.PINNED_QUEEN_WEIGHT*BitOperations.getHammingWeight(pos.whiteQueens & whitePinnedPieces);
+			score -= params.PINNED_ROOK_WEIGHT*BitOperations.getHammingWeight(pos.whiteRooks & whitePinnedPieces);
+			score -= params.PINNED_BISHOP_WEIGHT*BitOperations.getHammingWeight((pos.whiteBishops) & whitePinnedPieces);
+			score -= params.PINNED_KNIGHT_WEIGHT*BitOperations.getHammingWeight((pos.whiteKnights) & whitePinnedPieces);
+			blackPinnedPieces = pos.getPinnedPieces(false);
+			blackMovablePieces = ~blackPinnedPieces;
+			score += params.PINNED_QUEEN_WEIGHT*BitOperations.getHammingWeight(pos.blackQueens & blackPinnedPieces);
+			score += params.PINNED_ROOK_WEIGHT*BitOperations.getHammingWeight(pos.blackRooks & blackPinnedPieces);
+			score += params.PINNED_BISHOP_WEIGHT*BitOperations.getHammingWeight((pos.blackBishops) & blackPinnedPieces);
+			score += params.PINNED_KNIGHT_WEIGHT*BitOperations.getHammingWeight((pos.blackKnights) & blackPinnedPieces);
+			// Pawn-piece defence.
+			whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & whiteMovablePieces, Bitboard.FULL_BOARD);
+			blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns & blackMovablePieces, Bitboard.FULL_BOARD);
+			score += params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks & ((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
+			score -= params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks & ((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns));
+			// Pawn-piece attack.
+			score += params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks & ((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns));
+			score -= params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks & ((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
+			// Stopped pawns.
+			score -= params.STOPPED_PAWN_WEIGHT*BitOperations.getHammingWeight((pos.whitePawns << 8) & (pos.allBlackOccupied^pos.blackPawns));
+			score += params.STOPPED_PAWN_WEIGHT*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & (pos.allWhiteOccupied^pos.whitePawns));
+			// Piece coverage.
+			blackKinglessOccupied = pos.allOccupied^pos.blackKing;
+			blackKinglessEmpty = pos.allEmpty^pos.blackKing;
+			whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns, Bitboard.FULL_BOARD);
+			blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns, Bitboard.FULL_BOARD);
+			whiteQueenCoverage = MultiMoveSets.queenMoveSets(pos.whiteQueens, blackKinglessOccupied, blackKinglessEmpty);
+			whiteRookCoverage = MultiMoveSets.rookMoveSets(pos.whiteRooks, blackKinglessOccupied, blackKinglessEmpty);
+			whiteBishopCoverage = MultiMoveSets.bishopMoveSets(pos.whiteBishops, blackKinglessOccupied, blackKinglessEmpty);
+			whiteKnightCoverage = MultiMoveSets.knightMoveSets(pos.whiteKnights, Bitboard.FULL_BOARD);
+			whiteKinglessOccupied = pos.allOccupied^pos.whiteKing;
+			whiteKinglessEmpty = pos.allEmpty^pos.whiteKing;
+			blackQueenCoverage = MultiMoveSets.queenMoveSets(pos.blackQueens, whiteKinglessOccupied, whiteKinglessEmpty);
+			blackRookCoverage = MultiMoveSets.rookMoveSets(pos.blackRooks, whiteKinglessOccupied, whiteKinglessEmpty);
+			blackBishopCoverage = MultiMoveSets.bishopMoveSets(pos.blackBishops, whiteKinglessOccupied, whiteKinglessEmpty);
+			blackKnightCoverage = MultiMoveSets.knightMoveSets(pos.blackKnights, Bitboard.FULL_BOARD);
+			// King mobility.
+			whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
+			blackKingInd = BitOperations.indexOfBit(pos.blackKing);
+			whiteKingMobility = MoveSetDatabase.getByIndex(whiteKingInd).getKingMoveSet(pos.allNonWhiteOccupied);
+			blackKingMobility = MoveSetDatabase.getByIndex(blackKingInd).getKingMoveSet(pos.allNonBlackOccupied);
+			score += params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteKingMobility & ~(blackPawnAttacks |
+					blackKnightCoverage | blackBishopCoverage | blackRookCoverage | blackQueenCoverage | blackKingMobility));
+			score -= params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackKingMobility & ~(whitePawnAttacks |
+					whiteKnightCoverage | whiteBishopCoverage | whiteRookCoverage | whiteQueenCoverage | whiteKingMobility));
+			// Iterate over pieces to determine mobility and tropism to the opponent king.
+			whiteDistToBlackKing = 0;
+			whitePieces = BitOperations.serialize(pos.allWhiteOccupied^pos.whiteKing^pos.whitePawns);
+			while (whitePieces.hasNext()) {
+				piece = whitePieces.next();
+				whiteDistToBlackKing += CHEBYSHEV_DISTANCE[piece][blackKingInd];
+				if (((1L << piece) & whiteMovablePieces) != 0) {
+					if (pos.offsetBoard[piece] == Piece.W_QUEEN.ind)
+						score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getQueenMoveSet(pos.allNonWhiteOccupied, pos.allOccupied))*
+								params.QUEEN_MOBILITY_WEIGHT;
+					else if (pos.offsetBoard[piece] == Piece.W_ROOK.ind)
+						score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getRookMoveSet(pos.allNonWhiteOccupied, pos.allOccupied))*
+								params.ROOK_MOBILITY_WEIGHT;
+					else if (pos.offsetBoard[piece] == Piece.W_BISHOP.ind)
+						score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getBishopMoveSet(pos.allNonWhiteOccupied, pos.allOccupied))*
+								params.BISHOP_MOBILITY_WEIGHT;
+					else // W_KNIGHT
+						score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getKnightMoveSet(pos.allNonWhiteOccupied))*
+								params.KNIGHT_MOBILITY_WEIGHT;
+				}
 			}
+			blackDistToWhiteKing = 0;
+			blackPieces = BitOperations.serialize(pos.allBlackOccupied^pos.blackKing^pos.blackPawns);
+			while (blackPieces.hasNext()) {
+				piece = blackPieces.next();
+				blackDistToWhiteKing += CHEBYSHEV_DISTANCE[piece][whiteKingInd];
+				if (((1L << piece) & blackMovablePieces) != 0) {
+					if (pos.offsetBoard[piece] == Piece.B_QUEEN.ind)
+						score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getQueenMoveSet(pos.allNonBlackOccupied, pos.allOccupied))*
+								params.QUEEN_MOBILITY_WEIGHT;
+					else if (pos.offsetBoard[piece] == Piece.B_ROOK.ind)
+						score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getRookMoveSet(pos.allNonBlackOccupied, pos.allOccupied))*
+								params.ROOK_MOBILITY_WEIGHT;
+					else if (pos.offsetBoard[piece] == Piece.B_BISHOP.ind)
+						score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getBishopMoveSet(pos.allNonBlackOccupied, pos.allOccupied))*
+								params.BISHOP_MOBILITY_WEIGHT;
+					else // B_KNIGHT
+						score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getKnightMoveSet(pos.allNonBlackOccupied))*
+								params.KNIGHT_MOBILITY_WEIGHT;
+				}
+			}
+			// Piece-king tropism.
+			score -= taperedEvalScore(0, params.PIECE_KING_TROPISM_WEIGHT*whiteDistToBlackKing/BitOperations.getHammingWeight(pos.allWhiteOccupied^pos.whitePawns) -
+					params.PIECE_KING_TROPISM_WEIGHT*blackDistToWhiteKing/BitOperations.getHammingWeight(pos.allBlackOccupied^pos.blackPawns), phase);
+			// Bishop pair.
+			if (numOfWhiteBishops >= 2 && (BitOperations.indexOfLSBit(pos.whiteBishops) -
+					BitOperations.indexOfLSBit(BitOperations.resetLSBit(pos.whiteBishops))%2 != 0))
+				score += params.BISHOP_PAIR_ADVANTAGE;
+			if (numOfBlackBishops >= 2 && (BitOperations.indexOfLSBit(pos.blackBishops) -
+					BitOperations.indexOfLSBit(BitOperations.resetLSBit(pos.blackBishops))%2 != 0))
+				score -= params.BISHOP_PAIR_ADVANTAGE;
+			// Knight advantage for each pawn on board.
+			score += (numOfWhiteKnights - numOfBlackKnights)*BitOperations.getHammingWeight(pos.whitePawns | pos.blackPawns)*params.KNIGHT_ADVANTAGE_PER_PAWN;
+			if (!isWhitesTurn) {
+				score -= params.TEMPO_ADVANTAGE;
+				score += pos.isInCheck ? params.CHECK_DISADVANTAGE : 0;
+				score *= -1;
+			}
+			else {
+				score += params.TEMPO_ADVANTAGE;
+				score -= pos.isInCheck ? params.CHECK_DISADVANTAGE : 0;
+			}
+//			if (score <= alpha - params.LAZY_EVAL_MAR || score >= beta + params.LAZY_EVAL_MAR) {
+//				eT.insert(new ETEntry(pos.key, score, false, hashGen));
+//				return score;
+//			}
 		}
-		// @!FIXME Proper mobility and king mobility evaluation instead of the current mess.
-		extendedScore = 0;
-		// Pinned pieces.
-		whitePinnedPieces = pos.getPinnedPieces(true);
-		whiteMovablePieces = ~whitePinnedPieces;
-		extendedScore -= params.PINNED_QUEEN_WEIGHT*BitOperations.getHammingWeight(pos.whiteQueens & whitePinnedPieces);
-		extendedScore -= params.PINNED_ROOK_WEIGHT*BitOperations.getHammingWeight(pos.whiteRooks & whitePinnedPieces);
-		extendedScore -= params.PINNED_BISHOP_WEIGHT*BitOperations.getHammingWeight((pos.whiteBishops) & whitePinnedPieces);
-		extendedScore -= params.PINNED_KNIGHT_WEIGHT*BitOperations.getHammingWeight((pos.whiteKnights) & whitePinnedPieces);
-		blackPinnedPieces = pos.getPinnedPieces(false);
-		blackMovablePieces = ~blackPinnedPieces;
-		extendedScore += params.PINNED_QUEEN_WEIGHT*BitOperations.getHammingWeight(pos.blackQueens & blackPinnedPieces);
-		extendedScore += params.PINNED_ROOK_WEIGHT*BitOperations.getHammingWeight(pos.blackRooks & blackPinnedPieces);
-		extendedScore += params.PINNED_BISHOP_WEIGHT*BitOperations.getHammingWeight((pos.blackBishops) & blackPinnedPieces);
-		extendedScore += params.PINNED_KNIGHT_WEIGHT*BitOperations.getHammingWeight((pos.blackKnights) & blackPinnedPieces);
-		// Piece mobility and coverage.
-		whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns, -1);
-		blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns, -1);
-		whiteQueenCoverage = MultiMoveSets.queenMoveSets(pos.whiteQueens & whiteMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		whiteRookCoverage = MultiMoveSets.rookMoveSets(pos.whiteRooks & whiteMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		whiteBishopCoverage = MultiMoveSets.bishopMoveSets(pos.whiteBishops & whiteMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		whiteKnightCoverage = MultiMoveSets.knightMoveSets(pos.whiteKnights & whiteMovablePieces, -1);
-		blackQueenCoverage = MultiMoveSets.queenMoveSets(pos.blackQueens & blackMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		blackRookCoverage = MultiMoveSets.rookMoveSets(pos.blackRooks & blackMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		blackBishopCoverage = MultiMoveSets.bishopMoveSets(pos.blackBishops & blackMovablePieces,
-				pos.allOccupied, pos.allEmpty);
-		blackKnightCoverage = MultiMoveSets.knightMoveSets(pos.blackKnights & blackMovablePieces, -1);
-		extendedScore += params.QUEEN_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteQueenCoverage);
-		extendedScore += params.ROOK_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteRookCoverage);
-		extendedScore += params.BISHOP_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteBishopCoverage);
-		extendedScore += params.KNIGHT_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(whiteKnightCoverage);
-		extendedScore -= params.QUEEN_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackQueenCoverage);
-		extendedScore -= params.ROOK_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackRookCoverage);
-		extendedScore -= params.BISHOP_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackBishopCoverage);
-		extendedScore -= params.KNIGHT_COVERED_SQUARE_WEIGHT*BitOperations.getHammingWeight(blackKnightCoverage);
-		// Pawn-piece defence.
-		whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & whiteMovablePieces, -1);
-		blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns & blackMovablePieces, -1);
-		extendedScore += params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
-				((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
-		extendedScore -= params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
-				((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns));
-		// Pawn-piece attack.
-		extendedScore += params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
-				((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns));
-		extendedScore -= params.PAWN_ATTACKED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
-				((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
-		// Stopped pawns.
-		extendedScore -= params.STOPPED_PAWN_WEIGHT*BitOperations.getHammingWeight((pos.whitePawns << 8) & (pos.allBlackOccupied^pos.blackPawns));
-		extendedScore += params.STOPPED_PAWN_WEIGHT*BitOperations.getHammingWeight((pos.blackPawns >>> 8) & (pos.allWhiteOccupied^pos.whitePawns));
-		// Piece-king tropism.
-		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
-		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
-		whiteDistToBlackKing = 0;
-		whitePieces = BitOperations.serialize(pos.allWhiteOccupied & ~pos.whitePawns);
-		while (whitePieces.hasNext())
-			whiteDistToBlackKing += CHEBYSHEV_DISTANCE[whitePieces.next()][blackKingInd];
-		blackDistToWhiteKing = 0;
-		blackPieces = BitOperations.serialize(pos.allBlackOccupied & ~pos.blackPawns);
-		while (blackPieces.hasNext())
-			blackDistToWhiteKing += CHEBYSHEV_DISTANCE[blackPieces.next()][whiteKingInd];
-		extendedScore -= (params.PIECE_KING_TROPISM_WEIGHT*whiteDistToBlackKing)/
-				Math.max(1, BitOperations.getHammingWeight(pos.allWhiteOccupied^pos.whitePawns));
-		extendedScore += (params.PIECE_KING_TROPISM_WEIGHT*blackDistToWhiteKing)/
-				Math.max(1, BitOperations.getHammingWeight(pos.allBlackOccupied^pos.blackPawns));
-		// King mobility.
-		whiteKingMobility = MoveSetDatabase.getByIndex(whiteKingInd).getKingMoveSet(pos.allNonWhiteOccupied);
-		blackKingMobility = MoveSetDatabase.getByIndex(blackKingInd).getKingMoveSet(pos.allNonBlackOccupied);
-		extendedScore += params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteKingMobility & ~(blackPawnAttacks |
-				blackKnightCoverage | blackBishopCoverage | blackRookCoverage | blackQueenCoverage | blackKingMobility));
-		extendedScore -= params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackKingMobility & ~(whitePawnAttacks |
-				whiteKnightCoverage | whiteBishopCoverage | whiteRookCoverage | whiteQueenCoverage | whiteKingMobility));
-		// Final extended score.
-		if (!isWhitesTurn)
-			extendedScore *= -1;
-		score += extendedScore;
+		// @!FIXME Add fine evaluation terms for the extended score.
+//		extendedScore = 0;
+//		// Final extended score.
+//		if (!isWhitesTurn)
+//			extendedScore *= -1;
+//		score += extendedScore;
 		eT.insert(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}

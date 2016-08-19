@@ -374,6 +374,14 @@ class Position implements Hashable, Copiable<Position> {
 		return repetitions;
 	}
 	/**
+	 * Returns the number of pieces on the board.
+	 * 
+	 * @return
+	 */
+	public int getNumberOfPieces() {
+		return BitOperations.getHammingWeight(allOccupied);
+	}
+	/**
 	 * Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.
 	 * 
 	 * @return
@@ -3041,7 +3049,7 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				capturedPiece = Piece.NULL.ind;
 				type = MoveType.SHORT_CASTLING.ind;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^O-O-O[+#]?[//?!]{0,2}$")) {
 				if (isWhitesTurn) {
@@ -3056,7 +3064,7 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				capturedPiece = Piece.NULL.ind;
 				type = MoveType.LONG_CASTLING.ind;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1));
@@ -3073,7 +3081,7 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				capturedPiece = Piece.NULL.ind;
 				type = MoveType.NORMAL.ind;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1));
@@ -3090,7 +3098,7 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				capturedPiece = Piece.NULL.ind;
 				type = (byte)(Piece.parse(chars[3]).ind + 2);
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
@@ -3119,7 +3127,7 @@ class Position implements Hashable, Copiable<Position> {
 						type = MoveType.NORMAL.ind;
 					}
 				}
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^x[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
@@ -3134,7 +3142,7 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				capturedPiece = offsetBoard[to];
 				type = (byte)(Piece.parse(chars[4]).ind + 2);
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^x[a-h][1-8]e.p.[+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
@@ -3150,7 +3158,7 @@ class Position implements Hashable, Copiable<Position> {
 					capturedPiece = Piece.W_PAWN.ind;
 				}
 				type = MoveType.EN_PASSANT.ind;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[a-h]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
@@ -3181,7 +3189,7 @@ class Position implements Hashable, Copiable<Position> {
 						type = MoveType.NORMAL.ind;
 					}
 				}
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[a-h]x[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
@@ -3198,7 +3206,7 @@ class Position implements Hashable, Copiable<Position> {
 				}
 				capturedPiece = offsetBoard[to];
 				type = (byte)(Piece.parse(chars[5]).ind + 2);
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[a-h]x[a-h][1-8]e.p.[+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
@@ -3216,7 +3224,7 @@ class Position implements Hashable, Copiable<Position> {
 					capturedPiece = Piece.W_PAWN.ind;
 				}
 				type = MoveType.EN_PASSANT.ind;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[KQRBN][a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[1] - 'a') + 8*(Integer.parseInt(Character.toString(chars[2])) - 1));
@@ -3224,7 +3232,7 @@ class Position implements Hashable, Copiable<Position> {
 				capturedPiece = Piece.NULL.ind;
 				type = MoveType.NORMAL.ind;
 				from = -1;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[KQRBN][a-h][a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
@@ -3256,7 +3264,7 @@ class Position implements Hashable, Copiable<Position> {
 				capturedPiece = offsetBoard[to];
 				type = MoveType.NORMAL.ind;
 				from = -1;
-				restriction = -1L;
+				restriction = Bitboard.FULL_BOARD;
 			}
 			else if (san.matches("^[KQRBN][a-h]x[a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte)((int)(chars[3] - 'a') + 8*(Integer.parseInt(Character.toString(chars[4])) - 1));

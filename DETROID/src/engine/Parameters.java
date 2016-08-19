@@ -22,8 +22,6 @@ import java.util.Random;
  */
 public final class Parameters {
 
-	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
-	
 	// Piece values.
 	public short KING_VALUE;
 	public short QUEEN_VALUE;
@@ -57,15 +55,22 @@ public final class Parameters {
 	public byte PINNED_ROOK_WEIGHT;
 	public byte PINNED_BISHOP_WEIGHT;
 	public byte PINNED_KNIGHT_WEIGHT;
-	public byte QUEEN_COVERED_SQUARE_WEIGHT;
-	public byte ROOK_COVERED_SQUARE_WEIGHT;
-	public byte BISHOP_COVERED_SQUARE_WEIGHT;
-	public byte KNIGHT_COVERED_SQUARE_WEIGHT;
+	public byte QUEEN_MOBILITY_WEIGHT;
+	public byte ROOK_MOBILITY_WEIGHT;
+	public byte BISHOP_MOBILITY_WEIGHT;
+	public byte KNIGHT_MOBILITY_WEIGHT;
+	public byte BISHOP_PAIR_ADVANTAGE;
+	public byte KNIGHT_ADVANTAGE_PER_PAWN;
 	public byte PAWN_DEFENDED_PIECE_WEIGHT;
 	public byte PAWN_ATTACKED_PIECE_WEIGHT;
 	public byte STOPPED_PAWN_WEIGHT;
 	public byte PIECE_KING_TROPISM_WEIGHT;
 	public byte KING_MOBILITY_WEIGHT;
+	public byte TEMPO_ADVANTAGE;
+	public byte CHECK_DISADVANTAGE;
+	
+	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
+	public short LAZY_EVAL_MAR;
 	
 	// Game phase intervals.
 	public short GAME_PHASE_OPENING_LOWER;
@@ -110,9 +115,6 @@ public final class Parameters {
 	public byte MOVES_TO_GO_SAFETY_MARGIN;
 	public float FRACTION_OF_TOTAL_TIME_TO_USE;
 	
-	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	public short LAZY_EVAL_MAR;
-	
 	// Piece-square tables based on and extending Tomasz Michniewski's "Unified Evaluation" tables.
 	public byte[] PST_PAWN_OPENING;
 	public byte[] PST_PAWN_ENDGAME;
@@ -128,16 +130,11 @@ public final class Parameters {
 	private long id;
 	private String filePath;
 	
-	@SuppressWarnings("unused")
-	private Parameters(boolean noIo) { }
 	public Parameters(String filePath) throws IOException {
 		setParameters(filePath);
 		this.filePath = filePath;
 		Random rand = new Random();
 		id = rand.nextLong();
-	}
-	public Parameters() throws IOException {
-		this(DEFAULT_PARAMETERS_FILE_PATH);
 	}
 	/**
 	 * Returns the 64 bit ID number of the instance.
@@ -216,14 +213,6 @@ public final class Parameters {
 			e.printStackTrace();
 			return false;
 		}
-	}
-	/**
-	 * Overwrites the default parameters file, params.txt, with the state of this instance.
-	 * 
-	 * @return
-	 */
-	public boolean writeToFile() {
-		return writeToFile(DEFAULT_PARAMETERS_FILE_PATH);
 	}
 	/**
 	 * Writes the parameters to the specified file.

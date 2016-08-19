@@ -253,8 +253,7 @@ class Search implements Runnable {
 					if (score >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
-					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY)) ||
-							(hashMove != null && move.equals(hashMove))) {
+					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY))) {
 						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
 					}
