@@ -19,6 +19,7 @@ import uci.ScoreType;
 import uci.SearchInfo;
 import uci.Option;
 import util.*;
+import java.net.*;
 
 /**
  * 
@@ -32,8 +33,13 @@ public class Detroid implements Engine, Observer {
 	public final static String AUTHOR = "Viktor Csomor";
 	
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
-	public final static String DEFAULT_BOOK_FILE_PATH = new File(System.getProperty("java.class.path")).getAbsoluteFile().getParentFile().toString() +
-			File.separator + "book.bin";
+	public final static String DEFAULT_BOOK_FILE_PATH;
+	static {
+		try {
+			DEFAULT_BOOK_FILE_PATH = new File(Detroid.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+					.getAbsoluteFile().getParent() + File.separator + "book.bin";
+		} catch (URISyntaxException e) { DEFAULT_BOOK_FILE_PATH = null; }
+	}
 	// Search, evaluation, and time control parameters.
 	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
 	
@@ -268,6 +274,7 @@ public class Detroid implements Engine, Observer {
 				if (debug) debugInfo.set("Use of own book successfully set to " + value);
 				return true;
 			}
+			if (debug) debugInfo.set("No book file found at " + options.get(primaryBookPath));
 		}
 		else if (primaryBookPath.equals(setting)) {
 			try {

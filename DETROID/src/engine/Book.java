@@ -52,7 +52,7 @@ abstract class Book implements Closeable {
 	 * @return
 	 */
 	public String getPrimaryFilePath() {
-		return path.toAbsolutePath().toString();
+		return path.toString();
 	}
 	/**
 	 * Returns the path to the secondary book file.
