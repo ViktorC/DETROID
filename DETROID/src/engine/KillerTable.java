@@ -24,8 +24,8 @@ class KillerTable {
 			this.move1 = move1;
 			this.move2 = move2;
 		}
-		public int getMove1() { return move1; }
-		public int getMove2() { return move2; }
+		int getMove1() { return move1; }
+		int getMove2() { return move2; }
 	}
 	
 	private KillerTableEntry[] t;
