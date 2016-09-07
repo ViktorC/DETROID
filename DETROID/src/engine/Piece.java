@@ -25,8 +25,8 @@ enum Piece {
 	B_KNIGHT('n'),
 	B_PAWN	('p');
 	
-	public final byte  ind;		// A number that generally represents the respective piece, among others, for example on the offset board.
-	public final char letter;	// A character denoting the piece-type in chess notation.
+	final byte  ind;		// A number that generally represents the respective piece, among others, for example on the offset board.
+	final char letter;	// A character denoting the piece-type in chess notation.
 	
 	private Piece(char fen) {
 		this.ind = (byte)ordinal();
@@ -39,7 +39,7 @@ enum Piece {
 	 * @return
 	 * @throws ChessParseException 
 	 */
-	public static Piece parse(char piece) throws ChessParseException {
+	static Piece parse(char piece) throws ChessParseException {
 		switch (piece) {
 			case '\u0000':
 				return Piece.NULL;
@@ -77,7 +77,7 @@ enum Piece {
 	 * @param numericNotation
 	 * @return
 	 */
-	public static Piece getByNumericNotation(int numericNotation) {
+	static Piece getByNumericNotation(int numericNotation) {
 		switch (numericNotation) {
 			case 0: return NULL;
 			case 1: return W_KING; case 2: return W_QUEEN; case 3: return W_ROOK; case 4: return W_BISHOP; case 5: return W_KNIGHT;

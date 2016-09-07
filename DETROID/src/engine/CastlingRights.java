@@ -13,7 +13,7 @@ enum CastlingRights {
 	LONG,
 	ALL;
 	
-	public final byte ind;	// Numeric representation of the the castling rights.
+	final byte ind;	// Numeric representation of the the castling rights.
 	
 	private CastlingRights() {
 		ind = (byte)ordinal();
@@ -24,7 +24,7 @@ enum CastlingRights {
 	 * @param ind
 	 * @return
 	 */
-	public static CastlingRights getByIndex(int ind) {
+	static CastlingRights getByIndex(int ind) {
 		switch (ind) {
 			case 0: return NONE; case 1: return SHORT; case 2: return LONG; case 3: return ALL;
 			default: throw new IllegalArgumentException();
@@ -37,7 +37,7 @@ enum CastlingRights {
 	 * @param black
 	 * @return
 	 */
-	public static String toFEN(CastlingRights white, CastlingRights black) {
+	static String toFEN(CastlingRights white, CastlingRights black) {
 		if (white == null || black == null)
 			return null;
 		String out = "";

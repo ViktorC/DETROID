@@ -133,28 +133,13 @@ public final class BitOperations {
 		return (n & 0xFF00FF00FF00FF00L)  >>> 8  | (n & 0x00FF00FF00FF00FFL)  << 8;
 	}
 	/**
-	 * Returns a queue of the indexes of all set bits in the input parameter.
-	 * 
-	 * @param n
-	 * @return
-	 */
-	public final static ByteStack serialize(long n) {
-		ByteStack out = new ByteStack();
-		while (n != 0) {
-			out.add(DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)]);
-			n = n & (n - 1);
-		}
-		return out;
-	}
-	/**
 	 * Returns an array of the indexes of all set bits in the input parameter.
 	 * 
 	 * @param n
-	 * @param numberOfSetBits The Hamming weight of the number. Assumed to be correct.
 	 * @return
 	 */
-	public final static byte[] serialize(long n, byte numberOfSetBits) {
-		byte[] series = new byte[numberOfSetBits];
+	public final static byte[] serialize(long n) {
+		byte[] series = new byte[getHammingWeight(n)];
 		int ind = 0;
 		while (n != 0) {
 			series[ind] = DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)];
@@ -170,17 +155,16 @@ public final class BitOperations {
 	 * @return
 	 */
 	public final static long[] getAllSubsets(long n) {
-		byte numOfSetBits = BitOperations.getHammingWeight(n);
-		byte[] bitIndArray = BitOperations.serialize(n, numOfSetBits);
-		ByteList subsetBitIndList;
-		int numOfSubsets = 1 << numOfSetBits;
+		byte[] bitIndArray = BitOperations.serialize(n);
+		byte[] subsetBitIndArr;
+		int numOfSubsets = 1 << bitIndArray.length;
 		long[] combArray = new long[numOfSubsets];
 		long combination;
 		for (int i = 0; i < numOfSubsets; i++) {
-			subsetBitIndList = BitOperations.serialize(i);
+			subsetBitIndArr = BitOperations.serialize(i);
 			combination = 0L;
-			while (subsetBitIndList.hasNext())
-				combination |= (1L << bitIndArray[subsetBitIndList.next()]);
+			for (byte b : subsetBitIndArr)
+				combination |= (1L << bitIndArray[b]);
 			combArray[i] = combination;
 		}
 		return combArray;

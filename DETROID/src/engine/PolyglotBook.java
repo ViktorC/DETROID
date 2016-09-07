@@ -44,7 +44,7 @@ class PolyglotBook extends Book {
 	 * @param filePath
 	 * @throws IOException
 	 */
-	public PolyglotBook(String filePath) throws IOException {
+	PolyglotBook(String filePath) throws IOException {
 		super(filePath);
 		gen = ZobristKeyGenerator.getInstance();
 	}
@@ -57,7 +57,7 @@ class PolyglotBook extends Book {
 	 * @param secondaryBookFilePath
 	 * @throws IOException
 	 */
-	public PolyglotBook(String filePath, String secondaryBookFilePath) throws IOException {
+	PolyglotBook(String filePath, String secondaryBookFilePath) throws IOException {
 		this(filePath);
 		if (secondaryBookFilePath != null)
 			secondaryBook = new PolyglotBook(secondaryBookFilePath);
@@ -71,7 +71,7 @@ class PolyglotBook extends Book {
 	 */
 	private ArrayList<Entry> getRelevantEntries(Position p) {
 		long low, mid, hi, temp = -1;
-		long readerPos, currKey, key = gen.getPolyglotHashKey(p);
+		long readerPos, currKey, key = gen.generatePolyglotHashKey(p);
 		ArrayList<Entry> entries = new ArrayList<>();
 		ByteBuffer buff = ByteBuffer.allocateDirect(ENTRY_SIZE);
 		try {
@@ -182,7 +182,7 @@ class PolyglotBook extends Book {
 	 * @see engine.IBook#getMove(engine.Position, engine.Book.SelectionModel)
 	 */
 	@Override
-	public Move getMove(Position p, SelectionModel selection) {
+	Move getMove(Position p, SelectionModel selection) {
 		short max;
 		double totalWeight, randomDouble, weightSum;
 		Entry e;

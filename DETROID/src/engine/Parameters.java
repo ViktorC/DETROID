@@ -67,7 +67,6 @@ public final class Parameters {
 	public byte PIECE_KING_TROPISM_WEIGHT;
 	public byte KING_MOBILITY_WEIGHT;
 	public byte TEMPO_ADVANTAGE;
-	public byte CHECK_DISADVANTAGE;
 	
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
 	public short LAZY_EVAL_MAR;

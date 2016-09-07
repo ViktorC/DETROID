@@ -8,7 +8,7 @@ import uci.DebugInfo;
  * @author Viktor
  *
  */
-public class DebugInformation extends DebugInfo {
+class DebugInformation extends DebugInfo {
 
 	private String info;
 	

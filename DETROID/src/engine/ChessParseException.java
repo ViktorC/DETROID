@@ -15,17 +15,17 @@ class ChessParseException extends ParseException {
 	 */
 	private static final long serialVersionUID = -2375327691687152573L;
 
-	public ChessParseException() {
+	ChessParseException() {
 		this("");
 	}
-	public ChessParseException(String arg) {
+	ChessParseException(String arg) {
 		super(arg, -1);
 	}
-	public ChessParseException(String arg0, int arg1) {
+	ChessParseException(String arg0, int arg1) {
 		super(arg0, arg1);
 		// TODO Auto-generated constructor stub
 	}
-	public ChessParseException(Exception e) {
+	ChessParseException(Exception e) {
 		this(e.getMessage());
 	}
 }

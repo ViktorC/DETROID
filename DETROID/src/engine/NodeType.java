@@ -12,7 +12,7 @@ enum NodeType {
 	FAIL_HIGH,
 	FAIL_LOW;
 	
-	public final byte ind;
+	final byte ind;
 	
 	private NodeType() {
 		this.ind = (byte)ordinal();

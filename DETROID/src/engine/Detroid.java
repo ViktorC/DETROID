@@ -2,6 +2,7 @@ package engine;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -19,7 +20,6 @@ import uci.ScoreType;
 import uci.SearchInfo;
 import uci.Option;
 import util.*;
-import java.net.*;
 
 /**
  * 
@@ -35,10 +35,12 @@ public class Detroid implements Engine, Observer {
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
 	public final static String DEFAULT_BOOK_FILE_PATH;
 	static {
+		String path;
 		try {
-			DEFAULT_BOOK_FILE_PATH = new File(Detroid.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+			path = new File(Detroid.class.getProtectionDomain().getCodeSource().getLocation().toURI())
 					.getAbsoluteFile().getParent() + File.separator + "book.bin";
-		} catch (URISyntaxException e) { DEFAULT_BOOK_FILE_PATH = null; }
+		} catch (URISyntaxException e) { path = null; }
+		DEFAULT_BOOK_FILE_PATH = path;
 	}
 	// Search, evaluation, and time control parameters.
 	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
@@ -50,7 +52,6 @@ public class Detroid implements Engine, Observer {
 	private Option<?> primaryBookPath;
 	private Option<?> secondaryBookPath;
 	private Option<?> uciOpponent;
-	private Option<?> parametersPath;
 	private HashMap<Option<?>, Object> options;
 	
 	private Parameters params;
@@ -85,9 +86,10 @@ public class Detroid implements Engine, Observer {
 	private void setHashSize(int hashSize) {
 		long sizeInBytes = hashSize*1024*1024;
 		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
-		tT = new LossyHashTable<>(sizeInBytes*params.TT_SHARE/totalHashShares, TTEntry.SIZE);
-		eT = new LossyHashTable<>(sizeInBytes*params.ET_SHARE/totalHashShares, ETEntry.SIZE);
-		pT = new LossyHashTable<>(sizeInBytes*params.PT_SHARE/totalHashShares, PTEntry.SIZE);
+		SizeEstimator estimator = SizeEstimator.getInstance();
+		tT = new LossyHashTable<>(sizeInBytes*params.TT_SHARE/totalHashShares/estimator.sizeOf(TTEntry.class));
+		eT = new LossyHashTable<>(sizeInBytes*params.ET_SHARE/totalHashShares/estimator.sizeOf(ETEntry.class));
+		pT = new LossyHashTable<>(sizeInBytes*params.PT_SHARE/totalHashShares/estimator.sizeOf(PTEntry.class));
 		if (debug) debugInfo.set("Hash capacity data\n" +
 				"Transposition table capacity - " + tT.getCapacity() + "\n" +
 				"Evaluation table capacity - " + eT.getCapacity() + "\n" +
@@ -178,7 +180,7 @@ public class Detroid implements Engine, Observer {
 	 */
 	private String getRandomMove() {
 		int i = 0;
-		List<Move> moves = game.getPosition().getMoves();
+		ArrayList<Move> moves = game.getPosition().getMoves();
 		String[] arr = new String[moves.size()];
 		for (Move m : moves)
 			arr[i++] = m.toString();
@@ -206,7 +208,6 @@ public class Detroid implements Engine, Observer {
 		primaryBookPath = new Option.StringOption("PrimaryBookPath", book == null ? null : book.getPrimaryFilePath());
 		secondaryBookPath = new Option.StringOption("SecondaryBookPath", null);
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
-		parametersPath = new Option.StringOption("ParametersPath", params.getFilePath());
 		options.put(hashSize, hashSize.getDefaultValue());
 		options.put(clearHash, clearHash.getDefaultValue());
 		options.put(ponder, ponder.getDefaultValue());
@@ -214,11 +215,11 @@ public class Detroid implements Engine, Observer {
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue());
 		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue());
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
-		options.put(parametersPath, parametersPath.getDefaultValue());
 		searchStats = new SearchInformation();
 		searchStats.addObserver(this);
 		setHashSize((int)options.get(hashSize));
 		hT = new RelativeHistoryTable(params);
+		System.gc();
 	}
 	@Override
 	public String getName() {
@@ -242,7 +243,6 @@ public class Detroid implements Engine, Observer {
 		list.add(primaryBookPath);
 		list.add(secondaryBookPath);
 		list.add(uciOpponent);
-		list.add(parametersPath);
 		return list;
 	}
 	@Override
@@ -300,15 +300,6 @@ public class Detroid implements Engine, Observer {
 			options.put(uciOpponent, value);
 			if (debug) debugInfo.set("Opponent name successfully set to " + value);
 			return true;
-		}
-		else if (parametersPath.equals(setting)) {
-			try {
-				Parameters newParams = new Parameters((String) value);
-				params = newParams;
-				options.put(parametersPath, params.getFilePath());
-				if (debug) debugInfo.set("Parameters file path successfully set to " + value);
-				return true;
-			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
 		}
 		if (debug) debugInfo.set("The setting was not accepted");
 		return false;
@@ -546,9 +537,9 @@ public class Detroid implements Engine, Observer {
 		long load, capacity;
 		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
 		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
-		if (debug) debugInfo.set("Total hash size in MB - " +
-				String.format("%.2f", (float)((double)(tT.sizeInBytes() + eT.sizeInBytes() + pT.sizeInBytes()))/(2L << 20)));
-		return (short) (1000*load/capacity);
+		if (debug) debugInfo.set("Total hash size in MB - " + String.format("%.2f", (float)((double)(SizeEstimator.getInstance().sizeOf(tT) +
+				SizeEstimator.getInstance().sizeOf(eT) + SizeEstimator.getInstance().sizeOf(pT)))/(1L << 20)));
+		return (short) (1000*Math.max(1, load)/capacity);
 	}
 	@Override
 	public DebugInfo getDebugInfo() {
@@ -572,7 +563,7 @@ public class Detroid implements Engine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchInformation stats = (SearchInformation)o;
-		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().getHead() : new Move();
+		Move newSearchRes = stats.getPvMoveList() != null ? stats.getPvMoveList().get(0) : new Move();
 		newSearchRes = newSearchRes == null ? new Move() : newSearchRes;
 		if (!searchResult.equals(newSearchRes)) {
 			timeOfLastSearchResChange = System.currentTimeMillis();

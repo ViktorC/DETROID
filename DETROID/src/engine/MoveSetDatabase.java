@@ -92,12 +92,12 @@ enum MoveSetDatabase {
 	
 	private final long[] rookMoveSets;
 	private final long[] bishopMoveSets;
-	public final long kingMoveMask;
-	public final long knightMoveMask;
+	final long kingMoveMask;
+	final long knightMoveMask;
 	private final long pawnWhiteAdvanceMoveMask;
 	private final long pawnBlackAdvanceMoveMask;
-	public final long pawnWhiteCaptureMoveMask;
-	public final long pawnBlackCaptureMoveMask;
+	final long pawnWhiteCaptureMoveMask;
+	final long pawnBlackCaptureMoveMask;
 	
 	/**
 	 * Requires magic numbers which can be generated and printed to the console externally, using the
@@ -150,7 +150,7 @@ enum MoveSetDatabase {
 	 * 
 	 * @return
 	 */
-	public long getRookMoveMask() {
+	long getRookMoveMask() {
 		return rookMoveSets[0];
 	}
 	/**
@@ -158,7 +158,7 @@ enum MoveSetDatabase {
 	 * 
 	 * @return
 	 */
-	public long getBishopMoveMask() {
+	long getBishopMoveMask() {
 		return bishopMoveSets[0];
 	}
 	/**
@@ -167,7 +167,7 @@ enum MoveSetDatabase {
 	 * 
 	 * @return
 	 */
-	public long getQueenMoveMask() {
+	long getQueenMoveMask() {
 		return rookMoveSets[0] | bishopMoveSets[0];
 	}
 	/**
@@ -176,7 +176,7 @@ enum MoveSetDatabase {
 	 * @param allOpponentOccupied
 	 * @return
 	 */
-	public long getKingMoveSet(long allNonSameColorOccupied) {
+	long getKingMoveSet(long allNonSameColorOccupied) {
 		return kingMoveMask & allNonSameColorOccupied;
 	}
 	/**
@@ -185,7 +185,7 @@ enum MoveSetDatabase {
 	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public long getKnightMoveSet(long allNonSameColorOccupied) {
+	long getKnightMoveSet(long allNonSameColorOccupied) {
 		return knightMoveMask & allNonSameColorOccupied;
 	}
 	/**
@@ -194,7 +194,7 @@ enum MoveSetDatabase {
 	 * @param allNonWhiteOccupied
 	 * @return
 	 */
-	public long getWhitePawnCaptureSet(long allBlackOccupied) {
+	long getWhitePawnCaptureSet(long allBlackOccupied) {
 		return pawnWhiteCaptureMoveMask & allBlackOccupied;
 	}
 	/**
@@ -203,7 +203,7 @@ enum MoveSetDatabase {
 	 * @param allNonWhiteOccupied
 	 * @return
 	 */
-	public long getBlackPawnCaptureSet(long allWhiteOccupied) {
+	long getBlackPawnCaptureSet(long allWhiteOccupied) {
 		return pawnBlackCaptureMoveMask & allWhiteOccupied;
 	}
 	/**
@@ -212,7 +212,7 @@ enum MoveSetDatabase {
 	 * @param allNonWhiteOccupied
 	 * @return
 	 */
-	public long getWhitePawnAdvanceSet(long allEmpty) {
+	long getWhitePawnAdvanceSet(long allEmpty) {
 		if (sqrInd > 15)
 			return pawnWhiteAdvanceMoveMask & allEmpty;
 		long adv = pawnWhiteAdvanceMoveMask & allEmpty;
@@ -224,7 +224,7 @@ enum MoveSetDatabase {
 	 * @param allNonWhiteOccupied
 	 * @return
 	 */
-	public long getBlackPawnAdvanceSet(long allEmpty) {
+	long getBlackPawnAdvanceSet(long allEmpty) {
 		if (sqrInd < 48)
 			return pawnBlackAdvanceMoveMask & allEmpty;
 		long adv = pawnBlackAdvanceMoveMask & allEmpty;
@@ -236,7 +236,7 @@ enum MoveSetDatabase {
 	 * @param allNonWhiteOccupied
 	 * @return
 	 */
-	public long getWhitePawnMoveSet(long allBlackOccupied, long allEmpty) {
+	long getWhitePawnMoveSet(long allBlackOccupied, long allEmpty) {
 		long advSet, captSet = pawnWhiteCaptureMoveMask & allBlackOccupied;
 		advSet = pawnWhiteAdvanceMoveMask & allEmpty;
 		if (sqrInd < 16)
@@ -249,7 +249,7 @@ enum MoveSetDatabase {
 	 * @param allNonWhiteOccupied
 	 * @return
 	 */
-	public long getBlackPawnMoveSet(long allWhiteOccupied, long allEmpty) {
+	long getBlackPawnMoveSet(long allWhiteOccupied, long allEmpty) {
 		long advSet, captSet = pawnBlackCaptureMoveMask & allWhiteOccupied;
 		advSet = pawnBlackAdvanceMoveMask & allEmpty;
 		if (sqrInd > 47)
@@ -263,7 +263,7 @@ enum MoveSetDatabase {
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getRookMoveSet(long allNonSameColorOccupied, long allOccupied) {
+	long getRookMoveSet(long allNonSameColorOccupied, long allOccupied) {
 		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] & allNonSameColorOccupied;
 	}
 	
@@ -274,7 +274,7 @@ enum MoveSetDatabase {
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getBishopMoveSet(long allNonSameColorOccupied, long allOccupied) {
+	long getBishopMoveSet(long allNonSameColorOccupied, long allOccupied) {
 		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] & allNonSameColorOccupied;
 	}
 	/**
@@ -284,7 +284,7 @@ enum MoveSetDatabase {
 	 * @param allOccupied
 	 * @return
 	 */
-	public long getQueenMoveSet(long allNonSameColorOccupied, long allOccupied) {
+	long getQueenMoveSet(long allNonSameColorOccupied, long allOccupied) {
 		return (rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
 			    bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) & allNonSameColorOccupied;
 	}
@@ -294,7 +294,7 @@ enum MoveSetDatabase {
 	 * @param sqrInd
 	 * @return
 	 */
-	public static MoveSetDatabase getByIndex(int sqrInd) {
+	static MoveSetDatabase getByIndex(int sqrInd) {
 		switch(sqrInd) {
 			case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1;
 			case 6:  return G1; case 7:  return H1; case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2;

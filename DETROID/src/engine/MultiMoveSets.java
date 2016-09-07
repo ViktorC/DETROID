@@ -20,7 +20,7 @@ final class MultiMoveSets {
 	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public final static long kingMoveSets(long king, long allNonSameColorOccupied) {
+	final static long kingMoveSets(long king, long allNonSameColorOccupied) {
 		return ((((king << 7) | (king >>> 9) | (king >>> 1)) & ~File.H.bits) |
 				(king << 8) | (king >>> 8) |
 				(((king << 9) | (king >>> 7) | (king << 1)) & ~File.A.bits)) & allNonSameColorOccupied;
@@ -32,7 +32,7 @@ final class MultiMoveSets {
 	 * @param allNonSameColorOccupied
 	 * @return
 	 */
-	public final static long knightMoveSets(long knight, long allNonSameColorOccupied) {
+	final static long knightMoveSets(long knight, long allNonSameColorOccupied) {
 		return ((((knight << 15) | (knight >>> 17)) & ~File.H.bits) |
 				(((knight << 6) | (knight >>> 10)) & ~(File.H.bits | File.G.bits)) |
 				(((knight << 10) | (knight >>> 6)) & ~(File.A.bits | File.B.bits)) |
@@ -45,7 +45,7 @@ final class MultiMoveSets {
 	 * @param allOpponentOccupied
 	 * @return
 	 */
-	public final static long whitePawnCaptureSets(long whitePawns, long allOpponentOccupied) {
+	final static long whitePawnCaptureSets(long whitePawns, long allOpponentOccupied) {
 		return (((whitePawns << 7) & ~File.H.bits) | ((whitePawns << 9) & ~File.A.bits)) & allOpponentOccupied;
 	}
 	/**
@@ -55,7 +55,7 @@ final class MultiMoveSets {
 	 * @param allOpponentOccupied
 	 * @return
 	 */
-	public final static long blackPawnCaptureSets(long blackPawns, long allOpponentOccupied) {
+	final static long blackPawnCaptureSets(long blackPawns, long allOpponentOccupied) {
 		return (((blackPawns >>> 9) & ~File.H.bits) | ((blackPawns >>> 7) & ~File.A.bits)) & allOpponentOccupied;
 	}
 	/**
@@ -66,7 +66,7 @@ final class MultiMoveSets {
 	 * @param allEmpty
 	 * @return
 	 */
-	public final static long whitePawnAdvanceSets(long whitePawns, long allEmpty) {
+	final static long whitePawnAdvanceSets(long whitePawns, long allEmpty) {
 		return (whitePawns << 8) & allEmpty;
 	}
 	/**
@@ -77,7 +77,7 @@ final class MultiMoveSets {
 	 * @param allEmpty
 	 * @return
 	 */
-	public final static long blackPawnAdvanceSets(long blackPawns, long allEmpty) {
+	final static long blackPawnAdvanceSets(long blackPawns, long allEmpty) {
 		return (blackPawns >>> 8) & allEmpty;
 	}
 	/**
@@ -88,7 +88,7 @@ final class MultiMoveSets {
 	 * @param allEmpty
 	 * @return
 	 */
-	public final static long bishopMoveSets(long bishops, long allOpponentOccupied, long allEmpty) {
+	final static long bishopMoveSets(long bishops, long allOpponentOccupied, long allEmpty) {
 		long gen, attackSet = 0;
 		gen = Bitboard.northWestFill(bishops, allEmpty);
 		attackSet |= gen | (((gen << 7) & ~File.H.bits) & allOpponentOccupied);
@@ -108,7 +108,7 @@ final class MultiMoveSets {
 	 * @param allEmpty
 	 * @return
 	 */
-	public final static long rookMoveSets(long rooks, long allOpponentOccupied, long allEmpty) {
+	final static long rookMoveSets(long rooks, long allOpponentOccupied, long allEmpty) {
 		long gen, attackSet = 0;
 		gen = Bitboard.northFill(rooks, allEmpty);
 		attackSet |= gen | ((gen << 8) & allOpponentOccupied);
@@ -128,7 +128,7 @@ final class MultiMoveSets {
 	 * @param allEmpty
 	 * @return
 	 */
-	public final static long queenMoveSets(long queens, long allOpponentOccupied, long allEmpty) {
+	final static long queenMoveSets(long queens, long allOpponentOccupied, long allEmpty) {
 		return rookMoveSets(queens, allOpponentOccupied, allEmpty) | bishopMoveSets(queens, allOpponentOccupied, allEmpty);
 	}
 }

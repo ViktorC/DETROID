@@ -1,7 +1,6 @@
 package engine;
 
 import util.LossyHashTable;
-import util.SizeOf;
 
 /**
  * A transposition table entry that stores information about searched positions identified by the key such as the depth of the search, the best move from this
@@ -16,35 +15,29 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 	/**
 	 * The 64-bit position hash key.
 	 */
-	public final long key;
+	final long key;
 	/**
 	 * How deep the position has been searched.
 	 */
-	public final short depth;
+	final short depth;
 	/**
 	 * The type of the returned score.
 	 */
-	public final byte type;
+	final byte type;
 	/**
 	 * The returned score.
 	 */
-	public final short score;
+	final short score;
 	/**
 	 * The best move compressed into an int.
 	 */
-	public final int bestMove;
+	final int bestMove;
 	/**
 	 * The age of the entry.
 	 */
 	byte generation;
 	
-	/**
-	 * The total size of the entry in bytes.
-	 */
-	public final static int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.LONG.numOfBytes + SizeOf.INT.numOfBytes +
-			2*SizeOf.SHORT.numOfBytes + 2*SizeOf.BYTE.numOfBytes);
-
-	public TTEntry(long key, short depth, byte type, short score, int bestMove, byte age) {
+	TTEntry(long key, short depth, byte type, short score, int bestMove, byte age) {
 		this.key = key;
 		this.depth = depth;
 		this.type = type;

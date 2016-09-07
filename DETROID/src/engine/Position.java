@@ -1,5 +1,9 @@
 package engine;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import engine.Bitboard.*;
 import util.*;
 
@@ -17,7 +21,7 @@ import util.*;
  * @author Viktor
  * 
  */
-class Position implements Hashable, Copiable<Position> {
+class Position implements Copiable<Position>, Hashable {
 	
 	/**
 	 * A FEN string for the starting chess position.
@@ -79,20 +83,16 @@ class Position implements Hashable, Copiable<Position> {
 	byte blackCastlingRights;
 	
 	/**A stack of all the moves made so far. */
-	Stack<Move> moveList;
+	ArrayDeque<Move> moveList;
 	/**A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info. */
-	Stack<UnmakeMoveRegister> unmakeRegisterHistory;
+	ArrayDeque<UnmakeMoveRegister> unmakeRegisterHistory;
 	
 	/**A Zobrist key generator instance. */
 	ZobristKeyGenerator gen;
-	/**The Zobrist key that is fairly close to a unique representation of the state of the Position instance in one number. */
+	/**A Zobrist key that is fairly close to a unique representation of the state of the Position instance in one 64 bit number. */
 	long key;
-	/**A Zobrist key for the pawns' position only. */
-	long pawnKey;
 	/**All the positions that have occurred so far represented in Zobrist keys. */
 	long[] keyHistory;
-	/**All the pawn positions occurred. */
-	long[] pawnKeyHistory;
 	
 	/**
 	 * It parses a FEN-String and initializes a Position instance based on it.
@@ -102,7 +102,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @return
 	 * @throws ChessParseException 
 	 */
-	public static Position parse(String fen) throws ChessParseException {
+	static Position parse(String fen) throws ChessParseException {
 		Position pos = new Position();
 		String[] fenFields = fen.split(" "), ranks;
 		String board, turn, castling, enPassant, rank;
@@ -242,24 +242,18 @@ class Position implements Hashable, Copiable<Position> {
 			pos.enPassantRights = EnPassantRights.values()[enPassant.toLowerCase().charAt(0) - 'a'].ind;
 		pos.checkers = pos.getCheckers();
 		pos.isInCheck = pos.checkers != 0;
-		pos.gen.setHashKeys(pos);
+		pos.key = pos.gen.generateHashKey(pos);
 		pos.keyHistory[pos.halfMoveIndex] = pos.key;
-		pos.pawnKeyHistory[pos.halfMoveIndex] = pos.pawnKey;
 		return pos;
 	}
 	/**Initializes a default, empty Position instance.*/
 	private Position() {
-		moveList = new Stack<Move>();
-		unmakeRegisterHistory = new Stack<UnmakeMoveRegister>();
+		moveList = new ArrayDeque<Move>();
+		unmakeRegisterHistory = new ArrayDeque<UnmakeMoveRegister>();
 		gen = ZobristKeyGenerator.getInstance();
-		/* "The longest decisive tournament game is Fressinet-Kosteniuk, Villandry 2007, which Kosteniuk won in 237 moves."
-		 * - one third of that is used as the initial length of the history array. */
-		keyHistory = new long[158];
-		pawnKeyHistory = new long[158];
+		keyHistory = new long[32];
 	}
 	private Position(Position pos) {
-		Stack<Move> reverseMoves;
-		Stack<UnmakeMoveRegister> reverseUnmake;
 		whiteKing = pos.whiteKing;
 		whiteQueens = pos.whiteQueens;
 		whiteRooks = pos.whiteRooks;
@@ -287,29 +281,19 @@ class Position implements Hashable, Copiable<Position> {
 		halfMoveIndex = pos.halfMoveIndex;
 		fiftyMoveRuleClock = pos.fiftyMoveRuleClock;
 		key = pos.key;
-		pawnKey = pos.pawnKey;
 		offsetBoard = new byte[pos.offsetBoard.length];
 		for (int i = 0; i < pos.offsetBoard.length; i++)
 			offsetBoard[i] = pos.offsetBoard[i];
 		keyHistory = new long[pos.keyHistory.length];
-		pawnKeyHistory = new long[pos.keyHistory.length];
-		for (int i = 0; i < pos.keyHistory.length; i++) {
+		for (int i = 0; i < pos.keyHistory.length; i++)
 			keyHistory[i] = pos.keyHistory[i];
-			pawnKeyHistory[i] = pos.pawnKeyHistory[i];
-		}
 		gen = pos.gen;
-		reverseMoves = new Stack<>();
-		moveList = new Stack<>();
-		while (pos.moveList.hasNext())
-			reverseMoves.add(pos.moveList.next());
-		while (reverseMoves.hasNext())
-			moveList.add(reverseMoves.next());
-		reverseUnmake = new Stack<>();
-		unmakeRegisterHistory = new Stack<>();
-		while (pos.unmakeRegisterHistory.hasNext())
-			reverseUnmake.add(pos.unmakeRegisterHistory.next());
-		while (reverseUnmake.hasNext())
-			unmakeRegisterHistory.add(reverseUnmake.next());
+		moveList = new ArrayDeque<>();
+		for (Move m : pos.moveList)
+			moveList.add(m);
+		unmakeRegisterHistory = new ArrayDeque<>();
+		for (UnmakeMoveRegister u : pos.unmakeRegisterHistory)
+			unmakeRegisterHistory.add(u);
 	}
 	/**
 	 * Returns a deep copy of the position.
@@ -320,36 +304,17 @@ class Position implements Hashable, Copiable<Position> {
 	public Position deepCopy() {
 		return new Position(this);
 	}
-	/**
-	 * Returns the 64-bit Zobrist key of the current position. A Zobrist key is used to almost uniquely hash a chess position to an integer.
-	 */
 	@Override
 	public long hashKey() {
 		return key;
 	}
 	/**
-	 * Returns whether the side to move is in check.
+	 * Returns a 64 bit Zobrist hash key for the pawn-king structure on the board.
 	 * 
 	 * @return
 	 */
-	public boolean isInCheck() {
-		return isInCheck;
-	}
-	/**
-	 * Returns the number of half moves made.
-	 * 
-	 * @return
-	 */
-	public int getHalfMoveIndex() {
-		return halfMoveIndex;
-	}
-	/**
-	 * Returns the number of half moves made since the last capture or pawn move.
-	 * 
-	 * @return
-	 */
-	public short getFiftyMoveRuleClock() {
-		return fiftyMoveRuleClock;
+	long getPawnKingHashKey() {
+		return gen.generatePawnKingHashKey(this);
 	}
 	/**
 	 * Returns the number of times the current position has already occurred before. If the position has already occurred before within the last
@@ -358,7 +323,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param sensitiveHalfMoveWindow
 	 * @return
 	 */
-	public int getNumberOfRepetitions(int sensitiveHalfMoveWindow) {
+	int getNumberOfRepetitions(int sensitiveHalfMoveWindow) {
 		int repetitions = 0;
 		if (fiftyMoveRuleClock >= 4) {
 			for (int i = halfMoveIndex - 4; i >= halfMoveIndex - fiftyMoveRuleClock; i -= 2) {
@@ -378,7 +343,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @return
 	 */
-	public int getNumberOfPieces() {
+	int getNumberOfPieces() {
 		return BitOperations.getHammingWeight(allOccupied);
 	}
 	/**
@@ -387,7 +352,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @return
 	 */
 	Move getLastMove() {
-		return moveList.getHead();
+		return moveList.peekFirst();
 	}
 	/**
 	 * Returns an object containing some information about the previous position.
@@ -395,7 +360,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @return
 	 */
 	UnmakeMoveRegister getUnmakeRegister() {
-		return unmakeRegisterHistory.getHead();
+		return unmakeRegisterHistory.peekFirst();
 	}
 	/**
 	 * Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the
@@ -434,7 +399,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param byWhite
 	 * @return
 	 */
-	private long getAttackers(int sqrInd, boolean byWhite) {
+	long getAttackers(int sqrInd, boolean byWhite) {
 		long attackers = 0;
 		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
 		if (byWhite) {
@@ -465,7 +430,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param byWhite
 	 * @return
 	 */
-	private long getBlockerCandidates(int sqrInd, boolean byWhite) {
+	long getBlockerCandidates(int sqrInd, boolean byWhite) {
 		long blockerCandidates = 0;
 		long sqrBit = 1L << sqrInd;
 		long blackPawnAdvance = (sqrBit >>> 8), whitePawnAdvance = (sqrBit << 8);
@@ -700,10 +665,9 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param move
 	 * @return
 	 */
-	public boolean isLegal(Move move) {
-		List<Move> moveList = getMoves();
-		while (moveList.hasNext()) {
-			if (moveList.next().equals(move))
+	boolean isLegal(Move move) {
+		for (Move m : getMoves()) {
+			if (m.equals(move))
 				return true;
 		}
 		return false;
@@ -719,39 +683,29 @@ class Position implements Hashable, Copiable<Position> {
 		long toBit = 1L << move.to;
 		if (isWhitesTurn) {
 			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(blackKing));
-			if (move.movedPiece == Piece.W_QUEEN.ind) {
+			if (move.movedPiece == Piece.W_QUEEN.ind)
 				return (db.getQueenMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
-			}
-			else if (move.movedPiece == Piece.W_ROOK.ind) {
+			else if (move.movedPiece == Piece.W_ROOK.ind)
 				return (db.getRookMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
-			}
-			else if (move.movedPiece == Piece.W_BISHOP.ind) {
+			else if (move.movedPiece == Piece.W_BISHOP.ind)
 				return (db.getBishopMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
-			}
-			else if (move.movedPiece == Piece.W_KNIGHT.ind) {
+			else if (move.movedPiece == Piece.W_KNIGHT.ind)
 				return (db.getKnightMoveSet(allNonWhiteOccupied) & toBit) != 0;
-			}
-			else {
+			else
 				return (db.pawnBlackCaptureMoveMask & toBit) != 0;
-			}
 		}
 		else {
 			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(whiteKing));
-			if (move.movedPiece == Piece.B_QUEEN.ind) {
+			if (move.movedPiece == Piece.B_QUEEN.ind)
 				return (db.getQueenMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
-			}
-			else if (move.movedPiece == Piece.B_ROOK.ind) {
+			else if (move.movedPiece == Piece.B_ROOK.ind)
 				return (db.getRookMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
-			}
-			else if (move.movedPiece == Piece.B_BISHOP.ind) {
+			else if (move.movedPiece == Piece.B_BISHOP.ind)
 				return (db.getBishopMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
-			}
-			else if (move.movedPiece == Piece.B_KNIGHT.ind) {
+			else if (move.movedPiece == Piece.B_KNIGHT.ind)
 				return (db.getKnightMoveSet(allNonBlackOccupied) & toBit) != 0;
-			}
-			else {
+			else
 				return (db.pawnWhiteCaptureMoveMask & toBit) != 0;
-			}
 		}
 	}
 	/**
@@ -761,7 +715,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param moves The move list to which the pinned piece moves will be added.
 	 * @return A bitboard representing the pinned pieces.
 	 */
-	private long addTacticalPinnedPieceMoves(List<Move> moves) {
+	private long addTacticalPinnedPieceMoves(ArrayList<Move> moves) {
 		long straightSliders, diagonalSliders, pinnedPieceBit, pinnerBit, pinnedPieces = 0, enPassantDestination = 0;
 		byte pinnedPieceInd, pinnedPiece, to;
 		Ray attRayMask;
@@ -800,6 +754,7 @@ class Position implements Hashable, Copiable<Position> {
 						to = BitOperations.indexOfBit(pinnerBit);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.ind));
 					}
+					// Check also for possible pinned pawn en passant and promotion.
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						if (enPassantRights != EnPassantRights.NONE.ind) {
 							if (((1L << (to = (byte)(pinnedPieceInd + 7))) &
@@ -840,6 +795,7 @@ class Position implements Hashable, Copiable<Position> {
 						to = BitOperations.indexOfBit(pinnerBit);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.ind));
 					}
+					// Check also for possible pinned pawn en passant and promotion.
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
 						if (enPassantRights != EnPassantRights.NONE.ind) {
 							if (((1L << (to = (byte)(pinnedPieceInd + 9))) &
@@ -995,6 +951,7 @@ class Position implements Hashable, Copiable<Position> {
 						to = BitOperations.indexOfBit(pinnerBit);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.ind));
 					}
+					// Check also for possible pinned pawn en passant and promotion.
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						if (this.enPassantRights != EnPassantRights.NONE.ind) {
 							if (((1L << (to = (byte)(pinnedPieceInd - 7))) &
@@ -1035,6 +992,7 @@ class Position implements Hashable, Copiable<Position> {
 						to = BitOperations.indexOfBit(pinnerBit);
 						moves.add(new Move(pinnedPieceInd, to, pinnedPiece, offsetBoard[to], MoveType.NORMAL.ind));
 					}
+					// Check also for possible pinned pawn en passant and promotion.
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
 						if (enPassantRights != EnPassantRights.NONE.ind) {
 							if (((1L << (to = (byte)(pinnedPieceInd - 9))) &
@@ -1076,10 +1034,10 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param moves The move list to which the pinned piece moves will be added.
 	 * @return A bitboard representing the pinned pieces.
 	 */
-	private long addQuietPinnedPieceMoves(List<Move> moves) {
+	private long addQuietPinnedPieceMoves(ArrayList<Move> moves) {
 		long straightSliders, diagonalSliders, pinnedPieceBit, pinnerBit, pinnedPieces = 0;
 		byte pinnedPieceInd, pinnedPiece;
-		ByteStack pinnedPieceMoves;
+		long pinnedPieceMoveSet;
 		Ray attRayMask;
 		if (this.isWhitesTurn) {
 			straightSliders = blackQueens | blackRooks;
@@ -1091,9 +1049,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize((pinnerBit - (whiteKing << 1))^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = (pinnerBit - (whiteKing << 1))^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1103,14 +1064,20 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1)) & attRayMask.filePos)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((pinnerBit - (whiteKing << 1)) & attRayMask.filePos)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveSetDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvanceSet(allEmpty));
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = MoveSetDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvanceSet(allEmpty);
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1120,9 +1087,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((pinnerBit - (whiteKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1132,10 +1102,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (whiteKing << 1)) &
-								attRayMask.antiDiagonalPos)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((pinnerBit - (whiteKing << 1)) & attRayMask.antiDiagonalPos)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1145,9 +1117,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize((whiteKing - (pinnerBit << 1))^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = (whiteKing - (pinnerBit << 1))^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1157,14 +1132,20 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((whiteKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 					else if (pinnedPiece == Piece.W_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveSetDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvanceSet(allEmpty));
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = MoveSetDatabase.getByIndex(pinnedPieceInd).getWhitePawnAdvanceSet(allEmpty);
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1174,9 +1155,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((whiteKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1186,10 +1170,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.W_QUEEN.ind || pinnedPiece == Piece.W_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((whiteKing - (pinnerBit << 1)) &
-								attRayMask.antiDiagonalNeg)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((whiteKing - (pinnerBit << 1)) & attRayMask.antiDiagonalNeg)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1204,9 +1190,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize((pinnerBit - (blackKing << 1))^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = (pinnerBit - (blackKing << 1))^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1216,14 +1205,20 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1)) & attRayMask.filePos)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((pinnerBit - (blackKing << 1)) & attRayMask.filePos)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveSetDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvanceSet(allEmpty));
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = MoveSetDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvanceSet(allEmpty);
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1233,9 +1228,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((pinnerBit - (blackKing << 1)) & attRayMask.diagonalPos)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1245,10 +1243,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((pinnerBit - (blackKing << 1)) &
-								attRayMask.antiDiagonalPos)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((pinnerBit - (blackKing << 1)) & attRayMask.antiDiagonalPos)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1258,9 +1258,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize((blackKing - (pinnerBit << 1))^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = (blackKing - (pinnerBit << 1))^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1270,14 +1273,20 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_ROOK.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((blackKing - (pinnerBit << 1)) & attRayMask.fileNeg)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 					else if (pinnedPiece == Piece.B_PAWN.ind) {
-						pinnedPieceMoves = BitOperations.serialize(MoveSetDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvanceSet(allEmpty));
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = MoveSetDatabase.getByIndex(pinnedPieceInd).getBlackPawnAdvanceSet(allEmpty);
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1287,9 +1296,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((blackKing - (pinnerBit << 1)) & attRayMask.diagonalNeg)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1299,10 +1311,12 @@ class Position implements Hashable, Copiable<Position> {
 					pinnedPieceInd  = BitOperations.indexOfBit(pinnedPieceBit);
 					pinnedPiece = offsetBoard[pinnedPieceInd];
 					if (pinnedPiece == Piece.B_QUEEN.ind || pinnedPiece == Piece.B_BISHOP.ind) {
-						pinnedPieceMoves = BitOperations.serialize(((blackKing - (pinnerBit << 1)) &
-								attRayMask.antiDiagonalNeg)^pinnedPieceBit);
-						while (pinnedPieceMoves.hasNext())
-							moves.add(new Move(pinnedPieceInd, pinnedPieceMoves.next(), pinnedPiece, Piece.NULL.ind, MoveType.NORMAL.ind));
+						pinnedPieceMoveSet = ((blackKing - (pinnerBit << 1)) & attRayMask.antiDiagonalNeg)^pinnedPieceBit;
+						while (pinnedPieceMoveSet != 0) {
+							moves.add(new Move(pinnedPieceInd, BitOperations.indexOfLSBit(pinnedPieceMoveSet), pinnedPiece, Piece.NULL.ind,
+									MoveType.NORMAL.ind));
+							pinnedPieceMoveSet = BitOperations.resetLSBit(pinnedPieceMoveSet);
+						}
 					}
 				}
 			}
@@ -1310,80 +1324,78 @@ class Position implements Hashable, Copiable<Position> {
 		return pinnedPieces;
 	}
 	/**
-	 * A method that returns a list (queue) of the legal moves that change the material balance on the board (captures/promotions) from a
+	 * A method that returns a list of the legal moves that change the material balance on the board (captures/promotions) from a
 	 * non-check position.
 	 * 
-	 * @return A queue of material-tactical legal moves.
+	 * @return A list of material-tactical legal moves.
 	 */
-	private Queue<Move> generateTacticalMoves() {
-		long movablePieces, pieceSet, moveSet, enPassAttBits, enPassBits;
+	private ArrayList<Move> generateTacticalMoves() {
+		long movablePieces, pieceSet, moveSet, enPassAttBits, enPassBits, pawnPieceSet;
 		byte king, piece, to, victim;
 		MoveSetDatabase kingDb;
-		ByteStack pieces, moveList;
-		Queue<Move> moves = new Queue<Move>();
+		ArrayList<Move> moves = new ArrayList<Move>();
 		if (isWhitesTurn) {
 			movablePieces = ~addTacticalPinnedPieceMoves(moves);
-			pieceSet = whiteKnights & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allBlackOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whiteBishops & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allBlackOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whiteRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allBlackOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whiteQueens & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allBlackOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveSetDatabase.getByIndex(king).getKingMoveSet(allBlackOccupied);
-			moveList = BitOperations.serialize(moveSet);
-			while (moveList.hasNext()) {
-				to = moveList.next();
+			moveSet = MoveSetDatabase.getByIndex(king).getKingMoveSet(allBlackOccupied);
+			while (moveSet != 0) {
+				to = BitOperations.indexOfLSBit(moveSet);
 				if (!isAttacked(to, false))
 					moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
+				moveSet = BitOperations.resetLSBit(moveSet);
 			}
-			pieceSet = whitePawns & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
+			pieceSet = whiteQueens & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allBlackOccupied, allOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = whiteRooks & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allBlackOccupied, allOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.W_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = whiteBishops & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allBlackOccupied, allOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = whiteKnights & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allBlackOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = pawnPieceSet = whitePawns & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
 				moveSet = MoveSetDatabase.getByIndex(piece).getWhitePawnMoveSet(allBlackOccupied, allEmpty);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
 					victim = offsetBoard[to];
+					// Check for promotion.
 					if (to >= Square.A8.ind) {
 						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.ind));
 						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.ind));
@@ -1392,15 +1404,18 @@ class Position implements Hashable, Copiable<Position> {
 					}
 					else if (victim != 0)
 						moves.add(new Move(piece, to, Piece.W_PAWN.ind, victim, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
+			// Check for en passant moves.
 			if (enPassantRights != EnPassantRights.NONE.ind) {
 				if ((pieceSet = MoveSetDatabase.getByIndex(to = (byte)(EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights))
-						.getBlackPawnCaptureSet(pieceSet)) != 0) {
-					pieces = BitOperations.serialize(pieceSet);
+						.getBlackPawnCaptureSet(pawnPieceSet)) != 0) {
 					kingDb = MoveSetDatabase.getByIndex(king);
-					while (pieces.hasNext()) {
-						piece = pieces.next();
+					while (pieceSet != 0) {
+						piece = BitOperations.indexOfLSBit(pieceSet);
+						// Make sure that the en passant does not leave the king exposed to check.
 						enPassAttBits = ((1L << piece) | (1L << to));
 						enPassBits = enPassAttBits | (1L << (to - 8));
 						allNonWhiteOccupied ^= enPassAttBits;
@@ -1410,73 +1425,73 @@ class Position implements Hashable, Copiable<Position> {
 							moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
 						allNonWhiteOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
+						pieceSet = BitOperations.resetLSBit(pieceSet);
 					}
 				}
 			}
 		}
 		else {
 			movablePieces = ~addTacticalPinnedPieceMoves(moves);
-			pieceSet = blackKnights & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allWhiteOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackBishops & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allWhiteOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allWhiteOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackQueens & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allWhiteOccupied, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
-				}
-			}
-			king  = BitOperations.indexOfBit(blackKing);
+			king = BitOperations.indexOfBit(blackKing);
 			moveSet	= MoveSetDatabase.getByIndex(king).getKingMoveSet(allWhiteOccupied);
-			moveList = BitOperations.serialize(moveSet);
-			while (moveList.hasNext()) {
-				to = moveList.next();
+			while (moveSet != 0) {
+				to = BitOperations.indexOfLSBit(moveSet);
 				if (!isAttacked(to, true))
 					moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
+				moveSet = BitOperations.resetLSBit(moveSet);
 			}
-			pieceSet = blackPawns & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
+			pieceSet = blackQueens & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allWhiteOccupied, allOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = blackRooks & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allWhiteOccupied, allOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.B_ROOK.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = blackBishops & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allWhiteOccupied, allOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = blackKnights & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allWhiteOccupied);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = pawnPieceSet = blackPawns & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
 				moveSet = MoveSetDatabase.getByIndex(piece).getBlackPawnMoveSet(allWhiteOccupied, allEmpty);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);;
 					victim = offsetBoard[to];
+					// Check for promotion.
 					if (to < Square.A2.ind) {
 						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_QUEEN.ind));
 						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.PROMOTION_TO_ROOK.ind));
@@ -1485,15 +1500,18 @@ class Position implements Hashable, Copiable<Position> {
 					}
 					else if (victim != 0)
 						moves.add(new Move(piece, to, Piece.B_PAWN.ind, victim, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
+			// Check for en passant moves.
 			if (enPassantRights != EnPassantRights.NONE.ind) {
 				if ((pieceSet = MoveSetDatabase.getByIndex(to = (byte)(EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights))
-						.getWhitePawnCaptureSet(pieceSet)) != 0) {
-					pieces = BitOperations.serialize(pieceSet);
+						.getWhitePawnCaptureSet(pawnPieceSet)) != 0) {
 					kingDb = MoveSetDatabase.getByIndex(king);
-					while (pieces.hasNext()) {
-						piece = pieces.next();
+					while (pieceSet != 0) {
+						piece = BitOperations.indexOfLSBit(pieceSet);
+						// Make sure that the en passant does not leave the king exposed to check.
 						enPassAttBits = ((1L << piece) | (1L << to));
 						enPassBits = enPassAttBits | (1L << (to + 8));
 						allNonBlackOccupied ^= enPassAttBits;
@@ -1503,6 +1521,7 @@ class Position implements Hashable, Copiable<Position> {
 							moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
 						allNonBlackOccupied ^= enPassAttBits;
 						allOccupied ^= enPassBits;
+						pieceSet = BitOperations.resetLSBit(pieceSet);
 					}
 				}
 			}
@@ -1510,179 +1529,170 @@ class Position implements Hashable, Copiable<Position> {
 		return moves;
 	}
 	/**
-	 * A method that returns a list (queue) of the legal moves that do not affect the material balance of the position (no captures or
+	 * A method that returns a list of the legal moves that do not affect the material balance of the position (no captures or
 	 * promotions) from a non-check position.
 	 * 
-	 * @return A queue of non-material legal moves.
+	 * @return A list of non-material legal moves.
 	 */
-	private Queue<Move> generateQuietMoves() {
+	private ArrayList<Move> generateQuietMoves() {
 		long movablePieces, pieceSet, moveSet;
 		byte king, piece, to;
-		ByteStack pieces, moveList;
-		Move move;
-		Queue<Move> moves = new Queue<Move>();
+		ArrayList<Move> moves = new ArrayList<Move>();
 		if (isWhitesTurn) {
 			king = BitOperations.indexOfBit(whiteKing);
-			moveSet  = MoveSetDatabase.getByIndex(king).getKingMoveSet(allEmpty);
-			moveList = BitOperations.serialize(moveSet);
-			while (moveList.hasNext()) {
-				to = moveList.next();
+			moveSet = MoveSetDatabase.getByIndex(king).getKingMoveSet(allEmpty);
+			while (moveSet != 0) {
+				to = BitOperations.indexOfLSBit(moveSet);
 				if (!isAttacked(to, false))
 					moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				moveSet = BitOperations.resetLSBit(moveSet);
 			}
+			// Check for the legality of castling.
 			if ((whiteCastlingRights == CastlingRights.LONG.ind || whiteCastlingRights == CastlingRights.ALL.ind) &&
-					((Square.B1.bit | Square.C1.bit | Square.D1.bit) & allOccupied) == 0 &&
-					(move = moves.getTail()) != null && move.to == Square.D1.ind && !isAttacked(Square.C1.ind, false))
+					((Square.B1.bit | Square.C1.bit | Square.D1.bit) & allOccupied) == 0 && !isAttacked(Square.D1.ind, false) &&
+					!isAttacked(Square.C1.ind, false))
 				moves.add(new Move(king, Square.C1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.ind));
 			if ((whiteCastlingRights == CastlingRights.SHORT.ind || whiteCastlingRights == CastlingRights.ALL.ind) &&
 					((Square.F1.bit | Square.G1.bit) & allOccupied) == 0 && !isAttacked(Square.F1.ind, false) && !isAttacked(Square.G1.ind, false))
 				moves.add(new Move(king, Square.G1.ind, Piece.W_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.ind));
 			movablePieces = ~addQuietPinnedPieceMoves(moves);
-			pieceSet = whiteKnights & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allEmpty);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+			pieceSet = whiteQueens & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.W_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
-			}
-			pieceSet = whiteBishops & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = whitePawns & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getWhitePawnAdvanceSet(allEmpty);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					if (to <= 55)
-						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
 			pieceSet = whiteRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
 				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.W_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
-			pieceSet = whiteQueens & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.W_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+			pieceSet = whiteBishops & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.W_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = whiteKnights & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allEmpty);
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.W_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = whitePawns & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet = MoveSetDatabase.getByIndex(piece).getWhitePawnAdvanceSet(allEmpty);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					if (to <= 55)
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
 		}
 		else {
 			king  = BitOperations.indexOfBit(blackKing);
 			moveSet	= MoveSetDatabase.getByIndex(king).getKingMoveSet(allEmpty);
-			moveList = BitOperations.serialize(moveSet);
-			while (moveList.hasNext()) {
-				to = moveList.next();
+			while (moveSet != 0) {
+				to = BitOperations.indexOfLSBit(moveSet);
 				if (!isAttacked(to, true))
 					moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				moveSet = BitOperations.resetLSBit(moveSet);
 			}
+			// Check for the legality of castling.
 			if ((blackCastlingRights == CastlingRights.SHORT.ind || blackCastlingRights == CastlingRights.ALL.ind) &&
-					((Square.F8.bit | Square.G8.bit) & allOccupied) == 0 && (move = moves.getHead()) != null && move.to == Square.F8.ind &&
-					!isAttacked(Square.G8.ind, true))
+					((Square.F8.bit | Square.G8.bit) & allOccupied) == 0 && !isAttacked(Square.F8.ind, true) && !isAttacked(Square.G8.ind, true))
 				moves.add(new Move(king, Square.G8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.SHORT_CASTLING.ind));
 			if ((blackCastlingRights == CastlingRights.LONG.ind || blackCastlingRights == CastlingRights.ALL.ind) &&
-					((Square.B8.bit | Square.C8.bit | Square.D8.bit) & allOccupied) == 0 && !isAttacked(Square.C8.ind, true) && !isAttacked(Square.D8.ind, true))
+					((Square.B8.bit | Square.C8.bit | Square.D8.bit) & allOccupied) == 0 && !isAttacked(Square.C8.ind, true) &&
+					!isAttacked(Square.D8.ind, true))
 				moves.add(new Move(king, Square.C8.ind, Piece.B_KING.ind, Piece.NULL.ind, MoveType.LONG_CASTLING.ind));
 			movablePieces = ~addQuietPinnedPieceMoves(moves);
-			pieceSet = blackKnights & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allEmpty);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+			pieceSet = blackQueens & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.B_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
-			}
-			pieceSet = blackBishops & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
-			}
-			pieceSet = blackPawns & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet = MoveSetDatabase.getByIndex(piece).getBlackPawnAdvanceSet(allEmpty);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					if (to >= 8)
-						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
-				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
 			pieceSet = blackRooks & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
 				moveSet	= MoveSetDatabase.getByIndex(piece).getRookMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.B_ROOK.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
-			pieceSet = blackQueens & movablePieces;
-			pieces = BitOperations.serialize(pieceSet);
-			while (pieces.hasNext()) {
-				piece = pieces.next();
-				moveSet	= MoveSetDatabase.getByIndex(piece).getQueenMoveSet(allEmpty, allOccupied);
-				moveList = BitOperations.serialize(moveSet);
-				while (moveList.hasNext()) {
-					to = moveList.next();
-					moves.add(new Move(piece, to, Piece.B_QUEEN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+			pieceSet = blackBishops & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getBishopMoveSet(allEmpty, allOccupied);
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.B_BISHOP.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
 				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = blackKnights & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet	= MoveSetDatabase.getByIndex(piece).getKnightMoveSet(allEmpty);
+				while (moveSet != 0) {
+					moves.add(new Move(piece, BitOperations.indexOfLSBit(moveSet), Piece.B_KNIGHT.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
+			}
+			pieceSet = blackPawns & movablePieces;
+			while (pieceSet != 0) {
+				piece = BitOperations.indexOfLSBit(pieceSet);
+				moveSet = MoveSetDatabase.getByIndex(piece).getBlackPawnAdvanceSet(allEmpty);
+				while (moveSet != 0) {
+					to = BitOperations.indexOfLSBit(moveSet);
+					if (to >= 8)
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					moveSet = BitOperations.resetLSBit(moveSet);
+				}
+				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
 		}
 		return moves;
 	}
 	/**
-	 * This method returns a list (queue) of the legal moves that change the material balance on the board (captures/promotions) from a
+	 * This method returns a list of the legal moves that change the material balance on the board (captures/promotions) from a
 	 * position in which the side to move is in check.
 	 * 
-	 * @return A queue of legal material moves from a check position.
+	 * @return A list of legal material moves from a check position.
 	 */
-	private Queue<Move> generateTacticalCheckEvasionMoves() {
+	private ArrayList<Move> generateTacticalCheckEvasionMoves() {
 		long kingMoveSet, movablePieces, squaresOfInterventionSet, checkerAttackerSet, checkerBlockerSet;
 		byte checker1, checker2, checkerPiece1, checkerPiece2, squareOfIntervention, checkerAttackerSquare,
 			checkerBlockerSquare, king, to, movedPiece;
-		ByteStack kingMoves, squaresOfIntervention, checkerAttackers, checkerBlockers;
-		Queue<Move> moves = new Queue<Move>();
+		ArrayList<Move> moves = new ArrayList<Move>();
 		MoveSetDatabase dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (isWhitesTurn) {
@@ -1690,6 +1700,7 @@ class Position implements Hashable, Copiable<Position> {
 			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allBlackOccupied);
+			// Single check.
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
@@ -1697,9 +1708,8 @@ class Position implements Hashable, Copiable<Position> {
 				if ((checkers & Rank.R8.bits) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, true) & movablePieces & ~whiteKing;
-				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
-				while (checkerAttackers.hasNext()) {
-					checkerAttackerSquare = checkerAttackers.next();
+				while (checkerAttackerSet != 0) {
+					checkerAttackerSquare = BitOperations.indexOfLSBit(checkerAttackerSet);
 					movedPiece = offsetBoard[checkerAttackerSquare];
 					if (movedPiece == Piece.W_PAWN.ind) {
 						if (promotionOnAttackPossible) {
@@ -1717,7 +1727,9 @@ class Position implements Hashable, Copiable<Position> {
 					}
 					else
 						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.ind));
+					checkerAttackerSet = BitOperations.resetLSBit(checkerAttackerSet);
 				}
+				// Check for possible promotion on blocking.
 				if (checkerPiece1 == Piece.B_QUEEN.ind) {
 					if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
 						squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
@@ -1728,13 +1740,11 @@ class Position implements Hashable, Copiable<Position> {
 					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & whitePawns & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = Piece.W_PAWN.ind;
 							if (promotionOnBlockPossible) {
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
@@ -1746,10 +1756,13 @@ class Position implements Hashable, Copiable<Position> {
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.PROMOTION_TO_KNIGHT.ind));
 							}
-							else if (enPassantRights != EnPassantRights.NONE.ind && squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
+							else if (enPassantRights != EnPassantRights.NONE.ind &&
+									squareOfIntervention ==enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
 				}
@@ -1758,13 +1771,11 @@ class Position implements Hashable, Copiable<Position> {
 						promotionOnBlockPossible = true;
 					squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
 							kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & whitePawns & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = Piece.W_PAWN.ind;
 							if (promotionOnBlockPossible) {
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
@@ -1780,36 +1791,39 @@ class Position implements Hashable, Copiable<Position> {
 									squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getRookMoveMask();
 				}
 				else if (checkerPiece1 == Piece.B_BISHOP.ind) {
 					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
 							kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & whitePawns & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = Piece.W_PAWN.ind;
 							if (enPassantRights != EnPassantRights.NONE.ind &&
 									squareOfIntervention == enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, false))
 						moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
+			// Double check, only the king can move.
 			else {
 				checker1 = BitOperations.indexOfLSBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
@@ -1825,11 +1839,11 @@ class Position implements Hashable, Copiable<Position> {
 				else if (checkerPiece2 == Piece.B_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
 				else if (checkerPiece2 == Piece.B_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
 				else if (checkerPiece2 == Piece.B_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, false))
 						moves.add(new Move(king, to, Piece.W_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
 		}
@@ -1838,6 +1852,7 @@ class Position implements Hashable, Copiable<Position> {
 			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allWhiteOccupied);
+			// Single check.
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
@@ -1845,9 +1860,8 @@ class Position implements Hashable, Copiable<Position> {
 				if ((checkers & Rank.R1.bits) != 0)
 					promotionOnAttackPossible = true;
 				checkerAttackerSet = getAttackers(checker1, false) & movablePieces & ~blackKing;
-				checkerAttackers = BitOperations.serialize(checkerAttackerSet);
-				while (checkerAttackers.hasNext()) {
-					checkerAttackerSquare = checkerAttackers.next();
+				while (checkerAttackerSet != 0) {
+					checkerAttackerSquare = BitOperations.indexOfLSBit(checkerAttackerSet);
 					movedPiece = offsetBoard[checkerAttackerSquare];
 					if (movedPiece == Piece.B_PAWN.ind) {
 						if (promotionOnAttackPossible) {
@@ -1865,7 +1879,9 @@ class Position implements Hashable, Copiable<Position> {
 					}
 					else
 						moves.add(new Move(checkerAttackerSquare, checker1, movedPiece, checkerPiece1, MoveType.NORMAL.ind));
+					checkerAttackerSet = BitOperations.resetLSBit(checkerAttackerSet);
 				}
+				// Check for possible promotion on blocking.
 				if (checkerPiece1 == Piece.W_QUEEN.ind) {
 					if ((File.getBySquareIndex(king).bits & checkers) != 0 || (Rank.getBySquareIndex(king).bits & checkers) != 0) {
 						squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
@@ -1876,13 +1892,11 @@ class Position implements Hashable, Copiable<Position> {
 					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & blackPawns & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = Piece.B_PAWN.ind;
 							if (promotionOnBlockPossible) {
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
@@ -1898,7 +1912,9 @@ class Position implements Hashable, Copiable<Position> {
 									squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
 				}
@@ -1907,13 +1923,11 @@ class Position implements Hashable, Copiable<Position> {
 						promotionOnBlockPossible = true;
 					squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
 							kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & blackPawns & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = Piece.B_PAWN.ind;
 							if (promotionOnBlockPossible) {
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
@@ -1929,36 +1943,39 @@ class Position implements Hashable, Copiable<Position> {
 									squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getRookMoveMask();
 				}
 				else if (checkerPiece1 == Piece.W_BISHOP.ind) {
 					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
 							kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & blackPawns & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = Piece.B_PAWN.ind;
 							if (enPassantRights != EnPassantRights.NONE.ind &&
 									squareOfIntervention == enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, true))
 						moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
+			// Double check, only the king can move.
 			else {
 				checker1 = BitOperations.indexOfLSBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
@@ -1974,28 +1991,27 @@ class Position implements Hashable, Copiable<Position> {
 				else if (checkerPiece2 == Piece.W_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
 				else if (checkerPiece2 == Piece.W_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
 				else if (checkerPiece2 == Piece.W_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, true))
 						moves.add(new Move(king, to, Piece.B_KING.ind, offsetBoard[to], MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
 		}
 		return moves;
 	}
 	/**
-	 * This method returns a list (queue) of the legal moves that do not affect the material balance (no captures or promotions) from a
+	 * This method returns a list of the legal moves that do not affect the material balance (no captures or promotions) from a
 	 * position in which the side to move is in check.
 	 * 
-	 * @return A queue of non-material legal moves from a check position.
+	 * @return A list of non-material legal moves from a check position.
 	 */
-	private Queue<Move> generateQuietCheckEvasionMoves() {
+	private ArrayList<Move> generateQuietCheckEvasionMoves() {
 		long kingMoveSet, movablePieces, squaresOfInterventionSet, checkerBlockerSet;
 		byte checker1, checker2, checkerPiece1, checkerPiece2, squareOfIntervention,
 			checkerBlockerSquare, king, to, movedPiece;
-		ByteStack kingMoves, squaresOfIntervention, checkerBlockers;
-		Queue<Move> moves = new Queue<Move>();
+		ArrayList<Move> moves = new ArrayList<Move>();
 		MoveSetDatabase dB, kingDb;
 		boolean promotionOnAttackPossible = false, promotionOnBlockPossible = false;
 		if (this.isWhitesTurn) {
@@ -2003,6 +2019,7 @@ class Position implements Hashable, Copiable<Position> {
 			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allEmpty);
+			// Single check.
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = this.offsetBoard[checker1];
@@ -2019,18 +2036,18 @@ class Position implements Hashable, Copiable<Position> {
 					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = offsetBoard[checkerBlockerSquare];
 							if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.NORMAL.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getQueenMoveSet(allNonWhiteOccupied, (allOccupied^whiteKing));
 				}
@@ -2039,44 +2056,45 @@ class Position implements Hashable, Copiable<Position> {
 						promotionOnBlockPossible = true;
 					squaresOfInterventionSet = (dB.getRookMoveSet(allNonBlackOccupied, allOccupied) &
 							kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = offsetBoard[checkerBlockerSquare];
 							if (!promotionOnBlockPossible || movedPiece != Piece.W_PAWN.ind)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.NORMAL.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getRookMoveMask();
 				}
 				else if (checkerPiece1 == Piece.B_BISHOP.ind) {
 					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonBlackOccupied, allOccupied) &
 							kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, true) & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare],
 									Piece.NULL.ind, MoveType.NORMAL.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, false))
 						moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
+			// Double check, only the king can move.
 			else {
 				checker1 = BitOperations.indexOfLSBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
@@ -2092,11 +2110,11 @@ class Position implements Hashable, Copiable<Position> {
 				else if (checkerPiece2 == Piece.B_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
 				else if (checkerPiece2 == Piece.B_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
 				else if (checkerPiece2 == Piece.B_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, false))
 						moves.add(new Move(king, to, Piece.W_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
 		}
@@ -2105,6 +2123,7 @@ class Position implements Hashable, Copiable<Position> {
 			movablePieces = ~getPinnedPieces(isWhitesTurn);
 			kingDb = MoveSetDatabase.getByIndex(king);
 			kingMoveSet = kingDb.getKingMoveSet(allEmpty);
+			// Single check.
 			if (BitOperations.resetLSBit(checkers) == 0) {
 				checker1 = BitOperations.indexOfBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
@@ -2121,18 +2140,18 @@ class Position implements Hashable, Copiable<Position> {
 					else
 						squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
 								kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = offsetBoard[checkerBlockerSquare];
 							if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.NORMAL.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getQueenMoveSet(allNonBlackOccupied, (allOccupied^blackKing));
 				}
@@ -2141,44 +2160,45 @@ class Position implements Hashable, Copiable<Position> {
 						promotionOnBlockPossible = true;
 					squaresOfInterventionSet = (dB.getRookMoveSet(allNonWhiteOccupied, allOccupied) &
 							kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							movedPiece = offsetBoard[checkerBlockerSquare];
 							if (!promotionOnBlockPossible || movedPiece != Piece.B_PAWN.ind)
 								moves.add(new Move(checkerBlockerSquare, squareOfIntervention, movedPiece,
 										Piece.NULL.ind, MoveType.NORMAL.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getRookMoveMask();
 				}
 				else if (checkerPiece1 == Piece.W_BISHOP.ind) {
 					squaresOfInterventionSet = (dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied) &
 							kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied));
-					squaresOfIntervention = BitOperations.serialize(squaresOfInterventionSet);
-					while (squaresOfIntervention.hasNext()) {
-						squareOfIntervention = squaresOfIntervention.next();
+					while (squaresOfInterventionSet != 0) {
+						squareOfIntervention = BitOperations.indexOfLSBit(squaresOfInterventionSet);
 						checkerBlockerSet = getBlockerCandidates(squareOfIntervention, false) & movablePieces;
-						checkerBlockers = BitOperations.serialize(checkerBlockerSet);
-						while (checkerBlockers.hasNext()) {
-							checkerBlockerSquare = checkerBlockers.next();
+						while (checkerBlockerSet != 0) {
+							checkerBlockerSquare = BitOperations.indexOfLSBit(checkerBlockerSet);
 							moves.add(new Move(checkerBlockerSquare, squareOfIntervention, offsetBoard[checkerBlockerSquare],
 									Piece.NULL.ind, MoveType.NORMAL.ind));
+							checkerBlockerSet = BitOperations.resetLSBit(checkerBlockerSet);
 						}
+						squaresOfInterventionSet = BitOperations.resetLSBit(squaresOfInterventionSet);
 					}
 					kingMoveSet &= ~dB.getBishopMoveMask();
 				}
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, true))
 						moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
+			// Double check, only the king can move.
 			else {
 				checker1 = BitOperations.indexOfLSBit(checkers);
 				checkerPiece1 = offsetBoard[checker1];
@@ -2194,23 +2214,23 @@ class Position implements Hashable, Copiable<Position> {
 				else if (checkerPiece2 == Piece.W_ROOK.ind) kingMoveSet &= ~dB.getRookMoveMask();
 				else if (checkerPiece2 == Piece.W_BISHOP.ind) kingMoveSet &= ~dB.getBishopMoveMask();
 				else if (checkerPiece2 == Piece.W_KNIGHT.ind) kingMoveSet &= ~dB.knightMoveMask;
-				kingMoves = BitOperations.serialize(kingMoveSet);
-				while (kingMoves.hasNext()) {
-					to = kingMoves.next();
+				while (kingMoveSet != 0) {
+					to = BitOperations.indexOfLSBit(kingMoveSet);
 					if (!isAttacked(to, true))
 						moves.add(new Move(king, to, Piece.B_KING.ind, Piece.NULL.ind, MoveType.NORMAL.ind));
+					kingMoveSet = BitOperations.resetLSBit(kingMoveSet);
 				}
 			}
 		}
 		return moves;
 	}
 	/**
-	 * Generates a queue of Move objects that represents all the legal moves from the current position.
+	 * Generates a list of Move objects that represents all the legal moves from the current position.
 	 * 
-	 * @return A queue of all the legal moves from this position.
+	 * @return A list of all the legal moves from this position.
 	 */
-	public Queue<Move> getMoves() {
-		Queue<Move> moves = new Queue<>();
+	public ArrayList<Move> getMoves() {
+		ArrayList<Move> moves = new ArrayList<>();
 		if (isInCheck) {
 			moves = generateTacticalCheckEvasionMoves();
 			moves.addAll(generateQuietCheckEvasionMoves());
@@ -2222,21 +2242,21 @@ class Position implements Hashable, Copiable<Position> {
 		return moves;
 	}
 	/**
-	 * Generates a queue of Move objects that represents the material legal moves (i.e. the ones that change the material balance of the
+	 * Generates a list of Move objects that represents the material legal moves (i.e. the ones that change the material balance of the
 	 * position such as captures and promotions) from the current position.
 	 * 
-	 * @return A queue of the material legal moves from this position.
+	 * @return A list of the material legal moves from this position.
 	 */
-	public Queue<Move> getTacticalMoves() {
+	ArrayList<Move> getTacticalMoves() {
 		return isInCheck? generateTacticalCheckEvasionMoves() : generateTacticalMoves();
 	}
 	/**
-	 * Generates a queue of Move objects that represents the non-material legal moves (i.e. the ones that do not affect the material
+	 * Generates a list of Move objects that represents the non-material legal moves (i.e. the ones that do not affect the material
 	 * balance of the position such as non-promotion and non-capture moves) from the current position.
 	 * 
-	 * @return A queue of the non-material legal moves from this position.
+	 * @return A list of the non-material legal moves from this position.
 	 */
-	public Queue<Move> getQuietMoves() {
+	ArrayList<Move> getQuietMoves() {
 		return isInCheck? generateQuietCheckEvasionMoves() : generateQuietMoves();
 	}
 	/**
@@ -2898,11 +2918,10 @@ class Position implements Hashable, Copiable<Position> {
 	 * 
 	 * @param move A Move object that is going to be made in the position.
 	 */
-	public void makeMove(Move move) {
-		long[] temp;
+	void makeMove(Move move) {
 		makeMoveOnBoard(move);
-		moveList.add(move);
-		unmakeRegisterHistory.add(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, 
+		moveList.addFirst(move);
+		unmakeRegisterHistory.addFirst(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, 
 				fiftyMoveRuleClock, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
@@ -2920,34 +2939,25 @@ class Position implements Hashable, Copiable<Position> {
 		checkers = getCheckers();
 		isInCheck = checkers != 0;
 		halfMoveIndex++;
-		if (keyHistory.length - halfMoveIndex <= 3) {
-			temp = keyHistory;
-			keyHistory = new long[keyHistory.length + 50];
-			for (int i = 0; i < temp.length; i++)
-				keyHistory[i] = temp[i];
-			temp = pawnKeyHistory;
-			pawnKeyHistory = new long[pawnKeyHistory.length + 50];
-			for (int i = 0; i < temp.length; i++)
-				pawnKeyHistory[i] = temp[i];
-		}
-		gen.updateKeys(this);
+		// Ensure the key history is big enough to hold the entries.
+		if (keyHistory.length - halfMoveIndex <= 3)
+			keyHistory = Arrays.copyOf(keyHistory, keyHistory.length + (keyHistory.length >> 1));
+		key = gen.getUpdatedKey(this);
 		keyHistory[halfMoveIndex] = key;
-		pawnKeyHistory[halfMoveIndex] = pawnKey;
 	}
 	/**
 	 * Makes a null move that can be taken back with {@link #unmakeMove() unmakeMove}. Consecutive null moves are not supported.
 	 */
-	public void makeNullMove() {
-		unmakeRegisterHistory.add(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights,
+	void makeNullMove() {
+		unmakeRegisterHistory.addFirst(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights,
 				fiftyMoveRuleClock, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
 		enPassantRights = EnPassantRights.NONE.ind;
-		moveList.add(null);
+		moveList.addFirst(Move.NULL_MOVE);
 		halfMoveIndex++;
-		gen.updateKeys(this);
+		key = gen.getUpdatedKey(this);
 		keyHistory[halfMoveIndex] = key;
-		pawnKeyHistory[halfMoveIndex] = pawnKey;
 	}
 	/**
 	 * Reverts the changes made to the state of the Position instance by the last move made. It returns a reference to the move
@@ -2955,12 +2965,12 @@ class Position implements Hashable, Copiable<Position> {
 	 *
 	 * @return
 	 */
-	public Move unmakeMove() {
+	Move unmakeMove() {
+		UnmakeMoveRegister positionInfo = unmakeRegisterHistory.poll();
+		if (positionInfo == null) return null;
 		Move move = moveList.pop();
 		isWhitesTurn = !isWhitesTurn;
-		if (move != null) unmakeMoveOnBoard(move);
-		UnmakeMoveRegister positionInfo = unmakeRegisterHistory.pop();
-		if (positionInfo == null) return null;
+		if (!move.equals(Move.NULL_MOVE)) unmakeMoveOnBoard(move);
 		whiteCastlingRights = positionInfo.whiteCastlingRights;
 		blackCastlingRights = positionInfo.blackCastlingRights;
 		enPassantRights = positionInfo.enPassantRights;
@@ -2968,9 +2978,7 @@ class Position implements Hashable, Copiable<Position> {
 		checkers = positionInfo.checkers;
 		isInCheck = checkers != 0;
 		keyHistory[halfMoveIndex] = 0;
-		pawnKeyHistory[halfMoveIndex] = 0;
 		key = keyHistory[--halfMoveIndex];
-		pawnKey = pawnKeyHistory[halfMoveIndex];
 		return move;
 	}
 	/**
@@ -2980,39 +2988,24 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param depth
 	 * @return
 	 */
-	public long perft(int depth) {
-		Queue<Move> moves;
-		Move move;
-		long leafNodes = 0;
-		if (depth == 0)
-			return 1;
-		moves = getMoves();
-		while (moves.hasNext()) {
-			move = moves.next();
-			makeMove(move);
+	long perft(int depth) {
+		ArrayList<Move> tacticalMoves, quietMoves;
+		long leafNodes;
+//		if (depth == 0)
+//			return 1;
+		leafNodes = 0;
+		tacticalMoves = getTacticalMoves();
+		quietMoves = getQuietMoves();
+		if (depth == 1)
+			return tacticalMoves.size() + quietMoves.size();
+		for (Move m : tacticalMoves) {
+			makeMove(m);
 			leafNodes += perft(depth - 1);
 			unmakeMove();
 		}
-		return leafNodes;
-	}
-	/**
-	 * Runs a staged perft test faster than the standard method. Instead of making and unmaking the moves leading to the leaf nodes, it simply
-	 * returns the number of generated moves from the nodes at depth 1. More suitable for benchmarking move generation.
-	 * 
-	 * @param depth
-	 * @return
-	 */
-	public long quickPerft(int depth) {
-		Queue<Move> moves;
-		Move move;
-		long leafNodes = 0;
-		moves = getMoves();
-		if (depth == 1)
-			return moves.size();
-		while (moves.hasNext()) {
-			move = moves.next();
-			makeMove(move);
-			leafNodes += quickPerft(depth - 1);
+		for (Move m : quietMoves) {
+			makeMove(m);
+			leafNodes += perft(depth - 1);
 			unmakeMove();
 		}
 		return leafNodes;
@@ -3026,7 +3019,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @throws ChessParseException
 	 * @throws NullPointerException
 	 */
-	public Move parseSAN(String san) throws ChessParseException, NullPointerException {
+	Move parseSAN(String san) throws ChessParseException, NullPointerException {
 		byte from, to, movedPiece, capturedPiece, type;
 		long movablePieces, restriction, pawnAdvancer;
 		char[] chars;
@@ -3331,7 +3324,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @throws ChessParseException
 	 * @throws NullPointerException
 	 */
-	public Move parsePACN(String pacn) throws ChessParseException, NullPointerException {
+	Move parsePACN(String pacn) throws ChessParseException, NullPointerException {
 		byte from, to, movedPiece, capturedPiece, type;
 		String input = pacn.trim().toLowerCase();
 		if (input.length() != 4 && input.length() != 5)
@@ -3401,7 +3394,7 @@ class Position implements Hashable, Copiable<Position> {
 	 * @param move
 	 * @return
 	 */
-	public String toSAN(Move move) {
+	String toSAN(Move move) {
 		String san, movedPiece, capture, origin, destFile, destRank;
 		Piece mPiece;
 		MoveSetDatabase mT;

@@ -1,7 +1,6 @@
 package engine;
 
 import util.LossyHashTable;
-import util.SizeOf;
 
 /**
  * A simple entry class for a pawn table implementation that stores the evaluation scores for different pawn positions. The number of expected
@@ -25,13 +24,7 @@ class PTEntry implements LossyHashTable.Entry<PTEntry> {
 	 */
 	byte generation;
 	
-	/**
-	 * The total size of the entry in bytes.
-	 */
-	public static final int SIZE = (int)SizeOf.roundedSize(SizeOf.OBJ_POINTER.numOfBytes + SizeOf.SHORT.numOfBytes +
-			SizeOf.LONG.numOfBytes + SizeOf.BYTE.numOfBytes);
-	
-	public PTEntry(long key, short score, byte generation) {
+	PTEntry(long key, short score, byte generation) {
 		this.key = key;
 		this.score = score;
 		this.generation = generation;

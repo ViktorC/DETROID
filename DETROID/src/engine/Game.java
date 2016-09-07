@@ -1,12 +1,9 @@
 package engine;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-
-import util.List;
-import util.Queue;
-import util.Stack;
 
 /**
  * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.
@@ -23,14 +20,14 @@ class Game {
 	 * @author Viktor
 	 *
 	 */
-	public enum State {
+	enum State {
 		
 		IN_PROGRESS ("*"),
 		WHITE_WIN	("1-0"),
 		BLACK_WIN	("0-1"),
 		DRAW		("1/2-1/2");
 		
-		public final String pgnNotation;
+		final String pgnNotation;
 		
 		private State(String pgnNotation) {
 			this.pgnNotation = pgnNotation;
@@ -42,7 +39,7 @@ class Game {
 	 * @author Viktor
 	 *
 	 */
-	public enum Side {
+	enum Side {
 		
 		WHITE,
 		BLACK;
@@ -52,7 +49,7 @@ class Game {
 	/**
 	 * The average number of full moves a chess game usually lasts.
 	 */
-	public final static int AVG_MOVES_PER_GAME = 40;
+	final static int AVG_MOVES_PER_GAME = 40;
 	
 	private String startPos;
 	private Position position;
@@ -71,7 +68,7 @@ class Game {
 	 * @return
 	 * @throws ChessParseException
 	 */
-	public static Game parse(String pgn) throws ChessParseException {
+	static Game parse(String pgn) throws ChessParseException {
 		char tagChar;
 		String tagContent, tagType, tagValue,
 			event = null, site = null, date = null, round = null,
@@ -80,7 +77,7 @@ class Game {
 		Game out = new Game();
 		SimpleDateFormat dF;
 		String[] moveDescParts;
-		List<String> sanStrings = new Queue<>();
+		ArrayList<String> sanStrings = new ArrayList<>();
 		Move move;
 		if (pgn == null)
 			return null;
@@ -163,8 +160,8 @@ class Game {
 				if (!s.matches("^[0-9]+.$") && !s.matches("^\\$[0-9]+$"))
 					sanStrings.add(s);
 			}
-			while (sanStrings.hasNext()) {
-				move = out.position.parseSAN(sanStrings.next());
+			for (String sanString : sanStrings) {
+				move = out.position.parseSAN(sanString);
 				out.position.makeMove(move);
 			}
 		}
@@ -184,7 +181,7 @@ class Game {
 	 * @param round
 	 * @throws ChessParseException 
 	 */
-	public Game(String position, String event, String site,
+	Game(String position, String event, String site,
 			String whitePlayerName, String blackPlayerName, int round) throws ChessParseException {
 		this.position = Position.parse(position);
 		startPos = this.position.toString();
@@ -206,7 +203,7 @@ class Game {
 	 * @param blackPlayerName
 	 * @throws ChessParseException 
 	 */
-	public Game(String position, String event, String site, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+	Game(String position, String event, String site, String whitePlayerName, String blackPlayerName) throws ChessParseException {
 		this(position, event, site, whitePlayerName, blackPlayerName, 1);
 	}
 	/**
@@ -217,7 +214,7 @@ class Game {
 	 * @param blackPlayerName
 	 * @throws ChessParseException 
 	 */
-	public Game(String position, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+	Game(String position, String whitePlayerName, String blackPlayerName) throws ChessParseException {
 		this(position, null, null, whitePlayerName, blackPlayerName, 1);
 	}
 	/**
@@ -226,14 +223,14 @@ class Game {
 	 * @param position The position in FEN.
 	 * @throws ChessParseException 
 	 */
-	public Game(String position) throws ChessParseException {
+	Game(String position) throws ChessParseException {
 		this(position, null, null, null, null, 1);
 	}
 	/**
 	 * Returns a game instance set to the start position with the site, event, whitePlayerName, and blackPlayerName values being null
 	 * and round set to 1.
 	 */
-	public Game() {
+	Game() {
 		try {
 			position = Position.parse(Position.START_POSITION_FEN);
 		} catch (ChessParseException e) { }
@@ -242,7 +239,7 @@ class Game {
 		round = 1;
 		state = State.IN_PROGRESS;
 	}
-	public String getStartPos() {
+	String getStartPos() {
 		return startPos;
 	}
 	/**
@@ -250,43 +247,43 @@ class Game {
 	 * 
 	 * @return
 	 */
-	public Position getPosition() {
+	Position getPosition() {
 		return position.deepCopy();
 	}
-	public String getEvent() {
+	String getEvent() {
 		return event;
 	}
-	public String getSite() {
+	String getSite() {
 		return site;
 	}
-	public Date getDate() {
+	Date getDate() {
 		return date;
 	}
-	public int getRound() {
+	int getRound() {
 		return round;
 	}
-	public String getWhitePlayerName() {
+	String getWhitePlayerName() {
 		return whitePlayerName;
 	}
-	public String getBlackPlayerName() {
+	String getBlackPlayerName() {
 		return blackPlayerName;
 	}
-	public Side getSideToMove() {
+	Side getSideToMove() {
 		return position.isWhitesTurn ? Side.WHITE : Side.BLACK;
 	}
-	public State getState() {
+	State getState() {
 		return state;
 	}
-	public void setEvent(String event) {
+	void setEvent(String event) {
 		this.event = event;
 	}
-	public void setSite(String site) {
+	void setSite(String site) {
 		this.site = site;
 	}
-	public void setWhitePlayerName(String whitePlayerName) {
+	void setWhitePlayerName(String whitePlayerName) {
 		this.whitePlayerName = whitePlayerName;
 	}
-	public void setBlackPlayerName(String blackPlayerName) {
+	void setBlackPlayerName(String blackPlayerName) {
 		this.blackPlayerName = blackPlayerName;
 	}
 	private void setState() {
@@ -300,7 +297,7 @@ class Game {
 	 * @param move The move to make defined either in pure algebraic coordinate notation or standard algebraic notation.
 	 * @return Whether the move was legal and of valid format.
 	 */
-	public boolean play(String move) {
+	boolean play(String move) {
 		Move m;
 		try {
 			m = position.parsePACN(move);
@@ -326,16 +323,14 @@ class Game {
 		String moveListSAN = "";
 		boolean printRound = true;
 		int roundNum = 0;
-		Move move;
-		List<Move> moveStack = new Stack<>();
-		while (position.moveList.hasNext()) {
-			moveStack.add(position.moveList.next());
+		ArrayList<Move> moves = new ArrayList<>();
+		for (Move move : position.getMoves()) {
+			moves.add(move);
 			position.unmakeMove();
 		}
-		while (moveStack.hasNext()) {
+		for (Move move : moves) {
 			if (printRound)
 				moveListSAN += ++roundNum + ". ";
-			move = moveStack.next();
 			moveListSAN += position.toSAN(move) + " ";
 			position.makeMove(move);
 			printRound = !printRound;

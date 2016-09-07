@@ -16,13 +16,11 @@ import java.util.function.Predicate;
  * two unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
  * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the first table.
  * 
- * The default size of the hash table is 64MB, the minimum is 1MB, and it can hold up to 2^30 entries.
- * 
  * @author Viktor
  *
  * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
  */
-public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterable<T>, Estimable {
+public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterable<T> {
 	
 	/**
 	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
@@ -37,18 +35,12 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
-	private final static double T1_SHARE = 0.6F;
-	private final static double T2_SHARE = 0.4F;
-	
-	/**
-	 * The default maximum hash table size in bytes.
-	 */
-	public final static long DEFAULT_SIZE = 1L << 24;
+	private final static double T1_SHARE = 0.6d;
+	private final static double T2_SHARE = 0.4d;
 	
 	private final static long MAX_CAPACITY = 1L << 30;	// The maximum number of slots.
 	private final static long MIN_CAPACITY = 1L << 10;	// The minimum number of slots.
 	
-	private long entrySize;	// The size of a hash entry, including all overheads, in bytes.
 	private long capacity;	// The number of hash table slots.
 	
 	private long load = 0;	// Load counter.
@@ -56,28 +48,17 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	private T[] t1, t2;	// The two hash tables.
 	
 	/**
-	 * Initializes a hash table with a maximum capacity calculated from the specified maximum allowed memory space and the size of the entry
-	 * type's instance. The size has to be at least 1024 (2^10) and at most 1073741824 (2^30) times greater than the entry size. E.g. if the
-	 * entry size is 32 bytes, the maximum allowed maximum hash table size is 32GB and the minimum maximum size is 1MB (32*1024 bytes < 1MB).
+	 * Initializes a hash table with a capacity of the closest lesser than or equal prime number to the specified maximum capacity. The capacity has
+	 * to be at least 1024 (2^10) and at most 1073741824 (2^30).
 	 * 
-	 * @param size Maximum hash table size in bytes. It can not not be guaranteed to be completely accurately reflected, but will be very
-	 * closely approximated. If size is 0 or less, the hash table defaults to 16MB.
-	 * @param entrySizeB The size of an instance of the entry class in bytes.
+	 * @param capacity Maximum hash table capacity.
 	 */
 	@SuppressWarnings({"unchecked"})
-	public LossyHashTable(long size, final int entrySizeB) {
+	public LossyHashTable(long capacity) {
 		long tL1, tL2;
 		MillerRabin prim;
-		entrySize = entrySizeB;
-		if (size <= 0)
-			size = DEFAULT_SIZE;
-		capacity = size/entrySize;
-		if (capacity < MIN_CAPACITY)
-			throw new IllegalArgumentException("The size has to be great enough for the hash table " +
-					"to be able to accommodate at least 1024 (2^10) entries of the specified entry size.");
-		if (capacity > MAX_CAPACITY)
-			throw new IllegalArgumentException("The size has to be small enough for the hash table not " +
-					"to be able to accommodate more than 1073741824 (2^30) entries of the specified entry size.");
+		if (capacity < MIN_CAPACITY || capacity > MAX_CAPACITY)
+			throw new IllegalArgumentException("The capacity has to be between 1024 and 1073741824.");
 		// Ensuring all tables have prime lengths.
 		tL1 = tL2 = 0;
 		prim = new MillerRabin();
@@ -90,16 +71,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		}
 		t1 = (T[])new Entry[(int)tL1];
 		t2 = (T[])new Entry[(int)tL2];
-		capacity = t1.length + t2.length;
-	}
-	/**
-	 * Initializes a hash table with a default maximum size of 64MB and a maximum capacity calculated from the division of this default maximum
-	 * size by the specified size of the entry type's instance.
-	 * 
-	 * @param entrySizeB The size of an instance of the entry class in bytes.
-	 */
-	public LossyHashTable(final int entrySizeB) {
-		this(0, entrySizeB);
+		this.capacity = t1.length + t2.length;
 	}
 	/**
 	 * Returns the number of occupied slots in the hash table.
@@ -219,7 +191,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * Return the entry identified by the input parameter key or null if it is not in the table.
 	 * 
 	 * @param key
-	 * @return The entry mapped to the speciied key.
+	 * @return The entry mapped to the specified key.
 	 */
 	public T lookUp(long key) {
 		T e;
@@ -284,16 +256,6 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		t1 = (T[])new Entry[t1.length];
 		t2 = (T[])new Entry[t2.length];
 	}
-	/**
-	 * Returns the base size of the HashTable instance in bytes.
-	 * 
-	 * @return The size of the underlying hash table structure.
-	 */
-	@Override
-	public long sizeInBytes() {
-		// Total size of entries and empty slots
-		return SizeOf.roundedSize(capacity*SizeOf.OBJ_POINTER.numOfBytes + load*(entrySize - SizeOf.OBJ_POINTER.numOfBytes));
-	}
 	@Override
 	public Iterator<T> iterator() {
 		ArrayList<T> list;
@@ -306,6 +268,6 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	public String toString() {
 		return "Load/Capacity: " + load + "/" + capacity + "; " +
 				String.format("Factor: %.1f", (load*100)/(double)capacity) + "%\n" +
-				String.format("Size: %.2fMB", sizeInBytes()/(double)(1 << 20));
+				String.format("Size: %.2fMB", SizeEstimator.getInstance().sizeOf(this)/(double)(1 << 20));
 	}
 }

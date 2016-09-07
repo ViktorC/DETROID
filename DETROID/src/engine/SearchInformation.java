@@ -1,8 +1,9 @@
 package engine;
 
+import java.util.ArrayList;
+
 import uci.ScoreType;
 import uci.SearchInfo;
-import util.List;
 
 /**
  * An observable class for the results and statistics of a search.
@@ -10,9 +11,9 @@ import util.List;
  * @author Viktor
  *
  */
-public class SearchInformation extends SearchInfo {
+class SearchInformation extends SearchInfo {
 	
-	private List<Move> pVline;		// Principal variation.
+	private ArrayList<Move> pVline;		// Principal variation.
 	private Move currentMove;		// The root move currently being searched.
 	private int currentMoveNumber;	// The ordinal of the move currently being searched in the root position's move list.
 	private short nominalDepth;		// The depth to which the PV has been searched.
@@ -25,13 +26,52 @@ public class SearchInformation extends SearchInfo {
 	SearchInformation() {
 		
 	}
+	void set(ArrayList<Move> PVline, Move currentMove, int currentMoveNumber, short nominalDepth,
+			short score, ScoreType scoreType, long nodes, long time) {
+		this.pVline = PVline;
+		this.currentMove = currentMove;
+		this.currentMoveNumber = currentMoveNumber;
+		this.nominalDepth = nominalDepth;
+		this.score = score;
+		this.scoreType = scoreType;
+		this.nodes = nodes;
+		this.time = time;
+		setChanged();
+		notifyObservers();
+	}
 	/**
-	 * Returns the principal variation of the search as a queue of moves.
+	 * Returns the principal variation of the search as a list of moves.
 	 * 
 	 * @return
 	 */
-	public List<Move> getPvMoveList() {
+	ArrayList<Move> getPvMoveList() {
 		return pVline;
+	}
+	/**
+	 * Returns a one-line String representation of the principal variation result.
+	 * 
+	 * @return
+	 */
+	String getPvString() {
+		String out = "";
+		for (Move m : pVline)
+			out += m.toString() + " ";
+		out += "\n";
+		return out;
+	}
+	/**
+	 * Returns a String of some search statistics such as greatest nominal depth, score, search speed, etc.
+	 * 
+	 * @return
+	 */
+	String getStatString() {
+		String out = "";
+		out += "Nominal depth: " + nominalDepth + "\n";
+		out += "Score: " + score + "; Type: " + scoreType + "\n";
+		out += String.format("Time: %.2fs\n", (float)time/1000);
+		out += "Nodes: " + nodes + "\n";
+		out += "Search speed: " + nodes/Math.max(time, 1) + "kNps\n";
+		return out;
 	}
 	/* (non-Javadoc)
 	 * @see chess.SearchInfo#getPv()
@@ -93,45 +133,6 @@ public class SearchInformation extends SearchInfo {
 	@Override
 	public long getTime() {
 		return time;
-	}
-	void set(List<Move> PVline, Move currentMove, int currentMoveNumber, short nominalDepth,
-			short score, ScoreType scoreType, long nodes, long time) {
-		this.pVline = PVline;
-		this.currentMove = currentMove;
-		this.currentMoveNumber = currentMoveNumber;
-		this.nominalDepth = nominalDepth;
-		this.score = score;
-		this.scoreType = scoreType;
-		this.nodes = nodes;
-		this.time = time;
-		setChanged();
-		notifyObservers();
-	}
-	/**
-	 * Returns a one-line String representation of the principal variation result.
-	 * 
-	 * @return
-	 */
-	public String getPvString() {
-		String out = "";
-		for (Move m : pVline)
-			out += m.toString() + " ";
-		out += "\n";
-		return out;
-	}
-	/**
-	 * Returns a String of some search statistics such as greatest nominal depth, score, search speed, etc.
-	 * 
-	 * @return
-	 */
-	public String getStatString() {
-		String out = "";
-		out += "Nominal depth: " + nominalDepth + "\n";
-		out += "Score: " + score + "; Type: " + scoreType + "\n";
-		out += String.format("Time: %.2fs\n", (float)time/1000);
-		out += "Nodes: " + nodes + "\n";
-		out += "Search speed: " + nodes/Math.max(time, 1) + "kNps\n";
-		return out;
 	}
 	@Override
 	public String toString() {

@@ -1,5 +1,7 @@
 package util;
 
+import java.util.Collection;
+
 /**
  * An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
  * {@link #Comparable Comparable} interface.
@@ -13,14 +15,14 @@ public final class QuickSort {
 		
 	}
 	/**
-	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the
-	 * {@link #Comparable Comparable} interface.
+	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the {@link #Comparable Comparable}
+	 * interface. It is recommended to use {@link #java.util.Collection Collection}'s {@link #java.util.Collection.sort sort} method if performance is important.
 	 * 
 	 * @param container The list to be sorted.
 	 * @return A sorted array.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T extends Comparable<T>> T[] sort(List<T> container) {
+	public static <T extends Comparable<T>> T[] sort(Collection<T> container) {
 		int left, right;
 		T[] array;
 		if (container.size() != 0) {

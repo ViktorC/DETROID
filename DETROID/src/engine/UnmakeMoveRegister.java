@@ -13,13 +13,13 @@ import util.*;
  */
 class UnmakeMoveRegister {
 
-	public final byte whiteCastlingRights;
-	public final byte blackCastlingRights;
-	public final byte enPassantRights;
-	public final byte fiftyMoveRuleClock;
-	public final long checkers;
+	final byte whiteCastlingRights;
+	final byte blackCastlingRights;
+	final byte enPassantRights;
+	final byte fiftyMoveRuleClock;
+	final long checkers;
 	
-	public UnmakeMoveRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
+	UnmakeMoveRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
 			byte fiftyMoveRuleClock, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;

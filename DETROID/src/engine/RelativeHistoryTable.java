@@ -15,12 +15,12 @@ class RelativeHistoryTable {
 	private Parameters params;
 	
 	/**The maximum score a move can have. */
-	public final short MAX_SCORE;
+	final short MAX_SCORE;
 	
 	private int[][] historyT;	// A [piece][destination square] table for the history heuristic.
 	private int[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
 	
-	public RelativeHistoryTable(Parameters params) {
+	RelativeHistoryTable(Parameters params) {
 		this.params = params;
 		MAX_SCORE = (short)(2*(params.QUEEN_VALUE - params.PAWN_VALUE));
 		/* The numbering of the pieces starts from one, so each table has a redundant first row to save
@@ -33,7 +33,7 @@ class RelativeHistoryTable {
 	 * 
 	 * @param m The move that caused the cut-off.
 	 */
-	public void recordSuccessfulMove(Move m) {
+	void recordSuccessfulMove(Move m) {
 		historyT[m.movedPiece][m.to] += MAX_SCORE;
 		butterflyT[m.movedPiece][m.to]++;
 	}
@@ -42,14 +42,14 @@ class RelativeHistoryTable {
 	 * 
 	 * @param m The move that did not cause a cut-off.
 	 */
-	public void recordUnsuccessfulMove(Move m) {
+	void recordUnsuccessfulMove(Move m) {
 		butterflyT[m.movedPiece][m.to]++;
 	}
 	/**
 	 * Decrements the current values in the tables by a certain factor for when a new search is started allowing for more significance associated
 	 * with the new values than with the old ones.
 	 */
-	public void decrementCurrentValues() {
+	void decrementCurrentValues() {
 		for (int i = 1; i < historyT.length; i++) {
 			for (int j = 0; j < 64; j++) {
 				historyT[i][j] /= params.RHT_DECREMENT_FACTOR;
@@ -64,7 +64,7 @@ class RelativeHistoryTable {
 	 * @return The relative history heuristic score for the move according to the cut-off to occurence ratio of the associated entries in the
 	 * from-to tables.
 	 */
-	public short score(Move m) {
+	short score(Move m) {
 		int bTscore;
 		bTscore = butterflyT[m.movedPiece][m.to];
 		if (bTscore != 0)
@@ -75,7 +75,7 @@ class RelativeHistoryTable {
 	/**
 	 * Resets all values in the tables to zero.
 	 */
-	public void reset() {
+	void reset() {
 		for (int i = 1; i < historyT.length; i++) {
 			for (int j = 0; j < 64; j++) {
 				historyT[i][j] = 0;

@@ -15,12 +15,12 @@ class KillerTable {
 	 * @author Viktor
 	 *
 	 */
-	public static class KillerTableEntry {
+	static class KillerTableEntry {
 		
 		private int move1;
 		private int move2;
 		
-		public KillerTableEntry(int move1, int move2) {
+		KillerTableEntry(int move1, int move2) {
 			this.move1 = move1;
 			this.move2 = move2;
 		}
@@ -35,7 +35,7 @@ class KillerTable {
 	 * 
 	 * @param size The length of the table. Should be the maximum allowed search depth.
 	 */
-	public KillerTable(int size) {
+	KillerTable(int size) {
 		t = new KillerTableEntry[size];
 		for (int i = 0; i < t.length; i++)
 			t[i] = new KillerTableEntry(0, 0);
@@ -47,7 +47,7 @@ class KillerTable {
 	 * @param m The move that caused the cut-off.
 	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
 	 */
-	public void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
+	void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
 		KillerTableEntry e = t[ply];
 		int compM = m.toInt();
 		if (e.move1 != compM) {
@@ -62,7 +62,7 @@ class KillerTable {
 	 * @return The killer move entry from the table entry for the ply.
 	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
 	 */
-	public KillerTableEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
+	KillerTableEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
 		return t[ply];
 	}
 }

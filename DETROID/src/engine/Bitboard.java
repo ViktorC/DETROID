@@ -10,7 +10,7 @@ import util.BitOperations;
  */
 final class Bitboard {
 	
-	public final static long FULL_BOARD = -1L;
+	final static long FULL_BOARD = -1L;
 	
 	/**
 	 * An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
@@ -19,7 +19,7 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	public static enum Square {
+	static enum Square {
 
 		A1, B1, C1, D1, E1, F1, G1, H1,
 		A2, B2, C2, D2, E2, F2, G2, H2,
@@ -30,8 +30,8 @@ final class Bitboard {
 		A7, B7, C7, D7, E7, F7, G7, H7,
 		A8, B8, C8, D8, E8, F8, G8, H8;
 
-		public final byte ind;
-		public final long bit;
+		final byte ind;
+		final long bit;
 
 		private Square() {
 			ind = (byte)ordinal();
@@ -47,7 +47,7 @@ final class Bitboard {
 		/**
 		 * @return a Square enum.
 		 */
-		public static Square getByIndex(int sqrInd) {
+		static Square getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1;
 				case 6:  return G1; case 7:  return H1; case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2;
@@ -72,11 +72,11 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	public static enum File {
+	static enum File {
 		
 		A, B, C, D, E, F, G, H;
 		
-		public final long bits;
+		final long bits;
 		
 		private File() {
 			bits = 0b0000000100000001000000010000000100000001000000010000000100000001L << ordinal();
@@ -86,7 +86,7 @@ final class Bitboard {
 		 * 
 		 * @param fileInd The index of the file.
 		 */
-		public static File getByIndex(int fileInd) {
+		static File getByIndex(int fileInd) {
 			switch(fileInd) {
 				case 0:  return A;
 				case 1:  return B;
@@ -104,7 +104,7 @@ final class Bitboard {
 		 * 
 		 * @param sqr A Square enum.
 		 */
-		public static File getBySquare(Square sqr) {
+		static File getBySquare(Square sqr) {
 			return getByIndex(sqr.ind & 7);
 		}
 		/**
@@ -112,7 +112,7 @@ final class Bitboard {
 		 * 
 		 * @param sqrInd The index of the square.
 		 */
-		public static File getBySquareIndex(int sqrInd) {
+		static File getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd & 7);
 		}
 	}
@@ -124,11 +124,11 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	public static enum Rank {
+	static enum Rank {
 		
 		R1, R2, R3, R4, R5, R6, R7, R8;
 		
-		public final long bits;
+		final long bits;
 		
 		private Rank() {
 			bits = 0b0000000000000000000000000000000000000000000000000000000011111111L << (8*ordinal());
@@ -138,7 +138,7 @@ final class Bitboard {
 		 * 
 		 * @param rnkInd The index of the rank.
 		 */
-		public static Rank getByIndex(int rnkInd) {
+		static Rank getByIndex(int rnkInd) {
 			switch(rnkInd) {
 				case 0:  return R1;
 				case 1:  return R2;
@@ -156,7 +156,7 @@ final class Bitboard {
 		 * 
 		 * @param sqr A Square enum.
 		 */
-		public static Rank getBySquare(Square sqr) {
+		static Rank getBySquare(Square sqr) {
 			return getByIndex(sqr.ind >>> 3);
 		}
 		/**
@@ -164,7 +164,7 @@ final class Bitboard {
 		 * 
 		 * @param sqrInd The index of the square.
 		 */
-		public static Rank getBySquareIndex(int sqrInd) {
+		static Rank getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd >>> 3);
 		}
 	}
@@ -176,11 +176,11 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	public static enum Diagonal {
+	static enum Diagonal {
 		
 		DG1, DG2, DG3, DG4, DG5, DG6, DG7, DG8, DG9, DG10, DG11, DG12, DG13, DG14, DG15;
 		
-		public final long bits;
+		final long bits;
 		
 		private Diagonal() {
 			long base = 0b0000000100000010000001000000100000010000001000000100000010000000L;
@@ -193,7 +193,7 @@ final class Bitboard {
 		 * 
 		 * @param dgnInd The index of the diagonal.
 		 */
-		public static Diagonal getByIndex(int dgnInd) {
+		static Diagonal getByIndex(int dgnInd) {
 			switch(dgnInd) {
 				case 0:  return DG1;
 				case 1:  return DG2;
@@ -218,7 +218,7 @@ final class Bitboard {
 		 * 
 		 * @param sqr A Square enum.
 		 */
-		public static Diagonal getBySquare(Square sqr) {
+		static Diagonal getBySquare(Square sqr) {
 			return getByIndex((sqr.ind & 7) + (sqr.ind >>> 3));
 		}
 		/**
@@ -226,7 +226,7 @@ final class Bitboard {
 		 * 
 		 * @param sqrInd The index of a square.
 		 */
-		public static Diagonal getBySquareIndex(int sqrInd) {
+		static Diagonal getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (sqrInd >>> 3));
 		}
 	}
@@ -238,11 +238,11 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	public static enum AntiDiagonal {
+	static enum AntiDiagonal {
 		
 		ADG1, ADG2, ADG3, ADG4, ADG5, ADG6, ADG7, ADG8, ADG9, ADG10, ADG11, ADG12, ADG13, ADG14, ADG15;
 		
-		public final long bits;
+		final long bits;
 		
 		private AntiDiagonal() {
 			long base = 0b1000000001000000001000000001000000001000000001000000001000000001L;
@@ -254,7 +254,7 @@ final class Bitboard {
 		 * 
 		 * @param adgnInd The index of the anti-diagonal.
 		 */
-		public static AntiDiagonal getByIndex(int adgnInd) {
+		static AntiDiagonal getByIndex(int adgnInd) {
 			switch(adgnInd) {
 				case 0:  return ADG1;
 				case 1:  return ADG2;
@@ -279,7 +279,7 @@ final class Bitboard {
 		 * 
 		 * @param sqr A Square enum.
 		 */
-		public static AntiDiagonal getBySquare(Square sqr) {
+		static AntiDiagonal getBySquare(Square sqr) {
 			return getByIndex((sqr.ind & 7) + (7 - (sqr.ind >>> 3)));
 		}
 		/**
@@ -287,7 +287,7 @@ final class Bitboard {
 		 * 
 		 * @param sqrInd The index of a square.
 		 */
-		public static AntiDiagonal getBySquareIndex(int sqrInd) {
+		static AntiDiagonal getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
 	}
@@ -297,7 +297,7 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	public enum Ray {
+	enum Ray {
 		
 		A1, B1, C1, D1, E1, F1, G1, H1,
 		A2, B2, C2, D2, E2, F2, G2, H2,
@@ -308,14 +308,14 @@ final class Bitboard {
 		A7, B7, C7, D7, E7, F7, G7, H7,
 		A8, B8, C8, D8, E8, F8, G8, H8;
 		
-		public final long rankPos;
-		public final long rankNeg;
-		public final long filePos;
-		public final long fileNeg;
-		public final long diagonalPos;
-		public final long diagonalNeg;
-		public final long antiDiagonalPos;
-		public final long antiDiagonalNeg;
+		final long rankPos;
+		final long rankNeg;
+		final long filePos;
+		final long fileNeg;
+		final long diagonalPos;
+		final long diagonalNeg;
+		final long antiDiagonalPos;
+		final long antiDiagonalNeg;
 		
 		private Ray( ) {
 			int sqrInd = this.ordinal();
@@ -339,7 +339,7 @@ final class Bitboard {
 		 * @param sqrInd
 		 * @return
 		 */
-		public static Ray getByIndex(int sqrInd) {
+		static Ray getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1;
 				case 6:  return G1; case 7:  return H1; case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2;
@@ -368,7 +368,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long northFill(long generator, long propagator) {
+	static long northFill(long generator, long propagator) {
 		generator  |= (generator  << 8)  & propagator;
 		propagator &= (propagator << 8);
 		generator  |= (generator  << 16) & propagator;
@@ -384,7 +384,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long southFill(long generator, long propagator) {
+	static long southFill(long generator, long propagator) {
 		generator  |= (generator  >>> 8)  & propagator;
 		propagator &= (propagator >>> 8);
 		generator  |= (generator  >>> 16) & propagator;
@@ -401,7 +401,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long westFill(long generator, long propagator) {
+	static long westFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
 		generator  |= (generator  >>> 1) & propagator;
 		propagator &= (propagator >>> 1);
@@ -419,7 +419,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long eastFill(long generator, long propagator) {
+	static long eastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
 		generator  |= (generator  << 1) & propagator;
 		propagator &= (propagator << 1);
@@ -437,7 +437,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long northWestFill(long generator, long propagator) {
+	static long northWestFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
 		generator  |= (generator  << 7)  & propagator;
 		propagator &= (propagator << 7);
@@ -455,7 +455,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long northEastFill(long generator, long propagator) {
+	static long northEastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
 		generator  |= (generator  << 9)  & propagator;
 		propagator &= (propagator << 9);
@@ -473,7 +473,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long southWestFill(long generator, long propagator) {
+	static long southWestFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
 		generator  |= (generator  >>> 9)  & propagator;
 		propagator &= (propagator >>> 9);
@@ -491,7 +491,7 @@ final class Bitboard {
 	 * @param propagator All empty squares.
 	 * @return
 	 */
-	public static long southEastFill(long generator, long propagator) {
+	static long southEastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
 		generator  |= (generator  >>> 7)  & propagator;
 		propagator &= (propagator >>> 7);
@@ -506,7 +506,7 @@ final class Bitboard {
 	 * @param bitboard
 	 * @return
 	 */
-	public static String bitboardToString(long bitboard) {
+	static String bitboardToString(long bitboard) {
 		String out = "";
 		String board = BitOperations.toBinaryString(bitboard);
 		for (int i = 0; i < 64; i += 8) {

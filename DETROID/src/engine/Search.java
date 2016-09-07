@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.ArrayList;
 import java.util.Set;
 
 import engine.ETEntry;
@@ -25,7 +26,7 @@ import util.*;
  */
 class Search implements Runnable {
 	
-	public final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
+	final static int MAX_NOMINAL_SEARCH_DEPTH = 64;
 	// For fractional ply extensions.
 	private final static int FULL_PLY = 8;
 	// Including extensions and quiescence search.
@@ -47,7 +48,7 @@ class Search implements Runnable {
 	private boolean ponder;
 	private int maxDepth;
 	private long maxNodes;
-	private List<Move> allowedRootMoves;
+	private ArrayList<Move> allowedRootMoves;
 	private boolean areMovesRestricted;
 	private long nodes;
 	private boolean doStopSearch;
@@ -68,7 +69,7 @@ class Search implements Runnable {
 	 * @param evalTable Evaluation hash table.
 	 * @param pawnTable Pawn hash table.
 	 */
-	public Search(Position position, SearchInformation stats, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
+	Search(Position position, SearchInformation stats, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
 			RelativeHistoryTable historyTable, final byte hashEntryGen, LossyHashTable<TTEntry> transposTable,
 			LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, Parameters params) {
 		this.params = params;
@@ -89,7 +90,7 @@ class Search implements Runnable {
 		else
 			this.maxDepth = MAX_NOMINAL_SEARCH_DEPTH;
 		if (moves != null) {
-			allowedRootMoves = new Stack<>();
+			allowedRootMoves = new ArrayList<>();
 			for (Move m : moves)
 				allowedRootMoves.add(m);
 		}
@@ -172,7 +173,7 @@ class Search implements Runnable {
 		int depth, score, bestScore, extension, numOfMoves;
 		Move hashMove, bestMove, move, lastMove;
 		boolean lastMoveIsMaterial, statsUpdated;
-		List<Move> tacticalMoves, quietMoves, allMoves;
+		ArrayList<Move> tacticalMoves, quietMoves, allMoves;
 		Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
 		TTEntry e;
 		statsUpdated = false;
@@ -208,7 +209,7 @@ class Search implements Runnable {
 		// Sort moves.
 		tacticalMovesArr = orderMaterialMovesSEE(position, tacticalMoves);
 		quietMovesArr = orderNonMaterialMoves(quietMoves);
-		allMoves = new Queue<>();
+		allMoves = new ArrayList<>();
 		if (hashMove != null && (quietMoves.contains(hashMove) || tacticalMoves.contains(hashMove)))
 			allMoves.add(hashMove);
 		else
@@ -253,7 +254,7 @@ class Search implements Runnable {
 					if (score >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
-					if (insertNodeIntoTt(position.hashKey(), origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY))) {
+					if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/FULL_PLY))) {
 						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score);
 					}
@@ -264,7 +265,7 @@ class Search implements Runnable {
 		}
 		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
-			insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
+			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/FULL_PLY));
 			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
 		}
 		return bestScore;
@@ -288,7 +289,7 @@ class Search implements Runnable {
 		int bestScore, score, searchedMoves, matMoveBreakInd, kMove, evalScore, razRed, extension;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial, isThereMateThreat;
-		Queue<Move> matMoves, nonMatMoves;
+		ArrayList<Move> matMoves, nonMatMoves;
 		Move[] matMovesArr, nonMatMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
@@ -317,7 +318,7 @@ class Search implements Runnable {
 			// Check extension.
 			depth = isInCheck ? depth + params.CHECK_EXT : depth;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
-			e = tT.lookUp(position.hashKey());
+			e = tT.lookUp(position.key);
 			if (e != null) {
 				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
@@ -368,7 +369,7 @@ class Search implements Runnable {
 					(hashMove == null || e.depth <= depth*params.IID_REL_DEPTH/FULL_PLY)) {
 				for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
 					pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true);
-				e = tT.lookUp(position.hashKey());
+				e = tT.lookUp(position.key);
 				if (e != null && e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
 					isThereHashMove = position.isLegalSoft(hashMove);
@@ -655,7 +656,7 @@ class Search implements Runnable {
 			}
 		}
 		// Add new entry to the transposition table.
-		insertNodeIntoTt(position.hashKey(), origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
+		insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/ FULL_PLY));
 		// Return the unadjusted best score.
 		return bestScore;
 	}
@@ -672,7 +673,7 @@ class Search implements Runnable {
 	 */
 	private int quiescence(int distFromRoot, int alpha, int beta) {
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
-		List<Move> materialMoves, quietMoves;
+		ArrayList<Move> materialMoves, quietMoves;
 		Move[] moves;
 		Move move;
 		TTEntry e;
@@ -684,7 +685,7 @@ class Search implements Runnable {
 		if (position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
 		// Hash probe.
-		e = tT.lookUp(position.hashKey());
+		e = tT.lookUp(position.key);
 		if (e != null) {
 			// Mate score adjustment to root distance.
 			if (e.score <= L_CHECK_MATE_LIMIT)
@@ -752,14 +753,14 @@ class Search implements Runnable {
 	 * @param ply
 	 * @return
 	 */
-	private Queue<Move> extractPv(int ply) {
+	private ArrayList<Move> extractPv(int ply) {
 		Move[] pVarr = new Move[ply];
-		Queue<Move> pV = new Queue<>();
+		ArrayList<Move> pV = new ArrayList<>();
 		TTEntry e;
 		Move bestMove;
 		int i, j;
 		i = j = 0;
-		while ((e = tT.lookUp(position.hashKey())) != null && e.bestMove != 0 && i < ply) {
+		while ((e = tT.lookUp(position.key)) != null && e.bestMove != 0 && i < ply) {
 			bestMove = Move.toMove(e.bestMove);
 			position.makeMove(bestMove);
 			pVarr[i++] = bestMove;
@@ -777,12 +778,10 @@ class Search implements Runnable {
 	 * @param moves
 	 * @return
 	 */
-	private Move[] orderMaterialMovesSEE(Position pos, List<Move> moves) {
+	private Move[] orderMaterialMovesSEE(Position pos, ArrayList<Move> moves) {
 		Move[] arr = new Move[moves.size()];
-		Move move;
 		int i = 0;
-		while (moves.hasNext()) {
-			move = moves.next();
+		for (Move move : moves) {
 			move.value = eval.SEE(pos, move);	// Static exchange evaluation.
 			arr[i++] = move;
 		}
@@ -794,12 +793,10 @@ class Search implements Runnable {
 	 * @param moves
 	 * @return
 	 */
-	private Move[] orderMaterialMovesMVVLVA(List<Move> moves) {
+	private Move[] orderMaterialMovesMVVLVA(ArrayList<Move> moves) {
 		Move[] arr = new Move[moves.size()];
-		Move move;
 		int i = 0;
-		while (moves.hasNext()) {
-			move = moves.next();
+		for (Move move : moves) {
 			if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
 				move.value = (short) (params.QUEEN_VALUE - params.PAWN_VALUE);
 				if (move.capturedPiece != Piece.NULL.ind)
@@ -817,12 +814,10 @@ class Search implements Runnable {
 	 * @param moves
 	 * @return
 	 */
-	private Move[] orderNonMaterialMoves(List<Move> moves) {
+	private Move[] orderNonMaterialMoves(ArrayList<Move> moves) {
 		Move[] arr = new Move[moves.size()];
-		Move move;
 		int i = 0;
-		while (moves.hasNext()) {
-			move = moves.next();
+		for (Move move : moves) {
 			move.value = hT.score(move);
 			arr[i++] = move;
 		}

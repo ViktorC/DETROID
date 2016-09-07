@@ -1,5 +1,6 @@
 package engine;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -10,8 +11,6 @@ import java.util.function.Function;
 
 import engine.Bitboard.*;
 import util.BitOperations;
-import util.List;
-import util.Queue;
 
 /**
  * A class whose instance generates 64 bit 'magic' numbers for hashing occupancy variations onto an index in a pre-calculated sliding piece move
@@ -34,14 +33,14 @@ final class MagicsGenerator {
 	 * @author Viktor
 	 *
 	 */
-	public static class Magics {
+	static class Magics {
 		
-		public final boolean rook;
-		public final byte sqrInd;
-		public final long magicNumber;
-		public final byte magicShift;
+		final boolean rook;
+		final byte sqrInd;
+		final long magicNumber;
+		final byte magicShift;
 		
-		public Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
+		Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
 			this.rook = rook;
 			this.sqrInd = sqrInd;
 			this.magicNumber = magicNumber;
@@ -59,16 +58,12 @@ final class MagicsGenerator {
 		}
 	}
 	
-	private static MagicsGenerator INSTANCE;
+	private static MagicsGenerator INSTANCE = new MagicsGenerator();
 	
 	private long[][] rookOccupancyVariations;
 	private long[][] bishopOccupancyVariations;
 	private long[][] rookAttackSetVariations;
 	private long[][] bishopAttackSetVariations;
-	
-	static {
-		INSTANCE = new MagicsGenerator();
-	}
 	
 	private MagicsGenerator() {
 		long bit;
@@ -99,7 +94,7 @@ final class MagicsGenerator {
 	 * 
 	 * @return
 	 */
-	public static MagicsGenerator getInstance() {
+	static MagicsGenerator getInstance() {
 		return INSTANCE;
 	}
 	/**
@@ -113,13 +108,13 @@ final class MagicsGenerator {
 	 * @param enhanced
 	 * @return
 	 */
-	public synchronized Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+	synchronized Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
 		final Random random = new Random();
 		int shift;
 		long[] occVar, attVar;
 		Function<Integer, Long> gen;
 		CompletionService<Long> pool;
-		List<Future<Long>> futures;
+		ArrayList<Future<Long>> futures;
 		int numOfProcessors;
 		long num;
 		if (rook) {
@@ -159,7 +154,7 @@ final class MagicsGenerator {
 		if (enhanced) {
 			numOfProcessors = Runtime.getRuntime().availableProcessors();
 			pool = new ExecutorCompletionService<Long>(Executors.newFixedThreadPool(numOfProcessors));
-			futures = new Queue<>();
+			futures = new ArrayList<>();
 			for (int i = 0; i < numOfProcessors; i++)
 				futures.add(pool.submit(() -> gen.apply(shift + 1)));
 			try {
@@ -182,7 +177,7 @@ final class MagicsGenerator {
 	 * @param enhancedSquares
 	 * @return
 	 */
-	public synchronized Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
+	synchronized Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
 		Magics[] allMagics = new Magics[64];
 		Magics m;
 		if (print)

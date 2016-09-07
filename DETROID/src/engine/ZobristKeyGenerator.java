@@ -3,6 +3,7 @@ package engine;
 import java.util.Random;
 
 import engine.Bitboard.Square;
+import util.BitOperations;
 
 /**
  * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
@@ -249,41 +250,37 @@ final class ZobristKeyGenerator {
 	 * 
 	 * @return
 	 */
-	public static ZobristKeyGenerator getInstance() {
+	static ZobristKeyGenerator getInstance() {
 		return INSTANCE;
 	}
 	/**
-	 * Encodes a Position object's pawn and main hash keys and sets the respective fields in the Position object.
+	 * Generates a main Zobrist hash key for the position based on the side to move, the board state, and the castling and en passant rights.
 	 * 
-	 * @param board
+	 * @param p
+	 * @return
 	 */
-	public void setHashKeys(Position p) {
+	long generateHashKey(Position p) {
 		byte[] offsetBoard = p.offsetBoard;
-		long key = 0, pawnKey = 0;
-		int piece;
+		long key = 0;
 		if (!p.isWhitesTurn)
 			key ^= turn;
-		for (int i = 0; i < offsetBoard.length; i++) {
-			piece = offsetBoard[i];
-			key ^= board[piece][i];
-			if (piece == Piece.W_PAWN.ind || piece == Piece.B_PAWN.ind || piece == Piece.W_KING.ind || piece == Piece.B_KING.ind)
-				pawnKey ^= board[piece][i];
-		}
+		for (int i = 0; i < offsetBoard.length; i++)
+			key ^= board[offsetBoard[i]][i];
 		key ^= whiteCastlingRights[p.whiteCastlingRights];
 		key ^= blackCastlingRights[p.blackCastlingRights];
 		key ^= enPassantRights[p.enPassantRights];
-		p.key = key;
-		p.pawnKey = pawnKey;
+		return key;
 	}
 	/**
-	 * Modifies a Position object's hash keys according to the changes made by the last move.
+	 * Returns an updated version of a Position object's hash key according to the changes made by the last move.
 	 * 
 	 * @param p
+	 * @return
 	 */
-	public void updateKeys(Position p) {
+	long getUpdatedKey(Position p) {
 		int enPassVictSqr;
 		long[] movedRow;
-		long key = p.key, pawnKey = p.pawnKey;
+		long key = p.key;
 		Move move = p.getLastMove();
 		UnmakeMoveRegister unmakeReg = p.getUnmakeRegister();
 		key ^= turn;
@@ -293,30 +290,16 @@ final class ZobristKeyGenerator {
 		key ^= whiteCastlingRights[p.whiteCastlingRights];
 		key ^= blackCastlingRights[p.blackCastlingRights];
 		key ^= enPassantRights[p.enPassantRights];
-		if (move != null) {
+		if (!move.equals(Move.NULL_MOVE)) {
 			movedRow = board[move.movedPiece];
 			if (move.type == MoveType.NORMAL.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				key ^= movedRow[move.to];
-				if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.W_PAWN.ind) {
-					pawnKey ^= movedRow[move.from];
-					pawnKey ^= movedRow[move.to];
-				}
-				else if (move.movedPiece == Piece.B_KING.ind || move.movedPiece == Piece.B_PAWN.ind) {
-					pawnKey ^= movedRow[move.from];
-					pawnKey ^= movedRow[move.to];
-				}
-				if (move.capturedPiece == Piece.B_PAWN.ind)
-					pawnKey ^= board[move.capturedPiece][move.to];
-				else if (move.capturedPiece == Piece.W_PAWN.ind)
-					pawnKey ^= board[move.capturedPiece][move.to];
 			}
 			else if (move.type == MoveType.SHORT_CASTLING.ind) {
 				key ^= movedRow[move.from];
 				key ^= movedRow[move.to];
-				pawnKey ^= movedRow[move.from];
-				pawnKey ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_KING.ind) {
 					key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
 					key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
@@ -329,8 +312,6 @@ final class ZobristKeyGenerator {
 			else if (move.type == MoveType.LONG_CASTLING.ind) {
 				key ^= movedRow[move.from];
 				key ^= movedRow[move.to];
-				pawnKey ^= movedRow[move.from];
-				pawnKey ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_KING.ind) {
 					key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
 					key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
@@ -343,19 +324,15 @@ final class ZobristKeyGenerator {
 			else if (move.type == MoveType.EN_PASSANT.ind) {
 				key ^= movedRow[move.from];
 				key ^= movedRow[move.to];
-				pawnKey ^= movedRow[move.from];
-				pawnKey ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					enPassVictSqr = move.to - 8;
 				else
 					enPassVictSqr = move.to + 8;
 				key ^= board[move.capturedPiece][enPassVictSqr];
-				pawnKey ^= board[move.capturedPiece][enPassVictSqr];
 			}
 			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_QUEEN.ind][move.to];
 				else
@@ -364,7 +341,6 @@ final class ZobristKeyGenerator {
 			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_ROOK.ind][move.to];
 				else
@@ -373,7 +349,6 @@ final class ZobristKeyGenerator {
 			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_BISHOP.ind][move.to];
 				else
@@ -382,15 +357,35 @@ final class ZobristKeyGenerator {
 			else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
-				pawnKey ^= movedRow[move.from];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_KNIGHT.ind][move.to];
 				else
 					key ^= board[Piece.B_KNIGHT.ind][move.to];
 			}
 		}
-		p.key = key;
-		p.pawnKey = pawnKey;
+		return key;
+	}
+	/**
+	 * Generates a Zobrist hash key for the pawn-king structure on the board.
+	 * 
+	 * @param p
+	 * @return
+	 */
+	long generatePawnKingHashKey(Position p) {
+		long key = 0;
+		long whitePawns = p.whitePawns;
+		long blackPawns = p.blackPawns;
+		while (whitePawns != 0) {
+			key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
+			whitePawns = BitOperations.resetLSBit(whitePawns);
+		}
+		while (blackPawns != 0) {
+			key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
+			blackPawns = BitOperations.resetLSBit(blackPawns);
+		}
+		key ^= board[Piece.W_KING.ind][BitOperations.indexOfBit(p.whiteKing)];
+		key ^= board[Piece.B_KING.ind][BitOperations.indexOfBit(p.blackKing)];
+		return key;
 	}
 	/**
 	 * Returns the 64 bit hash key used for positions in PolyGlot opening books.
@@ -398,7 +393,7 @@ final class ZobristKeyGenerator {
 	 * @param p
 	 * @return
 	 */
-	public long getPolyglotHashKey(Position p) {
+	long generatePolyglotHashKey(Position p) {
 		long key = 0L;
 		int piece, pieceNote;
 		byte[] offBoard = p.offsetBoard;
