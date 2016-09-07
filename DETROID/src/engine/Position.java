@@ -2942,7 +2942,7 @@ class Position implements Copiable<Position>, Hashable {
 		// Ensure the key history is big enough to hold the entries.
 		if (keyHistory.length - halfMoveIndex <= 3)
 			keyHistory = Arrays.copyOf(keyHistory, keyHistory.length + (keyHistory.length >> 1));
-		key = gen.getUpdatedKey(this);
+		key = gen.getUpdatedHashKey(this);
 		keyHistory[halfMoveIndex] = key;
 	}
 	/**
@@ -2956,7 +2956,7 @@ class Position implements Copiable<Position>, Hashable {
 		enPassantRights = EnPassantRights.NONE.ind;
 		moveList.addFirst(Move.NULL_MOVE);
 		halfMoveIndex++;
-		key = gen.getUpdatedKey(this);
+		key = gen.getUpdatedHashKey(this);
 		keyHistory[halfMoveIndex] = key;
 	}
 	/**

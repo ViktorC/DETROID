@@ -277,7 +277,7 @@ final class ZobristKeyGenerator {
 	 * @param p
 	 * @return
 	 */
-	long getUpdatedKey(Position p) {
+	long getUpdatedHashKey(Position p) {
 		int enPassVictSqr;
 		long[] movedRow;
 		long key = p.key;

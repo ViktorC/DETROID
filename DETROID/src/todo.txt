@@ -1,11 +1,9 @@
--	Consider writing a LongArrayList for the keys in Position.
+-	Improve the evaluation, especially the handling of pinned pieces and checks or double checks.
+-	Study what other terms other engines have. Define less essential terms for the extended evaluation part to further refine the final score
+-	Implement a generic LRU Cache util to use for the EGBT entries and incorporate look ups into the search.
 -	Create an EGTB interface for end game tablebases/bitbases with all the necessary methods for probing and whatsoever.
 -	Create a class GaviotaEGTB that implements EGTB. It should use Ballicora's native probing library. A good example of such an implementation can
 	be found here: http://www.programcreek.com/java-api-examples/index.php?source_dir=chessonline-master/src/com/if3games/chessonline/gtb/Probe.java
--	Implement a generic LRU Cache util to use for the EGBT entries and incorporate look ups into the search.
--	Improve the evaluation, especially the handling of pinned pieces and checks or double checks.
--	Study what other terms other engines have. Define less essential terms for the extended evaluation part to further refine the final score (such 
-	as tempo). (v 0.8)
 -	Set up a parameter tuning framework possibly using cutechess-cli and genetic algorithms such as PBIL. (v 0.9)
 -	Add support for multi-PV. (v 0.95)
 -	Implement SMP. (v 1.0)
