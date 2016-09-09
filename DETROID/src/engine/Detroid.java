@@ -87,9 +87,9 @@ public class Detroid implements Engine, Observer {
 		long sizeInBytes = hashSize*1024*1024;
 		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
 		SizeEstimator estimator = SizeEstimator.getInstance();
-		tT = new LossyHashTable<>(sizeInBytes*params.TT_SHARE/totalHashShares/estimator.sizeOf(TTEntry.class));
-		eT = new LossyHashTable<>(sizeInBytes*params.ET_SHARE/totalHashShares/estimator.sizeOf(ETEntry.class));
-		pT = new LossyHashTable<>(sizeInBytes*params.PT_SHARE/totalHashShares/estimator.sizeOf(PTEntry.class));
+		tT = new LossyHashTable<>((int) (sizeInBytes*params.TT_SHARE/totalHashShares/estimator.sizeOf(TTEntry.class)));
+		eT = new LossyHashTable<>((int) (sizeInBytes*params.ET_SHARE/totalHashShares/estimator.sizeOf(ETEntry.class)));
+		pT = new LossyHashTable<>((int) (sizeInBytes*params.PT_SHARE/totalHashShares/estimator.sizeOf(PTEntry.class)));
 		if (debug) debugInfo.set("Hash capacity data\n" +
 				"Transposition table capacity - " + tT.getCapacity() + "\n" +
 				"Evaluation table capacity - " + eT.getCapacity() + "\n" +
@@ -188,6 +188,7 @@ public class Detroid implements Engine, Observer {
 	}
 	@Override
 	public synchronized void init() {
+		int maxHashSize;
 		try {
 			params = new Parameters(DEFAULT_PARAMETERS_FILE_PATH);
 		} catch (IOException e) { }
@@ -201,7 +202,8 @@ public class Detroid implements Engine, Observer {
 		outOfBook = false;
 		game = new Game();
 		options = new HashMap<>();
-		hashSize = new Option.SpinOption("Hash", 128, 1, (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(1L << 20)/2));
+		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
+		hashSize = new Option.SpinOption("Hash", Math.min(128, maxHashSize), 1, maxHashSize);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);

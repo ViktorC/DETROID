@@ -536,7 +536,7 @@ final class Evaluator {
 		isWhitesTurn = pos.isWhitesTurn;
 		score = 0;
 		// Probe evaluation hash table.
-		eE = eT.lookUp(pos.key);
+		eE = eT.get(pos.key);
 		if (eE != null) {
 			eE.generation = hashGen;
 			score = eE.score;
@@ -585,7 +585,7 @@ final class Evaluator {
 			score += (numOfWhiteKnights - numOfBlackKnights)*params.KNIGHT_VALUE;
 			pawnKingKey = pos.getPawnKingHashKey();
 			// Try for hashed pawn score.
-			pE = pT.lookUp(pawnKingKey);
+			pE = pT.get(pawnKingKey);
 			if (pE != null) {
 				pE.generation = hashGen;
 				pawnScore = pE.score;
@@ -593,7 +593,7 @@ final class Evaluator {
 			// Evaluate pawn structure.
 			else {
 				pawnScore = pawnKingStructureScore(pos.whiteKing, pos.blackKing, pos.whitePawns, pos.blackPawns);
-				pT.insert(new PTEntry(pawnKingKey, pawnScore, hashGen));
+				pT.put(new PTEntry(pawnKingKey, pawnScore, hashGen));
 			}
 			score += pawnScore;
 			// Piece-square scores.
@@ -738,7 +738,7 @@ final class Evaluator {
 //		if (!isWhitesTurn)
 //			extendedScore *= -1;
 //		score += extendedScore;
-		eT.insert(new ETEntry(pos.key, score, true, hashGen));
+		eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}
 }

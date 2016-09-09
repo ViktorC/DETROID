@@ -200,7 +200,7 @@ class Search implements Runnable {
 		// Check extension.
 		depth = position.isInCheck ? depth + params.CHECK_EXT : depth;
 		// Hash look-up.
-		e = tT.lookUp(position.key);
+		e = tT.get(position.key);
 		if (e != null) {
 			e.generation = hashEntryGen;
 			if (e.bestMove != 0)
@@ -318,7 +318,7 @@ class Search implements Runnable {
 			// Check extension.
 			depth = isInCheck ? depth + params.CHECK_EXT : depth;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
-			e = tT.lookUp(position.key);
+			e = tT.get(position.key);
 			if (e != null) {
 				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
@@ -369,7 +369,7 @@ class Search implements Runnable {
 					(hashMove == null || e.depth <= depth*params.IID_REL_DEPTH/FULL_PLY)) {
 				for (short i = 1; i < depth*params.IID_REL_DEPTH/FULL_PLY; i++)
 					pVsearch(i*FULL_PLY, distFromRoot, alpha, beta, true);
-				e = tT.lookUp(position.key);
+				e = tT.get(position.key);
 				if (e != null && e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
 					isThereHashMove = position.isLegalSoft(hashMove);
@@ -685,7 +685,7 @@ class Search implements Runnable {
 		if (position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
 		// Hash probe.
-		e = tT.lookUp(position.key);
+		e = tT.get(position.key);
 		if (e != null) {
 			// Mate score adjustment to root distance.
 			if (e.score <= L_CHECK_MATE_LIMIT)
@@ -760,7 +760,7 @@ class Search implements Runnable {
 		Move bestMove;
 		int i, j;
 		i = j = 0;
-		while ((e = tT.lookUp(position.key)) != null && e.bestMove != 0 && i < ply) {
+		while ((e = tT.get(position.key)) != null && e.bestMove != 0 && i < ply) {
 			bestMove = Move.toMove(e.bestMove);
 			position.makeMove(bestMove);
 			pVarr[i++] = bestMove;
@@ -892,6 +892,6 @@ class Search implements Runnable {
 		else
 			type = NodeType.EXACT.ind;
 		//	Add new entry to the transposition table.
-		return tT.insert(new TTEntry(key, depth, type, (short) score, bestMoveInt, hashEntryGen));
+		return tT.put(new TTEntry(key, depth, type, (short) score, bestMoveInt, hashEntryGen));
 	}
 }

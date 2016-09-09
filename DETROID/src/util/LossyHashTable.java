@@ -35,11 +35,11 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
-	private final static double T1_SHARE = 0.6d;
-	private final static double T2_SHARE = 0.4d;
+	private final static float T1_SHARE = 0.6f;
+	private final static float T2_SHARE = 0.4f;
 	
-	private final static long MAX_CAPACITY = 1L << 30;	// The maximum number of slots.
-	private final static long MIN_CAPACITY = 1L << 10;	// The minimum number of slots.
+	private final static int MAX_CAPACITY = (int) (1L << 30);	// The maximum number of slots.
+	private final static int MIN_CAPACITY = (int) (1L << 10);	// The minimum number of slots.
 	
 	private long capacity;	// The number of hash table slots.
 	
@@ -54,11 +54,11 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * @param capacity Maximum hash table capacity.
 	 */
 	@SuppressWarnings({"unchecked"})
-	public LossyHashTable(long capacity) {
+	public LossyHashTable(int capacity) {
 		long tL1, tL2;
 		MillerRabin prim;
 		if (capacity < MIN_CAPACITY || capacity > MAX_CAPACITY)
-			throw new IllegalArgumentException("The capacity has to be between 1024 and 1073741824.");
+			throw new IllegalArgumentException("Illegal capacity. The capacity has to be between " + MIN_CAPACITY + " and " + MAX_CAPACITY + ".");
 		// Ensuring all tables have prime lengths.
 		tL1 = tL2 = 0;
 		prim = new MillerRabin();
@@ -96,7 +96,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * @return Whether the entry has been inserted into one of the tables.
 	 * @throws NullPointerException
 	 */
-	public boolean insert(T e) throws NullPointerException {
+	public boolean put(T e) throws NullPointerException {
 		int ind1, ind2, altInd;
 		T slot1, slot2, temp;
 		long key = e.hashKey();
@@ -193,7 +193,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * @param key
 	 * @return The entry mapped to the specified key.
 	 */
-	public T lookUp(long key) {
+	public T get(long key) {
 		T e;
 		long absKey = key & Long.MAX_VALUE;
 		if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
