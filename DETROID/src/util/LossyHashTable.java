@@ -196,9 +196,9 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	public T get(long key) {
 		T e;
 		long absKey = key & Long.MAX_VALUE;
-		if ((e = t1[(int)(absKey%t1.length)]) != null && e.hashKey() == key)
+		if ((e = t1[(int) (absKey%t1.length)]) != null && e.hashKey() == key)
 			return e;
-		if ((e = t2[(int)(absKey%t2.length)]) != null && e.hashKey() == key)
+		if ((e = t2[(int) (absKey%t2.length)]) != null && e.hashKey() == key)
 			return e;
 		return null;
 	}

@@ -288,9 +288,9 @@ class Search implements Runnable {
 		final boolean isPvNode = beta > origAlpha + 1;
 		int bestScore, score, searchedMoves, matMoveBreakInd, kMove, evalScore, razRed, extension;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsMaterial, isThereMateThreat;
-		ArrayList<Move> matMoves, nonMatMoves;
-		Move[] matMovesArr, nonMatMovesArr;
+		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isThereMateThreat;
+		ArrayList<Move> tacticalMoves, quietMoves;
+		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
 		KillerTableEntry kE;
 		bestScore = mateScore;
@@ -298,7 +298,7 @@ class Search implements Runnable {
 		searchedMoves = 0;
 		hashMove = killerMove1 = killerMove2 = null;
 		isThereHashMove = isThereKM1 = isThereKM2 = false;
-		matMoves = nonMatMoves = null;
+		tacticalMoves = quietMoves = null;
 		nodes++;
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = false;
@@ -376,11 +376,11 @@ class Search implements Runnable {
 				}
 			}
 			lastMove = position.getLastMove();
-			lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
+			lastMoveIsTactical = lastMove != null && lastMove.isMaterial();
 			// If there is a hash move, search that first.
 			if (isThereHashMove) {
 				// Recapture extension (includes capturing newly promoted pieces).
-				extension = lastMoveIsMaterial && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? params.RECAP_EXT : 0;
+				extension = lastMoveIsTactical && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? params.RECAP_EXT : 0;
 				position.makeMove(hashMove);
 				score = -pVsearch(depth + extension - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				position.unmakeMove();
@@ -403,11 +403,11 @@ class Search implements Runnable {
 				}
 			}
 			// Generate material moves.
-			matMoves = position.getTacticalMoves();
+			tacticalMoves = position.getTacticalMoves();
 			// If there was no hash move or material moves, perform a mate check.
-			if (!isThereHashMove && matMoves.size() == 0) {
-				nonMatMoves = position.getQuietMoves();
-				if (nonMatMoves.size() == 0) {
+			if (!isThereHashMove && tacticalMoves.size() == 0) {
+				quietMoves = position.getQuietMoves();
+				if (quietMoves.size() == 0) {
 					score = isInCheck ? mateScore : Termination.STALE_MATE.score;
 					if (score > bestScore) {
 						bestMove = null;
@@ -437,11 +437,11 @@ class Search implements Runnable {
 					return score;
 			}
 			// Sort the material moves.
-			matMovesArr = orderMaterialMovesMVVLVA(matMoves);
+			tacticalMovesArr = orderMaterialMovesMVVLVA(tacticalMoves);
 			matMoveBreakInd = 0;
 			// Search winning and equal captures.
-			for (int i = 0; i < matMovesArr.length; i++) {
-				move = matMovesArr[i];
+			for (int i = 0; i < tacticalMovesArr.length; i++) {
+				move = tacticalMovesArr[i];
 				// If this move was the hash move, skip it.
 				if (isThereHashMove && move.equals(hashMove)) {
 					isThereHashMove = false;
@@ -453,7 +453,7 @@ class Search implements Runnable {
 					break;
 				}
 				// Recapture extension (includes capturing newly promoted pieces).
-				extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
+				extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
 						params.RECAP_EXT : 0;
 				position.makeMove(move);
 				// PVS.
@@ -543,15 +543,15 @@ class Search implements Runnable {
 				}
 			}	// Killer move check ending.
 			// Search losing captures if there are any.
-			for (int i = matMoveBreakInd; i < matMovesArr.length; i++) {
-				move = matMovesArr[i];
+			for (int i = matMoveBreakInd; i < tacticalMovesArr.length; i++) {
+				move = tacticalMovesArr[i];
 				// If this move was the hash move, skip it.
 				if (isThereHashMove && move.equals(hashMove)) {
 					isThereHashMove = false;
 					continue;
 				}
 				// Recapture extension.
-				extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.RECAP_EXT : 0;
+				extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.RECAP_EXT : 0;
 				position.makeMove(move);
 				// PVS.
 				if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
@@ -576,16 +576,16 @@ class Search implements Runnable {
 					break Search;
 			}
 			// Generate the non-material legal moves if they are not generated yet.
-			if (nonMatMoves == null)
-				nonMatMoves = position.getQuietMoves();
+			if (quietMoves == null)
+				quietMoves = position.getQuietMoves();
 			// One reply extension.
-			if (matMoves.size() == 0 && nonMatMoves.size() == 1)
+			if (tacticalMoves.size() == 0 && quietMoves.size() == 1)
 				depth += params.SINGLE_REPLY_EXT;
 			evalScore = Integer.MIN_VALUE;
 			// Order and search the non-material moves.
-			nonMatMovesArr = orderNonMaterialMoves(nonMatMoves);
-			for (int i = 0; i < nonMatMovesArr.length; i++) {
-				move = nonMatMovesArr[i];
+			quietMovesArr = orderNonMaterialMoves(quietMoves);
+			for (int i = 0; i < quietMovesArr.length; i++) {
+				move = quietMovesArr[i];
 				// If this move was the hash move, skip it.
 				if (isThereHashMove && move.equals(hashMove)) {
 					isThereHashMove = false;
@@ -629,7 +629,7 @@ class Search implements Runnable {
 							score = -pVsearch(depth - FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				}
 				// Else PVS with razoring.
-				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && matMovesArr.length == 0)
+				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && tacticalMovesArr.length == 0)
 					score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				else {
 					score = -pVsearch(depth - (razRed + 1)*FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);

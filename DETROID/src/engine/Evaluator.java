@@ -517,11 +517,14 @@ final class Evaluator {
 			numOfBlackKnights, numOfAllPieces, piece;
 		int bishopColor, newBishopColor, phase, square;
 		int whiteDistToBlackKing, blackDistToWhiteKing, whiteKingInd, blackKingInd;
+		long whitePinningPieces, blackPinningPieces;
+		long[] whitePinLines, blackPinLines;
+		byte pinner;
+		long temp, pinLine, moveSetRestriction;
 		long whitePinnedPieces, blackPinnedPieces;
-		long whiteMovablePieces, blackMovablePieces;
 		long whiteKinglessOccupied, whiteKinglessEmpty, blackKinglessOccupied, blackKinglessEmpty;
-		long whiteKnightCoverage, whiteBishopCoverage, whiteRookCoverage, whiteQueenCoverage;
-		long blackKnightCoverage, blackBishopCoverage, blackRookCoverage, blackQueenCoverage;
+		long whiteKnightCoverage, whiteBishopCoverage, whiteRookCoverage, whiteQueenCoverage, whiteCoverage;
+		long blackKnightCoverage, blackBishopCoverage, blackRookCoverage, blackQueenCoverage, blackCoverage;
 		long whitePawnAttacks, blackPawnAttacks;
 		long whiteKingMobility, blackKingMobility;
 		long bishopSet, whitePieceSet, blackPieceSet;
@@ -608,21 +611,41 @@ final class Evaluator {
 			}
 			score += (short) taperedEvalScore(openingScore, endgameScore, phase);
 			// Pinned pieces.
-			whitePinnedPieces = pos.getPinnedPieces(true);
-			whiteMovablePieces = ~whitePinnedPieces;
+			whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
+			blackKingInd = BitOperations.indexOfBit(pos.blackKing);
+			whitePinningPieces = pos.getPinningPieces(true);
+			blackPinningPieces = pos.getPinningPieces(false);
+			whitePinLines = new long[BitOperations.getHammingWeight(whitePinningPieces)];
+			temp = whitePinningPieces;
+			blackPinnedPieces = 0;
+			for (int i = 0; i < whitePinLines.length; i++) {
+				pinner = BitOperations.indexOfLSBit(temp);
+				pinLine = Bitboard.LINE_SEGMENTS[blackKingInd][pinner] | (1L << pinner);
+				whitePinLines[i] = pinLine;
+				blackPinnedPieces |= pinLine & pos.allBlackOccupied;
+				temp = BitOperations.resetLSBit(temp);
+			}
+			blackPinLines = new long[BitOperations.getHammingWeight(blackPinningPieces)];
+			temp = blackPinningPieces;
+			whitePinnedPieces = 0;
+			for (int i = 0; i < blackPinLines.length; i++) {
+				pinner = BitOperations.indexOfLSBit(temp);
+				pinLine = Bitboard.LINE_SEGMENTS[whiteKingInd][pinner] | (1L << pinner);
+				blackPinLines[i] = pinLine;
+				whitePinnedPieces |= pinLine & pos.allWhiteOccupied;
+				temp = BitOperations.resetLSBit(temp);
+			}
 			score -= params.PINNED_QUEEN_WEIGHT*BitOperations.getHammingWeight(pos.whiteQueens & whitePinnedPieces);
 			score -= params.PINNED_ROOK_WEIGHT*BitOperations.getHammingWeight(pos.whiteRooks & whitePinnedPieces);
 			score -= params.PINNED_BISHOP_WEIGHT*BitOperations.getHammingWeight((pos.whiteBishops) & whitePinnedPieces);
 			score -= params.PINNED_KNIGHT_WEIGHT*BitOperations.getHammingWeight((pos.whiteKnights) & whitePinnedPieces);
-			blackPinnedPieces = pos.getPinnedPieces(false);
-			blackMovablePieces = ~blackPinnedPieces;
 			score += params.PINNED_QUEEN_WEIGHT*BitOperations.getHammingWeight(pos.blackQueens & blackPinnedPieces);
 			score += params.PINNED_ROOK_WEIGHT*BitOperations.getHammingWeight(pos.blackRooks & blackPinnedPieces);
 			score += params.PINNED_BISHOP_WEIGHT*BitOperations.getHammingWeight((pos.blackBishops) & blackPinnedPieces);
 			score += params.PINNED_KNIGHT_WEIGHT*BitOperations.getHammingWeight((pos.blackKnights) & blackPinnedPieces);
 			// Pawn-piece defence.
-			whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & whiteMovablePieces, Bitboard.FULL_BOARD);
-			blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns & blackMovablePieces, Bitboard.FULL_BOARD);
+			whitePawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & ~whitePinnedPieces, Bitboard.FULL_BOARD);
+			blackPawnAttacks = MultiMoveSets.blackPawnCaptureSets(pos.blackPawns & ~blackPinnedPieces, Bitboard.FULL_BOARD);
 			score += params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(whitePawnAttacks &
 					((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns));
 			score -= params.PAWN_DEFENDED_PIECE_WEIGHT*BitOperations.getHammingWeight(blackPawnAttacks &
@@ -651,60 +674,90 @@ final class Evaluator {
 			blackBishopCoverage = MultiMoveSets.bishopMoveSets(pos.blackBishops, whiteKinglessOccupied, whiteKinglessEmpty);
 			blackKnightCoverage = MultiMoveSets.knightMoveSets(pos.blackKnights, Bitboard.FULL_BOARD);
 			// King mobility.
-			whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
-			blackKingInd = BitOperations.indexOfBit(pos.blackKing);
 			whiteKingMobility = MoveSetDatabase.getByIndex(whiteKingInd).getKingMoveSet(pos.allNonWhiteOccupied);
 			blackKingMobility = MoveSetDatabase.getByIndex(blackKingInd).getKingMoveSet(pos.allNonBlackOccupied);
-			score += params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteKingMobility & ~(blackPawnAttacks |
-					blackKnightCoverage | blackBishopCoverage | blackRookCoverage | blackQueenCoverage | blackKingMobility));
-			score -= params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackKingMobility & ~(whitePawnAttacks |
-					whiteKnightCoverage | whiteBishopCoverage | whiteRookCoverage | whiteQueenCoverage | whiteKingMobility));
+			whiteCoverage = whitePawnAttacks | whiteKnightCoverage | whiteBishopCoverage | whiteRookCoverage | whiteQueenCoverage | whiteKingMobility;
+			blackCoverage = blackPawnAttacks | blackKnightCoverage | blackBishopCoverage | blackRookCoverage | blackQueenCoverage | blackKingMobility;
+			if (whiteKingInd == Square.E1.ind) {
+				if ((pos.whiteCastlingRights == CastlingRights.SHORT.ind || pos.whiteCastlingRights == CastlingRights.ALL.ind)) {
+					if (pos.offsetBoard[Square.H1.ind] == Piece.W_ROOK.ind && (whiteKingMobility & Square.F1.bit) != 0 && (pos.allOccupied & Square.G1.bit) == 0 &&
+							(blackCoverage & Square.G1.bit) == 0)
+						whiteKingMobility |= Square.G1.bit;
+				}
+				else if ((pos.whiteCastlingRights == CastlingRights.LONG.ind || pos.whiteCastlingRights == CastlingRights.ALL.ind)) {
+					if (pos.offsetBoard[Square.A1.ind] == Piece.W_ROOK.ind && (whiteKingMobility & Square.D1.bit) != 0 &&
+							(pos.allOccupied & (Square.B1.bit | Square.C1.bit)) == 0 && (blackCoverage & Square.C1.bit) == 0)
+						whiteKingMobility |= Square.C1.bit;
+				}
+			}
+			if (blackKingInd == Square.E8.ind) {
+				if ((pos.blackCastlingRights == CastlingRights.SHORT.ind || pos.blackCastlingRights == CastlingRights.ALL.ind)) {
+					if (pos.offsetBoard[Square.H8.ind] == Piece.B_ROOK.ind && (blackKingMobility & Square.F8.bit) != 0 && (pos.allOccupied & Square.G8.bit) == 0 &&
+							(whiteCoverage & Square.G8.bit) == 0)
+						blackKingMobility |= Square.G8.bit;
+				}
+				else if ((pos.blackCastlingRights == CastlingRights.LONG.ind || pos.blackCastlingRights == CastlingRights.ALL.ind)) {
+					if (pos.offsetBoard[Square.A8.ind] == Piece.B_ROOK.ind && (blackKingMobility & Square.D8.bit) != 0 &&
+							(pos.allOccupied & (Square.B8.bit | Square.C8.bit)) == 0 && (whiteCoverage & Square.C8.bit) == 0)
+						blackKingMobility |= Square.C8.bit;
+				}
+			}
+			score += params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(whiteKingMobility & ~blackCoverage);
+			score -= params.KING_MOBILITY_WEIGHT*BitOperations.getHammingWeight(blackKingMobility & ~whiteCoverage);
 			// Iterate over pieces to determine mobility and tropism to the opponent king.
 			whiteDistToBlackKing = 0;
 			whitePieceSet = pos.allWhiteOccupied^pos.whiteKing^pos.whitePawns;
 			blackDistToWhiteKing = 0;
 			blackPieceSet = pos.allBlackOccupied^pos.blackKing^pos.blackPawns;
-			// @!TODO Check penalty from the mobility score.
-//			if (pos.isInCheck) {
-//				checker1 = BitOperations.indexOfLSBit(pos.checkers);
-//				if ((checker2 = BitOperations.indexOfBit(BitOperations.resetLSBit(pos.checkers))) != 0) {
-//					if (pos.isWhitesTurn) whitePieceSet = 0; else blackPieceSet = 0;
-//				}
-//				else {
-//					
-//				}
-//			}
 			while (whitePieceSet != 0) {
 				piece = BitOperations.indexOfLSBit(whitePieceSet);
 				whiteDistToBlackKing += CHEBYSHEV_DISTANCE[piece][blackKingInd];
+				moveSetRestriction = Bitboard.FULL_BOARD;
+				if ((piece & whitePinnedPieces) != 0) {
+					for (long n : blackPinLines) {
+						if ((piece & n) != 0) {
+							moveSetRestriction = n;
+							break;
+						}
+					}
+				}
 				if (pos.offsetBoard[piece] == Piece.W_QUEEN.ind)
-					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getQueenMoveSet(pos.allNonWhiteOccupied, pos.allOccupied))*
-							params.QUEEN_MOBILITY_WEIGHT;
+					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getQueenMoveSet(pos.allNonWhiteOccupied, pos.allOccupied) &
+							moveSetRestriction)*params.QUEEN_MOBILITY_WEIGHT;
 				else if (pos.offsetBoard[piece] == Piece.W_ROOK.ind)
-					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getRookMoveSet(pos.allNonWhiteOccupied, pos.allOccupied))*
-							params.ROOK_MOBILITY_WEIGHT;
+					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getRookMoveSet(pos.allNonWhiteOccupied, pos.allOccupied) &
+							moveSetRestriction)*params.ROOK_MOBILITY_WEIGHT;
 				else if (pos.offsetBoard[piece] == Piece.W_BISHOP.ind)
-					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getBishopMoveSet(pos.allNonWhiteOccupied, pos.allOccupied))*
-							params.BISHOP_MOBILITY_WEIGHT;
+					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getBishopMoveSet(pos.allNonWhiteOccupied, pos.allOccupied) &
+							moveSetRestriction)*params.BISHOP_MOBILITY_WEIGHT;
 				else // W_KNIGHT
-					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getKnightMoveSet(pos.allNonWhiteOccupied))*
+					score += BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getKnightMoveSet(pos.allNonWhiteOccupied) & moveSetRestriction)*
 							params.KNIGHT_MOBILITY_WEIGHT;
 				whitePieceSet = BitOperations.resetLSBit(whitePieceSet);
 			}
 			while (blackPieceSet != 0) {
 				piece = BitOperations.indexOfLSBit(blackPieceSet);
 				blackDistToWhiteKing += CHEBYSHEV_DISTANCE[piece][whiteKingInd];
+				moveSetRestriction = Bitboard.FULL_BOARD;
+				if ((piece & blackPinnedPieces) != 0) {
+					for (long n : whitePinLines) {
+						if ((piece & n) != 0) {
+							moveSetRestriction = n;
+							break;
+						}
+					}
+				}
 				if (pos.offsetBoard[piece] == Piece.B_QUEEN.ind)
-					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getQueenMoveSet(pos.allNonBlackOccupied, pos.allOccupied))*
-							params.QUEEN_MOBILITY_WEIGHT;
+					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getQueenMoveSet(pos.allNonBlackOccupied, pos.allOccupied) &
+							moveSetRestriction)*params.QUEEN_MOBILITY_WEIGHT;
 				else if (pos.offsetBoard[piece] == Piece.B_ROOK.ind)
-					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getRookMoveSet(pos.allNonBlackOccupied, pos.allOccupied))*
-							params.ROOK_MOBILITY_WEIGHT;
+					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getRookMoveSet(pos.allNonBlackOccupied, pos.allOccupied) &
+							moveSetRestriction)*params.ROOK_MOBILITY_WEIGHT;
 				else if (pos.offsetBoard[piece] == Piece.B_BISHOP.ind)
-					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getBishopMoveSet(pos.allNonBlackOccupied, pos.allOccupied))*
-							params.BISHOP_MOBILITY_WEIGHT;
+					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getBishopMoveSet(pos.allNonBlackOccupied, pos.allOccupied) &
+							moveSetRestriction)*params.BISHOP_MOBILITY_WEIGHT;
 				else // B_KNIGHT
-					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getKnightMoveSet(pos.allNonBlackOccupied))*
+					score -= BitOperations.getHammingWeight(MoveSetDatabase.getByIndex(piece).getKnightMoveSet(pos.allNonBlackOccupied) & moveSetRestriction)*
 							params.KNIGHT_MOBILITY_WEIGHT;
 				blackPieceSet = BitOperations.resetLSBit(blackPieceSet);
 			}

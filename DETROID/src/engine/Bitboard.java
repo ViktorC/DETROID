@@ -10,7 +10,36 @@ import util.BitOperations;
  */
 final class Bitboard {
 	
+	/**
+	 * A bitboard with all the 64 bits set.
+	 */
 	final static long FULL_BOARD = -1L;
+	/**
+	 * A straight line, if one exists, between an [origin square] and a [target square] for each two-square combination. If the two squares do not fall on the same
+	 * rank, file, diagonal, or anti-diagonal the line is '0'.
+	 */
+	final static long[][] LINE_SEGMENTS;
+	static {
+		Rays originRays, targetRays;
+		long line;
+		LINE_SEGMENTS = new long[64][64];
+		for (int origin = 0; origin < 64; origin++) {
+			originRays = Rays.getByIndex(origin);
+			for (int target = 0; target < 64; target++) {
+				targetRays = Rays.getByIndex(target);
+				line = 0;
+				line |= (originRays.rankPos & targetRays.rankNeg);
+				line |= (originRays.rankNeg & targetRays.rankPos);
+				line |= (originRays.diagonalPos & targetRays.diagonalNeg);
+				line |= (originRays.diagonalNeg & targetRays.diagonalPos);
+				line |= (originRays.filePos & targetRays.fileNeg);
+				line |= (originRays.fileNeg & targetRays.filePos);
+				line |= (originRays.antiDiagonalPos & targetRays.antiDiagonalNeg);
+				line |= (originRays.antiDiagonalNeg & targetRays.antiDiagonalPos);
+				LINE_SEGMENTS[origin][target] = line;
+			}
+		}
+	}
 	
 	/**
 	 * An enum type for the 64 squares of the chess board. Each constant has a field that contains a long with only the bit on
@@ -297,7 +326,7 @@ final class Bitboard {
 	 * @author Viktor
 	 *
 	 */
-	enum Ray {
+	enum Rays {
 		
 		A1, B1, C1, D1, E1, F1, G1, H1,
 		A2, B2, C2, D2, E2, F2, G2, H2,
@@ -317,7 +346,7 @@ final class Bitboard {
 		final long antiDiagonalPos;
 		final long antiDiagonalNeg;
 		
-		private Ray( ) {
+		private Rays( ) {
 			int sqrInd = this.ordinal();
 			long sqrBit = Square.getByIndex(sqrInd).bit;
 			Rank rank = Rank.getBySquareIndex(sqrInd);
@@ -339,7 +368,7 @@ final class Bitboard {
 		 * @param sqrInd
 		 * @return
 		 */
-		static Ray getByIndex(int sqrInd) {
+		static Rays getByIndex(int sqrInd) {
 			switch(sqrInd) {
 				case 0:  return A1; case 1:  return B1; case 2:  return C1; case 3:  return D1; case 4:  return E1; case 5:  return F1;
 				case 6:  return G1; case 7:  return H1; case 8:  return A2; case 9:  return B2; case 10: return C2; case 11: return D2;
