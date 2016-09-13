@@ -1,6 +1,4 @@
--	Improve the evaluation, especially the handling of en passant, checks, and double checks for the mobility calculation for the side to move; consider
-	rewarding pinning pieces.
--	Study what other terms other engines have. Define less essential terms for the extended evaluation part to further refine the final score.
+-	Study what evaluation terms other engines have. Consider implementing asymmetric terms based on LVA-MVV.
 -	Create an EGTB interface for end game tablebases/bitbases with all the necessary methods for probing and whatsoever.
 -	Create a class GaviotaEGTB that implements EGTB. It should use Ballicora's native probing library. A good example of such an implementation can
 	be found here: http://www.programcreek.com/java-api-examples/index.php?source_dir=chessonline-master/src/com/if3games/chessonline/gtb/Probe.java

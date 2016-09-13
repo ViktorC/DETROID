@@ -59,6 +59,7 @@ public final class Parameters {
 	public byte ROOK_MOBILITY_WEIGHT;
 	public byte BISHOP_MOBILITY_WEIGHT;
 	public byte KNIGHT_MOBILITY_WEIGHT;
+	public byte LIVE_EP_ADVANTAGE;
 	public byte BISHOP_PAIR_ADVANTAGE;
 	public byte KNIGHT_ADVANTAGE_PER_PAWN;
 	public byte PAWN_DEFENDED_PIECE_WEIGHT;

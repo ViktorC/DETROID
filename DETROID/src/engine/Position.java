@@ -489,14 +489,14 @@ class Position implements Copiable<Position>, Hashable {
 	 * Returns a long representing all the squares on which there are pinned pieces in the current position for the specified side. A pinned piece is one that when
 	 * moved would expose its king to a check.
 	 * 
-	 * @param forWhite
+	 * @param white
 	 * @return
 	 */
-	long getPinnedPieces(boolean forWhite) {
+	long getPinnedPieces(boolean white) {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders, pinnedPiece, pinnedPieces = 0;
 		Rays attRayMask;
-		if (forWhite) {
+		if (white) {
 			attRayMask = Rays.getByIndex(BitOperations.indexOfBit(whiteKing));
 			rankPos = attRayMask.rankPos & allOccupied;
 			rankNeg = attRayMask.rankNeg & allOccupied;
@@ -575,43 +575,15 @@ class Position implements Copiable<Position>, Hashable {
 	/**
 	 * Returns a long representing all the squares on which there are pieces pinning opponent pieces to their king.
 	 * 
-	 * @param forWhite Whether the colour of the pinning pieces should be white.
+	 * @param white Whether the colour of the pinning pieces should be white.
 	 * @return
 	 */
-	long getPinningPieces(boolean forWhite) {
+	long getPinningPieces(boolean white) {
 		long rankPos, rankNeg, filePos, fileNeg, diagonalPos, diagonalNeg, antiDiagonalPos, antiDiagonalNeg;
 		long straightSliders, diagonalSliders, pinnedPiece, pinningPieces = 0;
 		Rays attRayMask;
-		if (forWhite) {
-			attRayMask = Rays.getByIndex(BitOperations.indexOfBit(whiteKing));
-			rankPos = attRayMask.rankPos & allOccupied;
-			rankNeg = attRayMask.rankNeg & allOccupied;
-			filePos = attRayMask.filePos & allOccupied;
-			fileNeg = attRayMask.fileNeg & allOccupied;
-			diagonalPos = attRayMask.diagonalPos & allOccupied;
-			diagonalNeg = attRayMask.diagonalNeg & allOccupied;
-			antiDiagonalPos = attRayMask.antiDiagonalPos & allOccupied;
-			antiDiagonalNeg = attRayMask.antiDiagonalNeg & allOccupied;
-			straightSliders = blackQueens | blackRooks;
-			diagonalSliders = blackQueens | blackBishops;
-			if ((pinnedPiece = BitOperations.getLSBit(rankPos) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(rankPos^pinnedPiece) & straightSliders;
-			if ((pinnedPiece = BitOperations.getLSBit(filePos) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(filePos^pinnedPiece) & straightSliders;
-			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(diagonalPos^pinnedPiece) & diagonalSliders;
-			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) & diagonalSliders;
-			if ((pinnedPiece = BitOperations.getMSBit(rankNeg) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(rankNeg^pinnedPiece) & straightSliders;
-			if ((pinnedPiece = BitOperations.getMSBit(fileNeg) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(fileNeg^pinnedPiece) & straightSliders;
-			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(diagonalNeg^pinnedPiece) & diagonalSliders;
-			if ((pinnedPiece = BitOperations.getMSBit(antiDiagonalNeg) & allWhiteOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) & diagonalSliders;
-		}
-		else {
+		pinningPieces = 0;
+		if (white) {
 			attRayMask = Rays.getByIndex(BitOperations.indexOfBit(blackKing));
 			rankPos = attRayMask.rankPos & allOccupied;
 			rankNeg = attRayMask.rankNeg & allOccupied;
@@ -624,21 +596,50 @@ class Position implements Copiable<Position>, Hashable {
 			straightSliders = whiteQueens | whiteRooks;
 			diagonalSliders = whiteQueens | whiteBishops;
 			if ((pinnedPiece = BitOperations.getLSBit(rankPos) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(rankPos^pinnedPiece) & straightSliders;
+				pinningPieces |= (BitOperations.getLSBit(rankPos^pinnedPiece) & straightSliders);
 			if ((pinnedPiece = BitOperations.getLSBit(filePos) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(filePos^pinnedPiece) & straightSliders;
+				pinningPieces |= (BitOperations.getLSBit(filePos^pinnedPiece) & straightSliders);
 			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(diagonalPos^pinnedPiece) & diagonalSliders;
+				pinningPieces |= (BitOperations.getLSBit(diagonalPos^pinnedPiece) & diagonalSliders);
 			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) & diagonalSliders;
+				pinningPieces |= (BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) & diagonalSliders);
 			if ((pinnedPiece = BitOperations.getMSBit(rankNeg) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(rankNeg^pinnedPiece) & straightSliders;
+				pinningPieces |= (BitOperations.getMSBit(rankNeg^pinnedPiece) & straightSliders);
 			if ((pinnedPiece = BitOperations.getMSBit(fileNeg) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(fileNeg^pinnedPiece) & straightSliders;
+				pinningPieces |= (BitOperations.getMSBit(fileNeg^pinnedPiece) & straightSliders);
 			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(diagonalNeg^pinnedPiece) & diagonalSliders;
+				pinningPieces |= (BitOperations.getMSBit(diagonalNeg^pinnedPiece) & diagonalSliders);
 			if ((pinnedPiece = BitOperations.getMSBit(antiDiagonalNeg) & allBlackOccupied) != 0)
-				pinningPieces = BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) & diagonalSliders;
+				pinningPieces |= (BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) & diagonalSliders);
+		}
+		else {
+			attRayMask = Rays.getByIndex(BitOperations.indexOfBit(whiteKing));
+			rankPos = attRayMask.rankPos & allOccupied;
+			rankNeg = attRayMask.rankNeg & allOccupied;
+			filePos = attRayMask.filePos & allOccupied;
+			fileNeg = attRayMask.fileNeg & allOccupied;
+			diagonalPos = attRayMask.diagonalPos & allOccupied;
+			diagonalNeg = attRayMask.diagonalNeg & allOccupied;
+			antiDiagonalPos = attRayMask.antiDiagonalPos & allOccupied;
+			antiDiagonalNeg = attRayMask.antiDiagonalNeg & allOccupied;
+			straightSliders = blackQueens | blackRooks;
+			diagonalSliders = blackQueens | blackBishops;
+			if ((pinnedPiece = BitOperations.getLSBit(rankPos) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getLSBit(rankPos^pinnedPiece) & straightSliders);
+			if ((pinnedPiece = BitOperations.getLSBit(filePos) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getLSBit(filePos^pinnedPiece) & straightSliders);
+			if ((pinnedPiece = BitOperations.getLSBit(diagonalPos) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getLSBit(diagonalPos^pinnedPiece) & diagonalSliders);
+			if ((pinnedPiece = BitOperations.getLSBit(antiDiagonalPos) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getLSBit(antiDiagonalPos^pinnedPiece) & diagonalSliders);
+			if ((pinnedPiece = BitOperations.getMSBit(rankNeg) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getMSBit(rankNeg^pinnedPiece) & straightSliders);
+			if ((pinnedPiece = BitOperations.getMSBit(fileNeg) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getMSBit(fileNeg^pinnedPiece) & straightSliders);
+			if ((pinnedPiece = BitOperations.getMSBit(diagonalNeg) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getMSBit(diagonalNeg^pinnedPiece) & diagonalSliders);
+			if ((pinnedPiece = BitOperations.getMSBit(antiDiagonalNeg) & allWhiteOccupied) != 0)
+				pinningPieces |= (BitOperations.getMSBit(antiDiagonalNeg^pinnedPiece) & diagonalSliders);
 		}
 		return pinningPieces;
 	}
