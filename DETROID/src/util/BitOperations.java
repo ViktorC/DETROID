@@ -8,7 +8,7 @@ package util;
  * @author Viktor
  *
  */
-public final class BitOperations {
+public class BitOperations {
 	
 	private final static byte[] DE_BRUIJN_TABLE =
 		{ 0,  1, 48,  2, 57, 49, 28,  3,

@@ -296,32 +296,27 @@ final class ZobristKeyGenerator {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				key ^= movedRow[move.to];
-			}
-			else if (move.type == MoveType.SHORT_CASTLING.ind) {
+			} else if (move.type == MoveType.SHORT_CASTLING.ind) {
 				key ^= movedRow[move.from];
 				key ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_KING.ind) {
 					key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
 					key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
-				}
-				else {
+				} else {
 					key ^= board[Piece.B_ROOK.ind][Square.H8.ind];
 					key ^= board[Piece.B_ROOK.ind][Square.F8.ind];
 				}
-			}
-			else if (move.type == MoveType.LONG_CASTLING.ind) {
+			} else if (move.type == MoveType.LONG_CASTLING.ind) {
 				key ^= movedRow[move.from];
 				key ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_KING.ind) {
 					key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
 					key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
-				}
-				else {
+				} else {
 					key ^= board[Piece.B_ROOK.ind][Square.A8.ind];
 					key ^= board[Piece.B_ROOK.ind][Square.D8.ind];
 				}
-			}
-			else if (move.type == MoveType.EN_PASSANT.ind) {
+			} else if (move.type == MoveType.EN_PASSANT.ind) {
 				key ^= movedRow[move.from];
 				key ^= movedRow[move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
@@ -329,32 +324,28 @@ final class ZobristKeyGenerator {
 				else
 					enPassVictSqr = move.to + 8;
 				key ^= board[move.capturedPiece][enPassVictSqr];
-			}
-			else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+			} else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_QUEEN.ind][move.to];
 				else
 					key ^= board[Piece.B_QUEEN.ind][move.to];
-			}
-			else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
+			} else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_ROOK.ind][move.to];
 				else
 					key ^= board[Piece.B_ROOK.ind][move.to];
-			}
-			else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
+			} else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
 					key ^= board[Piece.W_BISHOP.ind][move.to];
 				else
 					key ^= board[Piece.B_BISHOP.ind][move.to];
-			}
-			else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
+			} else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
 				key ^= movedRow[move.from];
 				key ^= board[move.capturedPiece][move.to];
 				if (move.movedPiece == Piece.W_PAWN.ind)
@@ -430,8 +421,7 @@ final class ZobristKeyGenerator {
 				mD = MoveSetDatabase.getByIndex(enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND);
 				if (mD.getBlackPawnCaptureSet(p.whitePawns) != 0)
 					key ^= polyglotRandom64[772 + enPassantRights];
-			}
-			else {
+			} else {
 				mD = MoveSetDatabase.getByIndex(enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND);
 				if (mD.getWhitePawnCaptureSet(p.blackPawns) != 0)
 					key ^= polyglotRandom64[772 + enPassantRights];

@@ -11,6 +11,6 @@ public enum ScoreType {
 	EXACT,
 	LOWER_BOUND,
 	UPPER_BOUND,
-	MATE
+	MATE;
 	
 }

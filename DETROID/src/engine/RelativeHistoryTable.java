@@ -12,7 +12,7 @@ package engine;
  */
 class RelativeHistoryTable {
 
-	private Parameters params;
+	private Params params;
 	
 	/**The maximum score a move can have. */
 	final short MAX_SCORE;
@@ -20,7 +20,7 @@ class RelativeHistoryTable {
 	private int[][] historyT;	// A [piece][destination square] table for the history heuristic.
 	private int[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
 	
-	RelativeHistoryTable(Parameters params) {
+	RelativeHistoryTable(Params params) {
 		this.params = params;
 		MAX_SCORE = (short)(2*(params.QUEEN_VALUE - params.PAWN_VALUE));
 		/* The numbering of the pieces starts from one, so each table has a redundant first row to save

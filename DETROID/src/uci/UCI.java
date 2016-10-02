@@ -17,25 +17,20 @@ import java.util.concurrent.*;
  */
 public final class UCI implements Observer, Closeable {
 	
-	private static UCI INSTANCE = new UCI(System.in, System.out);
-	
 	private Scanner in;
 	private PrintStream out;
-	private Engine engine;
+	private UCIEngine engine;
 	
-	public static UCI getInstance() {
-		return INSTANCE;
-	}
-	private UCI(InputStream in, OutputStream out) {
+	public UCI(InputStream in, OutputStream out) {
 		this.in = new Scanner(in);
 		this.out = new PrintStream(out);
 	}
 	/**
-	 * Runs the UCI protocol on the standard input and output streams controlling the specified UCI compatible engine.
+	 * Runs the UCI protocol on the input and output streams controlling the specified UCI compatible engine.
 	 * 
 	 * @param engine
 	 */
-	public synchronized void run(Engine engine) {
+	public synchronized void run(UCIEngine engine) {
 		ExecutorService exec = Executors.newFixedThreadPool(1);
 		boolean over = false;
 		String input = "";
@@ -44,7 +39,8 @@ public final class UCI implements Observer, Closeable {
 		String option;
 		this.engine = engine;
 		while (!in.nextLine().trim().equals("uci"));
-		this.engine.init();
+		if (!this.engine.isInit())
+			this.engine.init();
 		this.engine.getSearchInfo().addObserver(this);
 		this.engine.getDebugInfo().addObserver(this);
 		out.println("id name " + this.engine.getName());
@@ -52,17 +48,16 @@ public final class UCI implements Observer, Closeable {
 		for (Option<?> o : engine.getOptions()) {
 			option = "option name " + o.getName() + " type ";
 			if (o instanceof Option.CheckOption)
-				option += "check default " + (boolean)o.getDefaultValue();
+				option += "check default " + (boolean) o.getDefaultValue();
 			else if (o instanceof Option.SpinOption)
-				option += "spin default " + (Integer)o.getDefaultValue() + " min " + o.getMin() + " max " + o.getMax();
+				option += "spin default " + (Integer) o.getDefaultValue() + " min " + o.getMin() + " max " + o.getMax();
 			else if (o instanceof Option.StringOption)
-				option += "string default " + (String)o.getDefaultValue();
+				option += "string default " + (String) o.getDefaultValue();
 			else if (o instanceof Option.ComboOption) {
-				option += "combo default " + (String)o.getDefaultValue() + " var";
+				option += "combo default " + (String) o.getDefaultValue() + " var";
 				for (Object v : o.getAllowedValues())
 					option += " " + v;
-			}
-			else if (o instanceof Option.ButtonOption)
+			} else if (o instanceof Option.ButtonOption)
 				option += "button";
 			out.println(option);
 		}
@@ -92,15 +87,13 @@ public final class UCI implements Observer, Closeable {
 									value += tokens[i] + " ";
 								value = value.trim();
 								this.engine.setOption((Option.StringOption)e, value.equals("null") ? null : value);
-							}
-							else if (e instanceof Option.ComboOption) {
+							} else if (e instanceof Option.ComboOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
 								this.engine.setOption((Option.ComboOption)e, value.equals("null") ? null : value);
-							}
-							else if (e instanceof Option.ButtonOption)
+							} else if (e instanceof Option.ButtonOption)
 								this.engine.setOption((Option.ButtonOption)e, null);
 							break;
 						}
@@ -230,8 +223,8 @@ public final class UCI implements Observer, Closeable {
 	@Override
 	public void update(Observable p1, Object p2)
 	{
-		if (p1 instanceof SearchInfo) {
-			SearchInfo stats = (SearchInfo)p1;
+		if (p1 instanceof SearchInformation) {
+			SearchInformation stats = (SearchInformation)p1;
 			String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
 			if (stats.getCurrentMove() != null) {
 				info += "currmove " + stats.getCurrentMove() + " ";
@@ -263,8 +256,8 @@ public final class UCI implements Observer, Closeable {
 			out.println(info);
 			out.println("info hashfull " + engine.getHashLoadPermill());
 		}
-		else if (p1 instanceof DebugInfo) {
-			DebugInfo debugInfo = (DebugInfo)p1;
+		else if (p1 instanceof DebugInformation) {
+			DebugInformation debugInfo = (DebugInformation)p1;
 			String content = debugInfo.getContent();
 			String[] lines = content.split("\\r?\\n");
 			for (String s : lines)

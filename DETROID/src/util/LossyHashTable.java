@@ -62,15 +62,15 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		// Ensuring all tables have prime lengths.
 		tL1 = tL2 = 0;
 		prim = new MillerRabin();
-		tL2 = prim.greatestLEPrime((long)(T2_SHARE*capacity));
-		if ((tL1 = prim.greatestLEPrime((long)(T1_SHARE*capacity))) == tL2) {
+		tL2 = prim.greatestLEPrime((long) (T2_SHARE*capacity));
+		if ((tL1 = prim.greatestLEPrime((long) (T1_SHARE*capacity))) == tL2) {
 			if (tL2 >= 3)
 				tL2 = prim.greatestLEPrime(tL2 - 1);
 			else
 				tL1 = prim.leastGEPrime(tL1 + 1);
 		}
-		t1 = (T[])new Entry[(int)tL1];
-		t2 = (T[])new Entry[(int)tL2];
+		t1 = (T[]) new Entry[(int) tL1];
+		t2 = (T[]) new Entry[(int) tL2];
 		this.capacity = t1.length + t2.length;
 	}
 	/**
@@ -104,7 +104,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		long altAbsKey, absKey = key & Long.MAX_VALUE;
 		slot1IsEmpty = slot2IsEmpty = true;
 		// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
-		if ((slot1 = t1[(ind1 = (int)(absKey%t1.length))]) != null) {
+		if ((slot1 = t1[(ind1 = (int) (absKey%t1.length))]) != null) {
 			if (key == slot1.hashKey()) {
 				if (e.compareTo(slot1) > 0) {
 					t1[ind1] = e;
@@ -114,7 +114,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 			}
 			slot1IsEmpty = false;
 		}
-		if ((slot2 = t2[(ind2 = (int)(absKey%t2.length))]) != null) {
+		if ((slot2 = t2[(ind2 = (int) (absKey%t2.length))]) != null) {
 			if (key == slot2.hashKey()) {
 				if (e.compareTo(slot2) > 0) {
 					t2[ind2] = e;
@@ -144,22 +144,20 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 			slot1 = slot2;
 			slot2 = temp;
 			slot1IsInT1 = false;
-		}
-		else
+		} else
 			slot1IsInT1 = true;
 		if (e.compareTo(slot1) > 0) {
 			altAbsKey = slot1.hashKey() & Long.MAX_VALUE;
 			if (slot1IsInT1) {
 				t1[ind1] = e;
 				// If the entry that is about to get pushed out's alternative slot is empty insert the entry there.
-				if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
+				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null) {
 					t2[altInd] = slot1;
 					load++;
 				}
-			}
-			else {
+			} else {
 				t2[ind2] = e;
-				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
+				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null) {
 					t1[altInd] = slot1;
 					load++;
 				}
@@ -170,14 +168,13 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 			altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
 			if (slot1IsInT1) {
 				t2[ind2] = e;
-				if (t1[(altInd = (int)(altAbsKey%t1.length))] == null) {
+				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null) {
 					t1[altInd] = slot2;
 					load++;
 				}
-			}
-			else {
+			} else {
 				t1[ind1] = e;
-				if (t2[(altInd = (int)(altAbsKey%t2.length))] == null) {
+				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null) {
 					t2[altInd] = slot2;
 					load++;
 				}
@@ -213,12 +210,12 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		int ind;
 		T e;
 		long absKey = key & Long.MAX_VALUE;
-		if ((e = t1[(ind = (int)(absKey%t1.length))]) != null && e.hashKey() == key) {
+		if ((e = t1[(ind = (int) (absKey%t1.length))]) != null && e.hashKey() == key) {
 			t1[ind] = null;
 			load--;
 			return true;
 		}
-		if ((e = t2[(ind = (int)(absKey%t2.length))]) != null && e.hashKey() == key) {
+		if ((e = t2[(ind = (int) (absKey%t2.length))]) != null && e.hashKey() == key) {
 			t2[ind] = null;
 			load--;
 			return true;
@@ -267,7 +264,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	@Override
 	public String toString() {
 		return "Load/Capacity: " + load + "/" + capacity + "; " +
-				String.format("Factor: %.1f", (load*100)/(double)capacity) + "%\n" +
-				String.format("Size: %.2fMB", SizeEstimator.getInstance().sizeOf(this)/(double)(1 << 20));
+				String.format("Factor: %.1f", (load*100)/(double) capacity) + "%\n" +
+				String.format("Size: %.2fMB", SizeEstimator.getInstance().sizeOf(this)/(double) (1 << 20));
 	}
 }

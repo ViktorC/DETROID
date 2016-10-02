@@ -61,8 +61,7 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 				return e.score - score;
 			else
 				return 1;
-		}
-		else
+		} else
 			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind ? 1 : -1;
 	}
 	/**

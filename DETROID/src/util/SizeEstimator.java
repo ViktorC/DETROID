@@ -53,8 +53,7 @@ public class SizeEstimator {
 				}
 			}
 			clazz = clazz.getSuperclass();
-		}
-		while (clazz != null);
+		} while (clazz != null);
 		return fields;
 	}
 	/**
@@ -149,8 +148,7 @@ public class SizeEstimator {
 						size += sizeOf(Array.get(o, i), visitedObjects);
 				}
 			}
-		}
-		else {
+		} else {
 			// OO header size.
 			size = SizeOf.MARK_WORD.numOfBytes + SizeOf.OBJECT_POINTER.numOfBytes;
 			fields = getNonStaticFields(clazz);

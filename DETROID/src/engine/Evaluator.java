@@ -37,7 +37,7 @@ final class Evaluator {
 		}
 	}
 	
-	private Parameters params;
+	private Params params;
 	
 	// The sum of the respective weights of pieces for assessing the game phase.
 	private final int TOTAL_PHASE_WEIGHTS;
@@ -81,7 +81,7 @@ final class Evaluator {
 	 * @param pawnTable
 	 * @param hashEntryGeneration
 	 */
-	Evaluator(Parameters params, LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, byte hashEntryGeneration) {
+	Evaluator(Params params, LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, byte hashEntryGeneration) {
 		this.params = params;
 		TOTAL_PHASE_WEIGHTS = 4*(params.KNIGHT_PHASE_WEIGHT + params.BISHOP_PHASE_WEIGHT + params.ROOK_PHASE_WEIGHT) + 2*params.QUEEN_PHASE_WEIGHT;
 		PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT = Math.min(phaseScore(0, 0, 2, 0), phaseScore(0, 0, 0, 2));
@@ -99,6 +99,16 @@ final class Evaluator {
 	 */
 	private void initPieceSquareArrays() {
 		int c1, c2;
+		byte[] PST_PAWN_OPENING = params.getPST_PAWN_OPENING();
+		byte[] PST_PAWN_ENDGAME = params.getPST_PAWN_ENDGAME();
+		byte[] PST_KNIGHT_OPENING = params.getPST_KNIGHT_OPENING();
+		byte[] PST_KNIGHT_ENDGAME = params.getPST_KNIGHT_ENDGAME();
+		byte[] PST_BISHOP = params.getPST_BISHOP();
+		byte[] PST_ROOK_OPENING = params.getPST_ROOK_OPENING();
+		byte[] PST_ROOK_ENDGAME = params.getPST_ROOK_ENDGAME();
+		byte[] PST_QUEEN = params.getPST_QUEEN();
+		byte[] PST_KING_OPENING = params.getPST_KING_OPENING();
+		byte[] PST_KING_ENDGAME = params.getPST_KING_ENDGAME();
 		PST_W_PAWN_OPENING = new byte[64];
 		PST_W_PAWN_ENDGAME = new byte[64];
 		PST_W_KNIGHT_OPENING = new byte[64];
@@ -122,32 +132,32 @@ final class Evaluator {
 		// Due to the reversed order of the rows in the definition of the white piece-square tables,
 		// they are just right for black with negated values.
 		for (int i = 0; i < 64; i++) {
-			PST_B_PAWN_OPENING[i] = (byte)-params.PST_PAWN_OPENING[i];
-			PST_B_PAWN_ENDGAME[i] = (byte)-params.PST_PAWN_ENDGAME[i];
-			PST_B_KNIGHT_OPENING[i] = (byte)-params.PST_KNIGHT_OPENING[i];
-			PST_B_KNIGHT_ENDGAME[i] = (byte)-params.PST_KNIGHT_ENDGAME[i];
-			PST_B_BISHOP[i] = (byte)-params.PST_BISHOP[i];
-			PST_B_ROOK_OPENING[i] = (byte)-params.PST_ROOK_OPENING[i];
-			PST_B_ROOK_ENDGAME[i] = (byte)-params.PST_ROOK_ENDGAME[i];
-			PST_B_QUEEN[i] = (byte)-params.PST_QUEEN[i];
-			PST_B_KING_OPENING[i] = (byte)-params.PST_KING_OPENING[i];
-			PST_B_KING_ENDGAME[i] = (byte)-params.PST_KING_ENDGAME[i];
+			PST_B_PAWN_OPENING[i] = (byte) -PST_PAWN_OPENING[i];
+			PST_B_PAWN_ENDGAME[i] = (byte) -PST_PAWN_ENDGAME[i];
+			PST_B_KNIGHT_OPENING[i] = (byte) -PST_KNIGHT_OPENING[i];
+			PST_B_KNIGHT_ENDGAME[i] = (byte) -PST_KNIGHT_ENDGAME[i];
+			PST_B_BISHOP[i] = (byte) -PST_BISHOP[i];
+			PST_B_ROOK_OPENING[i] = (byte) -PST_ROOK_OPENING[i];
+			PST_B_ROOK_ENDGAME[i] = (byte) -PST_ROOK_ENDGAME[i];
+			PST_B_QUEEN[i] = (byte) -PST_QUEEN[i];
+			PST_B_KING_OPENING[i] = (byte) -PST_KING_OPENING[i];
+			PST_B_KING_ENDGAME[i] = (byte) -PST_KING_ENDGAME[i];
 		}
 		// To get the right values for the white piece-square tables, we vertically mirror and negate the ones for black
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
 				c1 = i*8 + j;
 				c2 = ((7 - i)*8) + j;
-				PST_W_PAWN_OPENING[c1] = (byte)-PST_B_PAWN_OPENING[c2];
-				PST_W_PAWN_ENDGAME[c1] = (byte)-PST_B_PAWN_ENDGAME[c2];
-				PST_W_KNIGHT_OPENING[c1] = (byte)-PST_B_KNIGHT_OPENING[c2];
-				PST_W_KNIGHT_ENDGAME[c1] = (byte)-PST_B_KNIGHT_ENDGAME[c2];
-				PST_W_BISHOP[c1] = (byte)-PST_B_BISHOP[c2];
-				PST_W_ROOK_OPENING[c1] = (byte)-PST_B_ROOK_OPENING[c2];
-				PST_W_ROOK_ENDGAME[c1] = (byte)-PST_B_ROOK_ENDGAME[c2];
-				PST_W_QUEEN[c1] = (byte)-PST_B_QUEEN[c2];
-				PST_W_KING_OPENING[c1] = (byte)-PST_B_KING_OPENING[c2];
-				PST_W_KING_ENDGAME[c1] = (byte)-PST_B_KING_ENDGAME[c2];
+				PST_W_PAWN_OPENING[c1] = (byte) -PST_B_PAWN_OPENING[c2];
+				PST_W_PAWN_ENDGAME[c1] = (byte) -PST_B_PAWN_ENDGAME[c2];
+				PST_W_KNIGHT_OPENING[c1] = (byte) -PST_B_KNIGHT_OPENING[c2];
+				PST_W_KNIGHT_ENDGAME[c1] = (byte) -PST_B_KNIGHT_ENDGAME[c2];
+				PST_W_BISHOP[c1] = (byte) -PST_B_BISHOP[c2];
+				PST_W_ROOK_OPENING[c1] = (byte) -PST_B_ROOK_OPENING[c2];
+				PST_W_ROOK_ENDGAME[c1] = (byte) -PST_B_ROOK_ENDGAME[c2];
+				PST_W_QUEEN[c1] = (byte) -PST_B_QUEEN[c2];
+				PST_W_KING_OPENING[c1] = (byte) -PST_B_KING_OPENING[c2];
+				PST_W_KING_ENDGAME[c1] = (byte) -PST_B_KING_ENDGAME[c2];
 			}
 		}
 	}
@@ -212,8 +222,7 @@ final class Evaluator {
 				else if ((attackers = dB.getKingMoveSet(pos.whiteKing)) != 0) {
 					attackerVal = params.KING_VALUE;
 					kingVictVal = victimVal;
-				}
-				else
+				} else
 					break;
 				// If the king has attackers, the exchange is over and the king's victim's value is disregarded
 				if (victimVal == params.KING_VALUE) {
@@ -221,8 +230,7 @@ final class Evaluator {
 					break;
 				}
 				score += victimVal;
-			}
-			else {
+			} else {
 				if ((attackers = dB.getWhitePawnCaptureSet(pos.blackPawns) & occupied) != 0)
 					attackerVal = params.PAWN_VALUE;
 				else if ((attackers = dB.getKnightMoveSet(pos.blackKnights) & occupied) != 0)
@@ -236,8 +244,7 @@ final class Evaluator {
 				else if ((attackers = dB.getKingMoveSet(pos.blackKing)) != 0) {
 					attackerVal = params.KING_VALUE;
 					kingVictVal = victimVal;
-				}
-				else
+				} else
 					break;
 				if (victimVal == params.KING_VALUE) {
 					score += kingVictVal;
@@ -295,7 +302,7 @@ final class Evaluator {
 		Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.whiteBishops)).ordinal()%2 ==
 		Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
 			return true;
-		if (numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
+		if (numOfWhiteKnights == 0 && numOfBlackKnights == 0 && (numOfWhiteBishops + numOfBlackBishops) > 0) {
 			bishopSqrArr = BitOperations.serialize(pos.whiteBishops | pos.blackBishops);
 			bishopColor = Diagonal.getBySquareIndex(bishopSqrArr[0]).ordinal()%2;
 			for (byte bishopField : bishopSqrArr) {
@@ -435,8 +442,7 @@ final class Evaluator {
 				score += params.SHIELDING_PAWN_WEIGHT1;
 			score -= params.SHIELD_THREATENING_PAWN_WEIGHT*BitOperations.getHammingWeight((Square.G3.bit | Square.G4.bit | Square.H3.bit |
 					Square.H4.bit | Square.F3.bit | Square.F4.bit) & blackPawns);
-		}
-		else if (whiteKing == Square.A1.bit || whiteKing == Square.B1.bit || whiteKing == Square.C1.bit) {
+		} else if (whiteKing == Square.A1.bit || whiteKing == Square.B1.bit || whiteKing == Square.C1.bit) {
 			if ((whitePawns & Square.A2.bit) != 0)
 				score += params.SHIELDING_PAWN_WEIGHT2;
 			if ((whitePawns & Square.B2.bit) != 0)
@@ -463,8 +469,7 @@ final class Evaluator {
 				score -= params.SHIELDING_PAWN_WEIGHT1;
 			score += params.SHIELD_THREATENING_PAWN_WEIGHT*BitOperations.getHammingWeight((Square.G5.bit | Square.G6.bit | Square.H5.bit |
 					Square.H6.bit | Square.F5.bit | Square.F6.bit) & whitePawns);
-		}
-		else if (blackKing == Square.A8.bit || blackKing == Square.B8.bit || blackKing == Square.C8.bit) {
+		} else if (blackKing == Square.A8.bit || blackKing == Square.B8.bit || blackKing == Square.C8.bit) {
 			if ((blackPawns & Square.A7.bit) != 0)
 				score -= params.SHIELDING_PAWN_WEIGHT2;
 			if ((blackPawns & Square.B7.bit) != 0)
@@ -500,7 +505,7 @@ final class Evaluator {
 		}
 		score -= (params.KING_PAWN_TROPISM_WEIGHT*whiteTropism)/Math.max(1, numOfWhitePawns);
 		score += (params.KING_PAWN_TROPISM_WEIGHT*blackTropism)/Math.max(1, numOfBlackPawns);
-		return (short)score;
+		return (short) score;
 	}
 	/**
 	 * A static evaluation of the chess position from the color to move's point of view. It considers material imbalance, coverage, pawn structure,
@@ -700,8 +705,7 @@ final class Evaluator {
 			if (isWhitesTurn) {
 				if ((whitePawnAttacks & (1L << (pos.enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND))) != 0)
 					score += params.LIVE_EP_ADVANTAGE;
-			}
-			else {
+			} else {
 				if ((blackPawnAttacks & (1L << (pos.enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND))) != 0)
 					score += params.LIVE_EP_ADVANTAGE;
 			}
@@ -717,8 +721,7 @@ final class Evaluator {
 				if (pos.offsetBoard[Square.H1.ind] == Piece.W_ROOK.ind && (whiteKingMobility & Square.F1.bit) != 0 && (pos.allOccupied & Square.G1.bit) == 0 &&
 						(blackCoverage & Square.G1.bit) == 0)
 					whiteKingMobility |= Square.G1.bit;
-			}
-			else if ((pos.whiteCastlingRights == CastlingRights.LONG.ind || pos.whiteCastlingRights == CastlingRights.ALL.ind)) {
+			} else if ((pos.whiteCastlingRights == CastlingRights.LONG.ind || pos.whiteCastlingRights == CastlingRights.ALL.ind)) {
 				if (pos.offsetBoard[Square.A1.ind] == Piece.W_ROOK.ind && (whiteKingMobility & Square.D1.bit) != 0 &&
 						(pos.allOccupied & (Square.B1.bit | Square.C1.bit)) == 0 && (blackCoverage & Square.C1.bit) == 0)
 					whiteKingMobility |= Square.C1.bit;
@@ -729,8 +732,7 @@ final class Evaluator {
 				if (pos.offsetBoard[Square.H8.ind] == Piece.B_ROOK.ind && (blackKingMobility & Square.F8.bit) != 0 && (pos.allOccupied & Square.G8.bit) == 0 &&
 						(whiteCoverage & Square.G8.bit) == 0)
 					blackKingMobility |= Square.G8.bit;
-			}
-			else if ((pos.blackCastlingRights == CastlingRights.LONG.ind || pos.blackCastlingRights == CastlingRights.ALL.ind)) {
+			} else if ((pos.blackCastlingRights == CastlingRights.LONG.ind || pos.blackCastlingRights == CastlingRights.ALL.ind)) {
 				if (pos.offsetBoard[Square.A8.ind] == Piece.B_ROOK.ind && (blackKingMobility & Square.D8.bit) != 0 &&
 						(pos.allOccupied & (Square.B8.bit | Square.C8.bit)) == 0 && (whiteCoverage & Square.C8.bit) == 0)
 					blackKingMobility |= Square.C8.bit;
@@ -752,8 +754,7 @@ final class Evaluator {
 					whitePieceSet = 0;
 				else
 					blackPieceSet = 0;
-			}
-			else {
+			} else {
 				checker = BitOperations.indexOfLSBit(pos.checkers);
 				if (isWhitesTurn)
 					whiteMoveSetCheckRestriction = Bitboard.LINE_SEGMENTS[whiteKingInd][checker] | (1L << checker);
@@ -819,8 +820,7 @@ final class Evaluator {
 		if (!isWhitesTurn) {
 			score -= params.TEMPO_ADVANTAGE;
 			score *= -1;
-		}
-		else
+		} else
 			score += params.TEMPO_ADVANTAGE;
 		eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;

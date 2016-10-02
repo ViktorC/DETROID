@@ -120,8 +120,7 @@ final class MagicsGenerator {
 		if (rook) {
 			occVar = rookOccupancyVariations[sqrInd];
 			attVar = rookAttackSetVariations[sqrInd];
-		}
-		else {
+		} else {
 			occVar = bishopOccupancyVariations[sqrInd];
 			attVar = bishopAttackSetVariations[sqrInd];
 		}
@@ -162,8 +161,7 @@ final class MagicsGenerator {
 			} catch (InterruptedException | ExecutionException e) { num = 0; e.printStackTrace(); }
 			for (Future<Long> f : futures)
 				f.cancel(true);
-		}
-		else
+		} else
 			num = gen.apply(shift);
 		return new Magics(rook, (byte)sqrInd, num, (byte)shift);
 	}

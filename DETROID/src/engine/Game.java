@@ -1,9 +1,12 @@
 package engine;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+
+import uibase.GameState;
 
 /**
  * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.
@@ -12,39 +15,6 @@ import java.util.Date;
  *
  */
 class Game {
-	
-	
-	/**
-	 * A simple enum for game outcome types.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	enum State {
-		
-		IN_PROGRESS ("*"),
-		WHITE_WIN	("1-0"),
-		BLACK_WIN	("0-1"),
-		DRAW		("1/2-1/2");
-		
-		final String pgnNotation;
-		
-		private State(String pgnNotation) {
-			this.pgnNotation = pgnNotation;
-		}
-	}
-	/**
-	 * A simple enum for the two sides/colors in a chess game.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	enum Side {
-		
-		WHITE,
-		BLACK;
-		
-	}
 	
 	/**
 	 * The average number of full moves a chess game usually lasts.
@@ -59,7 +29,7 @@ class Game {
 	private int round;
 	private String whitePlayerName;
 	private String blackPlayerName;
-	private State state;
+	private GameState state;
 
 	/**
 	 * Parses a game in PGN notation and returns a Game instance.
@@ -130,16 +100,16 @@ class Game {
 			out.blackPlayerName = blackName;
 			switch (result) {
 				case "1-0":
-					out.state = State.WHITE_WIN;
+					pgn = pgn.replaceAll("1-0", "");
 					break;
 				case "0-1":
-					out.state = State.BLACK_WIN;
+					pgn = pgn.replaceAll("0-1", "");
 					break;
 				case "1/2-1/2":
-					out.state = State.DRAW;
+					pgn = pgn.replaceAll("1/2-1/2", "");
 					break;
 				case "*":
-					out.state = State.IN_PROGRESS;
+					pgn = pgn.replaceAll("*", "");
 					break;
 				default:
 					throw new ChessParseException();
@@ -152,9 +122,6 @@ class Game {
 			pgn = pgn.replaceAll(";[.]*\\n", "");
 			pgn = pgn.replaceAll("\\([^)]*\\)", "");
 			pgn = pgn.replaceAll("\\{[^\\}]*\\}", "");
-			if (out.state != State.IN_PROGRESS) {
-				pgn = pgn.replaceAll("(1/2-1/2)|(1-0)|(0-1)", "");
-			}
 			moveDescParts = pgn.split("[\\s]+");
 			for (String s : moveDescParts) {
 				if (!s.matches("^[0-9]+.$") && !s.matches("^\\$[0-9]+$"))
@@ -164,6 +131,7 @@ class Game {
 				move = out.position.parseSAN(sanString);
 				out.position.makeMove(move);
 			}
+			out.setState();
 		}
 		catch (Exception e) {
 			throw new ChessParseException(e);
@@ -237,8 +205,13 @@ class Game {
 		startPos = Position.START_POSITION_FEN;
 		date = new Date();
 		round = 1;
-		state = State.IN_PROGRESS;
+		state = GameState.IN_PROGRESS;
 	}
+	/**
+	 * Returns FEN string representing the starting position of the game.
+	 * 
+	 * @return
+	 */
 	String getStartPos() {
 		return startPos;
 	}
@@ -250,46 +223,118 @@ class Game {
 	Position getPosition() {
 		return position.deepCopy();
 	}
+	/**
+	 * Returns the name of the event the game takes/took place at.
+	 * 
+	 * @return
+	 */
 	String getEvent() {
 		return event;
 	}
+	/**
+	 * Returns the name of the site where the game takes/took place.
+	 * 
+	 * @return
+	 */
 	String getSite() {
 		return site;
 	}
+	/**
+	 * Returns the date when the game took place.
+	 * 
+	 * @return
+	 */
 	Date getDate() {
 		return date;
 	}
+	/**
+	 * Returns the round of the game.
+	 * 
+	 * @return
+	 */
 	int getRound() {
 		return round;
 	}
+	/**
+	 * Returns the white player's name.
+	 * 
+	 * @return
+	 */
 	String getWhitePlayerName() {
 		return whitePlayerName;
 	}
+	/**
+	 * Returns the black player's name.
+	 * 
+	 * @return
+	 */
 	String getBlackPlayerName() {
 		return blackPlayerName;
 	}
+	/**
+	 * Returns the side to move according to {@link #Side Side}.
+	 * 
+	 * @return
+	 */
 	Side getSideToMove() {
 		return position.isWhitesTurn ? Side.WHITE : Side.BLACK;
 	}
-	State getState() {
+	/**
+	 * Returns the game of the state according to {@link #uibase.GameState GameState}.
+	 * 
+	 * @return
+	 */
+	GameState getState() {
 		return state;
 	}
+	/**
+	 * Sets the event at which the game takes/took place.
+	 * 
+	 * @param event
+	 */
 	void setEvent(String event) {
 		this.event = event;
 	}
+	/**
+	 * Sets the site where the game takes/took place.
+	 * 
+	 * @param site
+	 */
 	void setSite(String site) {
 		this.site = site;
 	}
+	/**
+	 * Sets the name of the white player.
+	 * 
+	 * @param whitePlayerName
+	 */
 	void setWhitePlayerName(String whitePlayerName) {
 		this.whitePlayerName = whitePlayerName;
 	}
+	/**
+	 * Sets the name of the black player.
+	 * 
+	 * @param blackPlayerName
+	 */
 	void setBlackPlayerName(String blackPlayerName) {
 		this.blackPlayerName = blackPlayerName;
 	}
+	/**
+	 * Internally updates the state of the game. Should be called after a move has been successfully played.
+	 */
 	private void setState() {
-		state = position.getMoves().size() == 0 || position.fiftyMoveRuleClock >= 100 ||
-				position.getNumberOfRepetitions(0) >= 2 ?
-			position.isInCheck ? position.isWhitesTurn ? State.BLACK_WIN : State.WHITE_WIN : State.DRAW : State.IN_PROGRESS;
+		if (position.getMoves().size() == 0)
+			state = position.isInCheck ? position.isWhitesTurn ? GameState.BLACK_MATES : GameState.WHITE_MATES : GameState.STALE_MATE;
+		else {
+			if (Evaluator.isMaterialInsufficient(position))
+				state = GameState.DRAW_BY_INSUFFICIENT_MATERIAL;
+			else if (position.getNumberOfRepetitions(0) >= 2)
+				state = GameState.DRAW_BY_3_FOLD_REPETITION;
+			else if (position.fiftyMoveRuleClock >= 100)
+				state = GameState.DRAW_BY_50_MOVE_RULE;
+			else
+				state = GameState.IN_PROGRESS;
+		}
 	}
 	/**
 	 * Plays a move defined either in PACN or SAN on the board if legal.
@@ -323,19 +368,19 @@ class Game {
 		String moveListSAN = "";
 		boolean printRound = true;
 		int roundNum = 0;
-		ArrayList<Move> moves = new ArrayList<>();
-		for (Move move : position.getMoves()) {
-			moves.add(move);
+		ArrayDeque<Move> moves = new ArrayDeque<>();
+		for (Move move : position.moveList) {
+			moves.addFirst(move);
 			position.unmakeMove();
 		}
 		for (Move move : moves) {
 			if (printRound)
 				moveListSAN += ++roundNum + ". ";
+			if (roundNum%7 == 0 && printRound)
+				moveListSAN += "\n";
+			printRound = !printRound;
 			moveListSAN += position.toSAN(move) + " ";
 			position.makeMove(move);
-			printRound = !printRound;
-			if (roundNum%6 == 0 && printRound)
-				moveListSAN += "\n";
 		}
 		return moveListSAN;
 	}
@@ -344,10 +389,10 @@ class Game {
 	 */
 	@Override
 	public String toString() {
-		String pgn = "", date;
+		String pgn = "", date, result;
 		Calendar cal = Calendar.getInstance();
-		pgn += "[Event \"" + event == null ? "N/A" : event + "\"]\n";
-		pgn += "[Site \"" + site == null ? "N/A" : site + "\"]\n";
+		pgn += "[Event \"" + (event == null ? "N/A" : event) + "\"]\n";
+		pgn += "[Site \"" + (site == null ? "N/A" : site) + "\"]\n";
 		if (this.date == null)
 			date = "??";
 		else {
@@ -356,12 +401,34 @@ class Game {
 		}
 		pgn += "[Date \"" + date + "\"]\n";
 		pgn += "[Round \"" + round + "\"]\n";
-		pgn += "[White \"" + whitePlayerName == null ? "N/A" : whitePlayerName + "\"]\n";
-		pgn += "[Black \"" + blackPlayerName == null ? "N/A" : blackPlayerName + "\"]\n";
-		pgn += "[Result \"" + state.pgnNotation + "\"]\n";
+		pgn += "[White \"" + (whitePlayerName == null ? "N/A" : whitePlayerName) + "\"]\n";
+		pgn += "[Black \"" + (blackPlayerName == null ? "N/A" : blackPlayerName) + "\"]\n";
+		result = "";
+		if (state == GameState.IN_PROGRESS)
+			result = "*";
+		else if (state == GameState.WHITE_MATES)
+			result = "1-0";
+		else if (state == GameState.BLACK_MATES)
+			result = "0-1";
+		else
+			result = "1/2-1/2";
+		pgn += "[Result \"" + result + "\"]\n";
 		pgn += "[FEN \"" + startPos + "\"]\n";
 		pgn += "\n";
 		pgn += moveListToSAN();
 		return pgn;
+	}
+	
+	/**
+	 * A simple enum for the two sides/colors in a chess game.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	enum Side {
+		
+		WHITE,
+		BLACK;
+		
 	}
 }

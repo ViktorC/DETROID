@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="engine_GaviotaEGTB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gtb-att.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gtb-dec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gtb-probe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tbprobe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\wrap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\huffman\hzip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\liblzf\lzf_c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\liblzf\lzf_d.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\Alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\Bra86.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\LzFind.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\Lzma86Dec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\Lzma86Enc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\LzmaDec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\lzma\LzmaEnc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\deflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\infback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\inffast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\inflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\inftrees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\trees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\uncompr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\zcompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compression\zlib\zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sysport\sysport.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="engine_GaviotaEGTB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gtb-att.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gtb-dec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gtb-probe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gtb-types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="progname.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\wrap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\huffman\hzip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\liblzf\lzf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\liblzf\lzfP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\Alloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\Bra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\LzFind.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\LzFindMt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\LzHash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\Lzma86Dec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\Lzma86Enc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\LzmaDec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\LzmaEnc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\lzma\Types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\crc32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\inffast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\inffixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\zconf.in.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compression\zlib\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sysport\sysport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="jni.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

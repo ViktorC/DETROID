@@ -10,6 +10,7 @@ import java.util.Random;
  */
 public final class MillerRabin {
 	
+	// The default number of times the witness loop is run.
 	private static final int DEFAULT_ACCURACY = 7;
 	
 	private Random rand;
