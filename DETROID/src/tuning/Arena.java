@@ -28,6 +28,8 @@ public class Arena implements AutoCloseable {
 	private final static long TIMER_ADDITIONAL_DELAY = 10;
 	
 	private ControllerEngine controller;
+	private SingularTimer timer;
+	private Random rand;
 	private boolean doLog;
 	private Logger logger;
 	private long id;
@@ -43,10 +45,12 @@ public class Arena implements AutoCloseable {
 		this.controller = controller;
 		if (!this.controller.isInit())
 			this.controller.init();
+		timer = new SingularTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
 		doLog = logger != null;
 		if (doLog)
 			this.logger = logger;
-		id = (new Random(System.nanoTime())).nextLong();
+		rand = new Random(System.nanoTime());
+		id = rand.nextLong();
 	}
 	/**
 	 * Constructs an arena controlled by the specified engine.
@@ -78,7 +82,6 @@ public class Arena implements AutoCloseable {
 	 */
 	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame) {
 		MatchResult matchRes = new MatchResult();
-		SingularTimer timer = new SingularTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
 		games = Math.max(0, games);
 		timePerGame = Math.max(500, timePerGame);
 		if (!engine1.isInit())
@@ -91,7 +94,7 @@ public class Arena implements AutoCloseable {
 				"Games: " + games + " TC: " + timePerGame + "ms per Game\n\n");
 		timer.start();
 		timer.pause();
-		boolean engine1White = true;
+		boolean engine1White = rand.nextBoolean();
 		Games: for (int i = 0; i < games; i++, engine1White = !engine1White) {
 			String move = null;
 			long engine1Time = timePerGame;
@@ -177,7 +180,6 @@ public class Arena implements AutoCloseable {
 				engine2.play(move);
 				engine1Turn = !engine1Turn;
 			}
-			timer.cancel();
 			GameState state = controller.getGameState();
 			if (state == GameState.WHITE_MATES) {
 				if (engine1White)
@@ -224,11 +226,12 @@ public class Arena implements AutoCloseable {
 				}
 			}
 		}
-		timer.close();
+		timer.cancel();
 		return matchRes;
 	}
 	@Override
 	public void close() {
+		timer.close();
 		controller.quit();
 	}
 	
