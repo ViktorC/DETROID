@@ -49,6 +49,22 @@ public class SingularTimer implements AutoCloseable {
 		setDelay(delay);
 	}
 	/**
+	 * Returns whether the timer has been cancelled.
+	 * 
+	 * @return
+	 */
+	public boolean isCancelled() {
+		return cancel;
+	}
+	/**
+	 * Returns whether the timer is on pause.
+	 * 
+	 * @return
+	 */
+	public boolean isPuased() {
+		return pause;
+	}
+	/**
 	 * Returns whether the timer is still alive which means that it is either still waiting or
 	 * currently executing the delayed task.
 	 * 
@@ -121,12 +137,8 @@ public class SingularTimer implements AutoCloseable {
 	 * Starts the timer with the set parameters on a separate thread from a single thread fixed thread pool.
 	 * From the moment this method is invoked to the moment the execution of the delayed task finishes, the
 	 * timer is considered alive.
-	 * 
-	 * @throws IllegalStateException If it is attempted to be invoked while the timer is still alive.
 	 */
-	public synchronized void start() throws IllegalStateException {
-		if (isAlive)
-			throw new IllegalStateException("The start method cannot be invoked again on a SingularTimer instance that is still alive.");
+	public synchronized void start() {
 		isAlive = true;
 		cancel = false;
 		pool.submit(() -> {
@@ -135,10 +147,13 @@ public class SingularTimer implements AutoCloseable {
 					Thread.sleep(resolution);
 					while (pause && !cancel)
 						Thread.sleep(resolution);
-					if (cancel)
+					if (cancel) {
+						isAlive = false;
 						return;
+					}
 					ticks.decrementAndGet();
 				} catch (InterruptedException e) {
+					isAlive = false;
 					return;
 				}
 			}

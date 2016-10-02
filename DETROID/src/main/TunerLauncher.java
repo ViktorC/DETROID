@@ -12,14 +12,14 @@ import tuning.OptimizerObserver;
 public class TunerLauncher {
 
 	final static String LOG_FILE_PATH = "log.txt";
-	final static int CONCURRENCY = 2;
+	final static int CONCURRENCY = 1;
 	
 	public static void main(String[] args) {
 		OptimizerEngines[] engines = new OptimizerEngines[CONCURRENCY];
 		for (int i = 0; i < engines.length; i++)
 			engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
 		double[] probVector = OptimizerObserver.getLatestProbabilityVector(LOG_FILE_PATH);
-		EngineParameterOptimizer epo = new EngineParameterOptimizer(engines, 20, 1000, probVector, 80, 300, Logger.getAnonymousLogger());
+		EngineParameterOptimizer epo = new EngineParameterOptimizer(engines, 20, 800, probVector, 80, 300, Logger.getAnonymousLogger());
 		Logger logger = Logger.getAnonymousLogger();
 		try {
 			logger.addHandler(new FileHandler(LOG_FILE_PATH));
