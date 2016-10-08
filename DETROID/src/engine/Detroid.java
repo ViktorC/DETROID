@@ -208,7 +208,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		game = new Game();
 		options = new HashMap<>();
 		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
-		hashSize = new Option.SpinOption("Hash", Math.min(32, maxHashSize), 1, maxHashSize);
+		hashSize = new Option.SpinOption("Hash", Math.min(1, maxHashSize), 1, maxHashSize);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);

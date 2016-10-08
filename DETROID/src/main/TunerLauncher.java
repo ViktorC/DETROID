@@ -16,13 +16,13 @@ public class TunerLauncher {
 	
 	public static void main(String[] args) {
 		OptimizerEngines[] engines = new OptimizerEngines[CONCURRENCY];
-		for (int i = 0; i < engines.length; i++)
+		for (int i = 0; i < CONCURRENCY; i++)
 			engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
 		double[] probVector = OptimizerObserver.getLatestProbabilityVector(LOG_FILE_PATH);
-		EngineParameterOptimizer epo = new EngineParameterOptimizer(engines, 20, 800, probVector, 80, 300, Logger.getAnonymousLogger());
+		EngineParameterOptimizer epo = new EngineParameterOptimizer(engines, 50, 250, probVector, 100, 200, Logger.getAnonymousLogger());
 		Logger logger = Logger.getAnonymousLogger();
 		try {
-			logger.addHandler(new FileHandler(LOG_FILE_PATH));
+			logger.addHandler(new FileHandler(LOG_FILE_PATH, true));
 		} catch (SecurityException | IOException e) {
 			e.printStackTrace();
 		}

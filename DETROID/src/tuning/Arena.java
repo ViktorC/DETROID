@@ -77,13 +77,15 @@ public class Arena implements AutoCloseable {
 	 * @param engine2 Contender number two.
 	 * @param games The number of games to play. Should be an even number.
 	 * @param timePerGame The number of milliseconds each engine will have to make all their moves during the course of each game.
-	 * If it is less than 500, it will default to 500.
+	 * If it is less than 500, it will default to 250.
 	 * @return The results of the match.
 	 */
 	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame) {
-		MatchResult matchRes = new MatchResult();
+		int engine1Wins = 0;
+		int engine2Wins = 0;
+		int draws = 0;
 		games = Math.max(0, games);
-		timePerGame = Math.max(500, timePerGame);
+		timePerGame = Math.max(250, timePerGame);
 		if (!engine1.isInit())
 			engine1.init();
 		if (!engine2.isInit())
@@ -130,20 +132,18 @@ public class Arena implements AutoCloseable {
 						move = searchRes.getBestMove();
 						engine1Time -= ((System.nanoTime() - start)/1000000);
 						if (engine1Time <= 0 || !controller.play(move)) {
-							matchRes.engine2Wins++;
+							engine2Wins++;
 							if (doLog) logger.info("Arena: " + id + "\n" + "Engine2 WINS: " + (engine1Time <= 0 ? "Engine1 lost on time." :
 									"Engine1 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() + "\n" +
-									"STANDINGS: " + matchRes.engine1Wins + " - " + matchRes.draws + " - " +
-									matchRes.engine2Wins + "\n\n");
+									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 							continue Games;
 						}
 					} catch (Exception e) {
 						timer.pause();
-						matchRes.engine2Wins++;
+						engine2Wins++;
 						if (doLog) {
 							logger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost due to error.\n" +
-									"STANDINGS: " + matchRes.engine1Wins + " - " + matchRes.draws + " - " +
-									matchRes.engine2Wins + "\n\n");
+									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 						}
 						continue Games;
 					}
@@ -158,20 +158,18 @@ public class Arena implements AutoCloseable {
 						move = searchRes.getBestMove();
 						engine2Time -= ((System.nanoTime() - start)/1000000);
 						if (engine2Time <= 0 || !controller.play(move)) {
-							matchRes.engine1Wins++;
+							engine1Wins++;
 							if (doLog) logger.info("Arena: " + id + "\n" + "Engine1 WINS: " + (engine2Time <= 0 ? "Engine2 lost on time." :
 									"Engine2 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() + "\n" +
-									"STANDINGS: " + matchRes.engine1Wins + " - " + matchRes.draws + " - " +
-									matchRes.engine2Wins + "\n\n");
+									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 							continue Games;
 						}
 					} catch (Exception e) {
 						timer.pause();
-						matchRes.engine1Wins++;
+						engine1Wins++;
 						if (doLog) {
 							logger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost due to error.\n" +
-									"STANDINGS: " + matchRes.engine1Wins + " - " + matchRes.draws + " - " +
-									matchRes.engine2Wins + "\n\n");
+									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 						}
 						continue Games;
 					}
@@ -183,28 +181,26 @@ public class Arena implements AutoCloseable {
 			GameState state = controller.getGameState();
 			if (state == GameState.WHITE_MATES) {
 				if (engine1White)
-					matchRes.engine1Wins++;
+					engine1Wins++;
 				else
-					matchRes.engine2Wins++;
+					engine2Wins++;
 				if (doLog) logger.info("Arena: " + id + "\n" + (engine1White ? "Engine1 WINS: " : "Engine2 WINS: ") + "Check mate.\n" +
-						controller.toPGN() + "\n" + "STANDINGS: " + matchRes.engine1Wins + " - " + matchRes.draws + " - " +
-						matchRes.engine2Wins + "\n\n");
+						controller.toPGN() + "\n" + "STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 			}
 			else if (state == GameState.BLACK_MATES) {
 				if (engine1White)
-					matchRes.engine2Wins++;
+					engine2Wins++;
 				else
-					matchRes.engine1Wins++;
+					engine1Wins++;
 				if (doLog) logger.info("Arena: " + id + "\n" + (engine1White ? "Engine2 WINS: " : "Engine1 WINS: ") + "Check mate.\n" +
-						controller.toPGN() + "\n" + "STANDINGS: " + matchRes.engine1Wins + " - " + matchRes.draws + " - " +
-						matchRes.engine2Wins + "\n\n");
+						controller.toPGN() + "\n" + "STANDINGS: " + engine1Wins + " - "  + draws + " - " + engine2Wins + "\n\n");
 			}
 			else {
-				matchRes.draws++;
+				draws++;
 				if (doLog) {
 					String gameRes = "Arena: " + id + "\n" + "DRAW: ";
-					String pgnAndStandings = controller.toPGN() + "\n" + "STANDINGS: " + matchRes.engine1Wins + " - " +
-							matchRes.draws + " - " + matchRes.engine2Wins + "\n\n";
+					String pgnAndStandings = controller.toPGN() + "\n" + "STANDINGS: " + engine1Wins + " - " +
+							draws + " - " + engine2Wins + "\n\n";
 					String reason = "";
 					switch (state) {
 						case STALE_MATE:
@@ -227,53 +223,12 @@ public class Arena implements AutoCloseable {
 			}
 		}
 		timer.cancel();
-		return matchRes;
+		return new MatchResult(engine1Wins, engine2Wins, draws);
 	}
 	@Override
 	public void close() {
 		timer.close();
 		controller.quit();
-	}
-	
-	/**
-	 * An class for storing the results of a match between two engines.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	public final static class MatchResult {
-		
-		private int engine1Wins = 0;
-		private int engine2Wins = 0;
-		private int draws = 0;
-		
-		private MatchResult() {
-			
-		}
-		/**
-		 * Returns the number of times Engine 1 won.
-		 * 
-		 * @return
-		 */
-		public int getEngine1Wins() {
-			return engine1Wins;
-		}
-		/**
-		 * Returns the number of times Engine 2 won.
-		 * 
-		 * @return
-		 */
-		public int getEngine2Wins() {
-			return engine2Wins;
-		}
-		/**
-		 * Returns the number of times the two engines drew.
-		 * 
-		 * @return
-		 */
-		public int getDraws() {
-			return draws;
-		}
 	}
 
 }

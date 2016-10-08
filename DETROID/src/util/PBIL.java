@@ -49,9 +49,14 @@ public abstract class PBIL extends Observable {
 	private final double learningRate;
 	private final double negLearningRateAddition;
 	
-	private Individual fittestIndividual;
-	private int currentGeneration;
 	private double[] probabilityVector;
+	
+	private Individual allTimeFittestIndividual;
+	private Individual currentFittestIndividual;
+	private Individual currentLeastFitIndividual;
+	private int currentIndividualIndex;
+	private int currentGeneration;
+	private double averageCurrentGenerationFitness;
 	
 	/**
 	 * Constructs an instance with the specified optimization parameters.
@@ -88,7 +93,9 @@ public abstract class PBIL extends Observable {
 			if (initialProbabilityVector.length < genomeLength)
 				Arrays.fill(probabilityVector, initialProbabilityVector.length, genomeLength, 0.5d);
 		}
-		fittestIndividual = new Individual(null, Double.MIN_VALUE);
+		allTimeFittestIndividual = new Individual(null, -Double.MAX_VALUE);
+		currentFittestIndividual = new Individual();
+		currentLeastFitIndividual = new Individual();
 		this.genomeLength = genomeLength;
 		this.populationSize = populationSize;
 		this.generations = generations;
@@ -132,22 +139,20 @@ public abstract class PBIL extends Observable {
 		this(null, genomeLength, populationSize, generations);
 	}
 	/**
-	 * Returns the individual represented by its genome and fitness level that achieved the highest fitness score so
-	 * far during the optimization process. It returns null if {@link #optimize() optimze} has not been called on the
-	 * instance yet.
+	 * Returns the population size.
 	 * 
 	 * @return
 	 */
-	public Individual getFittestIndividual() {
-		return fittestIndividual;
+	public int getPopulationSize() {
+		return populationSize;
 	}
 	/**
-	 * Returns the current generation in the evolution.
+	 * Returns the total number of generations
 	 * 
 	 * @return
 	 */
-	public int getCurrentGeneration() {
-		return currentGeneration;
+	public int getGenerations() {
+		return generations;
 	}
 	/**
 	 * Returns a copy of the current probability vector. It returns null if {@link #optimize() optimze} has not been
@@ -159,24 +164,63 @@ public abstract class PBIL extends Observable {
 		return Arrays.copyOf(probabilityVector, probabilityVector.length);
 	}
 	/**
-	 * Sets the all time fittest individual according to the specified parameters and notifies the
-	 * observers.
+	 * Returns the individual represented by its genome and fitness level that achieved the highest fitness score so
+	 * far during the optimization process. It returns null if {@link #optimize() optimze} has not been called on the
+	 * instance yet.
 	 * 
-	 * @param fittestGenome
-	 * @param highestFitness
+	 * @return
 	 */
-	private void setFittestIndividual(String fittestGenome, double highestFitness) {
-		fittestIndividual = new Individual(fittestGenome, highestFitness);
-		setChanged();
-		notifyObservers();
+	public Individual getAllTimeFittestIndividual() {
+		return allTimeFittestIndividual;
 	}
 	/**
-	 * Sets the current generation according to the specified value and notifies the observers.
+	 * Returns the fittest individual represented by its genome and fitness level that achieved the highest fitness
+	 * score so far in the current generation. It returns null if {@link #optimize() optimze} has not been called on
+	 * the instance yet.
 	 * 
-	 * @param generation
+	 * @return
 	 */
-	private void setCurrentGeneration(int generation) {
-		currentGeneration = generation;
+	public Individual getCurrentFittestIndividual() {
+		return currentFittestIndividual;
+	}
+	/**
+	 * Returns the least fit individual represented by its genome and fitness level that achieved the lowest fitness
+	 * score so far in the current generation. It returns null if {@link #optimize() optimze} has not been called on
+	 * the instance yet.
+	 * 
+	 * @return
+	 */
+	public Individual getCurrentLeastFitIndividual() {
+		return currentLeastFitIndividual;
+	}
+	/**
+	 * Returns the index (starting from 1) of individual whose fitness level is currently being assessed.
+	 * 
+	 * @return
+	 */
+	public int getCurrentIndividualIndex() {
+		return currentIndividualIndex;
+	}
+	/**
+	 * Returns the index (starting from 1) of the current generation in the evolution.
+	 * 
+	 * @return
+	 */
+	public int getCurrentGenerationIndex() {
+		return currentGeneration;
+	}
+	/**
+	 * Returns the average fitness level of the current generation.
+	 * 
+	 * @return
+	 */
+	public double getAverageCurrentGenerationFitness() {
+		return averageCurrentGenerationFitness;
+	}
+	/**
+	 * Sets the status of the object to changed and notifies all observers.
+	 */
+	private void informObservers() {
 		setChanged();
 		notifyObservers();
 	}
@@ -194,28 +238,33 @@ public abstract class PBIL extends Observable {
 		Random rand = new Random(System.nanoTime());
 		// Evolution.
 		for (int i = prevGen; i < generations + prevGen; i++) {
-			setCurrentGeneration(i + 1);
-			Individual fittest = new Individual(null, Double.MIN_VALUE);
-			Individual leastFit = new Individual(null, Double.MAX_VALUE);
+			double cummulativeFitness = 0;
+			currentGeneration = i + 1;
+			averageCurrentGenerationFitness = 0;
+			currentFittestIndividual = new Individual(null, -Double.MAX_VALUE);
+			currentLeastFitIndividual = new Individual(null, Double.MAX_VALUE);
 			// Generate the new genomes and set up the new population.
 			String[] genomes = new String[populationSize];
 			for (int j = 0; j < populationSize; j++) {
+				currentIndividualIndex = j +1;
 				String genome = "";
 				for (int k = 0; k < genomeLength; k++)
 					genome += rand.nextDouble() < probabilityVector[k] ? "1" : "0";
 				genomes[j] = genome;
 				// Measure the individual's fitness
 				double fitness = fitnessFunction(genome);
+				cummulativeFitness += fitness;
+				averageCurrentGenerationFitness = cummulativeFitness/(j + 1);
 				// Find the genomes that produced the fittest and the least fit individuals.
-				if (fitness > fittest.fitness) {
-					fittest.genome = genome;
-					fittest.fitness = fitness;
-					if (fitness > fittestIndividual.fitness)
-						setFittestIndividual(genome, fitness);
-				} else if (fitness < leastFit.fitness) {
-					leastFit.genome = genome;
-					leastFit.fitness = fitness;
+				if (fitness > currentFittestIndividual.fitness) {
+					currentFittestIndividual = new Individual(genome, fitness);
+					if (fitness > allTimeFittestIndividual.fitness) {
+						allTimeFittestIndividual = currentFittestIndividual;
+					}
 				}
+				if (fitness < currentLeastFitIndividual.fitness)
+					currentLeastFitIndividual = new Individual(genome, fitness);
+				informObservers();
 			}
 			/*
 			 * Update the probability vector according to the fitness of the fittest and the least fit
@@ -226,10 +275,11 @@ public abstract class PBIL extends Observable {
 				 * At the points where the fittest genome's gene differs from the least fit genome's gene,
 				 * magnify the effect on the probability vector by the value of diffLearningRateAddition.
 				 */
-				double appliedLearningRate = leastFit.genome.charAt(j) == fittest.genome.charAt(j) ?
-						learningRate : learningRate + negLearningRateAddition;
+				double appliedLearningRate = (currentLeastFitIndividual.genome.charAt(j) == 
+						currentFittestIndividual.genome.charAt(j) ? learningRate : 
+						learningRate + negLearningRateAddition);
 				double newProbabilityVectorVal = probabilityVector[j]*(1d - appliedLearningRate) +
-						(fittest.genome.charAt(j) == '1' ? appliedLearningRate : 0d);
+						(currentFittestIndividual.genome.charAt(j) == '1' ? appliedLearningRate : 0d);
 				// Mutate the probability vector.
 				if (rand.nextDouble() < mutationProbability)
 					newProbabilityVectorVal = newProbabilityVectorVal*(1d - mutationShift) +
@@ -237,7 +287,7 @@ public abstract class PBIL extends Observable {
 				probabilityVector[j] = newProbabilityVectorVal;
 			}
 		}
-		return fittestIndividual;
+		return allTimeFittestIndividual;
 	}
 	/**
 	 * Measures the fitness of the genome. Higher values mean higher fitness levels. It is a crucial step,
@@ -256,9 +306,16 @@ public abstract class PBIL extends Observable {
 	 */
 	public final static class Individual {
 		
-		private String genome;
-		private double fitness;
+		private final String genome;
+		private final double fitness;
 		
+		/**
+		 * Constructs a default instance.
+		 */
+		private Individual() {
+			genome = null;
+			fitness = 0;
+		}
 		/**
 		 * Constructs an individual according to the specified parameters.
 		 * 

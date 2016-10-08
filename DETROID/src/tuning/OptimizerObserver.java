@@ -56,15 +56,21 @@ public class OptimizerObserver implements Observer {
 	@Override
 	public void update(Observable arg0, Object arg1) {
 		PBIL pbil = (PBIL) arg0;
-		String out = "------------------------------ Generation " + pbil.getCurrentGeneration() + "\n" +
+		String out = "------------------------------ Generation " + pbil.getCurrentGenerationIndex() + "\n" +
 				"Probability vector: {";
 		for (double prob : pbil.getProbabilityVector())
 			out += " " + prob + "d,";
 		if (out.endsWith(","))
 			out = out.substring(0, out.length() - 1);
 		out += " }\n";
-		out += "All time fittest individual: " + pbil.getFittestIndividual().getGenome() + "\n" +
-				"Highest fitness level: " + pbil.getFittestIndividual().getFitness() + "\n";
+		out += "All time fittest individual: " + pbil.getAllTimeFittestIndividual().getGenome() + "\n";
+		out += "All time highest fitness level: " + pbil.getAllTimeFittestIndividual().getFitness() + "\n";
+		out += "Current generation fittest individual: " + pbil.getCurrentFittestIndividual().getGenome() + "\n";
+		out += "Current generation highest fitness level: " + pbil.getCurrentFittestIndividual().getFitness() + "\n";
+		out += "Current generation least fit individual: " + pbil.getCurrentLeastFitIndividual().getGenome() + "\n";
+		out += "Current generation lowest fitness level: " + pbil.getCurrentLeastFitIndividual().getFitness() + "\n";
+		out += "Current generation average fitness level: " + pbil.getAverageCurrentGenerationFitness() + "\n";
+		out += "Current individual index " + pbil.getCurrentIndividualIndex() + "/" + pbil.getPopulationSize() + "\n";
 		logger.info(out);
 	}
 

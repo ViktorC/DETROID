@@ -7,7 +7,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import tuning.Arena.MatchResult;
 import uci.UCIEngine;
 import util.PBIL;
 
@@ -95,7 +94,7 @@ public class EngineParameterOptimizer extends PBIL implements AutoCloseable {
 	}
 	@Override
 	protected double fitnessFunction(String genome) {
-		double fitness = 0;
+		double fitness = Double.MIN_VALUE;
 		ArrayList<Future<MatchResult>> futures = new ArrayList<>(engines.length);
 		for (int i = 0; i < engines.length; i++) {
 			final int index = i;
@@ -113,7 +112,7 @@ public class EngineParameterOptimizer extends PBIL implements AutoCloseable {
 		for (Future<MatchResult> f : futures) {
 			try {
 				MatchResult res = f.get();
-				fitness += res.getEngine1Wins()*2 + res.getDraws();
+				fitness = Elo.calculateDifference(res);
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}
