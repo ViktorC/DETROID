@@ -44,8 +44,8 @@ public abstract class PBIL extends Observable {
 	private final double mutationShift;
 	private final double learningRate;
 	private final double negLearningRateAddition;
-	private String[] genomes;
 	private double[] probabilityVector;
+	private String[] genomes;
 	private Individual allTimeFittestIndividual;
 	private Individual currentFittestIndividual;
 	private Individual currentLeastFitIndividual;
@@ -197,6 +197,14 @@ public abstract class PBIL extends Observable {
 		return Arrays.copyOf(probabilityVector, probabilityVector.length);
 	}
 	/**
+	 * Returns a copy of the current set of genomes making up the population of the generation.
+	 * 
+	 * @return
+	 */
+	public String[] getGenomes() {
+		return Arrays.copyOf(genomes, genomes.length);
+	}
+	/**
 	 * Returns the individual represented by its genome and fitness level that achieved the highest fitness score so
 	 * far during the optimization process. It returns null if {@link #optimize() optimze} has not been called on the
 	 * instance yet.
@@ -278,7 +286,7 @@ public abstract class PBIL extends Observable {
 	/**
 	 * An implementation of the Population-based Incremental Learning algorithm which optimizes
 	 * a string of binary digits representing parameters to a system according to the instance's
-	 * constructor parameters. It this method is invoked on an instance for the second time, it
+	 * constructor parameters. If this method is invoked on an instance for the second time, it
 	 * will continue the optimization where the first method call left off. For starting anew, a
 	 * new instance needs to be created.
 	 * 
@@ -291,14 +299,15 @@ public abstract class PBIL extends Observable {
 			averageCurrentGenerationFitness = 0;
 			currentFittestIndividual = new Individual(null, -Double.MAX_VALUE);
 			currentLeastFitIndividual = new Individual(null, Double.MAX_VALUE);
-			// For each individual in the population...
+			// Generate the new population by generating the genomes using the probability vector.
 			for (; currentIndividualIndex < populationSize; currentIndividualIndex++) {
-				// Generate the new genome.
 				String genome = "";
 				for (int k = 0; k < genomeLength; k++)
 					genome += rand.nextDouble() < probabilityVector[k] ? "1" : "0";
 				genomes[currentIndividualIndex] = genome;
-				// Measure the fitness level.
+			}
+			// Measure the fitness of each individual in the population.
+			for (String genome : genomes) {
 				double fitness = fitnessFunction(genome);
 				averageCurrentGenerationFitness = (currentIndividualIndex*averageCurrentGenerationFitness + fitness)/
 						(currentIndividualIndex + 1);
@@ -334,7 +343,7 @@ public abstract class PBIL extends Observable {
 				probabilityVector[j] = newProbabilityVectorVal;
 			}
 			currentGeneration++;
-			// Break if the evolution has reached the desired stage.
+			// Exit if the evolution has reached the desired stage.
 			if (isOptimized()) {
 				informObservers();
 				break;
