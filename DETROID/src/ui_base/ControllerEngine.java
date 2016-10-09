@@ -1,4 +1,4 @@
-package uibase;
+package ui_base;
 
 import uci.UCIEngine;
 

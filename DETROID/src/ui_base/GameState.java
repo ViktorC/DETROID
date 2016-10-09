@@ -1,4 +1,4 @@
-package uibase;
+package ui_base;
 
 /**
  * All the different states a chess game can have disregarding time control.

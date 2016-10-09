@@ -5,15 +5,15 @@ import java.util.logging.Logger;
 
 import uci.SearchResults;
 import uci.UCIEngine;
-import uibase.ControllerEngine;
-import uibase.GameState;
+import ui_base.ControllerEngine;
+import ui_base.GameState;
 import util.SingularTimer;
 
 /**
  * A class for pitting two UCI compatible engines against each other, supervised by a controller engine.
  * 
  * @see uci.UCIEngine
- * @see uibase.ControllerEngine
+ * @see ui_base.ControllerEngine
  * @author Viktor
  *
  */
