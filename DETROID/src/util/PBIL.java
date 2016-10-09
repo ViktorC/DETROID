@@ -296,9 +296,6 @@ public abstract class PBIL extends Observable {
 		Random rand = new Random(System.nanoTime());
 		// Evolution.
 		while (true) {
-			averageCurrentGenerationFitness = 0;
-			currentFittestIndividual = new Individual(null, -Double.MAX_VALUE);
-			currentLeastFitIndividual = new Individual(null, Double.MAX_VALUE);
 			// Generate the new population by generating the genomes using the probability vector.
 			for (; currentIndividualIndex < populationSize; currentIndividualIndex++) {
 				String genome = "";
@@ -306,6 +303,9 @@ public abstract class PBIL extends Observable {
 					genome += rand.nextDouble() < probabilityVector[k] ? "1" : "0";
 				genomes[currentIndividualIndex] = genome;
 			}
+			averageCurrentGenerationFitness = 0;
+			currentFittestIndividual = new Individual(null, -Double.MAX_VALUE);
+			currentLeastFitIndividual = new Individual(null, Double.MAX_VALUE);
 			// Measure the fitness of each individual in the population.
 			for (String genome : genomes) {
 				double fitness = fitnessFunction(genome);
