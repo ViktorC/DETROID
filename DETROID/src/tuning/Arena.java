@@ -1,13 +1,17 @@
 package tuning;
 
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import uci.SearchResults;
 import uci.UCIEngine;
 import ui_base.ControllerEngine;
 import ui_base.GameState;
-import util.SingularTimer;
 
 /**
  * A class for pitting two UCI compatible engines against each other, supervised by a controller engine.
@@ -24,11 +28,8 @@ public class Arena implements AutoCloseable {
 	 */
 	public final static String EVENT = "Viktor Csomor's Chess Arena";
 	
-	private final static long TIMER_RESOLUTION = 15;
-	private final static long TIMER_ADDITIONAL_DELAY = 10;
-	
 	private ControllerEngine controller;
-	private SingularTimer timer;
+	private ExecutorService pool;
 	private Random rand;
 	private boolean doLog;
 	private Logger logger;
@@ -45,7 +46,7 @@ public class Arena implements AutoCloseable {
 		this.controller = controller;
 		if (!this.controller.isInit())
 			this.controller.init();
-		timer = new SingularTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
+		pool = Executors.newCachedThreadPool();
 		doLog = logger != null;
 		if (doLog)
 			this.logger = logger;
@@ -94,8 +95,6 @@ public class Arena implements AutoCloseable {
 				"Arena: " + id + "\n" +
 				"Engine1: " + engine1.getName() + " - Engine2: " + engine2.getName() + "\n" +
 				"Games: " + games + " TC: " + timePerGame + "ms per Game\n\n");
-		timer.start();
-		timer.pause();
 		boolean engine1White = rand.nextBoolean();
 		Games: for (int i = 0; i < games; i++, engine1White = !engine1White) {
 			String move = null;
@@ -114,63 +113,82 @@ public class Arena implements AutoCloseable {
 				controller.setSite("?");
 			}
 			while (controller.getGameState() == GameState.IN_PROGRESS) {
-				if (!timer.isAlive()) {
-					timer.setDelay(Long.MAX_VALUE);
-					timer.start();
-					timer.pause();
-				}
-				long start = System.nanoTime();
+				long start = System.currentTimeMillis();
 				move = null;
 				if (engine1Turn) {
 					try {
-						timer.setCallBack(() -> engine1.stop());
-						timer.setDelay(engine1Time + TIMER_ADDITIONAL_DELAY);
-						timer.goOn();
-						SearchResults searchRes = engine1.search(null, false, engine1White ? engine1Time : engine2Time, engine1White ?
-								engine2Time : engine1Time, null, null, null, null, null, null, null, null);
-						timer.pause();
-						move = searchRes.getBestMove();
-						engine1Time -= ((System.nanoTime() - start)/1000000);
-						if (engine1Time <= 0 || !controller.play(move)) {
-							engine2Wins++;
-							if (doLog) logger.info("Arena: " + id + "\n" + "Engine2 WINS: " + (engine1Time <= 0 ? "Engine1 lost on time." :
-									"Engine1 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() + "\n" +
-									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
-							continue Games;
-						}
-					} catch (Exception e) {
-						timer.pause();
+						move = pool.submit(() -> engine1.search(null, false, engine1White ? engine1Time : engine2Time, engine1White ?
+								engine2Time : engine1Time, null, null, null, null, null, null, null, null).getBestMove())
+								.get(engine1Time, TimeUnit.MILLISECONDS);
+					} catch (TimeoutException e) {
+						engine1.stop();
+						engine2Wins++;
+						if (doLog) logger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost on time.\n" + controller.toPGN() +
+								"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						continue Games;
+					} catch (ExecutionException e) {
 						engine2Wins++;
 						if (doLog) {
-							logger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost due to error.\n" +
+							logger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost due to error.\n" + controller.toPGN() +
+									"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						}
+						continue Games;
+					} catch (InterruptedException e) {
+						if (doLog) {
+							logger.info("Arena: " + id + "\n" + "Match interrupted.\n" + controller.toPGN() + "\n" +
 									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 						}
+						break Games;
+					}
+					engine1Time -= (System.currentTimeMillis() - start);
+					if (engine1Time <= 0) {
+						engine1.stop();
+						engine2Wins++;
+						if (doLog) logger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost on time.\n" + controller.toPGN() +
+								"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						continue Games;
+					} else if (move == null || !controller.play(move)) {
+						engine2Wins++;
+						if (doLog) logger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 returned an illegal move: " + move + "." +
+								"\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 						continue Games;
 					}
 				} else {
 					try {
-						timer.setCallBack(() -> engine2.stop());
-						timer.setDelay(engine2Time + TIMER_ADDITIONAL_DELAY);
-						timer.goOn();
-						SearchResults searchRes = engine2.search(null, false, engine1White ? engine1Time : engine2Time, engine1White ?
-								engine2Time : engine1Time, null, null, null, null, null, null, null, null);
-						timer.pause();
-						move = searchRes.getBestMove();
-						engine2Time -= ((System.nanoTime() - start)/1000000);
-						if (engine2Time <= 0 || !controller.play(move)) {
-							engine1Wins++;
-							if (doLog) logger.info("Arena: " + id + "\n" + "Engine1 WINS: " + (engine2Time <= 0 ? "Engine2 lost on time." :
-									"Engine2 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() + "\n" +
-									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
-							continue Games;
-						}
-					} catch (Exception e) {
-						timer.pause();
+						move = pool.submit(() -> engine2.search(null, false, engine1White ? engine1Time : engine2Time, engine1White ?
+								engine2Time : engine1Time, null, null, null, null, null, null, null, null).getBestMove())
+								.get(engine1Time, TimeUnit.MILLISECONDS);
+					} catch (TimeoutException e) {
+						engine2.stop();
+						engine1Wins++;
+						if (doLog) logger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost on time.\n" + controller.toPGN() +
+								"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						continue Games;
+					} catch (ExecutionException e) {
 						engine1Wins++;
 						if (doLog) {
-							logger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost due to error.\n" +
+							logger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost due to error.\n" + controller.toPGN() +
+									"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						}
+						continue Games;
+					} catch (InterruptedException e) {
+						if (doLog) {
+							logger.info("Arena: " + id + "\n" + "Match interrupted.\n" + controller.toPGN() + "\n" +
 									"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 						}
+						break Games;
+					}
+					engine2Time -= (System.currentTimeMillis() - start);
+					if (engine2Time <= 0) {
+						engine2.stop();
+						engine1Wins++;
+						if (doLog) logger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost on time.\n" + controller.toPGN() +
+								"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						continue Games;
+					} else if (move == null || !controller.play(move)) {
+						engine1Wins++;
+						if (doLog) logger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 returned an illegal move: " + move + "." +
+								"\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
 						continue Games;
 					}
 				}
@@ -222,13 +240,12 @@ public class Arena implements AutoCloseable {
 				}
 			}
 		}
-		timer.cancel();
 		return new MatchResult(engine1Wins, engine2Wins, draws);
 	}
 	@Override
 	public void close() {
-		timer.close();
 		controller.quit();
+		pool.shutdown();
 	}
 
 }

@@ -20,7 +20,8 @@ import java.util.Arrays;
  * for writing the contents of an instance to a file or reading, parsing, and setting the fields of an instance based on such a file. It is also possible
  * to retrieve a binary string that represents the genotype of the instance with each field's value gray coded and concatenated into a binary string. A
  * string like that can be then used to initilaize instances with the same procedure reversed. Fields of the subclasses can be annotated with the
- * {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the number of bits to consider when tuning the parameter.
+ * {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the number of bits to consider when tuning the parameter. Even though floating
+ * points are allowed, their use is discouraged as it makes convergence less likely during optimization.
  * 
  * WARNING: It only supports non-static primitive fields declared in its subclasses! All other fields need to be marked transient or a
  * {@link #ClassFormatError ClassFormatError} is thrown by the constructor. When initializing from a file, transient fields will still be set if
