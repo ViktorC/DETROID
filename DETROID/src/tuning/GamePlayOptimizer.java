@@ -54,8 +54,8 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
 			double[] initialProbabilityVector, int populationSize, Logger logger)
 					throws NullPointerException {
-		super(initialProbabilityVector, engines[0].getTunableEngine().getParameters().toGrayCodeString().length(),
-				populationSize, logger);
+		super(engines[0].getTunableEngine().getParameters().toGrayCodeString().length(), populationSize, null, null, null, null, null,
+				initialProbabilityVector, logger);
 		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
 		for (OptimizerEngines e : engines) {
 			if (e != null)

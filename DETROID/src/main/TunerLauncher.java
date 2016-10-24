@@ -20,7 +20,7 @@ public class TunerLauncher {
 		engines[0].init();
 		Logger logger = Logger.getAnonymousLogger();
 		logger.addHandler(new FileHandler("log", true));
-		StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, "fens", -0.003, logger);
+		StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, 65536, "fens", -0.003, logger);
 		optimizer.train();
 		try {
 			optimizer.close();

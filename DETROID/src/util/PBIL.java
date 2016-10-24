@@ -9,46 +9,66 @@ import java.util.logging.Logger;
  * by strings of binary digits. The fitness of the individuals in each population is measured by the abstract method
  * {@link #fitnessFunction(String) fitnessFunction} which must be implemented.
  * 
+ * PBIL: http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.61.8554
+ * 
  * @author Viktor
  * 
  */
 public abstract class PBIL {
 	
 	/**
+	 * The default number of genotypes generated per generation.
+	 */
+	protected final static int POPULATION_SIZE = 100;
+	/**
 	 * The default probability of mutation applied to the probability vector.
 	 */
-	public final static double MUTATION_PROBABILITY = 0.02d;
+	protected final static double MUTATION_PROBABILITY = 0.02d;
 	/**
 	 * The default amount of mutation applied to the probability vector.
 	 */
-	public final static double MUTATION_SHIFT = 0.05d;
+	protected final static double MUTATION_SHIFT = 0.05d;
 	/**
 	 * The default learning rate.
 	 */
-	public final static double LEARNING_RATE = 0.1d;
+	protected final static double LEARNING_RATE = 0.1d;
 	/**
 	 * The default additional learning rate from 'negative' experience.
 	 */
-	public final static double NEGATIVE_LEARNING_RATE = 0.025d;
-	/**
-	 * The value used for the generation field in case no limit has been specified.
-	 */
-	protected final static int NO_GENERATION_CAP = -1;
+	protected final static double NEGATIVE_LEARNING_RATE = 0.025d;
 	
 	protected final int genotypeLength;
 	protected final int populationSize;
-	protected final int generations;
 	protected final double mutationProbability;
 	protected final double mutationShift;
 	protected final double learningRate;
 	protected final double negLearningRateAddition;
-	protected double[] probabilityVector;
+	protected final Integer generations;
+	protected final double[] probabilityVector;
 	
 	protected final Logger logger;
 	
 	/**
 	 * Constructs an instance with the specified optimization parameters.
 	 * 
+	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
+	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
+	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
+	 * @param populationSize The number of genotypes to produce per generation. If it is null, a 
+	 * default value of 100 will be used.
+	 * @param mutationProbability The probability of mutation for each gene. If it is null, a default 
+	 * value of 0.02 will be used.
+	 * @param mutationShift The effect of mutation on the probability vector. If it is null, a default 
+	 * value of 0.05 will be used.
+	 * @param learningRate The effect the fittest specimen's genotype has on the probability vector. If 
+	 * it is null a default value of 0.1 will be used.
+	 * @param negLearningRateAddition The additional effect the fittest specimen's genes have on
+	 * the probability vector at the points where they differ from those of the least fit specimen
+	 * in the population.  If it is null a default value of 0.025 will be used.
+	 * @param generations The number of iterations. If it is null, the set will be considered optimized, 
+	 * and thus the process will terminate, when all the elements of the probability vector have converged 
+	 * to 0 or 1 within a margin dependent on the population size [1/populationSize]. If an initial 
+	 * probability vector is provided and it already converged, no further optimization will be performed.
 	 * @param initialProbabilityVector The starting probability vector for the optimization.
 	 * It allows the algorithm to pick up where a previous, terminated optimization process
 	 * left off. If the array's length is smaller than genomeLength, it will be extended with
@@ -56,23 +76,12 @@ public abstract class PBIL {
 	 * the first x elements will be considered, where x = genomeLength. If it is null, an array
 	 * with a length equal to genomeLength, only containing elements that have the value 0.5d
 	 * will be used.
-	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
-	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
-	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
-	 * @param populationSize The number of samples to produce per generation.
-	 * @param generations The number of iterations.
-	 * @param mutationProbability The probability of mutation for each gene.
-	 * @param mutationShift The effect of mutation on the probability vector.
-	 * @param learningRate The effect the fittest specimen's genotype has on the probability vector.
-	 * @param negLearningRateAddition The additional effect the fittest specimen's genes have on
-	 * the probability vector at the points where they differ from those of the least fit specimen
-	 * in the population.
 	 * @param logger The logger used to log the current status of the optimization process. If it is 
 	 * null, no logging is performed.
+	 * @throws IllegalArgumentException
 	 */
-	protected PBIL(double[] initialProbabilityVector, int genotypeLength, int populationSize, int generations,
-			double mutationProbability, double mutationShift, double learningRate, double negLearningRateAddition,
-			Logger logger) {
+	protected PBIL(int genotypeLength, Integer populationSize, Double mutationProbability, Double mutationShift, Double learningRate,
+			Double negLearningRateAddition, Integer generations, double[] initialProbabilityVector, Logger logger) throws IllegalArgumentException {
 		if (genotypeLength <= 0)
 			throw new IllegalArgumentException("The value of genomeLength has to be greater than 0.");
 		if (initialProbabilityVector == null) {
@@ -85,97 +94,18 @@ public abstract class PBIL {
 				Arrays.fill(probabilityVector, initialProbabilityVector.length, genotypeLength, 0.5d);
 		}
 		this.genotypeLength = genotypeLength;
-		this.populationSize = populationSize;
+		this.populationSize = (populationSize == null ? POPULATION_SIZE : populationSize);
+		this.mutationProbability = (mutationProbability == null ? MUTATION_PROBABILITY : mutationProbability);
+		this.mutationShift = (mutationShift == null ? MUTATION_SHIFT : mutationShift);
+		this.learningRate = (learningRate == null ? LEARNING_RATE : learningRate);
+		this.negLearningRateAddition = (negLearningRateAddition == null ? NEGATIVE_LEARNING_RATE : negLearningRateAddition);
 		this.generations = generations;
-		this.mutationProbability = mutationProbability;
-		this.mutationShift = mutationShift;
-		this.learningRate = learningRate;
-		this.negLearningRateAddition = negLearningRateAddition;
 		this.logger = logger;
-	}
-	/**
-	 * Constructs an instance for the specified initial probability vector, genotype length, population size, and number of
-	 * generations with the default optimization parameters.
-	 * 
-	 * @param initialProbabilityVector The starting probability vector for the optimization.
-	 * It allows the algorithm to pick up where a previous, terminated optimization process
-	 * left off. If the array's length is smaller than genomeLength, it will be extended with
-	 * elements of the value 0.5d; if the length of the array is greater than genomeLength, only
-	 * the first x elements will be considered, where x = genomeLength. If it is null, an array
-	 * with a length equal to genomeLength, only containing elements that have the value 0.5d
-	 * will be used.
-	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
-	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
-	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
-	 * @param populationSize The number of samples to produce per generation.
-	 * @param generations The number of iterations.
-	 * @param logger The logger used to log the current status of the optimization process. If it is 
-	 * null, no logging is performed.
-	 */
-	protected PBIL(double[] initialProbabilityVector, int genotypeLength, int populationSize, int generations, Logger logger) {
-		this(initialProbabilityVector, genotypeLength, populationSize, generations, MUTATION_PROBABILITY,
-				MUTATION_SHIFT, LEARNING_RATE, NEGATIVE_LEARNING_RATE, logger);
-	}
-	/**
-	 * Constructs an instance for the specified initial probability vector, genotype length, population size, and number
-	 * of generations with the default optimization parameters. The set will be considered optimized, and thus the
-	 * process will terminate, when all the elements of the probability vector have converged to 0 or 1 within a margin
-	 * dependent on the population size [1/populationSize]. If the initial probability vector is already converged, no
-	 * further optimization will be performed.
-	 * 
-	 * @param initialProbabilityVector The starting probability vector for the optimization.
-	 * It allows the algorithm to pick up where a previous, terminated optimization process
-	 * left off. If the array's length is smaller than genomeLength, it will be extended with
-	 * elements of the value 0.5d; if the length of the array is greater than genomeLength, only
-	 * the first x elements will be considered, where x = genomeLength. If it is null, an array
-	 * with a length equal to genomeLength, only containing elements that have the value 0.5d
-	 * will be used.
-	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
-	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
-	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
-	 * @param populationSize The number of samples to produce per generation.
-	 * @param logger The logger used to log the current status of the optimization process. If it is 
-	 * null, no logging is performed.
-	 */
-	protected PBIL(double[] initialProbabilityVector, int genotypeLength, int populationSize, Logger logger) {
-		this(initialProbabilityVector, genotypeLength, populationSize, NO_GENERATION_CAP, MUTATION_PROBABILITY,
-				MUTATION_SHIFT, LEARNING_RATE, NEGATIVE_LEARNING_RATE, logger);
-	}
-	/**
-	 * Constructs an instance for the specified genotype length, population size, and number of generations with the default
-	 * optimization parameters.
-	 * 
-	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
-	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
-	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
-	 * @param populationSize The number of samples to produce per generation.
-	 * @param generations The number of iterations.
-	 * @param logger The logger used to log the current status of the optimization process. If it is 
-	 * null, no logging is performed.
-	 */
-	protected PBIL(int genotypeLength, int populationSize, int generations, Logger logger) {
-		this(null, genotypeLength, populationSize, generations, logger);
-	}
-	/**
-	 * Constructs an instance for the specified genotype length and population size with the default optimization parameters.
-	 * The set will be considered optimized, and thus the process will terminate, when all the elements of the probability
-	 * vector have converged to 0 or 1 within a margin dependent on the population size [1/populationSize].
-	 * 
-	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
-	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
-	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
-	 * @param populationSize The number of samples to produce per generation.
-	 * @param generations The number of iterations.
-	 * @param logger The logger used to log the current status of the optimization process. If it is 
-	 * null, no logging is performed.
-	 */
-	protected PBIL(int genotypeLength, int populationSize, Logger logger) {
-		this(null, genotypeLength, populationSize, NO_GENERATION_CAP, logger);
 	}
 	/**
 	 * Returns the Shannon entropy of the current generation of genotypes.
 	 * 
-	 * @return
+	 * @return The Shannon entropy of the current generation of genotypes
 	 */
 	public final double getEntropy() {
 		double entropy = 0;
@@ -188,11 +118,11 @@ public abstract class PBIL {
 	 * none was defined, whether all the elements of the probability vector have converged to
 	 * either 0 or 1.
 	 * 
-	 * @param currentGeneration
+	 * @param currentGeneration The current generation count.
 	 * @return Whether the loop can be broken or not.
 	 */
 	private final boolean isOptimized(int currentGeneration) {
-		if (generations == NO_GENERATION_CAP) {
+		if (generations == null) {
 			for (double e : probabilityVector) {
 				if (e > 1d/populationSize && e < 1d - 1d/populationSize)
 					return false;
@@ -206,7 +136,7 @@ public abstract class PBIL {
 	 * a string of binary digits representing parameters to a system according to the instance's
 	 * constructor parameters.
 	 * 
-	 * @return The fittest individual.
+	 * @return The fittest genotype.
 	 */
 	public final synchronized String optimize() {
 		Random rand = new Random(System.nanoTime());

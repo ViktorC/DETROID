@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import util.SGD;
+import util.ASGD;
 
 /**
  * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent algorithm 
@@ -30,16 +30,12 @@ import util.SGD;
  * @author Viktor
  *
  */
-public class StaticEvaluationOptimizer extends SGD implements AutoCloseable {
+public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 
 	/**
-	 * The step size for the gradient descent.
+	 * The base step size for the gradient descent.
 	 */
-	private static final double LEARNING_RATE = 5000000;
-	/**
-	 * The sizes of the mini batches.
-	 */
-	private static final int SAMPLE_SIZE = 8192;
+	private static final double BASE_LEARNING_RATE = 500000000;
 	
 	private final TunableEngine[] engines;
 	private final double k;
@@ -56,6 +52,8 @@ public class StaticEvaluationOptimizer extends SGD implements AutoCloseable {
 	 * parallel on four threads. If the array or its first element are null or the method {@link 
 	 * #uci.UCIEngine.init() init} hasn't been called on the first element, a {@link 
 	 * #NullPointerException NullPointerException} is thrown.
+	 * @param sampleSize The number of positions to include in one mini-batch. The higher this number
+	 * is, the slower but more stable the convergence will be.
 	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
 	 * If it doesn't exist an {@link #IOException IOException} is thrown.
 	 * @param k A scaling constant for the sigmoid function used calculate the average error.
@@ -64,9 +62,9 @@ public class StaticEvaluationOptimizer extends SGD implements AutoCloseable {
 	 * @throws NullPointerException If the parameter engines is null or its first element is
 	 * null.
 	 */
-	public StaticEvaluationOptimizer(TunableEngine[] engines, String fenFilePath, Double k, Logger logger)
+	public StaticEvaluationOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
 			throws NullPointerException, IOException {
-		super(engines[0].getParameters().toDoubleArray(), false, 1, LEARNING_RATE, SAMPLE_SIZE, fenFilePath, logger);
+		super(engines[0].getParameters().toDoubleArray(), false, 1d, BASE_LEARNING_RATE, null, null, null, sampleSize, fenFilePath, logger);
 		ArrayList<TunableEngine> enginesList = new ArrayList<>();
 		for (TunableEngine e : engines) {
 			if (e != null) {
@@ -83,28 +81,6 @@ public class StaticEvaluationOptimizer extends SGD implements AutoCloseable {
 				logger.info("Optimal K: " + this.k + System.lineSeparator());
 		} else
 			this.k = k;
-	}
-	/**
-	 * Constructs and returns a new StaticEvaluationOptimizer instance according to the specified 
-	 * parameters.
-	 * 
-	 * @param engines An array of {@link #TunableEngine TunableEngine} instances (of which 
-	 * the parameters' gray code string should have the same length). For each non-null element
-	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
-	 * array of four non-null elements, the fitness function will be distributed and executed 
-	 * parallel on four threads. If the array or its first element are null or the method {@link 
-	 * #uci.UCIEngine.init() init} hasn't been called on the first element, a {@link 
-	 * #NullPointerException NullPointerException} is thrown.
-	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
-	 * If it doesn't exist an {@link #IOException IOException} is thrown.
-	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
-	 * @throws IllegalArgumentException If an IO or parsing error occurs.
-	 * @throws NullPointerException If the parameter engines is null or its first element is
-	 * null.
-	 */
-	public StaticEvaluationOptimizer(TunableEngine[] engines, String fenFilePath, Logger logger)
-			throws NullPointerException, IOException {
-		this(engines, fenFilePath, null, logger);
 	}
 	/**
 	 * Generates a file of lines of FEN strings with the results of the games the positions occurred in 

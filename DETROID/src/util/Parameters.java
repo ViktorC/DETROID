@@ -21,8 +21,7 @@ import java.util.Arrays;
  * retrieve the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded 
  * and concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
  * procedure reversed. Fields of the subclasses can be annotated with the {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the 
- * number of bits to consider when tuning the parameter. Even though floating points are allowed, their use is discouraged as it makes convergence 
- * less likely during optimization.
+ * number of bits to consider when tuning the parameter.
  * 
  * WARNING: It only supports non-static primitive fields declared in its subclasses! All other fields need to be marked transient or a {@link 
  * #ClassFormatError ClassFormatError} is thrown by the constructor. When initializing from a file, transient fields will still be set if declared in 
@@ -264,7 +263,7 @@ public abstract class Parameters {
 		return arr;
 	}
 	/**
-	 * Returns a binary String of all the bits of all the non-tansient fields of the instance concatenated field by field.
+	 * Returns a binary string of all the bits of all the non-tansient fields of the instance concatenated field by field.
 	 * 
 	 * @return
 	 */
