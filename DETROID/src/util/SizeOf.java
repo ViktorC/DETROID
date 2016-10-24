@@ -66,7 +66,7 @@ public enum SizeOf {
 						compressed = false;
 					else if (s.contains("Xmx")) {
 						s = s.toLowerCase();
-						pattern = Pattern.compile("[0-9]+[gmk]{1}");
+						pattern = Pattern.compile("[0-9]+[gmk]?");
 						matcher = pattern.matcher(s);
 						if (matcher.find()) {
 							xmxValue = matcher.group();
@@ -81,6 +81,8 @@ public enum SizeOf {
 								case 'k':
 									below32g = xmxValueNum < (32 << 20);
 									break;
+								default:
+									below32g = xmxValueNum < (32 << 30);
 							}
 						}
 					}

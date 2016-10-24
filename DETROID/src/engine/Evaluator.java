@@ -31,47 +31,45 @@ final class Evaluator {
 				f2 = File.getBySquareIndex(j).ordinal();
 				rankDist = Math.abs(r2 - r1);
 				fileDist = Math.abs(f2 - f1);
-				MANHATTAN_DISTANCE[i][j] = (byte)(rankDist + fileDist);
-				CHEBYSHEV_DISTANCE[i][j] = (byte)Math.max(rankDist, fileDist);
+				MANHATTAN_DISTANCE[i][j] = (byte) (rankDist + fileDist);
+				CHEBYSHEV_DISTANCE[i][j] = (byte) Math.max(rankDist, fileDist);
 			}
 		}
 	}
 	
-	private Params params;
-	
+	private final Params params;
+	// Evaluation score hash table.
+	private final LossyHashTable<ETEntry> eT;
+	// Pawn hash table.
+	private final LossyHashTable<PTEntry> pT;
 	// The sum of the respective weights of pieces for assessing the game phase.
-	private final int TOTAL_PHASE_WEIGHTS;
-	private final int PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT;
+	private final int totalPhaseWeights;
+	private final int phaseScoreLimitForInsuffMaterial;
 	
-	byte[] PST_W_PAWN_OPENING;
-	byte[] PST_W_PAWN_ENDGAME;
-	byte[] PST_W_KNIGHT_OPENING;
-	byte[] PST_W_KNIGHT_ENDGAME;
-	byte[] PST_W_BISHOP;
-	byte[] PST_W_ROOK_OPENING;
-	byte[] PST_W_ROOK_ENDGAME;
-	byte[] PST_W_QUEEN;
-	byte[] PST_W_KING_OPENING;
-	byte[] PST_W_KING_ENDGAME;
+	private byte[] pstWpawnOpening;
+	private byte[] pstWpawnEndgame;
+	private byte[] pstWknightOpening;
+	private byte[] pstWknightEndgame;
+	private byte[] pstWbishop;
+	private byte[] pstWrookOpening;
+	private byte[] pstWrookEndgame;
+	private byte[] pstWqueen;
+	private byte[] pstWkingOpening;
+	private byte[] pstWkingEndgame;
 	
-	byte[] PST_B_PAWN_OPENING;
-	byte[] PST_B_PAWN_ENDGAME;
-	byte[] PST_B_KNIGHT_OPENING;
-	byte[] PST_B_KNIGHT_ENDGAME;
-	byte[] PST_B_BISHOP;
-	byte[] PST_B_ROOK_OPENING;
-	byte[] PST_B_ROOK_ENDGAME;
-	byte[] PST_B_QUEEN;
-	byte[] PST_B_KING_OPENING;
-	byte[] PST_B_KING_ENDGAME;
+	private byte[] pstBpawnOpening;
+	private byte[] pstBpawnEndgame;
+	private byte[] pstBknightOpening;
+	private byte[] pstBknightEndgame;
+	private byte[] pstBbishop;
+	private byte[] pstBrookOpening;
+	private byte[] pstBrookEndgame;
+	private byte[] pstBqueen;
+	private byte[] pstBkingOpening;
+	private byte[] pstBkingEndgame;
 	
-	private byte[][] PST_OPENING;
-	private byte[][] PST_ENDGAME;
-	
-	private LossyHashTable<ETEntry> eT;	// Evaluation score hash table.
-	private LossyHashTable<PTEntry> pT;	// Pawn hash table.
-	
-	private byte hashGen;	// Entry generation.
+	private byte[][] pstOpening;
+	private byte[][] pstEndgame;
 	
 	/**
 	 * Initializes a chess position evaluator.
@@ -79,87 +77,86 @@ final class Evaluator {
 	 * @param params
 	 * @param evalTable
 	 * @param pawnTable
-	 * @param hashEntryGeneration
 	 */
-	Evaluator(Params params, LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable, byte hashEntryGeneration) {
+	Evaluator(Params params, LossyHashTable<ETEntry> evalTable, LossyHashTable<PTEntry> pawnTable) {
 		this.params = params;
-		TOTAL_PHASE_WEIGHTS = 4*(params.KNIGHT_PHASE_WEIGHT + params.BISHOP_PHASE_WEIGHT + params.ROOK_PHASE_WEIGHT) + 2*params.QUEEN_PHASE_WEIGHT;
-		PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT = Math.min(phaseScore(0, 0, 2, 0), phaseScore(0, 0, 0, 2));
+		totalPhaseWeights = 4*(params.KNIGHT_PHASE_WEIGHT + params.BISHOP_PHASE_WEIGHT + params.ROOK_PHASE_WEIGHT) + 2*params.QUEEN_PHASE_WEIGHT;
+		phaseScoreLimitForInsuffMaterial = Math.min(phaseScore(0, 0, 2, 0), phaseScore(0, 0, 0, 2));
 		initPieceSquareArrays();
-		PST_OPENING = new byte[][]{PST_W_KING_OPENING, PST_W_QUEEN, PST_W_ROOK_OPENING, PST_W_BISHOP, PST_W_KNIGHT_OPENING, PST_W_PAWN_OPENING,
-			PST_B_KING_OPENING, PST_B_QUEEN, PST_B_ROOK_OPENING, PST_B_BISHOP, PST_B_KNIGHT_OPENING, PST_B_PAWN_OPENING};
-		PST_ENDGAME = new byte[][]{PST_W_KING_ENDGAME, PST_W_QUEEN, PST_W_ROOK_ENDGAME, PST_W_BISHOP, PST_W_KNIGHT_ENDGAME, PST_W_PAWN_ENDGAME,
-			PST_B_KING_ENDGAME, PST_B_QUEEN, PST_B_ROOK_ENDGAME, PST_B_BISHOP, PST_B_KNIGHT_ENDGAME, PST_B_PAWN_ENDGAME};
 		eT = evalTable;
 		pT = pawnTable;
-		hashGen = hashEntryGeneration;
 	}
 	/**
 	 * Initializes the piece square arrays with the correct order of values.
 	 */
-	private void initPieceSquareArrays() {
+	void initPieceSquareArrays() {
 		int c1, c2;
-		byte[] PST_PAWN_OPENING = params.getPST_PAWN_OPENING();
-		byte[] PST_PAWN_ENDGAME = params.getPST_PAWN_ENDGAME();
-		byte[] PST_KNIGHT_OPENING = params.getPST_KNIGHT_OPENING();
-		byte[] PST_KNIGHT_ENDGAME = params.getPST_KNIGHT_ENDGAME();
-		byte[] PST_BISHOP = params.getPST_BISHOP();
-		byte[] PST_ROOK_OPENING = params.getPST_ROOK_OPENING();
-		byte[] PST_ROOK_ENDGAME = params.getPST_ROOK_ENDGAME();
-		byte[] PST_QUEEN = params.getPST_QUEEN();
-		byte[] PST_KING_OPENING = params.getPST_KING_OPENING();
-		byte[] PST_KING_ENDGAME = params.getPST_KING_ENDGAME();
-		PST_W_PAWN_OPENING = new byte[64];
-		PST_W_PAWN_ENDGAME = new byte[64];
-		PST_W_KNIGHT_OPENING = new byte[64];
-		PST_W_KNIGHT_ENDGAME = new byte[64];
-		PST_W_BISHOP = new byte[64];
-		PST_W_ROOK_OPENING = new byte[64];
-		PST_W_ROOK_ENDGAME = new byte[64];
-		PST_W_QUEEN = new byte[64];
-		PST_W_KING_OPENING = new byte[64];
-		PST_W_KING_ENDGAME = new byte[64];
-		PST_B_PAWN_OPENING = new byte[64];
-		PST_B_PAWN_ENDGAME = new byte[64];
-		PST_B_KNIGHT_OPENING = new byte[64];
-		PST_B_KNIGHT_ENDGAME = new byte[64];
-		PST_B_BISHOP = new byte[64];
-		PST_B_ROOK_OPENING = new byte[64];
-		PST_B_ROOK_ENDGAME = new byte[64];
-		PST_B_QUEEN = new byte[64];
-		PST_B_KING_OPENING = new byte[64];
-		PST_B_KING_ENDGAME = new byte[64];
+		byte[] pstPawnOpening = params.getPST_PAWN_OPENING();
+		byte[] pstPawnEndgame = params.getPST_PAWN_ENDGAME();
+		byte[] pstKnightOpening = params.getPST_KNIGHT_OPENING();
+		byte[] pstKnightEndgame = params.getPST_KNIGHT_ENDGAME();
+		byte[] pstBishop = params.getPST_BISHOP();
+		byte[] pstRookOpening = params.getPST_ROOK_OPENING();
+		byte[] pstRookEndgame = params.getPST_ROOK_ENDGAME();
+		byte[] pstQueen = params.getPST_QUEEN();
+		byte[] pstKingOpening = params.getPST_KING_OPENING();
+		byte[] pstKingEndgame = params.getPST_KING_ENDGAME();
+		pstWpawnOpening = new byte[64];
+		pstWpawnEndgame = new byte[64];
+		pstWknightOpening = new byte[64];
+		pstWknightEndgame = new byte[64];
+		pstWbishop = new byte[64];
+		pstWrookOpening = new byte[64];
+		pstWrookEndgame = new byte[64];
+		pstWqueen = new byte[64];
+		pstWkingOpening = new byte[64];
+		pstWkingEndgame = new byte[64];
+		pstBpawnOpening = new byte[64];
+		pstBpawnEndgame = new byte[64];
+		pstBknightOpening = new byte[64];
+		pstBknightEndgame = new byte[64];
+		pstBbishop = new byte[64];
+		pstBrookOpening = new byte[64];
+		pstBrookEndgame = new byte[64];
+		pstBqueen = new byte[64];
+		pstBkingOpening = new byte[64];
+		pstBkingEndgame = new byte[64];
 		// Due to the reversed order of the rows in the definition of the white piece-square tables,
 		// they are just right for black with negated values.
 		for (int i = 0; i < 64; i++) {
-			PST_B_PAWN_OPENING[i] = (byte) -PST_PAWN_OPENING[i];
-			PST_B_PAWN_ENDGAME[i] = (byte) -PST_PAWN_ENDGAME[i];
-			PST_B_KNIGHT_OPENING[i] = (byte) -PST_KNIGHT_OPENING[i];
-			PST_B_KNIGHT_ENDGAME[i] = (byte) -PST_KNIGHT_ENDGAME[i];
-			PST_B_BISHOP[i] = (byte) -PST_BISHOP[i];
-			PST_B_ROOK_OPENING[i] = (byte) -PST_ROOK_OPENING[i];
-			PST_B_ROOK_ENDGAME[i] = (byte) -PST_ROOK_ENDGAME[i];
-			PST_B_QUEEN[i] = (byte) -PST_QUEEN[i];
-			PST_B_KING_OPENING[i] = (byte) -PST_KING_OPENING[i];
-			PST_B_KING_ENDGAME[i] = (byte) -PST_KING_ENDGAME[i];
+			pstBpawnOpening[i] = (byte) -pstPawnOpening[i];
+			pstBpawnEndgame[i] = (byte) -pstPawnEndgame[i];
+			pstBknightOpening[i] = (byte) -pstKnightOpening[i];
+			pstBknightEndgame[i] = (byte) -pstKnightEndgame[i];
+			pstBbishop[i] = (byte) -pstBishop[i];
+			pstBrookOpening[i] = (byte) -pstRookOpening[i];
+			pstBrookEndgame[i] = (byte) -pstRookEndgame[i];
+			pstBqueen[i] = (byte) -pstQueen[i];
+			pstBkingOpening[i] = (byte) -pstKingOpening[i];
+			pstBkingEndgame[i] = (byte) -pstKingEndgame[i];
 		}
 		// To get the right values for the white piece-square tables, we vertically mirror and negate the ones for black
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
 				c1 = i*8 + j;
 				c2 = ((7 - i)*8) + j;
-				PST_W_PAWN_OPENING[c1] = (byte) -PST_B_PAWN_OPENING[c2];
-				PST_W_PAWN_ENDGAME[c1] = (byte) -PST_B_PAWN_ENDGAME[c2];
-				PST_W_KNIGHT_OPENING[c1] = (byte) -PST_B_KNIGHT_OPENING[c2];
-				PST_W_KNIGHT_ENDGAME[c1] = (byte) -PST_B_KNIGHT_ENDGAME[c2];
-				PST_W_BISHOP[c1] = (byte) -PST_B_BISHOP[c2];
-				PST_W_ROOK_OPENING[c1] = (byte) -PST_B_ROOK_OPENING[c2];
-				PST_W_ROOK_ENDGAME[c1] = (byte) -PST_B_ROOK_ENDGAME[c2];
-				PST_W_QUEEN[c1] = (byte) -PST_B_QUEEN[c2];
-				PST_W_KING_OPENING[c1] = (byte) -PST_B_KING_OPENING[c2];
-				PST_W_KING_ENDGAME[c1] = (byte) -PST_B_KING_ENDGAME[c2];
+				pstWpawnOpening[c1] = (byte) -pstBpawnOpening[c2];
+				pstWpawnEndgame[c1] = (byte) -pstBpawnEndgame[c2];
+				pstWknightOpening[c1] = (byte) -pstBknightOpening[c2];
+				pstWknightEndgame[c1] = (byte) -pstBknightEndgame[c2];
+				pstWbishop[c1] = (byte) -pstBbishop[c2];
+				pstWrookOpening[c1] = (byte) -pstBrookOpening[c2];
+				pstWrookEndgame[c1] = (byte) -pstBrookEndgame[c2];
+				pstWqueen[c1] = (byte) -pstBqueen[c2];
+				pstWkingOpening[c1] = (byte) -pstBkingOpening[c2];
+				pstWkingEndgame[c1] = (byte) -pstBkingEndgame[c2];
 			}
 		}
+		// Set the opening and endgame arrays of piece square tables.
+		pstOpening = new byte[][]{pstWkingOpening, pstWqueen, pstWrookOpening, pstWbishop, pstWknightOpening, pstWpawnOpening,
+			pstBkingOpening, pstBqueen, pstBrookOpening, pstBbishop, pstBknightOpening, pstBpawnOpening};
+		pstEndgame = new byte[][]{pstWkingEndgame, pstWqueen, pstWrookEndgame, pstWbishop, pstWknightEndgame, pstWpawnEndgame,
+			pstBkingEndgame, pstBqueen, pstBrookEndgame, pstBbishop, pstBknightEndgame, pstBpawnEndgame};
 	}
 	/**
 	 * Returns the value of a piece type defined by a piece index according to {@link #engine.Piece Piece}.
@@ -323,9 +320,9 @@ final class Evaluator {
 	 * @return
 	 */
 	private int phaseScore(int numOfQueens, int numOfRooks, int numOfBishops, int numOfKnights) {
-		int phase = TOTAL_PHASE_WEIGHTS - (numOfQueens*params.QUEEN_PHASE_WEIGHT + numOfRooks*params.ROOK_PHASE_WEIGHT
+		int phase = totalPhaseWeights - (numOfQueens*params.QUEEN_PHASE_WEIGHT + numOfRooks*params.ROOK_PHASE_WEIGHT
 					+ numOfBishops*params.BISHOP_PHASE_WEIGHT + numOfKnights*params.KNIGHT_PHASE_WEIGHT);
-		return (phase*params.GAME_PHASE_ENDGAME_UPPER + TOTAL_PHASE_WEIGHTS/2)/TOTAL_PHASE_WEIGHTS;
+		return (phase*params.GAME_PHASE_ENDGAME_UPPER + totalPhaseWeights/2)/totalPhaseWeights;
 	}
 	/**
 	 * Returns an estimation of the phase in which the current game is based on the given position.
@@ -512,11 +509,12 @@ final class Evaluator {
 	 * king safety, king tropism, king mobility, trapped pieces, etc.
 	 * 
 	 * @param pos
+	 * @param hashGen
 	 * @param alpha
 	 * @param beta
 	 * @return
 	 */
-	int score(Position pos, int alpha, int beta) {
+	int score(Position pos, byte hashGen, int alpha, int beta) {
 		final boolean isWhitesTurn = pos.isWhitesTurn;
 		long pawnKingKey;
 		byte numOfWhiteQueens, numOfWhiteRooks, numOfWhiteBishops, numOfWhiteKnights;
@@ -551,16 +549,16 @@ final class Evaluator {
 		PTEntry pE;
 		score = 0;
 		// Probe evaluation hash table.
-		eE = eT.get(pos.key);
-		if (eE != null) {
-			eE.generation = hashGen;
-			score = eE.score;
-			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
-			if (eE.isExact || score >= beta + params.LAZY_EVAL_MAR || score <= alpha - params.LAZY_EVAL_MAR)
-				return eE.score;
-		}
-		// In case of no hash hit, calculate the base score from scratch.
-		else {
+//		eE = eT.get(pos.key);
+//		if (eE != null) {
+//			eE.generation = hashGen;
+//			score = eE.score;
+//			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
+//			if (eE.isExact || score >= beta + params.LAZY_EVAL_MAR || score <= alpha - params.LAZY_EVAL_MAR)
+//				return eE.score;
+//		}
+//		// In case of no hash hit, calculate the base score from scratch.
+//		else {
 			numOfWhiteQueens = BitOperations.getHammingWeight(pos.whiteQueens);
 			numOfWhiteRooks = BitOperations.getHammingWeight(pos.whiteRooks);
 			numOfWhiteBishops = BitOperations.getHammingWeight(pos.whiteBishops);
@@ -572,7 +570,7 @@ final class Evaluator {
 			phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
 					numOfWhiteKnights + numOfBlackKnights);
 			// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
-			if (phase >= PHASE_SCORE_LIMIT_FOR_INSUFFICIENT_MAT && numOfWhiteQueens == 0 && numOfBlackQueens == 0 &&
+			if (phase >= phaseScoreLimitForInsuffMaterial && numOfWhiteQueens == 0 && numOfBlackQueens == 0 &&
 			numOfWhiteRooks == 0 && numOfBlackRooks == 0 && pos.whitePawns == 0 && pos.blackPawns == 0) {
 				numOfAllPieces = BitOperations.getHammingWeight(pos.allOccupied);
 				if (numOfAllPieces == 2 ||
@@ -598,18 +596,18 @@ final class Evaluator {
 			score += (numOfWhiteRooks - numOfBlackRooks)*params.ROOK_VALUE;
 			score += (numOfWhiteBishops - numOfBlackBishops)*params.BISHOP_VALUE;
 			score += (numOfWhiteKnights - numOfBlackKnights)*params.KNIGHT_VALUE;
-			pawnKingKey = pos.getPawnKingHashKey();
+//			pawnKingKey = pos.getPawnKingHashKey();
 			// Try for hashed pawn score.
-			pE = pT.get(pawnKingKey);
-			if (pE != null) {
-				pE.generation = hashGen;
-				pawnScore = pE.score;
-			}
+//			pE = pT.get(pawnKingKey);
+//			if (pE != null) {
+//				pE.generation = hashGen;
+//				pawnScore = pE.score;
+//			}
 			// Evaluate pawn structure.
-			else {
+//			else {
 				pawnScore = pawnKingStructureScore(pos.whiteKing, pos.blackKing, pos.whitePawns, pos.blackPawns);
-				pT.put(new PTEntry(pawnKingKey, pawnScore, hashGen));
-			}
+//				pT.put(new PTEntry(pawnKingKey, pawnScore, hashGen));
+//			}
 			score += pawnScore;
 			// Piece-square scores.
 			openingScore = endgameScore = 0;
@@ -618,8 +616,8 @@ final class Evaluator {
 				square = offsetBoard[i] - 1;
 				if (square < Piece.NULL.ind)
 					continue;
-				openingScore += PST_OPENING[square][i];
-				endgameScore += PST_ENDGAME[square][i];
+				openingScore += pstOpening[square][i];
+				endgameScore += pstEndgame[square][i];
 			}
 			score += (short) taperedEvalScore(openingScore, endgameScore, phase);
 			// Bishop pair.
@@ -632,11 +630,11 @@ final class Evaluator {
 			// Knight advantage for each pawn on board.
 			score += (numOfWhiteKnights - numOfBlackKnights)*BitOperations.getHammingWeight(pos.whitePawns | pos.blackPawns)*params.KNIGHT_ADVANTAGE_PER_PAWN;
 			tempScore = (short) (isWhitesTurn ? score : -score);
-			if (tempScore <= alpha - params.LAZY_EVAL_MAR || tempScore >= beta + params.LAZY_EVAL_MAR) {
-				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
-				return tempScore;
-			}
-		}
+//			if (tempScore <= alpha - params.LAZY_EVAL_MAR || tempScore >= beta + params.LAZY_EVAL_MAR) {
+//				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
+//				return tempScore;
+//			}
+//		}
 		// Pinned pieces.
 		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
 		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
@@ -822,7 +820,7 @@ final class Evaluator {
 			score *= -1;
 		} else
 			score += params.TEMPO_ADVANTAGE;
-		eT.put(new ETEntry(pos.key, score, true, hashGen));
+//		eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}
 }

@@ -10,14 +10,21 @@ import java.util.HashSet;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import engine.Book.SelectionModel;
 import engine.Game.Side;
 import tuning.TunableEngine;
 import uci.DebugInformation;
 import uci.UCIEngine;
-import ui_base.ControllerEngine;
-import ui_base.GameState;
+import uibase.ControllerEngine;
+import uibase.GameState;
 import uci.SearchResults;
 import uci.ScoreType;
 import uci.SearchInformation;
@@ -34,19 +41,18 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	public final static float VERSION_NUMBER = 0.80f;
 	public final static String NAME = "DETROID" + " " + VERSION_NUMBER;
 	public final static String AUTHOR = "Viktor Csomor";
-	
+	// Search, evaluation, and time control parameters.
+	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
 	public final static String DEFAULT_BOOK_FILE_PATH;
 	static {
 		String path;
 		try {
-			path = new File(Detroid.class.getProtectionDomain().getCodeSource().getLocation().toURI())
-					.getAbsoluteFile().getParent() + File.separator + "book.bin";
+			path = new File(Detroid.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsoluteFile().getParent() +
+					File.separator + "book.bin";
 		} catch (URISyntaxException e) { path = null; }
 		DEFAULT_BOOK_FILE_PATH = path;
 	}
-	// Search, evaluation, and time control parameters.
-	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
 	
 	private Option<?> hashSize;
 	private Option<?> clearHash;
@@ -65,7 +71,9 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	private boolean debug;
 	private Book book;
 	private boolean outOfBook;
-	private Thread search;
+	private Evaluator eval;
+	private ExecutorService executor;
+	private Future<?> search;
 	private boolean stop;
 	private boolean ponderHit;
 	private SearchInfo searchStats;
@@ -130,18 +138,18 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				(game.getSideToMove() == Side.BLACK && (blackTime == null || blackTime <= 0))))
 			return 0;
 		if (movesToGo == null) {
-			phaseScore = new Evaluator(params, eT, pT, gen).phaseScore(game.getPosition());
-			movesToGo = Game.AVG_MOVES_PER_GAME - Game.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_ENDGAME_UPPER +
+			phaseScore = eval.phaseScore(game.getPosition());
+			movesToGo = params.AVG_MOVES_PER_GAME - params.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_ENDGAME_UPPER +
 					params.MOVES_TO_GO_SAFETY_MARGIN;
 			if (debug) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);
 		}
 		return game.getSideToMove() == Side.WHITE ?
-				Math.max(1, (whiteTime + Math.max(0, (movesToGo - 1)*whiteIncrement)*
-				params.FRACTION_OF_TOTAL_TIME_TO_USE_HTH/100)/(movesToGo + 1)) :
-				Math.max(1, (blackTime + Math.max(0, (movesToGo - 1)*blackIncrement)*
-				params.FRACTION_OF_TOTAL_TIME_TO_USE_HTH/100)/(movesToGo + 1));
+				Math.max(1, (whiteTime + Math.max(0, movesToGo - 1)*whiteIncrement)*
+				params.FRACTION_OF_TOTAL_TIME_TO_USE_HTH/100/(movesToGo + 1)) :
+				Math.max(1, (blackTime + Math.max(0, movesToGo - 1)*blackIncrement)*
+				params.FRACTION_OF_TOTAL_TIME_TO_USE_HTH/100/(movesToGo + 1));
 	}
 	/**
 	 * Computes and returns the search time extension in milliseconds if the search should be extended at all.
@@ -185,6 +193,8 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	private String getRandomMove() {
 		int i = 0;
 		ArrayList<Move> moves = game.getPosition().getMoves();
+		if (moves.size() == 0)
+			return null;
 		String[] arr = new String[moves.size()];
 		for (Move m : moves)
 			arr[i++] = m.toString();
@@ -195,7 +205,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		int maxHashSize;
 		try {
 			params = new Params();
-			params.initFromFile(DEFAULT_PARAMETERS_FILE_PATH);
+			params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
 		} catch (IOException e) { }
 		try {
 			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
@@ -224,9 +234,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
-		setHashSize((int)options.get(hashSize));
+		setHashSize((int) options.get(hashSize));
 		hT = new RelativeHistoryTable(params);
-		System.gc();
+		eval = new Evaluator(params, eT, pT);
+		executor = Executors.newSingleThreadExecutor();
 		isInit = true;
 	}
 	@Override
@@ -321,32 +332,31 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		try {
 			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 			// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
-			if (newGame) {
+//			if (newGame) {
 				if (debug) debugInfo.set("New game set");
-				game = new Game(pos.toString());
-			} else if (!game.getStartPos().equals(pos.toString())) {
-				newGame();
-				if (debug) debugInfo.set("New game set due to new start position");
-				game = new Game(pos.toString());
-			}
-			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
-			else {
-				if (debug) debugInfo.set("Position set within the same game");
-				gen++;
-				if (gen == 127) {
-					tT.clear();
-					eT.clear();
-					pT.clear();
-					gen = 0;
-				} else {
-					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
-					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
-					pT.remove(e -> e.generation < gen - params.PT_ENTRY_LIFECYCLE);
-				}
-				hT.decrementCurrentValues();
-				System.gc();
-				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
-			}
+				game = new Game(pos);
+//			} else if (!game.getStartPos().equals(pos.toString())) {
+//				newGame();
+//				if (debug) debugInfo.set("New game set due to new start position");
+//				game = new Game(pos);
+//			}
+//			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
+//			else {
+//				if (debug) debugInfo.set("Position set within the same game");
+//				gen++;
+//				if (gen == 127) {
+//					tT.clear();
+//					eT.clear();
+//					pT.clear();
+//					gen = 0;
+//				} else {
+//					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
+//					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
+//					pT.remove(e -> e.generation < gen - params.PT_ENTRY_LIFECYCLE);
+//				}
+//				hT.decrementCurrentValues();
+//				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
+//			}
 			return true;
 		} catch (ChessParseException | NullPointerException e) {
 			if (debug) debugInfo.set(e.getMessage());
@@ -373,6 +383,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		boolean doPonder, doInfinite;
 		doPonder = false;
 		doInfinite = infinite != null && infinite;
+		stop = false;
 		// Reset search stats.
 		searchResult = new Move();
 		scoreFluctuation = 0;
@@ -382,9 +393,9 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		if (newGame) {
 			if (game.getSideToMove() == Side.WHITE) {
 				game.setWhitePlayerName(NAME);
-				game.setBlackPlayerName((String)options.get(uciOpponent));
+				game.setBlackPlayerName((String) options.get(uciOpponent));
 			} else {
-				game.setWhitePlayerName((String)options.get(uciOpponent));
+				game.setWhitePlayerName((String) options.get(uciOpponent));
 				game.setBlackPlayerName(NAME);
 			}
 			if (debug) debugInfo.set("Players' names set\n" +
@@ -393,18 +404,19 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			newGame = false;
 		}
 		// Search the book if possible.
-		if ((Boolean)options.get(ownBook) && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null &&
+		if ((Boolean) options.get(ownBook) && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null &&
 				nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
-			search = new Thread(() -> {
+			search = executor.submit(() -> {
 				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
 				searchResult = searchResult == null ? new Move() : searchResult;
 			});
-			search.start();
 			if (debug) debugInfo.set("Book search started");
 			try {
-				search.join();
-			} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+				search.get();
+			} catch (InterruptedException | ExecutionException e1) {
+				if (debug) debugInfo.set(e1.getMessage());
+			} catch (CancellationException e2) { }
 			if (debug) debugInfo.set("Book search done");
 			ponderMove = null;
 			// If the book search has not been externally stopped, use the remaining time for a normal search.
@@ -422,7 +434,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		else {
 			// Check if pondering is possible.
 			if (ponder != null && ponder) {
-				if (!(Boolean)options.get(this.ponder)) {
+				if (!(Boolean) options.get(this.ponder)) {
 					if (debug) debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
 					return null;
 				} else
@@ -442,17 +454,16 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				moves = null;
 			// Start the search.
 			Search: {
-				search = new Thread(new Search(game.getPosition(), searchStats, doPonder || doInfinite,
+				search = executor.submit(new Search(game.getPosition(), searchStats, doPonder || doInfinite,
 						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-						nodes == null ? Long.MAX_VALUE : nodes, moves, hT, gen, tT, eT, pT, params));
-				search.start();
+						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, tT, params));
 				if (debug) debugInfo.set("Search started");
 				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
 				if (doPonder) {
 					if (debug) debugInfo.set("In ponder mode");
-					while (search.isAlive() && !ponderHit) {
+					while (!stop && !ponderHit) {
 						try {
-							wait(200);
+							wait();
 						} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
 					}
 					if (debug) debugInfo.set("Ponder stopped");
@@ -469,9 +480,21 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				// If in infinite mode, let the search run until it is externally stopped.
 				else if (doInfinite) {
 					if (debug) debugInfo.set("In infinite mode");
+					while (!stop) {
+						try {
+							wait();
+						} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+					}
+					break Search;
+				}
+				// Fixed node or depth search
+				else if (whiteTime == null && blackTime == null && searchTime == null) {
+					if (debug) debugInfo.set("In fixed mode");
 					try {
-						search.join();
-					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+						search.get();
+					} catch (InterruptedException | ExecutionException e1) {
+						if (debug) debugInfo.set(e1.getMessage());
+					} catch (CancellationException e2) { }
 					break Search;
 				}
 				// Compute search time and wait for the search to terminate for the computed amount of time.
@@ -479,25 +502,28 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 						computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo) : searchTime;
 				if (debug) debugInfo.set("Base search time - " + time);
 				try {
-					search.join(time);
+					search.get(time, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException | ExecutionException e1) {
+					if (debug) debugInfo.set(e1.getMessage());
+				} catch (TimeoutException e2) {
 					if (debug) debugInfo.set("Base search time up");
-				} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+				} catch (CancellationException e3) { }
 				// If time was up, check if the search should be extended.
-				if (!stop && (searchTime == null) && (depth == null) && (nodes == null) && (mateDistance == null)) {
+				if (!search.isDone() && searchTime == null) {
 					try {
 						extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
 						if (debug) debugInfo.set("Extra search time - " + extraTime);
 						if (extraTime > 0)
-							search.join(extraTime);
+							search.get(extraTime, TimeUnit.MILLISECONDS);
+					} catch (InterruptedException | ExecutionException e1) {
+						if (debug) debugInfo.set(e1.getMessage());
+					} catch (TimeoutException e2) {
 						if (debug) debugInfo.set("Extra time up");
-					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+					} catch (CancellationException e3) { }
 				}
 				// Time is up, stop the search.
-				if (search.isAlive()) {
-					search.interrupt();
-					try {
-						search.join();
-					} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+				if (!search.isDone()) {
+					search.cancel(true);
 				}
 			}
 			if (debug) debugInfo.set("Search stopped");
@@ -506,27 +532,33 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
 		}
 		// Set final results.
-		if (searchResult.equals(new Move())) {
-			bestMove = getRandomMove();
-			if (debug) debugInfo.set("No valid PV root move found\n" +
-					"Random move selected");
-		} else
-			bestMove = searchResult.toString();
-		stop = false;
-		return new SearchResults(bestMove, ponderMove);
+//		if (searchResult.equals(Move.NULL_MOVE)) {
+//			bestMove = getRandomMove();
+//			if (debug) debugInfo.set("No valid PV root move found\n" +
+//					"Random move selected");
+//		} else
+//			bestMove = searchResult.toString();
+//		return new SearchResults(bestMove, ponderMove);
+		return new SearchResults(null, null);
 	}
 	@Override
 	public void stop() {
-		if (search != null && search.isAlive()) {
+		if (search != null && !search.isDone()) {
 			if (debug) debugInfo.set("Stopping search...");
-			search.interrupt();
+			search.cancel(true);
 			stop = true;
+			synchronized (this) {
+				notify();
+			}
 		}
 	}
 	@Override
 	public void ponderhit() {
 		if (debug) debugInfo.set("Signaling ponderhit...");
 		ponderHit = true;
+		synchronized (this) {
+			notify();
+		}
 	}
 	@Override
 	public SearchInformation getSearchInfo() {
@@ -551,14 +583,12 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		try {
 			book.close();
 		} catch (IOException e) { e.printStackTrace(); }
-		if (search != null && search.isAlive())
-			search.interrupt();
+		executor.shutdown();
 		searchStats.deleteObservers();
 		hT = null;
 		tT = null;
 		eT = null;
 		pT = null;
-		System.gc();
 		isInit = false;
 	}
 	@Override
@@ -591,6 +621,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return game.toString();
 	}
 	@Override
+	public synchronized String toFEN() {
+		return game.getPosition().toString();
+	}
+	@Override
 	public synchronized GameState getGameState() {
 		return game.getState();
 	}
@@ -599,17 +633,22 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return params;
 	}
 	@Override
+	public void reloadParameters() {
+		if (eval != null)
+			eval.initPieceSquareArrays();
+	}
+	@Override
 	public void update(Observable o, Object arg) {
 		SearchInfo stats = (SearchInfo) o;
 		Move newSearchRes = stats.getPvMoveList() != null && stats.getPvMoveList().size() > 0 ?
-				stats.getPvMoveList().get(0) : new Move();
-		newSearchRes = newSearchRes == null ? new Move() : newSearchRes;
+				stats.getPvMoveList().get(0) : Move.NULL_MOVE;
+		newSearchRes = newSearchRes == null ? Move.NULL_MOVE : newSearchRes;
 		if (!searchResult.equals(newSearchRes)) {
 			timeOfLastSearchResChange = System.currentTimeMillis();
 			numOfSearchResChanges++;
 		}
 		scoreFluctuation = (short) (stats.getScore() - searchResult.value);
-		searchResult = !newSearchRes.equals(new Move()) ? newSearchRes : searchResult;
+		searchResult = !newSearchRes.equals(Move.NULL_MOVE) ? newSearchRes : searchResult;
 		searchResult.value = stats.getScore();
 	}
 	

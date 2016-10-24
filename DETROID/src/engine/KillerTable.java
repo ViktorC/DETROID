@@ -8,25 +8,6 @@ package engine;
  *
  */
 class KillerTable {
-
-	/**
-	 * A killer heuristic table entry for storing two killer moves compressed into two integers.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	static class KillerTableEntry {
-		
-		private int move1;
-		private int move2;
-		
-		KillerTableEntry(int move1, int move2) {
-			this.move1 = move1;
-			this.move2 = move2;
-		}
-		int getMove1() { return move1; }
-		int getMove2() { return move2; }
-	}
 	
 	private KillerTableEntry[] t;
 	
@@ -65,4 +46,23 @@ class KillerTable {
 	KillerTableEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
 		return t[ply];
 	}
+	
+	/**
+	 * A killer heuristic table entry for storing two killer moves compressed into two integers.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	static class KillerTableEntry {
+		
+		private int move1;
+		private int move2;
+		
+		KillerTableEntry(int move1, int move2) {
+			this.move1 = move1;
+			this.move2 = move2;
+		}
+		int getMove1() { return move1; }
+		int getMove2() { return move2; }
+	}	
 }

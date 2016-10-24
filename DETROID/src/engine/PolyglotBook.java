@@ -15,23 +15,6 @@ import engine.Bitboard.Square;
  */
 class PolyglotBook extends Book {
 	
-	/**
-	 * A simple container class for Polyglot book entries. Only stores relevant information, i.e. move and weight.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	private class Entry {
-		
-		short move;
-		short weight;
-		
-		Entry(short move, short weight) {
-			this.move = move;
-			this.weight = weight;
-		}
-	}
-	
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 
@@ -227,6 +210,23 @@ class PolyglotBook extends Book {
 		} catch (ChessParseException | NullPointerException | IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
+		}
+	}
+	
+	/**
+	 * A simple container class for Polyglot book entries. Only stores relevant information, i.e. move and weight.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	private class Entry {
+		
+		final short move;
+		final short weight;
+		
+		Entry(short move, short weight) {
+			this.move = move;
+			this.weight = weight;
 		}
 	}
 }

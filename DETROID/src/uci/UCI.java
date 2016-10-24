@@ -78,23 +78,23 @@ public final class UCI implements Observer, Closeable {
 					for (Option<?> e : engine.getOptions()) {
 						if (e.getName().equals(tokens[2])) {
 							if (e instanceof Option.CheckOption)
-								this.engine.setOption((Option.CheckOption)e, Boolean.parseBoolean(tokens[4]));
+								this.engine.setOption((Option.CheckOption) e, Boolean.parseBoolean(tokens[4]));
 							else if (e instanceof Option.SpinOption)
-								this.engine.setOption((Option.SpinOption)e, Integer.parseInt(tokens[4]));
+								this.engine.setOption((Option.SpinOption) e, Integer.parseInt(tokens[4]));
 							else if (e instanceof Option.StringOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.StringOption)e, value.equals("null") ? null : value);
+								this.engine.setOption((Option.StringOption) e, value.equals("null") ? null : value);
 							} else if (e instanceof Option.ComboOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.ComboOption)e, value.equals("null") ? null : value);
+								this.engine.setOption((Option.ComboOption) e, value.equals("null") ? null : value);
 							} else if (e instanceof Option.ButtonOption)
-								this.engine.setOption((Option.ButtonOption)e, null);
+								this.engine.setOption((Option.ButtonOption) e, null);
 							break;
 						}
 					}
@@ -252,7 +252,7 @@ public final class UCI implements Observer, Closeable {
 				info += "upperbound ";
 				break;
 			}
-			info += stats.getScore() + " nps " + (int)1000*stats.getNodes()/Math.max(1, stats.getTime());
+			info += stats.getScore() + " nps " + (int) 1000*stats.getNodes()/Math.max(1, stats.getTime());
 			out.println(info);
 			out.println("info hashfull " + engine.getHashLoadPermill());
 		}

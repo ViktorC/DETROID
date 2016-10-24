@@ -12,13 +12,12 @@ package engine;
  */
 class RelativeHistoryTable {
 
-	private Params params;
-	
 	/**The maximum score a move can have. */
 	final short MAX_SCORE;
 	
-	private int[][] historyT;	// A [piece][destination square] table for the history heuristic.
-	private int[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
+	private final Params params;
+	private final int[][] historyT;	// A [piece][destination square] table for the history heuristic.
+	private final int[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
 	
 	RelativeHistoryTable(Params params) {
 		this.params = params;

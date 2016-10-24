@@ -8,10 +8,10 @@ package engine;
  */
 enum Termination {
 	
-	CHECK_MATE				(Short.MIN_VALUE + 1),
-	STALE_MATE				(0),
-	INSUFFICIENT_MATERIAL	(0),
-	DRAW_CLAIMED			(0);
+	CHECK_MATE (Short.MIN_VALUE + 1),
+	STALE_MATE (0),
+	INSUFFICIENT_MATERIAL (0),
+	DRAW_CLAIMED (0);
 	
 	final short score;
 	

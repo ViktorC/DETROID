@@ -7,8 +7,6 @@ import util.Parameters;
  * An interface for a tunable chess engine whose parameters can be retrieved.
  * 
  * @author Viktor
- *
- * @param <T>
  */
 public interface TunableEngine extends UCIEngine {
 
@@ -18,5 +16,8 @@ public interface TunableEngine extends UCIEngine {
 	 * @return
 	 */
 	Parameters getParameters();
-	
+	/**
+	 * Notifies the engine that the parameters have changed and that if it uses cached values, it should reload them.
+	 */
+	void reloadParameters();
 }

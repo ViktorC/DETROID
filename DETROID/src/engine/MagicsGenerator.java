@@ -27,43 +27,12 @@ import util.BitOperations;
  */
 final class MagicsGenerator {
 	
-	/**
-	 * A simple class for returning both the magic number and the magic shift value.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	static class Magics {
-		
-		final boolean rook;
-		final byte sqrInd;
-		final long magicNumber;
-		final byte magicShift;
-		
-		Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
-			this.rook = rook;
-			this.sqrInd = sqrInd;
-			this.magicNumber = magicNumber;
-			this.magicShift = magicShift;
-		}
-		/**
-		 * Format:
-		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)
-		 */
-		@Override
-		public String toString() {
-			String type = rook ? "ROOK" : "BISHOP";
-			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toHexLiteral(magicNumber) +
-					", %2d),", type + ":", magicShift);
-		}
-	}
+	private static final MagicsGenerator INSTANCE = new MagicsGenerator();
 	
-	private static MagicsGenerator INSTANCE = new MagicsGenerator();
-	
-	private long[][] rookOccupancyVariations;
-	private long[][] bishopOccupancyVariations;
-	private long[][] rookAttackSetVariations;
-	private long[][] bishopAttackSetVariations;
+	private final long[][] rookOccupancyVariations;
+	private final long[][] bishopOccupancyVariations;
+	private final long[][] rookAttackSetVariations;
+	private final long[][] bishopAttackSetVariations;
 	
 	private MagicsGenerator() {
 		long bit;
@@ -196,5 +165,36 @@ final class MagicsGenerator {
 				System.out.println(m);
 		}
 		return allMagics;
+	}
+	
+	/**
+	 * A simple class for returning both the magic number and the magic shift value.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	static class Magics {
+		
+		final boolean rook;
+		final byte sqrInd;
+		final long magicNumber;
+		final byte magicShift;
+		
+		Magics(boolean rook, byte sqrInd, long magicNumber, byte magicShift) {
+			this.rook = rook;
+			this.sqrInd = sqrInd;
+			this.magicNumber = magicNumber;
+			this.magicShift = magicShift;
+		}
+		/**
+		 * Format:
+		 * TYPE: SQUARE (MAGIC_NUMBER, MAGIC_SHIFT)
+		 */
+		@Override
+		public String toString() {
+			String type = rook ? "ROOK" : "BISHOP";
+			return String.format("%-6s " + Square.getByIndex(sqrInd) + "  (" + BitOperations.toHexLiteral(magicNumber) +
+					", %2d),", type + ":", magicShift);
+		}
 	}
 }

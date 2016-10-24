@@ -83,7 +83,8 @@ public interface UCIEngine {
 	 * @param whiteIncrement Increment per move in ms.
 	 * @param blackIncrement Increment per move in ms.
 	 * @param movesToGo The number of moves until the next time control.
-	 * @param depth The depth to which the position should be searched.
+	 * @param depth The depth to which the position should be searched. If it is 0, the engine should return the score determined 
+	 * by the quiescence search or if it is not implemented, the static evaluation score.
 	 * @param nodes The maximum number of nodes that should be searched.
 	 * @param mateDistance Search for a mate in x.
 	 * @param searchTime Search exactly this number of ms.

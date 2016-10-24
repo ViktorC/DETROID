@@ -1,7 +1,7 @@
 package tuning;
 
 import uci.UCIEngine;
-import ui_base.ControllerEngine;
+import uibase.ControllerEngine;
 
 /**
  * A parameter class for {@link #EngineParameterOptimizer EngineParameterOptimizer} storing references to engines required to perform the

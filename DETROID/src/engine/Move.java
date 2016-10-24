@@ -14,30 +14,6 @@ class Move implements Comparable<Move> {
 	final static Move NULL_MOVE = new Move();
 	
 	/**
-	 * Mask and shift values for encoding contents of a Move object into an int; and vica versa.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	private enum ToInt {
-		
-		SHIFT_TO (6),
-		SHIFT_MOVED (12),
-		SHIFT_CAPTURED (16),
-		SHIFT_TYPE (20),
-		MASK_FROM (63),
-		MASK_TO (63),
-		MASK_MOVED (15),
-		MASK_CAPTURED (15);
-		
-		final byte value;
-		
-		private ToInt(int value) {
-			this.value = (byte)value;
-		}
-	}
-	
-	/**
 	 * The index of the origin square.
 	 */
 	final byte from;
@@ -170,6 +146,30 @@ class Move implements Comparable<Move> {
 				return pacn + "n";
 			default:
 				return pacn;
+		}
+	}
+	
+	/**
+	 * Mask and shift values for encoding contents of a Move object into an int; and vica versa.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	private enum ToInt {
+		
+		SHIFT_TO (6),
+		SHIFT_MOVED (12),
+		SHIFT_CAPTURED (16),
+		SHIFT_TYPE (20),
+		MASK_FROM (63),
+		MASK_TO (63),
+		MASK_MOVED (15),
+		MASK_CAPTURED (15);
+		
+		final byte value;
+		
+		private ToInt(int value) {
+			this.value = (byte)value;
 		}
 	}
 }

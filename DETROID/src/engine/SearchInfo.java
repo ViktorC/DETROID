@@ -13,7 +13,7 @@ import uci.SearchInformation;
  */
 class SearchInfo extends SearchInformation {
 	
-	private ArrayList<Move> pVline;		// Principal variation.
+	private ArrayList<Move> pVline;	// Principal variation.
 	private Move currentMove;		// The root move currently being searched.
 	private int currentMoveNumber;	// The ordinal of the move currently being searched in the root position's move list.
 	private short nominalDepth;		// The depth to which the PV has been searched.

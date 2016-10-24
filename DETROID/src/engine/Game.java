@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import ui_base.GameState;
+import uibase.GameState;
 
 /**
  * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.
@@ -16,12 +16,7 @@ import ui_base.GameState;
  */
 class Game {
 	
-	/**
-	 * The average number of full moves a chess game usually lasts.
-	 */
-	final static int AVG_MOVES_PER_GAME = 40;
-	
-	private String startPos;
+	private Position startPosition;
 	private Position position;
 	private String event;
 	private String site;
@@ -115,7 +110,7 @@ class Game {
 					throw new ChessParseException();
 			}
 			out.position = fen == null ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
-			out.startPos = out.position.toString();
+			out.startPosition = out.position.deepCopy();
 			if (moveDescStartInd < pgn.length())
 				pgn = pgn.substring(moveDescStartInd);
 			pgn = pgn.trim();
@@ -141,18 +136,19 @@ class Game {
 	/**
 	 * Returns a game instance according to the parameter values.
 	 * 
-	 * @param position The position in FEN.
+	 * @param position
 	 * @param event
 	 * @param site
 	 * @param whitePlayerName
 	 * @param blackPlayerName
 	 * @param round
+	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(String position, String event, String site,
-			String whitePlayerName, String blackPlayerName, int round) throws ChessParseException {
-		this.position = Position.parse(position);
-		startPos = this.position.toString();
+	Game(Position position, String event, String site,
+			String whitePlayerName, String blackPlayerName, int round) throws NullPointerException, ChessParseException {
+		this.position = Position.parse(position.toString());
+		startPosition = this.position.deepCopy();
 		this.event = event;
 		this.site = site;
 		date = new Date();
@@ -164,34 +160,38 @@ class Game {
 	/**
 	 * Returns a game instance according to the parameter values with the round number set to 1.
 	 * 
-	 * @param position The position in FEN.
+	 * @param position
 	 * @param event
 	 * @param site
 	 * @param whitePlayerName
 	 * @param blackPlayerName
+	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(String position, String event, String site, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+	Game(Position position, String event, String site, String whitePlayerName, String blackPlayerName)
+			throws NullPointerException, ChessParseException {
 		this(position, event, site, whitePlayerName, blackPlayerName, 1);
 	}
 	/**
 	 * Returns a game instance with the site and event values being null and round set to 1.
 	 * 
-	 * @param position The position in FEN.
+	 * @param position
 	 * @param whitePlayerName
 	 * @param blackPlayerName
+	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(String position, String whitePlayerName, String blackPlayerName) throws ChessParseException {
+	Game(Position position, String whitePlayerName, String blackPlayerName) throws NullPointerException, ChessParseException {
 		this(position, null, null, whitePlayerName, blackPlayerName, 1);
 	}
 	/**
 	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being null and round set to 1.
 	 * 
-	 * @param position The position in FEN.
+	 * @param position
+	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(String position) throws ChessParseException {
+	Game(Position position) throws NullPointerException, ChessParseException {
 		this(position, null, null, null, null, 1);
 	}
 	/**
@@ -202,18 +202,18 @@ class Game {
 		try {
 			position = Position.parse(Position.START_POSITION_FEN);
 		} catch (ChessParseException e) { }
-		startPos = Position.START_POSITION_FEN;
+		startPosition = position.deepCopy();
 		date = new Date();
 		round = 1;
 		state = GameState.IN_PROGRESS;
 	}
 	/**
-	 * Returns FEN string representing the starting position of the game.
+	 * Returns a deep copy of the starting position of the game.
 	 * 
 	 * @return
 	 */
-	String getStartPos() {
-		return startPos;
+	Position getStartPos() {
+		return startPosition;
 	}
 	/**
 	 * Returns a deep copy of the current position. Changes made to the object are not reflected in the Game instance.
@@ -413,7 +413,7 @@ class Game {
 		else
 			result = "1/2-1/2";
 		pgn += "[Result \"" + result + "\"]\n";
-		pgn += "[FEN \"" + startPos + "\"]\n";
+		pgn += "[FEN \"" + startPosition.toString() + "\"]\n";
 		pgn += "\n";
 		pgn += moveListToSAN();
 		return pgn;
