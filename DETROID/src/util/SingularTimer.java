@@ -151,7 +151,7 @@ public class SingularTimer implements AutoCloseable {
 	 * 
 	 * @throws IllegalStateException If the method was invoked on an alive instance.
 	 */
-	public synchronized void start() throws IllegalStateException {
+	public void start() throws IllegalStateException {
 		if (isAlive)
 			throw new IllegalStateException("The start method cannot be invoked while the timer is still alive.");
 		isAlive = true;

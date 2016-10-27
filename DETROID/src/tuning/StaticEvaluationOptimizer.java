@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
@@ -35,7 +36,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	/**
 	 * The base step size for the gradient descent.
 	 */
-	private static final double BASE_LEARNING_RATE = 500000000;
+	private static final double BASE_LEARNING_RATE = 4;
 	
 	private final TunableEngine[] engines;
 	private final double k;
@@ -64,7 +65,8 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 */
 	public StaticEvaluationOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
 			throws NullPointerException, IOException {
-		super(engines[0].getParameters().toDoubleArray(), false, 1d, BASE_LEARNING_RATE, null, null, null, sampleSize, fenFilePath, logger);
+		super(engines[0].getParameters().values(), (double[]) Array.newInstance(double.class, engines[0].getParameters().values().length),
+				engines[0].getParameters().maxValues(), 1d, BASE_LEARNING_RATE, null, null, null, null, null, sampleSize, fenFilePath, logger);
 		ArrayList<TunableEngine> enginesList = new ArrayList<>();
 		for (TunableEngine e : engines) {
 			if (e != null) {

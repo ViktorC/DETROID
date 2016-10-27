@@ -21,7 +21,7 @@ import java.util.Arrays;
  * retrieve the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded 
  * and concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
  * procedure reversed. Fields of the subclasses can be annotated with the {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the 
- * number of bits to consider when tuning the parameter.
+ * number of bits to consider when tuning the parameter. This might not be very intuitive when applied to floating point fields.
  * 
  * WARNING: It only supports non-static primitive fields declared in its subclasses! All other fields need to be marked transient or a {@link 
  * #ClassFormatError ClassFormatError} is thrown by the constructor. When initializing from a file, transient fields will still be set if declared in 
@@ -247,7 +247,7 @@ public abstract class Parameters {
 	 * 
 	 * @return
 	 */
-	public final double[] toDoubleArray() {
+	public final double[] values() {
 		double[] arr = new double[fields.size()];
 		int i = 0;
 		for (Field f : fields) {
@@ -259,6 +259,40 @@ public abstract class Parameters {
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				e.printStackTrace();
 			}
+		}
+		return arr;
+	}
+	/**
+	 * Returns an array of doubles holding the maximum allowed values for all non-transient fields of the instance determined by the 
+	 * field type and the {@link #LimitBinaryLength LimitBinaryLength} annotations.
+	 * 
+	 * @return
+	 */
+	public final double[] maxValues() {
+		double[] arr = new double[fields.size()];
+		int i = 0;
+		for (Field f : fields) {
+			Class<?> fieldType = f.getType();
+			LimitBinaryLength ann = f.getAnnotation(LimitBinaryLength.class);
+			long max = (ann != null ? 1L << ann.value() - 1 : Long.MAX_VALUE);
+			if (max == 0)
+				continue;
+			if (fieldType.equals(boolean.class))
+				arr[i++] = 1;
+			else if (fieldType.equals(byte.class))
+				arr[i++] = Math.min(max, Byte.MAX_VALUE);
+			else if (fieldType.equals(short.class))
+				arr[i++] = Math.min(max, Short.MAX_VALUE);
+			else if (fieldType.equals(int.class))
+				arr[i++] = Math.min(max, Integer.MAX_VALUE);
+			else if (fieldType.equals(long.class))
+				arr[i++] = max;
+			else if (fieldType.equals(float.class))
+				arr[i++] = Math.min(max, Integer.MAX_VALUE);
+			else if (fieldType.equals(double.class))
+				arr[i++] = max;
+			else if (fieldType.equals(char.class))
+				arr[i++] = Math.min(max, Character.MAX_VALUE);
 		}
 		return arr;
 	}
