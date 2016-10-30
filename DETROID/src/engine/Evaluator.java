@@ -549,16 +549,16 @@ final class Evaluator {
 		PTEntry pE;
 		score = 0;
 		// Probe evaluation hash table.
-//		eE = eT.get(pos.key);
-//		if (eE != null) {
-//			eE.generation = hashGen;
-//			score = eE.score;
-//			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
-//			if (eE.isExact || score >= beta + params.LAZY_EVAL_MAR || score <= alpha - params.LAZY_EVAL_MAR)
-//				return eE.score;
-//		}
-//		// In case of no hash hit, calculate the base score from scratch.
-//		else {
+		eE = eT.get(pos.key);
+		if (eE != null) {
+			eE.generation = hashGen;
+			score = eE.score;
+			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
+			if (eE.isExact || score >= beta + params.LAZY_EVAL_MAR || score <= alpha - params.LAZY_EVAL_MAR)
+				return eE.score;
+		}
+		// In case of no hash hit, calculate the base score from scratch.
+		else {
 			numOfWhiteQueens = BitOperations.getHammingWeight(pos.whiteQueens);
 			numOfWhiteRooks = BitOperations.getHammingWeight(pos.whiteRooks);
 			numOfWhiteBishops = BitOperations.getHammingWeight(pos.whiteBishops);
@@ -596,18 +596,18 @@ final class Evaluator {
 			score += (numOfWhiteRooks - numOfBlackRooks)*params.ROOK_VALUE;
 			score += (numOfWhiteBishops - numOfBlackBishops)*params.BISHOP_VALUE;
 			score += (numOfWhiteKnights - numOfBlackKnights)*params.KNIGHT_VALUE;
-//			pawnKingKey = pos.getPawnKingHashKey();
+			pawnKingKey = pos.getPawnKingHashKey();
 			// Try for hashed pawn score.
-//			pE = pT.get(pawnKingKey);
-//			if (pE != null) {
-//				pE.generation = hashGen;
-//				pawnScore = pE.score;
-//			}
+			pE = pT.get(pawnKingKey);
+			if (pE != null) {
+				pE.generation = hashGen;
+				pawnScore = pE.score;
+			}
 			// Evaluate pawn structure.
-//			else {
+			else {
 				pawnScore = pawnKingStructureScore(pos.whiteKing, pos.blackKing, pos.whitePawns, pos.blackPawns);
-//				pT.put(new PTEntry(pawnKingKey, pawnScore, hashGen));
-//			}
+				pT.put(new PTEntry(pawnKingKey, pawnScore, hashGen));
+			}
 			score += pawnScore;
 			// Piece-square scores.
 			openingScore = endgameScore = 0;
@@ -630,11 +630,11 @@ final class Evaluator {
 			// Knight advantage for each pawn on board.
 			score += (numOfWhiteKnights - numOfBlackKnights)*BitOperations.getHammingWeight(pos.whitePawns | pos.blackPawns)*params.KNIGHT_ADVANTAGE_PER_PAWN;
 			tempScore = (short) (isWhitesTurn ? score : -score);
-//			if (tempScore <= alpha - params.LAZY_EVAL_MAR || tempScore >= beta + params.LAZY_EVAL_MAR) {
-//				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
-//				return tempScore;
-//			}
-//		}
+			if (tempScore <= alpha - params.LAZY_EVAL_MAR || tempScore >= beta + params.LAZY_EVAL_MAR) {
+				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
+				return tempScore;
+			}
+		}
 		// Pinned pieces.
 		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
 		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
@@ -820,7 +820,7 @@ final class Evaluator {
 			score *= -1;
 		} else
 			score += params.TEMPO_ADVANTAGE;
-//		eT.put(new ETEntry(pos.key, score, true, hashGen));
+		eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}
 }

@@ -218,7 +218,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		game = new Game();
 		options = new HashMap<>();
 		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
-		hashSize = new Option.SpinOption("Hash", Math.min(1, maxHashSize), 1, maxHashSize);
+		hashSize = new Option.SpinOption("Hash", Math.min(64, maxHashSize), 1, maxHashSize);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
@@ -332,31 +332,31 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		try {
 			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 			// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
-//			if (newGame) {
+			if (newGame) {
 				if (debug) debugInfo.set("New game set");
 				game = new Game(pos);
-//			} else if (!game.getStartPos().equals(pos.toString())) {
-//				newGame();
-//				if (debug) debugInfo.set("New game set due to new start position");
-//				game = new Game(pos);
-//			}
-//			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
-//			else {
-//				if (debug) debugInfo.set("Position set within the same game");
-//				gen++;
-//				if (gen == 127) {
-//					tT.clear();
-//					eT.clear();
-//					pT.clear();
-//					gen = 0;
-//				} else {
-//					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
-//					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
-//					pT.remove(e -> e.generation < gen - params.PT_ENTRY_LIFECYCLE);
-//				}
-//				hT.decrementCurrentValues();
-//				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
-//			}
+			} else if (!game.getStartPos().equals(pos.toString())) {
+				newGame();
+				if (debug) debugInfo.set("New game set due to new start position");
+				game = new Game(pos);
+			}
+			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
+			else {
+				if (debug) debugInfo.set("Position set within the same game");
+				gen++;
+				if (gen == 127) {
+					tT.clear();
+					eT.clear();
+					pT.clear();
+					gen = 0;
+				} else {
+					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
+					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
+					pT.remove(e -> e.generation < gen - params.PT_ENTRY_LIFECYCLE);
+				}
+				hT.decrementCurrentValues();
+				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
+			}
 			return true;
 		} catch (ChessParseException | NullPointerException e) {
 			if (debug) debugInfo.set(e.getMessage());
@@ -532,14 +532,14 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
 		}
 		// Set final results.
-//		if (searchResult.equals(Move.NULL_MOVE)) {
-//			bestMove = getRandomMove();
-//			if (debug) debugInfo.set("No valid PV root move found\n" +
-//					"Random move selected");
-//		} else
-//			bestMove = searchResult.toString();
-//		return new SearchResults(bestMove, ponderMove);
-		return new SearchResults(null, null);
+		if (searchResult.equals(Move.NULL_MOVE)) {
+			bestMove = getRandomMove();
+			if (debug) debugInfo.set("No valid PV root move found\n" +
+					"Random move selected");
+		} else
+			bestMove = searchResult.toString();
+		return new SearchResults(bestMove, ponderMove);
+//		return new SearchResults(null, null);
 	}
 	@Override
 	public void stop() {

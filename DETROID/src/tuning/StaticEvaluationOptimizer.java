@@ -173,7 +173,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 * 
 	 * @param sourceFenFile The file path to the source FEN file.
 	 * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
-	 * @param numOfPositionsToFilter The first x positions to filter from each game.
+	 * @param numOfPositionsToFilter The first x full moves to filter from each game.
 	 * @throws IOException
 	 */
 	public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile, int numOfPositionsToFilter)
@@ -189,10 +189,33 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 				Matcher matcher = halfMovePattern.matcher(line);
 				if (matcher.find()) {
 					String match = matcher.group();
-					int halfMoveInd = Integer.parseInt(match.substring(0, match.length() - 1));
-					if (halfMoveInd > numOfPositionsToFilter)
+					int fullMoveInd = Integer.parseInt(match.substring(0, match.length() - 1));
+					if (fullMoveInd > numOfPositionsToFilter)
 						writer.write(line + System.lineSeparator());
 				}
+			}
+		}
+	}
+	/**
+	 * Copies all the lines from the source FEN file to the destination file except for the ones representing positions from 
+	 * drawn games.
+	 * 
+	 * @param sourceFenFile The file path to the source FEN file.
+	 * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
+	 * @throws IOException
+	 */
+	public static void filterDraws(String sourceFenFile, String destinationFenFile)
+			throws IOException {
+		File destinationFile = new File(sourceFenFile);
+		if (!destinationFile.exists())
+			Files.createFile(destinationFile.toPath());
+		try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
+				BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				double result = Double.parseDouble(line.split(";")[1]);
+				if (result != 0.5)
+					writer.write(line + System.lineSeparator());
 			}
 		}
 	}

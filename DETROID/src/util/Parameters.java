@@ -21,7 +21,9 @@ import java.util.Arrays;
  * retrieve the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded 
  * and concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
  * procedure reversed. Fields of the subclasses can be annotated with the {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the 
- * number of bits to consider when tuning the parameter. This might not be very intuitive when applied to floating point fields.
+ * number of bits to consider when tuning the parameter. When applied to floating point values, it's effects are less intuituve as instead of ignoring 
+ * bits of the number's binary representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be 
+ * for integer numbers (2^[limit] - 1).
  * 
  * WARNING: It only supports non-static primitive fields declared in its subclasses! All other fields need to be marked transient or a {@link 
  * #ClassFormatError ClassFormatError} is thrown by the constructor. When initializing from a file, transient fields will still be set if declared in 
@@ -148,9 +150,9 @@ public abstract class Parameters {
 				else if (fieldType.equals(long.class))
 					f.set(this, GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 63))), 2)));
 				else if (fieldType.equals(float.class))
-					f.set(this, Float.intBitsToFloat((int) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 31))), 2))));
+					f.set(this, (float) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 31))), 2)));
 				else if (fieldType.equals(double.class))
-					f.set(this, Double.longBitsToDouble(GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 63))), 2))));
+					f.set(this, GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 63))), 2)));
 				else if (fieldType.equals(char.class))
 					f.set(this, (char) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 16))), 2)));
 			}
@@ -297,7 +299,9 @@ public abstract class Parameters {
 		return arr;
 	}
 	/**
-	 * Returns a binary string of all the bits of all the non-tansient fields of the instance concatenated field by field.
+	 * Returns a binary string of all the bits of all the non-tansient fields of the instance concatenated field by field. Floating point 
+	 * values will be cast to integer values (float to int, double to long) for their binary representation which may result in information 
+	 * loss.
 	 * 
 	 * @return
 	 */
@@ -311,21 +315,21 @@ public abstract class Parameters {
 				if (bitLimit == 64)
 					continue;
 				if (fieldValue instanceof Boolean)
-					genome += ((Boolean) fieldValue) ? "1" : "0";
+					genome += f.getBoolean(this) ? "1" : "0";
 				else if (fieldValue instanceof Byte)
-					genome += BitOperations.toBinaryString(GrayCode.encode((Byte) fieldValue)).substring(Math.max(bitLimit, 57));
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getByte(this))).substring(Math.max(bitLimit, 57));
 				else if (fieldValue instanceof Short)
-					genome += BitOperations.toBinaryString(GrayCode.encode((Short) fieldValue)).substring(Math.max(bitLimit, 49));
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getShort(this))).substring(Math.max(bitLimit, 49));
 				else if (fieldValue instanceof Integer)
-					genome += BitOperations.toBinaryString(GrayCode.encode((Integer) fieldValue)).substring(Math.max(bitLimit, 33));
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getInt(this))).substring(Math.max(bitLimit, 33));
 				else if (fieldValue instanceof Long)
-					genome += BitOperations.toBinaryString(GrayCode.encode((Long) fieldValue)).substring(Math.max(bitLimit, 1));
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getLong(this))).substring(Math.max(bitLimit, 1));
 				else if (fieldValue instanceof Float)
-					genome += BitOperations.toBinaryString(GrayCode.encode(Float.floatToIntBits((Float) fieldValue))).substring(Math.max(bitLimit, 33));
+					genome += BitOperations.toBinaryString(GrayCode.encode((int) f.getFloat(this))).substring(Math.max(bitLimit, 33));
 				else if (fieldValue instanceof Double)
-					genome += BitOperations.toBinaryString(GrayCode.encode(Double.doubleToLongBits((Double) fieldValue))).substring(Math.max(bitLimit, 1));
+					genome += BitOperations.toBinaryString(GrayCode.encode((long) f.getDouble(this))).substring(Math.max(bitLimit, 1));
 				else if (fieldValue instanceof Character)
-					genome += BitOperations.toBinaryString(GrayCode.encode(Character.getNumericValue((Character) fieldValue))).substring(Math.max(bitLimit, 48));
+					genome += BitOperations.toBinaryString(GrayCode.encode(Character.getNumericValue(f.getChar(this)))).substring(Math.max(bitLimit, 48));
 			}
 			return genome;
 		}

@@ -194,7 +194,7 @@ public abstract class ASGD {
 				momentumPi *= momDecayRateTplus1;
 				// Correct the momentum vector initialization bias by the momentum Pi for t + 1.
 				mPrime = m/(1 - momentumPi);
-				// Update the norm vector, the accumulated second moment estimates of the gradients.
+				// Update the norm vector.
 				n = normDecayRate*normVector[i] + (1 - normDecayRate)*Math.pow(g, 2);
 				normVector[i] = n;
 				// Correct the norm vector initialization bias by the norm decay rate to the power of t.

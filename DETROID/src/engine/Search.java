@@ -707,20 +707,20 @@ class Search implements Runnable {
 		if (position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
 		// Hash probe.
-//		e = tT.get(position.key);
-//		if (e != null) {
-//			// Mate score adjustment to root distance.
-//			if (e.score <= L_CHECK_MATE_LIMIT)
-//				score = e.score + distFromRoot;
-//			else if (e.score >= W_CHECK_MATE_LIMIT)
-//				score = e.score - distFromRoot;
-//			else
-//				score = e.score;
-//			// Return score if applicable.
-//			if (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_HIGH.ind && score >= beta) ||
-//					(e.type == NodeType.FAIL_LOW.ind && score <= alpha))
-//				return score;
-//		}
+		e = tT.get(position.key);
+		if (e != null) {
+			// Mate score adjustment to root distance.
+			if (e.score <= lCheckMateLimit)
+				score = e.score + distFromRoot;
+			else if (e.score >= wCheckMateLimit)
+				score = e.score - distFromRoot;
+			else
+				score = e.score;
+			// Return score if applicable.
+			if (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_HIGH.ind && score >= beta) ||
+					(e.type == NodeType.FAIL_LOW.ind && score <= alpha))
+				return score;
+		}
 		// Check for the fifty-move rule if the position cannot be a check mate.
 		if (!isInCheck && position.fiftyMoveRuleClock >= 100)
 			return Termination.DRAW_CLAIMED.score;
