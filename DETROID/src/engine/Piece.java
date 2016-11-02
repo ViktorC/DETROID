@@ -29,7 +29,7 @@ enum Piece {
 	final char letter;	// A character denoting the piece-type in chess notation.
 	
 	private Piece(char fen) {
-		this.ind = (byte)ordinal();
+		this.ind = (byte) ordinal();
 		this.letter = fen;
 	}
 	/**

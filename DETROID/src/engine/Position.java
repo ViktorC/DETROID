@@ -345,7 +345,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * @return
 	 */
 	int getNumberOfPieces() {
-		return BitOperations.getHammingWeight(allOccupied);
+		return BitOperations.hammingWeight(allOccupied);
 	}
 	/**
 	 * Returns an object containing all relevant information about the last move made. If the move history list is empty, it returns null.
@@ -3386,7 +3386,7 @@ class Position implements Copiable<Position>, Hashable {
 			case W_PAWN:
 				if (move.capturedPiece != Piece.NULL.ind) {
 					possOriginSqrs = mT.getBlackPawnCaptureSet(whitePawns & movablePieces);
-					if (BitOperations.getHammingWeight(possOriginSqrs) == 1)
+					if (BitOperations.hammingWeight(possOriginSqrs) == 1)
 						origin = "";
 					else
 						origin = Character.toString((char) (move.from%8 + 'a'));
@@ -3418,7 +3418,7 @@ class Position implements Copiable<Position>, Hashable {
 			case B_PAWN:
 				if (move.capturedPiece != Piece.NULL.ind) {
 					possOriginSqrs = mT.getWhitePawnCaptureSet(blackPawns & movablePieces);
-					if (BitOperations.getHammingWeight(possOriginSqrs) == 1)
+					if (BitOperations.hammingWeight(possOriginSqrs) == 1)
 						origin = "";
 					else
 						origin = Character.toString((char) (move.from%8 + 'a'));
@@ -3431,11 +3431,11 @@ class Position implements Copiable<Position>, Hashable {
 				return null;
 		}
 		if (origin == null) {
-			if (BitOperations.getHammingWeight(possOriginSqrs) == 1)
+			if (BitOperations.hammingWeight(possOriginSqrs) == 1)
 				origin = "";
-			else if (BitOperations.getHammingWeight(File.getBySquareIndex(move.from).bits & possOriginSqrs) == 1)
+			else if (BitOperations.hammingWeight(File.getBySquareIndex(move.from).bits & possOriginSqrs) == 1)
 				origin = Character.toString((char) (move.from%8 + 'a'));
-			else if (BitOperations.getHammingWeight(Rank.getBySquareIndex(move.from).bits & possOriginSqrs) == 1)
+			else if (BitOperations.hammingWeight(Rank.getBySquareIndex(move.from).bits & possOriginSqrs) == 1)
 				origin = Integer.toString(move.from/8 + 1);
 			else
 				origin = Character.toString((char) (move.from%8 + 'a')) + Integer.toString(move.from/8 + 1);

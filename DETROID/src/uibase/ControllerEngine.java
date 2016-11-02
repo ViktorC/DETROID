@@ -12,6 +12,12 @@ public interface ControllerEngine extends UCIEngine {
 
 
 	/**
+	 * Returns the current game state as labelled by {@link #uibase.GameState GameState}.
+	 * 
+	 * @return
+	 */
+	GameState getGameState();
+	/**
 	 * Parses the Portable Game Notation string and sets its internal data structure tracking the state of the game
 	 * accordingly. It returns whether the game could be successfully set or not.
 	 * 
@@ -39,6 +45,12 @@ public interface ControllerEngine extends UCIEngine {
 	 */
 	void setSite(String site);
 	/**
+	 * Unmakes the last move and returns it in Pure Algebraic Coordinate Notation. It returns null if no moves have been made yet.
+	 * 
+	 * @return
+	 */
+	String unplayLastMove();
+	/**
 	 * Returns a Portable Game Notation string representing the state of the game.
 	 * 
 	 * @return
@@ -50,11 +62,5 @@ public interface ControllerEngine extends UCIEngine {
 	 * @return
 	 */
 	String toFEN();
-	/**
-	 * Returns the current game state as labelled by {@link #uibase.GameState GameState}.
-	 * 
-	 * @return
-	 */
-	GameState getGameState();
 	
 }

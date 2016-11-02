@@ -359,6 +359,15 @@ class Game {
 		return false;
 	}
 	/**
+	 * Unmakes the last move and returns it in Pure Algebraic Coordinate Notation. It returns null if no moves have been made yet.
+	 * 
+	 * @return
+	 */
+	String unplay() {
+		Move m = position.unmakeMove();
+		return m == null ? null : m.toString();
+	}
+	/**
 	 * Returns a string representation of the position's move list in SAN with six full moves per line.
 	 * 
 	 * @param p

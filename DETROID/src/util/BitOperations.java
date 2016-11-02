@@ -101,7 +101,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static byte getHammingWeight(long n) {
+	public final static byte hammingWeight(long n) {
 		n -= ((n >>> 1) & 0x5555555555555555L);
 		n  = (n & 0x3333333333333333L) + ((n >>> 2) & 0x3333333333333333L);
 		n  = (n + (n >>> 4)) & 0x0F0F0F0F0F0F0F0FL;
@@ -139,7 +139,7 @@ public class BitOperations {
 	 * @return
 	 */
 	public final static byte[] serialize(long n) {
-		byte[] series = new byte[getHammingWeight(n)];
+		byte[] series = new byte[hammingWeight(n)];
 		int ind = 0;
 		while (n != 0) {
 			series[ind] = DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)];

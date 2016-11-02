@@ -148,12 +148,18 @@ public class SingularTimer implements AutoCloseable {
 	 * Starts the timer with the set parameters on a separate thread from a single thread fixed thread pool.
 	 * From the moment this method is invoked to the moment the execution of the delayed task finishes, the
 	 * timer is considered alive.
-	 * 
-	 * @throws IllegalStateException If the method was invoked on an alive instance.
 	 */
-	public void start() throws IllegalStateException {
-		if (isAlive)
-			throw new IllegalStateException("The start method cannot be invoked while the timer is still alive.");
+	public void start() {
+		// If the thread is still alive when this method is called, wait until it finishes.
+		synchronized (this) {
+			while (isAlive) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		isAlive = true;
 		cancel = false;
 		pause = false;
@@ -167,16 +173,25 @@ public class SingularTimer implements AutoCloseable {
 					}
 					if (cancel) {
 						isAlive = false;
+						synchronized (SingularTimer.this) {
+							SingularTimer.this.notify();
+						}
 						return;
 					}
 					ticks.decrementAndGet();
 				} catch (InterruptedException e) {
 					isAlive = false;
+					synchronized (SingularTimer.this) {
+						SingularTimer.this.notify();
+					}
 					return;
 				}
 			}
 			callBack.run();
 			isAlive = false;
+			synchronized (SingularTimer.this) {
+				SingularTimer.this.notify();
+			}
 		});
 	}
 	@Override

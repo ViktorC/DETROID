@@ -106,7 +106,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				"Transposition table capacity - " + tT.getCapacity() + "\n" +
 				"Evaluation table capacity - " + eT.getCapacity() + "\n" +
 				"Pawn table capacity - " + pT.getCapacity());
-		System.gc();
 	}
 	/**
 	 * Clears the transposition, pawn, evaluation, and history tables.
@@ -539,7 +538,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		} else
 			bestMove = searchResult.toString();
 		return new SearchResults(bestMove, ponderMove);
-//		return new SearchResults(null, null);
 	}
 	@Override
 	public void stop() {
@@ -592,6 +590,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		isInit = false;
 	}
 	@Override
+	public synchronized GameState getGameState() {
+		return game.getState();
+	}
+	@Override
 	public void setPlayers(String whitePlayer, String blackPlayer) {
 		game.setWhitePlayerName(whitePlayer);
 		game.setBlackPlayerName(blackPlayer);
@@ -617,6 +619,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		}
 	}
 	@Override
+	public synchronized String unplayLastMove() {
+		return game.unplay();
+	}
+	@Override
 	public synchronized String toPGN() {
 		return game.toString();
 	}
@@ -625,17 +631,15 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return game.getPosition().toString();
 	}
 	@Override
-	public synchronized GameState getGameState() {
-		return game.getState();
-	}
-	@Override
 	public Parameters getParameters() {
 		return params;
 	}
 	@Override
 	public void reloadParameters() {
-		if (eval != null)
+		if (isInit()) {
 			eval.initPieceSquareArrays();
+			setHashSize((Integer) options.get(hashSize));
+		}
 	}
 	@Override
 	public void update(Observable o, Object arg) {

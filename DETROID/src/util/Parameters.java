@@ -276,9 +276,7 @@ public abstract class Parameters {
 		for (Field f : fields) {
 			Class<?> fieldType = f.getType();
 			LimitBinaryLength ann = f.getAnnotation(LimitBinaryLength.class);
-			long max = (ann != null ? 1L << ann.value() - 1 : Long.MAX_VALUE);
-			if (max == 0)
-				continue;
+			long max = (ann != null ? (1L << ann.value()) - 1 : Long.MAX_VALUE);
 			if (fieldType.equals(boolean.class))
 				arr[i++] = 1;
 			else if (fieldType.equals(byte.class))

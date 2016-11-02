@@ -225,7 +225,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 * @return The value for K that locally minimizes the average error.
 	 */
 	private double computeOptimalK() {
-		final double resolution = 0.001;
+		final double resolution = 0.01;
 		double k = 0;
 		double kPlusErr = computeAverageError(features, k + resolution, trainingData);
 		double kMinusErr = computeAverageError(features, k - resolution, trainingData);
@@ -302,6 +302,8 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 					e.position(fen);
 					e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
 					double score = e.getSearchInfo().getScore();
+					if (!fen.contains("w"))
+						score *= -1;
 					double error = computeError(result, score, k);
 					subTotalError += error;
 				}

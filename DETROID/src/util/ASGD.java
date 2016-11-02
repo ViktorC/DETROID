@@ -2,7 +2,9 @@ package util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -49,6 +51,7 @@ public abstract class ASGD {
 	protected final double[] features;
 	protected final double[] minValues;
 	protected final double[] maxValues;
+	protected final Set<Integer> indicesToIgnore;
 	protected final double h;
 	protected final double learningRate;
 	protected final double epsilon;
@@ -70,13 +73,13 @@ public abstract class ASGD {
 	 * length of the array is smaller than that off the features array, the array will be extended by elements of the greatest negative 
 	 * double value to match the length of the features array. If it is null, an array of elements of the greatest negative double value 
 	 * will be used. Each element has to be smaller by at least the absolute value of h times two than the corresponding element in the 
-	 * maxValues array.
+	 * maxValues array, else the corresponding feature will be ignored.
 	 * @param maxValues The maximum allowed values for the features. Each element corresponds to the element at the same index in the 
 	 * features array. If the length of the array is greater than that of the features array, the extra elements will be ignored. If the 
 	 * length of the array is smaller than that off the features array, the array will be extended by elements of the greatest positive 
 	 * double value to match the length of the features array. If it is null, an array of elements of the greatest positive double value 
 	 * will be used. Each element has to be greater by at least the absolute value of h times two than the corresponding element in the 
-	 * minValues array.
+	 * minValues array, else the corresponding feature will be ignored.
 	 * @param h A constant employed in the numerical differentiation formula used to derive the derivative of the cost function. If the 
 	 * the function is smooth, usually the smaller it is, the more accurate the approximation of the derivatives will be. It should never 
 	 * be 0 nonetheless. If it is null, a default value of 1e-3 is used. However, the optimal value is highly application dependent (e.g. 
@@ -101,38 +104,42 @@ public abstract class ASGD {
 	 * @param filePath The path to the file holding the training data set.
 	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
 	 * @throws IllegalArgumentException If features is null or its length is 0. If the decay rate is greater than 1 or smaller than 0. If 
-	 * an element in minValues is not at least the absolute value of h times two smaller than the respective element in maxValues.
+	 * an element in minValues is greater than the respective element in maxValues.
 	 */
 	protected ASGD(double[] features, double[] minValues, double[] maxValues, Double h, Double baseLearningRate, Double epsilon,
 			Double momentumDecayRate, Double normDecayRate, Double annealingExponent, Integer maxEpoch, Integer sampleSize, String filePath,
 			Logger logger) throws IllegalArgumentException {
 		if (features == null || features.length == 0)
 			throw new IllegalArgumentException("The array features cannot be null and its length has to be greater than 0.");
+		indicesToIgnore = new HashSet<>();
+		if (minValues != null && maxValues != null) {
+			int length = Math.min(minValues.length, maxValues.length);
+			length = Math.min(length, features.length);
+			for (int i = 0; i < length; i++) {
+				if (minValues[i] > maxValues[i])
+					throw new IllegalArgumentException("The minimum value constraints cannot be greater than the respective maximum " +
+							"value constraints.");
+				if (maxValues[i] - minValues[i] <= Math.abs(2*h))
+					indicesToIgnore.add(i);
+			}
+		}
 		this.features = features.clone();
 		this.minValues = new double[features.length];
 		this.maxValues = new double[features.length];
 		Arrays.fill(this.minValues, -Double.MAX_VALUE);
 		Arrays.fill(this.maxValues, Double.MAX_VALUE);
-		if (minValues != null) {
-			int length = Math.min(this.features.length, minValues.length);
-			for (int i = 0; i < length; i++) {
-				this.minValues[i] = minValues[i];
+		for (int i = 0; i < features.length; i++) {
+			if (indicesToIgnore.contains(i))
+				continue;
+			this.features[i] = features[i];
+			if (minValues != null) {
 				this.features[i] = Math.max(this.features[i], minValues[i]);
-			}
-		}
-		if (maxValues != null) {
-			int length = Math.min(this.features.length, this.maxValues.length);
-			for (int i = 0; i < length; i++) {
 				this.minValues[i] = minValues[i];
-				this.features[i] = Math.min(this.features[i], this.maxValues[i]);
 			}
-		}
-		int length = Math.min(this.minValues.length, this.maxValues.length);
-		for (int i = 0; i < length; i++) {
-			if (this.minValues[i] >= this.maxValues[i])
-				throw new IllegalArgumentException("The minimum value constraints have to be smaller than the respective maximum value constraints.");
-			if (this.maxValues[i] - this.minValues[i] <= Math.abs(2*h))
-				throw new IllegalArgumentException("The windows between the respective minimum and maximum values have to be at least |2*h| each.");
+			if (maxValues != null) {
+				this.features[i] = Math.min(this.features[i], maxValues[i]);
+				this.maxValues[i] = maxValues[i];
+			}
 		}
 		this.h = (h == null ? H : h);
 		this.learningRate = (baseLearningRate == null ? LEARNING_RATE : baseLearningRate);
@@ -269,6 +276,8 @@ public abstract class ASGD {
 	private final double computeCostFunctionDerivative(int i, ArrayList<Object> dataSample) {
 		double cost1, cost2, denominator;
 		double feature = features[i];
+		if (indicesToIgnore.contains(i))
+			return 0;
 		if (feature > maxValues[i] - h) {
 			cost1 = costFunction(features, dataSample);
 			features[i] = feature - h;

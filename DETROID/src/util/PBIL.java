@@ -146,9 +146,6 @@ public abstract class PBIL {
 		int curGen = 0;
 		// Evolution.
 		while (true) {
-			if (logger != null)
-				logger.info("Generation: " + curGen + "; Entropy: " + getEntropy() + System.lineSeparator() + 
-						"Probability vector: " + probabilityVector + System.lineSeparator());
 			// Generate the new population by generating the genotypes using the probability vector.
 			for (int i = 0; i < populationSize; i++) {
 				String genotype = "";
@@ -171,6 +168,7 @@ public abstract class PBIL {
 					curHighestFitness = fitness;
 					curFittestGenotype = genome;
 					if (fitness > highestFitness) {
+						highestFitness = fitness;
 						fittestGenotype = genome;
 					}
 				}
@@ -180,7 +178,10 @@ public abstract class PBIL {
 				}
 			}
 			if (logger != null)
-				logger.info("Average fitness: " + averageCurrentGenerationFitness + System.lineSeparator() + 
+				logger.info("Generation: " + curGen + "; Entropy: " + getEntropy() + System.lineSeparator() + 
+						"Probability vector: " + Arrays.toString(probabilityVector) + System.lineSeparator() +
+						"Average fitness: " + averageCurrentGenerationFitness + System.lineSeparator() +
+						"All time highest fitness:" + highestFitness + System.lineSeparator() + 
 						"All time fittest genotype: " + fittestGenotype + System.lineSeparator());
 			/*
 			 * Update the probability vector according to the fitness of the fittest and the least fit

@@ -47,7 +47,8 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * binary string's length. If it is null, an array with a length equal to the parameters' 
 	 * binary string's length, only containing elements that have the value 0.5d will be used.
 	 * @param populationSize The number of samples to produce per generation.
-	 * @param gameLogger A logger to log the optimization process
+	 * @param logger A logger to log the optimization process. If it is null, no logging 
+	 * will be done.
 	 * @throws NullPointerException If the parameter engines is null or its first element is
 	 * null.
 	 */
@@ -84,14 +85,14 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
 	 * engine is incremented after each legal move.
 	 * @param populationSize The number of samples to produce per generation.
-	 * @param gameLogger A logger to log the game results. If it is null, no logging will be 
-	 * done.
+	 * @param logger A logger to log the optimization process. If it is null, no logging 
+	 * will be done.
 	 * @throws NullPointerException If the parameter engines is null or its first element is
 	 * null.
 	 */
 	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove, int populationSize,
-			Logger gameLogger) throws NullPointerException {
-		this(engines, games, timePerGame, timeIncPerMove, null, populationSize, gameLogger);
+			Logger logger) throws NullPointerException {
+		this(engines, games, timePerGame, timeIncPerMove, null, populationSize, logger);
 	}
 	@Override
 	protected double fitnessFunction(String genome) {
@@ -109,6 +110,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				if (!oppEngine.isInit())
 					oppEngine.init();
 				tunEngine.getParameters().set(genome);
+				tunEngine.reloadParameters();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));
 		}
