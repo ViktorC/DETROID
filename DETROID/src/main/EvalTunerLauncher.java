@@ -19,7 +19,7 @@ public class EvalTunerLauncher {
 		engines[0].init();
 		Logger logger = Logger.getAnonymousLogger();
 		logger.addHandler(new FileHandler("log", true));
-		StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, 131072, "fens", -0.63d , logger);
+		StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, 131072, "fens", -0.6, logger);
 		optimizer.train();
 		try {
 			optimizer.close();

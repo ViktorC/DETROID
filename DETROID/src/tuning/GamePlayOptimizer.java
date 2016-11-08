@@ -65,7 +65,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		this.engines = enginesList.toArray(new OptimizerEngines[enginesList.size()]);
 		arenas = new Arena[this.engines.length];
 		for (int i = 0; i < this.engines.length; i++)
-			arenas[i] = new Arena(this.engines[i].getController(), Logger.getAnonymousLogger());
+			arenas[i] = new Arena(this.engines[i].getController());
 		this.games = games;
 		this.timePerGame = timePerGame;
 		this.timeIncPerMove = timeIncPerMove;

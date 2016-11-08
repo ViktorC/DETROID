@@ -84,7 +84,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	private RelativeHistoryTable hT;
 	private LossyHashTable<TTEntry> tT;		// Transposition table.
 	private LossyHashTable<ETEntry> eT;		// Evaluation hash table.
-	private LossyHashTable<PTEntry> pT;		// Pawn hash table.
 	private byte gen;
 	
 	public Detroid() {
@@ -97,15 +96,13 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	 */
 	private void setHashSize(int hashSize) {
 		long sizeInBytes = hashSize*1024*1024;
-		int totalHashShares = params.TT_SHARE + params.ET_SHARE + params.PT_SHARE;
+		int totalHashShares = params.TT_SHARE + params.ET_SHARE;
 		SizeEstimator estimator = SizeEstimator.getInstance();
 		tT = new LossyHashTable<>((int) (sizeInBytes*params.TT_SHARE/totalHashShares/estimator.sizeOf(TTEntry.class)));
 		eT = new LossyHashTable<>((int) (sizeInBytes*params.ET_SHARE/totalHashShares/estimator.sizeOf(ETEntry.class)));
-		pT = new LossyHashTable<>((int) (sizeInBytes*params.PT_SHARE/totalHashShares/estimator.sizeOf(PTEntry.class)));
 		if (debug) debugInfo.set("Hash capacity data\n" +
 				"Transposition table capacity - " + tT.getCapacity() + "\n" +
-				"Evaluation table capacity - " + eT.getCapacity() + "\n" +
-				"Pawn table capacity - " + pT.getCapacity());
+				"Evaluation table capacity - " + eT.getCapacity());
 	}
 	/**
 	 * Clears the transposition, pawn, evaluation, and history tables.
@@ -113,7 +110,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	private void clearHash() {
 		tT.clear();
 		eT.clear();
-		pT.clear();
 		hT.reset();
 		System.gc();
 		gen = 0;
@@ -217,7 +213,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		game = new Game();
 		options = new HashMap<>();
 		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
-		hashSize = new Option.SpinOption("Hash", Math.min(64, maxHashSize), 1, maxHashSize);
+		hashSize = new Option.SpinOption("Hash", Math.min(1, maxHashSize), 1, maxHashSize);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
@@ -235,7 +231,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		searchStats.addObserver(this);
 		setHashSize((int) options.get(hashSize));
 		hT = new RelativeHistoryTable(params);
-		eval = new Evaluator(params, eT, pT);
+		eval = new Evaluator(params, eT);
 		executor = Executors.newSingleThreadExecutor();
 		isInit = true;
 	}
@@ -346,14 +342,12 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				if (gen == 127) {
 					tT.clear();
 					eT.clear();
-					pT.clear();
 					gen = 0;
 				} else {
 					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
 					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
-					pT.remove(e -> e.generation < gen - params.PT_ENTRY_LIFECYCLE);
 				}
-				hT.decrementCurrentValues();
+				hT.decreaseCurrentValues();
 				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
 			}
 			return true;
@@ -407,25 +401,28 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
 			search = executor.submit(() -> {
-				searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+				Move searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
 				searchResult = searchResult == null ? new Move() : searchResult;
+				return searchResult;
 			});
 			if (debug) debugInfo.set("Book search started");
 			try {
-				search.get();
+				searchResult = (Move) search.get();
 			} catch (InterruptedException | ExecutionException e1) {
 				if (debug) debugInfo.set(e1.getMessage());
 			} catch (CancellationException e2) { }
 			if (debug) debugInfo.set("Book search done");
 			ponderMove = null;
-			// If the book search has not been externally stopped, use the remaining time for a normal search.
-			if (!stop) {
+			// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
+			if (!stop && searchResult == null) {
 				if (searchResult.equals(new Move())) {
 					if (debug) debugInfo.set("No book move found. Out of book.");
 					outOfBook = true;
-					search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? whiteTime - (System.currentTimeMillis() - bookSearchStart) :
-						whiteTime, game.getSideToMove() == Side.WHITE ? blackTime : blackTime - (System.currentTimeMillis() - bookSearchStart),
-						whiteIncrement, blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
+					search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? (whiteTime != null ?
+							whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
+							game.getSideToMove() == Side.WHITE ? blackTime : (blackTime != null ?
+							blackTime - (System.currentTimeMillis() - bookSearchStart) : null), whiteIncrement,
+							blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
 				}
 			}
 		}
@@ -565,10 +562,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	@Override
 	public short getHashLoadPermill() {
 		long load, capacity;
-		capacity = tT.getCapacity() + eT.getCapacity() + pT.getCapacity();
-		load = tT.getLoad() + eT.getLoad() + pT.getLoad();
+		capacity = tT.getCapacity() + eT.getCapacity();
+		load = tT.getLoad() + eT.getLoad();
 		if (debug) debugInfo.set("Total hash size in MB - " + String.format("%.2f", (float) ((double) (SizeEstimator.getInstance().sizeOf(tT) +
-				SizeEstimator.getInstance().sizeOf(eT) + SizeEstimator.getInstance().sizeOf(pT)))/(1L << 20)));
+				SizeEstimator.getInstance().sizeOf(eT)))/(1L << 20)));
 		return (short) (1000*Math.max(1, load)/capacity);
 	}
 	@Override
@@ -586,7 +583,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		hT = null;
 		tT = null;
 		eT = null;
-		pT = null;
 		isInit = false;
 	}
 	@Override

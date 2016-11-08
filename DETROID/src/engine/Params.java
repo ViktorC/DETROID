@@ -51,27 +51,13 @@ final class Params extends Parameters {
 	@LimitBinaryLength (value = 0)
 	byte PASSED_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte ISOLATED_PAWN_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte BACKWARD_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte OPEN_BACKWARD_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte SHIELDING_PAWN_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte STOPPED_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte QUEEN_MOBILITY_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte ROOK_MOBILITY_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte BISHOP_MOBILITY_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte KNIGHT_MOBILITY_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte PINNED_QUEEN_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte PINNED_ROOK_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PINNED_BISHOP_WEIGHT;
 	@LimitBinaryLength (value = 0)
@@ -92,6 +78,18 @@ final class Params extends Parameters {
 	byte PAWN_ATTACKED_BISHOP_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_ATTACKED_KNIGHT_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte PAWN_ATTACKED_PAWN_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte QUEEN_MOBILITY_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte ROOK_MOBILITY_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte BISHOP_MOBILITY_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte KNIGHT_MOBILITY_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte QUEEN_KING_TROPISM_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte BISHOP_PAIR_ADVANTAGE;
 	@LimitBinaryLength (value = 0)
@@ -114,9 +112,9 @@ final class Params extends Parameters {
 	short GAME_PHASE_ENDGAME_UPPER;
 	
 	// Search parameters.
-	@LimitBinaryLength (value = 4)
+	@LimitBinaryLength (value = 2)
 	byte NMR;						// Null move pruning reduction.
-	@LimitBinaryLength (value = 4)
+	@LimitBinaryLength (value = 0)
 	byte LMR;						// Late move reduction.
 	@LimitBinaryLength (value = 5)
 	byte LMRMSM;					// Min. number of searched moves for late move reduction.
@@ -125,7 +123,7 @@ final class Params extends Parameters {
 	@LimitBinaryLength (value = 11)
 	short FMAR2;					// Extended futility margin.
 	@LimitBinaryLength (value = 11)
-	short FMAR3;					// Razoring margin.
+	short RMAR;						// Razoring margin.
 	@LimitBinaryLength (value = 11)
 	short A_DELTA;					// The aspiration delta within iterative deepening.
 	@LimitBinaryLength (value = 11)
@@ -146,27 +144,26 @@ final class Params extends Parameters {
 	byte RHT_DECREMENT_FACTOR;
 	
 	// The shares of the different hash tables of the total hash size.
+	@LimitBinaryLength (value = 0)
 	byte TT_SHARE;
+	@LimitBinaryLength (value = 0)
 	byte ET_SHARE;
-	byte PT_SHARE;
 	
 	// The number of turns for which the different hash table's entries are retained by default.
-	@LimitBinaryLength (value = 4)
+	@LimitBinaryLength (value = 0)
 	byte TT_ENTRY_LIFECYCLE;
-	@LimitBinaryLength (value = 4)
+	@LimitBinaryLength (value = 0)
 	byte ET_ENTRY_LIFECYCLE;
-	@LimitBinaryLength (value = 4)
-	byte PT_ENTRY_LIFECYCLE;
 	
 	// The values considered when calculating search time extensions.
-	@LimitBinaryLength (value = 12)
+	@LimitBinaryLength (value = 10)
 	short SCORE_FLUCTUATION_LIMIT;
 	byte FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT_HTH;
 	@LimitBinaryLength (value = 5)
 	byte RESULT_CHANGES_PER_DEPTH_LIMIT;
 	@LimitBinaryLength (value = 0)
 	byte AVG_MOVES_PER_GAME;
-	@LimitBinaryLength (value = 6)
+	@LimitBinaryLength (value = 5)
 	byte MOVES_TO_GO_SAFETY_MARGIN;
 	byte FRACTION_OF_TOTAL_TIME_TO_USE_HTH;
 	

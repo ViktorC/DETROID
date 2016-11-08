@@ -177,12 +177,6 @@ public abstract class PBIL {
 					curLeastFitGenotype = genome;
 				}
 			}
-			if (logger != null)
-				logger.info("Generation: " + curGen + "; Entropy: " + getEntropy() + System.lineSeparator() + 
-						"Probability vector: " + Arrays.toString(probabilityVector) + System.lineSeparator() +
-						"Average fitness: " + averageCurrentGenerationFitness + System.lineSeparator() +
-						"All time highest fitness:" + highestFitness + System.lineSeparator() + 
-						"All time fittest genotype: " + fittestGenotype + System.lineSeparator());
 			/*
 			 * Update the probability vector according to the fitness of the fittest and the least fit
 			 * individuals in the population sample and mutate it.
@@ -202,6 +196,12 @@ public abstract class PBIL {
 							(rand.nextBoolean() ? mutationShift : 0d);
 				probabilityVector[j] = newProbabilityVectorVal;
 			}
+			if (logger != null)
+				logger.info("Generation: " + curGen + "; Entropy: " + getEntropy() + System.lineSeparator() + 
+						"Probability vector: " + Arrays.toString(probabilityVector) + System.lineSeparator() +
+						"Average fitness: " + averageCurrentGenerationFitness + System.lineSeparator() +
+						"All time highest fitness:" + highestFitness + System.lineSeparator() + 
+						"All time fittest genotype: " + fittestGenotype + System.lineSeparator());
 			curGen++;
 			// Exit if the evolution has reached the desired stage.
 			if (isOptimized(curGen))

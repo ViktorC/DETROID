@@ -297,27 +297,6 @@ class Position implements Copiable<Position>, Hashable {
 			unmakeRegisterHistory.add(u);
 	}
 	/**
-	 * Returns a deep copy of the position.
-	 * 
-	 * @return
-	 */
-	@Override
-	public Position deepCopy() {
-		return new Position(this);
-	}
-	@Override
-	public long hashKey() {
-		return key;
-	}
-	/**
-	 * Returns a 64 bit Zobrist hash key for the pawn-king structure on the board.
-	 * 
-	 * @return
-	 */
-	long getPawnKingHashKey() {
-		return gen.generatePawnKingHashKey(this);
-	}
-	/**
 	 * Returns the number of times the current position has already occurred before. If the position has already occurred before within the last
 	 * x number of moves specified by sensitiveHalfMoveWindow, the maximum integer value is returned.
 	 * 
@@ -3454,16 +3433,14 @@ class Position implements Copiable<Position>, Hashable {
 		else
 			return san;
 	}
-	/**
-	 * Returns the current state of a Board object as a one-line String in FEN-notation. The FEN-notation consists of six fields separated
-	 * by spaces. The six fields are as follows:
-	 * 		1. board position
-	 * 		2. colour to move
-	 * 		3. castling rights
-	 * 		4. en passant rights
-	 * 		5. fifty-move rule clock
-	 * 		6. full move number
-	 */
+	@Override
+	public long hashKey() {
+		return key;
+	}
+	@Override
+	public Position deepCopy() {
+		return new Position(this);
+	}
 	@Override
 	public String toString() {
 		String fen = "";

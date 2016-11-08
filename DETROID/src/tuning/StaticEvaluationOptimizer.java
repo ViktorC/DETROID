@@ -36,7 +36,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	/**
 	 * The base step size for the gradient descent.
 	 */
-	private static final double BASE_LEARNING_RATE = 4;
+	private static final double BASE_LEARNING_RATE = 2;
 	
 	private final TunableEngine[] engines;
 	private final double k;
