@@ -38,7 +38,7 @@ import util.*;
  */
 public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Observer {
 	
-	public final static float VERSION_NUMBER = 0.80f;
+	public final static float VERSION_NUMBER = 0.90f;
 	public final static String NAME = "DETROID" + " " + VERSION_NUMBER;
 	public final static String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.
@@ -111,7 +111,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		tT.clear();
 		eT.clear();
 		hT.reset();
-		System.gc();
 		gen = 0;
 		if (debug) debugInfo.set("Hash tables cleared");
 	}
@@ -213,7 +212,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		game = new Game();
 		options = new HashMap<>();
 		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
-		hashSize = new Option.SpinOption("Hash", Math.min(1, maxHashSize), 1, maxHashSize);
+		hashSize = new Option.SpinOption("Hash", Math.min(64, maxHashSize), 1, maxHashSize);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
@@ -330,7 +329,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			if (newGame) {
 				if (debug) debugInfo.set("New game set");
 				game = new Game(pos);
-			} else if (!game.getStartPos().equals(pos.toString())) {
+			} else if (!game.getStartPos().toString().equals(pos.toString())) {
 				newGame();
 				if (debug) debugInfo.set("New game set due to new start position");
 				game = new Game(pos);
@@ -566,7 +565,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		load = tT.getLoad() + eT.getLoad();
 		if (debug) debugInfo.set("Total hash size in MB - " + String.format("%.2f", (float) ((double) (SizeEstimator.getInstance().sizeOf(tT) +
 				SizeEstimator.getInstance().sizeOf(eT)))/(1L << 20)));
-		return (short) (1000*Math.max(1, load)/capacity);
+		return (short) (1000*load/capacity);
 	}
 	@Override
 	public DebugInformation getDebugInfo() {

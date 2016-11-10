@@ -343,6 +343,14 @@ class Position implements Copiable<Position>, Hashable {
 		return unmakeRegisterHistory.peekFirst();
 	}
 	/**
+	 * Returns a 64 bit Zobrist hash key for the pawn-king structure on the board.
+	 * 
+	 * @return
+	 */
+	long pawnKingHashKey() {
+		return gen.generatePawnKingHashKey(this);
+	}
+	/**
 	 * Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the
 	 * supposedly enemy occupied square specified by sqrInd.
 	 * 

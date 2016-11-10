@@ -31,7 +31,7 @@ public final class UCI implements Observer, Closeable {
 	 * @param engine
 	 */
 	public synchronized void run(UCIEngine engine) {
-		ExecutorService exec = Executors.newFixedThreadPool(1);
+		ExecutorService exec = Executors.newSingleThreadExecutor();
 		boolean over = false;
 		String input = "";
 		String[] tokens;

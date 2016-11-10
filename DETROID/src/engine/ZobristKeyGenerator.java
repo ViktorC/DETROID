@@ -3,6 +3,7 @@ package engine;
 import java.util.Random;
 
 import engine.Bitboard.Square;
+import util.BitOperations;
 
 /**
  * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
@@ -353,6 +354,28 @@ final class ZobristKeyGenerator {
 					key ^= board[Piece.B_KNIGHT.ind][move.to];
 			}
 		}
+		return key;
+	}
+	/**
+	 * Generates a Zobrist hash key for the pawn-king structure on the board.
+	 * 
+	 * @param p
+	 * @return
+	 */
+	long generatePawnKingHashKey(Position p) {
+		long key = 0;
+		long whitePawns = p.whitePawns;
+		long blackPawns = p.blackPawns;
+		while (whitePawns != 0) {
+			key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
+			whitePawns = BitOperations.resetLSBit(whitePawns);
+		}
+		while (blackPawns != 0) {
+			key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
+			blackPawns = BitOperations.resetLSBit(blackPawns);
+		}
+		key ^= board[Piece.W_KING.ind][BitOperations.indexOfBit(p.whiteKing)];
+		key ^= board[Piece.B_KING.ind][BitOperations.indexOfBit(p.blackKing)];
 		return key;
 	}
 	/**

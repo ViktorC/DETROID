@@ -26,7 +26,7 @@ final class Params extends Parameters {
 	short KNIGHT_VALUE;
 	@LimitBinaryLength (value = 0)
 	short PAWN_VALUE;
-	
+
 	// Piece phase weights
 	@LimitBinaryLength (value = 0)
 	byte KING_PHASE_WEIGHT;
@@ -40,7 +40,7 @@ final class Params extends Parameters {
 	byte KNIGHT_PHASE_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_PHASE_WEIGHT;
-	
+
 	// Evaluation weights.
 	@LimitBinaryLength (value = 0)
 	byte BLOCKED_PAWN_WEIGHT1;
@@ -48,6 +48,18 @@ final class Params extends Parameters {
 	byte BLOCKED_PAWN_WEIGHT2;
 	@LimitBinaryLength (value = 0)
 	byte BLOCKED_PAWN_WEIGHT3;
+	@LimitBinaryLength (value = 0)
+	byte KING_FRIENDLY_NORMAL_PAWN_TROPISM_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte KING_OPPONENT_NORMAL_PAWN_TROPISM_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte KING_FRIENDLY_OPEN_BACKWARD_PAWN_TROPISM_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte KING_OPPONENT_OPEN_BACKWARD_PAWN_TROPISM_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte KING_FRIENDLY_PASSED_PAWN_TROPISM_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte KING_OPPONENT_PASSED_PAWN_TROPISM_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PASSED_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
@@ -57,12 +69,6 @@ final class Params extends Parameters {
 	@LimitBinaryLength (value = 0)
 	byte STOPPED_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte PINNED_QUEEN_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte PINNED_BISHOP_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte PINNED_KNIGHT_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte PAWN_DEFENDED_QUEEN_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_DEFENDED_ROOK_WEIGHT;
@@ -70,6 +76,8 @@ final class Params extends Parameters {
 	byte PAWN_DEFENDED_BISHOP_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_DEFENDED_KNIGHT_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte PAWN_DEFENDED_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_ATTACKED_QUEEN_WEIGHT;
 	@LimitBinaryLength (value = 0)
@@ -80,6 +88,14 @@ final class Params extends Parameters {
 	byte PAWN_ATTACKED_KNIGHT_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_ATTACKED_PAWN_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte PINNED_QUEEN_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte PINNED_ROOK_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte PINNED_BISHOP_WEIGHT;
+	@LimitBinaryLength (value = 0)
+	byte PINNED_KNIGHT_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte QUEEN_MOBILITY_WEIGHT;
 	@LimitBinaryLength (value = 0)
@@ -96,11 +112,11 @@ final class Params extends Parameters {
 	byte LIVE_EP_ADVANTAGE;
 	@LimitBinaryLength (value = 0)
 	byte TEMPO_ADVANTAGE;
-	
+
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	@LimitBinaryLength (value = 11)
+	@LimitBinaryLength (value = 0)
 	short LAZY_EVAL_MAR;
-	
+
 	// Game phase intervals.
 	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_OPENING_LOWER;
@@ -110,63 +126,67 @@ final class Params extends Parameters {
 	short GAME_PHASE_ENDGAME_LOWER;
 	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_ENDGAME_UPPER;
-	
+
 	// Search parameters.
 	@LimitBinaryLength (value = 2)
-	byte NMR;						// Null move pruning reduction.
+	byte NMR; // Null move pruning reduction.
 	@LimitBinaryLength (value = 0)
-	byte LMR;						// Late move reduction.
-	@LimitBinaryLength (value = 5)
-	byte LMRMSM;					// Min. number of searched moves for late move reduction.
+	byte LMR; // Late move reduction.
+	@LimitBinaryLength (value = 3)
+	byte LMRMSM; // Min. number of searched moves for late move reduction.
+	@LimitBinaryLength (value = 10)
+	short FMAR1; // Futility margin.
 	@LimitBinaryLength (value = 11)
-	short FMAR1;					// Futility margin.
-	@LimitBinaryLength (value = 11)
-	short FMAR2;					// Extended futility margin.
-	@LimitBinaryLength (value = 11)
-	short RMAR;						// Razoring margin.
-	@LimitBinaryLength (value = 11)
-	short A_DELTA;					// The aspiration delta within iterative deepening.
-	@LimitBinaryLength (value = 11)
-	short Q_DELTA;					// The margin for delta-pruning in the quiescence search.
+	short FMAR2; // Extended futility margin.
+	@LimitBinaryLength (value = 10)
+	short RMAR; // Razoring margin.
+	@LimitBinaryLength (value = 10)
+	short A_DELTA; // The aspiration delta within iterative deepening.
+	@LimitBinaryLength (value = 10)
+	short Q_DELTA; // The margin for delta-pruning in the quiescence search.
+	@LimitBinaryLength (value = 0)
+	byte MAX_NOMINAL_SEARCH_DEPTH; // The maximum nominal search depth.
+	@LimitBinaryLength (value = 0)
+	byte FULL_PLY; // For fractional ply extensions.
 	@LimitBinaryLength (value = 4)
-	byte CHECK_EXT;					// Fractional check extension.
+	byte CHECK_EXT; // Fractional check extension.
 	@LimitBinaryLength (value = 4)
-	byte RECAP_EXT;					// Fractional recapture extension.
+	byte RECAP_EXT; // Fractional recapture extension.
 	@LimitBinaryLength (value = 4)
-	byte SINGLE_REPLY_EXT; 			// Fractional single reply extension.
+	byte SINGLE_REPLY_EXT; // Fractional single reply extension.
 	@LimitBinaryLength (value = 4)
-	byte MATE_THREAT_EXT;			// Fractional mate threat extension.
-	@LimitBinaryLength (value = 5)
-	byte IID_MIN_ACTIVATION_DEPTH;	// The minimum depth at which IID is activated.
-	byte IID_REL_DEPTH_HTH;			// The portion of the total depth to which the position will be searched with IID.
-	
+	byte MATE_THREAT_EXT; // Fractional mate threat extension.
+	@LimitBinaryLength (value = 4)
+	byte IID_MIN_ACTIVATION_DEPTH; // The minimum depth at which IID is activated.
+	byte IID_REL_DEPTH_HTH; // The portion of the total depth to which the position will be searched with IID.
+
 	// The relative history table's value depreciation factor.
+	@LimitBinaryLength (value = 0)
 	byte RHT_DECREMENT_FACTOR;
-	
+
 	// The shares of the different hash tables of the total hash size.
 	@LimitBinaryLength (value = 0)
 	byte TT_SHARE;
 	@LimitBinaryLength (value = 0)
 	byte ET_SHARE;
-	
+
 	// The number of turns for which the different hash table's entries are retained by default.
 	@LimitBinaryLength (value = 0)
 	byte TT_ENTRY_LIFECYCLE;
 	@LimitBinaryLength (value = 0)
 	byte ET_ENTRY_LIFECYCLE;
-	
+
 	// The values considered when calculating search time extensions.
-	@LimitBinaryLength (value = 10)
+	@LimitBinaryLength (value = 11)
 	short SCORE_FLUCTUATION_LIMIT;
 	byte FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT_HTH;
-	@LimitBinaryLength (value = 5)
+	@LimitBinaryLength (value = 4)
 	byte RESULT_CHANGES_PER_DEPTH_LIMIT;
 	@LimitBinaryLength (value = 0)
 	byte AVG_MOVES_PER_GAME;
-	@LimitBinaryLength (value = 5)
 	byte MOVES_TO_GO_SAFETY_MARGIN;
 	byte FRACTION_OF_TOTAL_TIME_TO_USE_HTH;
-	
+
 	// Piece-square tables for openings and end games.
 	@LimitBinaryLength (value = 0)
 	byte PST_PAWN_OPENING_8;
