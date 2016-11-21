@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 /**
- * An interface for reading and selecting moves from a chess opening book. It should allow for using an alternative book once out of the main book.
+ * A base class for reading and selecting moves from a chess opening book. It should allow for using an alternative book once out of the main book.
  * 
  * @author Viktor
  *
@@ -62,6 +62,12 @@ abstract class Book implements Closeable {
 	public String getSecondaryFilePath() {
 		return secondaryBook == null ? null : secondaryBook.getPrimaryFilePath();
 	}
+	@Override
+	public void close() throws IOException {
+		bookStream.close();
+		if (secondaryBook != null)
+			secondaryBook.close();
+	}
 	/**
 	 * Picks and returns an opening move for the Position from all the relevant entries found in the PolyGlot book based on the specified
 	 * mathematical model for selection. If there have been no relevant entries found, it returns null.
@@ -72,10 +78,4 @@ abstract class Book implements Closeable {
 	 * @return An opening move.
 	 */
 	abstract Move getMove(Position p, SelectionModel selection);
-	@Override
-	public void close() throws IOException {
-		bookStream.close();
-		if (secondaryBook != null)
-			secondaryBook.close();
-	}
 }

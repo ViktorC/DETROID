@@ -1,7 +1,7 @@
 package engine;
 
-import util.LimitBinaryLength;
-import util.Parameters;
+import tuning.LimitBinaryLength;
+import tuning.EngineParameters;
 
 /**
  * The definitions of the evaluation, search, and hash and time management parameters used in the chess engine.
@@ -11,7 +11,7 @@ import util.Parameters;
  * @author Viktor
  *
  */
-final class Params extends Parameters {
+final class Params extends EngineParameters {
 
 	// Piece values.
 	@LimitBinaryLength (value = 0)
@@ -57,19 +57,13 @@ final class Params extends Parameters {
 	@LimitBinaryLength (value = 0)
 	byte KING_OPPONENT_OPEN_BACKWARD_PAWN_TROPISM_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte KING_FRIENDLY_PASSED_PAWN_TROPISM_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte KING_OPPONENT_PASSED_PAWN_TROPISM_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PASSED_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte BACKWARD_PAWN_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte OPEN_BACKWARD_PAWN_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte STOPPED_PAWN_WEIGHT;
-	@LimitBinaryLength (value = 0)
-	byte PAWN_DEFENDED_QUEEN_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte PAWN_DEFENDED_ROOK_WEIGHT;
 	@LimitBinaryLength (value = 0)
@@ -97,8 +91,6 @@ final class Params extends Parameters {
 	@LimitBinaryLength (value = 0)
 	byte PINNED_KNIGHT_WEIGHT;
 	@LimitBinaryLength (value = 0)
-	byte QUEEN_MOBILITY_WEIGHT;
-	@LimitBinaryLength (value = 0)
 	byte ROOK_MOBILITY_WEIGHT;
 	@LimitBinaryLength (value = 0)
 	byte BISHOP_MOBILITY_WEIGHT;
@@ -114,7 +106,7 @@ final class Params extends Parameters {
 	byte TEMPO_ADVANTAGE;
 
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	@LimitBinaryLength (value = 0)
+	@LimitBinaryLength (value = 11)
 	short LAZY_EVAL_MAR;
 
 	// Game phase intervals.
@@ -122,7 +114,7 @@ final class Params extends Parameters {
 	short GAME_PHASE_OPENING_LOWER;
 	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_OPENING_UPPER;
-	@LimitBinaryLength (value = 8)
+	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_ENDGAME_LOWER;
 	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_ENDGAME_UPPER;

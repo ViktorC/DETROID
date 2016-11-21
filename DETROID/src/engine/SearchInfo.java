@@ -74,6 +74,10 @@ class SearchInfo extends SearchInformation {
 		return out;
 	}
 	@Override
+	public int getPvNumber() {
+		return 0;
+	}
+	@Override
 	public String[] getPv() {
 		String[] arr = new String[pVline.size()];
 		int i = 0;

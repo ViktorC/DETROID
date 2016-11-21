@@ -16,11 +16,11 @@ public class Elo {
 	 * this opponent.
 	 * 
 	 * @param wins The number of wins. It has to be 0 or greater.
-	 * @param draws The number of draws. It has to be 0 or greater.
 	 * @param losses The number of losses. It has to be  0 or greater.
+	 * @param draws The number of draws. It has to be 0 or greater.
 	 * @return
 	 */
-	public final static int calculateDifference(int wins, int draws, int losses) {
+	public final static int calculateDifference(int wins, int losses, int draws) {
 		if (wins < 0 || draws < 0 || losses < 0)
 			throw new IllegalArgumentException("All parameters have to be 0 or greater.");
 		double points = wins + draws*0.5;
@@ -46,6 +46,6 @@ public class Elo {
 	 * @return
 	 */
 	public final static int calculateDifference(MatchResult result) {
-		return calculateDifference(result.getEngine1Wins(), result.getDraws(), result.getEngine2Wins());
+		return calculateDifference(result.getEngine1Wins(), result.getEngine2Wins(), result.getDraws());
 	}
 }

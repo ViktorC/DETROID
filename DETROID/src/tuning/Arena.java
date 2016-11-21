@@ -11,7 +11,6 @@ import uci.ScoreType;
 import uci.UCIEngine;
 import uibase.ControllerEngine;
 import uibase.GameState;
-import util.SingularTimer;
 
 /**
  * A class for pitting two UCI compatible engines against each other, supervised by a controller engine.
@@ -31,7 +30,7 @@ public class Arena implements AutoCloseable {
 	
 	private ControllerEngine controller;
 	private ExecutorService pool;
-	private SingularTimer timer;
+	private MatchTimer timer;
 	private Random rand;
 	private Logger resultLogger;
 	private Logger fenLogger;
@@ -53,7 +52,7 @@ public class Arena implements AutoCloseable {
 		if (!this.controller.isInit())
 			this.controller.init();
 		pool = Executors.newCachedThreadPool();
-		timer = new SingularTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
+		timer = new MatchTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
 		this.resultLogger = resultLogger;
 		this.fenLogger = fenLogger;
 		rand = new Random(System.nanoTime());
@@ -157,14 +156,14 @@ public class Arena implements AutoCloseable {
 							engine2Wins++;
 							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: " + (engine1Time <= 0 ?
 									"Engine1 lost on time." : "Engine1 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() +
-									"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+									"\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 							continue Games;
 						}
 					} catch (Exception e) {
 						timer.pause();
 						engine2Wins++;
 						if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost due to error.\n" +
-								controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+								controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 						continue Games;
 					}
 					engine1Time += timeIncPerMove;
@@ -183,14 +182,14 @@ public class Arena implements AutoCloseable {
 							engine1Wins++;
 							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: " + (engine2Time <= 0 ?
 									"Engine2 lost on time." : "Engine2 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() +
-									"\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+									"\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 							continue Games;
 						}
 					} catch (Exception e) {
 						timer.pause();
 						engine1Wins++;
 						if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost due to error.\n" +
-								"STANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+								"STANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 						continue Games;
 					}
 					engine2Time += timeIncPerMove;
@@ -207,7 +206,7 @@ public class Arena implements AutoCloseable {
 				else
 					engine2Wins++;
 				if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + (engine1White ? "Engine1 WINS: " : "Engine2 WINS: ") +
-						"Check mate.\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + draws + " - " + engine2Wins + "\n\n");
+						"Check mate.\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 				if (fenLogger != null) {
 					for (int j = 0; j < fenLog.size(); j++)
 						fenLog.set(j, fenLog.get(j) + ";1");
@@ -221,7 +220,7 @@ public class Arena implements AutoCloseable {
 				else
 					engine1Wins++;
 				if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + (engine1White ? "Engine2 WINS: " : "Engine1 WINS: ") +
-						"Check mate.\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - "  + draws + " - " + engine2Wins + "\n\n");
+						"Check mate.\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - "  + engine2Wins + " - " + draws + "\n\n");
 				if (fenLogger != null) {
 					for (int j = 0; j < fenLog.size(); j++)
 						fenLog.set(j, fenLog.get(j) + ";0");
@@ -234,7 +233,7 @@ public class Arena implements AutoCloseable {
 				if (resultLogger != null) {
 					String gameRes = "Arena: " + id + "\n" + "DRAW: ";
 					String pgnAndStandings = controller.toPGN() + "\n" + "STANDINGS: " + engine1Wins + " - " +
-							draws + " - " + engine2Wins + "\n\n";
+							engine2Wins + " - " + draws + "\n\n";
 					String reason = "";
 					switch (state) {
 						case STALE_MATE:

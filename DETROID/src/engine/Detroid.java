@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 
 import engine.Book.SelectionModel;
 import engine.Game.Side;
+import tuning.EngineParameters;
 import tuning.TunableEngine;
 import uci.DebugInformation;
 import uci.UCIEngine;
@@ -212,7 +213,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		game = new Game();
 		options = new HashMap<>();
 		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
-		hashSize = new Option.SpinOption("Hash", Math.min(64, maxHashSize), 1, maxHashSize);
+		hashSize = new Option.SpinOption("Hash", Math.min(1, maxHashSize), 1, maxHashSize);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
@@ -401,7 +402,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			bookSearchStart = System.currentTimeMillis();
 			search = executor.submit(() -> {
 				Move searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
-				searchResult = searchResult == null ? new Move() : searchResult;
+				searchResult = searchResult == null ? Move.NULL_MOVE : searchResult;
 				return searchResult;
 			});
 			if (debug) debugInfo.set("Book search started");
@@ -413,7 +414,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			if (debug) debugInfo.set("Book search done");
 			ponderMove = null;
 			// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
-			if (!stop && searchResult == null) {
+			if (!stop && searchResult.equals(Move.NULL_MOVE)) {
 				if (searchResult.equals(new Move())) {
 					if (debug) debugInfo.set("No book move found. Out of book.");
 					outOfBook = true;
@@ -626,7 +627,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return game.getPosition().toString();
 	}
 	@Override
-	public Parameters getParameters() {
+	public EngineParameters getParameters() {
 		return params;
 	}
 	@Override

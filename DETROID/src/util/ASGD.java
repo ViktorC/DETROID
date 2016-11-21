@@ -3,17 +3,18 @@ package util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Random;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Logger;
 
 /**
  * An adaptive stochastic gradient descent implementation for supervised learning. It is based on the Nadam (Nesterov-accelerated adaptive 
- * moment estimation) algorithm. It can be employed as a stochastic, mini-batch, or standard batch gradient descent algorithm. There are two 
- * abstract methods to implement for its subclasses, {@link #costFunction(double[], ArrayList) costFunction} which is ideally a smooth, 
- * convex function whose (global) minimum is to be found (if the function is not convex, the algorithm might converge to a local minimum) 
- * and {@link #cacheTrainingData(String) cacheTrainingData} which reads, parses, and caches the training data set for further use into an 
- * ArrayList of Objects.
+ * moment estimation) algorithm. It can be employed as a stochastic, mini-batch, or standard batch gradient descent algorithm. There are three 
+ * abstract methods to implement for its subclasses, {@link #costFunction(double[], ArrayList) costFunction} which is ideally a differentiable, 
+ * smooth, convex function whose (global) minimum is to be found (if the function is not convex, the algorithm might converge to a local minimum), 
+ * {@link #sampleTrainingData() sampleTrainingData} which (random) samples the training data, and {@link #getTestData() getTestData} which returns 
+ * the test data.
  * 
  * Nadam: http://cs229.stanford.edu/proj2015/054_report.pdf
  * 
@@ -59,8 +60,6 @@ public abstract class ASGD {
 	protected final double normDecayRate;
 	protected final double annealingRate;
 	protected final Integer maxEpoch;
-	protected final Integer sampleSize;
-	protected final ArrayList<Object> trainingData;
 	
 	protected final Logger logger;
 	
@@ -87,7 +86,7 @@ public abstract class ASGD {
 	 * thus it is recommended to provide a non-null value for h.
 	 * @param baseLearningRate The base step size for the gradient descent. If it is null, the default base learning rate of 1.0 will 
 	 * be used.
-	 * @param epsilon A constant fudgy factor used to better condition the denominator when calculating the Root-Mean-Squares. If it is 
+	 * @param epsilon A constant used to better condition the denominator when calculating the Root-Mean-Squares. If it is 
 	 * null, the default value of 1e-8 will be used. It is not recommended to change this value.
 	 * @param momentumDecayRate A constant that determines the base decay rate of the accumulated Nesterov momentum. If it is null, a 
 	 * default value of 0.99 is used. The lower this value, the faster the decay. It is not recommended to change this value. However, 
@@ -99,16 +98,13 @@ public abstract class ASGD {
 	 * not recommended to change this value.
 	 * @param maxEpoch The maximum number of iterations. If it is null, the optimization process will only stop if the gradient of the 
 	 * cost function is 0 for each feature.
-	 * @param sampleSize The size of the mini-batches to calculate the cost function on. If it is null, the whole training data set will be 
-	 * used.
-	 * @param filePath The path to the file holding the training data set.
 	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
 	 * @throws IllegalArgumentException If features is null or its length is 0. If the decay rate is greater than 1 or smaller than 0. If 
 	 * an element in minValues is greater than the respective element in maxValues.
 	 */
 	protected ASGD(double[] features, double[] minValues, double[] maxValues, Double h, Double baseLearningRate, Double epsilon,
-			Double momentumDecayRate, Double normDecayRate, Double annealingExponent, Integer maxEpoch, Integer sampleSize, String filePath,
-			Logger logger) throws IllegalArgumentException {
+			Double momentumDecayRate, Double normDecayRate, Double annealingExponent, Integer maxEpoch, Logger logger)
+					throws IllegalArgumentException {
 		if (features == null || features.length == 0)
 			throw new IllegalArgumentException("The array features cannot be null and its length has to be greater than 0.");
 		indicesToIgnore = new HashSet<>();
@@ -152,14 +148,6 @@ public abstract class ASGD {
 		this.normDecayRate = (normDecayRate == null ? NORM_DECY_RATE : normDecayRate);
 		this.annealingRate = (annealingExponent == null ? ANNEALING_EXPONENT : annealingExponent);
 		this.maxEpoch = maxEpoch;
-		if (sampleSize != null && sampleSize <= 0)
-			throw new IllegalArgumentException("The sample size has to be greater than 0 or null.");
-		this.sampleSize = sampleSize;
-		try {
-			this.trainingData = cacheTrainingData(filePath);
-		} catch (Exception e) {
-			throw new IllegalArgumentException("The training data set could not be cached.", e);
-		}
 		this.logger = logger;
 	}
 	/**
@@ -183,7 +171,7 @@ public abstract class ASGD {
 		momDecayRateT = momentumPi;
 		for (int t = 1;; t++) {
 			// Random sample the training data.
-			ArrayList<Object> sample = sampleTrainingData();
+			List<Entry<Object, Object>> sample = sampleTrainingData();
 			// Compute the gradient.
 			double[] gradient = computeGradient(sample);
 			boolean changed = false;
@@ -206,9 +194,9 @@ public abstract class ASGD {
 				normVector[i] = n;
 				// Correct the norm vector initialization bias by the norm decay rate to the power of t.
 				nPrime = n/(1 - Math.pow(normDecayRate, t));
-				// Compute the Nesterov-accelerated learning rate adapter.
+				// Compute the Nesterov-accelerated learning rate factor.
 				mBar = (1 - momDecayRateT)*gPrime + momDecayRateTplus1*mPrime;
-				// The current epoch's next annealed decay rate is next epoch's current annealed decay rate...
+				// The current epoch's next annealed decay rate is the next epoch's current annealed decay rate...
 				momDecayRateT = momDecayRateTplus1;
 				// Delta.
 				d = learningRate*mBar/(Math.sqrt(nPrime) + epsilon);
@@ -232,7 +220,7 @@ public abstract class ASGD {
 				for (int j = 0; j < greatestDelta.length; j++)
 					greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
 				// Log cost over the complete training data set as well.
-				logger.info("Epoch: " + t + "; Cost: " + costFunction(features, trainingData) + System.lineSeparator() + "Greatest deltas: " +
+				logger.info("Epoch: " + t + "; Cost: " + costFunction(features, getTestData()) + System.lineSeparator() + "Greatest deltas: " +
 						Arrays.toString(greatestDelta) + System.lineSeparator() + "Deltas: " + Arrays.toString(delta) + System.lineSeparator() + 
 						"Features: " + Arrays.toString(features) + System.lineSeparator());
 			}
@@ -258,7 +246,7 @@ public abstract class ASGD {
 	 * @param dataSample An iterable data set on which the cost function is to be calculated.
 	 * @return The gradient of the cost function.
 	 */
-	private final double[] computeGradient(ArrayList<Object> dataSample) {
+	private final double[] computeGradient(List<Entry<Object, Object>> dataSample) {
 		double[] gradient = new double[features.length];
 		for (int i = 0; i < gradient.length; i++)
 			gradient[i] = computeCostFunctionDerivative(i, dataSample);
@@ -273,7 +261,7 @@ public abstract class ASGD {
 	 * @param dataSample An iterable data set on which the cost function is to be calculated.
 	 * @return The derivative of the cost function with respect to the feature at index i in the feature set.
 	 */
-	private final double computeCostFunctionDerivative(int i, ArrayList<Object> dataSample) {
+	private final double computeCostFunctionDerivative(int i, List<Entry<Object, Object>> dataSample) {
 		double cost1, cost2, denominator;
 		double feature = features[i];
 		if (indicesToIgnore.contains(i))
@@ -299,37 +287,27 @@ public abstract class ASGD {
 		return (cost1 - cost2)/denominator;
 	}
 	/**
-	 * Extracts a random sample from the training data set. The size of the sample is determined by the value of the field sampleSize.
+	 * Returns the test data set as a list of key-value pairs where the key is the data and the value is the ground truth label. The list should 
+	 * contain at least one data set. The test data should never be included in the training data samples.
 	 * 
-	 * @return An iterable data set on which the cost function is to be calculated.
+	 * @return An list holding the validation data mapped to the correct labels.
 	 */
-	private final ArrayList<Object> sampleTrainingData() {
-		if (sampleSize == null)
-			return trainingData;
-		Random rand = new Random(System.currentTimeMillis());
-		ArrayList<Object> sample = new ArrayList<>(sampleSize);
-		for (int i = 0; i < sampleSize; i++) {
-			int ind = (int) (rand.nextDouble()*trainingData.size());
-			sample.add(trainingData.get(ind));
-		}
-		return sample;
-	}
+	protected abstract List<Entry<Object, Object>> getTestData();
 	/**
-	 * Loads all the data sets from the file into an ArrayList of Objects.
+	 * Extracts a random sample from the training data set and loads it into a list of key-value pairs where the key is the data and the value is the 
+	 * ground truth. The list should contain at least one data set.
 	 * 
-	 * @param filePath The path to the file containing the training data.
-	 * @return An ArrayList holding the training data.
-	 * @throws Exception If an IO or parsing error occurs.
+	 * @return An list holding the training data mapped to the correct labels.
 	 */
-	protected abstract ArrayList<Object> cacheTrainingData(String filePath) throws Exception;
+	protected abstract List<Entry<Object, Object>> sampleTrainingData();
 	/**
 	 * Calculates the costs associated with the given feature set for the specified data sample. The better the system performs, the lower the costs 
-	 * should be. Ideally, the cost function is convex.
+	 * should be. Ideally, the cost function is differentiable, smooth, and convex, but these are not requirements.
 	 * 
 	 * @param features An array of parameters.
-	 * @param dataSample An iterable data set on which the cost function is to be calculated.
+	 * @param dataSample A list of the training data mapped to the correct labels on which the cost function is to be calculated.
 	 * @return The cost associated with the given features.
 	 */
-	protected abstract double costFunction(double[] features, ArrayList<Object> dataSample);
+	protected abstract double costFunction(double[] features, List<Entry<Object, Object>> dataSample);
 	
 }

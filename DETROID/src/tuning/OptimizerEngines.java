@@ -1,6 +1,5 @@
 package tuning;
 
-import uci.UCIEngine;
 import uibase.ControllerEngine;
 
 /**
@@ -12,8 +11,8 @@ import uibase.ControllerEngine;
  */
 public class OptimizerEngines {
 
-	private final TunableEngine tunableEngine;
-	private final UCIEngine opponentEngine;
+	private final TunableEngine engine;
+	private final TunableEngine opponentEngine;
 	private final ControllerEngine controller;
 
 	/**
@@ -25,13 +24,13 @@ public class OptimizerEngines {
 	 * @param controller The controller engine for the {@link #tuning.Arena Arena}.
 	 * @throws IllegalArgumentException If any of the parameters are null.
 	 */
-	public OptimizerEngines(TunableEngine tunableEngine, UCIEngine opponentEngine, ControllerEngine controller) 
+	public OptimizerEngines(TunableEngine tunableEngine, TunableEngine opponentEngine, ControllerEngine controller) 
 			throws IllegalArgumentException {
 		if (tunableEngine == null || opponentEngine == null || controller == null)
 			throw new IllegalArgumentException("The parameters engine, opponentEngine, and controller cannot be null");
 		if (!tunableEngine.isInit())
 			tunableEngine.init();
-		this.tunableEngine = tunableEngine;
+		this.engine = tunableEngine;
 		this.opponentEngine = opponentEngine;
 		this.controller = controller;
 	}
@@ -40,15 +39,15 @@ public class OptimizerEngines {
 	 * 
 	 * @return
 	 */
-	public TunableEngine getTunableEngine() {
-		return tunableEngine;
+	public TunableEngine getEngine() {
+		return engine;
 	}
 	/**
 	 * Returns the opponent engine
 	 * 
 	 * @return
 	 */
-	public UCIEngine getOpponentEngine() {
+	public TunableEngine getOpponentEngine() {
 		return opponentEngine;
 	}
 	/**

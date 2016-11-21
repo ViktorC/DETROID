@@ -1,7 +1,6 @@
 package tuning;
 
 import uci.UCIEngine;
-import util.Parameters;
 
 /**
  * An interface for a tunable chess engine whose parameters can be retrieved.
@@ -15,7 +14,7 @@ public interface TunableEngine extends UCIEngine {
 	 * 
 	 * @return
 	 */
-	Parameters getParameters();
+	EngineParameters getParameters();
 	/**
 	 * Notifies the engine that the parameters have changed and that if it uses cached values, it should reload them.
 	 */

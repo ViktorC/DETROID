@@ -9,7 +9,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,12 +39,21 @@ import util.ASGD;
 public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 
 	/**
+	 * The fraction of the complete data set used as a test data set.
+	 */
+	private static final double TEST_DATA_PROPORTION = 0.2d;
+	/**
 	 * The base step size for the gradient descent.
 	 */
 	private static final double BASE_LEARNING_RATE = 2;
 	
 	private final TunableEngine[] engines;
 	private final double k;
+	private final int sampleSize;
+	private final int dataSetSize;
+	private final String fenFilePath;
+	private final List<Entry<Object, Object>> testData;
+	private final Random rand;
 	private final ExecutorService pool;
 	
 	/**
@@ -59,14 +73,22 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 * If it doesn't exist an {@link #IOException IOException} is thrown.
 	 * @param k A scaling constant for the sigmoid function used calculate the average error.
 	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
-	 * @throws IllegalArgumentException If an IO or parsing error occurs.
-	 * @throws NullPointerException If the parameter engines is null or its first element is
-	 * null.
+	 * @throws IllegalArgumentException If the parameters don't fit the requirements.
+	 * @throws IOException If an IO or parsing error occurs.
+	 * @throws NullPointerException If the parameter engines is null or its first element is null.
 	 */
 	public StaticEvaluationOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
-			throws NullPointerException, IOException {
+			throws NullPointerException, IllegalArgumentException, IOException {
 		super(engines[0].getParameters().values(), (double[]) Array.newInstance(double.class, engines[0].getParameters().values().length),
-				engines[0].getParameters().maxValues(), 1d, BASE_LEARNING_RATE, null, null, null, null, null, sampleSize, fenFilePath, logger);
+				engines[0].getParameters().maxValues(), 1d, BASE_LEARNING_RATE, null, null, null, null, null, logger);
+		if (sampleSize < 1)
+			throw new IllegalArgumentException("The sample size has to be greater than 0.");
+		this.sampleSize = sampleSize;
+		this.fenFilePath = fenFilePath;
+		dataSetSize = countDataSetSize();
+		if (dataSetSize < Math.ceil(1/TEST_DATA_PROPORTION))
+			throw new IllegalArgumentException("The complete data set has to contain at least " + Math.ceil(1/TEST_DATA_PROPORTION) +
+					" data rows.");
 		ArrayList<TunableEngine> enginesList = new ArrayList<>();
 		for (TunableEngine e : engines) {
 			if (e != null) {
@@ -76,6 +98,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 			}
 		}
 		this.engines = enginesList.toArray(new TunableEngine[enginesList.size()]);
+		rand = new Random(System.nanoTime());
 		pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), this.engines.length));
 		if (k == null) {
 			this.k = computeOptimalK();
@@ -83,6 +106,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 				logger.info("Optimal K: " + this.k + System.lineSeparator());
 		} else
 			this.k = k;
+		testData = cacheData((int) (dataSetSize*(1 - TEST_DATA_PROPORTION)), dataSetSize);
 	}
 	/**
 	 * Generates a file of lines of FEN strings with the results of the games the positions occurred in 
@@ -136,7 +160,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 					});
 					fenLogger.addHandler(handler);
 					Arena a = new Arena(e.getController(), null, fenLogger);
-					a.match(e.getTunableEngine(), e.getOpponentEngine(), workLoad, timePerGame, timeIncPerMove);
+					a.match(e.getEngine(), e.getOpponentEngine(), workLoad, timePerGame, timeIncPerMove);
 					a.close();
 					handler.flush();
 					handler.close();
@@ -159,7 +183,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 					try (BufferedReader reader = new BufferedReader(new FileReader(fileName));
 							BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
 						String line;
-						while ((line = reader.readLine()) != null)
+						while ((line = reader.readLine()) != null && !"".equals(line))
 							writer.write(line + System.lineSeparator());
 					}
 					Files.delete(extraFile.toPath());
@@ -223,10 +247,12 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 * Computes the optimal scaling constant K for the sigmoid function used to calculate the evaluation error.
 	 * 
 	 * @return The value for K that locally minimizes the average error.
+	 * @throws IOException If the training data cannot be loaded from the FEN file.
 	 */
-	private double computeOptimalK() {
+	private double computeOptimalK() throws IOException {
 		final double resolution = 0.01;
 		double k = 0;
+		List<Entry<Object, Object>> trainingData = cacheData(0, (int) (dataSetSize*(1 - TEST_DATA_PROPORTION)));
 		double kPlusErr = computeAverageError(features, k + resolution, trainingData);
 		double kMinusErr = computeAverageError(features, k - resolution, trainingData);
 		double minAvgErr = Math.min(kPlusErr, kMinusErr);
@@ -279,7 +305,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 * @param k The scaling constant K for the sigmoid function.
 	 * @return
 	 */
-	private double computeAverageError(double[] parameters, final double k, ArrayList<Object> dataSample) {
+	private double computeAverageError(double[] parameters, final double k, List<Entry<Object, Object>> dataSample) {
 		double totalError = 0;
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
@@ -296,9 +322,8 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 				double subTotalError = 0;
 				int endInd = (int) (last ? dataSample.size() : finalStartInd + workLoadPerThread);
 				for (int j = finalStartInd; j < endInd; j++) {
-					String[] parts = ((String) dataSample.get(j)).split(";");
-					String fen = parts[0];
-					double result = Double.parseDouble(parts[1]);
+					String fen = (String) dataSample.get(j).getKey();
+					double result = (double) ((Float) dataSample.get(j).getValue()).floatValue();
 					e.position(fen);
 					e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
 					double score = e.getSearchInfo().getScore();
@@ -320,21 +345,86 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 		}
 		return totalError/dataSample.size();
 	}
-	@Override
-	protected ArrayList<Object> cacheTrainingData(String filePath) throws FileNotFoundException, IOException {
-		ArrayList<Object> dataSet = new ArrayList<>();
-		try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+	/**
+	 * Returns the number of data rows in the labelled data set.
+	 * 
+	 * @return The number of data rows contained in the file.
+	 * @throws FileNotFoundException If the file does not exist.
+	 * @throws IOException If an iO error occurs.
+	 */
+	private int countDataSetSize() throws FileNotFoundException, IOException {
+		int count = 0;
+		try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				line = line.trim();
 				if (!"".equals(line))
-					dataSet.add(line);
+					count++;
 			}
 		}
-		return dataSet;
+		return count;
+	}
+	/**
+	 * Caches the data into a list of key-pair values where the key is FEN position and the value is the label denoting which side 
+	 * won the game in which the position occurred.
+	 * 
+	 * @param fromInd The line number from which on the lines will be loaded into the data set.
+	 * @param toInd The line number up to which (exclusive) the lines will be loaded into the data set.
+	 * @return The data held in the lines between the specified indices.
+	 * @throws IOException If there is an IO error reading the file.
+	 */
+	private List<Entry<Object, Object>> cacheData(int fromInd, int toInd) throws IOException {
+		List<Entry<Object, Object>> data = new ArrayList<>();
+		int count = 0;
+		try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				line = line.trim();
+				if (count >= fromInd && count < toInd) {
+					String[] parts = line.split(";");
+					String fen = parts[0];
+					Float result = Float.parseFloat(parts[1]);
+					data.add(new SimpleEntry<Object, Object>(fen, result));
+				}
+				count++;
+			}
+		}
+		return data;
 	}
 	@Override
-	protected double costFunction(double[] features, ArrayList<Object> dataSample) {
+	protected List<Entry<Object, Object>> getTestData() {
+		return testData;
+	}
+	@Override
+	protected List<Entry<Object, Object>> sampleTrainingData() {
+		int[] lines = new int[sampleSize];
+		for (int i = 0; i < sampleSize; i++)
+			lines[i] = (int) (rand.nextDouble()*(1 - TEST_DATA_PROPORTION)*dataSetSize);
+		Arrays.sort(lines);
+		List<Entry<Object, Object>> sample = new ArrayList<>();
+		int i = 0;
+		int count = 0;
+		long nextLine = lines[i++];
+		try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
+			String line;
+			while ((line = reader.readLine()) != null && i < sampleSize) {
+				line = line.trim();
+				if (count == nextLine) {
+					String[] parts = line.split(";");
+					String fen = parts[0];
+					Float result = Float.parseFloat(parts[1]);
+					sample.add(new SimpleEntry<Object, Object>(fen, result));
+					nextLine = lines[i++];
+				} else
+					count++;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return sample;
+	}
+	@Override
+	protected double costFunction(double[] features, List<Entry<Object, Object>> dataSample) {
 		return computeAverageError(features, k, dataSample);
 	}
 	@Override

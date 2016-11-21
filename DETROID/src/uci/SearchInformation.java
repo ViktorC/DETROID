@@ -11,6 +11,13 @@ import java.util.Observable;
 public abstract class SearchInformation extends Observable {
 
 	/**
+	 * Returns the index of the PV line. If multi-PV is not supported, it should always return 0. If it is supported, the numbering 
+	 * should start from 1 with the best line.
+	 * 
+	 * @return
+	 */
+	public abstract int getPvNumber();
+	/**
 	 * Returns an array of the principal variation with the moves in pure algebraic coordinate notation.
 	 * 
 	 * @return

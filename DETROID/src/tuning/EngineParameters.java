@@ -1,4 +1,4 @@
-package util;
+package tuning;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -14,12 +14,15 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import util.BitOperations;
+import util.GrayCode;
+
 /**
- * An abstract base class for tunable parameter definitions used in a system such as a chess engine or other applications requiring highly optimized
- * parameters. It provides methods for the retrieval of the values of the fields of its sub classes which are utilized in the methods provided for 
- * writing the contents of an instance to a file or reading, parsing, and setting the fields of an instance based on such a file. It is possible to 
- * retrieve the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded 
- * and concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
+ * An abstract base class for engine parameter definitions that influence the performance of the chess engine and thus should be highly optimized. 
+ * It provides methods for the retrieval of the values of the fields of its sub classes which are utilized in the methods provided for writing the 
+ * contents of an instance to a file or reading, parsing, and setting the fields of an instance based on such a file. It is possible to retrieve 
+ * the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded and 
+ * concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
  * procedure reversed. Fields of the subclasses can be annotated with the {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the 
  * number of bits to consider when tuning the parameter. When applied to floating point values, it's effects are less intuituve as instead of ignoring 
  * bits of the number's binary representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be 
@@ -38,7 +41,7 @@ import java.util.Arrays;
  * @author Viktor
  * 
  */
-public abstract class Parameters {
+public abstract class EngineParameters {
 
 	/**
 	 * If this string is encountered while parsing a parameters file, parsing is terminated. It can be inserted into a file that contains information that
@@ -53,7 +56,7 @@ public abstract class Parameters {
 	 * 
 	 * @throws ClassFormatError If the fields do not comply with the contract of {@link #Parameters Parameters}.
 	 */
-	protected Parameters() throws ClassFormatError {
+	protected EngineParameters() throws ClassFormatError {
 		fields = new ArrayList<>();
 		int modifiers;
 		Class<?> fieldType;

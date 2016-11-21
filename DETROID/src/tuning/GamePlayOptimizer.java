@@ -25,6 +25,9 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	private final long timeIncPerMove;
 	private final ExecutorService pool;
 	
+	private int lastGeneration;
+	private double lastHighestFitness;
+	
 	/**
 	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
 	 * 
@@ -55,7 +58,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
 			double[] initialProbabilityVector, int populationSize, Logger logger)
 					throws NullPointerException {
-		super(engines[0].getTunableEngine().getParameters().toGrayCodeString().length(), populationSize, null, null, null, null, null,
+		super(engines[0].getEngine().getParameters().toGrayCodeString().length(), populationSize, null, null, null, null, null,
 				initialProbabilityVector, logger);
 		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
 		for (OptimizerEngines e : engines) {
@@ -65,7 +68,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		this.engines = enginesList.toArray(new OptimizerEngines[enginesList.size()]);
 		arenas = new Arena[this.engines.length];
 		for (int i = 0; i < this.engines.length; i++)
-			arenas[i] = new Arena(this.engines[i].getController());
+			arenas[i] = new Arena(this.engines[i].getController(), Logger.getAnonymousLogger());
 		this.games = games;
 		this.timePerGame = timePerGame;
 		this.timeIncPerMove = timeIncPerMove;
@@ -96,6 +99,16 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	}
 	@Override
 	protected double fitnessFunction(String genome) {
+		if (currentGeneration != lastGeneration) {
+			lastGeneration = currentGeneration;
+			lastHighestFitness = highestFitness;
+			for (int i = 0; i < engines.length; i++) {
+				TunableEngine oppEngine = engines[i].getOpponentEngine();
+				oppEngine.init();
+				oppEngine.getParameters().set(fittestGenotype);
+				oppEngine.reloadParameters();
+			}
+		}
 		int engine1Wins = 0;
 		int engine2Wins = 0;
 		int draws = 0;
@@ -103,7 +116,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		for (int i = 0; i < engines.length; i++) {
 			final int index = i;
 			futures.add(pool.submit(() -> {
-				TunableEngine tunEngine = engines[index].getTunableEngine();
+				TunableEngine tunEngine = engines[index].getEngine();
 				UCIEngine oppEngine = engines[index].getOpponentEngine();
 				if (!tunEngine.isInit())
 					tunEngine.init();
@@ -124,7 +137,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				e.printStackTrace();
 			}
 		}
-		return Elo.calculateDifference(engine1Wins, engine2Wins, draws);
+		return lastHighestFitness + Elo.calculateDifference(engine1Wins, engine2Wins, draws);
 	}
 	@Override
 	public void close() throws Exception {
@@ -132,7 +145,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		for (Arena a : arenas)
 			a.close();
 		for (OptimizerEngines e : engines) {
-			e.getTunableEngine().quit();
+			e.getEngine().quit();
 			e.getOpponentEngine().quit();
 			e.getController().quit();
 		}

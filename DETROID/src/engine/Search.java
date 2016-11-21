@@ -182,95 +182,95 @@ class Search implements Runnable {
 		if (maxDepth == 0) {
 			bestScore = quiescence(0, origAlpha, beta);
 			updateInfo(null, 0, ply, origAlpha, beta, bestScore);
-		} else {
-			tacticalMoves = quietMoves = null;
-			// Check for the 3-fold repetition rule.
-			if (position.getNumberOfRepetitions(0) >= 2)
-				return Termination.DRAW_CLAIMED.score;
-			// Generate moves.
-			tacticalMoves = position.getTacticalMoves();
-			quietMoves = position.getQuietMoves();
-			numOfMoves = tacticalMoves.size() + quietMoves.size();
-			// Mate check.
-			if (numOfMoves == 0)
-				return position.isInCheck ? Termination.CHECK_MATE.score : Termination.STALE_MATE.score;
-			// One reply extension.
-			else if (numOfMoves == 1)
-				depth = Math.min(depthLimit, depth + params.SINGLE_REPLY_EXT);
-			// Check for the 50 move rule.
-			if (position.fiftyMoveRuleClock >= 100)
-				return Termination.DRAW_CLAIMED.score;
-			// Check extension.
-			depth = position.isInCheck ? Math.min(depthLimit, depth + params.CHECK_EXT) : depth;
-			// Hash look-up.
-			e = tT.get(position.key);
-			if (e != null) {
-				e.generation = hashEntryGen;
-				if (e.bestMove != 0)
-					hashMove = Move.toMove(e.bestMove);
-			}
-			// Sort moves.
-			tacticalMovesArr = orderMaterialMovesSEE(position, tacticalMoves);
-			quietMovesArr = orderNonMaterialMoves(quietMoves);
-			allMoves = new ArrayList<>();
-			if (hashMove != null && (quietMoves.contains(hashMove) || tacticalMoves.contains(hashMove)))
-				allMoves.add(hashMove);
-			else
-				hashMove = null;
-			for (int i = 0; i < tacticalMovesArr.length; i++) {
-				if (!allMoves.contains(tacticalMovesArr[i]))
-					allMoves.add(tacticalMovesArr[i]);
-			}
-			for (int i = 0; i < quietMovesArr.length; i++) {
-				if (!allMoves.contains(quietMovesArr[i]))
-					allMoves.add(quietMovesArr[i]);
-			}
-			if (areMovesRestricted)
-				allMoves.retainAll(allowedRootMoves);
-			allMovesArr = new Move[allMoves.size()];
-			allMovesArr = allMoves.toArray(allMovesArr);
-			lastMove = position.getLastMove();
-			lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
-			// Iterate over moves.
-			for (int i = 0; i < allMovesArr.length; i++) {
-				move = allMovesArr[i];
-				// Recapture extension.
-				extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
-					params.RECAP_EXT : 0;
-				position.makeMove(move);
-				// Full window search for the first move...
-				if (i == 0)
+			return bestScore;
+		}
+		tacticalMoves = quietMoves = null;
+		// Check for the 3-fold repetition rule.
+		if (position.getNumberOfRepetitions(0) >= 2)
+			return Termination.DRAW_CLAIMED.score;
+		// Generate moves.
+		tacticalMoves = position.getTacticalMoves();
+		quietMoves = position.getQuietMoves();
+		numOfMoves = tacticalMoves.size() + quietMoves.size();
+		// Mate check.
+		if (numOfMoves == 0)
+			return position.isInCheck ? Termination.CHECK_MATE.score : Termination.STALE_MATE.score;
+		// One reply extension.
+		else if (numOfMoves == 1)
+			depth = Math.min(depthLimit, depth + params.SINGLE_REPLY_EXT);
+		// Check for the 50 move rule.
+		if (position.fiftyMoveRuleClock >= 100)
+			return Termination.DRAW_CLAIMED.score;
+		// Check extension.
+		depth = position.isInCheck ? Math.min(depthLimit, depth + params.CHECK_EXT) : depth;
+		// Hash look-up.
+		e = tT.get(position.key);
+		if (e != null) {
+			e.generation = hashEntryGen;
+			if (e.bestMove != 0)
+				hashMove = Move.toMove(e.bestMove);
+		}
+		// Sort moves.
+		tacticalMovesArr = orderMaterialMovesSEE(position, tacticalMoves);
+		quietMovesArr = orderNonMaterialMoves(quietMoves);
+		allMoves = new ArrayList<>();
+		if (hashMove != null && (quietMoves.contains(hashMove) || tacticalMoves.contains(hashMove)))
+			allMoves.add(hashMove);
+		else
+			hashMove = null;
+		for (int i = 0; i < tacticalMovesArr.length; i++) {
+			if (!allMoves.contains(tacticalMovesArr[i]))
+				allMoves.add(tacticalMovesArr[i]);
+		}
+		for (int i = 0; i < quietMovesArr.length; i++) {
+			if (!allMoves.contains(quietMovesArr[i]))
+				allMoves.add(quietMovesArr[i]);
+		}
+		if (areMovesRestricted)
+			allMoves.retainAll(allowedRootMoves);
+		allMovesArr = new Move[allMoves.size()];
+		allMovesArr = allMoves.toArray(allMovesArr);
+		lastMove = position.getLastMove();
+		lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
+		// Iterate over moves.
+		for (int i = 0; i < allMovesArr.length; i++) {
+			move = allMovesArr[i];
+			// Recapture extension.
+			extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
+				params.RECAP_EXT : 0;
+			position.makeMove(move);
+			// Full window search for the first move...
+			if (i == 0)
+				score = -pVsearch(Math.min(depthLimit, depth + extension) - params.FULL_PLY, 1, -beta, -alpha, true);
+			// PVS for the rest.
+			else {
+				score = -pVsearch(Math.min(depthLimit, depth + extension) - params.FULL_PLY, 1, -alpha - 1, -alpha, true);
+				if (score > alpha && score < beta)
 					score = -pVsearch(Math.min(depthLimit, depth + extension) - params.FULL_PLY, 1, -beta, -alpha, true);
-				// PVS for the rest.
-				else {
-					score = -pVsearch(Math.min(depthLimit, depth + extension) - params.FULL_PLY, 1, -alpha - 1, -alpha, true);
-					if (score > alpha && score < beta)
-						score = -pVsearch(Math.min(depthLimit, depth + extension) - params.FULL_PLY, 1, -beta, -alpha, true);
-				}
-				position.unmakeMove();
-				// Score check.
-				if (score > bestScore) {
-					bestMove = move;
-					bestScore = score;
-					if (score > alpha) {
-						alpha = score;
-						if (score >= beta)
-							break;
-						// Insert into TT and update stats if applicable.
-						if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.FULL_PLY))) {
-							statsUpdated = true;
-							updateInfo(move, i + 1, ply, origAlpha, beta, score);
-						}
+			}
+			position.unmakeMove();
+			// Score check.
+			if (score > bestScore) {
+				bestMove = move;
+				bestScore = score;
+				if (score > alpha) {
+					alpha = score;
+					if (score >= beta)
+						break;
+					// Insert into TT and update stats if applicable.
+					if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.FULL_PLY))) {
+						statsUpdated = true;
+						updateInfo(move, i + 1, ply, origAlpha, beta, score);
 					}
 				}
-				if (doStopSearch || Thread.currentThread().isInterrupted())
-					break;
 			}
-			// If the search stats have not been updated yet, probably due to failing low or high, do it now.
-			if (!statsUpdated) {
-				insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.FULL_PLY));
-				updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
-			}
+			if (doStopSearch || Thread.currentThread().isInterrupted())
+				break;
+		}
+		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
+		if (!statsUpdated) {
+			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.FULL_PLY));
+			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
 		}
 		return bestScore;
 	}
@@ -298,7 +298,7 @@ class Search implements Runnable {
 		int kMove;
 		int razRed;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isThereMateThreat;
+		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isThereMateThreat, isReducible;
 		ArrayList<Move> tacticalMoves, quietMoves;
 		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
@@ -375,8 +375,7 @@ class Search implements Runnable {
 				break Search;
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-			if (isPvNode && !isThereHashMove && depth/params.FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH &&
-					(hashMove == null || e.depth <= depth*params.IID_REL_DEPTH_HTH/100/params.FULL_PLY)) {
+			if (isPvNode && !isThereHashMove && depth/params.FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
 				for (short i = 1; i < depth*params.IID_REL_DEPTH_HTH/100/params.FULL_PLY; i++)
 					pVsearch(i*params.FULL_PLY, distFromRoot, alpha, beta, true);
 				e = tT.get(position.key);
@@ -434,8 +433,9 @@ class Search implements Runnable {
 			// Check for the fifty-move rule; return a draw score if it applies.
 			if (position.fiftyMoveRuleClock >= 100)
 				return Termination.DRAW_CLAIMED.score;
+			isThereMateThreat = isInCheck || isPvNode || isEndgame || Math.abs(beta) >= wCheckMateLimit;
 			// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && !isEndgame && !isInCheck && !isPvNode && depth/params.FULL_PLY >= params.NMR) {
+			if (nullMoveAllowed && !isThereMateThreat && depth/params.FULL_PLY >= params.NMR) {
 				position.makeNullMove();
 				// Do not allow consecutive null moves.
 				if (depth/params.FULL_PLY == params.NMR)
@@ -618,25 +618,25 @@ class Search implements Runnable {
 					isThereKM2 = false;
 					continue;
 				}
-				isThereMateThreat = isInCheck || isPvNode || isEndgame || alpha >= wCheckMateLimit || beta <= lCheckMateLimit || position.givesCheck(move);
+				isReducible = !isThereMateThreat && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
 				razRed = 0;
 				// Futility pruning, extended futility pruning, and razoring.
-				if (!isThereMateThreat && depth/params.FULL_PLY <= 2) {
+				if (isReducible && depth/params.FULL_PLY <= 2) {
 					if (evalScore == Integer.MIN_VALUE)
-						evalScore = eval.score(position, hashEntryGen, origAlpha, beta);
+						evalScore = eval.score(position, hashEntryGen, alpha, beta);
 					if (depth/params.FULL_PLY == 1) {
 						if (evalScore + params.FMAR1 <= alpha)
 							continue;
 					} else if (depth/params.FULL_PLY == 2) {
 						if (evalScore + params.FMAR2 <= alpha)
 							continue;
-						else if (evalScore + params.RMAR <= alpha)
+						if (evalScore + params.RMAR <= alpha)
 							razRed = 1;
 					}
 				}
 				position.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (depth/params.FULL_PLY >= 3 && !isThereMateThreat && searchedMoves > params.LMRMSM) {
+				if (isReducible && depth/params.FULL_PLY >= 3 && searchedMoves > params.LMRMSM) {
 					score = -pVsearch(depth - (params.LMR + 1)*params.FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
 					if (score > alpha)

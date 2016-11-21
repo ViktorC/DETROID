@@ -347,7 +347,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * 
 	 * @return
 	 */
-	long pawnKingHashKey() {
+	long getPawnKingHashKey() {
 		return gen.generatePawnKingHashKey(this);
 	}
 	/**

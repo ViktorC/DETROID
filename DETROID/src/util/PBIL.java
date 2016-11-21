@@ -44,7 +44,11 @@ public abstract class PBIL {
 	protected final double learningRate;
 	protected final double negLearningRateAddition;
 	protected final Integer generations;
+	
 	protected final double[] probabilityVector;
+	protected int currentGeneration;
+	protected double highestFitness;
+	protected String fittestGenotype;
 	
 	protected final Logger logger;
 	
@@ -141,9 +145,9 @@ public abstract class PBIL {
 	public final synchronized String optimize() {
 		Random rand = new Random(System.nanoTime());
 		String[] genotypes = new String[populationSize];
-		double highestFitness = -Double.MAX_VALUE;
-		String fittestGenotype = null;
-		int curGen = 0;
+		highestFitness = -Double.MAX_VALUE;
+		fittestGenotype = null;
+		currentGeneration = 0;
 		// Evolution.
 		while (true) {
 			// Generate the new population by generating the genotypes using the probability vector.
@@ -197,14 +201,14 @@ public abstract class PBIL {
 				probabilityVector[j] = newProbabilityVectorVal;
 			}
 			if (logger != null)
-				logger.info("Generation: " + curGen + "; Entropy: " + getEntropy() + System.lineSeparator() + 
+				logger.info("Generation: " + currentGeneration + "; Entropy: " + getEntropy() + System.lineSeparator() + 
 						"Probability vector: " + Arrays.toString(probabilityVector) + System.lineSeparator() +
 						"Average fitness: " + averageCurrentGenerationFitness + System.lineSeparator() +
 						"All time highest fitness:" + highestFitness + System.lineSeparator() + 
 						"All time fittest genotype: " + fittestGenotype + System.lineSeparator());
-			curGen++;
+			currentGeneration++;
 			// Exit if the evolution has reached the desired stage.
-			if (isOptimized(curGen))
+			if (isOptimized(currentGeneration))
 				break;
 		}
 		return fittestGenotype;

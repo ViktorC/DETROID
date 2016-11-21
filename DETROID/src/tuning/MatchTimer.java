@@ -1,4 +1,4 @@
-package util;
+package tuning;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Viktor
  *
  */
-public class SingularTimer implements AutoCloseable {
+public class MatchTimer implements AutoCloseable {
 
 	// A single thread fixed thread pool in case the timer needs to be restarted.
 	private ExecutorService pool;
@@ -43,7 +43,7 @@ public class SingularTimer implements AutoCloseable {
 	 * checks the execution conditions such as whether the timer has been cancelled or paused, 
 	 * or whether the delayed task is due.
 	 */
-	public SingularTimer(Runnable callBack, long delay, long resolution) {
+	public MatchTimer(Runnable callBack, long delay, long resolution) {
 		pool = Executors.newSingleThreadExecutor();
 		this.delay = delay;
 		this.resolution = resolution;
@@ -167,30 +167,30 @@ public class SingularTimer implements AutoCloseable {
 			while (ticks.get() > 0) {
 				try {
 					Thread.sleep(resolution);
-					synchronized (SingularTimer.this) {
+					synchronized (MatchTimer.this) {
 						while (pause && !cancel)
-							SingularTimer.this.wait();
+							MatchTimer.this.wait();
 					}
 					if (cancel) {
 						isAlive = false;
-						synchronized (SingularTimer.this) {
-							SingularTimer.this.notify();
+						synchronized (MatchTimer.this) {
+							MatchTimer.this.notify();
 						}
 						return;
 					}
 					ticks.decrementAndGet();
 				} catch (InterruptedException e) {
 					isAlive = false;
-					synchronized (SingularTimer.this) {
-						SingularTimer.this.notify();
+					synchronized (MatchTimer.this) {
+						MatchTimer.this.notify();
 					}
 					return;
 				}
 			}
 			callBack.run();
 			isAlive = false;
-			synchronized (SingularTimer.this) {
-				SingularTimer.this.notify();
+			synchronized (MatchTimer.this) {
+				MatchTimer.this.notify();
 			}
 		});
 	}

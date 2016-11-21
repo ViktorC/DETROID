@@ -231,6 +231,8 @@ public final class UCI implements Observer, Closeable {
 				if (stats.getCurrentMoveNumber() != 0)
 					info += "currmovenumber " + stats.getCurrentMoveNumber() + " ";
 			}
+			if (stats.getPvNumber() != 0)
+				info += "multipv " + stats.getPvNumber() + " ";
 			String[] pV = stats.getPv();
 			if (pV != null && pV.length > 0) {
 				info += "pv ";
