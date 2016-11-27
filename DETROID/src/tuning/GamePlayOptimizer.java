@@ -25,8 +25,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	private final long timeIncPerMove;
 	private final ExecutorService pool;
 	
-	private double lastHighestFitness;
-	private String lastFittestGenotype;
+	private Logger logger;
 	
 	/**
 	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
@@ -72,6 +71,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		this.games = games;
 		this.timePerGame = timePerGame;
 		this.timeIncPerMove = timeIncPerMove;
+		this.logger = logger;
 		pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), this.engines.length));
 	}
 	/**
@@ -98,28 +98,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		this(engines, games, timePerGame, timeIncPerMove, null, populationSize, logger);
 	}
 	@Override
-	protected double fitnessFunction(String genome) {
-		if (highestFitness > lastHighestFitness) {
-			TunableEngine tunEngine = engines[0].getEngine();
-			tunEngine.getParameters().set(fittestGenotype);
-			tunEngine.reloadParameters();
-			MatchResult result = arenas[0].match(tunEngine, engines[0].getOpponentEngine(), 2*games, timePerGame, timeIncPerMove);
-			if (result.getEngine1Wins() >= result.getEngine2Wins()) {
-				highestFitness = lastHighestFitness + Elo.calculateDifference(result);
-				lastHighestFitness = highestFitness;
-				lastFittestGenotype = fittestGenotype;
-				for (int i = 0; i < engines.length; i++) {
-					TunableEngine oppEngine = engines[i].getOpponentEngine();
-					oppEngine.init();
-					oppEngine.getParameters().set(fittestGenotype);
-					oppEngine.reloadParameters();
-				}
-				logger.info("New fittest genotype found!\nFitness: " + highestFitness + "\nGenotype: " + fittestGenotype);
-			} else {
-				highestFitness = lastHighestFitness;
-				fittestGenotype = lastFittestGenotype;
-			}
-		}
+	protected double fitnessFunction(String genotype) {
 		int engine1Wins = 0;
 		int engine2Wins = 0;
 		int draws = 0;
@@ -133,7 +112,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 					tunEngine.init();
 				if (!oppEngine.isInit())
 					oppEngine.init();
-				tunEngine.getParameters().set(genome);
+				tunEngine.getParameters().set(genotype);
 				tunEngine.reloadParameters();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));
@@ -148,7 +127,21 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				e.printStackTrace();
 			}
 		}
-		return lastHighestFitness + Elo.calculateDifference(engine1Wins, engine2Wins, draws);
+		double fitness = getHighestFitness() + Elo.calculateDifference(engine1Wins, engine2Wins, draws);
+		if (fitness > 0) {
+			MatchResult result = arenas[0].match(engines[0].getEngine(), engines[0].getOpponentEngine(), 2*games, timePerGame, timeIncPerMove);
+			fitness = getHighestFitness() + Elo.calculateDifference(result);
+			if (fitness > 0) {
+				for (int i = 0; i < engines.length; i++) {
+					TunableEngine oppEngine = engines[i].getOpponentEngine();
+					oppEngine.init();
+					oppEngine.getParameters().set(genotype);
+					oppEngine.reloadParameters();
+				}
+				logger.info("New fittest genotype found!\nFitness: " + fitness + "\nGenotype: " + genotype);
+			}
+		}
+		return fitness;
 	}
 	@Override
 	public void close() throws Exception {

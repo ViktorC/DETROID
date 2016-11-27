@@ -37,20 +37,20 @@ public abstract class PBIL {
 	 */
 	protected final static double NEGATIVE_LEARNING_RATE = 0.025d;
 	
-	protected final int genotypeLength;
-	protected final int populationSize;
-	protected final double mutationProbability;
-	protected final double mutationShift;
-	protected final double learningRate;
-	protected final double negLearningRateAddition;
-	protected final Integer generations;
+	private final int genotypeLength;
+	private final int populationSize;
+	private final double mutationProbability;
+	private final double mutationShift;
+	private final double learningRate;
+	private final double negLearningRateAddition;
+	private final Integer generations;
 	
-	protected final double[] probabilityVector;
-	protected int currentGeneration;
-	protected double highestFitness;
-	protected String fittestGenotype;
+	private final double[] probabilityVector;
+	private int currentGeneration;
+	private double highestFitness;
+	private String fittestGenotype;
 	
-	protected final Logger logger;
+	private final Logger logger;
 	
 	/**
 	 * Constructs an instance with the specified optimization parameters.
@@ -105,6 +105,31 @@ public abstract class PBIL {
 		this.negLearningRateAddition = (negLearningRateAddition == null ? NEGATIVE_LEARNING_RATE : negLearningRateAddition);
 		this.generations = generations;
 		this.logger = logger;
+	}
+	/**
+	 * Returns the index of the current generation in the evolution.
+	 * 
+	 * @return The index of the current generation in the evolution.
+	 */
+	public int getCurrentGeneration() {
+		return currentGeneration;
+	}
+	/**
+	 * Returns the highest fitness score achieved during the evolution.
+	 * 
+	 * @return The highest fitness score achieved during the evolution.
+	 */
+	public double getHighestFitness() {
+		return highestFitness;
+	}
+	/**
+	 * Returns a string of binary digits representing the genotype that has achieved highest fitness score so far during 
+	 * the evolution.
+	 * 
+	 * @return The fittest genotype represented by a string of binary digits.
+	 */
+	public String getFittestGenotype() {
+		return fittestGenotype;
 	}
 	/**
 	 * Returns the Shannon entropy of the current generation of genotypes.
