@@ -160,7 +160,7 @@ public abstract class PBIL {
 			String curFittestGenotype = null;
 			String curLeastFitGenotype = null;
 			double curHighestFitness = -Double.MAX_VALUE;
-			double curLowestFitness = Double.MIN_VALUE;
+			double curLowestFitness = Double.MAX_VALUE;
 			double averageCurrentGenerationFitness = 0;
 			// Measure the fitness of each individual in the population.
 			for (int i = 0; i < populationSize; i++) {
