@@ -5,6 +5,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
 import engine.Detroid;
+import tuning.EngineParameters;
 import tuning.GamePlayOptimizer;
 import tuning.OptimizerEngines;
 import tuning.StaticEvaluationOptimizer;
@@ -26,11 +27,15 @@ public class Launcher {
 	/**
 	 * The default log file path.
 	 */
-	private static final String DEF_LOG_FILE_PATH = "log";
+	private static final String DEF_LOG_FILE_PATH = "log.txt";
 	/**
 	 * The default FENs file path for static evaluation tuning.
 	 */
-	private static final String DEF_FENS_FILE_PATH = "fens";
+	private static final String DEF_FENS_FILE_PATH = "fens.txt";
+	/**
+	 * The default path to the file to which the parameters converted from binary strings or double arrays are written.
+	 */
+	private static final String DEF_CONVERTED_PARAMS_PATH = "params.txt";
 	/**
 	 * The default number of games to play for engine and search control parameter tuning.
 	 */
@@ -95,7 +100,9 @@ public class Launcher {
 									initProbVec = new double[probs.length];
 									for (int j = 0; j < probs.length; j++)
 										initProbVec[j] = Double.parseDouble(probs[j].trim());
-								}
+								} break;
+								default:
+									throw new IllegalArgumentException();
 							}
 						}
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
@@ -107,10 +114,8 @@ public class Launcher {
 						} catch (SecurityException | IOException e) {
 							e.printStackTrace();
 						}
-						GamePlayOptimizer optimizer = new GamePlayOptimizer(engines, games, tc, tcInc, initProbVec, popSize, logger);
-						optimizer.optimize();
-						try {
-							optimizer.close();
+						try (GamePlayOptimizer optimizer = new GamePlayOptimizer(engines, games, tc, tcInc, initProbVec, popSize, logger)) {
+							optimizer.optimize();
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -135,7 +140,9 @@ public class Launcher {
 								} break;
 								case "-fensfile": {
 									fensFilePath = args[++i];
-								}
+								} break;
+								default:
+									throw new IllegalArgumentException();
 							}
 						}
 						TunableEngine[] engines = new TunableEngine[concurrency];
@@ -148,19 +155,13 @@ public class Launcher {
 						} catch (SecurityException | IOException e) {
 							e.printStackTrace();
 						}
-						StaticEvaluationOptimizer optimizer;
-						try {
-							optimizer = new StaticEvaluationOptimizer(engines, sampleSize, fensFilePath, k, logger);
+						try (StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, sampleSize, fensFilePath, k, logger)) {
 							optimizer.train();
-							try {
-								optimizer.close();
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-						} catch (NullPointerException | IllegalArgumentException | IOException e) {
+						} catch (Exception e) {
 							e.printStackTrace();
 						}
-					}
+					} else
+						throw new IllegalArgumentException();
 				} break;
 				case "-genfens": {
 					int games = DEF_GAMES;
@@ -184,7 +185,9 @@ public class Launcher {
 							} break;
 							case "-destfile": {
 								destFile = args[++i];
-							}
+							} break;
+							default:
+								throw new IllegalArgumentException();
 						}
 					}
 					OptimizerEngines[] engines = new OptimizerEngines[concurrency];
@@ -209,7 +212,9 @@ public class Launcher {
 								} break;
 								case "-destfile": {
 									destFile = args[++i];
-								}
+								} break;
+								default:
+									throw new IllegalArgumentException();
 							}
 						}
 						try {
@@ -230,7 +235,9 @@ public class Launcher {
 								} break;
 								case "-destfile": {
 									destFile = args[++i];
-								}
+								} break;
+								default:
+									throw new IllegalArgumentException();
 							}
 						}
 						try {
@@ -238,11 +245,40 @@ public class Launcher {
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
+					} else
+						throw new IllegalArgumentException();
+				} break;
+				case "-converttoparams": {
+					String arg1 = args[1];
+					String destFile = DEF_CONVERTED_PARAMS_PATH;
+					TunableEngine engine = new Detroid();
+					engine.init();
+					EngineParameters params = engine.getParameters();
+					if ("-binarystring".equals(arg1)) {
+						String binaryString = args[2];
+						params.set(binaryString);
+					} else if ("-doublearray".equals(arg1)) {
+						String vec = args[2];
+						String[] probs = vec.split(",");
+						double[] initProbVec = new double[probs.length];
+						for (int j = 0; j < probs.length; j++)
+							initProbVec[j] = Double.parseDouble(probs[j].trim());
+						params.set(initProbVec);
+					} else
+						throw new IllegalArgumentException();
+					if (args.length > 3) {
+						if (!"-paramsfile".equals(args[3]))
+							throw new IllegalArgumentException();
+						destFile = args[4];
 					}
+					System.out.println(params.toString());
+					params.writeToFile(destFile);
 				} break;
 				case "-gui": {
 					
-				}
+				} break;
+				default:
+					throw new IllegalArgumentException();
 			}
 		} else {
 			UCI uci = new UCI(System.in, System.out);
