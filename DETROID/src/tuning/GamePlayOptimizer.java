@@ -138,7 +138,8 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 					oppEngine.getParameters().set(genotype);
 					oppEngine.reloadParameters();
 				}
-				logger.info("New fittest genotype found!\nFitness: " + fitness + "\nGenotype: " + genotype);
+				logger.info("New fittest genotype found!\nFitness: " + (getFittestGenotype() != null ? (getHighestFitness() + fitness) : fitness) +
+						"\nGenotype: " + genotype);
 			}
 		}
 		return getFittestGenotype() != null ? getHighestFitness() + fitness : fitness;
