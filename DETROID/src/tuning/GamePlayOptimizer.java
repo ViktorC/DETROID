@@ -127,10 +127,10 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				e.printStackTrace();
 			}
 		}
-		double fitness = getHighestFitness() + Elo.calculateDifference(engine1Wins, engine2Wins, draws);
+		double fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
 		if (fitness > 0) {
 			MatchResult result = arenas[0].match(engines[0].getEngine(), engines[0].getOpponentEngine(), 2*games, timePerGame, timeIncPerMove);
-			fitness = getHighestFitness() + Elo.calculateDifference(result);
+			fitness = Elo.calculateDifference(result);
 			if (fitness > 0) {
 				for (int i = 0; i < engines.length; i++) {
 					TunableEngine oppEngine = engines[i].getOpponentEngine();
@@ -141,7 +141,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				logger.info("New fittest genotype found!\nFitness: " + fitness + "\nGenotype: " + genotype);
 			}
 		}
-		return fitness;
+		return getFittestGenotype() != null ? getHighestFitness() + fitness : fitness;
 	}
 	@Override
 	public void close() throws Exception {
