@@ -34,8 +34,10 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * each contain the engines needed for one optimization thread. For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
-	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown.
+	 * and played parallel on four threads. If the array contains more non-null elements than 
+	 * the number of available processors divided by two, the surplus will be ignored. The 
+	 * array's first element cannot be null or a {@link #NullPointerException NullPointerException} 
+	 * is thrown.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -64,7 +66,8 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 			if (e != null)
 				enginesList.add(e);
 		}
-		this.engines = enginesList.toArray(new OptimizerEngines[enginesList.size()]);
+		int maxConcurrency = Runtime.getRuntime().availableProcessors()/2;
+		this.engines = enginesList.toArray(new OptimizerEngines[Math.min(maxConcurrency, enginesList.size())]);
 		arenas = new Arena[this.engines.length];
 		for (int i = 0; i < this.engines.length; i++)
 			arenas[i] = new Arena(this.engines[i].getController(), Logger.getAnonymousLogger());
@@ -129,8 +132,26 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		}
 		double fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
 		if (fitness > 0) {
-			MatchResult result = arenas[0].match(engines[0].getEngine(), engines[0].getOpponentEngine(), 2*games, timePerGame, timeIncPerMove);
-			fitness = Elo.calculateDifference(result);
+			engine1Wins = 0;
+			engine2Wins = 0;
+			draws = 0;
+			futures = new ArrayList<>(engines.length);
+			for (int i = 0; i < engines.length; i++) {
+				int index = i;
+				futures.add(pool.submit(() -> arenas[index].match(engines[index].getEngine(), engines[index].getOpponentEngine(),
+						2*games/engines.length, timePerGame, timeIncPerMove)));
+			}
+			for (Future<MatchResult> f : futures) {
+				try {
+					MatchResult res = f.get();
+					engine1Wins += res.getEngine1Wins();
+					engine2Wins += res.getEngine2Wins();
+					draws += res.getDraws();
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
+				}
+			}
+			fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
 			if (fitness > 0) {
 				for (int i = 0; i < engines.length; i++) {
 					TunableEngine oppEngine = engines[i].getOpponentEngine();
