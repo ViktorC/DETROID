@@ -376,8 +376,7 @@ class Search implements Runnable {
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
 			if (isPvNode && !isThereHashMove && depth/params.FULL_PLY >= params.IID_MIN_ACTIVATION_DEPTH) {
-				for (short i = 1; i < depth*params.IID_REL_DEPTH_HTH/100/params.FULL_PLY; i++)
-					pVsearch(i*params.FULL_PLY, distFromRoot, alpha, beta, true);
+				pVsearch(depth*params.IID_REL_DEPTH_HTH/100, distFromRoot, alpha, beta, true);
 				e = tT.get(position.key);
 				if (e != null && e.bestMove != 0) {
 					hashMove = Move.toMove(e.bestMove);
