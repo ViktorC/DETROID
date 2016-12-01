@@ -79,6 +79,8 @@ class SearchInfo extends SearchInformation {
 	}
 	@Override
 	public String[] getPv() {
+		if (pVline == null)
+			return null;
 		String[] arr = new String[pVline.size()];
 		int i = 0;
 		for (Move m : pVline) {

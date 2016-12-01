@@ -64,7 +64,8 @@ public class Launcher {
 			int concurrency = DEF_CONCURRENCY;
 			String arg0 = args[0];
 			switch (arg0) {
-				case "-tune": {
+				// Tuning.
+				case "-t": {
 					String logFilePath = DEF_LOG_FILE_PATH;
 					String arg1 = args[1];
 					if ("search".equals(arg1)) {
@@ -163,7 +164,8 @@ public class Launcher {
 					} else
 						throw new IllegalArgumentException();
 				} break;
-				case "-genfens": {
+				// Generate FENs file.
+				case "-g": {
 					int games = DEF_GAMES;
 					long tc = DEF_TC;
 					long tcInc = DEF_TC_INC;
@@ -199,7 +201,8 @@ public class Launcher {
 						e.printStackTrace();
 					}
 				} break;
-				case "-filterfens": {
+				// Filter FENs file.
+				case "-f": {
 					String arg1 = args[1];
 					String sourceFile = null;
 					String destFile = DEF_FENS_FILE_PATH;
@@ -248,7 +251,8 @@ public class Launcher {
 					} else
 						throw new IllegalArgumentException();
 				} break;
-				case "-converttoparams": {
+				// Convert to parameters.
+				case "-c": {
 					String arg1 = args[1];
 					String destFile = DEF_CONVERTED_PARAMS_PATH;
 					TunableEngine engine = new Detroid();
@@ -274,20 +278,21 @@ public class Launcher {
 					System.out.println(params.toString());
 					params.writeToFile(destFile);
 				} break;
-				case "-gui": {
-					
+				// UCI mode.
+				case "-u": {
+					UCI uci = new UCI(System.in, System.out);
+					uci.run(new Detroid());
+					try {
+						uci.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				} break;
 				default:
 					throw new IllegalArgumentException();
 			}
 		} else {
-			UCI uci = new UCI(System.in, System.out);
-			uci.run(new Detroid());
-			try {
-				uci.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			// !TODO GUI mode.
 		}
 	}
 

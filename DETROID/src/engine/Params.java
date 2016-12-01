@@ -114,7 +114,7 @@ final class Params extends EngineParameters {
 	short GAME_PHASE_OPENING_LOWER;
 	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_OPENING_UPPER;
-	@LimitBinaryLength (value = 0)
+	@LimitBinaryLength (value = 8)
 	short GAME_PHASE_ENDGAME_LOWER;
 	@LimitBinaryLength (value = 0)
 	short GAME_PHASE_ENDGAME_UPPER;
@@ -146,8 +146,6 @@ final class Params extends EngineParameters {
 	byte RECAP_EXT; // Fractional recapture extension.
 	@LimitBinaryLength (value = 4)
 	byte SINGLE_REPLY_EXT; // Fractional single reply extension.
-	@LimitBinaryLength (value = 4)
-	byte MATE_THREAT_EXT; // Fractional mate threat extension.
 	@LimitBinaryLength (value = 4)
 	byte IID_MIN_ACTIVATION_DEPTH; // The minimum depth at which IID is activated.
 	byte IID_REL_DEPTH_HTH; // The portion of the total depth to which the position will be searched with IID.

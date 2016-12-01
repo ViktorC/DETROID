@@ -298,7 +298,7 @@ class Search implements Runnable {
 		int kMove;
 		int razRed;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isThereMateThreat, isReducible;
+		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isDangerous, isReducible;
 		ArrayList<Move> tacticalMoves, quietMoves;
 		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
@@ -432,20 +432,14 @@ class Search implements Runnable {
 			// Check for the fifty-move rule; return a draw score if it applies.
 			if (position.fiftyMoveRuleClock >= 100)
 				return Termination.DRAW_CLAIMED.score;
-			isThereMateThreat = isInCheck || isPvNode || isEndgame || Math.abs(beta) >= wCheckMateLimit;
+			isDangerous = isInCheck || isPvNode || isEndgame || Math.abs(beta) >= wCheckMateLimit;
 			// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && !isThereMateThreat && depth/params.FULL_PLY >= params.NMR) {
+			if (nullMoveAllowed && !isDangerous && depth >= (1 + params.NMR)*params.FULL_PLY) {
 				position.makeNullMove();
 				// Do not allow consecutive null moves.
-				if (depth/params.FULL_PLY == params.NMR)
-					score = -pVsearch(depth - params.NMR*params.FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false);
-				else
-					score = -pVsearch(depth - params.NMR*params.FULL_PLY - params.FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false);
+				score = -pVsearch(depth - (1 + params.NMR)*params.FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false);
 				position.unmakeMove();
-				// Mate threat extension.
-				if (score <= lCheckMateLimit)
-					depth = Math.min(depthLimit, depth + params.MATE_THREAT_EXT);
-				else if (score >= beta)
+				if (score >= beta)
 					return score;
 			}
 			// Sort the material moves.
@@ -617,7 +611,7 @@ class Search implements Runnable {
 					isThereKM2 = false;
 					continue;
 				}
-				isReducible = !isThereMateThreat && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
+				isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
 				razRed = 0;
 				// Futility pruning, extended futility pruning, and razoring.
 				if (isReducible && depth/params.FULL_PLY <= 2) {
