@@ -434,7 +434,7 @@ class Search implements Runnable {
 				return Termination.DRAW_CLAIMED.score;
 			isDangerous = isInCheck || isPvNode || isEndgame || Math.abs(beta) >= wCheckMateLimit;
 			// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && !isDangerous && depth >= (1 + params.NMR)*params.FULL_PLY) {
+			if (nullMoveAllowed && !isDangerous && depth > params.NMR*params.FULL_PLY) {
 				position.makeNullMove();
 				// Do not allow consecutive null moves.
 				score = -pVsearch(depth - (1 + params.NMR)*params.FULL_PLY, distFromRoot + 1, -beta, -beta + 1, false);
