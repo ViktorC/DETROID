@@ -369,6 +369,9 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	public synchronized SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
+		// !FIXME To help the tuning!
+		if (params.FMAR1 >= params.FMAR2 || params.FMAR2 <= params.RMAR)
+			return null;
 		Set<Move> moves;
 		String[] pV;
 		String bestMove, ponderMove;

@@ -625,11 +625,21 @@ class Search implements Runnable {
 					if (evalScore == Integer.MIN_VALUE)
 						evalScore = eval.score(position, hashEntryGen, alpha, beta);
 					if (depth/params.FULL_PLY == 1) {
-						if (evalScore + params.FMAR1 <= alpha)
+						// Futility pruning.
+						if (evalScore + params.FMAR1 <= alpha) {
+							// Record failure in the relative history table.
+							hT.recordUnsuccessfulMove(move);
 							continue;
+						}
 					} else if (depth/params.FULL_PLY == 2) {
-						if (evalScore + params.FMAR2 <= alpha)
+						// Extended futility pruning.
+						if (evalScore + params.FMAR2 <= alpha) {
+							// Record failure in the relative history table.
+							hT.recordUnsuccessfulMove(move);
 							continue;
+						}
+						/* Rezoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
+						 * by a margin great enough to completely prune the branch. */
 						if (evalScore + params.RMAR <= alpha)
 							razRed = 1;
 					}

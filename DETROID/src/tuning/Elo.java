@@ -23,9 +23,11 @@ public class Elo {
 	public final static int calculateDifference(int wins, int losses, int draws) {
 		if (wins < 0 || draws < 0 || losses < 0)
 			throw new IllegalArgumentException("All parameters have to be 0 or greater.");
-		double points = wins + draws*0.5;
 		int games = wins + draws + losses;
-		return (int) -Math.round(Math.log10((games - points)/points)*400);
+		if (games == 0)
+			return 0;
+		double points = wins + draws*0.5;
+		return calculateDifference(points/games);
 	}
 	/**
 	 * Calculates the Elo rating difference between a player and its opponent based on the win ration against this
@@ -37,6 +39,10 @@ public class Elo {
 	public final static int calculateDifference(double winRatio) {
 		if (winRatio < 0 || winRatio > 1)
 			throw new IllegalArgumentException("The win ratio has to between 0 and 1.");
+		if (winRatio == 0)
+			return Integer.MIN_VALUE;
+		if (winRatio == 1)
+			return Integer.MAX_VALUE;
 		return (int) -Math.round((Math.log((1 - winRatio)/winRatio)*400));
 	}
 	/**
