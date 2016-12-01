@@ -356,7 +356,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * @return
 	 */
 	boolean areTherePiecesOtherThanKingsAndPawns() {
-		return allOccupied == (whitePawns | blackPawns | whiteKing | blackKing);
+		return allOccupied != (whitePawns | blackPawns | whiteKing | blackKing);
 	}
 	/**
 	 * Returns a bitmap representing all the squares on which the pieces are of the colour defined by byWhite and in the current position could
