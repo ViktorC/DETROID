@@ -351,32 +351,12 @@ class Position implements Copiable<Position>, Hashable {
 		return gen.generatePawnKingHashKey(this);
 	}
 	/**
-	 * Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the
-	 * supposedly enemy occupied square specified by sqrInd.
+	 * Returns whether there are any pieces on the board other than pawns and kings.
 	 * 
-	 * @param sqrInd
-	 * @param byWhite
 	 * @return
 	 */
-	boolean isAttacked(int sqrInd, boolean byWhite) {
-		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
-		if (byWhite) {
-			return ((whiteKing & dB.kingMoveMask) != 0 ||
-					(whiteKnights & dB.knightMoveMask) != 0 ||
-					(whitePawns & dB.pawnBlackCaptureMoveMask) != 0 ||
-					((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) != 0 ||
-					((whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied)) != 0 || 
-					(offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind &&
-					sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights && (whitePawns & dB.kingMoveMask & Rank.R5.bits) != 0));
-		} else {
-			return ((blackKing & dB.kingMoveMask) != 0 ||
-					(blackKnights & dB.knightMoveMask) != 0 ||
-					(blackPawns & dB.pawnWhiteCaptureMoveMask) != 0 ||
-					((blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied)) != 0 ||
-					((blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied)) != 0 ||
-					(offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind &&
-					sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights && (blackPawns & dB.kingMoveMask & Rank.R4.bits) != 0));
-		}
+	boolean areTherePiecesOtherThanKingsAndPawns() {
+		return allOccupied == (whitePawns | blackPawns | whiteKing | blackKing);
 	}
 	/**
 	 * Returns a bitmap representing all the squares on which the pieces are of the colour defined by byWhite and in the current position could
@@ -407,6 +387,34 @@ class Position implements Copiable<Position>, Hashable {
 				attackers |= blackPawns & dB.kingMoveMask & Rank.R4.bits;
 		}
 		return attackers;
+	}
+	/**
+	 * Returns whether there are any pieces of the color defined by byWhite that could be, in the current position, legally moved to the
+	 * supposedly enemy occupied square specified by sqrInd.
+	 * 
+	 * @param sqrInd
+	 * @param byWhite
+	 * @return
+	 */
+	boolean isAttacked(int sqrInd, boolean byWhite) {
+		MoveSetDatabase dB = MoveSetDatabase.getByIndex(sqrInd);
+		if (byWhite) {
+			return ((whiteKing & dB.kingMoveMask) != 0 ||
+					(whiteKnights & dB.knightMoveMask) != 0 ||
+					(whitePawns & dB.pawnBlackCaptureMoveMask) != 0 ||
+					((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) != 0 ||
+					((whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied)) != 0 || 
+					(offsetBoard[sqrInd] == Piece.B_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind &&
+					sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights && (whitePawns & dB.kingMoveMask & Rank.R5.bits) != 0));
+		} else {
+			return ((blackKing & dB.kingMoveMask) != 0 ||
+					(blackKnights & dB.knightMoveMask) != 0 ||
+					(blackPawns & dB.pawnWhiteCaptureMoveMask) != 0 ||
+					((blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied)) != 0 ||
+					((blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied)) != 0 ||
+					(offsetBoard[sqrInd] == Piece.W_PAWN.ind && enPassantRights != EnPassantRights.NONE.ind &&
+					sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights && (blackPawns & dB.kingMoveMask & Rank.R4.bits) != 0));
+		}
 	}
 	/**
 	 * Returns a long representing all the squares on which the pieces are of the colour defined by byWhite and in the current position could

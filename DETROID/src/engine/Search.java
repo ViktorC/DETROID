@@ -432,7 +432,8 @@ class Search implements Runnable {
 			// Check for the fifty-move rule; return a draw score if it applies.
 			if (position.fiftyMoveRuleClock >= 100)
 				return Termination.DRAW_CLAIMED.score;
-			isDangerous = isInCheck || isPvNode || isEndgame || Math.abs(beta) >= wCheckMateLimit;
+			isDangerous = isInCheck || isPvNode || isEndgame || !position.areTherePiecesOtherThanKingsAndPawns() ||
+					Math.abs(beta) >= wCheckMateLimit;
 			// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
 			if (nullMoveAllowed && !isDangerous && depth > params.NMR*params.FULL_PLY) {
 				position.makeNullMove();
