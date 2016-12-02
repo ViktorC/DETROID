@@ -40,9 +40,9 @@ public class Elo {
 		if (winRatio < 0 || winRatio > 1)
 			throw new IllegalArgumentException("The win ratio has to between 0 and 1.");
 		if (winRatio == 0)
-			return Integer.MIN_VALUE;
-		if (winRatio == 1)
-			return Integer.MAX_VALUE;
+			winRatio = Double.MIN_VALUE;
+		else if (winRatio == 1)
+			winRatio -= Double.MIN_VALUE;
 		return (int) -Math.round((Math.log((1 - winRatio)/winRatio)*400));
 	}
 	/**
