@@ -122,16 +122,20 @@ final class Params extends EngineParameters {
 	// Search parameters.
 	@LimitBinaryLength (value = 2)
 	byte NMR; // Null move pruning reduction.
-	@LimitBinaryLength (value = 0)
+	@LimitBinaryLength (value = 2)
 	byte LMR; // Late move reduction.
 	@LimitBinaryLength (value = 3)
 	byte LMRMSM; // Min. number of searched moves for late move reduction.
-	@LimitBinaryLength (value = 10)
+	@LimitBinaryLength (value = 9)
 	short FMAR1; // Futility margin.
 	@LimitBinaryLength (value = 11)
 	short FMAR2; // Extended futility margin.
+	@LimitBinaryLength (value = 11)
+	short FMAR3; // Deep futility margin.
 	@LimitBinaryLength (value = 10)
-	short RMAR; // Razoring margin.
+	short RMAR1; // Razoring margin.
+	@LimitBinaryLength (value = 11)
+	short RMAR2; // Deep razoring margin.
 	@LimitBinaryLength (value = 10)
 	short A_DELTA; // The aspiration delta within iterative deepening.
 	@LimitBinaryLength (value = 10)

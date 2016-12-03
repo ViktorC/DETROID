@@ -615,38 +615,52 @@ class Search implements Runnable {
 				isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
 				razRed = 0;
 				// Futility pruning, extended futility pruning, and razoring.
-				if (isReducible && depth/params.FULL_PLY <= 2) {
+				if (isReducible && depth/params.FULL_PLY <= 3) {
 					if (evalScore == Integer.MIN_VALUE)
 						evalScore = eval.score(position, hashEntryGen, alpha, beta);
-					if (depth/params.FULL_PLY == 1) {
-						// Futility pruning.
-						if (evalScore + params.FMAR1 <= alpha) {
-							// Record failure in the relative history table.
-							hT.recordUnsuccessfulMove(move);
-							continue;
+					switch (depth/params.FULL_PLY) {
+						case 1: {
+							// Frontier futility pruning.
+							if (evalScore + params.FMAR1 <= alpha) {
+								// Record failure in the relative history table.
+								hT.recordUnsuccessfulMove(move);
+								continue;
+							}
+						} break;
+						case 2: {
+							// Extended futility pruning.
+							if (evalScore + params.FMAR2 <= alpha) {
+								// Record failure in the relative history table.
+								hT.recordUnsuccessfulMove(move);
+								continue;
+							}
+							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
+							 * by a margin great enough to completely prune the branch. */
+							if (evalScore + params.RMAR1 <= alpha)
+								razRed = 1;
+						} break;
+						case 3: {
+							// Deep futility pruning.
+							if (evalScore + params.FMAR3 <= alpha) {
+								// Record failure in the relative history table.
+								hT.recordUnsuccessfulMove(move);
+								continue;
+							}
+							// Deep razoring.
+							if (evalScore + params.RMAR2 <= alpha)
+								razRed = 1;
 						}
-					} else if (depth/params.FULL_PLY == 2) {
-						// Extended futility pruning.
-						if (evalScore + params.FMAR2 <= alpha) {
-							// Record failure in the relative history table.
-							hT.recordUnsuccessfulMove(move);
-							continue;
-						}
-						/* Rezoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
-						 * by a margin great enough to completely prune the branch. */
-						if (evalScore + params.RMAR <= alpha)
-							razRed = 1;
 					}
 				}
 				position.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (isReducible && depth/params.FULL_PLY >= 3 && searchedMoves > params.LMRMSM) {
-					score = -pVsearch(depth - (params.LMR + 1)*params.FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
+				if (isReducible && depth/params.FULL_PLY > 3 && searchedMoves > params.LMRMSM) {
+					score = -pVsearch(depth - params.LMR*params.FULL_PLY, distFromRoot + 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
 					if (score > alpha)
 						score = -pVsearch(depth - params.FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				}
-				// Else PVS with razoring.
+				// Else simple PVS with razoring.
 				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && tacticalMovesArr.length == 0)
 					score = -pVsearch(depth - (razRed + 1)*params.FULL_PLY, distFromRoot + 1, -beta, -alpha, true);
 				else {
