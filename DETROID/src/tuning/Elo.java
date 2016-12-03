@@ -8,6 +8,15 @@ package tuning;
  */
 public class Elo {
 
+	/**
+	 * The minimum allowed win ratio. Any win ratio smaller than this defaults to this value.
+	 */
+	private static final double MIN_WIN_RATIO = 1E-4;
+	/**
+	 * The maximum allowed win ratio. Any win ratio greater than this defaults to this value.
+	 */
+	private static final double MAX_WIN_RATIO = 1 - MIN_WIN_RATIO;
+	
 	private Elo() {
 		
 	}
@@ -39,10 +48,10 @@ public class Elo {
 	public final static int calculateDifference(double winRatio) {
 		if (winRatio < 0 || winRatio > 1)
 			throw new IllegalArgumentException("The win ratio has to between 0 and 1.");
-		if (winRatio == 0)
-			winRatio = Double.MIN_VALUE;
-		else if (winRatio == 1)
-			winRatio -= Double.MIN_VALUE;
+		if (winRatio < MIN_WIN_RATIO)
+			winRatio = MIN_WIN_RATIO;
+		else if (winRatio > MAX_WIN_RATIO)
+			winRatio = MAX_WIN_RATIO;
 		return (int) -Math.round((Math.log((1 - winRatio)/winRatio)*400));
 	}
 	/**
