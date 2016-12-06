@@ -1,7 +1,7 @@
 package tuning;
 
 /**
- * A utility class for calculating Elo score differences based match statistics.
+ * A utility class for calculating Elo score differences based on match statistics.
  * 
  * @author Viktor
  *
