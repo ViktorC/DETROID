@@ -12,6 +12,10 @@ public class Elo {
 	 * The minimum allowed win ratio. Any win ratio smaller than this defaults to this value.
 	 */
 	private static final double MIN_WIN_RATIO = 1e-5;
+	/**
+	 * The maximum allowed win ratio. Any win ratio greater than this defaults to this value.
+	 */
+	private static final double MAX_WIN_RATIO = 1 - MIN_WIN_RATIO;
 	
 	private Elo() {
 		
@@ -45,6 +49,7 @@ public class Elo {
 		if (winRatio < 0 || winRatio > 1)
 			throw new IllegalArgumentException("The win ratio has to between 0 and 1.");
 		winRatio = Math.max(winRatio, MIN_WIN_RATIO);
+		winRatio = Math.min(winRatio, MAX_WIN_RATIO);
 		return (int) -Math.round(Math.log10(1/winRatio - 1)*400);
 	}
 	/**
