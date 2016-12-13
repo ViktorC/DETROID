@@ -18,6 +18,12 @@ import util.PBIL;
  */
 public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 
+	/**
+	 * The factor of the original number of games to play in addition when assessing the fitness of a parameter set whose fitness 
+	 * surpassed the current highest fitness after having played the original number of games.
+	 */
+	private static final int VALIDATION_FACTOR = 2;
+	
 	private final OptimizerEngines[] engines;
 	private final Arena[] arenas;
 	private final int games;
@@ -129,14 +135,11 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		}
 		double fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
 		if (fitness > 0) {
-			engine1Wins = 0;
-			engine2Wins = 0;
-			draws = 0;
 			futures = new ArrayList<>(engines.length);
 			for (int i = 0; i < engines.length; i++) {
 				int index = i;
 				futures.add(pool.submit(() -> arenas[index].match(engines[index].getEngine(), engines[index].getOpponentEngine(),
-						2*games/engines.length, timePerGame, timeIncPerMove)));
+						VALIDATION_FACTOR*games/engines.length, timePerGame, timeIncPerMove)));
 			}
 			for (Future<MatchResult> f : futures) {
 				try {
