@@ -68,7 +68,7 @@ public class Launcher {
 				case "-t": {
 					String logFilePath = DEF_LOG_FILE_PATH;
 					String arg1 = args[1];
-					if ("search".equals(arg1)) {
+					if ("gameplay".equals(arg1)) {
 						int games = DEF_GAMES;
 						long tc = DEF_TC;
 						long tcInc = DEF_TC_INC;
@@ -120,7 +120,7 @@ public class Launcher {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-					} else if ("eval".equals(arg1)) {
+					} else if ("evaluation".equals(arg1)) {
 						Double k = null;
 						Integer sampleSize = null;
 						String fensFilePath = DEF_FENS_FILE_PATH;
@@ -280,10 +280,8 @@ public class Launcher {
 				} break;
 				// UCI mode.
 				case "-u": {
-					UCI uci = new UCI(System.in, System.out);
-					uci.run(new Detroid());
-					try {
-						uci.close();
+					try (UCI uci = new UCI(System.in, System.out)) {
+						uci.run(new Detroid());
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
