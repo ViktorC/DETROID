@@ -94,6 +94,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 			if (e != null) {
 				if (!e.isInit())
 					e.init();
+				e.setStaticEvalTuningMode(true);
 				enginesList.add(e);
 			}
 		}
@@ -310,29 +311,36 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
 		int workLoadPerThread = dataSample.size()/engines.length;
-		for (int i = 0; i < engines.length; i++) {
+		int enginesLength = workLoadPerThread < 0 ? 1 : engines.length;
+		for (int i = 0; i < enginesLength; i++) {
 			final int finalStartInd = startInd;
-			final boolean last = i == engines.length - 1;
+			final boolean last = i == enginesLength - 1;
 			final TunableEngine e = engines[i];
 			if (!e.isInit())
 				e.init();
 			e.getParameters().set(parameters);
 			e.reloadParameters();
 			futures.add(pool.submit(() -> {
-				double subTotalError = 0;
-				int endInd = (int) (last ? dataSample.size() : finalStartInd + workLoadPerThread);
-				for (int j = finalStartInd; j < endInd; j++) {
-					String fen = (String) dataSample.get(j).getKey();
-					double result = (double) ((Float) dataSample.get(j).getValue()).floatValue();
-					e.position(fen);
-					e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
-					double score = e.getSearchInfo().getScore();
-					if (!fen.contains("w"))
-						score *= -1;
-					double error = computeError(result, score, k);
-					subTotalError += error;
+				try {
+					double subTotalError = 0;
+					int endInd = (int) (last ? dataSample.size() : finalStartInd + workLoadPerThread);
+					for (int j = finalStartInd; j < endInd; j++) {
+						Entry<Object, Object> dataPair = dataSample.get(j);
+						String fen = (String) dataPair.getKey();
+						double result = (double) ((Float) dataPair.getValue()).floatValue();
+						e.position(fen);
+						e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
+						double score = e.getSearchInfo().getScore();
+						if (!fen.contains("w"))
+							score *= -1;
+						double error = computeError(result, score, k);
+						subTotalError += error;
+					}
+					return subTotalError;
+				} catch (Exception e1) {
+					e1.printStackTrace();
+					return 0d;
 				}
-				return subTotalError;
 			}));
 			startInd += workLoadPerThread;
 		}
@@ -404,7 +412,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 		List<Entry<Object, Object>> sample = new ArrayList<>();
 		int i = 0;
 		int count = 0;
-		long nextLine = lines[i++];
+		long nextLine = lines[0];
 		try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
 			String line;
 			while ((line = reader.readLine()) != null && i < sampleSize) {

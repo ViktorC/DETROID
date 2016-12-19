@@ -54,6 +54,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		} catch (URISyntaxException e) { path = null; }
 		DEFAULT_BOOK_FILE_PATH = path;
 	}
+	// The minimum allowed hash size in MB.
+	private final static int MIN_HASH_SIZE = 1;
+	// The maximum allowed hash size in MB.
+	private final static int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
 	
 	private Option<?> hashSize;
 	private Option<?> clearHash;
@@ -64,12 +68,14 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	private Option<?> uciOpponent;
 	private HashMap<Option<?>, Object> options;
 	
-	private boolean isInit;
+	private volatile boolean isInit;
+	private volatile boolean debugMode;
+	private volatile boolean controllerMode;
+	private volatile boolean staticEvalTuningMode;
 	private Params params;
 	private Game game;
 	private boolean newGame;
 	private DebugInfo debugInfo;
-	private boolean debug;
 	private Book book;
 	private boolean outOfBook;
 	private Evaluator eval;
@@ -101,7 +107,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		SizeEstimator estimator = SizeEstimator.getInstance();
 		tT = new LossyHashTable<>((int) (sizeInBytes*params.TT_SHARE/totalHashShares/estimator.sizeOf(TTEntry.class)));
 		eT = new LossyHashTable<>((int) (sizeInBytes*params.ET_SHARE/totalHashShares/estimator.sizeOf(ETEntry.class)));
-		if (debug) debugInfo.set("Hash capacity data\n" +
+		if (debugMode) debugInfo.set("Hash capacity data\n" +
 				"Transposition table capacity - " + tT.getCapacity() + "\n" +
 				"Evaluation table capacity - " + eT.getCapacity());
 	}
@@ -113,7 +119,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		eT.clear();
 		hT.reset();
 		gen = 0;
-		if (debug) debugInfo.set("Hash tables cleared");
+		if (debugMode) debugInfo.set("Hash tables cleared");
 	}
 	/**
 	 * Computes and returns the number of milliseconds the engine should initially spend on searching the current position.
@@ -136,7 +142,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			phaseScore = eval.phaseScore(game.getPosition());
 			movesToGo = params.AVG_MOVES_PER_GAME - params.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_ENDGAME_UPPER +
 					params.MOVES_TO_GO_SAFETY_MARGIN;
-			if (debug) debugInfo.set("Search time data\n" +
+			if (debugMode) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);
 		}
@@ -159,7 +165,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	 */
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
-		if (debug)
+		if (debugMode)
 			debugInfo.set("Search time extension data\n" +
 					"PV root move invalid - " + searchResult.equals(new Move()) + "\n" +
 					"Score fluctuation - " + Math.abs(scoreFluctuation) + "\n" +
@@ -197,7 +203,6 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	}
 	@Override
 	public synchronized void init() {
-		int maxHashSize;
 		try {
 			params = new Params();
 			params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
@@ -206,14 +211,15 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
 		} catch (IOException e) { }
 		debugInfo = new DebugInfo();
-		debug = false;
+		debugMode = false;
+		controllerMode = false;
+		staticEvalTuningMode = false;
 		ponderHit = false;
 		stop = false;
 		outOfBook = false;
 		game = new Game();
 		options = new HashMap<>();
-		maxHashSize = (int) Math.min(1024, Runtime.getRuntime().maxMemory()/(2L << 20));
-		hashSize = new Option.SpinOption("Hash", Math.min(1, maxHashSize), 1, maxHashSize);
+		hashSize = new Option.SpinOption("Hash", Math.min(params.DEFAULT_HASH_SIZE, MAX_HASH_SIZE), MIN_HASH_SIZE, MAX_HASH_SIZE);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
@@ -229,7 +235,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
-		setHashSize((int) options.get(hashSize));
+		setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.DEFAULT_HASH_SIZE);
 		hT = new RelativeHistoryTable(params);
 		eval = new Evaluator(params, eT);
 		executor = Executors.newSingleThreadExecutor();
@@ -248,8 +254,8 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return AUTHOR;
 	}
 	@Override
-	public void debug(boolean on) {
-		debug = on;
+	public void setDebugMode(boolean on) {
+		debugMode = on;
 	}
 	@Override
 	public Collection<Option<?>> getOptions() {
@@ -273,7 +279,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 					options.put(hashSize, value);
 					setHashSize(((Integer)value).intValue());
 				}
-				if (debug) debugInfo.set("Hash size successfully set to " + value);
+				if (debugMode) debugInfo.set("Hash size successfully set to " + value);
 				return true;
 			}
 		} else if (clearHash.equals(setting)) {
@@ -281,46 +287,47 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			return true;
 		} else if (ponder.equals(setting)) {
 			options.put(ponder, value);
-			if (debug) debugInfo.set("Ponder successfully set to " + value);
+			if (debugMode) debugInfo.set("Ponder successfully set to " + value);
 			return true;
 		} else if (ownBook.equals(setting)) {
 			if (book != null) {
 				options.put(ownBook, value);
-				if (debug) debugInfo.set("Use of own book successfully set to " + value);
+				if (debugMode) debugInfo.set("Use of own book successfully set to " + value);
 				return true;
 			}
-			if (debug) debugInfo.set("No book file found at " + options.get(primaryBookPath));
+			if (debugMode) debugInfo.set("No book file found at " + options.get(primaryBookPath));
 		} else if (primaryBookPath.equals(setting)) {
 			try {
 				PolyglotBook newBook = new PolyglotBook((String) value, book.getSecondaryFilePath());
 				book.close();
 				book = newBook;
 				options.put(primaryBookPath, book.getPrimaryFilePath());
-				if (debug) debugInfo.set("Primary book file path successfully set to " + value);
+				if (debugMode) debugInfo.set("Primary book file path successfully set to " + value);
 				return true;
-			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
+			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 		} else if (secondaryBookPath.equals(setting)) {
 			try {
 				PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
 				book.close();
 				book = newBook;
 				options.put(secondaryBookPath, book.getSecondaryFilePath());
-				if (debug) debugInfo.set("Secondary book file path successfully set to " + value);
+				if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
 				return true;
-			} catch (IOException e) { if (debug) debugInfo.set(e.getMessage()); }
+			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 		} else if (uciOpponent.equals(setting)) {
 			options.put(uciOpponent, value);
-			if (debug) debugInfo.set("Opponent name successfully set to " + value);
+			if (debugMode) debugInfo.set("Opponent name successfully set to " + value);
 			return true;
 		}
-		if (debug) debugInfo.set("The setting was not accepted");
+		if (debugMode) debugInfo.set("The setting was not accepted");
 		return false;
 	}
 	@Override
 	public synchronized void newGame() {
 		newGame = true;
 		outOfBook = false;
-		clearHash();
+		if (!controllerMode && !staticEvalTuningMode)
+			clearHash();
 	}
 	@Override
 	public synchronized boolean position(String fen) {
@@ -328,41 +335,43 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 			// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
 			if (newGame) {
-				if (debug) debugInfo.set("New game set");
+				if (debugMode) debugInfo.set("New game set");
 				game = new Game(pos);
 			} else if (!game.getStartPos().toString().equals(pos.toString())) {
 				newGame();
-				if (debug) debugInfo.set("New game set due to new start position");
+				if (debugMode) debugInfo.set("New game set due to new start position");
 				game = new Game(pos);
 			}
 			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
 			else {
-				if (debug) debugInfo.set("Position set within the same game");
+				if (debugMode) debugInfo.set("Position set within the same game");
 				gen++;
-				if (gen == 127) {
-					tT.clear();
-					eT.clear();
-					gen = 0;
-				} else {
-					tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
-					eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
+				if (!controllerMode && !staticEvalTuningMode) {
+					if (gen == 127) {
+						tT.clear();
+						eT.clear();
+						gen = 0;
+					} else {
+						tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
+						eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
+					}
+					hT.decreaseCurrentValues();
 				}
-				hT.decreaseCurrentValues();
 				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
 			}
 			return true;
 		} catch (ChessParseException | NullPointerException e) {
-			if (debug) debugInfo.set(e.getMessage());
+			if (debugMode) debugInfo.set(e.getMessage());
 			return false;
 		}
 	}
 	@Override
 	public synchronized boolean play(String pacn) {
 		if (game.play(pacn)) {
-			if (debug) debugInfo.set("Move \"" + pacn + "\" played successfully");
+			if (debugMode) debugInfo.set("Move \"" + pacn + "\" played successfully");
 			return true;
 		}
-		if (debug) debugInfo.set("Move \"" + pacn + "\" could not be played");
+		if (debugMode) debugInfo.set("Move \"" + pacn + "\" could not be played");
 		return false;
 	}
 	@Override
@@ -391,7 +400,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				game.setWhitePlayerName((String) options.get(uciOpponent));
 				game.setBlackPlayerName(NAME);
 			}
-			if (debug) debugInfo.set("Players' names set\n" +
+			if (debugMode) debugInfo.set("Players' names set\n" +
 					"White - " + game.getWhitePlayerName() + "\n" +
 					"Black - " + game.getBlackPlayerName());
 			newGame = false;
@@ -405,18 +414,18 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				searchResult = searchResult == null ? Move.NULL_MOVE : searchResult;
 				return searchResult;
 			});
-			if (debug) debugInfo.set("Book search started");
+			if (debugMode) debugInfo.set("Book search started");
 			try {
 				searchResult = (Move) search.get();
 			} catch (InterruptedException | ExecutionException e1) {
-				if (debug) debugInfo.set(e1.getMessage());
+				if (debugMode) debugInfo.set(e1.getMessage());
 			} catch (CancellationException e2) { }
-			if (debug) debugInfo.set("Book search done");
+			if (debugMode) debugInfo.set("Book search done");
 			ponderMove = null;
 			// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
 			if (!stop && searchResult.equals(Move.NULL_MOVE)) {
 				if (searchResult.equals(new Move())) {
-					if (debug) debugInfo.set("No book move found. Out of book.");
+					if (debugMode) debugInfo.set("No book move found. Out of book.");
 					outOfBook = true;
 					search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? (whiteTime != null ?
 							whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
@@ -431,7 +440,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 			// Check if pondering is possible.
 			if (ponder != null && ponder) {
 				if (!(Boolean) options.get(this.ponder)) {
-					if (debug) debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
+					if (debugMode) debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
 					return null;
 				} else
 					doPonder = true;
@@ -443,7 +452,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 					for (String s : searchMoves)
 						moves.add(game.getPosition().parsePACN(s));
 				} catch (ChessParseException | NullPointerException e) {
-					if (debug) debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
+					if (debugMode) debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
 					return null;
 				}
 			} else
@@ -453,19 +462,19 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				search = executor.submit(new Search(game.getPosition(), searchStats, doPonder || doInfinite,
 						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
 						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, tT, params));
-				if (debug) debugInfo.set("Search started");
+				if (debugMode) debugInfo.set("Search started");
 				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
 				if (doPonder) {
-					if (debug) debugInfo.set("In ponder mode");
+					if (debugMode) debugInfo.set("In ponder mode");
 					while (!stop && !ponderHit) {
 						try {
 							wait();
-						} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+						} catch (InterruptedException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 					}
-					if (debug) debugInfo.set("Ponder stopped");
+					if (debugMode) debugInfo.set("Ponder stopped");
 					// If the search terminated due to a ponderhit, keep searching...
 					if (ponderHit) {
-						if (debug) debugInfo.set("Ponderhit acknowledged");
+						if (debugMode) debugInfo.set("Ponderhit acknowledged");
 						ponderHit = false;
 					}
 					// If it did not, return the best move found.
@@ -475,46 +484,46 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				}
 				// If in infinite mode, let the search run until it is externally stopped.
 				else if (doInfinite) {
-					if (debug) debugInfo.set("In infinite mode");
+					if (debugMode) debugInfo.set("In infinite mode");
 					while (!stop) {
 						try {
 							wait();
-						} catch (InterruptedException e) { if (debug) debugInfo.set(e.getMessage()); }
+						} catch (InterruptedException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 					}
 					break Search;
 				}
 				// Fixed node or depth search
 				else if (whiteTime == null && blackTime == null && searchTime == null) {
-					if (debug) debugInfo.set("In fixed mode");
+					if (debugMode) debugInfo.set("In fixed mode");
 					try {
 						search.get();
 					} catch (InterruptedException | ExecutionException e1) {
-						if (debug) debugInfo.set(e1.getMessage());
+						if (debugMode) debugInfo.set(e1.getMessage());
 					} catch (CancellationException e2) { }
 					break Search;
 				}
 				// Compute search time and wait for the search to terminate for the computed amount of time.
 				time = searchTime == null || searchTime == 0 ?
 						computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo) : searchTime;
-				if (debug) debugInfo.set("Base search time - " + time);
+				if (debugMode) debugInfo.set("Base search time - " + time);
 				try {
 					search.get(time, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException | ExecutionException e1) {
-					if (debug) debugInfo.set(e1.getMessage());
+					if (debugMode) debugInfo.set(e1.getMessage());
 				} catch (TimeoutException e2) {
-					if (debug) debugInfo.set("Base search time up");
+					if (debugMode) debugInfo.set("Base search time up");
 				} catch (CancellationException e3) { }
 				// If time was up, check if the search should be extended.
 				if (!search.isDone() && searchTime == null) {
 					try {
 						extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
-						if (debug) debugInfo.set("Extra search time - " + extraTime);
+						if (debugMode) debugInfo.set("Extra search time - " + extraTime);
 						if (extraTime > 0)
 							search.get(extraTime, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException | ExecutionException e1) {
-						if (debug) debugInfo.set(e1.getMessage());
+						if (debugMode) debugInfo.set(e1.getMessage());
 					} catch (TimeoutException e2) {
-						if (debug) debugInfo.set("Extra time up");
+						if (debugMode) debugInfo.set("Extra time up");
 					} catch (CancellationException e3) { }
 				}
 				// Time is up, stop the search.
@@ -522,15 +531,16 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 					search.cancel(true);
 				}
 			}
-			if (debug) debugInfo.set("Search stopped");
+			if (debugMode) debugInfo.set("Search stopped");
 			// Set ponder move based on the PV.
 			pV = searchStats.getPv();
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
-		}
+		} if (staticEvalTuningMode)
+			return new SearchResults(null, null);
 		// Set final results.
 		if (searchResult.equals(Move.NULL_MOVE)) {
 			bestMove = getRandomMove();
-			if (debug) debugInfo.set("No valid PV root move found\n" +
+			if (debugMode) debugInfo.set("No valid PV root move found\n" +
 					"Random move selected");
 		} else
 			bestMove = searchResult.toString();
@@ -539,7 +549,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	@Override
 	public void stop() {
 		if (search != null && !search.isDone()) {
-			if (debug) debugInfo.set("Stopping search...");
+			if (debugMode) debugInfo.set("Stopping search...");
 			search.cancel(true);
 			stop = true;
 			synchronized (this) {
@@ -549,7 +559,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	}
 	@Override
 	public void ponderhit() {
-		if (debug) debugInfo.set("Signaling ponderhit...");
+		if (debugMode) debugInfo.set("Signaling ponderhit...");
 		ponderHit = true;
 		synchronized (this) {
 			notify();
@@ -564,7 +574,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		long load, capacity;
 		capacity = tT.getCapacity() + eT.getCapacity();
 		load = tT.getLoad() + eT.getLoad();
-		if (debug) debugInfo.set("Total hash size in MB - " + String.format("%.2f", (float) ((double) (SizeEstimator.getInstance().sizeOf(tT) +
+		if (debugMode) debugInfo.set("Total hash size in MB - " + String.format("%.2f", (float) ((double) (SizeEstimator.getInstance().sizeOf(tT) +
 				SizeEstimator.getInstance().sizeOf(eT)))/(1L << 20)));
 		return (short) (1000*load/capacity);
 	}
@@ -574,7 +584,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	}
 	@Override
 	public void quit() {
-		if (debug) debugInfo.set("Shutting down...");
+		if (debugMode) debugInfo.set("Shutting down...");
 		try {
 			book.close();
 		} catch (IOException e) { e.printStackTrace(); }
@@ -607,10 +617,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		try {
 			newGame();
 			game = Game.parse(pgn);
-			if (debug) debugInfo.set("Game successfully set to:\n" + pgn);
+			if (debugMode) debugInfo.set("Game successfully set to:\n" + pgn);
 			return true;
 		} catch (ChessParseException e) {
-			if (debug) debugInfo.set("Game could not be set. Invalid PGN:\n" + pgn);
+			if (debugMode) debugInfo.set("Game could not be set. Invalid PGN:\n" + pgn);
 			return false;
 		}
 	}
@@ -627,19 +637,31 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return game.getPosition().toString();
 	}
 	@Override
+	public void setControllerMode(boolean on) {
+		controllerMode = on;
+		reloadParameters();
+	}
+	@Override
 	public EngineParameters getParameters() {
 		return params;
 	}
 	@Override
 	public void reloadParameters() {
 		if (isInit()) {
-			eval.initPieceSquareArrays();
-			setHashSize((Integer) options.get(hashSize));
+			setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.DEFAULT_HASH_SIZE);
+			eval = new Evaluator(params, controllerMode || staticEvalTuningMode ? null : eT);
 		}
+	}
+	@Override
+	public void setStaticEvalTuningMode(boolean on) {
+		staticEvalTuningMode = on;
+		reloadParameters();
 	}
 	@Override
 	public void update(Observable o, Object arg) {
 		SearchInfo stats = (SearchInfo) o;
+		if (stats.getDepth() == 0)
+			return;
 		Move newSearchRes = stats.getPvMoveList() != null && stats.getPvMoveList().size() > 0 ?
 				stats.getPvMoveList().get(0) : Move.NULL_MOVE;
 		newSearchRes = newSearchRes == null ? Move.NULL_MOVE : newSearchRes;

@@ -193,8 +193,9 @@ public class Launcher {
 						}
 					}
 					OptimizerEngines[] engines = new OptimizerEngines[concurrency];
-					for (int i = 0; i < concurrency; i++)
+					for (int i = 0; i < concurrency; i++) {
 						engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+					}
 					try {
 						StaticEvaluationOptimizer.generateFENFile(engines, games, tc, tcInc, destFile);
 					} catch (NullPointerException | IllegalArgumentException | IOException e) {

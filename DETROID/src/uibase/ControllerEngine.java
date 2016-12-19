@@ -62,5 +62,10 @@ public interface ControllerEngine extends UCIEngine {
 	 * @return
 	 */
 	String toFEN();
-	
+	/**
+	 * Sets whether the engine should run in controller mode.
+	 * 
+	 * @param on
+	 */
+	void setControllerMode(boolean on);
 }

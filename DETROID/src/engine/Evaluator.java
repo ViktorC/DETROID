@@ -85,7 +85,7 @@ final class Evaluator {
 	/**
 	 * Initializes the piece square arrays with the correct order of values.
 	 */
-	void initPieceSquareArrays() {
+	private void initPieceSquareArrays() {
 		int c1, c2;
 		byte[] pstPawnOpening = params.getPST_PAWN_OPENING();
 		byte[] pstPawnEndgame = params.getPST_PAWN_ENDGAME();
@@ -479,8 +479,7 @@ final class Evaluator {
 		ETEntry eE;
 		score = 0;
 		// Probe evaluation hash table.
-		eE = eT.get(pos.key);
-		if (eE != null) {
+		if (eT != null && (eE = eT.get(pos.key)) != null) {
 			eE.generation = hashGen;
 			score = eE.score;
 			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
@@ -550,7 +549,7 @@ final class Evaluator {
 			score += (isWhitesTurn ? params.TEMPO_ADVANTAGE : -params.TEMPO_ADVANTAGE);
 			// Non-exact score hashing.
 			tempScore = (short) (isWhitesTurn ? score : -score);
-			if (tempScore <= alpha - params.LAZY_EVAL_MAR || tempScore >= beta + params.LAZY_EVAL_MAR) {
+			if (eT != null && (tempScore <= alpha - params.LAZY_EVAL_MAR || tempScore >= beta + params.LAZY_EVAL_MAR)) {
 				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
 				return tempScore;
 			}
@@ -693,7 +692,8 @@ final class Evaluator {
 		score -= numOfWhiteQueens != 0 ? params.QUEEN_KING_TROPISM_WEIGHT*whiteQueenKingTropism/numOfWhiteQueens : 0;
 		score += numOfBlackQueens != 0 ? params.QUEEN_KING_TROPISM_WEIGHT*blackQueenKingTropism/numOfBlackQueens : 0;
 		score *= (isWhitesTurn ? 1 : -1);
-		eT.put(new ETEntry(pos.key, score, true, hashGen));
+		if (eT != null)
+			eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}
 }

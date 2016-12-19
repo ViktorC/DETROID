@@ -51,6 +51,7 @@ public class Arena implements AutoCloseable {
 		this.controller = controller;
 		if (!this.controller.isInit())
 			this.controller.init();
+		this.controller.setControllerMode(true);
 		pool = Executors.newCachedThreadPool();
 		timer = new MatchTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
 		this.resultLogger = resultLogger;

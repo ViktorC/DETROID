@@ -68,7 +68,7 @@ public final class UCI implements Observer, Closeable {
 			header = tokens[0];
 			switch (header) {
 				case "debug": {
-					this.engine.debug(tokens[1].equals("on"));
+					this.engine.setDebugMode(tokens[1].equals("on"));
 				} break;
 				case "isready": {
 					out.println("readyok");

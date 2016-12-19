@@ -46,7 +46,7 @@ public interface UCIEngine {
 	 * 
 	 * @param on
 	 */
-	void debug(boolean on);
+	void setDebugMode(boolean on);
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 

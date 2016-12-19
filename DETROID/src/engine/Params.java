@@ -158,6 +158,9 @@ final class Params extends EngineParameters {
 	@LimitBinaryLength (value = 0)
 	byte RHT_DECREMENT_FACTOR;
 
+	// The default hash size in megabytes.
+	@LimitBinaryLength (value = 0)
+	byte DEFAULT_HASH_SIZE;
 	// The shares of the different hash tables of the total hash size.
 	@LimitBinaryLength (value = 0)
 	byte TT_SHARE;

@@ -22,7 +22,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * The factor of the original number of games to play in addition when assessing the fitness of a parameter set whose fitness 
 	 * surpassed the current highest fitness after having played the original number of games.
 	 */
-	private static final int VALIDATION_FACTOR = 2;
+	private static final int VALIDATION_FACTOR = 1;
 	
 	private final OptimizerEngines[] engines;
 	private final Arena[] arenas;
@@ -30,8 +30,6 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	private final long timePerGame;
 	private final long timeIncPerMove;
 	private final ExecutorService pool;
-	
-	private Logger logger;
 	
 	/**
 	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
@@ -77,7 +75,6 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		this.games = games;
 		this.timePerGame = timePerGame;
 		this.timeIncPerMove = timeIncPerMove;
-		this.logger = logger;
 		pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), this.engines.length));
 	}
 	/**
@@ -159,8 +156,6 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 					oppEngine.getParameters().set(genotype);
 					oppEngine.reloadParameters();
 				}
-				logger.info("New fittest genotype found!\nFitness: " + (getHighestFitness() > 0 ? (getHighestFitness() + fitness) : fitness) +
-						"\nGenotype: " + genotype);
 			}
 		}
 		return getHighestFitness() > 0 ? getHighestFitness() + fitness : fitness;

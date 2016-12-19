@@ -119,7 +119,7 @@ class Search implements Runnable {
 		// The number of consecutive fail-highs/fail-lows.
 		failHigh = failLow = 0;
 		// Iterative deepening.
-		for (short i = 1; i <= maxDepth; i++) {
+		for (short i = 0; i <= maxDepth; i++) {
 			score = search(i, alpha, beta);
 			if (doStopSearch || Thread.currentThread().isInterrupted())
 				break;
@@ -180,8 +180,8 @@ class Search implements Runnable {
 		bestScore = Integer.MIN_VALUE;
 		bestMove = hashMove = null;
 		if (maxDepth == 0) {
-			bestScore = quiescence(0, origAlpha, beta);
-			updateInfo(null, 0, ply, origAlpha, beta, bestScore);
+			bestScore = quiescence(0, alpha, beta);
+			updateInfo(null, 0, ply, alpha, beta, bestScore);
 			return bestScore;
 		}
 		tacticalMoves = quietMoves = null;
@@ -714,7 +714,7 @@ class Search implements Runnable {
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = true;
 		// Limit the maximum depth of the quiescence search.
-		if (distFromRoot >= maxExpectedSearchDepth)
+		if (distFromRoot > maxExpectedSearchDepth)
 			return eval.score(position, hashEntryGen, alpha, beta);
 		// Fifty-move rule and repetition rule check.
 		if (position.fiftyMoveRuleClock >= 100 || position.getNumberOfRepetitions(distFromRoot) >= 2)
