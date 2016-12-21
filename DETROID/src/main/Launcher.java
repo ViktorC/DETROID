@@ -262,13 +262,22 @@ public class Launcher {
 					if ("-binarystring".equals(arg1)) {
 						String binaryString = args[2];
 						params.set(binaryString);
-					} else if ("-doublearray".equals(arg1)) {
+					} else if ("-probvector".equals(arg1)) {
+						String binaryString = "";
 						String vec = args[2];
 						String[] probs = vec.split(",");
-						double[] initProbVec = new double[probs.length];
-						for (int j = 0; j < probs.length; j++)
-							initProbVec[j] = Double.parseDouble(probs[j].trim());
-						params.set(initProbVec);
+						for (int j = 0; j < probs.length; j++) {
+							double prob = Double.parseDouble(probs[j].trim());
+							binaryString += (prob >= 0.5 ? "1" : "0");
+						}
+						params.set(binaryString);
+					} else if ("-decimalarray".equals(arg1)) {
+						String val = args[2];
+						String[] array = val.split(",");
+						double[] decimalArray = new double[array.length];
+						for (int j = 0; j < array.length; j++)
+							decimalArray[j] = Double.parseDouble(array[j].trim());
+						params.set(decimalArray);
 					} else
 						throw new IllegalArgumentException();
 					if (args.length > 3) {
