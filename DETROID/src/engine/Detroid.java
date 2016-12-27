@@ -207,7 +207,9 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	public synchronized void init() throws Exception {
 		params = new Params();
 		params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
-		book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
+		try {
+			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
+		} catch (IOException e) { }
 		debugInfo = new DebugInfo();
 		debugMode = false;
 		controllerMode = false;
