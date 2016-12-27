@@ -73,12 +73,10 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 	 * If it doesn't exist an {@link #IOException IOException} is thrown.
 	 * @param k A scaling constant for the sigmoid function used calculate the average error.
 	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
-	 * @throws IllegalArgumentException If the parameters don't fit the requirements.
-	 * @throws IOException If an IO or parsing error occurs.
-	 * @throws NullPointerException If the parameter engines is null or its first element is null.
+	 * @throws Exception If the engines cannot be initialised.
 	 */
 	public StaticEvaluationOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
-			throws NullPointerException, IllegalArgumentException, IOException {
+			throws Exception {
 		super(engines[0].getParameters().values(), (double[]) Array.newInstance(double.class, engines[0].getParameters().values().length),
 				engines[0].getParameters().maxValues(), 1d, BASE_LEARNING_RATE, null, null, null, null, null, logger);
 		if (sampleSize < 1)
@@ -316,8 +314,13 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 			final int finalStartInd = startInd;
 			final boolean last = i == enginesLength - 1;
 			final TunableEngine e = engines[i];
-			if (!e.isInit())
-				e.init();
+			if (!e.isInit()) {
+				try {
+					e.init();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
 			e.getParameters().set(parameters);
 			e.reloadParameters();
 			futures.add(pool.submit(() -> {

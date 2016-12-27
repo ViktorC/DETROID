@@ -22,10 +22,10 @@ public class OptimizerEngines {
 	 * @param tunableEngine The engine to be tuned.
 	 * @param opponentEngine The opponent engine.
 	 * @param controller The controller engine for the {@link #tuning.Arena Arena}.
-	 * @throws IllegalArgumentException If any of the parameters are null.
+	 * @throws Exception If the engines cannot be initialised.
 	 */
 	public OptimizerEngines(TunableEngine tunableEngine, TunableEngine opponentEngine, ControllerEngine controller) 
-			throws IllegalArgumentException {
+			throws Exception {
 		if (tunableEngine == null || opponentEngine == null || controller == null)
 			throw new IllegalArgumentException("The parameters engine, opponentEngine, and controller cannot be null");
 		if (!tunableEngine.isInit())

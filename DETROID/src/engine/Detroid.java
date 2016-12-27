@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
@@ -65,6 +66,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	private Option<?> ownBook;
 	private Option<?> primaryBookPath;
 	private Option<?> secondaryBookPath;
+	private Option<?> parametersPath;
 	private Option<?> uciOpponent;
 	private HashMap<Option<?>, Object> options;
 	
@@ -202,14 +204,10 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return arr[(int) (Math.random()*arr.length)];
 	}
 	@Override
-	public synchronized void init() {
-		try {
-			params = new Params();
-			params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
-		} catch (IOException e) { }
-		try {
-			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
-		} catch (IOException e) { }
+	public synchronized void init() throws Exception {
+		params = new Params();
+		params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
+		book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
 		debugInfo = new DebugInfo();
 		debugMode = false;
 		controllerMode = false;
@@ -225,6 +223,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		ownBook = new Option.CheckOption("OwnBook", false);
 		primaryBookPath = new Option.StringOption("PrimaryBookPath", book == null ? null : book.getPrimaryFilePath());
 		secondaryBookPath = new Option.StringOption("SecondaryBookPath", null);
+		parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
 		uciOpponent = new Option.StringOption("UCI_Opponent", null);
 		options.put(hashSize, hashSize.getDefaultValue());
 		options.put(clearHash, clearHash.getDefaultValue());
@@ -232,6 +231,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		options.put(ownBook, ownBook.getDefaultValue());
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue());
 		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue());
+		options.put(parametersPath, parametersPath.getDefaultValue());
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
@@ -259,13 +259,14 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	}
 	@Override
 	public Collection<Option<?>> getOptions() {
-		Collection<Option<?>> list = new ArrayList<>();
+		List<Option<?>> list = new ArrayList<>();
 		list.add(hashSize);
 		list.add(clearHash);
 		list.add(ponder);
 		list.add(ownBook);
 		list.add(primaryBookPath);
 		list.add(secondaryBookPath);
+		list.add(parametersPath);
 		list.add(uciOpponent);
 		return list;
 	}
@@ -312,6 +313,15 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				book = newBook;
 				options.put(secondaryBookPath, book.getSecondaryFilePath());
 				if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
+				return true;
+			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+		} else if (parametersPath.equals(setting)) {
+			try {
+				String filePath = (String) value;
+				params.loadFrom(filePath);
+				options.put(parametersPath, filePath);
+				reloadParameters();
+				if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
 				return true;
 			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 		} else if (uciOpponent.equals(setting)) {

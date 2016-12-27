@@ -46,8 +46,9 @@ public class Arena implements AutoCloseable {
 	 * @param fenLogger A logger to log each position occurring during the games in which the engine that searched the
 	 * position didn't find a mate in FEN format followed by semicolon separator and the result of the game as in 1 - 
 	 * white wins, 0.5 - draw, 0 - black wins.
+	 * @throws Exception If the controller engine cannot be initialised.
 	 */
-	public Arena(ControllerEngine controller, Logger resultLogger, Logger fenLogger) {
+	public Arena(ControllerEngine controller, Logger resultLogger, Logger fenLogger) throws Exception {
 		this.controller = controller;
 		if (!this.controller.isInit())
 			this.controller.init();
@@ -65,16 +66,18 @@ public class Arena implements AutoCloseable {
 	 * 
 	 * @param controller The engine to control the match.
 	 * @param resultLogger The logger to log the game results and the complete game in PGN format.
+	 * @throws Exception If the controller engine cannot be initialised.
 	 */
-	public Arena(ControllerEngine controller, Logger resultLogger) {
+	public Arena(ControllerEngine controller, Logger resultLogger) throws Exception {
 		this(controller, resultLogger, null);
 	}
 	/**
 	 * Constructs an arena controlled by the specified engine.
 	 * 
 	 * @param controller The engine to control the match.
+	 * @throws Exception If the controller engine cannot be initialised.
 	 */
-	public Arena(ControllerEngine controller) {
+	public Arena(ControllerEngine controller) throws Exception {
 		this(controller, null, null);
 	}
 	/**
@@ -98,8 +101,10 @@ public class Arena implements AutoCloseable {
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an engine is incremented after each legal
 	 * move.
 	 * @return The results of the match.
+	 * @throws Exception If either of the engines is not initialised and an attempt at initialisation fails.
 	 */
-	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame, long timeIncPerMove) {
+	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame, long timeIncPerMove)
+			throws Exception {
 		int engine1Wins = 0;
 		int engine2Wins = 0;
 		int draws = 0;

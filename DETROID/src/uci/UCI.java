@@ -39,8 +39,13 @@ public final class UCI implements Observer, Closeable {
 		String option;
 		this.engine = engine;
 		while (!in.nextLine().trim().equals("uci"));
-		if (!this.engine.isInit())
-			this.engine.init();
+		if (!this.engine.isInit()) {
+			try {
+				this.engine.init();
+			} catch (Exception e) {
+				out.println("Failed to initialize engine: " + e.getMessage());
+			}
+		}
 		this.engine.getSearchInfo().addObserver(this);
 		this.engine.getDebugInfo().addObserver(this);
 		out.println("id name " + this.engine.getName());

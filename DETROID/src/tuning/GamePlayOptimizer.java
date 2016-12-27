@@ -55,12 +55,11 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * @param populationSize The number of samples to produce per generation.
 	 * @param logger A logger to log the optimization process. If it is null, no logging 
 	 * will be done.
-	 * @throws NullPointerException If the parameter engines is null or its first element is
-	 * null.
+	 * @throws Exception If the engines cannot be initialised.
 	 */
 	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
 			double[] initialProbabilityVector, int populationSize, Logger logger)
-					throws NullPointerException {
+					throws Exception {
 		super(engines[0].getEngine().getParameters().toGrayCodeString().length(), populationSize, null, null, null, null, null,
 				initialProbabilityVector, logger);
 		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
@@ -93,11 +92,10 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * @param populationSize The number of samples to produce per generation.
 	 * @param logger A logger to log the optimization process. If it is null, no logging 
 	 * will be done.
-	 * @throws NullPointerException If the parameter engines is null or its first element is
-	 * null.
+	 * @throws Exception If the engines cannot be initialised.
 	 */
 	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove, int populationSize,
-			Logger logger) throws NullPointerException {
+			Logger logger) throws Exception {
 		this(engines, games, timePerGame, timeIncPerMove, null, populationSize, logger);
 	}
 	@Override
@@ -152,7 +150,12 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 			if (fitness > 0) {
 				for (int i = 0; i < engines.length; i++) {
 					TunableEngine oppEngine = engines[i].getOpponentEngine();
-					oppEngine.init();
+					try {
+						oppEngine.init();
+					} catch (Exception e) {
+						e.printStackTrace();
+						return -Double.MAX_VALUE;
+					}
 					oppEngine.getParameters().set(genotype);
 					oppEngine.reloadParameters();
 				}

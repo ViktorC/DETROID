@@ -12,10 +12,12 @@ import java.util.Set;
 public interface UCIEngine {
 	
 	/**
-	 * Initializes the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
+	 * Initialises the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
 	 * this method on the instance first.
+	 * 
+	 * @throws Exception
 	 */
-	void init();
+	void init()  throws Exception;
 	/**
 	 * Returns whether the method {@link #init() init} has already been called on the instance.
 	 * 

@@ -18,47 +18,36 @@ import util.BitOperations;
 import util.GrayCode;
 
 /**
- * An abstract base class for engine parameter definitions that influence the performance of the chess engine and thus should be highly optimized. 
- * It provides methods for the retrieval of the values of the fields of its sub classes which are utilized in the methods provided for writing the 
+ * An abstract base class for engine parameter definitions that influence the performance of the chess engine and thus should be highly optimised. 
+ * It provides methods for the retrieval of the values of the fields of its sub classes which are utilised in the methods provided for writing the 
  * contents of an instance to a file or reading, parsing, and setting the fields of an instance based on such a file. It is possible to retrieve 
  * the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded and 
  * concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
- * procedure reversed. Fields of the subclasses can be annotated with the {@link #LimitBinaryLength LimitBinaryLength} annotation which marks the 
- * number of bits to consider when tuning the parameter. When applied to floating point values, it's effects are less intuituve as instead of ignoring 
- * bits of the number's binary representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be 
- * for integer numbers (2^[limit] - 1).
- * 
- * WARNING: It only supports non-static primitive fields declared in its subclasses! All other fields need to be marked transient or a {@link 
- * #ClassFormatError ClassFormatError} is thrown by the constructor. When initializing from a file, transient fields will still be set if declared in 
- * the file, but will not be included in any of the output formats. Fields with a binary length limited to 0 by a {@link #LimitBinaryLength LimitBinaryLength} 
- * annotation, however, will be included in the {@link #toString() toString} output and thus written to file; they will be only ignored during the 
- * optimization process.
+ * procedure reversed. Only those fields of the subclasses are handled by the class that are annotated with the {@link #Parameter Parameter} annotation. 
+ * The annotation also has an optional attribute {@link #Parameter.binaryLengthLimit binaryLengthLimit} which marks the number of bits to consider when 
+ * tuning the parameter. When applied to floating point values, it's effects are less intuituve as instead of ignoring bits of the number's binary 
+ * representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be for integer numbers (2^[limit] - 1).
  * 
  * WARNING: No negative values are supported, thus the most significant bit of each signed primitive (all except boolean and char) field will be ignored
- * when generating the binary string or setting the valeues of the fields based on a binary string and negative values will default to 0 when setting the
+ * when generating the binary string or setting the values of the fields based on a binary string and negative values will default to 0 when setting the
  * fields based on a double array.
  * 
  * @author Viktor
  * 
  */
 public abstract class EngineParameters {
-
-	/**
-	 * If this string is encountered while parsing a parameters file, parsing is terminated. It can be inserted into a file that contains information that
-	 * should not be parsed, signalling the start of this part.
-	 */
-	public final transient static String END_OF_FILE_MARK = "#EoF!";
 	
 	private final transient ArrayList<Field> fields;
 	
 	/**
-	 * Checks if the fields comply with the requirements of {@link #Parameters Parameters} and throws an {@link #ClassFormatError ClassFormatError} if not.
+	 * Constructs an instance and scans the fields of the (extending) class for ones annotated as {@link #Parameter Parameter}.
 	 * 
-	 * @throws ClassFormatError If the fields do not comply with the contract of {@link #Parameters Parameters}.
+	 * @throws ParameterException If a static or non-primitive field is annotated as {@link #Parameter Parameter}.
 	 */
-	protected EngineParameters() throws ClassFormatError {
+	protected EngineParameters() throws ParameterException {
 		fields = new ArrayList<>();
 		int modifiers;
+		Parameter param;
 		Class<?> fieldType;
 		Class<?> clazz = getClass();
 		Class<?> temp = clazz;
@@ -70,19 +59,20 @@ public abstract class EngineParameters {
 		for (Field f : allfields) {
 			f.setAccessible(true);
 			modifiers = f.getModifiers();
-			if (Modifier.isTransient(modifiers))
-				continue;
 			fieldType = f.getType();
-			if (!fieldType.isPrimitive() || Modifier.isStatic(modifiers))
-				throw new ClassFormatError("Illegal field: " + f.getName() + "; With the exception of transient fields, only non-static primitive, that is" +
-						"boolean, byte, short, int, long, float, double, and char fields are allowed in subclasses of Parameters.");
-			fields.add(f);
+			param = f.getAnnotation(Parameter.class);
+			if (param != null) {
+				if (!fieldType.isPrimitive() || Modifier.isStatic(modifiers))
+					throw new ParameterException("Illegal field: " + f.getName() + "; Only non-static primitive, that is" +
+						"boolean, byte, short, int, long, float, double, and char fields are allowed to be annotated as Parameters.");
+				fields.add(f);
+			}
 		}
 	}
 	/**
 	 * Sets the values of the non-transient fields of the instance. If a value in the array is negative, it will be taken for 0; if a value is greater than
-	 * what the respective field's type or bitlimit specified by the {@link #LimitBinaryLength LimitBinaryLength} annotation would allow for, the field will 
-	 * be set to its maximum allowed value. If the array is longer than the number of non-transient fields, the extra elementes will be ignored; if it is 
+	 * what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the field will 
+	 * be set to its maximum allowed value. If the array is longer than the number of non-transient fields, the extra elements will be ignored; if it is 
 	 * shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value greater than or equal to 1 will default 
 	 * to true, everything else will default to false.
 	 * 
@@ -96,8 +86,8 @@ public abstract class EngineParameters {
 			int lim = Math.min(fields.size(), values.length);
 			for (int i = 0; i < lim; i++) {
 				Field f = fields.get(i);
-				LimitBinaryLength ann = f.getAnnotation(LimitBinaryLength.class);
-				byte bitLimit = ann != null && ann.value() >= 0 ? ann.value() : 63;
+				Parameter ann = f.getAnnotation(Parameter.class);
+				byte bitLimit = ann != null && ann.binaryLengthLimit() >= 0 ? ann.binaryLengthLimit() : 63;
 				if (bitLimit == 0)
 					continue;
 				Class<?> fieldType = f.getType();
@@ -138,8 +128,8 @@ public abstract class EngineParameters {
 			int i = 0;
 			for (Field f : fields) {
 				Class<?> fieldType = f.getType();
-				LimitBinaryLength ann = f.getAnnotation(LimitBinaryLength.class);
-				byte bitLimit = ann != null && ann.value() >= 0 ? ann.value() : 63;
+				Parameter ann = f.getAnnotation(Parameter.class);
+				byte bitLimit = ann.binaryLengthLimit() >= 0 ? ann.binaryLengthLimit() : 63;
 				if (bitLimit == 0)
 					continue;
 				if (fieldType.equals(boolean.class))
@@ -165,7 +155,7 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Reads the parameter values from a file until the end of file mark or the actual end of the file is reached and sets the instance's fields accordingly.
+	 * Reads the parameter values from a file until the end of the file is reached and sets the instance's fields accordingly.
 	 * 
 	 * @param filePath The path to the file.
 	 * @return Whether at least some of the fields could be successfully set.
@@ -184,8 +174,6 @@ public abstract class EngineParameters {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.exists() ? new FileInputStream(filePath) : 
 			clazz.getResourceAsStream(filePath)));) {
 			while ((line = reader.readLine()) != null) {
-				if (line.contains(END_OF_FILE_MARK))
-					break;
 				indexOfClosingNameTag = line.indexOf(']');
 				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
 				try {
@@ -194,6 +182,8 @@ public abstract class EngineParameters {
 					e1.printStackTrace();
 					continue;
 				}
+				if (!fields.contains(field))
+					continue;
 				field.setAccessible(true);
 				value = line.substring(indexOfClosingNameTag + 4, line.length());
 				if (value.length() == 0)
@@ -247,8 +237,8 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Returns an array of doubles holding the values of all non-transient fields of the instance. Boolean values will be converted 
-	 * to either 1 or 0 depending on whether they are true or false.
+	 * Returns an array of doubles holding the values of all  the fields declared as parameters by the {@link #Parameter Parameter} annotation. Boolean 
+	 * values will be converted to either 1 or 0 depending on whether they are true or false.
 	 * 
 	 * @return
 	 */
@@ -268,8 +258,8 @@ public abstract class EngineParameters {
 		return arr;
 	}
 	/**
-	 * Returns an array of doubles holding the maximum allowed values for all non-transient fields of the instance determined by the 
-	 * field type and the {@link #LimitBinaryLength LimitBinaryLength} annotations.
+	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters by the  {@link #Parameter Parameter} 
+	 * annotation determined by the field type and the binaryLengthLimit attribute of the annotation.
 	 * 
 	 * @return
 	 */
@@ -278,8 +268,8 @@ public abstract class EngineParameters {
 		int i = 0;
 		for (Field f : fields) {
 			Class<?> fieldType = f.getType();
-			LimitBinaryLength ann = f.getAnnotation(LimitBinaryLength.class);
-			long max = (ann != null ? (1L << ann.value()) - 1 : Long.MAX_VALUE);
+			Parameter ann = f.getAnnotation(Parameter.class);
+			long max = 1L << ann.binaryLengthLimit();
 			if (fieldType.equals(boolean.class))
 				arr[i++] = 1;
 			else if (fieldType.equals(byte.class))
@@ -300,9 +290,9 @@ public abstract class EngineParameters {
 		return arr;
 	}
 	/**
-	 * Returns a binary string of all the bits of all the non-tansient fields of the instance concatenated field by field. Floating point 
-	 * values will be cast to integer values (float to int, double to long) for their binary representation which may result in information 
-	 * loss.
+	 * Returns a binary string of all the bits of all the non-static, primitive fields annotated as a {@link #Parameter Parameter} of the 
+	 * instance concatenated field by field. Floating point values will be cast to integer values (float to int, double to long) for their 
+	 * binary representation which may result in information loss.
 	 * 
 	 * @return
 	 */
@@ -311,8 +301,8 @@ public abstract class EngineParameters {
 		try {
 			for (Field f : fields) {
 				Object fieldValue = f.get(this);
-				LimitBinaryLength ann = f.getAnnotation(LimitBinaryLength.class);
-				byte bitLimit = (byte) (ann != null && ann.value() >= 0 ? 64 - ann.value() : 0);
+				Parameter ann = f.getAnnotation(Parameter.class);
+				byte bitLimit = (byte) (ann.binaryLengthLimit() >= 0 ? 64 - ann.binaryLengthLimit() : 0);
 				if (bitLimit == 64)
 					continue;
 				if (fieldValue instanceof Boolean)

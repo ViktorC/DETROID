@@ -95,7 +95,7 @@ public class Launcher {
 								case "-inc": {
 									tcInc = Long.parseLong(args[++i]);
 								} break;
-								case "-initprobvec": {
+								case "-initprobvector": {
 									String vec = args[++i];
 									String[] probs = vec.split(",");
 									initProbVec = new double[probs.length];
@@ -107,8 +107,13 @@ public class Launcher {
 							}
 						}
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
-						for (int i = 0; i < concurrency; i++)
-							engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+						for (int i = 0; i < concurrency; i++) {
+							try {
+								engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
 						Logger logger = Logger.getAnonymousLogger();
 						try {
 							logger.addHandler(new FileHandler(logFilePath, true));
@@ -149,7 +154,11 @@ public class Launcher {
 						TunableEngine[] engines = new TunableEngine[concurrency];
 						for (int i = 0; i < concurrency; i++)
 							engines[i] = new Detroid();
-						engines[0].init();
+						try {
+							engines[0].init();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 						Logger logger = Logger.getAnonymousLogger();
 						try {
 							logger.addHandler(new FileHandler(logFilePath, true));
@@ -194,7 +203,11 @@ public class Launcher {
 					}
 					OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 					for (int i = 0; i < concurrency; i++) {
-						engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+						try {
+							engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
 					try {
 						StaticEvaluationOptimizer.generateFENFile(engines, games, tc, tcInc, destFile);
@@ -257,7 +270,11 @@ public class Launcher {
 					String arg1 = args[1];
 					String destFile = DEF_CONVERTED_PARAMS_PATH;
 					TunableEngine engine = new Detroid();
-					engine.init();
+					try {
+						engine.init();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					EngineParameters params = engine.getParameters();
 					if ("-binarystring".equals(arg1)) {
 						String binaryString = args[2];
