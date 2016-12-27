@@ -153,6 +153,7 @@ final class Params extends EngineParameters {
 	byte SINGLE_REPLY_EXT; // Fractional single reply extension.
 	@Parameter (binaryLengthLimit = 4)
 	byte IID_MIN_ACTIVATION_DEPTH; // The minimum depth at which IID is activated.
+	@Parameter
 	byte IID_REL_DEPTH_HTH; // The portion of the total depth to which the position will be searched with IID.
 
 	// The relative history table's value depreciation factor.
@@ -177,12 +178,15 @@ final class Params extends EngineParameters {
 	// The values considered when calculating search time extensions.
 	@Parameter (binaryLengthLimit = 11)
 	short SCORE_FLUCTUATION_LIMIT;
+	@Parameter
 	byte FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT_HTH;
 	@Parameter (binaryLengthLimit = 4)
 	byte RESULT_CHANGES_PER_DEPTH_LIMIT;
 	@Parameter (binaryLengthLimit = 0)
 	byte AVG_MOVES_PER_GAME;
+	@Parameter
 	byte MOVES_TO_GO_SAFETY_MARGIN;
+	@Parameter
 	byte FRACTION_OF_TOTAL_TIME_TO_USE_HTH;
 
 	// Piece-square tables for openings and end games.

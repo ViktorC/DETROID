@@ -1,6 +1,9 @@
 package testing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A simplified implementation of the Extended Position Description standard to represent test suite records.
@@ -13,9 +16,10 @@ public class EPD {
 	private static final String BEST_MOVE_OP_CODE = "bm";
 	private static final String ID_OP_CODE = "id";
 	
+	private final String epd;
 	private final String id;
 	private final String position;
-	private final String[] bestMoves;
+	private final List<String> bestMoves;
 	
 	/**
 	 * Constructs an instance based on the specified EPD record.
@@ -23,6 +27,7 @@ public class EPD {
 	 * @param epd The EPD record.
 	 */
 	public EPD(String epd) {
+		this.epd = epd;
 		String[] parts = epd.split(" ");
 		if (parts.length < 4)
 			throw new IllegalArgumentException("Illegal EPD format.");
@@ -30,7 +35,7 @@ public class EPD {
 		String operations = epd.substring(position.length(), epd.length());
 		String[] ops = operations.trim().split(";");
 		String id = null;
-		String[] bestMoves = null;
+		String[] bestMoves = new String[0];
 		for (String op : ops) {
 			op = op.trim();
 			if (op.startsWith(BEST_MOVE_OP_CODE)) {
@@ -42,7 +47,7 @@ public class EPD {
 			}
 		}
 		this.id = id;
-		this.bestMoves = bestMoves;
+		this.bestMoves = Arrays.asList(bestMoves);
 	}
 	/**
 	 * Returns the ID of the record without the enclosing quotation marks.
@@ -61,12 +66,18 @@ public class EPD {
 		return position;
 	}
 	/**
-	 * Returns an array of the best moves for the position in SAN.
+	 * Returns an list of the best moves for the position in SAN.
 	 * 
-	 * @return An array of the best moves in SAN.
+	 * @return A list of the best moves in SAN.
 	 */
-	public String[] getBestMoves() {
-		return bestMoves == null ? null : Arrays.copyOf(bestMoves, bestMoves.length);
+	public List<String> getBestMoves() {
+		List<String> copy = new ArrayList<>();
+		Collections.copy(copy, bestMoves);
+		return copy;
 	}
-
+	@Override
+	public String toString() {
+		return epd;
+	}
+	
 }
