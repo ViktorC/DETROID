@@ -322,7 +322,7 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 				}
 			}
 			e.getParameters().set(parameters);
-			e.reloadParameters();
+			e.refresh();
 			futures.add(pool.submit(() -> {
 				try {
 					double subTotalError = 0;

@@ -1,4 +1,4 @@
-package uibase;
+package control;
 
 import uci.UCIEngine;
 
@@ -51,11 +51,12 @@ public interface ControllerEngine extends UCIEngine {
 	 */
 	String unplayLastMove();
 	/**
-	 * Returns a Portable Game Notation string representing the state of the game.
+	 * Converts a move legal in the current position from Pure Algebraic Coordinate Notation to Standard Algebraic Notation.
 	 * 
-	 * @return
+	 * @param move The move in PACN.
+	 * @return The move in SAN.
 	 */
-	String toPGN();
+	String convertPACNToSAN(String move);
 	/**
 	 * Returns a Forsyth–Edwards Notation string representing the current position.
 	 * 
@@ -63,9 +64,16 @@ public interface ControllerEngine extends UCIEngine {
 	 */
 	String toFEN();
 	/**
+	 * Returns a Portable Game Notation string representing the state of the game.
+	 * 
+	 * @return
+	 */
+	String toPGN();
+	/**
 	 * Sets whether the engine should run in controller mode.
 	 * 
 	 * @param on
 	 */
 	void setControllerMode(boolean on);
+	
 }

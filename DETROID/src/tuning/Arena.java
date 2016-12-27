@@ -7,16 +7,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+import control.ControllerEngine;
+import control.GameState;
 import uci.ScoreType;
 import uci.UCIEngine;
-import uibase.ControllerEngine;
-import uibase.GameState;
 
 /**
  * A class for pitting two UCI compatible engines against each other, supervised by a controller engine.
  * 
  * @see uci.UCIEngine
- * @see uibase.ControllerEngine
+ * @see control.ControllerEngine
  * @author Viktor
  *
  */

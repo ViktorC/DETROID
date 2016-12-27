@@ -1,4 +1,4 @@
-package tuning;
+package control;
 
 /**
  * A utility class for calculating Elo score differences based on match statistics such as the 
@@ -53,13 +53,5 @@ public class Elo {
 		winRatio = Math.min(winRatio, MAX_WIN_RATIO);
 		return (int) -Math.round(Math.log10(1/winRatio - 1)*400);
 	}
-	/**
-	 * Calculates the Elo rating difference between two engines based on a ({@link #MatchResult MatchResult} instance.
-	 * 
-	 * @param result The results of an {@link #Arena Arena} match.
-	 * @return
-	 */
-	public final static int calculateDifference(MatchResult result) {
-		return calculateDifference(result.getEngine1Wins(), result.getEngine2Wins(), result.getDraws());
-	}
+	
 }

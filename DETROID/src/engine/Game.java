@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import uibase.GameState;
+import control.GameState;
 
 /**
  * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.

@@ -1,6 +1,6 @@
 package tuning;
 
-import uibase.ControllerEngine;
+import control.ControllerEngine;
 
 /**
  * A parameter class for {@link #EngineParameterOptimizer EngineParameterOptimizer} storing references to engines required to perform the

@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import control.Elo;
 import uci.UCIEngine;
 import util.PBIL;
 
@@ -114,7 +115,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				if (!oppEngine.isInit())
 					oppEngine.init();
 				tunEngine.getParameters().set(genotype);
-				tunEngine.reloadParameters();
+				tunEngine.refresh();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));
 		}
@@ -157,7 +158,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 						return -Double.MAX_VALUE;
 					}
 					oppEngine.getParameters().set(genotype);
-					oppEngine.reloadParameters();
+					oppEngine.refresh();
 				}
 			}
 		}

@@ -19,14 +19,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import control.ControllerEngine;
+import control.GameState;
 import engine.Book.SelectionModel;
 import engine.Game.Side;
 import tuning.EngineParameters;
 import tuning.TunableEngine;
 import uci.DebugInformation;
 import uci.UCIEngine;
-import uibase.ControllerEngine;
-import uibase.GameState;
 import uci.SearchResults;
 import uci.ScoreType;
 import uci.SearchInformation;
@@ -322,7 +322,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				String filePath = (String) value;
 				params.loadFrom(filePath);
 				options.put(parametersPath, filePath);
-				reloadParameters();
+				refresh();
 				if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
 				return true;
 			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
@@ -641,6 +641,16 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		return game.unplay();
 	}
 	@Override
+	public String convertPACNToSAN(String move) {
+		Position pos = game.getPosition();
+		try {
+			return pos.toSAN(pos.parsePACN(move));
+		} catch (ChessParseException | NullPointerException e) {
+			if (debugMode) debugInfo.set("Error while converting PACN to SAN: " + e.getMessage());
+			throw new IllegalArgumentException("The parameter move cannot be converted to SAN.", e);
+		}
+	}
+	@Override
 	public synchronized String toPGN() {
 		return game.toString();
 	}
@@ -651,14 +661,14 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	@Override
 	public void setControllerMode(boolean on) {
 		controllerMode = on;
-		reloadParameters();
+		refresh();
 	}
 	@Override
 	public EngineParameters getParameters() {
 		return params;
 	}
 	@Override
-	public void reloadParameters() {
+	public void refresh() {
 		if (isInit()) {
 			setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.DEFAULT_HASH_SIZE);
 			eval = new Evaluator(params, controllerMode || staticEvalTuningMode ? null : eT);
@@ -667,7 +677,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	@Override
 	public void setStaticEvalTuningMode(boolean on) {
 		staticEvalTuningMode = on;
-		reloadParameters();
+		refresh();
 	}
 	@Override
 	public void update(Observable o, Object arg) {

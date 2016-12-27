@@ -18,7 +18,7 @@ public interface TunableEngine extends UCIEngine {
 	/**
 	 * Notifies the engine that the parameters have changed and that if it uses cached values, it should reload them.
 	 */
-	void reloadParameters();
+	void refresh();
 	/**
 	 * Sets whether the engine should run in static evaluation mode. Static evaluation mode should support 0-depth search 
 	 * which is a deterministic quiescent search.
