@@ -115,7 +115,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				if (!oppEngine.isInit())
 					oppEngine.init();
 				tunEngine.getParameters().set(genotype);
-				tunEngine.refresh();
+				tunEngine.notifyParametersChanged();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));
 		}
@@ -158,7 +158,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 						return -Double.MAX_VALUE;
 					}
 					oppEngine.getParameters().set(genotype);
-					oppEngine.refresh();
+					oppEngine.notifyParametersChanged();
 				}
 			}
 		}

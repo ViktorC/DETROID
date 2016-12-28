@@ -15,45 +15,45 @@ public interface UCIEngine {
 	 * Initialises the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
 	 * this method on the instance first.
 	 * 
-	 * @throws Exception
+	 * @throws Exception If the engine cannot be initialized due to some reason.
 	 */
 	void init()  throws Exception;
 	/**
 	 * Returns whether the method {@link #init() init} has already been called on the instance.
 	 * 
-	 * @return
+	 * @return Whether the engine has been initialized.
 	 */
 	boolean isInit();
 	/**
-	 * The name of the engine.
+	 * Returns the name of the engine.
 	 * 
-	 * @return
+	 * @return The name of the engine.
 	 */
 	String getName();
 	/**
-	 * The name of the author of the engine.
+	 * Returns the name of the author of the engine.
 	 * 
-	 * @return
+	 * @return The name of the author of the engine.
 	 */
 	String getAuthor();
 	/**
 	 * Returns the options the engine offers.
 	 * 
-	 * @return
+	 * @return The UCI options the engine offers.
 	 */
 	Collection<Option<?>> getOptions();
 	/**
-	 * Tells the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
+	 * Notifies the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
 	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.
 	 * 
-	 * @param on
+	 * @param on Whehter the engine should run in debug mode.
 	 */
 	void setDebugMode(boolean on);
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
-	 * @param setting
-	 * @param value
+	 * @param setting The UCI option to set.
+	 * @param value The value to which the option should be set.
 	 * @return Whether the setting was successfully set to the value, e.g. it was an allowed value.
 	 */
 	<T> boolean setOption(Option<T> setting, T value);
@@ -64,14 +64,14 @@ public interface UCIEngine {
 	/**
 	 * Sends the current position to the engine. The string "startpos" denotes the starting position and should be handled by the engine.
 	 * 
-	 * @param fen
-	 * @return
+	 * @param fen The current position in FEN.
+	 * @return Whether the position could be successfully set up.
 	 */
 	boolean position(String fen);
 	/**
-	 * Prompts the engine to make the move defined in pure algebraic coordinate notation.
+	 * Prompts the engine to make the move defined in Pure Algebraic Coordinate Notation.
 	 * 
-	 * @param pacn
+	 * @param pacn The move to play in PACN.
 	 * @return Whether the move was successfully made.
 	 */
 	boolean play(String pacn);
@@ -105,21 +105,21 @@ public interface UCIEngine {
 	 */
 	void ponderhit();
 	/**
-	 * Returns an observable object containing information about the results and statistics of the ongoing or if none, last search.
+	 * Returns an observable object containing information about the results and statistics of the ongoing/last search.
 	 * 
-	 * @return
+	 * @return An observable object containing information about the results and statistics of the ongoing/last search.
 	 */
 	SearchInformation getSearchInfo();
 	/**
 	 * Returns the load factor of the hash tables in permills.
 	 * 
-	 * @return
+	 * @return The load factor of the hash tables in permills.
 	 */
 	short getHashLoadPermill();
 	/**
 	 * Returns an observable object containing information that is not related to the game but can help detecting bugs in debug mode.
 	 * 
-	 * @return
+	 * @return An observable object containing information that is not related to the game but can help detecting bugs in debug mode.
 	 */
 	DebugInformation getDebugInfo();
 	/**

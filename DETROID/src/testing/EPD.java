@@ -2,7 +2,6 @@ package testing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -71,9 +70,7 @@ public class EPD {
 	 * @return A list of the best moves in SAN.
 	 */
 	public List<String> getBestMoves() {
-		List<String> copy = new ArrayList<>();
-		Collections.copy(copy, bestMoves);
-		return copy;
+		return new ArrayList<>(bestMoves);
 	}
 	@Override
 	public String toString() {

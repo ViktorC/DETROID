@@ -85,7 +85,7 @@ class Position implements Copiable<Position>, Hashable {
 	/**A stack of all the moves made so far. */
 	ArrayDeque<Move> moveList;
 	/**A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info. */
-	ArrayDeque<UnmakeMoveRegister> unmakeRegisterHistory;
+	ArrayDeque<UnmakeMoveRecord> unmakeRegisterHistory;
 	
 	/**A Zobrist key generator instance. */
 	ZobristKeyGenerator gen;
@@ -250,7 +250,7 @@ class Position implements Copiable<Position>, Hashable {
 	/**Initializes a default, empty Position instance.*/
 	private Position() {
 		moveList = new ArrayDeque<Move>();
-		unmakeRegisterHistory = new ArrayDeque<UnmakeMoveRegister>();
+		unmakeRegisterHistory = new ArrayDeque<UnmakeMoveRecord>();
 		gen = ZobristKeyGenerator.getInstance();
 		keyHistory = new long[32]; // Factor of two.
 	}
@@ -293,7 +293,7 @@ class Position implements Copiable<Position>, Hashable {
 		for (Move m : pos.moveList)
 			moveList.add(m);
 		unmakeRegisterHistory = new ArrayDeque<>();
-		for (UnmakeMoveRegister u : pos.unmakeRegisterHistory)
+		for (UnmakeMoveRecord u : pos.unmakeRegisterHistory)
 			unmakeRegisterHistory.add(u);
 	}
 	/**
@@ -339,7 +339,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * 
 	 * @return
 	 */
-	UnmakeMoveRegister getUnmakeRegister() {
+	UnmakeMoveRecord getUnmakeRegister() {
 		return unmakeRegisterHistory.peekFirst();
 	}
 	/**
@@ -2903,7 +2903,7 @@ class Position implements Copiable<Position>, Hashable {
 	void makeMove(Move move) {
 		makeMoveOnBoard(move);
 		moveList.addFirst(move);
-		unmakeRegisterHistory.addFirst(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights, 
+		unmakeRegisterHistory.addFirst(new UnmakeMoveRecord(whiteCastlingRights, blackCastlingRights, enPassantRights, 
 				fiftyMoveRuleClock, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
@@ -2930,7 +2930,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * Makes a null move that can be taken back with {@link #unmakeMove() unmakeMove}. Consecutive null moves are not supported.
 	 */
 	void makeNullMove() {
-		unmakeRegisterHistory.addFirst(new UnmakeMoveRegister(whiteCastlingRights, blackCastlingRights, enPassantRights,
+		unmakeRegisterHistory.addFirst(new UnmakeMoveRecord(whiteCastlingRights, blackCastlingRights, enPassantRights,
 				fiftyMoveRuleClock, checkers));
 		isWhitesTurn = !isWhitesTurn;
 		setCastlingRights();
@@ -2947,7 +2947,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * @return
 	 */
 	Move unmakeMove() {
-		UnmakeMoveRegister positionInfo = unmakeRegisterHistory.poll();
+		UnmakeMoveRecord positionInfo = unmakeRegisterHistory.poll();
 		if (positionInfo == null) return null;
 		Move move = moveList.pop();
 		isWhitesTurn = !isWhitesTurn;

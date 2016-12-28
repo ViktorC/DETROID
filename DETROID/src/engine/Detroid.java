@@ -26,7 +26,6 @@ import engine.Game.Side;
 import tuning.EngineParameters;
 import tuning.TunableEngine;
 import uci.DebugInformation;
-import uci.UCIEngine;
 import uci.SearchResults;
 import uci.ScoreType;
 import uci.SearchInformation;
@@ -38,10 +37,10 @@ import util.*;
  * @author Viktor
  *
  */
-public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Observer {
+public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	
 	public final static float VERSION_NUMBER = 0.90f;
-	public final static String NAME = "DETROID" + " " + VERSION_NUMBER;
+	public final static String NAME = "DETROID " + VERSION_NUMBER;
 	public final static String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.
 	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/params.txt";
@@ -322,7 +321,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 				String filePath = (String) value;
 				params.loadFrom(filePath);
 				options.put(parametersPath, filePath);
-				refresh();
+				notifyParametersChanged();
 				if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
 				return true;
 			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
@@ -608,6 +607,15 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 		isInit = false;
 	}
 	@Override
+	public List<String> getLegalMoves() {
+		Position pos = game.getPosition();
+		List<Move> moves = pos.getMoves();
+		List<String> moveStrings = new ArrayList<>(moves.size());
+		for (Move m : moves)
+			moveStrings.add(m.toString());
+		return moveStrings;
+	}
+	@Override
 	public synchronized GameState getGameState() {
 		return game.getState();
 	}
@@ -642,12 +650,22 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	}
 	@Override
 	public String convertPACNToSAN(String move) {
-		Position pos = game.getPosition();
 		try {
+			Position pos = game.getPosition();
 			return pos.toSAN(pos.parsePACN(move));
 		} catch (ChessParseException | NullPointerException e) {
 			if (debugMode) debugInfo.set("Error while converting PACN to SAN: " + e.getMessage());
 			throw new IllegalArgumentException("The parameter move cannot be converted to SAN.", e);
+		}
+	}
+	@Override
+	public String convertSANToPACN(String move) {
+		try {
+			Position pos = game.getPosition();
+			return pos.parseSAN(move).toString();
+		} catch (ChessParseException | NullPointerException e) {
+			if (debugMode) debugInfo.set("Error while converting SAN to PACN: " + e.getMessage());
+			throw new IllegalArgumentException("The parameter move cannot be converted to PACN.", e);
 		}
 	}
 	@Override
@@ -661,14 +679,18 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	@Override
 	public void setControllerMode(boolean on) {
 		controllerMode = on;
-		refresh();
+		notifyParametersChanged();
+	}
+	@Override
+	public long perft(int depth) {
+		return game.getPosition().perft(depth);
 	}
 	@Override
 	public EngineParameters getParameters() {
 		return params;
 	}
 	@Override
-	public void refresh() {
+	public void notifyParametersChanged() {
 		if (isInit()) {
 			setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.DEFAULT_HASH_SIZE);
 			eval = new Evaluator(params, controllerMode || staticEvalTuningMode ? null : eT);
@@ -677,7 +699,7 @@ public class Detroid implements UCIEngine, ControllerEngine, TunableEngine, Obse
 	@Override
 	public void setStaticEvalTuningMode(boolean on) {
 		staticEvalTuningMode = on;
-		refresh();
+		notifyParametersChanged();
 	}
 	@Override
 	public void update(Observable o, Object arg) {

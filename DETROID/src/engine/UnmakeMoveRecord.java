@@ -5,13 +5,13 @@ import util.*;
 
 /**
  * Some position and move information--such as castling and en passant rights, fifty-move rule clock, a bitmap representing checkers,
- * and the moved and captured pieces--is stored in this unencapsulated class' instances so as to make reverting back to the previous position when
+ * and the moved and captured pieces--is stored in this class' instances so as to make reverting back to the previous position when
  * unmaking a move faster.
  * 
  * @author Viktor
  *
  */
-class UnmakeMoveRegister {
+class UnmakeMoveRecord {
 
 	final byte whiteCastlingRights;
 	final byte blackCastlingRights;
@@ -19,7 +19,7 @@ class UnmakeMoveRegister {
 	final byte fiftyMoveRuleClock;
 	final long checkers;
 	
-	UnmakeMoveRegister(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
+	UnmakeMoveRecord(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
 			byte fiftyMoveRuleClock, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;

@@ -308,11 +308,9 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 		double totalError = 0;
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
-		int workLoadPerThread = dataSample.size()/engines.length;
-		int enginesLength = workLoadPerThread < 0 ? 1 : engines.length;
-		for (int i = 0; i < enginesLength; i++) {
+		int workLoadPerThread = (int) Math.ceil(dataSample.size()/engines.length);
+		for (int i = 0; i < engines.length && startInd < dataSample.size(); i++) {
 			final int finalStartInd = startInd;
-			final boolean last = i == enginesLength - 1;
 			final TunableEngine e = engines[i];
 			if (!e.isInit()) {
 				try {
@@ -322,11 +320,11 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 				}
 			}
 			e.getParameters().set(parameters);
-			e.refresh();
+			e.notifyParametersChanged();
 			futures.add(pool.submit(() -> {
 				try {
 					double subTotalError = 0;
-					int endInd = (int) (last ? dataSample.size() : finalStartInd + workLoadPerThread);
+					int endInd = Math.min(dataSample.size(), finalStartInd + workLoadPerThread);
 					for (int j = finalStartInd; j < endInd; j++) {
 						Entry<Object, Object> dataPair = dataSample.get(j);
 						String fen = (String) dataPair.getKey();

@@ -282,7 +282,7 @@ final class ZobristKeyGenerator {
 		long[] movedRow;
 		long key = p.key;
 		Move move = p.getLastMove();
-		UnmakeMoveRegister unmakeReg = p.getUnmakeRegister();
+		UnmakeMoveRecord unmakeReg = p.getUnmakeRegister();
 		key ^= turn;
 		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];
 		key ^= blackCastlingRights[unmakeReg.blackCastlingRights];
