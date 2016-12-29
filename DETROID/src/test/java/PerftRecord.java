@@ -1,4 +1,4 @@
-package main.java.testing;
+package test.java;
 
 /**
  * A performance test record holding a position, a depth, and a node count for the test.

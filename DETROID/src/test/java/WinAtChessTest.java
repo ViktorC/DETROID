@@ -15,8 +15,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import main.java.control.ControllerEngine;
 import main.java.engine.Detroid;
-import main.java.testing.EPD;
-import main.java.testing.EPDTestSuite;
 import main.java.uci.SearchResults;
 
 /**

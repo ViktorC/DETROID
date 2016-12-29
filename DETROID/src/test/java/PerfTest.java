@@ -15,8 +15,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import main.java.control.ControllerEngine;
 import main.java.engine.Detroid;
-import main.java.testing.PerftRecord;
-import main.java.testing.PerftSuite;
 
 /**
  * Perft result verification test.

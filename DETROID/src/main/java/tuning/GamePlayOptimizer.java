@@ -12,7 +12,8 @@ import main.java.uci.UCIEngine;
 import main.java.util.PBIL;
 
 /**
- * A class for optimizing chess engine parameters using a PBIL algorithm with a possibly parallel, game play based fitness function.
+ * A class for optimizing engine and search control parameters using a PBIL algorithm with a possibly parallel, game play based 
+ * fitness function.
  * 
  * @author Viktor
  *
@@ -56,13 +57,13 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * @param populationSize The number of samples to produce per generation.
 	 * @param logger A logger to log the optimization process. If it is null, no logging 
 	 * will be done.
-	 * @throws Exception If the engines cannot be initialised.
+	 * @throws Exception If the engines cannot be initialized.
 	 */
 	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
 			double[] initialProbabilityVector, int populationSize, Logger logger)
 					throws Exception {
-		super(engines[0].getEngine().getParameters().toGrayCodeString().length(), populationSize, null, null, null, null, null,
-				initialProbabilityVector, logger);
+		super(engines[0].getEngine().getParameters().toGrayCodeString(ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER).length(),
+				populationSize, null, null, null, null, null, initialProbabilityVector, logger);
 		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
 		for (OptimizerEngines e : engines) {
 			if (e != null)
@@ -114,7 +115,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 					tunEngine.init();
 				if (!oppEngine.isInit())
 					oppEngine.init();
-				tunEngine.getParameters().set(genotype);
+				tunEngine.getParameters().set(genotype, ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER);
 				tunEngine.notifyParametersChanged();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));
@@ -157,7 +158,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 						e.printStackTrace();
 						return -Double.MAX_VALUE;
 					}
-					oppEngine.getParameters().set(genotype);
+					oppEngine.getParameters().set(genotype, ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER);
 					oppEngine.notifyParametersChanged();
 				}
 			}
