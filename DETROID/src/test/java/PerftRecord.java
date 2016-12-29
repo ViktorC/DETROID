@@ -8,6 +8,7 @@ package test.java;
  */
 public class PerftRecord {
 
+	private final String perftRecord;
 	private final String position;
 	private final int depth;
 	private final long nodes;
@@ -15,16 +16,17 @@ public class PerftRecord {
 	/**
 	 * Constructs a perft record based on the specified string.
 	 * 
-	 * @param perftRecord A perft record of the format <FEN>;<depth>;<nodes>.
+	 * @param perftRecord A perft record of the format [<FEN>; <depth>; <nodes>;].
 	 */
 	public PerftRecord(String perftRecord) {
+		this.perftRecord = perftRecord;
 		String[] parts = perftRecord.split(";");
 		if (parts.length < 3)
 			throw new IllegalArgumentException("Illegal perft record format.");
-		String fen = parts[0].trim();
+		String position = parts[0].trim();
 		int depth = Integer.parseInt(parts[1].trim());
 		int nodes = Integer.parseInt(parts[2].trim());
-		this.position = fen;
+		this.position = position;
 		this.depth = depth;
 		this.nodes = nodes;
 	}
@@ -54,7 +56,7 @@ public class PerftRecord {
 	}
 	@Override
 	public String toString() {
-		return position + "; " + depth + "; " + nodes;
+		return perftRecord;
 	}
 	
 }

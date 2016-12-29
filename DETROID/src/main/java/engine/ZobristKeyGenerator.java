@@ -431,4 +431,5 @@ final class ZobristKeyGenerator {
 			key ^= polyglotRandom64[780];
 		return key;
 	}
+	
 }

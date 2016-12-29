@@ -22,4 +22,5 @@ enum MoveType {
 	private MoveType() {
 		ind = (byte)ordinal();
 	}
+	
 }

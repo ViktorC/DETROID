@@ -8,7 +8,7 @@ package main.java.util;
  * @author Viktor
  *
  */
-public class BitOperations {
+public final class BitOperations {
 	
 	private final static byte[] DE_BRUIJN_TABLE =
 		{ 0,  1, 48,  2, 57, 49, 28,  3,
@@ -32,7 +32,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static byte indexOfBit(long n) {
+	public static byte indexOfBit(long n) {
 		return DE_BRUIJN_TABLE[(int)((n*DE_BRUIJN_CONST) >>> 58)];
 	}
 	/**
@@ -41,7 +41,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long getMSBit(long n) {
+	public static long getMSBit(long n) {
 		n |= (n >> 1);
 		n |= (n >> 2);
 		n |= (n >> 4);
@@ -56,7 +56,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long resetMSBit(long n) {
+	public static long resetMSBit(long n) {
 		return n^getMSBit(n);
 	}
 	/**
@@ -65,7 +65,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static byte indexOfMSBit(long n) {
+	public static byte indexOfMSBit(long n) {
 		return DE_BRUIJN_TABLE[(int)((getMSBit(n)*DE_BRUIJN_CONST) >>> 58)];
 	}
 	/**
@@ -74,7 +74,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long getLSBit(long n) {
+	public static long getLSBit(long n) {
 		return n & -n;
 	}
 	/**
@@ -83,7 +83,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long resetLSBit(long n) {
+	public static long resetLSBit(long n) {
 		return n & (n - 1);
 	}
 	/**
@@ -92,7 +92,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static byte indexOfLSBit(long n) {
+	public static byte indexOfLSBit(long n) {
 		return DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)];
 	}
 	/**
@@ -101,7 +101,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static byte hammingWeight(long n) {
+	public static byte hammingWeight(long n) {
 		n -= ((n >>> 1) & 0x5555555555555555L);
 		n  = (n & 0x3333333333333333L) + ((n >>> 2) & 0x3333333333333333L);
 		n  = (n + (n >>> 4)) & 0x0F0F0F0F0F0F0F0FL;
@@ -113,7 +113,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long reverse(long n) {
+	public static long reverse(long n) {
 		n = (((n & 0xAAAAAAAAAAAAAAAAL)  >>> 1)  | ((n & 0x5555555555555555L)  << 1));
 		n = (((n & 0xCCCCCCCCCCCCCCCCL)  >>> 2)  | ((n & 0x3333333333333333L)  << 2));
 		n = (((n & 0xF0F0F0F0F0F0F0F0L)  >>> 4)  | ((n & 0x0F0F0F0F0F0F0F0FL)  << 4));
@@ -127,7 +127,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long reverseBytes(long n) {
+	public static long reverseBytes(long n) {
 		n = (n & 0xFFFFFFFF00000000L) >>> 32 | (n & 0x00000000FFFFFFFFL) << 32;
 		n = (n & 0xFFFF0000FFFF0000L) >>> 16 | (n & 0x0000FFFF0000FFFFL) << 16;
 		return (n & 0xFF00FF00FF00FF00L)  >>> 8  | (n & 0x00FF00FF00FF00FFL)  << 8;
@@ -138,7 +138,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static byte[] serialize(long n) {
+	public static byte[] serialize(long n) {
 		byte[] series = new byte[hammingWeight(n)];
 		int ind = 0;
 		while (n != 0) {
@@ -154,7 +154,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static long[] getAllSubsets(long n) {
+	public static long[] getAllSubsets(long n) {
 		byte[] bitIndArray = BitOperations.serialize(n);
 		byte[] subsetBitIndArr;
 		int numOfSubsets = 1 << bitIndArray.length;
@@ -175,7 +175,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static String toBinaryString(long n) {
+	public static String toBinaryString(long n) {
 		String binString = Long.toBinaryString(n);
 		return ("0000000000000000000000000000000000000000000000000000000000000000" + binString).substring(binString.length());
 	}
@@ -185,7 +185,7 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static String toBinaryLiteral(long n) {
+	public static String toBinaryLiteral(long n) {
 		return "0b"+ toBinaryString(n) + "L";
 	}
 	/**
@@ -194,8 +194,9 @@ public class BitOperations {
 	 * @param n
 	 * @return
 	 */
-	public final static String toHexLiteral(long n) {
+	public static String toHexLiteral(long n) {
 		String hexString = Long.toHexString(n);
 		return "0x" + ("0000000000000000" + hexString).substring(hexString.length()).toUpperCase() + "L";
 	}
+	
 }

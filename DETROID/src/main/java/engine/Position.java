@@ -3501,4 +3501,5 @@ class Position implements Copiable<Position>, Hashable {
 		fen += 1 + halfMoveIndex/2;
 		return fen;
 	}
+	
 }

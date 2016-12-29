@@ -310,4 +310,5 @@ enum MoveSetDatabase {
 			default: throw new IllegalArgumentException("Invalid square index.");
 		}
 	}
+	
 }

@@ -131,4 +131,5 @@ final class MultiMoveSets {
 	final static long queenMoveSets(long queens, long allOpponentOccupied, long allEmpty) {
 		return rookMoveSets(queens, allOpponentOccupied, allEmpty) | bishopMoveSets(queens, allOpponentOccupied, allEmpty);
 	}
+	
 }

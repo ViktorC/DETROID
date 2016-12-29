@@ -197,4 +197,5 @@ final class MagicsGenerator {
 					", %2d),", type + ":", magicShift);
 		}
 	}
+	
 }

@@ -895,4 +895,5 @@ class Search implements Runnable {
 		//	Add new entry to the transposition table.
 		return tT.put(new TTEntry(key, depth, type, (short) score, bestMoveInt, hashEntryGen));
 	}
+	
 }

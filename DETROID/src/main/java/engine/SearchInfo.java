@@ -120,4 +120,5 @@ class SearchInfo extends SearchInformation {
 	public String toString() {
 		return getPvString() + getStatString();
 	}
+	
 }

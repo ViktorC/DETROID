@@ -69,4 +69,5 @@ enum CastlingRights {
 			return "-";
 		return out;
 	}
+	
 }

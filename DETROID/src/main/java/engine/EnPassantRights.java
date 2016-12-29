@@ -57,4 +57,5 @@ enum EnPassantRights {
 		else
 			return super.toString().toLowerCase();
 	}
+	
 }

@@ -35,7 +35,7 @@ public enum SizeOf {
 	/**
 	 * Determines the space the mark word in an object header takes up in memory depending on the JVM.
 	 * 
-	 * @return
+	 * @return The space the mark word in an object header takes up in memory
 	 */
 	private static int getJVMMarkWordSize() {
 		return System.getProperty("sun.arch.data.model").equals("32") ? 4 : 8;
@@ -43,18 +43,19 @@ public enum SizeOf {
 	/**
 	 * Determines the space object pointers take up in memory depending on the JVM.
 	 * 
-	 * @return
+	 * @return The space object pointers take up in memory.
 	 */
 	private static int getJVMOOPSize() {
 		RuntimeMXBean runtimeMX;
 		boolean compressed, below32g;
 		Pattern pattern;
 		Matcher matcher;
-		String xmxValue;
+		String xmxValueMagnitude;
 		int xmxValueNum;
 		if (System.getProperty("sun.arch.data.model").equals("32"))
 			return 4;
 		else {
+			// As of Java 1.6.0_23, the JVM uses compressed OOPs by default.
 			compressed = System.getProperty("java.version").compareTo("1.6.0_23") >= 0;
 			below32g = true;
 			runtimeMX = ManagementFactory.getRuntimeMXBean();
@@ -65,24 +66,24 @@ public enum SizeOf {
 					else if (s.contains("-UseCompressedOops"))
 						compressed = false;
 					else if (s.contains("Xmx")) {
-						s = s.toLowerCase();
-						pattern = Pattern.compile("[0-9]+[gmk]?");
+						s = s.trim().toLowerCase();
+						pattern = Pattern.compile("([0-9]+)([gmk]?)$");
 						matcher = pattern.matcher(s);
 						if (matcher.find()) {
-							xmxValue = matcher.group();
-							xmxValueNum = Integer.parseInt(xmxValue.substring(0, xmxValue.length() -1));
-							switch (xmxValue.charAt(xmxValue.length() - 1)) {
-								case 'g':
+							xmxValueNum = Integer.parseInt(matcher.group(1));
+							xmxValueMagnitude = matcher.group(2);
+							switch (xmxValueMagnitude) {
+								case "g":
 									below32g = xmxValueNum < 32;
 									break;
-								case 'm':
-									below32g = xmxValueNum < (32 << 10);
+								case "m":
+									below32g = xmxValueNum < (32L << 10);
 									break;
-								case 'k':
-									below32g = xmxValueNum < (32 << 20);
+								case "k":
+									below32g = xmxValueNum < (32L << 20);
 									break;
 								default:
-									below32g = xmxValueNum < (32 << 30);
+									below32g = xmxValueNum < (32L << 30);
 							}
 						}
 					}
@@ -91,4 +92,5 @@ public enum SizeOf {
 			return compressed && below32g ? 4 : 8;
 		}
 	}
+	
 }

@@ -219,7 +219,7 @@ public abstract class ASGD {
 				double[] greatestDelta = new double[Math.min(delta.length, 5)];
 				for (int j = 0; j < greatestDelta.length; j++)
 					greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
-				// Log cost over the complete training data set as well.
+				// Log cost over the test data set. This is just a sanity check; it is not used for learning!
 				logger.info("Epoch: " + t + "; Cost: " + costFunction(features, getTestData()) + System.lineSeparator() + "Greatest deltas: " +
 						Arrays.toString(greatestDelta) + System.lineSeparator() + "Deltas: " + Arrays.toString(delta) + System.lineSeparator() + 
 						"Features: " + Arrays.toString(features) + System.lineSeparator());

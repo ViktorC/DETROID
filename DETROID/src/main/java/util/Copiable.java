@@ -13,4 +13,5 @@ public interface Copiable<T> {
 	 * Returns a deep copy of the object.
 	 */
 	T deepCopy();
+	
 }

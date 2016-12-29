@@ -38,4 +38,5 @@ public class GrayCode {
 	    g = g^(g >> 1);
 	    return g;
 	}
+	
 }

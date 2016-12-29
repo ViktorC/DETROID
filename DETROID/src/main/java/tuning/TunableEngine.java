@@ -26,4 +26,5 @@ public interface TunableEngine extends UCIEngine {
 	 * @param on Whether the engine should run in static evaluation mode.
 	 */
 	void setStaticEvalTuningMode(boolean on);
+	
 }

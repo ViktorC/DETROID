@@ -546,4 +546,5 @@ final class Bitboard {
 		out += "\n";
 		return out;
 	}
+	
 }

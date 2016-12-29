@@ -78,4 +78,5 @@ public final class QuickSort {
 		if (index < right)
 			quickSort(array, index, right);
 	}
+	
 }

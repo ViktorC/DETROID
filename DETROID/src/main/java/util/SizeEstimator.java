@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class SizeEstimator {
 
-	private static SizeEstimator instance = new SizeEstimator();
+	private static final SizeEstimator INSTANCE = new SizeEstimator();
 	
 	/**
 	 * Returns the single existing SizeEstimator instance.
@@ -21,7 +21,7 @@ public class SizeEstimator {
 	 * @return
 	 */
 	public static SizeEstimator getInstance() {
-		return instance;
+		return INSTANCE;
 	}
 	private SizeEstimator() {
 		
@@ -200,4 +200,5 @@ public class SizeEstimator {
 		// 8-byte-alignment.
 		return roundedSize(size);
 	}
+	
 }

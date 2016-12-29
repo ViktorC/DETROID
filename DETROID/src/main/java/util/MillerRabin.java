@@ -151,4 +151,5 @@ public final class MillerRabin {
 	public long greatestLEPrime(long n) {
 		return greatestLEPrime(n, DEFAULT_ACCURACY);
 	}
+	
 }

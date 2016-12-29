@@ -267,4 +267,5 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 				String.format("Factor: %.1f", (load*100)/(double) capacity) + "%\n" +
 				String.format("Size: %.2fMB", SizeEstimator.getInstance().sizeOf(this)/(double) (1 << 20));
 	}
+	
 }

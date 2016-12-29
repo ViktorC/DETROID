@@ -276,4 +276,5 @@ public final class UCI implements Observer, Closeable {
 		in.close();
 		out.close();
 	}
+	
 }

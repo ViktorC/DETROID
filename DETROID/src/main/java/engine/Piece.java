@@ -85,4 +85,5 @@ enum Piece {
 			case 11: return B_KNIGHT; case 12: return B_PAWN; default: throw new IllegalArgumentException();
 		}
 	}
+	
 }

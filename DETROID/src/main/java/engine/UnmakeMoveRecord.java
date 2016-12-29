@@ -50,4 +50,5 @@ class UnmakeMoveRecord {
 		rep += String.format("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
 		return rep;
 	}
+	
 }

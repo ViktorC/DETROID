@@ -172,4 +172,5 @@ class Move implements Comparable<Move> {
 			this.value = (byte)value;
 		}
 	}
+	
 }

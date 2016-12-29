@@ -66,4 +66,5 @@ public abstract class SearchInformation extends Observable {
 	 * @return
 	 */
 	public abstract long getTime();
+	
 }

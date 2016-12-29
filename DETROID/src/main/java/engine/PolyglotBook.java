@@ -229,4 +229,5 @@ class PolyglotBook extends Book {
 			this.weight = weight;
 		}
 	}
+	
 }

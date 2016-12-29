@@ -64,5 +64,6 @@ class KillerTable {
 		}
 		int getMove1() { return move1; }
 		int getMove2() { return move2; }
-	}	
+	}
+	
 }

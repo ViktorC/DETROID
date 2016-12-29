@@ -90,4 +90,5 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 		}
 		return String.format("%-17s %2d %-9s %7d  %10s %2d",Long.toHexString(key), depth, type, score, move, generation);
 	}
+	
 }

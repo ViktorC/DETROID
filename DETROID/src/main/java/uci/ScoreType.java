@@ -8,9 +8,21 @@ package main.java.uci;
  */
 public enum ScoreType {
 
+	/**
+	 * PV-node score; Knuth's type 1.
+	 */
 	EXACT,
-	LOWER_BOUND,
+	/**
+	 * Cut-node score; Knuth's type 2.
+	 */
 	UPPER_BOUND,
+	/**
+	 * All-node score; Knuth's type 3.
+	 */
+	LOWER_BOUND,
+	/**
+	 * Check mate score.
+	 */
 	MATE;
 	
 }

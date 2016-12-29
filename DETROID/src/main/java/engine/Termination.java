@@ -13,9 +13,13 @@ enum Termination {
 	INSUFFICIENT_MATERIAL (0),
 	DRAW_CLAIMED (0);
 	
+	/**
+	 * The score associated with the termination.
+	 */
 	final short score;
 	
 	private Termination(int score) {
 		this.score = (short)score;
 	}
+	
 }

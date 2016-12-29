@@ -70,4 +70,5 @@ public class WinAtChessTest {
 	public static void cleanUp() {
 		ENGINE.quit();
 	}
+	
 }

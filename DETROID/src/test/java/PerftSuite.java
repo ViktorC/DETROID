@@ -17,7 +17,7 @@ public class PerftSuite {
 	private final List<PerftRecord> records;
 	
 	/**
-	 * Parses the perft records of the format <FEN>;<depth>;<nodes> in the specified file and holds them in a list.
+	 * Parses the perft records of the format [<FEN>; <depth>; <nodes>;] in the specified file and holds them in a list.
 	 * 
 	 * @param perftEntriesFilePath The path to the file containing the perft test records.
 	 * @throws IOException If the file does not exist or cannot be read.

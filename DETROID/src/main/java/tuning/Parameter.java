@@ -33,4 +33,5 @@ public @interface Parameter {
 	 * @return The number of bits to include in the binary output for the annotated field.
 	 */
 	byte binaryLengthLimit() default -1;
+	
 }

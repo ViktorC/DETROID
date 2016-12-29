@@ -28,4 +28,5 @@ class ChessParseException extends ParseException {
 	ChessParseException(Exception e) {
 		this(e.getMessage());
 	}
+	
 }

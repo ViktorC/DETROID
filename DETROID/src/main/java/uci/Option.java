@@ -72,7 +72,7 @@ public class Option<T> {
 	 * @author Viktor
 	 *
 	 */
-	public static class CheckOption extends Option<Boolean> {
+	public static final class CheckOption extends Option<Boolean> {
 		
 		public CheckOption(String name, Boolean defaultValue) {
 			super(name, defaultValue, null, null, null);
@@ -84,7 +84,7 @@ public class Option<T> {
 	 * @author Viktor
 	 *
 	 */
-	public static class SpinOption extends Option<Integer> {
+	public static final class SpinOption extends Option<Integer> {
 		
 		public SpinOption(String name, Integer defaultValue, Integer min, Integer max) {
 			super(name, defaultValue, null, min, max);
@@ -96,7 +96,7 @@ public class Option<T> {
 	 * @author Viktor
 	 *
 	 */
-	public static class StringOption extends Option<String> {
+	public static final class StringOption extends Option<String> {
 		
 		public StringOption(String name, String defaultValue) {
 			super(name, defaultValue, null, null, null);
@@ -108,7 +108,7 @@ public class Option<T> {
 	 * @author Viktor
 	 *
 	 */
-	public static class ComboOption extends Option<String> {
+	public static final class ComboOption extends Option<String> {
 		
 		public ComboOption(String name, String defaultValue, Set<String> allowedValues) {
 			super(name, defaultValue, allowedValues, null, null);
@@ -120,9 +120,10 @@ public class Option<T> {
 	 * @author Viktor
 	 *
 	 */
-	public static class ButtonOption extends Option<Object> {
+	public static final class ButtonOption extends Option<Object> {
 		public ButtonOption(String name) {
 			super(name, null, null, null, null);
 		}
 	}
+	
 }

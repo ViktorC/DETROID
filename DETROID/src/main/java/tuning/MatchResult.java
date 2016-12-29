@@ -50,4 +50,5 @@ public final class MatchResult {
 	public int getDraws() {
 		return draws;
 	}
+	
 }

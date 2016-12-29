@@ -37,4 +37,5 @@ public class SearchResults {
 	public String getSuggestedPonderMove() {
 		return suggestedPonderMove;
 	}
+	
 }

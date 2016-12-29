@@ -78,4 +78,5 @@ abstract class Book implements Closeable {
 	 * @return An opening move.
 	 */
 	abstract Move getMove(Position p, SelectionModel selection);
+	
 }

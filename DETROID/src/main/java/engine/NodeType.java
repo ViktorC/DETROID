@@ -17,4 +17,5 @@ enum NodeType {
 	private NodeType() {
 		this.ind = (byte)ordinal();
 	}
+	
 }

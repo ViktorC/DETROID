@@ -16,4 +16,5 @@ public abstract class DebugInformation extends Observable {
 	 * @return
 	 */
 	public abstract String getContent();
+	
 }
