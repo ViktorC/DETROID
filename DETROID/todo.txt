@@ -1,2 +1,0 @@
--	Add support for multi-PV. (v 0.95)
--	Implement SMP. (v 1.0)
