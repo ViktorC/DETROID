@@ -3338,7 +3338,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * @return
 	 */
 	String toSAN(Move move) {
-		String san, movedPiece, capture, origin, destFile, destRank;
+		String movedPiece, capture, origin, destFile, destRank, spMoveSuffix, check;
 		Piece mPiece;
 		MoveSetDatabase mT;
 		long possOriginSqrs, movablePieces;
@@ -3436,19 +3436,20 @@ class Position implements Copiable<Position>, Hashable {
 			else
 				origin = Character.toString((char) (move.from%8 + 'a')) + Integer.toString(move.from/8 + 1);
 		}
-		san = movedPiece + origin + capture + destFile + destRank;
 		if (move.type == MoveType.EN_PASSANT.ind)
-			return san + "e.p.";
+			spMoveSuffix = "e.p.";
 		else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind)
-			return san + "=Q";
+			spMoveSuffix = "=Q";
 		else if (move.type == MoveType.PROMOTION_TO_ROOK.ind)
-			return san + "=R";
+			spMoveSuffix = "=R";
 		else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind)
-			return san + "=B";
+			spMoveSuffix = "=B";
 		else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind)
-			return san + "=N";
+			spMoveSuffix = "=N";
 		else
-			return san;
+			spMoveSuffix = "";
+		check = givesCheck(move) ? "+" : "";
+		return movedPiece + origin + capture + destFile + destRank + spMoveSuffix + check;
 	}
 	@Override
 	public long hashKey() {

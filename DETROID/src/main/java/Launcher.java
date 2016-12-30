@@ -1,6 +1,8 @@
 package main.java;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
@@ -8,12 +10,13 @@ import main.java.engine.Detroid;
 import main.java.tuning.EngineParameters;
 import main.java.tuning.GamePlayOptimizer;
 import main.java.tuning.OptimizerEngines;
+import main.java.tuning.ParameterType;
 import main.java.tuning.StaticEvaluationOptimizer;
 import main.java.tuning.TunableEngine;
 import main.java.uci.UCI;
 
 /**
- * A launcher for the engine and tuning framework.
+ * The main class for the engine and tuning framework.
  * 
  * @author Viktor
  *
@@ -73,6 +76,7 @@ public class Launcher {
 						long tc = DEF_TC;
 						long tcInc = DEF_TC_INC;
 						int popSize = DEF_POPULATION_SIZE;
+						ParameterType paramType = null;
 						double[] initProbVec = null;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
@@ -82,6 +86,22 @@ public class Launcher {
 								} break;
 								case "-concurrency": {
 									concurrency = Integer.parseInt(args[++i]);
+								} break;
+								case "-paramtype": {
+									String type = args[++i];
+									switch (type) {
+										case "eval":
+											paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
+											break;
+										case "control":
+											paramType = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER;
+											break;
+										case "all":
+											paramType = null;
+											break;
+										default:
+											throw new IllegalArgumentException();
+									}
 								} break;
 								case "-games": {
 									games = Integer.parseInt(args[++i]);
@@ -120,12 +140,13 @@ public class Launcher {
 						} catch (SecurityException | IOException e) {
 							e.printStackTrace();
 						}
-						try (GamePlayOptimizer optimizer = new GamePlayOptimizer(engines, games, tc, tcInc, initProbVec, popSize, logger)) {
+						try (GamePlayOptimizer optimizer = new GamePlayOptimizer(engines, paramType, games, tc, tcInc, initProbVec,
+								popSize, logger)) {
 							optimizer.optimize();
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-					} else if ("evaluation".equals(arg1)) {
+					} else if ("staticeval".equals(arg1)) {
 						Double k = null;
 						Integer sampleSize = null;
 						String fensFilePath = DEF_FENS_FILE_PATH;
@@ -165,7 +186,8 @@ public class Launcher {
 						} catch (SecurityException | IOException e) {
 							e.printStackTrace();
 						}
-						try (StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, sampleSize, fensFilePath, k, logger)) {
+						try (StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, sampleSize, fensFilePath,
+								k, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -278,30 +300,67 @@ public class Launcher {
 					EngineParameters params = engine.getParameters();
 					if ("-binarystring".equals(arg1)) {
 						String binaryString = args[2];
-						params.set(binaryString);
+						ParameterType paramType = null;
+						if (args.length > 3) {
+							if ("-paramtype".equals(args[3])) {
+								switch (args[4]) {
+									case "eval":
+										paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
+										break;
+									case "control":
+										paramType = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER;
+										break;
+									case "all":
+										paramType = null;
+										break;
+									default:
+										throw new IllegalArgumentException();
+								}
+							} else
+								throw new IllegalArgumentException();
+						}
+						params.set(binaryString, paramType);
 					} else if ("-probvector".equals(arg1)) {
 						String binaryString = "";
 						String vec = args[2];
+						ParameterType paramType = null;
 						String[] probs = vec.split(",");
 						for (int j = 0; j < probs.length; j++) {
 							double prob = Double.parseDouble(probs[j].trim());
 							binaryString += (prob >= 0.5 ? "1" : "0");
 						}
-						params.set(binaryString);
+						if (args.length > 3) {
+							if ("-paramtype".equals(args[3])) {
+								switch (args[4]) {
+									case "eval":
+										paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
+										break;
+									case "control":
+										paramType = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER;
+										break;
+									case "all":
+										paramType = null;
+										break;
+									default:
+										throw new IllegalArgumentException();
+								}
+							} else
+								throw new IllegalArgumentException();
+						}
+						params.set(binaryString, paramType);
 					} else if ("-decimalarray".equals(arg1)) {
 						String val = args[2];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];
 						for (int j = 0; j < array.length; j++)
 							decimalArray[j] = Double.parseDouble(array[j].trim());
-						params.set(decimalArray);
+						params.set(decimalArray, ParameterType.STATIC_EVALUATION_PARAMETER);
 					} else
 						throw new IllegalArgumentException();
-					if (args.length > 3) {
-						if (!"-paramsfile".equals(args[3]))
-							throw new IllegalArgumentException();
-						destFile = args[4];
-					}
+					List<String> argList = Arrays.asList(args);
+					int ind;
+					if ((ind = argList.indexOf("-paramsfile")) != -1)
+						destFile = argList.get(ind + 1);
 					System.out.println(params.toString());
 					params.writeToFile(destFile);
 				} break;

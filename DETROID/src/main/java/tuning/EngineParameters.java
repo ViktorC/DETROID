@@ -167,6 +167,8 @@ public abstract class EngineParameters {
 	 * @return All parameter fields of the specified type.
 	 */
 	private List<Field> getParamFields(ParameterType type) {
+		if (type == null)
+			return allParamFields;
 		switch (type) {
 			case STATIC_EVALUATION_PARAMETER:
 				return staticEvalParamFields;

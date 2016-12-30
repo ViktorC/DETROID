@@ -1,8 +1,6 @@
 package main.java.engine;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -47,15 +45,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	// Search, evaluation, and time control parameters.
 	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/main/resources/params.txt";
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
-	public final static String DEFAULT_BOOK_FILE_PATH;
-	static {
-		String path;
-		try {
-			path = new File(Detroid.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsoluteFile().getParent() +
-					File.separator + "book.bin";
-		} catch (URISyntaxException e) { path = null; }
-		DEFAULT_BOOK_FILE_PATH = path;
-	}
+	public final static String DEFAULT_BOOK_FILE_PATH = "book.bin";
 	// The minimum allowed hash size in MB.
 	private final static int MIN_HASH_SIZE = 1;
 	// The maximum allowed hash size in MB.

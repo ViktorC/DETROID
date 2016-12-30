@@ -79,7 +79,8 @@ public class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
 			throws Exception {
 		super(engines[0].getParameters().values(ParameterType.STATIC_EVALUATION_PARAMETER),
 				(double[]) Array.newInstance(double.class, engines[0].getParameters().values(ParameterType.STATIC_EVALUATION_PARAMETER).length),
-				engines[0].getParameters().maxValues(), 1d, BASE_LEARNING_RATE, null, null, null, null, null, logger);
+				engines[0].getParameters().maxValues(ParameterType.STATIC_EVALUATION_PARAMETER), 1d, BASE_LEARNING_RATE, null, null, null, null,
+				null, logger);
 		if (sampleSize < 1)
 			throw new IllegalArgumentException("The sample size has to be greater than 0.");
 		this.sampleSize = sampleSize;

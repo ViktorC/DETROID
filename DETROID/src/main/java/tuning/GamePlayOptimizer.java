@@ -12,7 +12,7 @@ import main.java.uci.UCIEngine;
 import main.java.util.PBIL;
 
 /**
- * A class for optimizing engine and search control parameters using a PBIL algorithm with a possibly parallel, game play based 
+ * A class for optimizing chess engine parameters using a PBIL algorithm with a possibly parallel, game play based 
  * fitness function.
  * 
  * @author Viktor
@@ -28,6 +28,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	
 	private final OptimizerEngines[] engines;
 	private final Arena[] arenas;
+	private final ParameterType parameterType;
 	private final int games;
 	private final long timePerGame;
 	private final long timeIncPerMove;
@@ -42,6 +43,8 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
 	 * {@link #NullPointerException NullPointerException} is thrown.
+	 * @param parameterType Denotes the type of chess engine parameters to tune with game play. 
+	 * If it is null, all parameters will be tuned.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -59,11 +62,12 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * will be done.
 	 * @throws Exception If the engines cannot be initialized.
 	 */
-	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			double[] initialProbabilityVector, int populationSize, Logger logger)
+	public GamePlayOptimizer(OptimizerEngines[] engines, ParameterType parameterType, int games, long timePerGame,
+			long timeIncPerMove, double[] initialProbabilityVector, int populationSize, Logger logger)
 					throws Exception {
-		super(engines[0].getEngine().getParameters().toGrayCodeString(ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER).length(),
+		super(engines[0].getEngine().getParameters().toGrayCodeString(parameterType).length(),
 				populationSize, null, null, null, null, null, initialProbabilityVector, logger);
+		this.parameterType = parameterType;
 		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
 		for (OptimizerEngines e : engines) {
 			if (e != null)
@@ -91,14 +95,68 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
 	 * engine is incremented after each legal move.
+	 * @param initialProbabilityVector The starting probability vector for the optimization.
+	 * It allows the algorithm to pick up where a previous, terminated optimization process
+	 * left off. If the array's length is smaller than the engine to be tuned's parameters' 
+	 * binary string's length, it will be extended with elements of the value 0.5d; if the 
+	 * length of the array is greater than engine to be tuned's parameters' binary string's 
+	 * length, only the first x elements will be considered, where x equals the parameters' 
+	 * binary string's length. If it is null, an array with a length equal to the parameters' 
+	 * binary string's length, only containing elements that have the value 0.5d will be used.
+	 * @param populationSize The number of samples to produce per generation.
+	 * @param logger A logger to log the optimization process. If it is null, no logging 
+	 * will be done.
+	 * @throws Exception If the engines cannot be initialized.
+	 */
+	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
+			double[] initialProbabilityVector, int populationSize, Logger logger) throws Exception {
+		this(engines, null, games, timePerGame, timeIncPerMove, initialProbabilityVector, populationSize, logger);
+	}
+	/**
+	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
+	 * 
+	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
+	 * each contain the engines needed for one optimization thread. For each non-null element
+	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
+	 * array of four non-null elements, the games in the fitness function will be distributed
+	 * and played parallel on four threads. The array's first element cannot be null or a 
+	 * {@link #NullPointerException NullPointerException} is thrown.
+	 * @param parameterType Denotes the type of chess engine parameters to tune with game play. 
+	 * If it is null, all parameters will be tuned.
+	 * @param games The number of games to play to assess the fitness of the parameters.
+	 * @param timePerGame The time each engine will have per game in milliseconds.
+	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
+	 * engine is incremented after each legal move.
 	 * @param populationSize The number of samples to produce per generation.
 	 * @param logger A logger to log the optimization process. If it is null, no logging 
 	 * will be done.
 	 * @throws Exception If the engines cannot be initialised.
 	 */
-	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove, int populationSize,
-			Logger logger) throws Exception {
-		this(engines, games, timePerGame, timeIncPerMove, null, populationSize, logger);
+	public GamePlayOptimizer(OptimizerEngines[] engines, ParameterType parameterType, int games, long timePerGame,
+			long timeIncPerMove, int populationSize, Logger logger) throws Exception {
+		this(engines, parameterType, games, timePerGame, timeIncPerMove, null, populationSize, logger);
+	}
+	/**
+	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
+	 * 
+	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
+	 * each contain the engines needed for one optimization thread. For each non-null element
+	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
+	 * array of four non-null elements, the games in the fitness function will be distributed
+	 * and played parallel on four threads. The array's first element cannot be null or a 
+	 * {@link #NullPointerException NullPointerException} is thrown.
+	 * @param games The number of games to play to assess the fitness of the parameters.
+	 * @param timePerGame The time each engine will have per game in milliseconds.
+	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
+	 * engine is incremented after each legal move.
+	 * @param populationSize The number of samples to produce per generation.
+	 * @param logger A logger to log the optimization process. If it is null, no logging 
+	 * will be done.
+	 * @throws Exception If the engines cannot be initialised.
+	 */
+	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
+			int populationSize, Logger logger) throws Exception {
+		this(engines, null, games, timePerGame, timeIncPerMove, populationSize, logger);
 	}
 	@Override
 	protected double fitnessFunction(String genotype) {
@@ -115,7 +173,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 					tunEngine.init();
 				if (!oppEngine.isInit())
 					oppEngine.init();
-				tunEngine.getParameters().set(genotype, ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER);
+				tunEngine.getParameters().set(genotype, parameterType);
 				tunEngine.notifyParametersChanged();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));
@@ -158,7 +216,7 @@ public class GamePlayOptimizer extends PBIL implements AutoCloseable {
 						e.printStackTrace();
 						return -Double.MAX_VALUE;
 					}
-					oppEngine.getParameters().set(genotype, ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER);
+					oppEngine.getParameters().set(genotype, parameterType);
 					oppEngine.notifyParametersChanged();
 				}
 			}
