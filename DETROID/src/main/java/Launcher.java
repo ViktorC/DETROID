@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
+import main.java.control.ControllerEngine;
 import main.java.engine.Detroid;
 import main.java.tuning.EngineParameters;
+import main.java.tuning.FENFileUtil;
 import main.java.tuning.GamePlayOptimizer;
 import main.java.tuning.OptimizerEngines;
 import main.java.tuning.ParameterType;
@@ -39,23 +41,6 @@ public class Launcher {
 	 * The default path to the file to which the parameters converted from binary strings or double arrays are written.
 	 */
 	private static final String DEF_CONVERTED_PARAMS_PATH = "params.txt";
-	/**
-	 * The default number of games to play for engine and search control parameter tuning.
-	 */
-	private static final int DEF_GAMES = 100;
-	/**
-	 * The default base length of games to play for engine and search control parameter tuning and FENs file generation in milliseconds.
-	 */
-	private static final long DEF_TC = 2500;
-	/**
-	 * The default time increment per move for games to play for engine and search control parameter tuning and FENs file generation in 
-	 * milliseconds.
-	 */
-	private static final long DEF_TC_INC = 0;
-	/**
-	 * The default population size for the genotypes in the PBIL algorithm behind the engine and search control parameter optimizer.
-	 */
-	private static final int DEF_POPULATION_SIZE = 100;
 	
 	/**
 	 * !TODO Documentation.
@@ -72,10 +57,10 @@ public class Launcher {
 					String logFilePath = DEF_LOG_FILE_PATH;
 					String arg1 = args[1];
 					if ("gameplay".equals(arg1)) {
-						int games = DEF_GAMES;
-						long tc = DEF_TC;
-						long tcInc = DEF_TC_INC;
-						int popSize = DEF_POPULATION_SIZE;
+						int popSize = -1;
+						int games = -1;
+						long tc = -1;
+						long tcInc = 0;
 						ParameterType paramType = null;
 						double[] initProbVec = null;
 						for (int i = 2; i < args.length; i++) {
@@ -126,6 +111,8 @@ public class Launcher {
 									throw new IllegalArgumentException();
 							}
 						}
+						if (games == -1 || tc == -1 || popSize == -1)
+							throw new IllegalArgumentException();
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
@@ -185,57 +172,98 @@ public class Launcher {
 							logger.addHandler(new FileHandler(logFilePath, true));
 						} catch (SecurityException | IOException e) {
 							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
 						try (StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, sampleSize, fensFilePath,
 								k, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
 							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
 					} else
 						throw new IllegalArgumentException();
 				} break;
 				// Generate FENs file.
 				case "-g": {
-					int games = DEF_GAMES;
-					long tc = DEF_TC;
-					long tcInc = DEF_TC_INC;
 					String destFile = DEF_FENS_FILE_PATH;
-					for (int i = 2; i < args.length; i++) {
-						String arg = args[i];
-						switch (arg) {
-							case "-concurrency": {
-								concurrency = Integer.parseInt(args[++i]);
-							} break;
-							case "-games": {
-								games = Integer.parseInt(args[++i]);
-							} break;
-							case "-tc": {
-								tc = Long.parseLong(args[++i]);
-							} break;
-							case "-inc": {
-								tcInc = Long.parseLong(args[++i]);
-							} break;
-							case "-destfile": {
-								destFile = args[++i];
-							} break;
-							default:
-								throw new IllegalArgumentException();
+					String arg1 = args[1];
+					if ("byselfplay".equals(arg1)) {
+						int games = -1;
+						long tc = -1;
+						long tcInc = 0;
+						for (int i = 2; i < args.length; i++) {
+							String arg = args[i];
+							switch (arg) {
+								case "-concurrency": {
+									concurrency = Integer.parseInt(args[++i]);
+								} break;
+								case "-games": {
+									games = Integer.parseInt(args[++i]);
+								} break;
+								case "-tc": {
+									tc = Long.parseLong(args[++i]);
+								} break;
+								case "-inc": {
+									tcInc = Long.parseLong(args[++i]);
+								} break;
+								case "-destfile": {
+									destFile = args[++i];
+								} break;
+								default:
+									throw new IllegalArgumentException();
+							}
 						}
-					}
-					OptimizerEngines[] engines = new OptimizerEngines[concurrency];
-					for (int i = 0; i < concurrency; i++) {
+						if (games == -1 || tc == -1)
+							throw new IllegalArgumentException();
+						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
+						for (int i = 0; i < concurrency; i++) {
+							try {
+								engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
 						try {
-							engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+							FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
+							for (OptimizerEngines e : engines) {
+								e.getEngine().quit();
+								e.getOpponentEngine().quit();
+								e.getController().quit();
+							}
+						} catch (NullPointerException | IOException e) {
+							e.printStackTrace();
+							throw new IllegalArgumentException(e);
+						}
+					} else if ("bypgnconversion".equals(arg1)) {
+						String sourceFile = null;
+						int maxNumOfGames = Integer.MAX_VALUE;
+						for (int i = 2; i < args.length; i++) {
+							String arg = args[i];
+							switch (arg) {
+								case "-maxgames": {
+									maxNumOfGames = Integer.parseInt(args[++i]);
+								} break;
+								case "-sourcefile": {
+									sourceFile = args[++i];
+								} break;
+								case "-destfile": {
+									destFile = args[++i];
+								} break;
+								default:
+									throw new IllegalArgumentException();
+							}
+						}
+						try {
+							ControllerEngine engine = new Detroid();
+							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
+							engine.quit();
 						} catch (Exception e) {
 							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
-					}
-					try {
-						StaticEvaluationOptimizer.generateFENFile(engines, games, tc, tcInc, destFile);
-					} catch (NullPointerException | IllegalArgumentException | IOException e) {
-						e.printStackTrace();
-					}
+					} else
+						throw new IllegalArgumentException();
 				} break;
 				// Filter FENs file.
 				case "-f": {
@@ -257,7 +285,7 @@ public class Launcher {
 							}
 						}
 						try {
-							StaticEvaluationOptimizer.filterDraws(sourceFile, destFile);
+							FENFileUtil.filterDraws(sourceFile, destFile);
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -280,9 +308,10 @@ public class Launcher {
 							}
 						}
 						try {
-							StaticEvaluationOptimizer.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
+							FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
 						} catch (IOException e) {
 							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
 					} else
 						throw new IllegalArgumentException();
@@ -298,12 +327,14 @@ public class Launcher {
 						e.printStackTrace();
 					}
 					EngineParameters params = engine.getParameters();
-					if ("-binarystring".equals(arg1)) {
-						String binaryString = args[2];
+					if (!"-value".equals(args[2]))
+						throw new IllegalArgumentException();
+					if ("binarystring".equals(arg1)) {
+						String binaryString = args[3];
 						ParameterType paramType = null;
-						if (args.length > 3) {
-							if ("-paramtype".equals(args[3])) {
-								switch (args[4]) {
+						if (args.length > 4) {
+							if ("-paramtype".equals(args[4])) {
+								switch (args[5]) {
 									case "eval":
 										paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
 										break;
@@ -320,18 +351,18 @@ public class Launcher {
 								throw new IllegalArgumentException();
 						}
 						params.set(binaryString, paramType);
-					} else if ("-probvector".equals(arg1)) {
+					} else if ("probvector".equals(arg1)) {
 						String binaryString = "";
-						String vec = args[2];
+						String vec = args[3];
 						ParameterType paramType = null;
 						String[] probs = vec.split(",");
 						for (int j = 0; j < probs.length; j++) {
 							double prob = Double.parseDouble(probs[j].trim());
 							binaryString += (prob >= 0.5 ? "1" : "0");
 						}
-						if (args.length > 3) {
-							if ("-paramtype".equals(args[3])) {
-								switch (args[4]) {
+						if (args.length > 4) {
+							if ("-paramtype".equals(args[4])) {
+								switch (args[5]) {
 									case "eval":
 										paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
 										break;
@@ -349,7 +380,7 @@ public class Launcher {
 						}
 						params.set(binaryString, paramType);
 					} else if ("-decimalarray".equals(arg1)) {
-						String val = args[2];
+						String val = args[3];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];
 						for (int j = 0; j < array.length; j++)
@@ -363,6 +394,7 @@ public class Launcher {
 						destFile = argList.get(ind + 1);
 					System.out.println(params.toString());
 					params.writeToFile(destFile);
+					engine.quit();
 				} break;
 				// UCI mode.
 				case "-u": {
@@ -379,5 +411,5 @@ public class Launcher {
 			// !TODO GUI mode.
 		}
 	}
-
+	
 }

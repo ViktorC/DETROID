@@ -1,6 +1,5 @@
 package main.java.engine;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -20,7 +19,7 @@ class Game {
 	private Position position;
 	private String event;
 	private String site;
-	private Date date;
+	private String date;
 	private int round;
 	private String whitePlayerName;
 	private String blackPlayerName;
@@ -38,9 +37,7 @@ class Game {
 		String tagContent, tagType, tagValue,
 			event = null, site = null, date = null, round = null,
 			whiteName = null, blackName = null, result = null, fen = null;
-		int moveDescStartInd = 0;
 		Game out = new Game();
-		SimpleDateFormat dF;
 		String[] moveDescParts;
 		ArrayList<String> sanStrings = new ArrayList<>();
 		Move move;
@@ -52,7 +49,6 @@ class Game {
 					tagContent = "";
 					while (++i < pgn.length() && (tagChar = pgn.charAt(i)) != ']')
 						tagContent += tagChar;
-					moveDescStartInd = i + 1;
 					tagType = tagContent.substring(0, tagContent.indexOf(' '));
 					tagValue = tagContent.substring(tagContent.indexOf('"') + 1, tagContent.lastIndexOf('"'));
 					switch (tagType.toUpperCase()) {
@@ -87,39 +83,38 @@ class Game {
 				throw new ChessParseException("Missing tag(s).");
 			out.event = event;
 			out.site = site;
-			dF = new SimpleDateFormat("yyyy.MM.dd");
-			dF.setLenient(false);
-			out.date = dF.parse(date);
-			out.round = Short.parseShort(round);
+			out.date = date;
+			out.round = "?".equals(round) ? -1 : Short.parseShort(round);
 			out.whitePlayerName = whiteName;
 			out.blackPlayerName = blackName;
-			switch (result) {
-				case "1-0":
-					pgn = pgn.replaceAll("1-0", "");
-					break;
-				case "0-1":
-					pgn = pgn.replaceAll("0-1", "");
-					break;
-				case "1/2-1/2":
-					pgn = pgn.replaceAll("1/2-1/2", "");
-					break;
-				case "*":
-					pgn = pgn.replaceAll("*", "");
-					break;
-				default:
-					throw new ChessParseException();
-			}
 			out.position = fen == null ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 			out.startPosition = out.position.deepCopy();
-			if (moveDescStartInd < pgn.length())
-				pgn = pgn.substring(moveDescStartInd);
+			pgn = pgn.substring(pgn.lastIndexOf(']') + 1, pgn.length());
 			pgn = pgn.trim();
 			pgn = pgn.replaceAll(";[.]*\\n", "");
 			pgn = pgn.replaceAll("\\([^)]*\\)", "");
 			pgn = pgn.replaceAll("\\{[^\\}]*\\}", "");
+			pgn = pgn.replaceAll("[0-9]+\\.", "");
+			switch (result) {
+			case "1-0":
+				pgn = pgn.replaceAll("1-0", "");
+				break;
+			case "0-1":
+				pgn = pgn.replaceAll("0-1", "");
+				break;
+			case "1/2-1/2":
+				pgn = pgn.replaceAll("1/2-1/2", "");
+				break;
+			case "*":
+				pgn = pgn.replaceAll("*", "");
+				break;
+			default:
+				throw new ChessParseException();
+			}
 			moveDescParts = pgn.split("[\\s]+");
 			for (String s : moveDescParts) {
-				if (!s.matches("^[0-9]+.$") && !s.matches("^\\$[0-9]+$"))
+				s = s.trim();
+				if (!s.matches("^\\$[0-9]+$"))
 					sanStrings.add(s);
 			}
 			for (String sanString : sanStrings) {
@@ -127,6 +122,14 @@ class Game {
 				out.position.makeMove(move);
 			}
 			out.setState();
+			if (out.state == GameState.IN_PROGRESS && !"*".equals(result)) {
+				if ("1-0".equals(result))
+					out.state = GameState.UNSPECIFIED_WHITE_WIN;
+				else if ("0-1".equals(result))
+					out.state = GameState.UNSPECIFIED_BLACK_WIN;
+				else
+					out.state = GameState.DRAW_BY_AGREEMENT;
+			}
 		}
 		catch (Exception e) {
 			throw new ChessParseException(e);
@@ -151,7 +154,9 @@ class Game {
 		startPosition = this.position.deepCopy();
 		this.event = event;
 		this.site = site;
-		date = new Date();
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(new Date());
+		date = cal.get(Calendar.YEAR) + "." + cal.get(Calendar.MONTH) + "." + cal.get(Calendar.DAY_OF_MONTH);
 		this.round = round;
 		this.whitePlayerName = whitePlayerName;
 		this.blackPlayerName = blackPlayerName;
@@ -170,7 +175,7 @@ class Game {
 	 */
 	Game(Position position, String event, String site, String whitePlayerName, String blackPlayerName)
 			throws NullPointerException, ChessParseException {
-		this(position, event, site, whitePlayerName, blackPlayerName, 1);
+		this(position, event, site, whitePlayerName, blackPlayerName, -1);
 	}
 	/**
 	 * Returns a game instance with the site and event values being null and round set to 1.
@@ -182,7 +187,7 @@ class Game {
 	 * @throws ChessParseException 
 	 */
 	Game(Position position, String whitePlayerName, String blackPlayerName) throws NullPointerException, ChessParseException {
-		this(position, null, null, whitePlayerName, blackPlayerName, 1);
+		this(position, null, null, whitePlayerName, blackPlayerName, -1);
 	}
 	/**
 	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being null and round set to 1.
@@ -192,7 +197,7 @@ class Game {
 	 * @throws ChessParseException 
 	 */
 	Game(Position position) throws NullPointerException, ChessParseException {
-		this(position, null, null, null, null, 1);
+		this(position, null, null, null, null, -1);
 	}
 	/**
 	 * Returns a game instance set to the start position with the site, event, whitePlayerName, and blackPlayerName values being null
@@ -203,7 +208,9 @@ class Game {
 			position = Position.parse(Position.START_POSITION_FEN);
 		} catch (ChessParseException e) { }
 		startPosition = position.deepCopy();
-		date = new Date();
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(new Date());
+		date = cal.get(Calendar.YEAR) + "." + cal.get(Calendar.MONTH) + "." + cal.get(Calendar.DAY_OF_MONTH);
 		round = 1;
 		state = GameState.IN_PROGRESS;
 	}
@@ -244,7 +251,7 @@ class Game {
 	 * 
 	 * @return
 	 */
-	Date getDate() {
+	String getDate() {
 		return date;
 	}
 	/**
@@ -337,6 +344,16 @@ class Game {
 		}
 	}
 	/**
+	 * Sets the state of the game in case of draw by agreement, resignation, or time out. Otherwise it is ignored.
+	 * 
+	 * @param state The new state of the game.
+	 */
+	void setState(GameState state) {
+		if (state != null && (state == GameState.DRAW_BY_AGREEMENT || state == GameState.UNSPECIFIED_WHITE_WIN ||
+				state == GameState.UNSPECIFIED_BLACK_WIN))
+			this.state = state;
+	}
+	/**
 	 * Plays a move defined either in PACN or SAN on the board if legal.
 	 * 
 	 * @param move The move to make defined either in pure algebraic coordinate notation or standard algebraic notation.
@@ -398,26 +415,19 @@ class Game {
 	 */
 	@Override
 	public String toString() {
-		String pgn = "", date, result;
-		Calendar cal = Calendar.getInstance();
+		String pgn = "", result;
 		pgn += "[Event \"" + (event == null ? "N/A" : event) + "\"]\n";
 		pgn += "[Site \"" + (site == null ? "N/A" : site) + "\"]\n";
-		if (this.date == null)
-			date = "??";
-		else {
-			cal.setTime(this.date);
-			date = cal.get(Calendar.YEAR) + "." + cal.get(Calendar.MONTH) + "." + cal.get(Calendar.DAY_OF_MONTH);
-		}
 		pgn += "[Date \"" + date + "\"]\n";
-		pgn += "[Round \"" + round + "\"]\n";
+		pgn += "[Round \"" + (round == -1 ? "?" : round) + "\"]\n";
 		pgn += "[White \"" + (whitePlayerName == null ? "N/A" : whitePlayerName) + "\"]\n";
 		pgn += "[Black \"" + (blackPlayerName == null ? "N/A" : blackPlayerName) + "\"]\n";
 		result = "";
 		if (state == GameState.IN_PROGRESS)
 			result = "*";
-		else if (state == GameState.WHITE_MATES)
+		else if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN)
 			result = "1-0";
-		else if (state == GameState.BLACK_MATES)
+		else if (state == GameState.BLACK_MATES || state == GameState.UNSPECIFIED_BLACK_WIN)
 			result = "0-1";
 		else
 			result = "1/2-1/2";
