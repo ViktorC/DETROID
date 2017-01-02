@@ -16,6 +16,7 @@ import main.java.tuning.ParameterType;
 import main.java.tuning.StaticEvaluationOptimizer;
 import main.java.tuning.TunableEngine;
 import main.java.uci.UCI;
+import main.java.uci.UCIEngine;
 
 /**
  * The main class for the engine and tuning framework.
@@ -25,6 +26,27 @@ import main.java.uci.UCI;
  */
 public class Launcher {
 
+	/**
+	 * Returns a new {@link #UCIEngine UCIEngine} instance that might or might not be a {@link #TunableEngine TunableEngine} as well.
+	 * 
+	 * @return A new UCI compatible engine instance.
+	 */
+	private static UCIEngine newEngineInstance() {
+		/* Create and return an instance of your engine. If it does not implement the TunableEngine interface, certain functionalities 
+		 * will not be available, but it will still function as a UCI engine. */
+		return new Detroid();
+	}
+	/**
+	 * Returns a new {@link #ControllerEngine ControllerEngine} instance.
+	 * 
+	 * @return A new controller engine instance.
+	 */
+	private static ControllerEngine newControllerEngineInstance() {
+		/* Create and return an instance of your engine or if it does not implement the interface, create and return an instance of
+		 * a ControllerEngine. */
+		return new Detroid();
+	}
+	
 	/**
 	 * The default number of threads to use.
 	 */
@@ -116,7 +138,8 @@ public class Launcher {
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+								engines[i] = new OptimizerEngines((TunableEngine) newEngineInstance(),
+										(TunableEngine) newEngineInstance(), newControllerEngineInstance());
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
@@ -161,7 +184,7 @@ public class Launcher {
 						}
 						TunableEngine[] engines = new TunableEngine[concurrency];
 						for (int i = 0; i < concurrency; i++)
-							engines[i] = new Detroid();
+							engines[i] = (TunableEngine) newEngineInstance();
 						try {
 							engines[0].init();
 						} catch (Exception e) {
@@ -219,7 +242,8 @@ public class Launcher {
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								engines[i] = new OptimizerEngines(new Detroid(), new Detroid(), new Detroid());
+								engines[i] = new OptimizerEngines((TunableEngine) newEngineInstance(),
+										(TunableEngine) newEngineInstance(), newControllerEngineInstance());
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
@@ -255,7 +279,7 @@ public class Launcher {
 							}
 						}
 						try {
-							ControllerEngine engine = new Detroid();
+							ControllerEngine engine = newControllerEngineInstance();
 							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
 							engine.quit();
 						} catch (Exception e) {
@@ -320,7 +344,7 @@ public class Launcher {
 				case "-c": {
 					String arg1 = args[1];
 					String destFile = DEF_CONVERTED_PARAMS_PATH;
-					TunableEngine engine = new Detroid();
+					TunableEngine engine = (TunableEngine) newEngineInstance();
 					try {
 						engine.init();
 					} catch (Exception e) {
@@ -379,7 +403,7 @@ public class Launcher {
 								throw new IllegalArgumentException();
 						}
 						params.set(binaryString, paramType);
-					} else if ("-decimalarray".equals(arg1)) {
+					} else if ("decimalarray".equals(arg1)) {
 						String val = args[3];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];
@@ -399,7 +423,7 @@ public class Launcher {
 				// UCI mode.
 				case "-u": {
 					try (UCI uci = new UCI(System.in, System.out)) {
-						uci.run(new Detroid());
+						uci.run(newEngineInstance());
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

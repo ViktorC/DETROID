@@ -1,5 +1,6 @@
 package main.java.engine;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import main.java.uci.ScoreType;
@@ -81,12 +82,10 @@ class SearchInfo extends SearchInformation {
 	public String[] getPv() {
 		if (pVline == null)
 			return null;
-		String[] arr = new String[pVline.size()];
-		int i = 0;
-		for (Move m : pVline) {
-			arr[i++] = m.toString();
-		}
-		return arr;
+		ArrayList<String> pV = new ArrayList<>(pVline.size());
+		for (Move m : pVline)
+			pV.add(m.toString());
+		return pV.toArray(new String[pV.size()]);
 	}
 	@Override
 	public String getCurrentMove() {
