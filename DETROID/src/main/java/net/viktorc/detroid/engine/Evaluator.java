@@ -5,7 +5,6 @@ import main.java.net.viktorc.detroid.engine.Bitboard.File;
 import main.java.net.viktorc.detroid.engine.Bitboard.Rank;
 import main.java.net.viktorc.detroid.util.BitOperations;
 import main.java.net.viktorc.detroid.util.LossyHashTable;
-import main.java.util.*;
 
 /**
  * A class for evaluating chess positions. It uses an evaluation hash table and a pawn hash table to improve performance. It also offers a static

@@ -2,7 +2,6 @@ package main.java.net.viktorc.detroid.engine;
 
 import main.java.net.viktorc.detroid.engine.Bitboard.Square;
 import main.java.net.viktorc.detroid.util.BitOperations;
-import main.java.util.*;
 
 /**
  * Some position and move information--such as castling and en passant rights, fifty-move rule clock, a bitmap representing checkers,
