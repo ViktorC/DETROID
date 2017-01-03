@@ -34,7 +34,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>main.java.Launcher</mainClass>
+              <mainClass>main.java.net.viktorc.detroid.Launcher</mainClass>
             </manifest>
           </archive>
         </configuration>
