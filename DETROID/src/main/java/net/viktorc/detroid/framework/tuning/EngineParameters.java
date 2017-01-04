@@ -1,19 +1,28 @@
 package main.java.net.viktorc.detroid.framework.tuning;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import main.java.net.viktorc.detroid.util.BitOperations;
 import main.java.net.viktorc.detroid.util.GrayCode;
@@ -37,6 +46,8 @@ import main.java.net.viktorc.detroid.util.GrayCode;
  * 
  */
 public abstract class EngineParameters {
+	
+	private static final String XML_ROOT_ELEMENT_NAME = "parameters";
 	
 	private final transient List<Field> allParamFields;
 	private final transient List<Field> staticEvalParamFields;
@@ -79,7 +90,7 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Reads the parameter values from a file until the end of the file is reached and sets the instance's fields accordingly.
+	 * Reads the parameter values from an XML file and sets the instance's fields accordingly.
 	 * 
 	 * @param filePath The path to the file.
 	 * @return Whether fields recorded in the file could be successfully set.
@@ -87,19 +98,23 @@ public abstract class EngineParameters {
 	 */
 	public final boolean loadFrom(String filePath) throws IOException {
 		File file;
-		String line;
 		String name;
 		String value;
 		Class<?> clazz = getClass();
 		Field field;
 		Class<?> fieldType;
-		int indexOfClosingNameTag;
 		file = new File(filePath);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.exists() ? new FileInputStream(filePath) : 
-			clazz.getResourceAsStream(filePath)));) {
-			while ((line = reader.readLine()) != null) {
-				indexOfClosingNameTag = line.indexOf(']');
-				name = line.substring(line.indexOf('[') + 1, indexOfClosingNameTag);
+		try (InputStream input = file.exists() ? new FileInputStream(filePath) : clazz.getResourceAsStream(filePath)) {
+			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			Document document = builder.parse(input);
+			document.getDocumentElement().normalize();
+			NodeList parameters = document.getDocumentElement().getChildNodes();
+			for (int i = 0; i < parameters.getLength(); i++) {
+				Node node = parameters.item(i);
+				if (node.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+				Element parameter = (Element) node;
+				name = parameter.getNodeName();
 				try {
 					field = clazz.getDeclaredField(name);
 				} catch (NoSuchFieldException | SecurityException e1) {
@@ -109,7 +124,7 @@ public abstract class EngineParameters {
 				if (!allParamFields.contains(field))
 					continue;
 				field.setAccessible(true);
-				value = line.substring(indexOfClosingNameTag + 4, line.length());
+				value = parameter.getTextContent();
 				if (value.length() == 0)
 					continue;
 				fieldType = field.getType();
@@ -132,7 +147,7 @@ public abstract class EngineParameters {
 			}
 			return true;
 		}
-		catch (FileNotFoundException | IllegalArgumentException | IllegalAccessException e2) {
+		catch (Exception e2) {
 			e2.printStackTrace();
 			return false;
 		}
@@ -145,18 +160,27 @@ public abstract class EngineParameters {
 	 * @return Whether the parameters could be successfully written to the file.
 	 */
 	public final boolean writeToFile(String filePath) {
-		File file = new File(filePath);
-		if (!file.exists()) {
-			try {
+		try {
+			File file = new File(filePath);
+			if (!file.exists())
 				Files.createFile(file.toPath());
-			} catch (IOException e1) {
-				return false;
+			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			Document document = builder.newDocument();
+			Element root = document.createElement(XML_ROOT_ELEMENT_NAME);
+			document.appendChild(root);
+			for (Field f : allParamFields) {
+				f.setAccessible(true);
+				Element parameter = document.createElement(f.getName());
+				parameter.setTextContent("" + f.get(this));
+				root.appendChild(parameter);
 			}
-		}
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-			writer.write(toString());
+			Transformer transformer = TransformerFactory.newInstance().newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			DOMSource source = new DOMSource(document);
+			StreamResult result = new StreamResult(file);
+			transformer.transform(source, result);
 			return true;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
@@ -421,7 +445,7 @@ public abstract class EngineParameters {
 		for (Field f : allParamFields) {
 			String subString = "";
 			try {
-				subString += "[" + f.getName() + "] = " + f.get(this).toString() + "\n";
+				subString += f.getName() + " = " + f.get(this).toString() + System.lineSeparator();
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				subString = "";
 			}

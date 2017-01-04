@@ -129,8 +129,9 @@ class Search implements Runnable {
 						failLow = 2;
 						failHigh = 2;
 					} else {
-						alpha = failLow == 0 ? Math.max(score - 2*params.aDelta, Termination.CHECK_MATE.score) :
-							failLow == 1 ? Math.max(score - 4*params.aDelta, Termination.CHECK_MATE.score) : Termination.CHECK_MATE.score;
+						alpha = failLow == 0 ? Math.max(score - 2*params.aspirationDelta, Termination.CHECK_MATE.score) :
+								failLow == 1 ? Math.max(score - 4*params.aspirationDelta, Termination.CHECK_MATE.score) :
+								Termination.CHECK_MATE.score;
 						failLow++;
 					}
 					i--;
@@ -141,15 +142,16 @@ class Search implements Runnable {
 						failLow = 2;
 						failHigh = 2;
 					} else {
-						beta = failHigh == 0 ? Math.min(score + 2*params.aDelta, -Termination.CHECK_MATE.score) :
-							failHigh == 1 ? Math.min(score + 4*params.aDelta, -Termination.CHECK_MATE.score) : -Termination.CHECK_MATE.score;
+						beta = failHigh == 0 ? Math.min(score + 2*params.aspirationDelta, -Termination.CHECK_MATE.score) :
+								failHigh == 1 ? Math.min(score + 4*params.aspirationDelta, -Termination.CHECK_MATE.score) :
+								-Termination.CHECK_MATE.score;
 						failHigh++;
 					}
 					i--;
 				} else {
 					failHigh = failLow = 0;
-					alpha = score >= wCheckMateLimit ? alpha : Math.max(score - params.aDelta, Termination.CHECK_MATE.score);
-					beta = score <= lCheckMateLimit ? beta : Math.min(score + params.aDelta, -Termination.CHECK_MATE.score);
+					alpha = score >= wCheckMateLimit ? alpha : Math.max(score - params.aspirationDelta, Termination.CHECK_MATE.score);
+					beta = score <= lCheckMateLimit ? beta : Math.min(score + params.aspirationDelta, -Termination.CHECK_MATE.score);
 				}
 			}
 		}
@@ -431,10 +433,10 @@ class Search implements Runnable {
 			isDangerous = isPvNode || isInCheck || isEndgame || Math.abs(beta) >= wCheckMateLimit ||
 					!position.areTherePiecesOtherThanKingsAndPawns();
 			// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && !isDangerous && depth > params.nmr*params.fullPly) {
+			if (nullMoveAllowed && !isDangerous && depth > params.nullMoveReduction*params.fullPly) {
 				position.makeNullMove();
 				// Do not allow consecutive null moves.
-				score = -pVsearch(depth - (1 + params.nmr)*params.fullPly, distFromRoot + 1, -beta, -beta + 1, false);
+				score = -pVsearch(depth - (1 + params.nullMoveReduction)*params.fullPly, distFromRoot + 1, -beta, -beta + 1, false);
 				position.unmakeMove();
 				if (score >= beta)
 					return score;
@@ -617,7 +619,7 @@ class Search implements Runnable {
 					switch (depth/params.fullPly) {
 						case 1: {
 							// Frontier futility pruning.
-							if (evalScore + params.fmar1 <= alpha) {
+							if (evalScore + params.futilityMargin1 <= alpha) {
 								// Record failure in the relative history table.
 								hT.recordUnsuccessfulMove(move);
 								continue;
@@ -625,33 +627,33 @@ class Search implements Runnable {
 						} break;
 						case 2: {
 							// Extended futility pruning.
-							if (evalScore + params.fmar2 <= alpha) {
+							if (evalScore + params.futilityMargin2 <= alpha) {
 								// Record failure in the relative history table.
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
 							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
 							 * by a margin great enough to completely prune the branch. */
-							if (evalScore + params.rmar1 <= alpha)
+							if (evalScore + params.razoringMargin1 <= alpha)
 								razRed = 1;
 						} break;
 						case 3: {
 							// Deep futility pruning.
-							if (evalScore + params.fmar3 <= alpha) {
+							if (evalScore + params.futilityMargin3 <= alpha) {
 								// Record failure in the relative history table.
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
 							// Deep razoring.
-							if (evalScore + params.rmar2 <= alpha)
+							if (evalScore + params.razoringMargin2 <= alpha)
 								razRed = 1;
 						}
 					}
 				}
 				position.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (isReducible && depth/params.fullPly > 3 && searchedMoves > params.lmrsm) {
-					score = -pVsearch(depth - params.lmr*params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
+				if (isReducible && depth/params.fullPly > 3 && searchedMoves > params.minMovesSearchedForLmr) {
+					score = -pVsearch(depth - params.lateMoveReduction*params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
 					if (score > alpha)
 						score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
@@ -728,7 +730,7 @@ class Search implements Runnable {
 		moves = orderMaterialMovesSEE(position, moveList);
 		for (Move move : moves) {
 			// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-			if (move.value < 0 || (!isEndgame && !isInCheck && move.value < alpha - params.qDelta))
+			if (move.value < 0 || (!isEndgame && !isInCheck && move.value < alpha - params.quiescenceDelta))
 				break;
 			position.makeMove(move);
 			searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);

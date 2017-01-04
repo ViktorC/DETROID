@@ -39,7 +39,7 @@ public class Launcher {
 	/**
 	 * The default path to the file to which the parameters converted from binary strings or double arrays are written.
 	 */
-	private static final String DEF_CONVERTED_PARAMS_PATH = "params.txt";
+	private static final String DEF_CONVERTED_PARAMS_PATH = "params.xml";
 	
 	/**
 	 * !TODO Documentation.

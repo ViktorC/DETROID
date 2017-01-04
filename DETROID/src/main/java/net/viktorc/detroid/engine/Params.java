@@ -123,25 +123,25 @@ final class Params extends EngineParameters {
 
 	// Search parameters.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
-	byte nmr; // Null move pruning reduction.
+	byte nullMoveReduction; // Null move pruning reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
-	byte lmr; // Late move reduction.
+	byte lateMoveReduction; // Late move reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 3)
-	byte lmrsm; // Min. number of searched moves for late move reduction.
+	byte minMovesSearchedForLmr; // Min. number of searched moves for late move reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 9)
-	short fmar1; // Futility margin.
+	short futilityMargin1; // Futility margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short fmar2; // Extended futility margin.
+	short futilityMargin2; // Extended futility margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short fmar3; // Deep futility margin.
+	short futilityMargin3; // Deep futility margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
-	short rmar1; // Razoring margin.
+	short razoringMargin1; // Razoring margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short rmar2; // Deep razoring margin.
+	short razoringMargin2; // Deep razoring margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
-	short aDelta; // The aspiration delta within iterative deepening.
+	short aspirationDelta; // The aspiration delta within iterative deepening.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
-	short qDelta; // The margin for delta-pruning in the quiescence search.
+	short quiescenceDelta; // The margin for delta-pruning in the quiescence search.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte maxNominalSearchDepth; // The maximum nominal search depth.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
@@ -163,7 +163,7 @@ final class Params extends EngineParameters {
 
 	// The default hash size in megabytes.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte defaultHashSize;
+	short defaultHashSize;
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte ttShare;

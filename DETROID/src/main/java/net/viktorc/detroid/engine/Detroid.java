@@ -31,8 +31,6 @@ import main.java.net.viktorc.detroid.framework.uci.SearchResults;
 import main.java.net.viktorc.detroid.util.LossyHashTable;
 import main.java.net.viktorc.detroid.util.SizeEstimator;
 
-
-
 /**
  * 
  * @author Viktor
@@ -44,7 +42,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public final static String NAME = "DETROID " + VERSION_NUMBER;
 	public final static String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.
-	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/main/resources/params.txt";
+	public final static String DEFAULT_PARAMETERS_FILE_PATH = "/main/resources/params.xml";
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
 	public final static String DEFAULT_BOOK_FILE_PATH = "book.bin";
 	// The minimum allowed hash size in MB.
@@ -578,8 +576,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		long load, capacity;
 		capacity = tT.getCapacity() + eT.getCapacity();
 		load = tT.getLoad() + eT.getLoad();
-		if (debugMode) debugInfo.set("Total hash size in MB - " + String.format("%.2f", (float) ((double) (SizeEstimator.getInstance().sizeOf(tT) +
-				SizeEstimator.getInstance().sizeOf(eT)))/(1L << 20)));
+		if (debugMode) debugInfo.set("Total hash size in MB - " + String.format("%.2f",
+				(float) ((double) (SizeEstimator.getInstance().sizeOf(tT) + SizeEstimator.getInstance().sizeOf(eT)))/(1L << 20)));
 		return (short) (1000*load/capacity);
 	}
 	@Override
