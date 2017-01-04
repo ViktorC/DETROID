@@ -8,7 +8,7 @@ import main.java.net.viktorc.detroid.framework.tuning.ParameterType;
 /**
  * The definitions of the evaluation, search, and hash and time management parameters used in the chess engine.
  * 
- * The suffix '_HTH' marks that the number denotes a factor of one given in hundreths and thus should be divided by 100 when used.
+ * The suffix 'Hth' marks that the number denotes a factor of one given in hundreths and thus should be divided by 100 when used.
  * 
  * @author Viktor
  *
@@ -17,1386 +17,1386 @@ final class Params extends EngineParameters {
 
 	// Piece values.
 	@Parameter (binaryLengthLimit = 0)
-	short KING_VALUE;
+	short kingValue;
 	@Parameter (binaryLengthLimit = 11)
-	short QUEEN_VALUE;
+	short queenValue;
 	@Parameter (binaryLengthLimit = 10)
-	short ROOK_VALUE;
+	short rookValue;
 	@Parameter (binaryLengthLimit = 9)
-	short BISHOP_VALUE;
+	short bishopValue;
 	@Parameter (binaryLengthLimit = 9)
-	short KNIGHT_VALUE;
+	short knightValue;
 	@Parameter (binaryLengthLimit = 8)
-	short PAWN_VALUE;
+	short pawnValue;
 
 	// Piece phase weights
 	@Parameter (binaryLengthLimit = 0)
-	byte KING_PHASE_WEIGHT;
+	byte kingPhaseWeight;
 	@Parameter (binaryLengthLimit = 0)
-	byte QUEEN_PHASE_WEIGHT;
+	byte queenPhaseWeight;
 	@Parameter (binaryLengthLimit = 0)
-	byte ROOK_PHASE_WEIGHT;
+	byte rookPhaseWeight;
 	@Parameter (binaryLengthLimit = 0)
-	byte BISHOP_PHASE_WEIGHT;
+	byte bishopPhaseWeight;
 	@Parameter (binaryLengthLimit = 0)
-	byte KNIGHT_PHASE_WEIGHT;
+	byte knightPhaseWeight;
 	@Parameter (binaryLengthLimit = 0)
-	byte PAWN_PHASE_WEIGHT;
+	byte pawnPhaseWeight;
 
 	// Evaluation weights.
 	@Parameter
-	byte BLOCKED_PAWN_WEIGHT1;
+	byte blockedPawnWeight1;
 	@Parameter
-	byte BLOCKED_PAWN_WEIGHT2;
+	byte blockedPawnWeight2;
 	@Parameter
-	byte BLOCKED_PAWN_WEIGHT3;
+	byte blockedPawnWeight3;
 	@Parameter
-	byte KING_FRIENDLY_NORMAL_PAWN_TROPISM_WEIGHT;
+	byte kingFriendlyNormalPawnTropismWeight;
 	@Parameter
-	byte KING_OPPONENT_NORMAL_PAWN_TROPISM_WEIGHT;
+	byte kingOpponentNormalPawnTropismWeight;
 	@Parameter
-	byte KING_FRIENDLY_OPEN_BACKWARD_PAWN_TROPISM_WEIGHT;
+	byte kingFriendlyOpenBackwardPawnTropismWeight;
 	@Parameter
-	byte KING_OPPONENT_OPEN_BACKWARD_PAWN_TROPISM_WEIGHT;
+	byte kingOpponentOpenBackwardPawnTropismWeight;
 	@Parameter
-	byte KING_OPPONENT_PASSED_PAWN_TROPISM_WEIGHT;
+	byte kingOpponentPassedPawnTropismWeight;
 	@Parameter
-	byte PASSED_PAWN_WEIGHT;
+	byte passedPawnWeight;
 	@Parameter
-	byte OPEN_BACKWARD_PAWN_WEIGHT;
+	byte openBackwardPawnWeight;
 	@Parameter
-	byte STOPPED_PAWN_WEIGHT;
+	byte stoppedPawnWeight;
 	@Parameter
-	byte PAWN_DEFENDED_ROOK_WEIGHT;
+	byte pawnDefendedRookWeight;
 	@Parameter
-	byte PAWN_DEFENDED_BISHOP_WEIGHT;
+	byte pawnDefendedBishopWeight;
 	@Parameter
-	byte PAWN_DEFENDED_KNIGHT_WEIGHT;
+	byte pawnDefendedKnightWeight;
 	@Parameter
-	byte PAWN_DEFENDED_PAWN_WEIGHT;
+	byte pawnDefendedPawnWeight;
 	@Parameter
-	byte PAWN_ATTACKED_QUEEN_WEIGHT;
+	byte pawnAttackedQueenWeight;
 	@Parameter
-	byte PAWN_ATTACKED_ROOK_WEIGHT;
+	byte pawnAttackedRookWeight;
 	@Parameter
-	byte PAWN_ATTACKED_BISHOP_WEIGHT;
+	byte pawnAttackedBishopWeight;
 	@Parameter
-	byte PAWN_ATTACKED_KNIGHT_WEIGHT;
+	byte pawnAttackedKnightWeight;
 	@Parameter
-	byte PAWN_ATTACKED_PAWN_WEIGHT;
+	byte pawnAttackedPawnWeight;
 	@Parameter
-	byte PINNED_QUEEN_WEIGHT;
+	byte pinnedQueenWeight;
 	@Parameter
-	byte PINNED_ROOK_WEIGHT;
+	byte pinnedRookWeight;
 	@Parameter
-	byte PINNED_BISHOP_WEIGHT;
+	byte pinnedBishopWeight;
 	@Parameter
-	byte PINNED_KNIGHT_WEIGHT;
+	byte pinnedKnightWeight;
 	@Parameter
-	byte ROOK_MOBILITY_WEIGHT;
+	byte rookMobilityWeight;
 	@Parameter
-	byte BISHOP_MOBILITY_WEIGHT;
+	byte bishopMobilityWeight;
 	@Parameter
-	byte KNIGHT_MOBILITY_WEIGHT;
+	byte knightMobilityWeight;
 	@Parameter
-	byte QUEEN_KING_TROPISM_WEIGHT;
+	byte queenKingTropismWeight;
 	@Parameter
-	byte BISHOP_PAIR_ADVANTAGE;
+	byte bishopPairAdvantage;
 	@Parameter
-	byte LIVE_EP_ADVANTAGE;
+	byte liveEpAdvantage;
 	@Parameter
-	byte TEMPO_ADVANTAGE;
+	byte tempoAdvantage;
 
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short LAZY_EVAL_MAR;
+	short lazyEvalMar;
 
 	// Game phase intervals.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	short GAME_PHASE_OPENING_LOWER;
+	short gamePhaseOpeningLower;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	short GAME_PHASE_OPENING_UPPER;
+	short gamePhaseOpeningUpper;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 8)
-	short GAME_PHASE_ENDGAME_LOWER;
+	short gamePhaseEndgameLower;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	short GAME_PHASE_ENDGAME_UPPER;
+	short gamePhaseEndgameUpper;
 
 	// Search parameters.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
-	byte NMR; // Null move pruning reduction.
+	byte nmr; // Null move pruning reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
-	byte LMR; // Late move reduction.
+	byte lmr; // Late move reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 3)
-	byte LMRMSM; // Min. number of searched moves for late move reduction.
+	byte lmrsm; // Min. number of searched moves for late move reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 9)
-	short FMAR1; // Futility margin.
+	short fmar1; // Futility margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short FMAR2; // Extended futility margin.
+	short fmar2; // Extended futility margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short FMAR3; // Deep futility margin.
+	short fmar3; // Deep futility margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
-	short RMAR1; // Razoring margin.
+	short rmar1; // Razoring margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short RMAR2; // Deep razoring margin.
+	short rmar2; // Deep razoring margin.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
-	short A_DELTA; // The aspiration delta within iterative deepening.
+	short aDelta; // The aspiration delta within iterative deepening.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
-	short Q_DELTA; // The margin for delta-pruning in the quiescence search.
+	short qDelta; // The margin for delta-pruning in the quiescence search.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte MAX_NOMINAL_SEARCH_DEPTH; // The maximum nominal search depth.
+	byte maxNominalSearchDepth; // The maximum nominal search depth.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte FULL_PLY; // For fractional ply extensions.
+	byte fullPly; // For fractional ply extensions.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
-	byte CHECK_EXT; // Fractional check extension.
+	byte checkExt; // Fractional check extension.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
-	byte RECAP_EXT; // Fractional recapture extension.
+	byte recapExt; // Fractional recapture extension.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
-	byte SINGLE_REPLY_EXT; // Fractional single reply extension.
+	byte singleReplyExt; // Fractional single reply extension.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
-	byte IID_MIN_ACTIVATION_DEPTH; // The minimum depth at which IID is activated.
+	byte iidMinActivationDepth; // The minimum depth at which IID is activated.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
-	byte IID_REL_DEPTH_HTH; // The portion of the total depth to which the position will be searched with IID.
+	byte iidRelDepthHth; // The portion of the total depth to which the position will be searched with IID.
 
 	// The relative history table's value depreciation factor.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte RHT_DECREMENT_FACTOR;
+	byte rhtDecrementFactor;
 
 	// The default hash size in megabytes.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte DEFAULT_HASH_SIZE;
+	byte defaultHashSize;
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte TT_SHARE;
+	byte ttShare;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte ET_SHARE;
+	byte etShare;
 
 	// The number of turns for which the different hash table's entries are retained by default.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte TT_ENTRY_LIFECYCLE;
+	byte ttEntryLifeCycle;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte ET_ENTRY_LIFECYCLE;
+	byte etEntryLifeCycle;
 
 	// The values considered when calculating search time extensions.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
-	short SCORE_FLUCTUATION_LIMIT;
+	short scoreFluctuationLimit;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
-	byte FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT_HTH;
+	byte fractionOfOrigSearchTimeSinceLastResultChangeLimitHth;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
-	byte RESULT_CHANGES_PER_DEPTH_LIMIT;
+	byte resultChangesPerDepthLimit;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
-	byte AVG_MOVES_PER_GAME;
+	byte avgMovesPerGame;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
-	byte MOVES_TO_GO_SAFETY_MARGIN;
+	byte movesToGoSafetyMargin;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
-	byte FRACTION_OF_TOTAL_TIME_TO_USE_HTH;
+	byte fractionOfTotalTimeToUseHth;
 
 	// Piece-square tables for openings and end games.
 	@Parameter
-	byte PST_PAWN_OPENING_8;
+	byte pstPawnOpening8;
 	@Parameter
-	byte PST_PAWN_OPENING_9;
+	byte pstPawnOpening9;
 	@Parameter
-	byte PST_PAWN_OPENING_10;
+	byte pstPawnOpening10;
 	@Parameter
-	byte PST_PAWN_OPENING_11;
+	byte pstPawnOpening11;
 	@Parameter
-	byte PST_PAWN_OPENING_12;
+	byte pstPawnOpening12;
 	@Parameter
-	byte PST_PAWN_OPENING_13;
+	byte pstPawnOpening13;
 	@Parameter
-	byte PST_PAWN_OPENING_14;
+	byte pstPawnOpening14;
 	@Parameter
-	byte PST_PAWN_OPENING_15;
+	byte pstPawnOpening15;
 	@Parameter
-	byte PST_PAWN_OPENING_16;
+	byte pstPawnOpening16;
 	@Parameter
-	byte PST_PAWN_OPENING_17;
+	byte pstPawnOpening17;
 	@Parameter
-	byte PST_PAWN_OPENING_18;
+	byte pstPawnOpening18;
 	@Parameter
-	byte PST_PAWN_OPENING_19;
+	byte pstPawnOpening19;
 	@Parameter
-	byte PST_PAWN_OPENING_20;
+	byte pstPawnOpening20;
 	@Parameter
-	byte PST_PAWN_OPENING_21;
+	byte pstPawnOpening21;
 	@Parameter
-	byte PST_PAWN_OPENING_22;
+	byte pstPawnOpening22;
 	@Parameter
-	byte PST_PAWN_OPENING_23;
+	byte pstPawnOpening23;
 	@Parameter
-	byte PST_PAWN_OPENING_24;
+	byte pstPawnOpening24;
 	@Parameter
-	byte PST_PAWN_OPENING_25;
+	byte pstPawnOpening25;
 	@Parameter
-	byte PST_PAWN_OPENING_26;
+	byte pstPawnOpening26;
 	@Parameter
-	byte PST_PAWN_OPENING_27;
+	byte pstPawnOpening27;
 	@Parameter
-	byte PST_PAWN_OPENING_28;
+	byte pstPawnOpening28;
 	@Parameter
-	byte PST_PAWN_OPENING_29;
+	byte pstPawnOpening29;
 	@Parameter
-	byte PST_PAWN_OPENING_30;
+	byte pstPawnOpening30;
 	@Parameter
-	byte PST_PAWN_OPENING_31;
+	byte pstPawnOpening31;
 	@Parameter
-	byte PST_PAWN_OPENING_32;
+	byte pstPawnOpening32;
 	@Parameter
-	byte PST_PAWN_OPENING_33;
+	byte pstPawnOpening33;
 	@Parameter
-	byte PST_PAWN_OPENING_34;
+	byte pstPawnOpening34;
 	@Parameter
-	byte PST_PAWN_OPENING_35;
+	byte pstPawnOpening35;
 	@Parameter
-	byte PST_PAWN_OPENING_36;
+	byte pstPawnOpening36;
 	@Parameter
-	byte PST_PAWN_OPENING_37;
+	byte pstPawnOpening37;
 	@Parameter
-	byte PST_PAWN_OPENING_38;
+	byte pstPawnOpening38;
 	@Parameter
-	byte PST_PAWN_OPENING_39;
+	byte pstPawnOpening39;
 	@Parameter
-	byte PST_PAWN_OPENING_40;
+	byte pstPawnOpening40;
 	@Parameter
-	byte PST_PAWN_OPENING_41;
+	byte pstPawnOpening41;
 	@Parameter
-	byte PST_PAWN_OPENING_42;
+	byte pstPawnOpening42;
 	@Parameter
-	byte PST_PAWN_OPENING_43;
+	byte pstPawnOpening43;
 	@Parameter
-	byte PST_PAWN_OPENING_44;
+	byte pstPawnOpening44;
 	@Parameter
-	byte PST_PAWN_OPENING_45;
+	byte pstPawnOpening45;
 	@Parameter
-	byte PST_PAWN_OPENING_46;
+	byte pstPawnOpening46;
 	@Parameter
-	byte PST_PAWN_OPENING_47;
+	byte pstPawnOpening47;
 	@Parameter
-	byte PST_PAWN_OPENING_48;
+	byte pstPawnOpening48;
 	@Parameter
-	byte PST_PAWN_OPENING_49;
+	byte pstPawnOpening49;
 	@Parameter
-	byte PST_PAWN_OPENING_50;
+	byte pstPawnOpening50;
 	@Parameter
-	byte PST_PAWN_OPENING_51;
+	byte pstPawnOpening51;
 	@Parameter
-	byte PST_PAWN_OPENING_52;
+	byte pstPawnOpening52;
 	@Parameter
-	byte PST_PAWN_OPENING_53;
+	byte pstPawnOpening53;
 	@Parameter
-	byte PST_PAWN_OPENING_54;
+	byte pstPawnOpening54;
 	@Parameter
-	byte PST_PAWN_OPENING_55;
+	byte pstPawnOpening55;
 
 	@Parameter
-	byte PST_PAWN_ENDGAME_8;
+	byte pstPawnEndgame8;
 	@Parameter
-	byte PST_PAWN_ENDGAME_9;
+	byte pstPawnEndgame9;
 	@Parameter
-	byte PST_PAWN_ENDGAME_10;
+	byte pstPawnEndgame10;
 	@Parameter
-	byte PST_PAWN_ENDGAME_11;
+	byte pstPawnEndgame11;
 	@Parameter
-	byte PST_PAWN_ENDGAME_12;
+	byte pstPawnEndgame12;
 	@Parameter
-	byte PST_PAWN_ENDGAME_13;
+	byte pstPawnEndgame13;
 	@Parameter
-	byte PST_PAWN_ENDGAME_14;
+	byte pstPawnEndgame14;
 	@Parameter
-	byte PST_PAWN_ENDGAME_15;
+	byte pstPawnEndgame15;
 	@Parameter
-	byte PST_PAWN_ENDGAME_16;
+	byte pstPawnEndgame16;
 	@Parameter
-	byte PST_PAWN_ENDGAME_17;
+	byte pstPawnEndgame17;
 	@Parameter
-	byte PST_PAWN_ENDGAME_18;
+	byte pstPawnEndgame18;
 	@Parameter
-	byte PST_PAWN_ENDGAME_19;
+	byte pstPawnEndgame19;
 	@Parameter
-	byte PST_PAWN_ENDGAME_20;
+	byte pstPawnEndgame20;
 	@Parameter
-	byte PST_PAWN_ENDGAME_21;
+	byte pstPawnEndgame21;
 	@Parameter
-	byte PST_PAWN_ENDGAME_22;
+	byte pstPawnEndgame22;
 	@Parameter
-	byte PST_PAWN_ENDGAME_23;
+	byte pstPawnEndgame23;
 	@Parameter
-	byte PST_PAWN_ENDGAME_24;
+	byte pstPawnEndgame24;
 	@Parameter
-	byte PST_PAWN_ENDGAME_25;
+	byte pstPawnEndgame25;
 	@Parameter
-	byte PST_PAWN_ENDGAME_26;
+	byte pstPawnEndgame26;
 	@Parameter
-	byte PST_PAWN_ENDGAME_27;
+	byte pstPawnEndgame27;
 	@Parameter
-	byte PST_PAWN_ENDGAME_28;
+	byte pstPawnEndgame28;
 	@Parameter
-	byte PST_PAWN_ENDGAME_29;
+	byte pstPawnEndgame29;
 	@Parameter
-	byte PST_PAWN_ENDGAME_30;
+	byte pstPawnEndgame30;
 	@Parameter
-	byte PST_PAWN_ENDGAME_31;
+	byte pstPawnEndgame31;
 	@Parameter
-	byte PST_PAWN_ENDGAME_32;
+	byte pstPawnEndgame32;
 	@Parameter
-	byte PST_PAWN_ENDGAME_33;
+	byte pstPawnEndgame33;
 	@Parameter
-	byte PST_PAWN_ENDGAME_34;
+	byte pstPawnEndgame34;
 	@Parameter
-	byte PST_PAWN_ENDGAME_35;
+	byte pstPawnEndgame35;
 	@Parameter
-	byte PST_PAWN_ENDGAME_36;
+	byte pstPawnEndgame36;
 	@Parameter
-	byte PST_PAWN_ENDGAME_37;
+	byte pstPawnEndgame37;
 	@Parameter
-	byte PST_PAWN_ENDGAME_38;
+	byte pstPawnEndgame38;
 	@Parameter
-	byte PST_PAWN_ENDGAME_39;
+	byte pstPawnEndgame39;
 	@Parameter
-	byte PST_PAWN_ENDGAME_40;
+	byte pstPawnEndgame40;
 	@Parameter
-	byte PST_PAWN_ENDGAME_41;
+	byte pstPawnEndgame41;
 	@Parameter
-	byte PST_PAWN_ENDGAME_42;
+	byte pstPawnEndgame42;
 	@Parameter
-	byte PST_PAWN_ENDGAME_43;
+	byte pstPawnEndgame43;
 	@Parameter
-	byte PST_PAWN_ENDGAME_44;
+	byte pstPawnEndgame44;
 	@Parameter
-	byte PST_PAWN_ENDGAME_45;
+	byte pstPawnEndgame45;
 	@Parameter
-	byte PST_PAWN_ENDGAME_46;
+	byte pstPawnEndgame46;
 	@Parameter
-	byte PST_PAWN_ENDGAME_47;
+	byte pstPawnEndgame47;
 	@Parameter
-	byte PST_PAWN_ENDGAME_48;
+	byte pstPawnEndgame48;
 	@Parameter
-	byte PST_PAWN_ENDGAME_49;
+	byte pstPawnEndgame49;
 	@Parameter
-	byte PST_PAWN_ENDGAME_50;
+	byte pstPawnEndgame50;
 	@Parameter
-	byte PST_PAWN_ENDGAME_51;
+	byte pstPawnEndgame51;
 	@Parameter
-	byte PST_PAWN_ENDGAME_52;
+	byte pstPawnEndgame52;
 	@Parameter
-	byte PST_PAWN_ENDGAME_53;
+	byte pstPawnEndgame53;
 	@Parameter
-	byte PST_PAWN_ENDGAME_54;
+	byte pstPawnEndgame54;
 	@Parameter
-	byte PST_PAWN_ENDGAME_55;
+	byte pstPawnEndgame55;
 
 	@Parameter
-	byte PST_KNIGHT_OPENING_0;
+	byte pstKnightOpening0;
 	@Parameter
-	byte PST_KNIGHT_OPENING_1;
+	byte pstKnightOpening1;
 	@Parameter
-	byte PST_KNIGHT_OPENING_2;
+	byte pstKnightOpening2;
 	@Parameter
-	byte PST_KNIGHT_OPENING_3;
+	byte pstKnightOpening3;
 	@Parameter
-	byte PST_KNIGHT_OPENING_8;
+	byte pstKnightOpening8;
 	@Parameter
-	byte PST_KNIGHT_OPENING_9;
+	byte pstKnightOpening9;
 	@Parameter
-	byte PST_KNIGHT_OPENING_10;
+	byte pstKnightOpening10;
 	@Parameter
-	byte PST_KNIGHT_OPENING_11;
+	byte pstKnightOpening11;
 	@Parameter
-	byte PST_KNIGHT_OPENING_16;
+	byte pstKnightOpening16;
 	@Parameter
-	byte PST_KNIGHT_OPENING_17;
+	byte pstKnightOpening17;
 	@Parameter
-	byte PST_KNIGHT_OPENING_18;
+	byte pstKnightOpening18;
 	@Parameter
-	byte PST_KNIGHT_OPENING_19;
+	byte pstKnightOpening19;
 	@Parameter
-	byte PST_KNIGHT_OPENING_24;
+	byte pstKnightOpening24;
 	@Parameter
-	byte PST_KNIGHT_OPENING_25;
+	byte pstKnightOpening25;
 	@Parameter
-	byte PST_KNIGHT_OPENING_26;
+	byte pstKnightOpening26;
 	@Parameter
-	byte PST_KNIGHT_OPENING_27;
+	byte pstKnightOpening27;
 	@Parameter
-	byte PST_KNIGHT_OPENING_32;
+	byte pstKnightOpening32;
 	@Parameter
-	byte PST_KNIGHT_OPENING_33;
+	byte pstKnightOpening33;
 	@Parameter
-	byte PST_KNIGHT_OPENING_34;
+	byte pstKnightOpening34;
 	@Parameter
-	byte PST_KNIGHT_OPENING_35;
+	byte pstKnightOpening35;
 	@Parameter
-	byte PST_KNIGHT_OPENING_40;
+	byte pstKnightOpening40;
 	@Parameter
-	byte PST_KNIGHT_OPENING_41;
+	byte pstKnightOpening41;
 	@Parameter
-	byte PST_KNIGHT_OPENING_42;
+	byte pstKnightOpening42;
 	@Parameter
-	byte PST_KNIGHT_OPENING_43;
+	byte pstKnightOpening43;
 	@Parameter
-	byte PST_KNIGHT_OPENING_48;
+	byte pstKnightOpening48;
 	@Parameter
-	byte PST_KNIGHT_OPENING_49;
+	byte pstKnightOpening49;
 	@Parameter
-	byte PST_KNIGHT_OPENING_50;
+	byte pstKnightOpening50;
 	@Parameter
-	byte PST_KNIGHT_OPENING_51;
+	byte pstKnightOpening51;
 	@Parameter
-	byte PST_KNIGHT_OPENING_56;
+	byte pstKnightOpening56;
 	@Parameter
-	byte PST_KNIGHT_OPENING_57;
+	byte pstKnightOpening57;
 	@Parameter
-	byte PST_KNIGHT_OPENING_58;
+	byte pstKnightOpening58;
 	@Parameter
-	byte PST_KNIGHT_OPENING_59;
+	byte pstKnightOpening59;
 
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_0;
+	byte pstKnightEndgame0;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_1;
+	byte pstKnightEndgame1;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_2;
+	byte pstKnightEndgame2;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_3;
+	byte pstKnightEndgame3;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_8;
+	byte pstKnightEndgame8;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_9;
+	byte pstKnightEndgame9;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_10;
+	byte pstKnightEndgame10;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_11;
+	byte pstKnightEndgame11;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_16;
+	byte pstKnightEndgame16;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_17;
+	byte pstKnightEndgame17;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_18;
+	byte pstKnightEndgame18;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_19;
+	byte pstKnightEndgame19;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_24;
+	byte pstKnightEndgame24;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_25;
+	byte pstKnightEndgame25;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_26;
+	byte pstKnightEndgame26;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_27;
+	byte pstKnightEndgame27;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_32;
+	byte pstKnightEndgame32;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_33;
+	byte pstKnightEndgame33;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_34;
+	byte pstKnightEndgame34;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_35;
+	byte pstKnightEndgame35;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_40;
+	byte pstKnightEndgame40;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_41;
+	byte pstKnightEndgame41;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_42;
+	byte pstKnightEndgame42;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_43;
+	byte pstKnightEndgame43;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_48;
+	byte pstKnightEndgame48;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_49;
+	byte pstKnightEndgame49;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_50;
+	byte pstKnightEndgame50;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_51;
+	byte pstKnightEndgame51;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_56;
+	byte pstKnightEndgame56;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_57;
+	byte pstKnightEndgame57;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_58;
+	byte pstKnightEndgame58;
 	@Parameter
-	byte PST_KNIGHT_ENDGAME_59;
+	byte pstKnightEndgame59;
 
 	@Parameter
-	byte PST_BISHOP_0;
+	byte pstBishop0;
 	@Parameter
-	byte PST_BISHOP_1;
+	byte pstBishop1;
 	@Parameter
-	byte PST_BISHOP_2;
+	byte pstBishop2;
 	@Parameter
-	byte PST_BISHOP_3;
+	byte pstBishop3;
 	@Parameter
-	byte PST_BISHOP_8;
+	byte pstBishop8;
 	@Parameter
-	byte PST_BISHOP_9;
+	byte pstBishop9;
 	@Parameter
-	byte PST_BISHOP_10;
+	byte pstBishop10;
 	@Parameter
-	byte PST_BISHOP_11;
+	byte pstBishop11;
 	@Parameter
-	byte PST_BISHOP_16;
+	byte pstBishop16;
 	@Parameter
-	byte PST_BISHOP_17;
+	byte pstBishop17;
 	@Parameter
-	byte PST_BISHOP_18;
+	byte pstBishop18;
 	@Parameter
-	byte PST_BISHOP_19;
+	byte pstBishop19;
 	@Parameter
-	byte PST_BISHOP_24;
+	byte pstBishop24;
 	@Parameter
-	byte PST_BISHOP_25;
+	byte pstBishop25;
 	@Parameter
-	byte PST_BISHOP_26;
+	byte pstBishop26;
 	@Parameter
-	byte PST_BISHOP_27;
+	byte pstBishop27;
 	@Parameter
-	byte PST_BISHOP_32;
+	byte pstBishop32;
 	@Parameter
-	byte PST_BISHOP_33;
+	byte pstBishop33;
 	@Parameter
-	byte PST_BISHOP_34;
+	byte pstBishop34;
 	@Parameter
-	byte PST_BISHOP_35;
+	byte pstBishop35;
 	@Parameter
-	byte PST_BISHOP_40;
+	byte pstBishop40;
 	@Parameter
-	byte PST_BISHOP_41;
+	byte pstBishop41;
 	@Parameter
-	byte PST_BISHOP_42;
+	byte pstBishop42;
 	@Parameter
-	byte PST_BISHOP_43;
+	byte pstBishop43;
 	@Parameter
-	byte PST_BISHOP_48;
+	byte pstBishop48;
 	@Parameter
-	byte PST_BISHOP_49;
+	byte pstBishop49;
 	@Parameter
-	byte PST_BISHOP_50;
+	byte pstBishop50;
 	@Parameter
-	byte PST_BISHOP_51;
+	byte pstBishop51;
 	@Parameter
-	byte PST_BISHOP_56;
+	byte pstBishop56;
 	@Parameter
-	byte PST_BISHOP_57;
+	byte pstBishop57;
 	@Parameter
-	byte PST_BISHOP_58;
+	byte pstBishop58;
 	@Parameter
-	byte PST_BISHOP_59;
+	byte pstBishop59;
 
 	@Parameter
-	byte PST_ROOK_OPENING_0;
+	byte pstRookOpening0;
 	@Parameter
-	byte PST_ROOK_OPENING_1;
+	byte pstRookOpening1;
 	@Parameter
-	byte PST_ROOK_OPENING_2;
+	byte pstRookOpening2;
 	@Parameter
-	byte PST_ROOK_OPENING_3;
+	byte pstRookOpening3;
 	@Parameter
-	byte PST_ROOK_OPENING_4;
+	byte pstRookOpening4;
 	@Parameter
-	byte PST_ROOK_OPENING_5;
+	byte pstRookOpening5;
 	@Parameter
-	byte PST_ROOK_OPENING_6;
+	byte pstRookOpening6;
 	@Parameter
-	byte PST_ROOK_OPENING_7;
+	byte pstRookOpening7;
 	@Parameter
-	byte PST_ROOK_OPENING_8;
+	byte pstRookOpening8;
 	@Parameter
-	byte PST_ROOK_OPENING_9;
+	byte pstRookOpening9;
 	@Parameter
-	byte PST_ROOK_OPENING_10;
+	byte pstRookOpening10;
 	@Parameter
-	byte PST_ROOK_OPENING_11;
+	byte pstRookOpening11;
 	@Parameter
-	byte PST_ROOK_OPENING_12;
+	byte pstRookOpening12;
 	@Parameter
-	byte PST_ROOK_OPENING_13;
+	byte pstRookOpening13;
 	@Parameter
-	byte PST_ROOK_OPENING_14;
+	byte pstRookOpening14;
 	@Parameter
-	byte PST_ROOK_OPENING_15;
+	byte pstRookOpening15;
 	@Parameter
-	byte PST_ROOK_OPENING_16;
+	byte pstRookOpening16;
 	@Parameter
-	byte PST_ROOK_OPENING_17;
+	byte pstRookOpening17;
 	@Parameter
-	byte PST_ROOK_OPENING_18;
+	byte pstRookOpening18;
 	@Parameter
-	byte PST_ROOK_OPENING_19;
+	byte pstRookOpening19;
 	@Parameter
-	byte PST_ROOK_OPENING_20;
+	byte pstRookOpening20;
 	@Parameter
-	byte PST_ROOK_OPENING_21;
+	byte pstRookOpening21;
 	@Parameter
-	byte PST_ROOK_OPENING_22;
+	byte pstRookOpening22;
 	@Parameter
-	byte PST_ROOK_OPENING_23;
+	byte pstRookOpening23;
 	@Parameter
-	byte PST_ROOK_OPENING_24;
+	byte pstRookOpening24;
 	@Parameter
-	byte PST_ROOK_OPENING_25;
+	byte pstRookOpening25;
 	@Parameter
-	byte PST_ROOK_OPENING_26;
+	byte pstRookOpening26;
 	@Parameter
-	byte PST_ROOK_OPENING_27;
+	byte pstRookOpening27;
 	@Parameter
-	byte PST_ROOK_OPENING_28;
+	byte pstRookOpening28;
 	@Parameter
-	byte PST_ROOK_OPENING_29;
+	byte pstRookOpening29;
 	@Parameter
-	byte PST_ROOK_OPENING_30;
+	byte pstRookOpening30;
 	@Parameter
-	byte PST_ROOK_OPENING_31;
+	byte pstRookOpening31;
 	@Parameter
-	byte PST_ROOK_OPENING_32;
+	byte pstRookOpening32;
 	@Parameter
-	byte PST_ROOK_OPENING_33;
+	byte pstRookOpening33;
 	@Parameter
-	byte PST_ROOK_OPENING_34;
+	byte pstRookOpening34;
 	@Parameter
-	byte PST_ROOK_OPENING_35;
+	byte pstRookOpening35;
 	@Parameter
-	byte PST_ROOK_OPENING_36;
+	byte pstRookOpening36;
 	@Parameter
-	byte PST_ROOK_OPENING_37;
+	byte pstRookOpening37;
 	@Parameter
-	byte PST_ROOK_OPENING_38;
+	byte pstRookOpening38;
 	@Parameter
-	byte PST_ROOK_OPENING_39;
+	byte pstRookOpening39;
 	@Parameter
-	byte PST_ROOK_OPENING_40;
+	byte pstRookOpening40;
 	@Parameter
-	byte PST_ROOK_OPENING_41;
+	byte pstRookOpening41;
 	@Parameter
-	byte PST_ROOK_OPENING_42;
+	byte pstRookOpening42;
 	@Parameter
-	byte PST_ROOK_OPENING_43;
+	byte pstRookOpening43;
 	@Parameter
-	byte PST_ROOK_OPENING_44;
+	byte pstRookOpening44;
 	@Parameter
-	byte PST_ROOK_OPENING_45;
+	byte pstRookOpening45;
 	@Parameter
-	byte PST_ROOK_OPENING_46;
+	byte pstRookOpening46;
 	@Parameter
-	byte PST_ROOK_OPENING_47;
+	byte pstRookOpening47;
 	@Parameter
-	byte PST_ROOK_OPENING_48;
+	byte pstRookOpening48;
 	@Parameter
-	byte PST_ROOK_OPENING_49;
+	byte pstRookOpening49;
 	@Parameter
-	byte PST_ROOK_OPENING_50;
+	byte pstRookOpening50;
 	@Parameter
-	byte PST_ROOK_OPENING_51;
+	byte pstRookOpening51;
 	@Parameter
-	byte PST_ROOK_OPENING_52;
+	byte pstRookOpening52;
 	@Parameter
-	byte PST_ROOK_OPENING_53;
+	byte pstRookOpening53;
 	@Parameter
-	byte PST_ROOK_OPENING_54;
+	byte pstRookOpening54;
 	@Parameter
-	byte PST_ROOK_OPENING_55;
+	byte pstRookOpening55;
 	@Parameter
-	byte PST_ROOK_OPENING_56;
+	byte pstRookOpening56;
 	@Parameter
-	byte PST_ROOK_OPENING_57;
+	byte pstRookOpening57;
 	@Parameter
-	byte PST_ROOK_OPENING_58;
+	byte pstRookOpening58;
 	@Parameter
-	byte PST_ROOK_OPENING_59;
+	byte pstRookOpening59;
 	@Parameter
-	byte PST_ROOK_OPENING_60;
+	byte pstRookOpening60;
 	@Parameter
-	byte PST_ROOK_OPENING_61;
+	byte pstRookOpening61;
 	@Parameter
-	byte PST_ROOK_OPENING_62;
+	byte pstRookOpening62;
 	@Parameter
-	byte PST_ROOK_OPENING_63;
+	byte pstRookOpening63;
 
 	@Parameter
-	byte PST_ROOK_ENDGAME_0;
+	byte pstRookEndgame0;
 	@Parameter
-	byte PST_ROOK_ENDGAME_1;
+	byte pstRookEndgame1;
 	@Parameter
-	byte PST_ROOK_ENDGAME_2;
+	byte pstRookEndgame2;
 	@Parameter
-	byte PST_ROOK_ENDGAME_3;
+	byte pstRookEndgame3;
 	@Parameter
-	byte PST_ROOK_ENDGAME_4;
+	byte pstRookEndgame4;
 	@Parameter
-	byte PST_ROOK_ENDGAME_5;
+	byte pstRookEndgame5;
 	@Parameter
-	byte PST_ROOK_ENDGAME_6;
+	byte pstRookEndgame6;
 	@Parameter
-	byte PST_ROOK_ENDGAME_7;
+	byte pstRookEndgame7;
 	@Parameter
-	byte PST_ROOK_ENDGAME_8;
+	byte pstRookEndgame8;
 	@Parameter
-	byte PST_ROOK_ENDGAME_9;
+	byte pstRookEndgame9;
 	@Parameter
-	byte PST_ROOK_ENDGAME_10;
+	byte pstRookEndgame10;
 	@Parameter
-	byte PST_ROOK_ENDGAME_11;
+	byte pstRookEndgame11;
 	@Parameter
-	byte PST_ROOK_ENDGAME_12;
+	byte pstRookEndgame12;
 	@Parameter
-	byte PST_ROOK_ENDGAME_13;
+	byte pstRookEndgame13;
 	@Parameter
-	byte PST_ROOK_ENDGAME_14;
+	byte pstRookEndgame14;
 	@Parameter
-	byte PST_ROOK_ENDGAME_15;
+	byte pstRookEndgame15;
 	@Parameter
-	byte PST_ROOK_ENDGAME_16;
+	byte pstRookEndgame16;
 	@Parameter
-	byte PST_ROOK_ENDGAME_17;
+	byte pstRookEndgame17;
 	@Parameter
-	byte PST_ROOK_ENDGAME_18;
+	byte pstRookEndgame18;
 	@Parameter
-	byte PST_ROOK_ENDGAME_19;
+	byte pstRookEndgame19;
 	@Parameter
-	byte PST_ROOK_ENDGAME_20;
+	byte pstRookEndgame20;
 	@Parameter
-	byte PST_ROOK_ENDGAME_21;
+	byte pstRookEndgame21;
 	@Parameter
-	byte PST_ROOK_ENDGAME_22;
+	byte pstRookEndgame22;
 	@Parameter
-	byte PST_ROOK_ENDGAME_23;
+	byte pstRookEndgame23;
 	@Parameter
-	byte PST_ROOK_ENDGAME_24;
+	byte pstRookEndgame24;
 	@Parameter
-	byte PST_ROOK_ENDGAME_25;
+	byte pstRookEndgame25;
 	@Parameter
-	byte PST_ROOK_ENDGAME_26;
+	byte pstRookEndgame26;
 	@Parameter
-	byte PST_ROOK_ENDGAME_27;
+	byte pstRookEndgame27;
 	@Parameter
-	byte PST_ROOK_ENDGAME_28;
+	byte pstRookEndgame28;
 	@Parameter
-	byte PST_ROOK_ENDGAME_29;
+	byte pstRookEndgame29;
 	@Parameter
-	byte PST_ROOK_ENDGAME_30;
+	byte pstRookEndgame30;
 	@Parameter
-	byte PST_ROOK_ENDGAME_31;
+	byte pstRookEndgame31;
 	@Parameter
-	byte PST_ROOK_ENDGAME_32;
+	byte pstRookEndgame32;
 	@Parameter
-	byte PST_ROOK_ENDGAME_33;
+	byte pstRookEndgame33;
 	@Parameter
-	byte PST_ROOK_ENDGAME_34;
+	byte pstRookEndgame34;
 	@Parameter
-	byte PST_ROOK_ENDGAME_35;
+	byte pstRookEndgame35;
 	@Parameter
-	byte PST_ROOK_ENDGAME_36;
+	byte pstRookEndgame36;
 	@Parameter
-	byte PST_ROOK_ENDGAME_37;
+	byte pstRookEndgame37;
 	@Parameter
-	byte PST_ROOK_ENDGAME_38;
+	byte pstRookEndgame38;
 	@Parameter
-	byte PST_ROOK_ENDGAME_39;
+	byte pstRookEndgame39;
 	@Parameter
-	byte PST_ROOK_ENDGAME_40;
+	byte pstRookEndgame40;
 	@Parameter
-	byte PST_ROOK_ENDGAME_41;
+	byte pstRookEndgame41;
 	@Parameter
-	byte PST_ROOK_ENDGAME_42;
+	byte pstRookEndgame42;
 	@Parameter
-	byte PST_ROOK_ENDGAME_43;
+	byte pstRookEndgame43;
 	@Parameter
-	byte PST_ROOK_ENDGAME_44;
+	byte pstRookEndgame44;
 	@Parameter
-	byte PST_ROOK_ENDGAME_45;
+	byte pstRookEndgame45;
 	@Parameter
-	byte PST_ROOK_ENDGAME_46;
+	byte pstRookEndgame46;
 	@Parameter
-	byte PST_ROOK_ENDGAME_47;
+	byte pstRookEndgame47;
 	@Parameter
-	byte PST_ROOK_ENDGAME_48;
+	byte pstRookEndgame48;
 	@Parameter
-	byte PST_ROOK_ENDGAME_49;
+	byte pstRookEndgame49;
 	@Parameter
-	byte PST_ROOK_ENDGAME_50;
+	byte pstRookEndgame50;
 	@Parameter
-	byte PST_ROOK_ENDGAME_51;
+	byte pstRookEndgame51;
 	@Parameter
-	byte PST_ROOK_ENDGAME_52;
+	byte pstRookEndgame52;
 	@Parameter
-	byte PST_ROOK_ENDGAME_53;
+	byte pstRookEndgame53;
 	@Parameter
-	byte PST_ROOK_ENDGAME_54;
+	byte pstRookEndgame54;
 	@Parameter
-	byte PST_ROOK_ENDGAME_55;
+	byte pstRookEndgame55;
 	@Parameter
-	byte PST_ROOK_ENDGAME_56;
+	byte pstRookEndgame56;
 	@Parameter
-	byte PST_ROOK_ENDGAME_57;
+	byte pstRookEndgame57;
 	@Parameter
-	byte PST_ROOK_ENDGAME_58;
+	byte pstRookEndgame58;
 	@Parameter
-	byte PST_ROOK_ENDGAME_59;
+	byte pstRookEndgame59;
 	@Parameter
-	byte PST_ROOK_ENDGAME_60;
+	byte pstRookEndgame60;
 	@Parameter
-	byte PST_ROOK_ENDGAME_61;
+	byte pstRookEndgame61;
 	@Parameter
-	byte PST_ROOK_ENDGAME_62;
+	byte pstRookEndgame62;
 	@Parameter
-	byte PST_ROOK_ENDGAME_63;
+	byte pstRookEndgame63;
 
 	@Parameter
-	byte PST_QUEEN_0;
+	byte pstQueen0;
 	@Parameter
-	byte PST_QUEEN_1;
+	byte pstQueen1;
 	@Parameter
-	byte PST_QUEEN_2;
+	byte pstQueen2;
 	@Parameter
-	byte PST_QUEEN_3;
+	byte pstQueen3;
 	@Parameter
-	byte PST_QUEEN_4;
+	byte pstQueen4;
 	@Parameter
-	byte PST_QUEEN_5;
+	byte pstQueen5;
 	@Parameter
-	byte PST_QUEEN_6;
+	byte pstQueen6;
 	@Parameter
-	byte PST_QUEEN_7;
+	byte pstQueen7;
 	@Parameter
-	byte PST_QUEEN_8;
+	byte pstQueen8;
 	@Parameter
-	byte PST_QUEEN_9;
+	byte pstQueen9;
 	@Parameter
-	byte PST_QUEEN_10;
+	byte pstQueen10;
 	@Parameter
-	byte PST_QUEEN_11;
+	byte pstQueen11;
 	@Parameter
-	byte PST_QUEEN_12;
+	byte pstQueen12;
 	@Parameter
-	byte PST_QUEEN_13;
+	byte pstQueen13;
 	@Parameter
-	byte PST_QUEEN_14;
+	byte pstQueen14;
 	@Parameter
-	byte PST_QUEEN_15;
+	byte pstQueen15;
 	@Parameter
-	byte PST_QUEEN_16;
+	byte pstQueen16;
 	@Parameter
-	byte PST_QUEEN_17;
+	byte pstQueen17;
 	@Parameter
-	byte PST_QUEEN_18;
+	byte pstQueen18;
 	@Parameter
-	byte PST_QUEEN_19;
+	byte pstQueen19;
 	@Parameter
-	byte PST_QUEEN_20;
+	byte pstQueen20;
 	@Parameter
-	byte PST_QUEEN_21;
+	byte pstQueen21;
 	@Parameter
-	byte PST_QUEEN_22;
+	byte pstQueen22;
 	@Parameter
-	byte PST_QUEEN_23;
+	byte pstQueen23;
 	@Parameter
-	byte PST_QUEEN_24;
+	byte pstQueen24;
 	@Parameter
-	byte PST_QUEEN_25;
+	byte pstQueen25;
 	@Parameter
-	byte PST_QUEEN_26;
+	byte pstQueen26;
 	@Parameter
-	byte PST_QUEEN_27;
+	byte pstQueen27;
 	@Parameter
-	byte PST_QUEEN_28;
+	byte pstQueen28;
 	@Parameter
-	byte PST_QUEEN_29;
+	byte pstQueen29;
 	@Parameter
-	byte PST_QUEEN_30;
+	byte pstQueen30;
 	@Parameter
-	byte PST_QUEEN_31;
+	byte pstQueen31;
 	@Parameter
-	byte PST_QUEEN_32;
+	byte pstQueen32;
 	@Parameter
-	byte PST_QUEEN_33;
+	byte pstQueen33;
 	@Parameter
-	byte PST_QUEEN_34;
+	byte pstQueen34;
 	@Parameter
-	byte PST_QUEEN_35;
+	byte pstQueen35;
 	@Parameter
-	byte PST_QUEEN_36;
+	byte pstQueen36;
 	@Parameter
-	byte PST_QUEEN_37;
+	byte pstQueen37;
 	@Parameter
-	byte PST_QUEEN_38;
+	byte pstQueen38;
 	@Parameter
-	byte PST_QUEEN_39;
+	byte pstQueen39;
 	@Parameter
-	byte PST_QUEEN_40;
+	byte pstQueen40;
 	@Parameter
-	byte PST_QUEEN_41;
+	byte pstQueen41;
 	@Parameter
-	byte PST_QUEEN_42;
+	byte pstQueen42;
 	@Parameter
-	byte PST_QUEEN_43;
+	byte pstQueen43;
 	@Parameter
-	byte PST_QUEEN_44;
+	byte pstQueen44;
 	@Parameter
-	byte PST_QUEEN_45;
+	byte pstQueen45;
 	@Parameter
-	byte PST_QUEEN_46;
+	byte pstQueen46;
 	@Parameter
-	byte PST_QUEEN_47;
+	byte pstQueen47;
 	@Parameter
-	byte PST_QUEEN_48;
+	byte pstQueen48;
 	@Parameter
-	byte PST_QUEEN_49;
+	byte pstQueen49;
 	@Parameter
-	byte PST_QUEEN_50;
+	byte pstQueen50;
 	@Parameter
-	byte PST_QUEEN_51;
+	byte pstQueen51;
 	@Parameter
-	byte PST_QUEEN_52;
+	byte pstQueen52;
 	@Parameter
-	byte PST_QUEEN_53;
+	byte pstQueen53;
 	@Parameter
-	byte PST_QUEEN_54;
+	byte pstQueen54;
 	@Parameter
-	byte PST_QUEEN_55;
+	byte pstQueen55;
 	@Parameter
-	byte PST_QUEEN_56;
+	byte pstQueen56;
 	@Parameter
-	byte PST_QUEEN_57;
+	byte pstQueen57;
 	@Parameter
-	byte PST_QUEEN_58;
+	byte pstQueen58;
 	@Parameter
-	byte PST_QUEEN_59;
+	byte pstQueen59;
 	@Parameter
-	byte PST_QUEEN_60;
+	byte pstQueen60;
 	@Parameter
-	byte PST_QUEEN_61;
+	byte pstQueen61;
 	@Parameter
-	byte PST_QUEEN_62;
+	byte pstQueen62;
 	@Parameter
-	byte PST_QUEEN_63;
+	byte pstQueen63;
 
 	@Parameter
-	byte PST_KING_OPENING_0;
+	byte pstKingOpening0;
 	@Parameter
-	byte PST_KING_OPENING_1;
+	byte pstKingOpening1;
 	@Parameter
-	byte PST_KING_OPENING_2;
+	byte pstKingOpening2;
 	@Parameter
-	byte PST_KING_OPENING_3;
+	byte pstKingOpening3;
 	@Parameter
-	byte PST_KING_OPENING_4;
+	byte pstKingOpening4;
 	@Parameter
-	byte PST_KING_OPENING_5;
+	byte pstKingOpening5;
 	@Parameter
-	byte PST_KING_OPENING_6;
+	byte pstKingOpening6;
 	@Parameter
-	byte PST_KING_OPENING_7;
+	byte pstKingOpening7;
 	@Parameter
-	byte PST_KING_OPENING_8;
+	byte pstKingOpening8;
 	@Parameter
-	byte PST_KING_OPENING_9;
+	byte pstKingOpening9;
 	@Parameter
-	byte PST_KING_OPENING_10;
+	byte pstKingOpening10;
 	@Parameter
-	byte PST_KING_OPENING_11;
+	byte pstKingOpening11;
 	@Parameter
-	byte PST_KING_OPENING_12;
+	byte pstKingOpening12;
 	@Parameter
-	byte PST_KING_OPENING_13;
+	byte pstKingOpening13;
 	@Parameter
-	byte PST_KING_OPENING_14;
+	byte pstKingOpening14;
 	@Parameter
-	byte PST_KING_OPENING_15;
+	byte pstKingOpening15;
 	@Parameter
-	byte PST_KING_OPENING_16;
+	byte pstKingOpening16;
 	@Parameter
-	byte PST_KING_OPENING_17;
+	byte pstKingOpening17;
 	@Parameter
-	byte PST_KING_OPENING_18;
+	byte pstKingOpening18;
 	@Parameter
-	byte PST_KING_OPENING_19;
+	byte pstKingOpening19;
 	@Parameter
-	byte PST_KING_OPENING_20;
+	byte pstKingOpening20;
 	@Parameter
-	byte PST_KING_OPENING_21;
+	byte pstKingOpening21;
 	@Parameter
-	byte PST_KING_OPENING_22;
+	byte pstKingOpening22;
 	@Parameter
-	byte PST_KING_OPENING_23;
+	byte pstKingOpening23;
 	@Parameter
-	byte PST_KING_OPENING_24;
+	byte pstKingOpening24;
 	@Parameter
-	byte PST_KING_OPENING_25;
+	byte pstKingOpening25;
 	@Parameter
-	byte PST_KING_OPENING_26;
+	byte pstKingOpening26;
 	@Parameter
-	byte PST_KING_OPENING_27;
+	byte pstKingOpening27;
 	@Parameter
-	byte PST_KING_OPENING_28;
+	byte pstKingOpening28;
 	@Parameter
-	byte PST_KING_OPENING_29;
+	byte pstKingOpening29;
 	@Parameter
-	byte PST_KING_OPENING_30;
+	byte pstKingOpening30;
 	@Parameter
-	byte PST_KING_OPENING_31;
+	byte pstKingOpening31;
 	@Parameter
-	byte PST_KING_OPENING_32;
+	byte pstKingOpening32;
 	@Parameter
-	byte PST_KING_OPENING_33;
+	byte pstKingOpening33;
 	@Parameter
-	byte PST_KING_OPENING_34;
+	byte pstKingOpening34;
 	@Parameter
-	byte PST_KING_OPENING_35;
+	byte pstKingOpening35;
 	@Parameter
-	byte PST_KING_OPENING_36;
+	byte pstKingOpening36;
 	@Parameter
-	byte PST_KING_OPENING_37;
+	byte pstKingOpening37;
 	@Parameter
-	byte PST_KING_OPENING_38;
+	byte pstKingOpening38;
 	@Parameter
-	byte PST_KING_OPENING_39;
+	byte pstKingOpening39;
 	@Parameter
-	byte PST_KING_OPENING_40;
+	byte pstKingOpening40;
 	@Parameter
-	byte PST_KING_OPENING_41;
+	byte pstKingOpening41;
 	@Parameter
-	byte PST_KING_OPENING_42;
+	byte pstKingOpening42;
 	@Parameter
-	byte PST_KING_OPENING_43;
+	byte pstKingOpening43;
 	@Parameter
-	byte PST_KING_OPENING_44;
+	byte pstKingOpening44;
 	@Parameter
-	byte PST_KING_OPENING_45;
+	byte pstKingOpening45;
 	@Parameter
-	byte PST_KING_OPENING_46;
+	byte pstKingOpening46;
 	@Parameter
-	byte PST_KING_OPENING_47;
+	byte pstKingOpening47;
 	@Parameter
-	byte PST_KING_OPENING_48;
+	byte pstKingOpening48;
 	@Parameter
-	byte PST_KING_OPENING_49;
+	byte pstKingOpening49;
 	@Parameter
-	byte PST_KING_OPENING_50;
+	byte pstKingOpening50;
 	@Parameter
-	byte PST_KING_OPENING_51;
+	byte pstKingOpening51;
 	@Parameter
-	byte PST_KING_OPENING_52;
+	byte pstKingOpening52;
 	@Parameter
-	byte PST_KING_OPENING_53;
+	byte pstKingOpening53;
 	@Parameter
-	byte PST_KING_OPENING_54;
+	byte pstKingOpening54;
 	@Parameter
-	byte PST_KING_OPENING_55;
+	byte pstKingOpening55;
 	@Parameter
-	byte PST_KING_OPENING_56;
+	byte pstKingOpening56;
 	@Parameter
-	byte PST_KING_OPENING_57;
+	byte pstKingOpening57;
 	@Parameter
-	byte PST_KING_OPENING_58;
+	byte pstKingOpening58;
 	@Parameter
-	byte PST_KING_OPENING_59;
+	byte pstKingOpening59;
 	@Parameter
-	byte PST_KING_OPENING_60;
+	byte pstKingOpening60;
 	@Parameter
-	byte PST_KING_OPENING_61;
+	byte pstKingOpening61;
 	@Parameter
-	byte PST_KING_OPENING_62;
+	byte pstKingOpening62;
 	@Parameter
-	byte PST_KING_OPENING_63;
+	byte pstKingOpening63;
 
 	@Parameter
-	byte PST_KING_ENDGAME_0;
+	byte pstKingEndgame0;
 	@Parameter
-	byte PST_KING_ENDGAME_1;
+	byte pstKingEndgame1;
 	@Parameter
-	byte PST_KING_ENDGAME_2;
+	byte pstKingEndgame2;
 	@Parameter
-	byte PST_KING_ENDGAME_3;
+	byte pstKingEndgame3;
 	@Parameter
-	byte PST_KING_ENDGAME_4;
+	byte pstKingEndgame4;
 	@Parameter
-	byte PST_KING_ENDGAME_5;
+	byte pstKingEndgame5;
 	@Parameter
-	byte PST_KING_ENDGAME_6;
+	byte pstKingEndgame6;
 	@Parameter
-	byte PST_KING_ENDGAME_7;
+	byte pstKingEndgame7;
 	@Parameter
-	byte PST_KING_ENDGAME_8;
+	byte pstKingEndgame8;
 	@Parameter
-	byte PST_KING_ENDGAME_9;
+	byte pstKingEndgame9;
 	@Parameter
-	byte PST_KING_ENDGAME_10;
+	byte pstKingEndgame10;
 	@Parameter
-	byte PST_KING_ENDGAME_11;
+	byte pstKingEndgame11;
 	@Parameter
-	byte PST_KING_ENDGAME_12;
+	byte pstKingEndgame12;
 	@Parameter
-	byte PST_KING_ENDGAME_13;
+	byte pstKingEndgame13;
 	@Parameter
-	byte PST_KING_ENDGAME_14;
+	byte pstKingEndgame14;
 	@Parameter
-	byte PST_KING_ENDGAME_15;
+	byte pstKingEndgame15;
 	@Parameter
-	byte PST_KING_ENDGAME_16;
+	byte pstKingEndgame16;
 	@Parameter
-	byte PST_KING_ENDGAME_17;
+	byte pstKingEndgame17;
 	@Parameter
-	byte PST_KING_ENDGAME_18;
+	byte pstKingEndgame18;
 	@Parameter
-	byte PST_KING_ENDGAME_19;
+	byte pstKingEndgame19;
 	@Parameter
-	byte PST_KING_ENDGAME_20;
+	byte pstKingEndgame20;
 	@Parameter
-	byte PST_KING_ENDGAME_21;
+	byte pstKingEndgame21;
 	@Parameter
-	byte PST_KING_ENDGAME_22;
+	byte pstKingEndgame22;
 	@Parameter
-	byte PST_KING_ENDGAME_23;
+	byte pstKingEndgame23;
 	@Parameter
-	byte PST_KING_ENDGAME_24;
+	byte pstKingEndgame24;
 	@Parameter
-	byte PST_KING_ENDGAME_25;
+	byte pstKingEndgame25;
 	@Parameter
-	byte PST_KING_ENDGAME_26;
+	byte pstKingEndgame26;
 	@Parameter
-	byte PST_KING_ENDGAME_27;
+	byte pstKingEndgame27;
 	@Parameter
-	byte PST_KING_ENDGAME_28;
+	byte pstKingEndgame28;
 	@Parameter
-	byte PST_KING_ENDGAME_29;
+	byte pstKingEndgame29;
 	@Parameter
-	byte PST_KING_ENDGAME_30;
+	byte pstKingEndgame30;
 	@Parameter
-	byte PST_KING_ENDGAME_31;
+	byte pstKingEndgame31;
 	@Parameter
-	byte PST_KING_ENDGAME_32;
+	byte pstKingEndgame32;
 	@Parameter
-	byte PST_KING_ENDGAME_33;
+	byte pstKingEndgame33;
 	@Parameter
-	byte PST_KING_ENDGAME_34;
+	byte pstKingEndgame34;
 	@Parameter
-	byte PST_KING_ENDGAME_35;
+	byte pstKingEndgame35;
 	@Parameter
-	byte PST_KING_ENDGAME_36;
+	byte pstKingEndgame36;
 	@Parameter
-	byte PST_KING_ENDGAME_37;
+	byte pstKingEndgame37;
 	@Parameter
-	byte PST_KING_ENDGAME_38;
+	byte pstKingEndgame38;
 	@Parameter
-	byte PST_KING_ENDGAME_39;
+	byte pstKingEndgame39;
 	@Parameter
-	byte PST_KING_ENDGAME_40;
+	byte pstKingEndgame40;
 	@Parameter
-	byte PST_KING_ENDGAME_41;
+	byte pstKingEndgame41;
 	@Parameter
-	byte PST_KING_ENDGAME_42;
+	byte pstKingEndgame42;
 	@Parameter
-	byte PST_KING_ENDGAME_43;
+	byte pstKingEndgame43;
 	@Parameter
-	byte PST_KING_ENDGAME_44;
+	byte pstKingEndgame44;
 	@Parameter
-	byte PST_KING_ENDGAME_45;
+	byte pstKingEndgame45;
 	@Parameter
-	byte PST_KING_ENDGAME_46;
+	byte pstKingEndgame46;
 	@Parameter
-	byte PST_KING_ENDGAME_47;
+	byte pstKingEndgame47;
 	@Parameter
-	byte PST_KING_ENDGAME_48;
+	byte pstKingEndgame48;
 	@Parameter
-	byte PST_KING_ENDGAME_49;
+	byte pstKingEndgame49;
 	@Parameter
-	byte PST_KING_ENDGAME_50;
+	byte pstKingEndgame50;
 	@Parameter
-	byte PST_KING_ENDGAME_51;
+	byte pstKingEndgame51;
 	@Parameter
-	byte PST_KING_ENDGAME_52;
+	byte pstKingEndgame52;
 	@Parameter
-	byte PST_KING_ENDGAME_53;
+	byte pstKingEndgame53;
 	@Parameter
-	byte PST_KING_ENDGAME_54;
+	byte pstKingEndgame54;
 	@Parameter
-	byte PST_KING_ENDGAME_55;
+	byte pstKingEndgame55;
 	@Parameter
-	byte PST_KING_ENDGAME_56;
+	byte pstKingEndgame56;
 	@Parameter
-	byte PST_KING_ENDGAME_57;
+	byte pstKingEndgame57;
 	@Parameter
-	byte PST_KING_ENDGAME_58;
+	byte pstKingEndgame58;
 	@Parameter
-	byte PST_KING_ENDGAME_59;
+	byte pstKingEndgame59;
 	@Parameter
-	byte PST_KING_ENDGAME_60;
+	byte pstKingEndgame60;
 	@Parameter
-	byte PST_KING_ENDGAME_61;
+	byte pstKingEndgame61;
 	@Parameter
-	byte PST_KING_ENDGAME_62;
+	byte pstKingEndgame62;
 	@Parameter
-	byte PST_KING_ENDGAME_63;
+	byte pstKingEndgame63;
 	
 	/**
-	 * Constructs an unitialized instance.
+	 * Constructs an uninitialized instance.
 	 * 
 	 * @throws ParameterException If a static or non-primitive field is annotated as {@link #Parameter Parameter}.
 	 */
 	Params() throws ParameterException {
 		super();
 	}
-	byte[] getPST_PAWN_OPENING() {
+	byte[] getPstPawnOpening() {
 		return new byte[] {
-				0, 0, 0, 0, 0, 0, 0, 0, PST_PAWN_OPENING_8, PST_PAWN_OPENING_9,
-				PST_PAWN_OPENING_10, PST_PAWN_OPENING_11, PST_PAWN_OPENING_12, PST_PAWN_OPENING_13, PST_PAWN_OPENING_14,
-				PST_PAWN_OPENING_15, PST_PAWN_OPENING_16, PST_PAWN_OPENING_17, PST_PAWN_OPENING_18, PST_PAWN_OPENING_19,
-				PST_PAWN_OPENING_20, PST_PAWN_OPENING_21, PST_PAWN_OPENING_22, PST_PAWN_OPENING_23, PST_PAWN_OPENING_24,
-				PST_PAWN_OPENING_25, PST_PAWN_OPENING_26, PST_PAWN_OPENING_27, PST_PAWN_OPENING_28, PST_PAWN_OPENING_29,
-				PST_PAWN_OPENING_30, PST_PAWN_OPENING_31, PST_PAWN_OPENING_32, PST_PAWN_OPENING_33, PST_PAWN_OPENING_34,
-				PST_PAWN_OPENING_35, PST_PAWN_OPENING_36, PST_PAWN_OPENING_37, PST_PAWN_OPENING_38, PST_PAWN_OPENING_39,
-				PST_PAWN_OPENING_40, PST_PAWN_OPENING_41, PST_PAWN_OPENING_42, PST_PAWN_OPENING_43, PST_PAWN_OPENING_44,
-				PST_PAWN_OPENING_45, PST_PAWN_OPENING_46, PST_PAWN_OPENING_47, PST_PAWN_OPENING_48, PST_PAWN_OPENING_49,
-				PST_PAWN_OPENING_50, PST_PAWN_OPENING_51, PST_PAWN_OPENING_52, PST_PAWN_OPENING_53, PST_PAWN_OPENING_54,
-				PST_PAWN_OPENING_55, 0, 0, 0, 0, 0, 0, 0, 0 };
+				0, 0, 0, 0, 0, 0, 0, 0, pstPawnOpening8, pstPawnOpening9,
+				pstPawnOpening10, pstPawnOpening11, pstPawnOpening12, pstPawnOpening13, pstPawnOpening14,
+				pstPawnOpening15, pstPawnOpening16, pstPawnOpening17, pstPawnOpening18, pstPawnOpening19,
+				pstPawnOpening20, pstPawnOpening21, pstPawnOpening22, pstPawnOpening23, pstPawnOpening24,
+				pstPawnOpening25, pstPawnOpening26, pstPawnOpening27, pstPawnOpening28, pstPawnOpening29,
+				pstPawnOpening30, pstPawnOpening31, pstPawnOpening32, pstPawnOpening33, pstPawnOpening34,
+				pstPawnOpening35, pstPawnOpening36, pstPawnOpening37, pstPawnOpening38, pstPawnOpening39,
+				pstPawnOpening40, pstPawnOpening41, pstPawnOpening42, pstPawnOpening43, pstPawnOpening44,
+				pstPawnOpening45, pstPawnOpening46, pstPawnOpening47, pstPawnOpening48, pstPawnOpening49,
+				pstPawnOpening50, pstPawnOpening51, pstPawnOpening52, pstPawnOpening53, pstPawnOpening54,
+				pstPawnOpening55, 0, 0, 0, 0, 0, 0, 0, 0 };
 	}
-	byte[] getPST_PAWN_ENDGAME() {
+	byte[] getPstPawnEndgame() {
 		return new byte[] {
-				0, 0, 0, 0, 0, 0, 0, 0, PST_PAWN_ENDGAME_8, PST_PAWN_ENDGAME_9,
-				PST_PAWN_ENDGAME_10, PST_PAWN_ENDGAME_11, PST_PAWN_ENDGAME_12, PST_PAWN_ENDGAME_13, PST_PAWN_ENDGAME_14,
-				PST_PAWN_ENDGAME_15, PST_PAWN_ENDGAME_16, PST_PAWN_ENDGAME_17, PST_PAWN_ENDGAME_18, PST_PAWN_ENDGAME_19,
-				PST_PAWN_ENDGAME_20, PST_PAWN_ENDGAME_21, PST_PAWN_ENDGAME_22, PST_PAWN_ENDGAME_23, PST_PAWN_ENDGAME_24,
-				PST_PAWN_ENDGAME_25, PST_PAWN_ENDGAME_26, PST_PAWN_ENDGAME_27, PST_PAWN_ENDGAME_28, PST_PAWN_ENDGAME_29,
-				PST_PAWN_ENDGAME_30, PST_PAWN_ENDGAME_31, PST_PAWN_ENDGAME_32, PST_PAWN_ENDGAME_33, PST_PAWN_ENDGAME_34,
-				PST_PAWN_ENDGAME_35, PST_PAWN_ENDGAME_36, PST_PAWN_ENDGAME_37, PST_PAWN_ENDGAME_38, PST_PAWN_ENDGAME_39,
-				PST_PAWN_ENDGAME_40, PST_PAWN_ENDGAME_41, PST_PAWN_ENDGAME_42, PST_PAWN_ENDGAME_43, PST_PAWN_ENDGAME_44,
-				PST_PAWN_ENDGAME_45, PST_PAWN_ENDGAME_46, PST_PAWN_ENDGAME_47, PST_PAWN_ENDGAME_48, PST_PAWN_ENDGAME_49,
-				PST_PAWN_ENDGAME_50, PST_PAWN_ENDGAME_51, PST_PAWN_ENDGAME_52, PST_PAWN_ENDGAME_53, PST_PAWN_ENDGAME_54,
-				PST_PAWN_ENDGAME_55, 0, 0, 0, 0, 0, 0, 0, 0 };
+				0, 0, 0, 0, 0, 0, 0, 0, pstPawnEndgame8, pstPawnEndgame9,
+				pstPawnEndgame10, pstPawnEndgame11, pstPawnEndgame12, pstPawnEndgame13, pstPawnEndgame14,
+				pstPawnEndgame15, pstPawnEndgame16, pstPawnEndgame17, pstPawnEndgame18, pstPawnEndgame19,
+				pstPawnEndgame20, pstPawnEndgame21, pstPawnEndgame22, pstPawnEndgame23, pstPawnEndgame24,
+				pstPawnEndgame25, pstPawnEndgame26, pstPawnEndgame27, pstPawnEndgame28, pstPawnEndgame29,
+				pstPawnEndgame30, pstPawnEndgame31, pstPawnEndgame32, pstPawnEndgame33, pstPawnEndgame34,
+				pstPawnEndgame35, pstPawnEndgame36, pstPawnEndgame37, pstPawnEndgame38, pstPawnEndgame39,
+				pstPawnEndgame40, pstPawnEndgame41, pstPawnEndgame42, pstPawnEndgame43, pstPawnEndgame44,
+				pstPawnEndgame45, pstPawnEndgame46, pstPawnEndgame47, pstPawnEndgame48, pstPawnEndgame49,
+				pstPawnEndgame50, pstPawnEndgame51, pstPawnEndgame52, pstPawnEndgame53, pstPawnEndgame54,
+				pstPawnEndgame55, 0, 0, 0, 0, 0, 0, 0, 0 };
 	}
-	byte[] getPST_KNIGHT_OPENING() {
+	byte[] getPstKnightOpening() {
 		return new byte[] {
-				PST_KNIGHT_OPENING_0, PST_KNIGHT_OPENING_1, PST_KNIGHT_OPENING_2, PST_KNIGHT_OPENING_3,
-				PST_KNIGHT_OPENING_3, PST_KNIGHT_OPENING_2, PST_KNIGHT_OPENING_1, PST_KNIGHT_OPENING_0,
-				PST_KNIGHT_OPENING_8, PST_KNIGHT_OPENING_9, PST_KNIGHT_OPENING_10, PST_KNIGHT_OPENING_11,
-				PST_KNIGHT_OPENING_11, PST_KNIGHT_OPENING_10, PST_KNIGHT_OPENING_9, PST_KNIGHT_OPENING_8,
-				PST_KNIGHT_OPENING_16, PST_KNIGHT_OPENING_17, PST_KNIGHT_OPENING_18, PST_KNIGHT_OPENING_19,
-				PST_KNIGHT_OPENING_19, PST_KNIGHT_OPENING_18, PST_KNIGHT_OPENING_17, PST_KNIGHT_OPENING_16,
-				PST_KNIGHT_OPENING_24, PST_KNIGHT_OPENING_25, PST_KNIGHT_OPENING_26, PST_KNIGHT_OPENING_27,
-				PST_KNIGHT_OPENING_27, PST_KNIGHT_OPENING_26, PST_KNIGHT_OPENING_25, PST_KNIGHT_OPENING_24,
-				PST_KNIGHT_OPENING_32, PST_KNIGHT_OPENING_33, PST_KNIGHT_OPENING_34, PST_KNIGHT_OPENING_35,
-				PST_KNIGHT_OPENING_35, PST_KNIGHT_OPENING_34, PST_KNIGHT_OPENING_33, PST_KNIGHT_OPENING_32,
-				PST_KNIGHT_OPENING_40, PST_KNIGHT_OPENING_41, PST_KNIGHT_OPENING_42, PST_KNIGHT_OPENING_43,
-				PST_KNIGHT_OPENING_43, PST_KNIGHT_OPENING_42, PST_KNIGHT_OPENING_41, PST_KNIGHT_OPENING_40,
-				PST_KNIGHT_OPENING_48, PST_KNIGHT_OPENING_49, PST_KNIGHT_OPENING_50, PST_KNIGHT_OPENING_51,
-				PST_KNIGHT_OPENING_51, PST_KNIGHT_OPENING_50, PST_KNIGHT_OPENING_49, PST_KNIGHT_OPENING_48,
-				PST_KNIGHT_OPENING_56, PST_KNIGHT_OPENING_57, PST_KNIGHT_OPENING_58, PST_KNIGHT_OPENING_59,
-				PST_KNIGHT_OPENING_59, PST_KNIGHT_OPENING_58, PST_KNIGHT_OPENING_57, PST_KNIGHT_OPENING_56 };
+				pstKnightOpening0, pstKnightOpening1, pstKnightOpening2, pstKnightOpening3,
+				pstKnightOpening3, pstKnightOpening2, pstKnightOpening1, pstKnightOpening0,
+				pstKnightOpening8, pstKnightOpening9, pstKnightOpening10, pstKnightOpening11,
+				pstKnightOpening11, pstKnightOpening10, pstKnightOpening9, pstKnightOpening8,
+				pstKnightOpening16, pstKnightOpening17, pstKnightOpening18, pstKnightOpening19,
+				pstKnightOpening19, pstKnightOpening18, pstKnightOpening17, pstKnightOpening16,
+				pstKnightOpening24, pstKnightOpening25, pstKnightOpening26, pstKnightOpening27,
+				pstKnightOpening27, pstKnightOpening26, pstKnightOpening25, pstKnightOpening24,
+				pstKnightOpening32, pstKnightOpening33, pstKnightOpening34, pstKnightOpening35,
+				pstKnightOpening35, pstKnightOpening34, pstKnightOpening33, pstKnightOpening32,
+				pstKnightOpening40, pstKnightOpening41, pstKnightOpening42, pstKnightOpening43,
+				pstKnightOpening43, pstKnightOpening42, pstKnightOpening41, pstKnightOpening40,
+				pstKnightOpening48, pstKnightOpening49, pstKnightOpening50, pstKnightOpening51,
+				pstKnightOpening51, pstKnightOpening50, pstKnightOpening49, pstKnightOpening48,
+				pstKnightOpening56, pstKnightOpening57, pstKnightOpening58, pstKnightOpening59,
+				pstKnightOpening59, pstKnightOpening58, pstKnightOpening57, pstKnightOpening56 };
 	}
-	byte[] getPST_KNIGHT_ENDGAME() {
+	byte[] getPstKnightEndgame() {
 		return new byte[] {
-				PST_KNIGHT_ENDGAME_0, PST_KNIGHT_ENDGAME_1, PST_KNIGHT_ENDGAME_2, PST_KNIGHT_ENDGAME_3,
-				PST_KNIGHT_ENDGAME_3, PST_KNIGHT_ENDGAME_2, PST_KNIGHT_ENDGAME_1, PST_KNIGHT_ENDGAME_0,
-				PST_KNIGHT_ENDGAME_8, PST_KNIGHT_ENDGAME_9, PST_KNIGHT_ENDGAME_10, PST_KNIGHT_ENDGAME_11,
-				PST_KNIGHT_ENDGAME_11, PST_KNIGHT_ENDGAME_10, PST_KNIGHT_ENDGAME_9, PST_KNIGHT_ENDGAME_8,
-				PST_KNIGHT_ENDGAME_16, PST_KNIGHT_ENDGAME_17, PST_KNIGHT_ENDGAME_18, PST_KNIGHT_ENDGAME_19,
-				PST_KNIGHT_ENDGAME_19, PST_KNIGHT_ENDGAME_18, PST_KNIGHT_ENDGAME_17, PST_KNIGHT_ENDGAME_16,
-				PST_KNIGHT_ENDGAME_24, PST_KNIGHT_ENDGAME_25, PST_KNIGHT_ENDGAME_26, PST_KNIGHT_ENDGAME_27,
-				PST_KNIGHT_ENDGAME_27, PST_KNIGHT_ENDGAME_26, PST_KNIGHT_ENDGAME_25, PST_KNIGHT_ENDGAME_24,
-				PST_KNIGHT_ENDGAME_32, PST_KNIGHT_ENDGAME_33, PST_KNIGHT_ENDGAME_34, PST_KNIGHT_ENDGAME_35,
-				PST_KNIGHT_ENDGAME_35, PST_KNIGHT_ENDGAME_34, PST_KNIGHT_ENDGAME_33, PST_KNIGHT_ENDGAME_32,
-				PST_KNIGHT_ENDGAME_40, PST_KNIGHT_ENDGAME_41, PST_KNIGHT_ENDGAME_42, PST_KNIGHT_ENDGAME_43,
-				PST_KNIGHT_ENDGAME_43, PST_KNIGHT_ENDGAME_42, PST_KNIGHT_ENDGAME_41, PST_KNIGHT_ENDGAME_40,
-				PST_KNIGHT_ENDGAME_48, PST_KNIGHT_ENDGAME_49, PST_KNIGHT_ENDGAME_50, PST_KNIGHT_ENDGAME_51,
-				PST_KNIGHT_ENDGAME_51, PST_KNIGHT_ENDGAME_50, PST_KNIGHT_ENDGAME_49, PST_KNIGHT_ENDGAME_48,
-				PST_KNIGHT_ENDGAME_56, PST_KNIGHT_ENDGAME_57, PST_KNIGHT_ENDGAME_58, PST_KNIGHT_ENDGAME_59,
-				PST_KNIGHT_ENDGAME_59, PST_KNIGHT_ENDGAME_58, PST_KNIGHT_ENDGAME_57, PST_KNIGHT_ENDGAME_56 };
+				pstKnightEndgame0, pstKnightEndgame1, pstKnightEndgame2, pstKnightEndgame3,
+				pstKnightEndgame3, pstKnightEndgame2, pstKnightEndgame1, pstKnightEndgame0,
+				pstKnightEndgame8, pstKnightEndgame9, pstKnightEndgame10, pstKnightEndgame11,
+				pstKnightEndgame11, pstKnightEndgame10, pstKnightEndgame9, pstKnightEndgame8,
+				pstKnightEndgame16, pstKnightEndgame17, pstKnightEndgame18, pstKnightEndgame19,
+				pstKnightEndgame19, pstKnightEndgame18, pstKnightEndgame17, pstKnightEndgame16,
+				pstKnightEndgame24, pstKnightEndgame25, pstKnightEndgame26, pstKnightEndgame27,
+				pstKnightEndgame27, pstKnightEndgame26, pstKnightEndgame25, pstKnightEndgame24,
+				pstKnightEndgame32, pstKnightEndgame33, pstKnightEndgame34, pstKnightEndgame35,
+				pstKnightEndgame35, pstKnightEndgame34, pstKnightEndgame33, pstKnightEndgame32,
+				pstKnightEndgame40, pstKnightEndgame41, pstKnightEndgame42, pstKnightEndgame43,
+				pstKnightEndgame43, pstKnightEndgame42, pstKnightEndgame41, pstKnightEndgame40,
+				pstKnightEndgame48, pstKnightEndgame49, pstKnightEndgame50, pstKnightEndgame51,
+				pstKnightEndgame51, pstKnightEndgame50, pstKnightEndgame49, pstKnightEndgame48,
+				pstKnightEndgame56, pstKnightEndgame57, pstKnightEndgame58, pstKnightEndgame59,
+				pstKnightEndgame59, pstKnightEndgame58, pstKnightEndgame57, pstKnightEndgame56 };
 	}
-	byte[] getPST_BISHOP() {
+	byte[] getPstBishop() {
 		return new byte[] {
-				PST_BISHOP_0, PST_BISHOP_1, PST_BISHOP_2, PST_BISHOP_3,
-				PST_BISHOP_3, PST_BISHOP_2, PST_BISHOP_1, PST_BISHOP_0,
-				PST_BISHOP_8, PST_BISHOP_9, PST_BISHOP_10, PST_BISHOP_11,
-				PST_BISHOP_11, PST_BISHOP_10, PST_BISHOP_9, PST_BISHOP_8,
-				PST_BISHOP_16, PST_BISHOP_17, PST_BISHOP_18, PST_BISHOP_19,
-				PST_BISHOP_19, PST_BISHOP_18, PST_BISHOP_17, PST_BISHOP_16,
-				PST_BISHOP_24, PST_BISHOP_25, PST_BISHOP_26, PST_BISHOP_27,
-				PST_BISHOP_27, PST_BISHOP_26, PST_BISHOP_25, PST_BISHOP_24,
-				PST_BISHOP_32, PST_BISHOP_33, PST_BISHOP_34, PST_BISHOP_35,
-				PST_BISHOP_35, PST_BISHOP_34, PST_BISHOP_33, PST_BISHOP_32,
-				PST_BISHOP_40, PST_BISHOP_41, PST_BISHOP_42, PST_BISHOP_43,
-				PST_BISHOP_43, PST_BISHOP_42, PST_BISHOP_41, PST_BISHOP_40,
-				PST_BISHOP_48, PST_BISHOP_49, PST_BISHOP_50, PST_BISHOP_51,
-				PST_BISHOP_51, PST_BISHOP_50, PST_BISHOP_49, PST_BISHOP_48,
-				PST_BISHOP_56, PST_BISHOP_57, PST_BISHOP_58, PST_BISHOP_59,
-				PST_BISHOP_59, PST_BISHOP_58, PST_BISHOP_57, PST_BISHOP_56 };
+				pstBishop0, pstBishop1, pstBishop2, pstBishop3,
+				pstBishop3, pstBishop2, pstBishop1, pstBishop0,
+				pstBishop8, pstBishop9, pstBishop10, pstBishop11,
+				pstBishop11, pstBishop10, pstBishop9, pstBishop8,
+				pstBishop16, pstBishop17, pstBishop18, pstBishop19,
+				pstBishop19, pstBishop18, pstBishop17, pstBishop16,
+				pstBishop24, pstBishop25, pstBishop26, pstBishop27,
+				pstBishop27, pstBishop26, pstBishop25, pstBishop24,
+				pstBishop32, pstBishop33, pstBishop34, pstBishop35,
+				pstBishop35, pstBishop34, pstBishop33, pstBishop32,
+				pstBishop40, pstBishop41, pstBishop42, pstBishop43,
+				pstBishop43, pstBishop42, pstBishop41, pstBishop40,
+				pstBishop48, pstBishop49, pstBishop50, pstBishop51,
+				pstBishop51, pstBishop50, pstBishop49, pstBishop48,
+				pstBishop56, pstBishop57, pstBishop58, pstBishop59,
+				pstBishop59, pstBishop58, pstBishop57, pstBishop56 };
 	}
-	byte[] getPST_ROOK_OPENING() {
+	byte[] getPstRookOpening() {
 		return new byte[] {
-				PST_ROOK_OPENING_0, PST_ROOK_OPENING_1, PST_ROOK_OPENING_2, PST_ROOK_OPENING_3, PST_ROOK_OPENING_4,
-				PST_ROOK_OPENING_5, PST_ROOK_OPENING_6, PST_ROOK_OPENING_7, PST_ROOK_OPENING_8, PST_ROOK_OPENING_9,
-				PST_ROOK_OPENING_10, PST_ROOK_OPENING_11, PST_ROOK_OPENING_12, PST_ROOK_OPENING_13, PST_ROOK_OPENING_14,
-				PST_ROOK_OPENING_15, PST_ROOK_OPENING_16, PST_ROOK_OPENING_17, PST_ROOK_OPENING_18, PST_ROOK_OPENING_19,
-				PST_ROOK_OPENING_20, PST_ROOK_OPENING_21, PST_ROOK_OPENING_22, PST_ROOK_OPENING_23, PST_ROOK_OPENING_24,
-				PST_ROOK_OPENING_25, PST_ROOK_OPENING_26, PST_ROOK_OPENING_27, PST_ROOK_OPENING_28, PST_ROOK_OPENING_29,
-				PST_ROOK_OPENING_30, PST_ROOK_OPENING_31, PST_ROOK_OPENING_32, PST_ROOK_OPENING_33, PST_ROOK_OPENING_34,
-				PST_ROOK_OPENING_35, PST_ROOK_OPENING_36, PST_ROOK_OPENING_37, PST_ROOK_OPENING_38, PST_ROOK_OPENING_39,
-				PST_ROOK_OPENING_40, PST_ROOK_OPENING_41, PST_ROOK_OPENING_42, PST_ROOK_OPENING_43, PST_ROOK_OPENING_44,
-				PST_ROOK_OPENING_45, PST_ROOK_OPENING_46, PST_ROOK_OPENING_47, PST_ROOK_OPENING_48, PST_ROOK_OPENING_49,
-				PST_ROOK_OPENING_50, PST_ROOK_OPENING_51, PST_ROOK_OPENING_52, PST_ROOK_OPENING_53, PST_ROOK_OPENING_54,
-				PST_ROOK_OPENING_55, PST_ROOK_OPENING_56, PST_ROOK_OPENING_57, PST_ROOK_OPENING_58, PST_ROOK_OPENING_59,
-				PST_ROOK_OPENING_60, PST_ROOK_OPENING_61, PST_ROOK_OPENING_62, PST_ROOK_OPENING_63 };
+				pstRookOpening0, pstRookOpening1, pstRookOpening2, pstRookOpening3, pstRookOpening4,
+				pstRookOpening5, pstRookOpening6, pstRookOpening7, pstRookOpening8, pstRookOpening9,
+				pstRookOpening10, pstRookOpening11, pstRookOpening12, pstRookOpening13, pstRookOpening14,
+				pstRookOpening15, pstRookOpening16, pstRookOpening17, pstRookOpening18, pstRookOpening19,
+				pstRookOpening20, pstRookOpening21, pstRookOpening22, pstRookOpening23, pstRookOpening24,
+				pstRookOpening25, pstRookOpening26, pstRookOpening27, pstRookOpening28, pstRookOpening29,
+				pstRookOpening30, pstRookOpening31, pstRookOpening32, pstRookOpening33, pstRookOpening34,
+				pstRookOpening35, pstRookOpening36, pstRookOpening37, pstRookOpening38, pstRookOpening39,
+				pstRookOpening40, pstRookOpening41, pstRookOpening42, pstRookOpening43, pstRookOpening44,
+				pstRookOpening45, pstRookOpening46, pstRookOpening47, pstRookOpening48, pstRookOpening49,
+				pstRookOpening50, pstRookOpening51, pstRookOpening52, pstRookOpening53, pstRookOpening54,
+				pstRookOpening55, pstRookOpening56, pstRookOpening57, pstRookOpening58, pstRookOpening59,
+				pstRookOpening60, pstRookOpening61, pstRookOpening62, pstRookOpening63 };
 	}
-	byte[] getPST_ROOK_ENDGAME() {
+	byte[] getPstRookEndgame() {
 		return new byte[] {
-				PST_ROOK_ENDGAME_0, PST_ROOK_ENDGAME_1, PST_ROOK_ENDGAME_2, PST_ROOK_ENDGAME_3, PST_ROOK_ENDGAME_4,
-				PST_ROOK_ENDGAME_5, PST_ROOK_ENDGAME_6, PST_ROOK_ENDGAME_7, PST_ROOK_ENDGAME_8, PST_ROOK_ENDGAME_9,
-				PST_ROOK_ENDGAME_10, PST_ROOK_ENDGAME_11, PST_ROOK_ENDGAME_12, PST_ROOK_ENDGAME_13, PST_ROOK_ENDGAME_14,
-				PST_ROOK_ENDGAME_15, PST_ROOK_ENDGAME_16, PST_ROOK_ENDGAME_17, PST_ROOK_ENDGAME_18, PST_ROOK_ENDGAME_19,
-				PST_ROOK_ENDGAME_20, PST_ROOK_ENDGAME_21, PST_ROOK_ENDGAME_22, PST_ROOK_ENDGAME_23, PST_ROOK_ENDGAME_24,
-				PST_ROOK_ENDGAME_25, PST_ROOK_ENDGAME_26, PST_ROOK_ENDGAME_27, PST_ROOK_ENDGAME_28, PST_ROOK_ENDGAME_29,
-				PST_ROOK_ENDGAME_30, PST_ROOK_ENDGAME_31, PST_ROOK_ENDGAME_32, PST_ROOK_ENDGAME_33, PST_ROOK_ENDGAME_34,
-				PST_ROOK_ENDGAME_35, PST_ROOK_ENDGAME_36, PST_ROOK_ENDGAME_37, PST_ROOK_ENDGAME_38, PST_ROOK_ENDGAME_39,
-				PST_ROOK_ENDGAME_40, PST_ROOK_ENDGAME_41, PST_ROOK_ENDGAME_42, PST_ROOK_ENDGAME_43, PST_ROOK_ENDGAME_44,
-				PST_ROOK_ENDGAME_45, PST_ROOK_ENDGAME_46, PST_ROOK_ENDGAME_47, PST_ROOK_ENDGAME_48, PST_ROOK_ENDGAME_49,
-				PST_ROOK_ENDGAME_50, PST_ROOK_ENDGAME_51, PST_ROOK_ENDGAME_52, PST_ROOK_ENDGAME_53, PST_ROOK_ENDGAME_54,
-				PST_ROOK_ENDGAME_55, PST_ROOK_ENDGAME_56, PST_ROOK_ENDGAME_57, PST_ROOK_ENDGAME_58, PST_ROOK_ENDGAME_59,
-				PST_ROOK_ENDGAME_60, PST_ROOK_ENDGAME_61, PST_ROOK_ENDGAME_62, PST_ROOK_ENDGAME_63 };
+				pstRookEndgame0, pstRookEndgame1, pstRookEndgame2, pstRookEndgame3, pstRookEndgame4,
+				pstRookEndgame5, pstRookEndgame6, pstRookEndgame7, pstRookEndgame8, pstRookEndgame9,
+				pstRookEndgame10, pstRookEndgame11, pstRookEndgame12, pstRookEndgame13, pstRookEndgame14,
+				pstRookEndgame15, pstRookEndgame16, pstRookEndgame17, pstRookEndgame18, pstRookEndgame19,
+				pstRookEndgame20, pstRookEndgame21, pstRookEndgame22, pstRookEndgame23, pstRookEndgame24,
+				pstRookEndgame25, pstRookEndgame26, pstRookEndgame27, pstRookEndgame28, pstRookEndgame29,
+				pstRookEndgame30, pstRookEndgame31, pstRookEndgame32, pstRookEndgame33, pstRookEndgame34,
+				pstRookEndgame35, pstRookEndgame36, pstRookEndgame37, pstRookEndgame38, pstRookEndgame39,
+				pstRookEndgame40, pstRookEndgame41, pstRookEndgame42, pstRookEndgame43, pstRookEndgame44,
+				pstRookEndgame45, pstRookEndgame46, pstRookEndgame47, pstRookEndgame48, pstRookEndgame49,
+				pstRookEndgame50, pstRookEndgame51, pstRookEndgame52, pstRookEndgame53, pstRookEndgame54,
+				pstRookEndgame55, pstRookEndgame56, pstRookEndgame57, pstRookEndgame58, pstRookEndgame59,
+				pstRookEndgame60, pstRookEndgame61, pstRookEndgame62, pstRookEndgame63 };
 	}
-	byte[] getPST_QUEEN() {
+	byte[] getPstQueen() {
 		return new byte[] {
-				PST_QUEEN_0, PST_QUEEN_1, PST_QUEEN_2, PST_QUEEN_3, PST_QUEEN_4,
-				PST_QUEEN_5, PST_QUEEN_6, PST_QUEEN_7, PST_QUEEN_8, PST_QUEEN_9,
-				PST_QUEEN_10, PST_QUEEN_11, PST_QUEEN_12, PST_QUEEN_13, PST_QUEEN_14,
-				PST_QUEEN_15, PST_QUEEN_16, PST_QUEEN_17, PST_QUEEN_18, PST_QUEEN_19,
-				PST_QUEEN_20, PST_QUEEN_21, PST_QUEEN_22, PST_QUEEN_23, PST_QUEEN_24,
-				PST_QUEEN_25, PST_QUEEN_26, PST_QUEEN_27, PST_QUEEN_28, PST_QUEEN_29,
-				PST_QUEEN_30, PST_QUEEN_31, PST_QUEEN_32, PST_QUEEN_33, PST_QUEEN_34,
-				PST_QUEEN_35, PST_QUEEN_36, PST_QUEEN_37, PST_QUEEN_38, PST_QUEEN_39,
-				PST_QUEEN_40, PST_QUEEN_41, PST_QUEEN_42, PST_QUEEN_43, PST_QUEEN_44,
-				PST_QUEEN_45, PST_QUEEN_46, PST_QUEEN_47, PST_QUEEN_48, PST_QUEEN_49,
-				PST_QUEEN_50, PST_QUEEN_51, PST_QUEEN_52, PST_QUEEN_53, PST_QUEEN_54,
-				PST_QUEEN_55, PST_QUEEN_56, PST_QUEEN_57, PST_QUEEN_58, PST_QUEEN_59,
-				PST_QUEEN_60, PST_QUEEN_61, PST_QUEEN_62, PST_QUEEN_63 };
+				pstQueen0, pstQueen1, pstQueen2, pstQueen3, pstQueen4,
+				pstQueen5, pstQueen6, pstQueen7, pstQueen8, pstQueen9,
+				pstQueen10, pstQueen11, pstQueen12, pstQueen13, pstQueen14,
+				pstQueen15, pstQueen16, pstQueen17, pstQueen18, pstQueen19,
+				pstQueen20, pstQueen21, pstQueen22, pstQueen23, pstQueen24,
+				pstQueen25, pstQueen26, pstQueen27, pstQueen28, pstQueen29,
+				pstQueen30, pstQueen31, pstQueen32, pstQueen33, pstQueen34,
+				pstQueen35, pstQueen36, pstQueen37, pstQueen38, pstQueen39,
+				pstQueen40, pstQueen41, pstQueen42, pstQueen43, pstQueen44,
+				pstQueen45, pstQueen46, pstQueen47, pstQueen48, pstQueen49,
+				pstQueen50, pstQueen51, pstQueen52, pstQueen53, pstQueen54,
+				pstQueen55, pstQueen56, pstQueen57, pstQueen58, pstQueen59,
+				pstQueen60, pstQueen61, pstQueen62, pstQueen63 };
 	}
-	byte[] getPST_KING_OPENING() {
+	byte[] getPstKingOpening() {
 		return new byte[] {
-				PST_KING_OPENING_0, PST_KING_OPENING_1, PST_KING_OPENING_2, PST_KING_OPENING_3, PST_KING_OPENING_4,
-				PST_KING_OPENING_5, PST_KING_OPENING_6, PST_KING_OPENING_7, PST_KING_OPENING_8, PST_KING_OPENING_9,
-				PST_KING_OPENING_10, PST_KING_OPENING_11, PST_KING_OPENING_12, PST_KING_OPENING_13, PST_KING_OPENING_14,
-				PST_KING_OPENING_15, PST_KING_OPENING_16, PST_KING_OPENING_17, PST_KING_OPENING_18, PST_KING_OPENING_19,
-				PST_KING_OPENING_20, PST_KING_OPENING_21, PST_KING_OPENING_22, PST_KING_OPENING_23, PST_KING_OPENING_24,
-				PST_KING_OPENING_25, PST_KING_OPENING_26, PST_KING_OPENING_27, PST_KING_OPENING_28, PST_KING_OPENING_29,
-				PST_KING_OPENING_30, PST_KING_OPENING_31, PST_KING_OPENING_32, PST_KING_OPENING_33, PST_KING_OPENING_34,
-				PST_KING_OPENING_35, PST_KING_OPENING_36, PST_KING_OPENING_37, PST_KING_OPENING_38, PST_KING_OPENING_39,
-				PST_KING_OPENING_40, PST_KING_OPENING_41, PST_KING_OPENING_42, PST_KING_OPENING_43, PST_KING_OPENING_44,
-				PST_KING_OPENING_45, PST_KING_OPENING_46, PST_KING_OPENING_47, PST_KING_OPENING_48, PST_KING_OPENING_49,
-				PST_KING_OPENING_50, PST_KING_OPENING_51, PST_KING_OPENING_52, PST_KING_OPENING_53, PST_KING_OPENING_54,
-				PST_KING_OPENING_55, PST_KING_OPENING_56, PST_KING_OPENING_57, PST_KING_OPENING_58, PST_KING_OPENING_59,
-				PST_KING_OPENING_60, PST_KING_OPENING_61, PST_KING_OPENING_62, PST_KING_OPENING_63 };
+				pstKingOpening0, pstKingOpening1, pstKingOpening2, pstKingOpening3, pstKingOpening4,
+				pstKingOpening5, pstKingOpening6, pstKingOpening7, pstKingOpening8, pstKingOpening9,
+				pstKingOpening10, pstKingOpening11, pstKingOpening12, pstKingOpening13, pstKingOpening14,
+				pstKingOpening15, pstKingOpening16, pstKingOpening17, pstKingOpening18, pstKingOpening19,
+				pstKingOpening20, pstKingOpening21, pstKingOpening22, pstKingOpening23, pstKingOpening24,
+				pstKingOpening25, pstKingOpening26, pstKingOpening27, pstKingOpening28, pstKingOpening29,
+				pstKingOpening30, pstKingOpening31, pstKingOpening32, pstKingOpening33, pstKingOpening34,
+				pstKingOpening35, pstKingOpening36, pstKingOpening37, pstKingOpening38, pstKingOpening39,
+				pstKingOpening40, pstKingOpening41, pstKingOpening42, pstKingOpening43, pstKingOpening44,
+				pstKingOpening45, pstKingOpening46, pstKingOpening47, pstKingOpening48, pstKingOpening49,
+				pstKingOpening50, pstKingOpening51, pstKingOpening52, pstKingOpening53, pstKingOpening54,
+				pstKingOpening55, pstKingOpening56, pstKingOpening57, pstKingOpening58, pstKingOpening59,
+				pstKingOpening60, pstKingOpening61, pstKingOpening62, pstKingOpening63 };
 	}
-	byte[] getPST_KING_ENDGAME() {
+	byte[] getPstKingEndgame() {
 		return new byte[] {
-				PST_KING_ENDGAME_0, PST_KING_ENDGAME_1, PST_KING_ENDGAME_2, PST_KING_ENDGAME_3, PST_KING_ENDGAME_4,
-				PST_KING_ENDGAME_5, PST_KING_ENDGAME_6, PST_KING_ENDGAME_7, PST_KING_ENDGAME_8, PST_KING_ENDGAME_9,
-				PST_KING_ENDGAME_10, PST_KING_ENDGAME_11, PST_KING_ENDGAME_12, PST_KING_ENDGAME_13, PST_KING_ENDGAME_14,
-				PST_KING_ENDGAME_15, PST_KING_ENDGAME_16, PST_KING_ENDGAME_17, PST_KING_ENDGAME_18, PST_KING_ENDGAME_19,
-				PST_KING_ENDGAME_20, PST_KING_ENDGAME_21, PST_KING_ENDGAME_22, PST_KING_ENDGAME_23, PST_KING_ENDGAME_24,
-				PST_KING_ENDGAME_25, PST_KING_ENDGAME_26, PST_KING_ENDGAME_27, PST_KING_ENDGAME_28, PST_KING_ENDGAME_29,
-				PST_KING_ENDGAME_30, PST_KING_ENDGAME_31, PST_KING_ENDGAME_32, PST_KING_ENDGAME_33, PST_KING_ENDGAME_34,
-				PST_KING_ENDGAME_35, PST_KING_ENDGAME_36, PST_KING_ENDGAME_37, PST_KING_ENDGAME_38, PST_KING_ENDGAME_39,
-				PST_KING_ENDGAME_40, PST_KING_ENDGAME_41, PST_KING_ENDGAME_42, PST_KING_ENDGAME_43, PST_KING_ENDGAME_44,
-				PST_KING_ENDGAME_45, PST_KING_ENDGAME_46, PST_KING_ENDGAME_47, PST_KING_ENDGAME_48, PST_KING_ENDGAME_49,
-				PST_KING_ENDGAME_50, PST_KING_ENDGAME_51, PST_KING_ENDGAME_52, PST_KING_ENDGAME_53, PST_KING_ENDGAME_54,
-				PST_KING_ENDGAME_55, PST_KING_ENDGAME_56, PST_KING_ENDGAME_57, PST_KING_ENDGAME_58, PST_KING_ENDGAME_59,
-				PST_KING_ENDGAME_60, PST_KING_ENDGAME_61, PST_KING_ENDGAME_62, PST_KING_ENDGAME_63 };
+				pstKingEndgame0, pstKingEndgame1, pstKingEndgame2, pstKingEndgame3, pstKingEndgame4,
+				pstKingEndgame5, pstKingEndgame6, pstKingEndgame7, pstKingEndgame8, pstKingEndgame9,
+				pstKingEndgame10, pstKingEndgame11, pstKingEndgame12, pstKingEndgame13, pstKingEndgame14,
+				pstKingEndgame15, pstKingEndgame16, pstKingEndgame17, pstKingEndgame18, pstKingEndgame19,
+				pstKingEndgame20, pstKingEndgame21, pstKingEndgame22, pstKingEndgame23, pstKingEndgame24,
+				pstKingEndgame25, pstKingEndgame26, pstKingEndgame27, pstKingEndgame28, pstKingEndgame29,
+				pstKingEndgame30, pstKingEndgame31, pstKingEndgame32, pstKingEndgame33, pstKingEndgame34,
+				pstKingEndgame35, pstKingEndgame36, pstKingEndgame37, pstKingEndgame38, pstKingEndgame39,
+				pstKingEndgame40, pstKingEndgame41, pstKingEndgame42, pstKingEndgame43, pstKingEndgame44,
+				pstKingEndgame45, pstKingEndgame46, pstKingEndgame47, pstKingEndgame48, pstKingEndgame49,
+				pstKingEndgame50, pstKingEndgame51, pstKingEndgame52, pstKingEndgame53, pstKingEndgame54,
+				pstKingEndgame55, pstKingEndgame56, pstKingEndgame57, pstKingEndgame58, pstKingEndgame59,
+				pstKingEndgame60, pstKingEndgame61, pstKingEndgame62, pstKingEndgame63 };
 	}
 	
 }

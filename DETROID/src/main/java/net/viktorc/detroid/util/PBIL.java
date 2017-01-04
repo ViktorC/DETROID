@@ -19,23 +19,23 @@ public abstract class PBIL {
 	/**
 	 * The default number of genotypes generated per generation.
 	 */
-	protected final static int POPULATION_SIZE = 100;
+	protected static final int POPULATION_SIZE = 100;
 	/**
 	 * The default probability of mutation applied to the probability vector.
 	 */
-	protected final static double MUTATION_PROBABILITY = 0.02d;
+	protected static final double MUTATION_PROBABILITY = 0.02d;
 	/**
 	 * The default amount of mutation applied to the probability vector.
 	 */
-	protected final static double MUTATION_SHIFT = 0.05d;
+	protected static final double MUTATION_SHIFT = 0.05d;
 	/**
 	 * The default learning rate.
 	 */
-	protected final static double LEARNING_RATE = 0.1d;
+	protected static final double LEARNING_RATE = 0.1d;
 	/**
 	 * The default additional learning rate from 'negative' experience.
 	 */
-	protected final static double NEGATIVE_LEARNING_RATE = 0.025d;
+	protected static final double NEGATIVE_LEARNING_RATE = 0.025d;
 	
 	private final int genotypeLength;
 	private final int populationSize;

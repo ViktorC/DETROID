@@ -35,11 +35,11 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
-	private final static float T1_SHARE = 0.6f;
-	private final static float T2_SHARE = 0.4f;
+	private static final float T1_SHARE = 0.6f;
+	private static final float T2_SHARE = 0.4f;
 	
-	private final static int MAX_CAPACITY = (int) (1L << 30);	// The maximum number of slots.
-	private final static int MIN_CAPACITY = (int) (1L << 10);	// The minimum number of slots.
+	private static final int MAX_CAPACITY = 1 << 30;	// The maximum number of slots.
+	private static final int MIN_CAPACITY = 1 << 10;	// The minimum number of slots.
 	
 	private long capacity;	// The number of hash table slots.
 	

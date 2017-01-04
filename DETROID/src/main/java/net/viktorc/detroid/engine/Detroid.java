@@ -97,10 +97,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	 */
 	private void setHashSize(int hashSize) {
 		long sizeInBytes = hashSize*1024*1024;
-		int totalHashShares = params.TT_SHARE + params.ET_SHARE;
+		int totalHashShares = params.ttShare + params.etShare;
 		SizeEstimator estimator = SizeEstimator.getInstance();
-		tT = new LossyHashTable<>((int) (sizeInBytes*params.TT_SHARE/totalHashShares/estimator.sizeOf(TTEntry.class)));
-		eT = new LossyHashTable<>((int) (sizeInBytes*params.ET_SHARE/totalHashShares/estimator.sizeOf(ETEntry.class)));
+		tT = new LossyHashTable<>((int) (sizeInBytes*params.ttShare/totalHashShares/estimator.sizeOf(TTEntry.class)));
+		eT = new LossyHashTable<>((int) (sizeInBytes*params.etShare/totalHashShares/estimator.sizeOf(ETEntry.class)));
 		if (debugMode) debugInfo.set("Hash capacity data\n" +
 				"Transposition table capacity - " + tT.getCapacity() + "\n" +
 				"Evaluation table capacity - " + eT.getCapacity());
@@ -134,17 +134,17 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			return 0;
 		if (movesToGo == null) {
 			phaseScore = eval.phaseScore(game.getPosition());
-			movesToGo = params.AVG_MOVES_PER_GAME - params.AVG_MOVES_PER_GAME*phaseScore/params.GAME_PHASE_ENDGAME_UPPER +
-					params.MOVES_TO_GO_SAFETY_MARGIN;
+			movesToGo = params.avgMovesPerGame - params.avgMovesPerGame*phaseScore/params.gamePhaseEndgameUpper +
+					params.movesToGoSafetyMargin;
 			if (debugMode) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);
 		}
 		return game.getSideToMove() == Side.WHITE ?
 				Math.max(1, (whiteTime + Math.max(0, movesToGo - 1)*whiteIncrement)*
-				params.FRACTION_OF_TOTAL_TIME_TO_USE_HTH/100/(movesToGo + 1)) :
+				params.fractionOfTotalTimeToUseHth/100/(movesToGo + 1)) :
 				Math.max(1, (blackTime + Math.max(0, movesToGo - 1)*blackIncrement)*
-				params.FRACTION_OF_TOTAL_TIME_TO_USE_HTH/100/(movesToGo + 1));
+				params.fractionOfTotalTimeToUseHth/100/(movesToGo + 1));
 	}
 	/**
 	 * Computes and returns the search time extension in milliseconds if the search should be extended at all.
@@ -167,12 +167,12 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					"Last PV root change " + (System.currentTimeMillis() - timeOfLastSearchResChange) + "ms ago\n" +
 					"Number of PV root changes per depth - " + numOfSearchResChanges/searchStats.getDepth());
 		if (searchResult.equals(new Move()) || (game.getSideToMove() == Side.WHITE ?
-				whiteTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN :
-				blackTime - origSearchTime > 1000*params.MOVES_TO_GO_SAFETY_MARGIN) &&
+				whiteTime - origSearchTime > 1000*params.movesToGoSafetyMargin :
+				blackTime - origSearchTime > 1000*params.movesToGoSafetyMargin) &&
 				(searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
-				Math.abs(scoreFluctuation) >= params.SCORE_FLUCTUATION_LIMIT || timeOfLastSearchResChange >= System.currentTimeMillis() -
-				origSearchTime*params.FRACTION_OF_ORIG_SEARCH_TIME_SINCE_LAST_RESULT_CHANGE_LIMIT_HTH/100 ||
-				numOfSearchResChanges/searchStats.getDepth() >= params.RESULT_CHANGES_PER_DEPTH_LIMIT)) {
+				Math.abs(scoreFluctuation) >= params.scoreFluctuationLimit || timeOfLastSearchResChange >= System.currentTimeMillis() -
+				origSearchTime*params.fractionOfOrigSearchTimeSinceLastResultChangeLimitHth/100 ||
+				numOfSearchResChanges/searchStats.getDepth() >= params.resultChangesPerDepthLimit)) {
 			return computeSearchTime(game.getSideToMove() == Side.WHITE ?  new Long(whiteTime - origSearchTime) : whiteTime,
 					game.getSideToMove() == Side.WHITE ? blackTime : new Long(blackTime - origSearchTime),
 					whiteIncrement, blackIncrement, movesToGo);
@@ -211,7 +211,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		outOfBook = false;
 		game = new Game();
 		options = new HashMap<>();
-		hashSize = new Option.SpinOption("Hash", Math.min(params.DEFAULT_HASH_SIZE, MAX_HASH_SIZE), MIN_HASH_SIZE, MAX_HASH_SIZE);
+		hashSize = new Option.SpinOption("Hash", Math.min(params.defaultHashSize, MAX_HASH_SIZE), MIN_HASH_SIZE, MAX_HASH_SIZE);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
@@ -229,7 +229,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		options.put(uciOpponent, uciOpponent.getDefaultValue());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
-		setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.DEFAULT_HASH_SIZE);
+		setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.defaultHashSize);
 		hT = new RelativeHistoryTable(params);
 		eval = new Evaluator(params, eT);
 		executor = Executors.newSingleThreadExecutor();
@@ -356,8 +356,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						eT.clear();
 						gen = 0;
 					} else {
-						tT.remove(e -> e.generation < gen - params.TT_ENTRY_LIFECYCLE);
-						eT.remove(e -> e.generation < gen - params.ET_ENTRY_LIFECYCLE);
+						tT.remove(e -> e.generation < gen - params.ttEntryLifeCycle);
+						eT.remove(e -> e.generation < gen - params.etEntryLifeCycle);
 					}
 					hT.decreaseCurrentValues();
 				}
@@ -685,7 +685,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public void notifyParametersChanged() {
 		if (isInit()) {
-			setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.DEFAULT_HASH_SIZE);
+			setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.defaultHashSize);
 			eval = new Evaluator(params, controllerMode || staticEvalTuningMode ? null : eT);
 		}
 	}

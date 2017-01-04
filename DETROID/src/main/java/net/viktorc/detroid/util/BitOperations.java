@@ -10,17 +10,17 @@ package main.java.net.viktorc.detroid.util;
  */
 public final class BitOperations {
 	
-	private final static byte[] DE_BRUIJN_TABLE =
-		{ 0,  1, 48,  2, 57, 49, 28,  3,
-		 61, 58, 50, 42, 38, 29, 17,  4,
-		 62, 55, 59, 36, 53, 51, 43, 22,
-		 45, 39, 33, 30, 24, 18, 12,  5,
-		 63, 47, 56, 27, 60, 41, 37, 16,
-		 54, 35, 52, 21, 44, 32, 23, 11,
-		 46, 26, 40, 15, 34, 20, 31, 10,
-		 25, 14, 19,  9, 13,  8,  7,  6};
-	
-	private final static long DE_BRUIJN_CONST = 0x03F79D71B4CB0A89L;
+	private static final byte[] DE_BRUIJN_TABLE = {
+			 0,  1, 48,  2, 57, 49, 28,  3,
+			61, 58, 50, 42, 38, 29, 17,  4,
+			62, 55, 59, 36, 53, 51, 43, 22,
+			45, 39, 33, 30, 24, 18, 12,  5,
+			63, 47, 56, 27, 60, 41, 37, 16,
+			54, 35, 52, 21, 44, 32, 23, 11,
+			46, 26, 40, 15, 34, 20, 31, 10,
+			25, 14, 19,  9, 13,  8,  7,  6
+	};
+	private static final long DE_BRUIJN_CONST = 0x03F79D71B4CB0A89L;
 	
 	private BitOperations() {
 		

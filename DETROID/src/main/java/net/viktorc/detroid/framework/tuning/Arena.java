@@ -25,8 +25,8 @@ public class Arena implements AutoCloseable {
 	/**
 	 * The arena event's impromptu name.
 	 */
-	public final static String EVENT = "Viktor Csomor's Computer Chess Arena";
-	private final static long TIMER_RESOLUTION = 3;
+	public static final String EVENT = "Viktor Csomor's Computer Chess Arena";
+	private static final long TIMER_RESOLUTION = 3;
 	
 	private ControllerEngine controller;
 	private ExecutorService pool;
