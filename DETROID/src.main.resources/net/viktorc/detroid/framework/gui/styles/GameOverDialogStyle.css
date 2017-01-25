@@ -1,0 +1,24 @@
+.dialog-pane {
+    -fx-background-color: black;
+}
+.dialog-pane .label {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.dialog-pane:header .header-panel {
+    -fx-background-color: black;
+}
+.dialog-pane:header .header-panel .label {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.button {
+	-fx-border-color: white;
+	-fx-background-color: black;
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.text {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}

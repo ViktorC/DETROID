@@ -1,0 +1,117 @@
+.pane {
+	-fx-background-color: black;
+}
+.menuBar {
+	-fx-background-color: black;
+	-fx-border-color: white;
+}
+.menuBar .menu {
+	-fx-background-color: black;
+}
+.menuBar .menu:hover {
+     -fx-background-color: rgb(160, 160, 160);
+}
+.menuBar .menu .label {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.menuBar .menu-item .label {
+    -fx-text-fill: white;
+}
+.menuBar .menu-item:focused {
+     -fx-background-color: rgb(160, 160, 160);
+}
+.menuBar .menu-item:focused .label {
+    -fx-text-fill: black;
+}
+.menuBar .context-menu {
+    -fx-skin: "com.sun.javafx.scene.control.skin.ContextMenuSkin";
+    -fx-background-color: black;
+    -fx-border-color: white;
+}
+.chessBoard {
+	-fx-border-color: white;
+}
+.whiteSquare {
+	-fx-background-color: rgb(235, 235, 235);
+}
+.blackSquare {
+	-fx-background-color: rgb(160, 160, 160);
+}
+.selectedSquare {
+	-fx-border-width: 3;
+	-fx-border-color: green;
+}
+.piece {
+	-fx-font-family: "Tahoma";
+	-fx-font-size: 26pt;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+.labels {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+	-fx-font-weight: 800;
+}
+.coords {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+	-fx-font-weight: 800;
+}
+.searchResults {
+	-fx-background-color: black;
+	-fx-border-color: white;
+}
+.searchResults .table-row-cell:selected .table-cell {
+	-fx-border-color: black;
+	-fx-text-fill: black;
+	-fx-background-color: rgb(160, 160, 160);
+}
+.searchResults .table-cell{
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.searchResults .table-row-cell {
+    -fx-background-color: black;
+}
+.searchResults .table-row-cell:odd {
+    -fx-background-color: black;
+}
+.searchResults .column-header,
+.searchResults .column-header-background {
+	-fx-border-color: white;
+	-fx-background-color: black;
+}
+.searchResults .column-header .label {
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-font-family: "Lucida Console";
+}
+.scroll-bar {
+	-fx-background-color: black;
+}
+.scroll-bar .thumb {
+	-fx-border-color: white;
+	-fx-background-color: black;
+}
+.corner {
+	-fx-background-color: black;
+}
+.timer {
+	-fx-alignment: center;
+	-fx-text-fill: white;
+	-fx-border-color: white;
+	-fx-font-family: "Lucida Console";
+	-fx-background-color: black;
+}
+.history {
+	-fx-border-color: white;
+	-fx-background-color: black;
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.history .content {
+	-fx-text-fill: white;
+	-fx-background-color: black;
+	-fx-font-family: "Lucida Console";
+}
