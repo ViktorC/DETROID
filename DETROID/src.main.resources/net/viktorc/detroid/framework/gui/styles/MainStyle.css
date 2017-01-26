@@ -77,10 +77,13 @@
 .searchResults .table-row-cell:odd {
     -fx-background-color: black;
 }
-.searchResults .column-header,
-.searchResults .column-header-background {
+.searchResults .column-header {
 	-fx-border-color: white;
 	-fx-background-color: black;
+}
+.searchResults .column-header-background .filler {
+    -fx-background-color: black;
+    -fx-border-color: white;
 }
 .searchResults .column-header .label {
     -fx-text-fill: white;

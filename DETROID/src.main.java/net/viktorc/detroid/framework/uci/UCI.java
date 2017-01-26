@@ -15,29 +15,26 @@ import java.util.concurrent.*;
  * @author Viktor
  *
  */
-public final class UCI implements Observer, Closeable {
+public final class UCI implements Observer, Runnable, Closeable {
 	
-	private Scanner in;
-	private PrintStream out;
-	private UCIEngine engine;
+	private final Scanner in;
+	private final PrintStream out;
+	private final UCIEngine engine;
+	private final ExecutorService executor;
 	
-	public UCI(InputStream in, OutputStream out) {
+	public UCI(UCIEngine engine, InputStream in, OutputStream out) {
+		this.engine = engine;
 		this.in = new Scanner(in);
 		this.out = new PrintStream(out);
+		executor = Executors.newSingleThreadExecutor();
 	}
-	/**
-	 * Runs the UCI protocol on the input and output streams controlling the specified UCI compatible engine.
-	 * 
-	 * @param engine
-	 */
-	public synchronized void run(UCIEngine engine) {
-		ExecutorService exec = Executors.newSingleThreadExecutor();
+	@Override
+	public synchronized void run() {
 		boolean over = false;
 		String input = "";
 		String[] tokens;
 		String header;
 		String option;
-		this.engine = engine;
 		while (!in.nextLine().trim().equals("uci"));
 		if (!this.engine.isInit()) {
 			try {
@@ -201,7 +198,7 @@ public final class UCI implements Observer, Closeable {
 					Integer p9 = mateDistance;
 					Long p10 = searchTime;
 					Boolean p11 = infinite;
-					exec.submit(() -> {
+					executor.submit(() -> {
 						String resultString;
 						SearchResults results = this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
 						resultString = "bestmove " + results.getBestMove();
@@ -221,9 +218,8 @@ public final class UCI implements Observer, Closeable {
 				}
 			}
 		}
-		this.engine.quit();
-		this.engine = null;
-		exec.shutdown();
+		this.engine.getSearchInfo().deleteObserver(this);
+		this.engine.getDebugInfo().deleteObserver(this);
 	}
 	@Override
 	public void update(Observable p1, Object p2)
@@ -273,6 +269,8 @@ public final class UCI implements Observer, Closeable {
 	}
 	@Override
 	public void close() throws IOException {
+		engine.quit();
+		executor.shutdown();
 		in.close();
 		out.close();
 	}

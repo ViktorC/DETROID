@@ -417,8 +417,8 @@ public final class ApplicationFramework implements Runnable {
 				} break;
 				// UCI mode.
 				case "-u": {
-					try (UCI uci = new UCI(System.in, System.out)) {
-						uci.run(factory.newEngineInstance());
+					try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
+						uci.run();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -428,8 +428,12 @@ public final class ApplicationFramework implements Runnable {
 			}
 		} else {
 			// GUI mode.
-			GUI.setEngines(factory.newControllerEngineInstance(), factory.newEngineInstance());
+			ControllerEngine controller = factory.newControllerEngineInstance();
+			TunableEngine searchEngine = factory.newEngineInstance();
+			GUI.setEngines(controller, searchEngine);
 			Application.launch(GUI.class);
+			controller.quit();
+			searchEngine.quit();
 		}
 	}
 	

@@ -30,6 +30,8 @@ public final class GUI extends Application {
 	private static ControllerEngine controllerEngine;
 	private static UCIEngine searchEngine;
 	
+	private MainController controller;
+	
 	/**
 	 * Constructs a default instance.
 	 */
@@ -69,11 +71,18 @@ public final class GUI extends Application {
 		BorderPane root = (BorderPane) loader.load(getClass().getResourceAsStream(VIEW_PATH));
 		Scene scene = new Scene(root);
 		scene.getStylesheets().add(getClass().getResource(STYLE_PATH).toExternalForm());
+		controller = loader.getController();
 		primaryStage.setScene(scene);
 		primaryStage.setTitle(TITLE);
 		primaryStage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
 		primaryStage.setResizable(false);
 		primaryStage.show();
+	}
+	@Override
+	public void stop() throws Exception {
+		if (controller != null)
+			controller.close();
+		super.stop();
 	}
 	
 }

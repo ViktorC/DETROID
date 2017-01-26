@@ -12,7 +12,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javafx.application.Platform;
@@ -107,13 +106,7 @@ public final class MainController implements AutoCloseable, Observer {
 	private volatile boolean isReset;
 	
 	public MainController(ControllerEngine controllerEngine, UCIEngine searchEngine) {
-		executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            public Thread newThread(Runnable runnable) {
-                Thread thread = Executors.defaultThreadFactory().newThread(runnable);
-                thread.setDaemon(true);
-                return thread;
-            }
-        });
+		executor = Executors.newSingleThreadExecutor();
 		this.controllerEngine = controllerEngine;
 		this.searchEngine = searchEngine;
 		legalDestinations = new ArrayList<>();
@@ -552,13 +545,6 @@ public final class MainController implements AutoCloseable, Observer {
 		setPosition("startpos", false);
 	}
 	@Override
-	public void close() throws Exception {
-		timer.cancel();
-		executor.shutdown();
-		searchEngine.quit();
-		controllerEngine.quit();
-	}
-	@Override
 	public synchronized void update(Observable o, Object arg) {
 		SearchInformation info = (SearchInformation) o;
 		String score;
@@ -582,6 +568,11 @@ public final class MainController implements AutoCloseable, Observer {
 				"" + info.getNodes(), "" + info.getCurrentMoveNumber(), String.join(" ", info.getPv()), score, "" + (info.getTime() == 0 ?
 				0 : info.getNodes()/info.getTime()), String.format("%.2f", (double) searchEngine.getHashLoadPermill()/1000));
 		Platform.runLater(() -> searchStats.add(stats));
+	}
+	@Override
+	public void close() throws Exception {
+		timer.cancel();
+		executor.shutdown();
 	}
 	
 }
