@@ -126,6 +126,11 @@ public final class MainController implements AutoCloseable, Observer {
 						whiteTime = 0;
 						controllerEngine.whiteForfeit();
 						Platform.runLater(() -> {
+							if (selectedSource != null) {
+								board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+								selectedNodeInd = null;
+								selectedSource = null;
+							}
 							setTimeField(true);
 							Alert dialog = new GameOverDialog(controllerEngine.getGameState(), true);
 							dialog.show();
@@ -139,6 +144,11 @@ public final class MainController implements AutoCloseable, Observer {
 						blackTime = 0;
 						controllerEngine.blackForfeit();
 						Platform.runLater(() -> {
+							if (selectedSource != null) {
+								board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+								selectedNodeInd = null;
+								selectedSource = null;
+							}
 							setTimeField(false);
 							Alert dialog = new GameOverDialog(controllerEngine.getGameState(), true);
 							dialog.show();
@@ -290,14 +300,14 @@ public final class MainController implements AutoCloseable, Observer {
 				setTimeField(false);
 			});
 		}
+		selectedNodeInd = null;
+		selectedSource = null;
 		controllerEngine.play(move);
 		searchEngine.position(controllerEngine.getStartPosition());
 		List<String> moveHistList = controllerEngine.getMoveHistory();
 		for (String m : moveHistList)
 			searchEngine.play(m);
 		setMoveHistory();
-		selectedNodeInd = null;
-		selectedSource = null;
 		setBoard(controllerEngine.toFEN());
 		legalMoves = controllerEngine.getLegalMoves();
 		usersTurn = !usersTurn;
@@ -389,6 +399,7 @@ public final class MainController implements AutoCloseable, Observer {
 				doTime = false;
 				controllerEngine.unplayLastMove();
 				controllerEngine.unplayLastMove();
+				searchEngine.newGame();
 				searchEngine.position(controllerEngine.getStartPosition());
 				List<String> moveHistList = controllerEngine.getMoveHistory();
 				for (String m : moveHistList)
@@ -432,14 +443,16 @@ public final class MainController implements AutoCloseable, Observer {
 				searchEngine.getSearchInfo().deleteObserver(MainController.this);
 				searchEngine.stop();
 				isUserWhite = !isUserWhite;
-				doTime = true;
 				usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
 				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
 				synchronized (MainController.this) {
 					searchStats.clear();
 				}
-				if (!usersTurn)
-					startSearch();
+				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+					doTime = true;
+					if (!usersTurn)
+						startSearch();
+				}
 			}
 		});
 		reset.setOnAction(new EventHandler<ActionEvent>() {

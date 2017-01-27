@@ -110,7 +110,7 @@ class Search implements Runnable {
 		// The number of consecutive fail-highs/fail-lows.
 		failHigh = failLow = 0;
 		// Iterative deepening.
-		for (short i = 0; i <= maxDepth; i++) {
+		for (short i = (short) (maxDepth == 0 ? 0 : 1); i <= maxDepth; i++) {
 			score = search(i, alpha, beta);
 			if (doStopSearch || Thread.currentThread().isInterrupted())
 				break;
@@ -172,12 +172,12 @@ class Search implements Runnable {
 		statsUpdated = false;
 		bestScore = Integer.MIN_VALUE;
 		bestMove = hashMove = null;
-		if (maxDepth == 0) {
+		// If ply equals 0, perform only quiescence search.
+		if (ply == 0) {
 			bestScore = quiescence(0, alpha, beta);
-			updateInfo(null, 0, ply, alpha, beta, bestScore);
+			updateInfo(null, 0, ply, alpha, beta, bestScore, true);
 			return bestScore;
-		} else if (ply == 0)
-			return 0;
+		}
 		tacticalMoves = quietMoves = null;
 		// Check for the 3-fold repetition rule.
 		if (position.getNumberOfRepetitions(0) >= 2)
@@ -254,7 +254,7 @@ class Search implements Runnable {
 					// Insert into TT and update stats if applicable.
 					if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
 						statsUpdated = true;
-						updateInfo(move, i + 1, ply, origAlpha, beta, score);
+						updateInfo(move, i + 1, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
 					}
 				}
 			}
@@ -264,7 +264,8 @@ class Search implements Runnable {
 		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
 			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score);
+			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score, doStopSearch ||
+					Thread.currentThread().isInterrupted());
 		}
 		return bestScore;
 	}
@@ -835,8 +836,9 @@ class Search implements Runnable {
 	 * @param alpha
 	 * @param beta
 	 * @param score
+	 * @param isCancelled
 	 */
-	private void updateInfo(Move currentMove, int moveNumber, short ply, int alpha, int beta, int score) {
+	private void updateInfo(Move currentMove, int moveNumber, short ply, int alpha, int beta, int score, boolean isCancelled) {
 		int resultScore;
 		ScoreType scoreType;
 		// Determine score type and value in case it's a mate score.
@@ -859,7 +861,8 @@ class Search implements Runnable {
 			}
 		}
 		// Update stats.
-		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType, nodes, System.currentTimeMillis() - startTime);
+		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType,
+				nodes, System.currentTimeMillis() - startTime, isCancelled);
 	}
 	/**
 	 * Inserts a node into the transposition table according to the specified parameters.

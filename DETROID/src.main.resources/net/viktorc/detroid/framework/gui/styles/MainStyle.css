@@ -78,8 +78,11 @@
     -fx-background-color: black;
 }
 .searchResults .column-header {
+    -fx-background-color: black;
 	-fx-border-color: white;
-	-fx-background-color: black;
+}
+.searchResults .column-header-background {
+    -fx-background-color: black;
 }
 .searchResults .column-header-background .filler {
     -fx-background-color: black;
@@ -92,6 +95,7 @@
 }
 .scroll-bar {
 	-fx-background-color: black;
+	-fx-border-color: white;
 }
 .scroll-bar .thumb {
 	-fx-border-color: white;
