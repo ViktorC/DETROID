@@ -5,13 +5,14 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.control.GameState;
 
-public class GameOverDialog extends Alert {
+public class GameOverAlert extends Alert {
 
-	private static final String STYLE_PATH = "../styles/GameOverDialogStyle.css";
+	private static final String STYLE_PATH = "../styles/dialog-style.css";
 	private static final String ICON_PATH = "../images/icon.png";
 	
-	public GameOverDialog(GameState state, boolean onTime) {
+	public GameOverAlert(Stage owner, GameState state, boolean onTime) {
 		super(AlertType.INFORMATION);
+		initOwner(owner);
 		Stage stage = (Stage) getDialogPane().getScene().getWindow();
 		stage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
 		getDialogPane().getStylesheets().add(getClass().getResource(STYLE_PATH).toExternalForm());

@@ -14,10 +14,20 @@
 }
 .button {
 	-fx-border-color: white;
+	-fx-background-color: black;
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.button:hover {
+	-fx-border-color: rgb(160, 160, 160);
+	-fx-text-fill: rgb(160, 160, 160);
+}
+.button:pressed {
+	-fx-border-color: black;
 	-fx-background-color: rgb(160, 160, 160);
 	-fx-text-fill: black;
-	-fx-font-family: "Tahoma";
-	-fx-font-size: 26pt;
-	-fx-alignment: center;
-	-fx-text-alignment: center;
+}
+.text {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
 }

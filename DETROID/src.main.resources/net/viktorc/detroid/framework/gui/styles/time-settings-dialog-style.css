@@ -1,0 +1,8 @@
+@import url("dialog-style.css");
+.text-field {
+	-fx-alignment: center;
+	-fx-text-fill: white;
+	-fx-border-color: white;
+	-fx-font-family: "Lucida Console";
+	-fx-background-color: black;
+}

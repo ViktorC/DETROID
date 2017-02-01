@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.*;
 
 /**
@@ -47,7 +48,8 @@ public final class UCI implements Observer, Runnable, Closeable {
 		this.engine.getDebugInfo().addObserver(this);
 		out.println("id name " + this.engine.getName());
 		out.println("id author " + this.engine.getAuthor());
-		for (Option<?> o : engine.getOptions()) {
+		for (Entry<Option<?>,Object> e : engine.getOptions().entrySet()) {
+			Option<?> o = e.getKey();
 			option = "option name " + o.getName() + " type ";
 			if (o instanceof Option.CheckOption)
 				option += "check default " + (boolean) o.getDefaultValue();
@@ -77,26 +79,27 @@ public final class UCI implements Observer, Runnable, Closeable {
 				} break;
 				case "setoption": {
 					String value;
-					for (Option<?> e : engine.getOptions()) {
-						if (e.getName().equals(tokens[2])) {
-							if (e instanceof Option.CheckOption)
-								this.engine.setOption((Option.CheckOption) e, Boolean.parseBoolean(tokens[4]));
-							else if (e instanceof Option.SpinOption)
-								this.engine.setOption((Option.SpinOption) e, Integer.parseInt(tokens[4]));
-							else if (e instanceof Option.StringOption) {
+					for (Entry<Option<?>,Object> e : engine.getOptions().entrySet()) {
+						Option<?> o = e.getKey();
+						if (o.getName().equals(tokens[2])) {
+							if (o instanceof Option.CheckOption)
+								this.engine.setOption((Option.CheckOption) o, Boolean.parseBoolean(tokens[4]));
+							else if (o instanceof Option.SpinOption)
+								this.engine.setOption((Option.SpinOption) o, Integer.parseInt(tokens[4]));
+							else if (o instanceof Option.StringOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.StringOption) e, value.equals("null") ? null : value);
-							} else if (e instanceof Option.ComboOption) {
+								this.engine.setOption((Option.StringOption) o, value.equals("null") ? null : value);
+							} else if (o instanceof Option.ComboOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.ComboOption) e, value.equals("null") ? null : value);
-							} else if (e instanceof Option.ButtonOption)
-								this.engine.setOption((Option.ButtonOption) e, null);
+								this.engine.setOption((Option.ComboOption) o, value.equals("null") ? null : value);
+							} else if (o instanceof Option.ButtonOption)
+								this.engine.setOption((Option.ButtonOption) o, null);
 							break;
 						}
 					}

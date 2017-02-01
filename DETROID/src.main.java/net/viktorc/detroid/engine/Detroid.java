@@ -2,11 +2,11 @@ package net.viktorc.detroid.engine;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
@@ -61,7 +61,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private Option<?> secondaryBookPath;
 	private Option<?> parametersPath;
 	private Option<?> uciOpponent;
-	private HashMap<Option<?>, Object> options;
+	private Map<Option<?>, Object> options;
 	
 	private Params params;
 	private Game game;
@@ -218,7 +218,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		stop = false;
 		outOfBook = false;
 		game = new Game();
-		options = new HashMap<>();
+		options = new LinkedHashMap<>();
 		hashSize = new Option.SpinOption("Hash", Math.min(params.defaultHashSize, MAX_HASH_SIZE), MIN_HASH_SIZE, MAX_HASH_SIZE);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
@@ -257,83 +257,78 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return AUTHOR;
 	}
 	@Override
-	public void setDebugMode(boolean on) {
-		debugMode = on;
-	}
-	@Override
-	public Collection<Option<?>> getOptions() {
-		List<Option<?>> list = new ArrayList<>();
-		list.add(hashSize);
-		list.add(clearHash);
-		list.add(ponder);
-		list.add(ownBook);
-		list.add(primaryBookPath);
-		list.add(secondaryBookPath);
-		list.add(parametersPath);
-		list.add(uciOpponent);
-		return list;
+	public Map<Option<?>,Object> getOptions() {
+		return new LinkedHashMap<>(options);
 	}
 	@Override
 	public synchronized <T> boolean setOption(Option<T> setting, T value) {
-		if (value == null) return false;
-		if (hashSize.equals(setting)) {
-			if (hashSize.getMin().intValue() <= ((Integer)value).intValue() &&
-					hashSize.getMax().intValue() >= ((Integer)value).intValue()) {
-				if (((Integer)value).intValue() != ((Integer)options.get(hashSize)).intValue()) {
-					options.put(hashSize, value);
-					setHashSize(((Integer)value).intValue());
+		try {
+			if (hashSize.equals(setting)) {
+				if (hashSize.getMin().intValue() <= ((Integer)value).intValue() &&
+						hashSize.getMax().intValue() >= ((Integer)value).intValue()) {
+					if (((Integer)value).intValue() != ((Integer)options.get(hashSize)).intValue()) {
+						options.put(hashSize, value);
+						setHashSize(((Integer)value).intValue());
+					}
+					if (debugMode) debugInfo.set("Hash size successfully set to " + value);
+					return true;
 				}
-				if (debugMode) debugInfo.set("Hash size successfully set to " + value);
+			} else if (clearHash.equals(setting)) {
+				clearHash();
+				return true;
+			} else if (ponder.equals(setting)) {
+				options.put(ponder, value);
+				if (debugMode) debugInfo.set("Ponder successfully set to " + value);
+				return true;
+			} else if (ownBook.equals(setting)) {
+				if (book != null) {
+					options.put(ownBook, value);
+					if (debugMode) debugInfo.set("Use of own book successfully set to " + value);
+					return true;
+				}
+				if (debugMode) debugInfo.set("No book file found at " + options.get(primaryBookPath));
+			} else if (primaryBookPath.equals(setting)) {
+				try {
+					PolyglotBook newBook = new PolyglotBook((String) value, book.getSecondaryFilePath());
+					book.close();
+					book = newBook;
+					options.put(primaryBookPath, book.getPrimaryFilePath());
+					if (debugMode) debugInfo.set("Primary book file path successfully set to " + value);
+					return true;
+				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+			} else if (secondaryBookPath.equals(setting)) {
+				try {
+					PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
+					book.close();
+					book = newBook;
+					options.put(secondaryBookPath, book.getSecondaryFilePath());
+					if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
+					return true;
+				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+			} else if (parametersPath.equals(setting)) {
+				try {
+					String filePath = (String) value;
+					params.loadFrom(filePath);
+					options.put(parametersPath, filePath);
+					notifyParametersChanged();
+					if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
+					return true;
+				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+			} else if (uciOpponent.equals(setting)) {
+				options.put(uciOpponent, value);
+				if (debugMode) debugInfo.set("Opponent name successfully set to " + value);
 				return true;
 			}
-		} else if (clearHash.equals(setting)) {
-			clearHash();
-			return true;
-		} else if (ponder.equals(setting)) {
-			options.put(ponder, value);
-			if (debugMode) debugInfo.set("Ponder successfully set to " + value);
-			return true;
-		} else if (ownBook.equals(setting)) {
-			if (book != null) {
-				options.put(ownBook, value);
-				if (debugMode) debugInfo.set("Use of own book successfully set to " + value);
-				return true;
-			}
-			if (debugMode) debugInfo.set("No book file found at " + options.get(primaryBookPath));
-		} else if (primaryBookPath.equals(setting)) {
-			try {
-				PolyglotBook newBook = new PolyglotBook((String) value, book.getSecondaryFilePath());
-				book.close();
-				book = newBook;
-				options.put(primaryBookPath, book.getPrimaryFilePath());
-				if (debugMode) debugInfo.set("Primary book file path successfully set to " + value);
-				return true;
-			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-		} else if (secondaryBookPath.equals(setting)) {
-			try {
-				PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
-				book.close();
-				book = newBook;
-				options.put(secondaryBookPath, book.getSecondaryFilePath());
-				if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
-				return true;
-			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-		} else if (parametersPath.equals(setting)) {
-			try {
-				String filePath = (String) value;
-				params.loadFrom(filePath);
-				options.put(parametersPath, filePath);
-				notifyParametersChanged();
-				if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
-				return true;
-			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-		} else if (uciOpponent.equals(setting)) {
-			options.put(uciOpponent, value);
-			if (debugMode) debugInfo.set("Opponent name successfully set to " + value);
-			return true;
+			if (debugMode) debugInfo.set("The setting was not accepted");
+			return false;
+		} catch (Exception e) {
+			if (debugMode) debugInfo.set("The setting was not accepted\n" + e.getMessage());
+			return false;
 		}
-		if (debugMode) debugInfo.set("The setting was not accepted");
-		return false;
+	}
+	@Override
+	public void setDebugMode(boolean on) {
+		debugMode = on;
 	}
 	@Override
 	public synchronized void newGame() {

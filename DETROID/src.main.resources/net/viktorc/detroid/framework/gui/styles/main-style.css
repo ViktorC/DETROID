@@ -1,33 +1,43 @@
 .pane {
 	-fx-background-color: black;
 }
-.menuBar {
+.menu-bar {
 	-fx-background-color: black;
 	-fx-border-color: white;
 }
-.menuBar .menu {
+.menu {
 	-fx-background-color: black;
 }
-.menuBar .menu:hover {
-     -fx-background-color: rgb(160, 160, 160);
-}
-.menuBar .menu .label {
+.menu .label, .menu .label {
 	-fx-text-fill: white;
 	-fx-font-family: "Lucida Console";
 }
-.menuBar .menu-item .label {
-    -fx-text-fill: white;
+.menu:showing, .menu:hover {
+	-fx-background-color: rgb(160, 160, 160);
 }
-.menuBar .menu-item:focused {
-     -fx-background-color: rgb(160, 160, 160);
+.menu:showing .label, .menu:hover .label {
+	-fx-text-fill: black;
 }
-.menuBar .menu-item:focused .label {
-    -fx-text-fill: black;
+.menu:showing .menu-item .label, .menu:hover .menu-item .label {
+	-fx-text-fill: white;
 }
-.menuBar .context-menu {
-    -fx-skin: "com.sun.javafx.scene.control.skin.ContextMenuSkin";
-    -fx-background-color: black;
-    -fx-border-color: white;
+.menu-item {
+	-fx-background-color: black;
+}
+.menu-item .label {
+	-fx-text-fill: white;
+}
+.menu-item:showing, .menu-item:hover {
+	-fx-background-color: rgb(160, 160, 160);
+}
+.menu:showing .menu-item:showing .label, .menu:showing .menu-item:hover .label,
+.menu:hover .menu-item:showing .label, .menu:hover .menu-item:hover .label {
+	-fx-text-fill: black;
+}
+.context-menu {
+	-fx-skin: "com.sun.javafx.scene.control.skin.ContextMenuSkin";
+	-fx-background-color: black;
+	-fx-border-color: white;
 }
 .chessBoard {
 	-fx-border-color: white;

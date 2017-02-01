@@ -34,7 +34,7 @@ public class Option<T> {
 		return name;
 	}
 	/**
-	 * Returns the default value of the setting.
+	 * Returns the default value of the setting. For a {@link #ButtonOption}, it is always null.
 	 * 
 	 * @return
 	 */
@@ -42,7 +42,7 @@ public class Option<T> {
 		return defaultValue;
 	}
 	/**
-	 * Returns the values a 'combobox' type setting can possibly take on.
+	 * Returns the values a {@link #ComboOption} can possibly take on. For all other option types, it is null.
 	 * 
 	 * @return
 	 */
@@ -50,19 +50,19 @@ public class Option<T> {
 		return allowedValues;
 	}
 	/**
-	 * Returns the minimum value for the setting. For non-number based setting types, it is always null.
+	 * Returns the minimum value for the setting. For option types other than {@link #SpinOption}, it is always null.
 	 * 
 	 * @return
 	 */
-	public Number getMin() {
+	public Integer getMin() {
 		return min;
 	}
 	/**
-	 * Returns the maximum value for the setting. For non-number based setting types, it is always null.
+	 * Returns the maximum value for the setting. For option types other than {@link #SpinOption}, it is always null.
 	 * 
 	 * @return
 	 */
-	public Number getMax() {
+	public Integer getMax() {
 		return max;
 	}
 
@@ -77,6 +77,7 @@ public class Option<T> {
 		public CheckOption(String name, Boolean defaultValue) {
 			super(name, defaultValue, null, null, null);
 		}
+		
 	}
 	/**
 	 * A spin option with minimum and maximum values subclassing Setting with an Integer type parameter.
@@ -89,6 +90,7 @@ public class Option<T> {
 		public SpinOption(String name, Integer defaultValue, Integer min, Integer max) {
 			super(name, defaultValue, null, min, max);
 		}
+		
 	}
 	/**
 	 * A simple string option subclassing Setting with a String type parameter.
@@ -101,6 +103,7 @@ public class Option<T> {
 		public StringOption(String name, String defaultValue) {
 			super(name, defaultValue, null, null, null);
 		}
+		
 	}
 	/**
 	 * A combo option with a set of allowed values subclassing Setting with a String type parameter.
@@ -113,6 +116,7 @@ public class Option<T> {
 		public ComboOption(String name, String defaultValue, Set<String> allowedValues) {
 			super(name, defaultValue, allowedValues, null, null);
 		}
+		
 	}
 	/**
 	 * A button option which only has a name and serves as a parameterless command.
@@ -121,9 +125,11 @@ public class Option<T> {
 	 *
 	 */
 	public static final class ButtonOption extends Option<Object> {
+		
 		public ButtonOption(String name) {
 			super(name, null, null, null, null);
 		}
+		
 	}
 	
 }

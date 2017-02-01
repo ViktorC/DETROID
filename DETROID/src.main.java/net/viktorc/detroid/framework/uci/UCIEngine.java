@@ -1,6 +1,6 @@
 package net.viktorc.detroid.framework.uci;
 
-import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,18 +37,11 @@ public interface UCIEngine {
 	 */
 	String getAuthor();
 	/**
-	 * Returns the options the engine offers.
+	 * Returns the options the engine offers and their values. Changes to the map are not propagated to the engine.
 	 * 
-	 * @return The UCI options the engine offers.
+	 * @return The UCI options the engine offers and their values.
 	 */
-	Collection<Option<?>> getOptions();
-	/**
-	 * Notifies the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
-	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.
-	 * 
-	 * @param on Whehter the engine should run in debug mode.
-	 */
-	void setDebugMode(boolean on);
+	Map<Option<?>,Object> getOptions();
 	/**
 	 * Sets an option defined by the engine to the specified value.
 	 * 
@@ -57,6 +50,13 @@ public interface UCIEngine {
 	 * @return Whether the setting was successfully set to the value, e.g. it was an allowed value.
 	 */
 	<T> boolean setOption(Option<T> setting, T value);
+	/**
+	 * Notifies the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
+	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.
+	 * 
+	 * @param on Whehter the engine should run in debug mode.
+	 */
+	void setDebugMode(boolean on);
 	/**
 	 * Resets the game. It might be a good idea for the engine to wipe the hash tables at this point.
 	 */

@@ -191,18 +191,25 @@
         <menus>
           <Menu mnemonicParsing="false" styleClass="menuTab" text="Game">
             <items>
-              <MenuItem fx:id="unmakeMove" mnemonicParsing="false" text="Unmake Move" />
-                  <RadioMenuItem fx:id="side" mnemonicParsing="false" selected="false" text="" />
+                  <MenuItem fx:id="reset" mnemonicParsing="false" styleClass="innerMenuItem" text="Reset" />
+                  <MenuItem fx:id="pasteFen" mnemonicParsing="false" styleClass="innerMenuItem" text="Paste FEN from Clipboard" />
+                  <MenuItem fx:id="pastePgn" mnemonicParsing="false" styleClass="innerMenuItem" text="Paste PGN from Clipboard" />
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem fx:id="reset" mnemonicParsing="false" text="Reset" />
-                  <MenuItem fx:id="pasteFen" mnemonicParsing="false" text="Paste FEN from Clipboard" />
-                  <MenuItem fx:id="pastePgn" mnemonicParsing="false" text="Paste PGN from Clipboard" />
+                  <MenuItem fx:id="copyFen" mnemonicParsing="false" styleClass="innerMenuItem" text="Copy FEN to Clipboard" />
+                  <MenuItem fx:id="copyPgn" mnemonicParsing="false" styleClass="innerMenuItem" text="Copy PGN to Clipboard" />
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem fx:id="copyFen" mnemonicParsing="false" text="Copy FEN to Clipboard" />
-                  <MenuItem fx:id="copyPgn" mnemonicParsing="false" text="Copy PGN to Clipboard" />
+              	  <MenuItem fx:id="unmakeMove" mnemonicParsing="false" styleClass="innerMenuItem" text="Unmake Move" />
+                  <RadioMenuItem fx:id="side" mnemonicParsing="false" styleClass="innerMenuItem" selected="true" text="Play as White" />
+                  <MenuItem fx:id="timeSettings" mnemonicParsing="false" styleClass="innerMenuItem" text="Time Control Settings" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Engine" />
+          <Menu mnemonicParsing="false" styleClass="menuTab" text="Engine">
+               <items>
+                  <RadioMenuItem fx:id="ponder" mnemonicParsing="false" styleClass="innerMenuItem" selected="false" text="Ponder" />
+                  <MenuItem fx:id="options" mnemonicParsing="false" styleClass="innerMenuItem" text="Options" />
+                  <MenuItem fx:id="debugConsole" mnemonicParsing="false" styleClass="innerMenuItem" text="Debug Console" />
+                  <MenuItem fx:id="about" mnemonicParsing="false" styleClass="innerMenuItem" text="About" />
+               </items></Menu>
         </menus>
       </MenuBar>
    </top>

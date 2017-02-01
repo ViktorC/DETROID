@@ -1,4 +1,4 @@
-package net.viktorc.detroid.framework.gui.util;
+package net.viktorc.detroid.framework.gui.models;
 
 /**
  * An enumeration of chess piece types and the corresponding Unicode values.

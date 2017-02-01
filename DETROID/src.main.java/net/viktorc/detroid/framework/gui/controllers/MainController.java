@@ -1,6 +1,5 @@
 package net.viktorc.detroid.framework.gui.controllers;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,9 +9,11 @@ import java.util.Observer;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -25,7 +26,8 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogEvent;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.TableView;
@@ -36,14 +38,22 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import net.viktorc.detroid.framework.control.ControllerEngine;
 import net.viktorc.detroid.framework.control.GameState;
-import net.viktorc.detroid.framework.gui.dialogs.GameOverDialog;
-import net.viktorc.detroid.framework.gui.dialogs.ErrorDialog;
+import net.viktorc.detroid.framework.gui.dialogs.GameOverAlert;
+import net.viktorc.detroid.framework.gui.dialogs.InfoAlert;
+import net.viktorc.detroid.framework.gui.dialogs.OptionsAlert;
+import net.viktorc.detroid.framework.gui.dialogs.ConsoleAlert;
+import net.viktorc.detroid.framework.gui.dialogs.ErrorAlert;
 import net.viktorc.detroid.framework.gui.dialogs.PromotionDialog;
-import net.viktorc.detroid.framework.gui.util.Piece;
-import net.viktorc.detroid.framework.gui.viewmodels.SearchInfoViewModel;
+import net.viktorc.detroid.framework.gui.dialogs.TimeSettingsDialog;
+import net.viktorc.detroid.framework.gui.models.Piece;
+import net.viktorc.detroid.framework.gui.models.SearchData;
+import net.viktorc.detroid.framework.gui.models.TimeControl;
 import net.viktorc.detroid.framework.uci.SearchInformation;
+import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 
 public final class MainController implements AutoCloseable, Observer {
@@ -52,12 +62,9 @@ public final class MainController implements AutoCloseable, Observer {
 	private static final String BLACK_SQR_STYLE_CLASS = "blackSquare";
 	private static final String SELECTED_SQR_STYLE_CLASS = "selectedSquare";
 	private static final String PIECE_STYLE_CLASS = "piece";
-	
 	private static final long DEFAULT_TIME = 300000;
 	private static final long TIMER_RESOLUTION = 100;
 	
-	@FXML
-	private MenuItem unmakeMove;
 	@FXML
 	private MenuItem reset;
 	@FXML
@@ -69,7 +76,19 @@ public final class MainController implements AutoCloseable, Observer {
 	@FXML
 	private MenuItem copyPgn;
 	@FXML
+	private MenuItem unmakeMove;
+	@FXML
 	private RadioMenuItem side;
+	@FXML
+	private MenuItem timeSettings;
+	@FXML
+	private RadioMenuItem ponder;
+	@FXML
+	private MenuItem options;
+	@FXML
+	private MenuItem debugConsole;
+	@FXML
+	private MenuItem about;
 	@FXML
 	private GridPane board;
 	@FXML
@@ -79,39 +98,41 @@ public final class MainController implements AutoCloseable, Observer {
 	@FXML
 	private TextField bTime;
 	@FXML
-	private TableView<SearchInfoViewModel> searchStatView;
+	private TableView<SearchData> searchStatView;
 	
-	private ObservableList<SearchInfoViewModel> searchStats;
+	private final Stage stage;
+	private ObservableList<SearchData> searchStats;
 	private ExecutorService executor;
 	private ControllerEngine controllerEngine;
 	private UCIEngine searchEngine;
 	private Timer timer;
 	private TimerTask task;
-	private long initWhiteTime;
-	private long initBlackTime;
-	private long whiteTimeInc;
-	private long blackTimeInc;
-	private ArrayDeque<Long> whiteTimes;
-	private ArrayDeque<Long> blackTimes;
+	private TimeControl timeControl;
+	private AtomicLong whiteTime;
+	private AtomicLong blackTime;
+	private ConcurrentLinkedDeque<Long> whiteTimes;
+	private ConcurrentLinkedDeque<Long> blackTimes;
 	private volatile boolean doTime;
-	private volatile long whiteTime;
-	private volatile long blackTime;
 	private volatile List<String> legalMoves;
 	private volatile List<String> legalDestinations;
-	private volatile String selectedSource;
 	private volatile Integer selectedNodeInd;
+	private volatile String selectedSource;
+	private volatile String ponderMove;
 	private volatile boolean isUserWhite;
 	private volatile boolean usersTurn;
 	private volatile boolean gameOn;
 	private volatile boolean isReset;
+	private volatile boolean doPonder;
+	private volatile boolean isPondering;
+	private volatile boolean isSearching;
 	
-	public MainController(ControllerEngine controllerEngine, UCIEngine searchEngine) {
+	public MainController(Stage stage, ControllerEngine controllerEngine, UCIEngine searchEngine) {
+		this.stage = stage;
 		executor = Executors.newSingleThreadExecutor();
 		this.controllerEngine = controllerEngine;
 		this.searchEngine = searchEngine;
 		legalDestinations = new ArrayList<>();
-		initWhiteTime = initBlackTime = DEFAULT_TIME;
-		whiteTimeInc = blackTimeInc = 0;
+		timeControl = new TimeControl(DEFAULT_TIME, DEFAULT_TIME, 0, 0);
 		timer = new Timer();
 		task = new TimerTask() {
 			
@@ -120,11 +141,12 @@ public final class MainController implements AutoCloseable, Observer {
 				if (!doTime)
 					return;
 				if (MainController.this.controllerEngine.isWhitesTurn()) {
-					whiteTime -= TIMER_RESOLUTION;
-					if (whiteTime <= 0) {
+					if (whiteTime.addAndGet(-TIMER_RESOLUTION) <= 0) {
 						doTime = false;
-						whiteTime = 0;
+						whiteTime.set(0);
 						controllerEngine.whiteForfeit();
+						isReset = true;
+						searchEngine.stop();
 						Platform.runLater(() -> {
 							if (selectedSource != null) {
 								board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
@@ -132,17 +154,18 @@ public final class MainController implements AutoCloseable, Observer {
 								selectedSource = null;
 							}
 							setTimeField(true);
-							Alert dialog = new GameOverDialog(controllerEngine.getGameState(), true);
+							Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
 							dialog.show();
 						});
 					} else
 						Platform.runLater(() -> setTimeField(true));
 				} else {
-					blackTime -= TIMER_RESOLUTION;
-					if (blackTime <= 0) {
+					if (blackTime.addAndGet(-TIMER_RESOLUTION) <= 0) {
 						doTime = false;
-						blackTime = 0;
+						blackTime.set(0);
 						controllerEngine.blackForfeit();
+						isReset = true;
+						searchEngine.stop();
 						Platform.runLater(() -> {
 							if (selectedSource != null) {
 								board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
@@ -150,7 +173,7 @@ public final class MainController implements AutoCloseable, Observer {
 								selectedSource = null;
 							}
 							setTimeField(false);
-							Alert dialog = new GameOverDialog(controllerEngine.getGameState(), true);
+							Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
 							dialog.show();
 						});
 					} else
@@ -158,8 +181,10 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		};
-		whiteTimes = new ArrayDeque<>();
-		blackTimes = new ArrayDeque<>();
+		whiteTime = new AtomicLong();
+		blackTime = new AtomicLong();
+		whiteTimes = new ConcurrentLinkedDeque<>();
+		blackTimes = new ConcurrentLinkedDeque<>();
 	}
 	private static String sqrIndToName(int ind) {
 		int rank = ind/8;
@@ -168,11 +193,13 @@ public final class MainController implements AutoCloseable, Observer {
 	}
 	private void setTimeField(boolean white) {
 		if (white)
-			wTime.setText(String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(whiteTime),
-					TimeUnit.MILLISECONDS.toSeconds(whiteTime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(whiteTime))));
+			wTime.setText(String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(whiteTime.get()),
+					TimeUnit.MILLISECONDS.toSeconds(whiteTime.get()) -
+					TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(whiteTime.get()))));
 		else
-			bTime.setText(String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(blackTime),
-					TimeUnit.MILLISECONDS.toSeconds(blackTime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(blackTime))));
+			bTime.setText(String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(blackTime.get()),
+					TimeUnit.MILLISECONDS.toSeconds(blackTime.get()) -
+					TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(blackTime.get()))));
 	}
 	private void addPiece(Piece piece, int row, int column) {
 		int nodeInd = row*8 + column + 1; // The first child is not a square.
@@ -180,6 +207,8 @@ public final class MainController implements AutoCloseable, Observer {
 		String sqr = sqrIndToName(sqrInd);
 		Text chessPiece = new Text("" + piece.getCode());
 		chessPiece.getStyleClass().add(PIECE_STYLE_CLASS);
+		chessPiece.minWidth(Double.MAX_VALUE);
+		chessPiece.minHeight(Double.MAX_VALUE);
 		chessPiece.setOnMouseClicked(new EventHandler<Event>() {
 
 			@Override
@@ -227,6 +256,12 @@ public final class MainController implements AutoCloseable, Observer {
 			}
 		}
 	}
+	private void setMoveHistory() {
+		String pgn = controllerEngine.toPGN();
+		String moveList = pgn.substring(pgn.lastIndexOf(']') + 1).trim();
+		moveList = moveList.replaceAll("\n", "");
+		moveHistory.setText(moveList);
+	}
 	private boolean isLegal(String sqr) {
 		boolean legal = false;
 		for (String m : legalMoves) {
@@ -240,36 +275,41 @@ public final class MainController implements AutoCloseable, Observer {
 		return legal;
 	}
 	private Piece resolvePromotion() {
-		Alert dialog = new PromotionDialog(controllerEngine.isWhitesTurn());
-		Optional<ButtonType> selection = dialog.showAndWait();
-		return Piece.getByUnicode(selection.get().getText().toLowerCase().charAt(0));
+		Dialog<Piece> dialog = new PromotionDialog(stage, controllerEngine.isWhitesTurn());
+		return dialog.showAndWait().get();
 	}
 	private void handleIllegalMove(String move) {
-		Alert dialog = new ErrorDialog("Illegal engine move.",
+		Alert dialog = new ErrorAlert(stage, "Illegal engine move.",
 				"The engine \"" + searchEngine.getName() + "\" proposed an illegal move (" + move + ").");
 		dialog.showAndWait();
 	}
-	private void startSearch() {
+	private synchronized void startSearch() {
 		isReset = false;
-		unmakeMove.setDisable(true);
+		isSearching = true;
 		searchEngine.getSearchInfo().addObserver(this);
+		searchStats.clear();
+		unmakeMove.setDisable(true);
 		if (!gameOn) {
 			gameOn = true;
 			timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
 		}
 		executor.submit(() -> {
-			long timeLeft = controllerEngine.isWhitesTurn() ? whiteTime : blackTime;
+			long timeLeft = controllerEngine.isWhitesTurn() ? whiteTime.get() : blackTime.get();
 			long start = System.currentTimeMillis();
-			String bestMove = searchEngine.search(null, null, whiteTime, blackTime, whiteTimeInc, blackTimeInc,
-					null, null, null, null, null, null).getBestMove();
+			SearchResults res = searchEngine.search(null, null, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
+					timeControl.getBlackInc(), null, null, null, null, null, null);
+			isSearching = false;
+			searchEngine.getSearchInfo().deleteObserver(this);
 			if (isReset)
 				return;
 			doTime = false;
+			ponderMove = res.getSuggestedPonderMove();
+			String bestMove = res.getBestMove();
 			timeLeft -= (System.currentTimeMillis() - start);
 			if (controllerEngine.isWhitesTurn())
-				whiteTime = timeLeft;
+				whiteTime.set(timeLeft);
 			else
-				blackTime = timeLeft;
+				blackTime.set(timeLeft);
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
 			Platform.runLater(() -> {
 				if (isLegal)
@@ -279,80 +319,147 @@ public final class MainController implements AutoCloseable, Observer {
 			});
 		});
 	}
-	private void setMoveHistory() {
-		String pgn = controllerEngine.toPGN();
-		String moveList = pgn.substring(pgn.lastIndexOf(']') + 1).trim();
-		moveList = moveList.replaceAll("\n", "");
-		moveHistory.setText(moveList);
+	private synchronized void startPondering() {
+		if (ponderMove == null)
+			return;
+		isPondering = true;
+		isReset = false;
+		searchEngine.getSearchInfo().addObserver(this);
+		searchStats.clear();
+		executor.submit(() -> {
+			searchEngine.play(ponderMove);
+			long timeLeft;
+			long timeSpent;
+			if (controllerEngine.isWhitesTurn()) {
+				timeLeft = blackTime.get();
+				timeSpent = whiteTime.get();
+			} else {
+				timeLeft = whiteTime.get();
+				timeSpent = blackTime.get();
+			}
+			long start = System.currentTimeMillis();
+			SearchResults res = searchEngine.search(null, true, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
+					timeControl.getBlackInc(), null, null, null, null, null, null);
+			searchEngine.getSearchInfo().deleteObserver(this);
+			isPondering = false;
+			// In case pondering is not allowed due to UCI settings.
+			if (res == null) {
+				doPonder = false;
+				synchronized (this) {
+					notify();
+				}
+				return;
+			}
+			if (isReset) {
+				synchronized (this) {
+					notify();
+				}
+				return;
+			}
+			doTime = false;
+			long end = System.currentTimeMillis();
+			timeSpent = end - start - (timeSpent - (controllerEngine.isWhitesTurn() ? blackTime.get() : whiteTime.get()));
+			ponderMove = res.getSuggestedPonderMove();
+			String bestMove = res.getBestMove();
+			timeLeft -= timeSpent;
+			if (controllerEngine.isWhitesTurn())
+				whiteTime.set(timeLeft);
+			else
+				blackTime.set(timeLeft);
+			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
+			Platform.runLater(() -> {
+				if (isLegal)
+					makeMove(bestMove);
+				else
+					handleIllegalMove(bestMove);
+			});
+		});
 	}
-	private void makeMove(String move) {
+	private synchronized void makeMove(String move) {
+		boolean ponderHit = false;
 		doTime = false;
 		if (controllerEngine.isWhitesTurn()) {
-			whiteTime += whiteTimeInc;
-			whiteTimes.addFirst(whiteTime);
-			Platform.runLater(() -> {
-				setTimeField(true);
-			});
+			whiteTime.addAndGet(timeControl.getWhiteInc());
+			whiteTimes.addFirst(whiteTime.get());
+			setTimeField(true);
 		} else {
-			blackTime += blackTimeInc;
-			blackTimes.addFirst(blackTime);
-			Platform.runLater(() -> {
-				setTimeField(false);
-			});
+			blackTime.addAndGet(timeControl.getBlackInc());
+			blackTimes.addFirst(blackTime.get());
+			setTimeField(false);
 		}
 		selectedNodeInd = null;
 		selectedSource = null;
 		controllerEngine.play(move);
-		searchEngine.position(controllerEngine.getStartPosition());
-		List<String> moveHistList = controllerEngine.getMoveHistory();
-		for (String m : moveHistList)
-			searchEngine.play(m);
 		setMoveHistory();
 		setBoard(controllerEngine.toFEN());
 		legalMoves = controllerEngine.getLegalMoves();
-		usersTurn = !usersTurn;
-		if (controllerEngine.getGameState() != GameState.IN_PROGRESS) {
-			Alert dialog = new GameOverDialog(controllerEngine.getGameState(), false);
-			dialog.show();
-			return;
-		} else if (whiteTime <= 0) {
-			whiteTime = 0;
-			controllerEngine.whiteForfeit();
-			Platform.runLater(() -> {
-				setTimeField(true);
-				Alert dialog = new GameOverDialog(controllerEngine.getGameState(), true);
-				dialog.show();
-			});
-			return;
-		} else if (blackTime <= 0) {
-			blackTime = 0;
-			controllerEngine.blackForfeit();
-			Platform.runLater(() -> {
-				setTimeField(false);
-				Alert dialog = new GameOverDialog(controllerEngine.getGameState(), true);
-				dialog.show();
-			});
-			return;
-		}
-		doTime = true;
-		if (!usersTurn) {
-			synchronized (MainController.this) {
-				searchStats.clear();
+		if (usersTurn) {
+			// Handle pondering.
+			if (doPonder) {
+				if (move.equals(ponderMove)) {
+					searchEngine.ponderhit();
+					ponderHit = true;
+				} else if (isPondering) {
+					isReset = true;
+					searchEngine.stop();
+					while (isPondering) {
+						try {
+							wait();
+						} catch (InterruptedException e) { }
+					}
+				}
 			}
-			startSearch();
+		}
+		usersTurn = !usersTurn;
+		List<String> moveHistList = null;
+		if (!ponderHit) {
+			searchEngine.position(controllerEngine.getStartPosition());
+			moveHistList = controllerEngine.getMoveHistory();
+			for (String m : moveHistList)
+				searchEngine.play(m);
+		}
+		if (controllerEngine.getGameState() != GameState.IN_PROGRESS) {
+			isReset = true;
+			searchEngine.stop();
+			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), false);
+			dialog.show();
+		} else if (whiteTime.get() <= 0) {
+			isReset = true;
+			searchEngine.stop();
+			whiteTime.set(0);
+			controllerEngine.whiteForfeit();
+			setTimeField(true);
+			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
+			dialog.show();
+		} else if (blackTime.get() <= 0) {
+			isReset = true;
+			searchEngine.stop();
+			blackTime.set(0);
+			controllerEngine.blackForfeit();
+			setTimeField(false);
+			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
+			dialog.show();
 		} else {
+			doTime = true;
+			if (!usersTurn) {
+				if (!ponderHit)
+					startSearch();
+			} else if (doPonder)
+				startPondering();
+		}
+		if (usersTurn) {
 			if (moveHistList.size() > 1)
 				unmakeMove.setDisable(false);
 		}
 	}
-	private void setPosition(String position, boolean isPgn) {
+	private synchronized void setPosition(String position, boolean isPgn) {
 		doTime = false;
 		whiteTimes.clear();
 		blackTimes.clear();
-		whiteTime = initWhiteTime;
-		blackTime = initBlackTime;
-		whiteTimes.addFirst(whiteTime);
-		blackTimes.addFirst(blackTime);
+		whiteTime.set(timeControl.getWhiteTime());
+		blackTime.set(timeControl.getBlackTime());
+		whiteTimes.addFirst(whiteTime.get());
+		blackTimes.addFirst(blackTime.get());
 		controllerEngine.newGame();
 		searchEngine.newGame();
 		if (isPgn) {
@@ -378,91 +485,36 @@ public final class MainController implements AutoCloseable, Observer {
 		setMoveHistory();
 		setTimeField(true);
 		setTimeField(false);
-		synchronized (MainController.this) {
-			searchStats.clear();
-		}
+		searchStats.clear();
 		if (controllerEngine.getGameState() != GameState.IN_PROGRESS) {
-			Alert dialog = new GameOverDialog(controllerEngine.getGameState(), false);
+			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), false);
 			dialog.show();
 			return;
 		}
 		doTime = true;
 		if (!usersTurn)
 			startSearch();
+		else if (doPonder)
+			startPondering();
 	}
 	@FXML
 	public void initialize() {
-		unmakeMove.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				doTime = false;
-				controllerEngine.unplayLastMove();
-				controllerEngine.unplayLastMove();
-				searchEngine.newGame();
-				searchEngine.position(controllerEngine.getStartPosition());
-				List<String> moveHistList = controllerEngine.getMoveHistory();
-				for (String m : moveHistList)
-					searchEngine.play(m);
-				if (whiteTimes.size() >= 2)
-					whiteTimes.poll();
-				whiteTime = whiteTimes.peek();
-				if (blackTimes.size() >= 2)
-					blackTimes.poll();
-				blackTime = blackTimes.peek();
-				legalMoves = controllerEngine.getLegalMoves();
-				if (selectedNodeInd != null) {
-					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					selectedNodeInd = null;
-					selectedSource = null;
-				}
-				unmakeMove.setDisable(moveHistList.size() < 2);
-				if (!gameOn) {
-					gameOn = true;
-					timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
-				}
-				Platform.runLater(() -> {
-					setBoard(controllerEngine.toFEN());
-					setMoveHistory();
-					setTimeField(true);
-					setTimeField(false);
-					doTime = true;
-				});
-			}
-		});
-		side.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				Platform.runLater(() -> {
-					String text = side.getText();
-					side.setText("Player: White".equals(text) ? "Player: Black" : "Player: White");
-				});
-				doTime = false;
-				isReset = true;
-				searchEngine.getSearchInfo().deleteObserver(MainController.this);
-				searchEngine.stop();
-				isUserWhite = !isUserWhite;
-				usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
-				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
-				synchronized (MainController.this) {
-					searchStats.clear();
-				}
-				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
-					doTime = true;
-					if (!usersTurn)
-						startSearch();
-				}
-			}
-		});
 		reset.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
 			public void handle(ActionEvent event) {
 				isReset = true;
-				searchEngine.getSearchInfo().deleteObserver(MainController.this);
 				searchEngine.stop();
-				Platform.runLater(() -> setPosition("startpos", false));
+				if (isPondering) {
+					while (isPondering) {
+						synchronized (MainController.this) {
+							try {
+								wait();
+							} catch (InterruptedException e) { }
+						}
+					}
+				}
+				setPosition("startpos", false);
 			}
 		});
 		pasteFen.setOnAction(new EventHandler<ActionEvent>() {
@@ -470,19 +522,25 @@ public final class MainController implements AutoCloseable, Observer {
 			@Override
 			public void handle(ActionEvent event) {
 				isReset = true;
-				searchEngine.getSearchInfo().deleteObserver(MainController.this);
 				searchEngine.stop();
+				if (isPondering) {
+					while (isPondering) {
+						synchronized (MainController.this) {
+							try {
+								wait();
+							} catch (InterruptedException e) { }
+						}
+					}
+				}
 				Clipboard clipboard = Clipboard.getSystemClipboard();
 				String fen = clipboard.getString();
-				Platform.runLater(() ->  {
-					try {
-						setPosition(fen, false);
-					} catch (Exception e) {
-						Alert dialog = new ErrorDialog("FEN parsing error.",
-								"The clipboard contents were not a valid FEN string.");
-						dialog.show();
-					}
-				});
+				try {
+					setPosition(fen, false);
+				} catch (Exception e) {
+					Alert dialog = new ErrorAlert(stage, "FEN parsing error.",
+							"The clipboard contents were not a valid FEN string.");
+					dialog.show();
+				}
 			}
 		});
 		pastePgn.setOnAction(new EventHandler<ActionEvent>() {
@@ -490,19 +548,25 @@ public final class MainController implements AutoCloseable, Observer {
 			@Override
 			public void handle(ActionEvent event) {
 				isReset = true;
-				searchEngine.getSearchInfo().deleteObserver(MainController.this);
 				searchEngine.stop();
+				if (isPondering) {
+					while (isPondering) {
+						synchronized (MainController.this) {
+							try {
+								wait();
+							} catch (InterruptedException e) { }
+						}
+					}
+				}
 				Clipboard clipboard = Clipboard.getSystemClipboard();
 				String pgn = clipboard.getString();
-				Platform.runLater(() ->  {
-					try {
-						setPosition(pgn, true);
-					} catch (Exception e) {
-						Alert dialog = new ErrorDialog("PGN parsing error.",
-								"The clipboard contents were not a valid PGN string.");
-						dialog.show();
-					}
-				});
+				try {
+					setPosition(pgn, true);
+				} catch (Exception e) {
+					Alert dialog = new ErrorAlert(stage, "PGN parsing error.",
+							"The clipboard contents were not a valid PGN string.");
+					dialog.show();
+				}
 			}
 		});
 		copyFen.setOnAction(new EventHandler<ActionEvent>() {
@@ -523,6 +587,213 @@ public final class MainController implements AutoCloseable, Observer {
 				Map<DataFormat, Object> content = new HashMap<DataFormat, Object>();
 				content.put(DataFormat.PLAIN_TEXT, controllerEngine.toPGN());
 				clipboard.setContent(content);
+			}
+		});
+		unmakeMove.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				doTime = false;
+				controllerEngine.unplayLastMove();
+				controllerEngine.unplayLastMove();
+				if (isPondering) {
+					isReset = true;
+					searchEngine.stop();
+					while (isPondering) {
+						synchronized (MainController.this) {
+							try {
+								wait();
+							} catch (InterruptedException e) { }
+						}
+					}
+				}
+				searchEngine.newGame();
+				searchEngine.position(controllerEngine.getStartPosition());
+				List<String> moveHistList = controllerEngine.getMoveHistory();
+				for (String m : moveHistList)
+					searchEngine.play(m);
+				if (whiteTimes.size() >= 2)
+					whiteTimes.poll();
+				whiteTime.set(whiteTimes.peek());
+				if (blackTimes.size() >= 2)
+					blackTimes.poll();
+				blackTime.set(blackTimes.peek());
+				legalMoves = controllerEngine.getLegalMoves();
+				if (selectedSource != null) {
+					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+					selectedNodeInd = null;
+					selectedSource = null;
+				}
+				unmakeMove.setDisable(moveHistList.size() < 2);
+				if (!gameOn) {
+					gameOn = true;
+					timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
+				}
+				setBoard(controllerEngine.toFEN());
+				setMoveHistory();
+				setTimeField(true);
+				setTimeField(false);
+				doTime = true;
+			}
+		});
+		side.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				doTime = false;
+				isReset = true;
+				searchEngine.stop();
+				if (selectedSource != null) {
+					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+					selectedNodeInd = null;
+					selectedSource = null;
+				}
+				if (controllerEngine.isWhitesTurn()) {
+					if (whiteTimes.size() > 0)
+						whiteTime.set(whiteTimes.peek());
+				} else {
+					if (blackTimes.size() > 0)
+						blackTime.set(blackTimes.peek());
+				}
+				isUserWhite = !isUserWhite;
+				usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
+				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
+				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+					doTime = true;
+					if (!usersTurn)
+						startSearch();
+				}
+			}
+		});
+		timeSettings.setOnAction(new EventHandler<ActionEvent>() {
+			
+			@Override
+			public void handle(ActionEvent event) {
+				doTime = false;
+				isReset = true;
+				searchEngine.stop();
+				if (selectedSource != null) {
+					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+					selectedNodeInd = null;
+					selectedSource = null;
+				}
+				if (!usersTurn) {
+					if (controllerEngine.isWhitesTurn()) {
+						if (whiteTimes.size() > 0) {
+							whiteTime.set(whiteTimes.peek());
+							setTimeField(true);
+						}
+					} else {
+						if (blackTimes.size() > 0) {
+							blackTime.set(blackTimes.peek());
+							setTimeField(false);
+						}
+					}
+				}
+				Dialog<TimeControl> timeSettingsDialog = new TimeSettingsDialog(stage, timeControl);
+				Optional<TimeControl> res = timeSettingsDialog.showAndWait();
+				if (res.isPresent())
+					timeControl = res.get();
+				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+					doTime = true;
+					if (!usersTurn)
+						startSearch();
+				}
+			}
+		});
+		ponder.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				synchronized (MainController.this) {
+					doPonder = ponder.selectedProperty().get();
+					if (usersTurn) {
+						if (doPonder)
+							startPondering();
+						else {
+							ponderMove = null;
+							isReset = true;
+							searchEngine.stop();
+						}
+					}
+				}
+			}
+		});
+		options.setOnAction(new EventHandler<ActionEvent>() {
+			
+			@Override
+			public void handle(ActionEvent event) {
+				doTime = false;
+				isReset = true;
+				searchEngine.stop();
+				if (selectedSource != null) {
+					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+					selectedNodeInd = null;
+					selectedSource = null;
+				}
+				if (!usersTurn) {
+					if (controllerEngine.isWhitesTurn()) {
+						if (whiteTimes.size() > 0) {
+							whiteTime.set(whiteTimes.peek());
+							setTimeField(true);
+						}
+					} else {
+						if (blackTimes.size() > 0) {
+							blackTime.set(blackTimes.peek());
+							setTimeField(false);
+						}
+					}
+				}
+				Alert optionsDialog = new OptionsAlert(stage, searchEngine);
+				optionsDialog.showAndWait();
+				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+					doTime = true;
+					if (!usersTurn)
+						startSearch();
+				}
+			}
+		});
+		debugConsole.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				Alert console = new ConsoleAlert(stage, searchEngine.getDebugInfo());
+				console.resultProperty().addListener((o, oldVal, newVal) -> {
+					searchEngine.setDebugMode(false);
+					debugConsole.setDisable(false);
+				});
+				console.setOnCloseRequest(new EventHandler<DialogEvent>() {
+					
+					@Override
+					public void handle(DialogEvent event) {
+						searchEngine.setDebugMode(false);
+						debugConsole.setDisable(false);
+					}
+				});
+				searchEngine.setDebugMode(true);
+				debugConsole.setDisable(true);
+				console.show();
+			}
+		});
+		about.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				Alert info = new InfoAlert(stage, "About the chess search engine.", "Name: " + searchEngine.getName() +
+						System.lineSeparator() + "Author: " + searchEngine.getAuthor());
+				info.resultProperty().addListener((o, oldVal, newVal) -> {
+					about.setDisable(false);
+				});
+				info.setOnCloseRequest(new EventHandler<DialogEvent>() {
+					
+					@Override
+					public void handle(DialogEvent event) {
+						about.setDisable(false);
+					}
+				});
+				info.initModality(Modality.NONE);
+				about.setDisable(true);
+				info.show();
 			}
 		});
 		for (int i = 0; i < 8; i++) {
@@ -553,12 +824,12 @@ public final class MainController implements AutoCloseable, Observer {
 		searchStatView.setItems(searchStats);
 		moveHistory.setWrapText(true);
 		isUserWhite = true;
-		side.setText("Player: White");
-		side.setSelected(isUserWhite);
 		setPosition("startpos", false);
 	}
 	@Override
 	public synchronized void update(Observable o, Object arg) {
+		if (isReset || (!isPondering && !isSearching))
+			return;
 		SearchInformation info = (SearchInformation) o;
 		String score;
 		switch (info.getScoreType()) {
@@ -577,13 +848,14 @@ public final class MainController implements AutoCloseable, Observer {
 		default:
 			return;
 		}
-		SearchInfoViewModel stats = new SearchInfoViewModel("" + info.getDepth(), String.format("%.2f", (double) info.getTime()/1000),
+		SearchData stats = new SearchData("" + info.getDepth(), String.format("%.2f", (double) info.getTime()/1000),
 				"" + info.getNodes(), "" + info.getCurrentMoveNumber(), String.join(" ", info.getPv()), score, "" + (info.getTime() == 0 ?
 				0 : info.getNodes()/info.getTime()), String.format("%.2f", (double) searchEngine.getHashLoadPermill()/1000));
 		Platform.runLater(() -> searchStats.add(stats));
 	}
 	@Override
 	public void close() throws Exception {
+		searchEngine.stop();
 		timer.cancel();
 		executor.shutdown();
 	}

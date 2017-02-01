@@ -43,10 +43,10 @@
 <bishopPairAdvantage>13</bishopPairAdvantage>
 <liveEpAdvantage>29</liveEpAdvantage>
 <tempoAdvantage>31</tempoAdvantage>
-<lazyEvalMar>440</lazyEvalMar>
+<lazyEvalMar>455</lazyEvalMar>
 <gamePhaseOpeningLower>0</gamePhaseOpeningLower>
 <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
-<gamePhaseEndgameLower>233</gamePhaseEndgameLower>
+<gamePhaseEndgameLower>246</gamePhaseEndgameLower>
 <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
 <nullMoveReduction>1</nullMoveReduction>
 <lateMoveReduction>2</lateMoveReduction>
@@ -55,7 +55,7 @@
 <futilityMargin1>33</futilityMargin1>
 <futilityMargin2>100</futilityMargin2>
 <futilityMargin3>139</futilityMargin3>
-<razoringMargin1>74</razoringMargin1>
+<razoringMargin1>117</razoringMargin1>
 <razoringMargin2>877</razoringMargin2>
 <aspirationDelta>68</aspirationDelta>
 <quiescenceDelta>918</quiescenceDelta>
@@ -63,8 +63,8 @@
 <fullPly>8</fullPly>
 <checkExt>15</checkExt>
 <recapExt>5</recapExt>
-<singleReplyExt>14</singleReplyExt>
-<iidMinActivationDepth>15</iidMinActivationDepth>
+<singleReplyExt>13</singleReplyExt>
+<iidMinActivationDepth>14</iidMinActivationDepth>
 <iidRelDepthHth>5</iidRelDepthHth>
 <rhtDecrementFactor>64</rhtDecrementFactor>
 <defaultHashSize>1</defaultHashSize>
@@ -72,7 +72,7 @@
 <eTshare>1</eTshare>
 <tTentryLifeCycle>2</tTentryLifeCycle>
 <eTentryLifeCycle>2</eTentryLifeCycle>
-<scoreFluctuationLimit>262</scoreFluctuationLimit>
+<scoreFluctuationLimit>263</scoreFluctuationLimit>
 <fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>50</fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>
 <resultChangesPerDepthLimit>7</resultChangesPerDepthLimit>
 <avgMovesPerGame>40</avgMovesPerGame>
