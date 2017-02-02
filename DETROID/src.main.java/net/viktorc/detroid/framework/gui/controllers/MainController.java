@@ -124,6 +124,7 @@ public final class MainController implements AutoCloseable, Observer {
 	private volatile boolean isReset;
 	private volatile boolean doPonder;
 	private volatile boolean isPondering;
+	private volatile boolean ponderHit;
 	private volatile boolean isSearching;
 	
 	public MainController(Stage stage, ControllerEngine controllerEngine, UCIEngine searchEngine) {
@@ -322,8 +323,9 @@ public final class MainController implements AutoCloseable, Observer {
 	private synchronized void startPondering() {
 		if (ponderMove == null)
 			return;
-		isPondering = true;
+		ponderHit = false;
 		isReset = false;
+		isPondering = true;
 		searchEngine.getSearchInfo().addObserver(this);
 		searchStats.clear();
 		executor.submit(() -> {
@@ -342,20 +344,15 @@ public final class MainController implements AutoCloseable, Observer {
 					timeControl.getBlackInc(), null, null, null, null, null, null);
 			searchEngine.getSearchInfo().deleteObserver(this);
 			isPondering = false;
-			// In case pondering is not allowed due to UCI settings.
-			if (res == null) {
-				doPonder = false;
-				synchronized (this) {
-					notify();
-				}
-				return;
-			}
 			if (isReset) {
-				synchronized (this) {
-					notify();
+				synchronized (MainController.this) {
+					MainController.this.notify();
 				}
 				return;
 			}
+			// In case pondering is not allowed due to UCI settings or the search terminates early (near a mate).
+			if (res == null || !ponderHit)
+				return;
 			doTime = false;
 			long end = System.currentTimeMillis();
 			timeSpent = end - start - (timeSpent - (controllerEngine.isWhitesTurn() ? blackTime.get() : whiteTime.get()));
@@ -376,7 +373,7 @@ public final class MainController implements AutoCloseable, Observer {
 		});
 	}
 	private synchronized void makeMove(String move) {
-		boolean ponderHit = false;
+		ponderHit = false;
 		doTime = false;
 		if (controllerEngine.isWhitesTurn()) {
 			whiteTime.addAndGet(timeControl.getWhiteInc());
@@ -395,11 +392,11 @@ public final class MainController implements AutoCloseable, Observer {
 		legalMoves = controllerEngine.getLegalMoves();
 		if (usersTurn) {
 			// Handle pondering.
-			if (doPonder) {
+			if (doPonder && isPondering) {
 				if (move.equals(ponderMove)) {
 					searchEngine.ponderhit();
 					ponderHit = true;
-				} else if (isPondering) {
+				} else {
 					isReset = true;
 					searchEngine.stop();
 					while (isPondering) {
@@ -509,7 +506,7 @@ public final class MainController implements AutoCloseable, Observer {
 					while (isPondering) {
 						synchronized (MainController.this) {
 							try {
-								wait();
+								MainController.this.wait();
 							} catch (InterruptedException e) { }
 						}
 					}
@@ -527,7 +524,7 @@ public final class MainController implements AutoCloseable, Observer {
 					while (isPondering) {
 						synchronized (MainController.this) {
 							try {
-								wait();
+								MainController.this.wait();
 							} catch (InterruptedException e) { }
 						}
 					}
@@ -553,7 +550,7 @@ public final class MainController implements AutoCloseable, Observer {
 					while (isPondering) {
 						synchronized (MainController.this) {
 							try {
-								wait();
+								MainController.this.wait();
 							} catch (InterruptedException e) { }
 						}
 					}
@@ -602,7 +599,7 @@ public final class MainController implements AutoCloseable, Observer {
 					while (isPondering) {
 						synchronized (MainController.this) {
 							try {
-								wait();
+								MainController.this.wait();
 							} catch (InterruptedException e) { }
 						}
 					}
