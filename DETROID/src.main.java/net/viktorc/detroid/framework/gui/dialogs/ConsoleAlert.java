@@ -11,6 +11,12 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.uci.DebugInformation;
 
+/**
+ * An alert for displaying a console to which the search engine's debug output is printed
+ * 
+ * @author Viktor
+ *
+ */
 public class ConsoleAlert extends Alert implements Observer {
 
 	private static final String STYLE_PATH = "../styles/console-dialog-style.css";
@@ -18,6 +24,12 @@ public class ConsoleAlert extends Alert implements Observer {
 	
 	private TextArea area;
 	
+	/**
+	 * Constructs an instance based on the specified parameters.
+	 * 
+	 * @param owner The parent stage.
+	 * @param debugInfo The observable debug information of the search engine.
+	 */
 	public ConsoleAlert(Stage owner, DebugInformation debugInfo) {
 		super(AlertType.INFORMATION);
 		initOwner(owner);
@@ -36,6 +48,7 @@ public class ConsoleAlert extends Alert implements Observer {
 	public void update(Observable o, Object arg) {
 		DebugInformation info = (DebugInformation) o;
 		String content = info.getContent();
+		System.out.println(content);
 		Platform.runLater(() -> area.appendText(content + System.lineSeparator()));
 	}
 

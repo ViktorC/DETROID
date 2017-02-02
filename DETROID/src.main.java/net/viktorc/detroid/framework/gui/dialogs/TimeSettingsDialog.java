@@ -17,11 +17,25 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.gui.models.TimeControl;
 
+/**
+ * A dialog that allows the time controls of a chess game to be set by displaying modifiable text input 
+ * fields representing the time controls. When saved, the time control represented by the contents of the 
+ * text input fields is returned by the {@link #showAndWait() showAndWait} method.
+ * 
+ * @author Viktor
+ *
+ */
 public class TimeSettingsDialog extends Dialog<TimeControl> {
 
 	private static final String STYLE_PATH = "../styles/time-settings-dialog-style.css";
 	private static final String ICON_PATH = "../images/icon.png";
 	
+	/**
+	 * Constructs an instance based on the specified parameters.
+	 * 
+	 * @param owner The parent stage.
+	 * @param timeControl The current time controls.
+	 */
 	public TimeSettingsDialog(Stage owner, TimeControl timeControl) {
 		initOwner(owner);
 		Stage stage = (Stage) getDialogPane().getScene().getWindow();
@@ -94,10 +108,23 @@ public class TimeSettingsDialog extends Dialog<TimeControl> {
 			}
 		});
 	}
+	/**
+	 * Formats a duration specified in milliseconds to [m{2,}]:[ss].
+	 * 
+	 * @param time The time in milliseconds.
+	 * @return The formatted time string.
+	 */
 	private String formatTime(long time) {
 		return String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(time),
 				TimeUnit.MILLISECONDS.toSeconds(time) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(time)));
 	}
+	/**
+	 * Parses a string of a certain duration formatted as [m+]:[s{1,2}].
+	 * 
+	 * @param formattedTime The formatted duration string.
+	 * @return The duration in milliseconds.
+	 * @throws Exception If the format or the values (e.g. -1 or 60 seconds) are illegal.
+	 */
 	private long parseFormattedTime(String formattedTime) throws Exception {
 		String[] units = formattedTime.split(":");
 		if (units.length != 2)
@@ -110,8 +137,15 @@ public class TimeSettingsDialog extends Dialog<TimeControl> {
 		return minutes*60000 + seconds*1000;
 	}
 	
+	/**
+	 * A text input field for durations that only accepts numeric characters and colons.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	private static class TimeTextField extends TextField {
 		
+		// The allowed characters.
 		private static final String REGEX = "[0-9:]*";
 		
 		@Override

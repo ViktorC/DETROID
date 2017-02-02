@@ -348,29 +348,7 @@ public final class ApplicationFramework implements Runnable {
 					EngineParameters params = engine.getParameters();
 					if (!"-value".equals(args[2]))
 						throw new IllegalArgumentException();
-					if ("binarystring".equals(arg1)) {
-						String binaryString = args[3];
-						ParameterType paramType = null;
-						if (args.length > 4) {
-							if ("-paramtype".equals(args[4])) {
-								switch (args[5]) {
-									case "eval":
-										paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
-										break;
-									case "control":
-										paramType = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER;
-										break;
-									case "all":
-										paramType = null;
-										break;
-									default:
-										throw new IllegalArgumentException();
-								}
-							} else
-								throw new IllegalArgumentException();
-						}
-						params.set(binaryString, paramType);
-					} else if ("probvector".equals(arg1)) {
+					if ("probvector".equals(arg1)) {
 						String binaryString = "";
 						String vec = args[3];
 						ParameterType paramType = null;
@@ -398,7 +376,7 @@ public final class ApplicationFramework implements Runnable {
 								throw new IllegalArgumentException();
 						}
 						params.set(binaryString, paramType);
-					} else if ("decimalarray".equals(arg1)) {
+					} else if ("decimalvalues".equals(arg1)) {
 						String val = args[3];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];

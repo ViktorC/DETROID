@@ -5,11 +5,24 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.control.GameState;
 
+/**
+ * An alert to display the end result of a chess game to the user.
+ * 
+ * @author Viktor
+ *
+ */
 public class GameOverAlert extends Alert {
 
 	private static final String STYLE_PATH = "../styles/dialog-style.css";
 	private static final String ICON_PATH = "../images/icon.png";
 	
+	/**
+	 * Constructs an instance based on the specified parameters.
+	 * 
+	 * @param owner The parent stage.
+	 * @param state The state of the game.
+	 * @param onTime Whether the game terminated due to time out.
+	 */
 	public GameOverAlert(Stage owner, GameState state, boolean onTime) {
 		super(AlertType.INFORMATION);
 		initOwner(owner);

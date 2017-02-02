@@ -393,7 +393,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		boolean doPonder, doInfinite;
 		doPonder = false;
 		doInfinite = infinite != null && infinite;
-		stop = false;
+		stop = ponderHit = false;
 		// Reset search stats.
 		searchResLock.writeLock().lock();
 		try {
@@ -493,6 +493,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					// If it did not, return the best move found.
 					else {
 						searchResLock.readLock().lock();
+						if (debugMode) debugInfo.set("Returning best move after ponderring was terminated.");
 						try {
 							return new SearchResults(searchResult == null || searchResult.equals(new Move()) ? getRandomMove().toString() :
 								searchResult.toString(), null);
@@ -586,10 +587,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public void stop() {
-		if (search != null && !search.isDone()) {
+		if (search != null) {
 			if (debugMode) debugInfo.set("Stopping search...");
-			search.cancel(true);
 			stop = true;
+			search.cancel(true);
 			synchronized (this) {
 				notify();
 			}

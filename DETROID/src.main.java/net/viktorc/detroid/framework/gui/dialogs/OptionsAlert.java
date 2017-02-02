@@ -27,13 +27,27 @@ import net.viktorc.detroid.framework.uci.Option.ComboOption;
 import net.viktorc.detroid.framework.uci.Option.SpinOption;
 import net.viktorc.detroid.framework.uci.Option.StringOption;
 
+/**
+ * An alert for displaying the UCI options the search engine provides to the user in the form of 
+ * GUI controls the user can interact with.
+ * 
+ * @author Viktor
+ *
+ */
 public class OptionsAlert extends Alert {
 
 	private static final String STYLE_PATH = "../styles/options-dialog-style.css";
 	private static final String ICON_PATH = "../images/icon.png";
+	// The colour of the feedback message at the top of the pane after an option has been set.
 	private static final String SUCCESS_COLOR = "green";
 	private static final String ERROR_COLOR = "red";
 	
+	/**
+	 * Constructs an instance based on the UCI option offered by the chess engine.
+	 * 
+	 * @param owner The parent stage.
+	 * @param engine The engine whose UCI options are to be displayed as interactive GUI controls.
+	 */
 	public OptionsAlert(Stage owner, UCIEngine engine) {
 		super(AlertType.NONE);
 		initOwner(owner);
@@ -171,8 +185,15 @@ public class OptionsAlert extends Alert {
 		getDialogPane().setContent(grid);
 	}
 
+	/**
+	 * An input text field that only accepts numeric characters.
+	 * 
+	 * @author Viktor
+	 *
+	 */
 	private static class SpinTextField extends TextField {
 		
+		// The allowed characters.
 		private static final String REGEX = "[0-9]*";
 		
 		@Override
@@ -181,7 +202,6 @@ public class OptionsAlert extends Alert {
 				super.replaceText(start, end, text);
 			}
 		}
-		
 		@Override
 		public void replaceSelection(String text) {
 			if (text.matches(REGEX)) {

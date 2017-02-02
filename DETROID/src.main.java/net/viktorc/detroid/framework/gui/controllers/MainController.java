@@ -56,13 +56,22 @@ import net.viktorc.detroid.framework.uci.SearchInformation;
 import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 
+/**
+ * The controller class for the main view of the chess application.
+ * 
+ * @author Viktor
+ *
+ */
 public final class MainController implements AutoCloseable, Observer {
 	
+	// CSS style definitions for dynamically generated nodes.
 	private static final String WHITE_SQR_STYLE_CLASS = "whiteSquare";
 	private static final String BLACK_SQR_STYLE_CLASS = "blackSquare";
 	private static final String SELECTED_SQR_STYLE_CLASS = "selectedSquare";
 	private static final String PIECE_STYLE_CLASS = "piece";
+	// The default time control.
 	private static final long DEFAULT_TIME = 300000;
+	// How frequently the timer's are updated. Only the user's time is actually measured with such a low accuracy.
 	private static final long TIMER_RESOLUTION = 100;
 	
 	@FXML
@@ -127,6 +136,14 @@ public final class MainController implements AutoCloseable, Observer {
 	private volatile boolean ponderHit;
 	private volatile boolean isSearching;
 	
+	/**
+	 * Constructs an instance using the specified engines for game control and searching.
+	 * 
+	 * @param stage The current stage.
+	 * @param controllerEngine The engine that controls the game play by enforcing the rules and storing the 
+	 * positions and game states.
+	 * @param searchEngine The engine responsible for searching the chess positions.
+	 */
 	public MainController(Stage stage, ControllerEngine controllerEngine, UCIEngine searchEngine) {
 		this.stage = stage;
 		executor = Executors.newSingleThreadExecutor();
@@ -187,11 +204,22 @@ public final class MainController implements AutoCloseable, Observer {
 		whiteTimes = new ConcurrentLinkedDeque<>();
 		blackTimes = new ConcurrentLinkedDeque<>();
 	}
+	/**
+	 * Converts a square index on the GUI board into a string in coordinate notation.
+	 * 
+	 * @param ind The index of the square on the GUI chess board grid.
+	 * @return The name of the chess square in coordinate notation.
+	 */
 	private static String sqrIndToName(int ind) {
 		int rank = ind/8;
 		int file = ind%8;
 		return "" + Character.toString((char) ('a' + file)) + (rank + 1);
 	}
+	/**
+	 * Sets the timers on the GUI.
+	 * 
+	 * @param white Whether white's or black's timer should be set.
+	 */
 	private void setTimeField(boolean white) {
 		if (white)
 			wTime.setText(String.format("%02d:%02d", TimeUnit.MILLISECONDS.toMinutes(whiteTime.get()),
@@ -202,6 +230,13 @@ public final class MainController implements AutoCloseable, Observer {
 					TimeUnit.MILLISECONDS.toSeconds(blackTime.get()) -
 					TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(blackTime.get()))));
 	}
+	/**
+	 * Places a piece of the specified type to the specified square on the board.
+	 * 
+	 * @param piece The type of the piece.
+	 * @param row The row into which it should be inserted.
+	 * @param column The column into which it should be inserted.
+	 */
 	private void addPiece(Piece piece, int row, int column) {
 		int nodeInd = row*8 + column + 1; // The first child is not a square.
 		int sqrInd = (7 - row)*8 + column;
@@ -241,6 +276,11 @@ public final class MainController implements AutoCloseable, Observer {
 		GridPane.setHalignment(chessPiece, HPos.CENTER);
 		GridPane.setValignment(chessPiece, VPos.CENTER);
 	}
+	/**
+	 * Sets up the GUI chess board based on the specified FEN string.
+	 * 
+	 * @param fen The board state in FEN.
+	 */
 	private void setBoard(String fen) {
 		board.getChildren().removeAll(board.lookupAll("." + PIECE_STYLE_CLASS));
 		String board = fen.split(" ")[0].trim();
@@ -257,12 +297,22 @@ public final class MainController implements AutoCloseable, Observer {
 			}
 		}
 	}
+	/**
+	 * Sets the move history text area according to the move history kept by the controller engine.
+	 */
 	private void setMoveHistory() {
 		String pgn = controllerEngine.toPGN();
 		String moveList = pgn.substring(pgn.lastIndexOf(']') + 1).trim();
 		moveList = moveList.replaceAll("\n", "");
 		moveHistory.setText(moveList);
 	}
+	/**
+	 * Returns whether the specified square is a legal origin square in the current position for the 
+	 * side to move.
+	 * 
+	 * @param sqr The square in coordinate notation.
+	 * @return Whether it is the origin of at least one legal move in the current position.
+	 */
 	private boolean isLegal(String sqr) {
 		boolean legal = false;
 		for (String m : legalMoves) {
@@ -275,26 +325,39 @@ public final class MainController implements AutoCloseable, Observer {
 		}
 		return legal;
 	}
+	/**
+	 * Displays the promotion dialog and returns the selected piece.
+	 * 
+	 * @return The piece to promote to.
+	 */
 	private Piece resolvePromotion() {
 		Dialog<Piece> dialog = new PromotionDialog(stage, controllerEngine.isWhitesTurn());
 		return dialog.showAndWait().get();
 	}
+	/**
+	 * Displays an error alert with the details.
+	 * 
+	 * @param move The illegal move.
+	 */
 	private void handleIllegalMove(String move) {
 		Alert dialog = new ErrorAlert(stage, "Illegal engine move.",
 				"The engine \"" + searchEngine.getName() + "\" proposed an illegal move (" + move + ").");
 		dialog.showAndWait();
 	}
+	/**
+	 * Prompts the search engine to start searching the current position.
+	 */
 	private synchronized void startSearch() {
 		isReset = false;
 		isSearching = true;
-		searchEngine.getSearchInfo().addObserver(this);
-		searchStats.clear();
 		unmakeMove.setDisable(true);
 		if (!gameOn) {
 			gameOn = true;
 			timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
 		}
+		searchStats.clear();
 		executor.submit(() -> {
+			searchEngine.getSearchInfo().addObserver(this);
 			long timeLeft = controllerEngine.isWhitesTurn() ? whiteTime.get() : blackTime.get();
 			long start = System.currentTimeMillis();
 			SearchResults res = searchEngine.search(null, null, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
@@ -320,13 +383,16 @@ public final class MainController implements AutoCloseable, Observer {
 			});
 		});
 	}
+	/**
+	 * Prompts the search engine to start pondering on the position resulting from making the ponder move. 
+	 * If there is no saved ponder move from the previous search, it immediately returns.
+	 */
 	private synchronized void startPondering() {
 		if (ponderMove == null)
 			return;
 		ponderHit = false;
 		isReset = false;
 		isPondering = true;
-		searchEngine.getSearchInfo().addObserver(this);
 		searchStats.clear();
 		executor.submit(() -> {
 			searchEngine.play(ponderMove);
@@ -339,6 +405,7 @@ public final class MainController implements AutoCloseable, Observer {
 				timeLeft = whiteTime.get();
 				timeSpent = blackTime.get();
 			}
+			searchEngine.getSearchInfo().addObserver(this);
 			long start = System.currentTimeMillis();
 			SearchResults res = searchEngine.search(null, true, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
 					timeControl.getBlackInc(), null, null, null, null, null, null);
@@ -372,6 +439,12 @@ public final class MainController implements AutoCloseable, Observer {
 			});
 		});
 	}
+	/**
+	 * Prompts the controller engine to make the specified move, it updates the position of the search move if there 
+	 * was no ponder hit, and it sets up the board based on the position stored by controller engine.
+	 * 
+	 * @param move The move to make.
+	 */
 	private synchronized void makeMove(String move) {
 		ponderHit = false;
 		doTime = false;
@@ -394,8 +467,8 @@ public final class MainController implements AutoCloseable, Observer {
 			// Handle pondering.
 			if (doPonder && isPondering) {
 				if (move.equals(ponderMove)) {
-					searchEngine.ponderhit();
 					ponderHit = true;
+					searchEngine.ponderhit();
 				} else {
 					isReset = true;
 					searchEngine.stop();
@@ -439,7 +512,7 @@ public final class MainController implements AutoCloseable, Observer {
 		} else {
 			doTime = true;
 			if (!usersTurn) {
-				if (!ponderHit)
+				if (doPonder && !ponderHit)
 					startSearch();
 			} else if (doPonder)
 				startPondering();
@@ -449,6 +522,12 @@ public final class MainController implements AutoCloseable, Observer {
 				unmakeMove.setDisable(false);
 		}
 	}
+	/**
+	 * Sets up the engines and the GUI based on the specified position.
+	 * 
+	 * @param position The position string.
+	 * @param isPgn Whether the string is in PGN or FEN.
+	 */
 	private synchronized void setPosition(String position, boolean isPgn) {
 		doTime = false;
 		whiteTimes.clear();

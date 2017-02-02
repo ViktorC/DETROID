@@ -46,7 +46,7 @@
 <lazyEvalMar>455</lazyEvalMar>
 <gamePhaseOpeningLower>0</gamePhaseOpeningLower>
 <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
-<gamePhaseEndgameLower>246</gamePhaseEndgameLower>
+<gamePhaseEndgameLower>241</gamePhaseEndgameLower>
 <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
 <nullMoveReduction>1</nullMoveReduction>
 <lateMoveReduction>2</lateMoveReduction>
@@ -72,7 +72,7 @@
 <eTshare>1</eTshare>
 <tTentryLifeCycle>2</tTentryLifeCycle>
 <eTentryLifeCycle>2</eTentryLifeCycle>
-<scoreFluctuationLimit>263</scoreFluctuationLimit>
+<scoreFluctuationLimit>262</scoreFluctuationLimit>
 <fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>50</fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>
 <resultChangesPerDepthLimit>7</resultChangesPerDepthLimit>
 <avgMovesPerGame>40</avgMovesPerGame>

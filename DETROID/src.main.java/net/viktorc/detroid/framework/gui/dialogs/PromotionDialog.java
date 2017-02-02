@@ -6,11 +6,24 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.gui.models.Piece;
 
+/**
+ * A dialog for handling chess promotions by presenting a set of selectable pieces to promote to.
+ * The selected piece is returned by the {@link #showAndWait() showAndWait} method.
+ * 
+ * @author Viktor
+ *
+ */
 public class PromotionDialog extends Dialog<Piece> {
 
 	private static final String STYLE_PATH = "../styles/promotion-dialog-style.css";
 	private static final String ICON_PATH = "../images/icon.png";
 	
+	/**
+	 * Constructs an instance based on the specified parameters.
+	 * 
+	 * @param owner The parent pane.
+	 * @param isWhitesTurn Whether it is white's turn.
+	 */
 	public PromotionDialog(Stage owner, boolean isWhitesTurn) {
 		initOwner(owner);
 		Stage stage = (Stage) getDialogPane().getScene().getWindow();
