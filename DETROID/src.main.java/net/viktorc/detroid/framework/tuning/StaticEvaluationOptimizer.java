@@ -187,7 +187,7 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 						Entry<Object, Object> dataPair = dataSample.get(j);
 						String fen = (String) dataPair.getKey();
 						double result = (double) ((Float) dataPair.getValue()).floatValue();
-						e.position(fen);
+						e.setPosition(fen);
 						e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
 						double score = e.getSearchInfo().getScore();
 						if (!fen.contains("w"))

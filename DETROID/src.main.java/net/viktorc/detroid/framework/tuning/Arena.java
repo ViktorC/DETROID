@@ -137,9 +137,9 @@ class Arena implements AutoCloseable {
 			engine1.newGame();
 			engine2.newGame();
 			controller.newGame();
-			engine1.position("startpos");
-			engine2.position("startpos");
-			controller.position("startpos");
+			engine1.setPosition("startpos");
+			engine2.setPosition("startpos");
+			controller.setPosition("startpos");
 			if (resultLogger != null) {
 				controller.setPlayers(engine1White ? "Engine1" : "Engine2", engine1White ? "Engine2" : "Engine1");
 				controller.setEvent(EVENT);

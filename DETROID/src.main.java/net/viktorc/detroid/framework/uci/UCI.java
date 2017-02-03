@@ -116,7 +116,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 					for (; i < tokens.length && !tokens[i].equals("moves"); i++)
 						pos += " " + tokens[i];
 					i++;
-					this.engine.position(pos);
+					this.engine.setPosition(pos);
 					for (; i < tokens.length; i++)
 						this.engine.play(tokens[i]);
 				} break;
@@ -214,7 +214,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 					this.engine.stop();
 				} break;
 				case "ponderhit": {
-					this.engine.ponderhit();
+					this.engine.ponderHit();
 				} break;
 				case "quit": {
 					over = true;

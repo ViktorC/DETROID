@@ -338,7 +338,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			clearHash();
 	}
 	@Override
-	public synchronized boolean position(String fen) {
+	public synchronized boolean setPosition(String fen) {
 		try {
 			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 			// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
@@ -597,7 +597,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		}
 	}
 	@Override
-	public void ponderhit() {
+	public void ponderHit() {
 		if (debugMode) debugInfo.set("Signaling ponderhit...");
 		ponderHit = true;
 		synchronized (this) {

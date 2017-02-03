@@ -11,15 +11,14 @@ import net.viktorc.detroid.util.Copiable;
 import net.viktorc.detroid.util.Hashable;
 
 /**
- * A bit board based class whose object holds information amongst others on the current board position, on all the previous moves and positions,
- * on castling and en passant rights, and on the player to move. It uses a pre-calculated 'magic' move database to avoid the cost of computing
- * the possible move sets of sliding pieces on the fly.
+ * A bit board based chess position class whose instances hold information amongst others on the current board position, on all the previous moves 
+ * and positions, on castling and en passant rights, and on the player to move. The class is also responsible for move generation. It uses a 
+ * pre-calculated 'magic' move database to avoid the cost of computing the possible move sets of sliding pieces on the fly.
  * 
- * The main functions include:
+ * The most important functions include:
  * {@link #getMoves() getMoves}
  * {@link #makeMove(Move) makeMove}
  * {@link #unmakeMove() unmakeMove}
- * {@link #perft(int) perft}
  *  
  * @author Viktor
  * 
@@ -257,6 +256,11 @@ class Position implements Copiable<Position>, Hashable {
 		gen = ZobristKeyGenerator.getInstance();
 		keyHistory = new long[32]; // Factor of two.
 	}
+	/**
+	 * Clones the specified position instance.
+	 * 
+	 * @param pos The position to clone.
+	 */
 	private Position(Position pos) {
 		whiteKing = pos.whiteKing;
 		whiteQueens = pos.whiteQueens;
@@ -303,8 +307,10 @@ class Position implements Copiable<Position>, Hashable {
 	 * Returns the number of times the current position has already occurred before. If the position has already occurred before within the last
 	 * x number of moves specified by sensitiveHalfMoveWindow, the maximum integer value is returned.
 	 * 
-	 * @param sensitiveHalfMoveWindow
-	 * @return
+	 * @param sensitiveHalfMoveWindow The number of moves preceding the current position within which if the position has already occured twice, 
+	 * the maximum integer value is returned.
+	 * @return The number of times the position has recurred. If it recurred within the specified half-move window, the maximum integer value is 
+	 * returned.
 	 */
 	int getNumberOfRepetitions(int sensitiveHalfMoveWindow) {
 		int repetitions = 0;

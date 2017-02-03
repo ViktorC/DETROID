@@ -468,7 +468,7 @@ public final class MainController implements AutoCloseable, Observer {
 			if (doPonder && isPondering) {
 				if (move.equals(ponderMove)) {
 					ponderHit = true;
-					searchEngine.ponderhit();
+					searchEngine.ponderHit();
 				} else {
 					isReset = true;
 					searchEngine.stop();
@@ -483,7 +483,7 @@ public final class MainController implements AutoCloseable, Observer {
 		usersTurn = !usersTurn;
 		List<String> moveHistList = null;
 		if (!ponderHit) {
-			searchEngine.position(controllerEngine.getStartPosition());
+			searchEngine.setPosition(controllerEngine.getStartPosition());
 			moveHistList = controllerEngine.getMoveHistory();
 			for (String m : moveHistList)
 				searchEngine.play(m);
@@ -541,15 +541,15 @@ public final class MainController implements AutoCloseable, Observer {
 		if (isPgn) {
 			if (!controllerEngine.setGame(position))
 				throw new IllegalArgumentException();
-			searchEngine.position(controllerEngine.getStartPosition());
+			searchEngine.setPosition(controllerEngine.getStartPosition());
 			List<String> moveHistList = controllerEngine.getMoveHistory();
 			for (String m : moveHistList)
 				searchEngine.play(m);
 			unmakeMove.setDisable(isUserWhite != controllerEngine.isWhitesTurn() || moveHistList.size() < 2);
 		} else {
-			if (!controllerEngine.position(position))
+			if (!controllerEngine.setPosition(position))
 				throw new IllegalArgumentException();
-			searchEngine.position(position);
+			searchEngine.setPosition(position);
 			unmakeMove.setDisable(true);
 			controllerEngine.setPlayers(isUserWhite ? "Player" : searchEngine.getName(),
 					isUserWhite ? searchEngine.getName() : "Player");
@@ -684,7 +684,7 @@ public final class MainController implements AutoCloseable, Observer {
 					}
 				}
 				searchEngine.newGame();
-				searchEngine.position(controllerEngine.getStartPosition());
+				searchEngine.setPosition(controllerEngine.getStartPosition());
 				List<String> moveHistList = controllerEngine.getMoveHistory();
 				for (String m : moveHistList)
 					searchEngine.play(m);

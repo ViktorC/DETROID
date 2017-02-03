@@ -45,7 +45,7 @@ public class WinAtChessTest {
 		if (!CONTROLLER.isInit())
 			CONTROLLER.init();
 		CONTROLLER.newGame();
-		CONTROLLER.position(record.getPosition());
+		CONTROLLER.setPosition(record.getPosition());
 		String bestMove = CONTROLLER.search(null, null, null, null, null, null, null, null, null, null,
 				TIME_PER_POSITION, null).getBestMove();
 		boolean correct = false;

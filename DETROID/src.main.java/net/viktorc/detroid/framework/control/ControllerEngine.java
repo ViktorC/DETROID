@@ -39,13 +39,13 @@ public interface ControllerEngine extends UCIEngine {
 	/**
 	 * Returns a list of all past moves made on the board in Pure Algebraic Coordinate Notation in chronological order.
 	 * 
-	 * @return A list of all past moves made on the board in PACN.
+	 * @return A list of all past moves made on the board in PACN. It should never return null.
 	 */
 	List<String> getMoveHistory();
 	/**
 	 * Returns a list of all legal moves in the current position in Pure Algebraic Coordinate Notation.
 	 * 
-	 * @return A list of all legal moves in the current position in PACN.
+	 * @return A list of all legal moves in the current position in PACN. It should never return null.
 	 */
 	List<String> getLegalMoves();
 	/**
@@ -94,12 +94,6 @@ public interface ControllerEngine extends UCIEngine {
 	 */
 	void blackForfeit();
 	/**
-	 * Takes back the last move and returns it in Pure Algebraic Coordinate Notation. It returns null if no moves have been made yet.
-	 * 
-	 * @return The last move made in Pure Algebraic Coordinate Notation
-	 */
-	String unplayLastMove();
-	/**
 	 * Converts a move legal in the current position from Pure Algebraic Coordinate Notation to Standard Algebraic Notation.
 	 * 
 	 * @param move The move in PACN.
@@ -125,6 +119,21 @@ public interface ControllerEngine extends UCIEngine {
 	 * @return A PGN string representing the state of the game.
 	 */
 	String toPGN();
+	/**
+	 * Takes back the last move and returns it in Pure Algebraic Coordinate Notation. It returns null if no moves have been made yet.
+	 * 
+	 * @return The last move made in Pure Algebraic Coordinate Notation
+	 */
+	default String unplayLastMove() {
+		List<String> moveHistory = getMoveHistory();
+		if (moveHistory.size() == 0)
+			return null;
+		String initFen = getStartPosition();
+		setPosition(initFen);
+		for (int i = 0; i < moveHistory.size() - 1; i++)
+			play(moveHistory.get(i));
+		return moveHistory.get(moveHistory.size() - 1);
+	}
 	/**
 	 * Runs a perft to the specified depth in the current position and returns the number of leaf nodes counted while 
 	 * traversing the tree.

@@ -46,7 +46,7 @@ public class PerfTest {
 			CONTROLLER.init();
 		CONTROLLER.setControllerMode(true);
 		CONTROLLER.newGame();
-		CONTROLLER.position(record.getPosition());
+		CONTROLLER.setPosition(record.getPosition());
 		start = System.currentTimeMillis();
 		nodes = CONTROLLER.perft(record.getDepth());
 		end = System.currentTimeMillis();

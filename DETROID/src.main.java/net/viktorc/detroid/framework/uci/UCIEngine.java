@@ -67,7 +67,7 @@ public interface UCIEngine {
 	 * @param fen The current position in FEN.
 	 * @return Whether the position could be successfully set up.
 	 */
-	boolean position(String fen);
+	boolean setPosition(String fen);
 	/**
 	 * Prompts the engine to make the move defined in Pure Algebraic Coordinate Notation.
 	 * 
@@ -106,7 +106,7 @@ public interface UCIEngine {
 	/**
 	 * Signals to the engine that the move it was pondering on was actually played and it should keep searching in normal mode.
 	 */
-	void ponderhit();
+	void ponderHit();
 	/**
 	 * Returns an observable object containing information about the results and statistics of the ongoing/last search.
 	 * 
