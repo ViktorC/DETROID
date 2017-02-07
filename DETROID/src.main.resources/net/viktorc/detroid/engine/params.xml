@@ -66,11 +66,11 @@
 <singleReplyExt>14</singleReplyExt>
 <iidMinActivationDepth>14</iidMinActivationDepth>
 <iidRelDepthHth>5</iidRelDepthHth>
-<rhtDecrementFactor>34</rhtDecrementFactor>
-<defaultHashSize>1</defaultHashSize>
+<rhtDecrementFactor>29</rhtDecrementFactor>
+<defaultHashSize>64</defaultHashSize>
 <tTshare>8</tTshare>
 <eTshare>4</eTshare>
-<tTentryLifeCycle>2</tTentryLifeCycle>
+<tTentryLifeCycle>0</tTentryLifeCycle>
 <eTentryLifeCycle>2</eTentryLifeCycle>
 <scoreFluctuationLimit>263</scoreFluctuationLimit>
 <fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>50</fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>

@@ -404,7 +404,7 @@ public final class MainController implements AutoCloseable, Observer {
 				blackTime.set(timeLeft);
 			String bestMove = res.getBestMove();
 			ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
-			double adjustedScore;
+			Double adjustedScore;
 			if (res.getScore().isPresent()) {
 				double score = res.getScore().get();
 				ScoreType type = res.getScoreType().get();
@@ -414,12 +414,14 @@ public final class MainController implements AutoCloseable, Observer {
 					score = type == ScoreType.MATE ? score > 0 ? -32 : 32 : -score/100;
 				adjustedScore = score;
 			} else
-				adjustedScore = 0;
+				adjustedScore = null;
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
 			Platform.runLater(() -> {
 				if (isLegal) {
-					dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
-					graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+					if (adjustedScore != null) {
+						dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
+						graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+					}
 					makeMove(bestMove);
 				}
 				else
@@ -478,7 +480,7 @@ public final class MainController implements AutoCloseable, Observer {
 				blackTime.set(timeLeft);
 			String bestMove = res.getBestMove();
 			ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
-			double adjustedScore;
+			Double adjustedScore;
 			if (res.getScore().isPresent()) {
 				double score = res.getScore().get();
 				ScoreType type = res.getScoreType().get();
@@ -488,12 +490,14 @@ public final class MainController implements AutoCloseable, Observer {
 					score = type == ScoreType.MATE ? score > 0 ? -32 : 32 : -score/100;
 				adjustedScore = score;
 			} else
-				adjustedScore = 0;
+				adjustedScore = null;
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
 			Platform.runLater(() -> {
 				if (isLegal) {
-					dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
-					graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+					if (adjustedScore != null) {
+						dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
+						graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+					}
 					makeMove(bestMove);
 				} else
 					handleIllegalMove(bestMove);
@@ -783,7 +787,14 @@ public final class MainController implements AutoCloseable, Observer {
 				setTimeField(true);
 				setTimeField(false);
 				searchStats.clear();
-				dataPoints.remove(dataPoints.size() - 1);
+				int numOfMoves = controllerEngine.getMoveHistory().size();
+				List<Data<String, Number>> pointsToRemove = new ArrayList<>();
+				for (Data<String, Number> point : dataPoints) {
+					int x = Integer.parseInt(point.getXValue());
+					if (x >= numOfMoves)
+						pointsToRemove.add(point);
+				}
+				dataPoints.removeAll(pointsToRemove);
 				graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
 				doTime = true;
 			}
@@ -796,6 +807,18 @@ public final class MainController implements AutoCloseable, Observer {
 				doTime = false;
 				isReset = true;
 				searchEngine.stop();
+				if (isPondering) {
+					while (isPondering) {
+						synchronized (MainController.this) {
+							try {
+								MainController.this.wait();
+							} catch (InterruptedException e) { }
+						}
+					}
+				}
+				searchEngine.setPosition(controllerEngine.getStartPosition());
+				for (String m : controllerEngine.getMoveHistory())
+					searchEngine.play(m);
 				if (selectedSource != null) {
 					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
 					selectedNodeInd = null;
