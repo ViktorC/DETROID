@@ -31,7 +31,7 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	private int tempGeneration;
 	
 	/**
-	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
+	 * Constructs a new instance according to the specified parameters.
 	 * 
 	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
@@ -84,7 +84,7 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		tempGeneration = -1;
 	}
 	/**
-	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
+	 * Constructs a new instance according to the specified parameters.
 	 * 
 	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
@@ -116,7 +116,7 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				populationSize, logger);
 	}
 	/**
-	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
+	 * Constructs a new instance according to the specified parameters.
 	 * 
 	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
@@ -144,7 +144,7 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 				populationSize, logger);
 	}
 	/**
-	 * Constructs and returns a new EngineParameterOptimizer instance according to the specified parameters.
+	 * Constructs a new instance according to the specified parameters.
 	 * 
 	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element

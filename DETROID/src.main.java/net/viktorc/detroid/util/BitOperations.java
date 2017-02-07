@@ -29,8 +29,8 @@ public final class BitOperations {
 	 * Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only one set bit and it is not
 	 * checked!
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number with a single set bit.
+	 * @return The index of that bit.
 	 */
 	public static byte indexOfBit(long n) {
 		return DE_BRUIJN_TABLE[(int)((n*DE_BRUIJN_CONST) >>> 58)];
@@ -38,8 +38,8 @@ public final class BitOperations {
 	/**
 	 * Returns the most significant (leftmost) bit in a long.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The value of the leftmost set bit.
 	 */
 	public static long getMSBit(long n) {
 		n |= (n >> 1);
@@ -53,8 +53,8 @@ public final class BitOperations {
 	/**
 	 * Returns a long with the most significant (leftmost) bit in the input parameter reset.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The number with the leftmost set bit reset.
 	 */
 	public static long resetMSBit(long n) {
 		return n^getMSBit(n);
@@ -62,8 +62,8 @@ public final class BitOperations {
 	/**
 	 * Returns the index of the most significant (leftmost) bit in a long.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The index of the leftmost set bit.
 	 */
 	public static byte indexOfMSBit(long n) {
 		return DE_BRUIJN_TABLE[(int)((getMSBit(n)*DE_BRUIJN_CONST) >>> 58)];
@@ -71,8 +71,8 @@ public final class BitOperations {
 	/**
 	 * Returns the least significant (rightmost) bit in a long.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The value of the rightmost set bit.
 	 */
 	public static long getLSBit(long n) {
 		return n & -n;
@@ -80,8 +80,8 @@ public final class BitOperations {
 	/**
 	 * Returns a long with the least significant (rightmost) bit in the input parameter reset.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The number with the rightmost set bit reset.
 	 */
 	public static long resetLSBit(long n) {
 		return n & (n - 1);
@@ -89,8 +89,8 @@ public final class BitOperations {
 	/**
 	 * Returns the index of the least significant (rightmost) bit in a long.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The index of the rightmost set bit.
 	 */
 	public static byte indexOfLSBit(long n) {
 		return DE_BRUIJN_TABLE[(int)(((n & -n)*DE_BRUIJN_CONST) >>> 58)];
@@ -98,8 +98,8 @@ public final class BitOperations {
 	/**
 	 * Returns the number of set bits in a long.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The Hamming-weight of the number.
 	 */
 	public static byte hammingWeight(long n) {
 		n -= ((n >>> 1) & 0x5555555555555555L);
@@ -110,8 +110,8 @@ public final class BitOperations {
 	/**
 	 * Returns a long with the bits of the input parameter reversed.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The number with the bits reversed.
 	 */
 	public static long reverse(long n) {
 		n = (((n & 0xAAAAAAAAAAAAAAAAL)  >>> 1)  | ((n & 0x5555555555555555L)  << 1));
@@ -124,8 +124,8 @@ public final class BitOperations {
 	/**
 	 * Returns a long with the bytes of the input parameter reversed/flipped.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return The number with the bytes reversed.
 	 */
 	public static long reverseBytes(long n) {
 		n = (n & 0xFFFFFFFF00000000L) >>> 32 | (n & 0x00000000FFFFFFFFL) << 32;
@@ -135,8 +135,8 @@ public final class BitOperations {
 	/**
 	 * Returns an array of the indexes of all set bits in the input parameter.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return An array of bytes representing the indexes of all the set bits in the number.
 	 */
 	public static byte[] serialize(long n) {
 		byte[] series = new byte[hammingWeight(n)];
@@ -151,8 +151,8 @@ public final class BitOperations {
 	/**
 	 * Returns an array of all the bitwise subsets of the parameter number.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return An array of the numbers made up by all the bitwise subsets of the number.
 	 */
 	public static long[] getAllSubsets(long n) {
 		byte[] bitIndArray = BitOperations.serialize(n);
@@ -170,29 +170,29 @@ public final class BitOperations {
 		return combArray;
 	}
 	/**
-	 * Returns a String representation of a long in binary form with all the 64 bits displayed whether set or not.
+	 * Returns a string representation of a long in binary form with all the 64 bits displayed whether set or not.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return A string representation with all leading zeros included.
 	 */
 	public static String toBinaryString(long n) {
 		String binString = Long.toBinaryString(n);
 		return ("0000000000000000000000000000000000000000000000000000000000000000" + binString).substring(binString.length());
 	}
 	/**
-	 * Returns the binary literal of the input long as a String.
+	 * Returns the binary literal of the input long as a string.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return A Java binary literal with all leading zeros included.
 	 */
 	public static String toBinaryLiteral(long n) {
 		return "0b"+ toBinaryString(n) + "L";
 	}
 	/**
-	 * Returns the hexadecimal literal of the input long as a String.
+	 * Returns the hexadecimal literal of the input long as a string.
 	 * 
-	 * @param n
-	 * @return
+	 * @param n The number.
+	 * @return A Java hexadecimal literal with all leading zeros included.
 	 */
 	public static String toHexLiteral(long n) {
 		String hexString = Long.toHexString(n);

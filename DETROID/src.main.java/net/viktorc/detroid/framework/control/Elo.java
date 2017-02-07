@@ -7,7 +7,7 @@ package net.viktorc.detroid.framework.control;
  * @author Viktor
  *
  */
-public class Elo {
+public final class Elo {
 
 	/**
 	 * The minimum allowed win ratio. Any win ratio smaller than this defaults to this value.

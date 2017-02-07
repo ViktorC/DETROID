@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.util.ASGD;
 
 /**
@@ -188,8 +189,9 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 						String fen = (String) dataPair.getKey();
 						double result = (double) ((Float) dataPair.getValue()).floatValue();
 						e.setPosition(fen);
-						e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
-						double score = e.getSearchInfo().getScore();
+						SearchResults res = e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
+						double score = res.getScore().get();
+						// Check if it's white's turn.
 						if (!fen.contains("w"))
 							score *= -1;
 						double error = computeError(result, score, k);

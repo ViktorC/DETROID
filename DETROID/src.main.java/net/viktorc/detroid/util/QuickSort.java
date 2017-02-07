@@ -52,9 +52,9 @@ public final class QuickSort {
 	/**
 	 * The quickSort algorithm.
 	 * 
-	 * @param array
-	 * @param left
-	 * @param right
+	 * @param array The array to sort.
+	 * @param left The index of the left head.
+	 * @param right The index of the right head.
 	 */
 	private static <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
 		int index, partLeft = left, partRight = right;

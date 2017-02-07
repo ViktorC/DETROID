@@ -13,7 +13,7 @@ public abstract class DebugInformation extends Observable {
 	/**
 	 * It returns the content of the instance, i.e. the debug information string.
 	 * 
-	 * @return
+	 * @return A string of debug information.
 	 */
 	public abstract String getContent();
 	

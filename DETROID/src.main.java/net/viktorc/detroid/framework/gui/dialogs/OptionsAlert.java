@@ -94,7 +94,7 @@ public class OptionsAlert extends Alert {
 				grid.add(label, 0, i);
 				grid.add(field, 1, i);
 			} else if (option instanceof SpinOption) {
-				Label label = new Label(name + " (" + option.getMin() + ", " + option.getMax() + "):");
+				Label label = new Label(name + " (" + option.getMin().get() + ", " + option.getMax().get() + "):");
 				SpinTextField field = new SpinTextField();
 				field.setText(value.toString());
 				Button button = new Button("Set");
@@ -119,7 +119,7 @@ public class OptionsAlert extends Alert {
 			} else if (option instanceof StringOption) {
 				Label label = new Label(name + ":");
 				TextField field = new TextField();
-				field.setText(option.getDefaultValue() == null ? "" : option.getDefaultValue().toString());
+				field.setText(option.getDefaultValue().get().toString());
 				Button button = new Button("Set");
 				button.setMinWidth(50);
 				button.setOnAction(new EventHandler<ActionEvent>() {
@@ -143,7 +143,7 @@ public class OptionsAlert extends Alert {
 				Label label = new Label(name + ":");
 				ComboBox<String> field = new ComboBox<>();
 				ComboOption c = (ComboOption) option;
-				field.getItems().addAll(c.getAllowedValues());
+				field.getItems().addAll(c.getAllowedValues().get());
 				field.setValue(value.toString());
 				field.setOnAction(new EventHandler<ActionEvent>() {
 					

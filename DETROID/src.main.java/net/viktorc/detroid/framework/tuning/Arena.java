@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import net.viktorc.detroid.framework.control.ControllerEngine;
 import net.viktorc.detroid.framework.control.GameState;
 import net.viktorc.detroid.framework.uci.ScoreType;
+import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 
 /**
@@ -130,7 +131,7 @@ class Arena implements AutoCloseable {
 				timer.start();
 				timer.pause();
 			}
-			String move = null;
+			SearchResults res = null;
 			long engine1Time = timePerGame;
 			long engine2Time = timePerGame;
 			boolean engine1Turn = engine1White;
@@ -147,22 +148,22 @@ class Arena implements AutoCloseable {
 			}
 			while (controller.getGameState() == GameState.IN_PROGRESS) {
 				long start;
-				move = null;
+				res = null;
 				if (engine1Turn) {
 					try {
 						timer.setCallBack(() -> engine1.stop());
 						timer.setDelay(engine1Time);
 						start = timer.getDelay();
 						timer.goOn();
-						move = engine1.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
-								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null).getBestMove();
+						res = engine1.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
+								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null);
 						timer.pause();
 						engine1Time -= (start - timer.getDelay());
-						if (engine1Time <= 0 || !controller.play(move)) {
+						if (engine1Time <= 0 || !controller.play(res.getBestMove())) {
 							engine2Wins++;
 							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: " + (engine1Time <= 0 ?
-									"Engine1 lost on time." : "Engine1 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() +
-									"\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
+									"Engine1 lost on time." : "Engine1 returned an illegal move: " + res.getBestMove() + ".") + "\n" +
+									controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 							continue Games;
 						}
 					} catch (Exception e) {
@@ -173,22 +174,23 @@ class Arena implements AutoCloseable {
 						continue Games;
 					}
 					engine1Time += timeIncPerMove;
-					if (fenLogger != null && engine1.getSearchInfo().getScoreType() != ScoreType.MATE) fenLog.add(controller.toFEN());
+					if (fenLogger != null && res.getScoreType().isPresent() && res.getScoreType().get() != ScoreType.MATE)
+						fenLog.add(controller.toFEN());
 				} else {
 					try {
 						timer.setCallBack(() -> engine2.stop());
 						timer.setDelay(engine2Time);
 						start = timer.getDelay();
 						timer.goOn();
-						move = engine2.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
-								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null).getBestMove();
+						res = engine2.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
+								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null);
 						timer.pause();
 						engine2Time -= (start - timer.getDelay());
-						if (engine2Time <= 0 || !controller.play(move)) {
+						if (engine2Time <= 0 || !controller.play(res.getBestMove())) {
 							engine1Wins++;
 							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: " + (engine2Time <= 0 ?
-									"Engine2 lost on time." : "Engine2 returned an illegal move: " + move + ".") + "\n" + controller.toPGN() +
-									"\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
+									"Engine2 lost on time." : "Engine2 returned an illegal move: " + res.getBestMove() + ".") + "\n" +
+									controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
 							continue Games;
 						}
 					} catch (Exception e) {
@@ -199,10 +201,11 @@ class Arena implements AutoCloseable {
 						continue Games;
 					}
 					engine2Time += timeIncPerMove;
-					if (fenLogger != null && engine2.getSearchInfo().getScoreType() != ScoreType.MATE) fenLog.add(controller.toFEN());
+					if (fenLogger != null && res.getScoreType().isPresent() && res.getScoreType().get() != ScoreType.MATE)
+						fenLog.add(controller.toFEN());
 				}
-				engine1.play(move);
-				engine2.play(move);
+				engine1.play(res.getBestMove());
+				engine2.play(res.getBestMove());
 				engine1Turn = !engine1Turn;
 			}
 			GameState state = controller.getGameState();

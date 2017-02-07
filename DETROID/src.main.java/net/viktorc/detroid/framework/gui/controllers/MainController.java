@@ -25,6 +25,10 @@ import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart.Data;
+import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogEvent;
@@ -52,6 +56,7 @@ import net.viktorc.detroid.framework.gui.dialogs.TimeSettingsDialog;
 import net.viktorc.detroid.framework.gui.models.Piece;
 import net.viktorc.detroid.framework.gui.models.SearchData;
 import net.viktorc.detroid.framework.gui.models.TimeControl;
+import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchInformation;
 import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
@@ -73,6 +78,8 @@ public final class MainController implements AutoCloseable, Observer {
 	private static final long DEFAULT_TIME = 300000;
 	// How frequently the timer's are updated. Only the user's time is actually measured with such a low accuracy.
 	private static final long TIMER_RESOLUTION = 100;
+	// The number of data points from which on, symbols are not drawn on the chart.
+	private static final int CHART_SYMBOL_LIMIT = 10;
 	
 	@FXML
 	private MenuItem reset;
@@ -107,9 +114,12 @@ public final class MainController implements AutoCloseable, Observer {
 	@FXML
 	private TextField bTime;
 	@FXML
+	private LineChart<String, Number> graph;
+	@FXML
 	private TableView<SearchData> searchStatView;
 	
 	private final Stage stage;
+	private ObservableList<Data<String, Number>> dataPoints;
 	private ObservableList<SearchData> searchStats;
 	private ExecutorService executor;
 	private ControllerEngine controllerEngine;
@@ -245,6 +255,7 @@ public final class MainController implements AutoCloseable, Observer {
 		chessPiece.getStyleClass().add(PIECE_STYLE_CLASS);
 		chessPiece.minWidth(Double.MAX_VALUE);
 		chessPiece.minHeight(Double.MAX_VALUE);
+		// Set up the on mouse clicked event handler for pieces.
 		chessPiece.setOnMouseClicked(new EventHandler<Event>() {
 
 			@Override
@@ -307,6 +318,26 @@ public final class MainController implements AutoCloseable, Observer {
 		moveHistory.setText(moveList);
 	}
 	/**
+	 * Sets the axes of the chart, assigns a new series to it, creates a new list of data points and 
+	 * assigns them to the new series. Simply clearing the data points list is not sufficient due to 
+	 * a bug that sometimes results in a line connecting the first data point to the horizontal line 
+	 * at y = 0.
+	 */
+	private void resetChart() {
+		Series<String, Number> series = new Series<>();
+		series.setName("W" + System.lineSeparator() + '\u25b2' + System.lineSeparator() +
+				'\u25bc' + System.lineSeparator() + "B");
+		dataPoints = FXCollections.observableArrayList();
+		series.setData(dataPoints);
+		ObservableList<Series<String, Number>> graphData = FXCollections.observableArrayList();
+		graphData.add(series);
+		graph.setData(graphData);
+		NumberAxis yAxis = (NumberAxis) graph.getYAxis();
+		yAxis.setLowerBound(-32);
+		yAxis.setUpperBound(32);
+		yAxis.setAutoRanging(true);
+	}
+	/**
 	 * Returns whether the specified square is a legal origin square in the current position for the 
 	 * side to move.
 	 * 
@@ -362,22 +393,35 @@ public final class MainController implements AutoCloseable, Observer {
 			long start = System.currentTimeMillis();
 			SearchResults res = searchEngine.search(null, null, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
 					timeControl.getBlackInc(), null, null, null, null, null, null);
-			isSearching = false;
+			timeLeft -= (System.currentTimeMillis() - start);
 			searchEngine.getSearchInfo().deleteObserver(this);
+			isSearching = false;
 			if (isReset)
 				return;
-			doTime = false;
-			ponderMove = res.getSuggestedPonderMove();
-			String bestMove = res.getBestMove();
-			timeLeft -= (System.currentTimeMillis() - start);
 			if (controllerEngine.isWhitesTurn())
 				whiteTime.set(timeLeft);
 			else
 				blackTime.set(timeLeft);
+			String bestMove = res.getBestMove();
+			ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
+			double adjustedScore;
+			if (res.getScore().isPresent()) {
+				double score = res.getScore().get();
+				ScoreType type = res.getScoreType().get();
+				if (controllerEngine.isWhitesTurn())
+					score = type == ScoreType.MATE ? score > 0 ? 32 : -32 : score/100;
+				else
+					score = type == ScoreType.MATE ? score > 0 ? -32 : 32 : -score/100;
+				adjustedScore = score;
+			} else
+				adjustedScore = 0;
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
 			Platform.runLater(() -> {
-				if (isLegal)
+				if (isLegal) {
+					dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
+					graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
 					makeMove(bestMove);
+				}
 				else
 					handleIllegalMove(bestMove);
 			});
@@ -395,20 +439,24 @@ public final class MainController implements AutoCloseable, Observer {
 		isPondering = true;
 		searchStats.clear();
 		executor.submit(() -> {
+			searchEngine.setPosition(controllerEngine.getStartPosition());
+			for (String m : controllerEngine.getMoveHistory())
+				searchEngine.play(m);
 			searchEngine.play(ponderMove);
 			long timeLeft;
 			long timeSpent;
 			if (controllerEngine.isWhitesTurn()) {
 				timeLeft = blackTime.get();
-				timeSpent = whiteTime.get();
+				timeSpent = whiteTimes.peek();
 			} else {
 				timeLeft = whiteTime.get();
-				timeSpent = blackTime.get();
+				timeSpent = blackTimes.peek();
 			}
 			searchEngine.getSearchInfo().addObserver(this);
 			long start = System.currentTimeMillis();
 			SearchResults res = searchEngine.search(null, true, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
 					timeControl.getBlackInc(), null, null, null, null, null, null);
+			long end = System.currentTimeMillis();
 			searchEngine.getSearchInfo().deleteObserver(this);
 			isPondering = false;
 			if (isReset) {
@@ -421,20 +469,33 @@ public final class MainController implements AutoCloseable, Observer {
 			if (res == null || !ponderHit)
 				return;
 			doTime = false;
-			long end = System.currentTimeMillis();
-			timeSpent = end - start - (timeSpent - (controllerEngine.isWhitesTurn() ? blackTime.get() : whiteTime.get()));
-			ponderMove = res.getSuggestedPonderMove();
-			String bestMove = res.getBestMove();
+			timeSpent = end - start - (timeSpent - (controllerEngine.isWhitesTurn() ? blackTime.get() - timeControl.getBlackInc() :
+				whiteTime.get() - timeControl.getWhiteInc()));
 			timeLeft -= timeSpent;
 			if (controllerEngine.isWhitesTurn())
 				whiteTime.set(timeLeft);
 			else
 				blackTime.set(timeLeft);
+			String bestMove = res.getBestMove();
+			ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
+			double adjustedScore;
+			if (res.getScore().isPresent()) {
+				double score = res.getScore().get();
+				ScoreType type = res.getScoreType().get();
+				if (controllerEngine.isWhitesTurn())
+					score = type == ScoreType.MATE ? score > 0 ? 32 : -32 : score/100;
+				else
+					score = type == ScoreType.MATE ? score > 0 ? -32 : 32 : -score/100;
+				adjustedScore = score;
+			} else
+				adjustedScore = 0;
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
 			Platform.runLater(() -> {
-				if (isLegal)
+				if (isLegal) {
+					dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
+					graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
 					makeMove(bestMove);
-				else
+				} else
 					handleIllegalMove(bestMove);
 			});
 		});
@@ -512,7 +573,7 @@ public final class MainController implements AutoCloseable, Observer {
 		} else {
 			doTime = true;
 			if (!usersTurn) {
-				if (doPonder && !ponderHit)
+				if (!doPonder || !ponderHit)
 					startSearch();
 			} else if (doPonder)
 				startPondering();
@@ -557,10 +618,16 @@ public final class MainController implements AutoCloseable, Observer {
 		}
 		usersTurn = isUserWhite == controllerEngine.isWhitesTurn();
 		legalMoves = controllerEngine.getLegalMoves();
+		if (selectedSource != null) {
+			board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+			selectedNodeInd = null;
+			selectedSource = null;
+		}
 		setBoard(controllerEngine.toFEN());
 		setMoveHistory();
 		setTimeField(true);
 		setTimeField(false);
+		resetChart();
 		searchStats.clear();
 		if (controllerEngine.getGameState() != GameState.IN_PROGRESS) {
 			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), false);
@@ -575,6 +642,7 @@ public final class MainController implements AutoCloseable, Observer {
 	}
 	@FXML
 	public void initialize() {
+		// Reset menu item handler: resets the time controls and the game to the starting position.
 		reset.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -593,6 +661,7 @@ public final class MainController implements AutoCloseable, Observer {
 				setPosition("startpos", false);
 			}
 		});
+		// Paste FEN from Clipboard menu item handler: sets up the position according to the FEN string in the clipboard.
 		pasteFen.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -619,6 +688,7 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		});
+		// Paste PGN from Clipboard menu item handler: sets up the position according to the PGN string in the clipboard.
 		pastePgn.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -645,6 +715,7 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		});
+		// Copy FEN to Clipboard menu item handler: Copies the current position description in FEN to the clipboard.
 		copyFen.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -655,6 +726,7 @@ public final class MainController implements AutoCloseable, Observer {
 				clipboard.setContent(content);
 			}
 		});
+		// Copy PGN to Clipboard menu item handler: Copies the current position description in PGN to the clipboard.
 		copyPgn.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -665,6 +737,7 @@ public final class MainController implements AutoCloseable, Observer {
 				clipboard.setContent(content);
 			}
 		});
+		// Unmake Move menu item handler: unmakes a whole move (only allowed if it is the user's turn).
 		unmakeMove.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -709,9 +782,13 @@ public final class MainController implements AutoCloseable, Observer {
 				setMoveHistory();
 				setTimeField(true);
 				setTimeField(false);
+				searchStats.clear();
+				dataPoints.remove(dataPoints.size() - 1);
+				graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
 				doTime = true;
 			}
 		});
+		// Play as White radio menu item handler: if it is selected the user plays as white, if not, as black.
 		side.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -731,6 +808,7 @@ public final class MainController implements AutoCloseable, Observer {
 					if (blackTimes.size() > 0)
 						blackTime.set(blackTimes.peek());
 				}
+				searchStats.clear();
 				isUserWhite = !isUserWhite;
 				usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
 				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
@@ -741,6 +819,7 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		});
+		// Time Control Settings menu item handler: opens a dialog for setting the time control.
 		timeSettings.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -766,6 +845,7 @@ public final class MainController implements AutoCloseable, Observer {
 						}
 					}
 				}
+				searchStats.clear();
 				Dialog<TimeControl> timeSettingsDialog = new TimeSettingsDialog(stage, timeControl);
 				Optional<TimeControl> res = timeSettingsDialog.showAndWait();
 				if (res.isPresent())
@@ -777,6 +857,7 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		});
+		// Ponder radio menu item handler: if selected the engine ponders while it is the user's turn.
 		ponder.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -795,6 +876,8 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		});
+		/* Options menu item handler: opens a dialog that presents the UCI options of the search engine in the form of 
+		 * interactive controls. */
 		options.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -820,6 +903,7 @@ public final class MainController implements AutoCloseable, Observer {
 						}
 					}
 				}
+				searchStats.clear();
 				Alert optionsDialog = new OptionsAlert(stage, searchEngine);
 				optionsDialog.showAndWait();
 				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
@@ -829,6 +913,8 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 			}
 		});
+		/* Debug Console menu item handler: opens a non-modal dialog that contains a text area to which the search engine's 
+		 * debug output is printed. */
 		debugConsole.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -851,6 +937,7 @@ public final class MainController implements AutoCloseable, Observer {
 				console.show();
 			}
 		});
+		// About menu item handler: opens a simple dialog displaying the name of the search engine and its author.
 		about.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -872,6 +959,7 @@ public final class MainController implements AutoCloseable, Observer {
 				info.show();
 			}
 		});
+		// Set up the board and the squares with event handlers.
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
 				Node n = new StackPane();
@@ -896,9 +984,13 @@ public final class MainController implements AutoCloseable, Observer {
 				board.add(n, j, i);
 			}
 		}
+		moveHistory.setWrapText(true);
+		// Set up the chart.
+		resetChart();
+		// Set up the search stats.
 		searchStats = FXCollections.observableArrayList();
 		searchStatView.setItems(searchStats);
-		moveHistory.setWrapText(true);
+		// Set up the initial position.
 		isUserWhite = true;
 		setPosition("startpos", false);
 	}

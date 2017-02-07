@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -17,21 +20,21 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<BorderPane prefHeight="800.0" prefWidth="860.0" scaleShape="false" styleClass="pane" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.viktorc.detroid.framework.gui.controllers.MainController">
+<BorderPane prefHeight="820.0" prefWidth="880.0" scaleShape="false" styleClass="pane" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.viktorc.detroid.framework.gui.controllers.MainController">
    <center>
-      <GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="728.0" prefWidth="810.0" BorderPane.alignment="CENTER">
+      <GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="745.0" prefWidth="838.0" BorderPane.alignment="CENTER">
         <columnConstraints>
           <ColumnConstraints hgrow="SOMETIMES" maxWidth="385.0" minWidth="10.0" prefWidth="385.0" />
-          <ColumnConstraints hgrow="SOMETIMES" maxWidth="374.0" minWidth="10.0" prefWidth="29.0" />
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="374.0" minWidth="10.0" prefWidth="15.0" />
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="379.0" minWidth="10.0" prefWidth="375.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="374.0" minWidth="10.0" prefWidth="25.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="374.0" minWidth="10.0" prefWidth="17.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="411.0" minWidth="10.0" prefWidth="409.0" />
         </columnConstraints>
         <rowConstraints>
             <RowConstraints maxHeight="318.0" minHeight="10.0" prefHeight="17.0" vgrow="SOMETIMES" />
-          <RowConstraints maxHeight="392.0" minHeight="10.0" prefHeight="384.0" vgrow="SOMETIMES" />
+          <RowConstraints maxHeight="392.0" minHeight="10.0" prefHeight="383.0" vgrow="SOMETIMES" />
           <RowConstraints maxHeight="318.0" minHeight="10.0" prefHeight="27.0" vgrow="SOMETIMES" />
-            <RowConstraints maxHeight="318.0" minHeight="9.0" prefHeight="13.0" vgrow="SOMETIMES" />
-            <RowConstraints maxHeight="289.0" minHeight="10.0" prefHeight="285.0" vgrow="SOMETIMES" />
+            <RowConstraints maxHeight="318.0" minHeight="0.0" prefHeight="14.0" vgrow="SOMETIMES" />
+            <RowConstraints maxHeight="299.0" minHeight="10.0" prefHeight="299.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
             <GridPane fx:id="board" gridLinesVisible="true" prefHeight="318.0" prefWidth="386.0" styleClass="chessBoard" GridPane.hgrow="NEVER" GridPane.rowIndex="1" GridPane.vgrow="NEVER">
@@ -139,9 +142,11 @@
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
               </columnConstraints>
               <rowConstraints>
-                  <RowConstraints maxHeight="189.0" minHeight="10.0" prefHeight="34.0" vgrow="SOMETIMES" />
-                  <RowConstraints maxHeight="133.0" minHeight="10.0" prefHeight="35.0" vgrow="SOMETIMES" />
-                <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="316.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="189.0" minHeight="10.0" prefHeight="29.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="143.0" minHeight="0.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="111.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="174.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
                   <TextArea fx:id="moveHistory" editable="false" prefHeight="200.0" prefWidth="200.0" styleClass="history" GridPane.rowIndex="2" />
@@ -170,6 +175,18 @@
                         </TextField>
                      </children>
                   </GridPane>
+                  <Label styleClass="labels" text="Search Score History:" GridPane.rowIndex="3" GridPane.valignment="BOTTOM">
+                     <padding>
+                        <Insets bottom="5.0" />
+                     </padding></Label>
+                  <LineChart fx:id="graph" legendSide="LEFT" GridPane.rowIndex="4">
+                    <xAxis>
+                      <CategoryAxis side="BOTTOM" />
+                    </xAxis>
+                    <yAxis>
+                      <NumberAxis side="LEFT" />
+                    </yAxis>
+                  </LineChart>
                </children>
             </GridPane>
             <Label styleClass="labels" text="Chess Board:" GridPane.valignment="BOTTOM">
@@ -199,13 +216,13 @@
                   <MenuItem fx:id="copyPgn" mnemonicParsing="false" styleClass="innerMenuItem" text="Copy PGN to Clipboard" />
                   <SeparatorMenuItem mnemonicParsing="false" />
               	  <MenuItem fx:id="unmakeMove" mnemonicParsing="false" styleClass="innerMenuItem" text="Unmake Move" />
-                  <RadioMenuItem fx:id="side" mnemonicParsing="false" styleClass="innerMenuItem" selected="true" text="Play as White" />
+                  <RadioMenuItem fx:id="side" mnemonicParsing="false" selected="true" styleClass="innerMenuItem" text="Play as White" />
                   <MenuItem fx:id="timeSettings" mnemonicParsing="false" styleClass="innerMenuItem" text="Time Control Settings" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" styleClass="menuTab" text="Engine">
                <items>
-                  <RadioMenuItem fx:id="ponder" mnemonicParsing="false" styleClass="innerMenuItem" selected="false" text="Ponder" />
+                  <RadioMenuItem fx:id="ponder" mnemonicParsing="false" selected="false" styleClass="innerMenuItem" text="Ponder" />
                   <MenuItem fx:id="options" mnemonicParsing="false" styleClass="innerMenuItem" text="Options" />
                   <MenuItem fx:id="debugConsole" mnemonicParsing="false" styleClass="innerMenuItem" text="Debug Console" />
                   <MenuItem fx:id="about" mnemonicParsing="false" styleClass="innerMenuItem" text="About" />

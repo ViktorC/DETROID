@@ -76,7 +76,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	/**
 	 * Returns the number of occupied slots in the hash table.
 	 * 
-	 * @return
+	 * @return The number of entries in the table.
 	 */
 	public long getLoad() {
 		return load;
@@ -84,7 +84,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	/**
 	 * Returns the total number of slots in the hash tables.
 	 * 
-	 * @return
+	 * @return The total number of entry slots.
 	 */
 	public long getCapacity() {
 		return capacity;
@@ -94,7 +94,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * 
 	 * @param e The entry to be inserted.
 	 * @return Whether the entry has been inserted into one of the tables.
-	 * @throws NullPointerException
+	 * @throws NullPointerException If e is null.
 	 */
 	public boolean put(T e) throws NullPointerException {
 		int ind1, ind2, altInd;
@@ -187,7 +187,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	/**
 	 * Return the entry identified by the input parameter key or null if it is not in the table.
 	 * 
-	 * @param key
+	 * @param key The 64 bit hash key.
 	 * @return The entry mapped to the specified key.
 	 */
 	public T get(long key) {
@@ -203,7 +203,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table;
 	 * returns false otherwise.
 	 * 
-	 * @param key
+	 * @param key The 64 bit hash key.
 	 * @return Whether there was an entry mapped to the specified key.
 	 */
 	public boolean remove(long key) {
@@ -225,7 +225,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	/**
 	 * Removes all the entries that match the condition specified in the argument.
 	 * 
-	 * @param condition
+	 * @param condition The condition on which an entry should be removed.
 	 */
 	public void remove(Predicate<T> condition) throws NullPointerException {
 		T e;

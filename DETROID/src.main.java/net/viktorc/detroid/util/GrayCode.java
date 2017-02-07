@@ -14,9 +14,9 @@ public class GrayCode {
 	/**
 	 * Converts a number to its gray coded value.
 	 * 
-	 * @param n
+	 * @param n The natural value of the number.
 	 * @throws IllegalArgumentException If n < 0.
-	 * @return
+	 * @return The gray coded value of the number.
 	 */
 	public final static long encode(long n) throws IllegalArgumentException {
 		if (n < 0)
@@ -26,8 +26,8 @@ public class GrayCode {
 	/**
 	 * Converts a gray coded number to its natural value.
 	 * 
-	 * @param g
-	 * @return
+	 * @param g The gray coded value of the number.
+	 * @return The natural value of the number.
 	 */
 	public final static long decode(long g) {
 		g = g^(g >> 32);

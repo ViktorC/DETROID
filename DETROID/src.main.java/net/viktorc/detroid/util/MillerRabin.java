@@ -21,8 +21,8 @@ public final class MillerRabin {
 	/**
 	 * Returns random long within the specified range by adjoining two random integers;
 	 * 
-	 * @param upperBound Exclusive.
-	 * @return
+	 * @param upperBound Exclusive upper bound.
+	 * @return A random number between zero (inclusive) and the specified upper bound
 	 */
 	private long nextLong(long upperBound) {
 		long r = rand.nextLong() & ((1L << 63) - 1); // Taking the absolute value of the random long.
@@ -34,7 +34,7 @@ public final class MillerRabin {
 	 * @param base The base of the modular exponentiation.
 	 * @param exp The exponent.
 	 * @param mod The modulus;
-	 * @return
+	 * @return The result of the exponentiation.
 	 */
 	private static long modPow(long base, long exp, long mod) {
 		long res;
@@ -55,7 +55,7 @@ public final class MillerRabin {
 	 * 
 	 * @param n The number to be tested.
 	 * @param k The accuracy of the primality test.
-	 * @return
+	 * @return Whether the number is probably prime or not.
 	 */
 	public boolean isPrime(long n, int k) {
 		long d, s, a, x;
@@ -96,7 +96,7 @@ public final class MillerRabin {
 	 * Tests whether a number is probably prime or not using the Miller-Rabin algorithm.
 	 * 
 	 * @param n The number to be tested.
-	 * @return
+	 * @return Whether the number is probably prime or not.
 	 */
 	public boolean isPrime(long n) {
 		return isPrime(n, DEFAULT_ACCURACY);
@@ -104,9 +104,9 @@ public final class MillerRabin {
 	/**
 	 * Finds and returns the smallest prime number that is greater than or equal to n.
 	 * 
-	 * @param n The number to be tested.
+	 * @param n The number.
 	 * @param k The accuracy of the primality test.
-	 * @return
+	 * @return The smallest prime that is greater than or equal to the number specified.
 	 */
 	public long leastGEPrime(long n, int k) {
 		if (n < 0)
@@ -120,8 +120,8 @@ public final class MillerRabin {
 	/**
 	 * Finds and returns the smallest prime number that is greater than or equal to n.
 	 * 
-	 * @param n The number to be tested.
-	 * @return
+	 * @param n The number.
+	 * @return The smallest prime that is greater than or equal to the number specified.
 	 */
 	public long leastGEPrime(long n) {
 		return leastGEPrime(n, DEFAULT_ACCURACY);
@@ -129,9 +129,9 @@ public final class MillerRabin {
 	/**
 	 * Finds and returns the greatest prime number that is lesser than or equal to n.
 	 * 
-	 * @param n The number to be tested.
+	 * @param n The number.
 	 * @param k The accuracy of the primality test.
-	 * @return
+	 * @return The greatest prime that is smaller than or equal to the number specified.
 	 */
 	public long greatestLEPrime(long n, int k) {
 		if (n < 2)
@@ -145,8 +145,8 @@ public final class MillerRabin {
 	/**
 	 * Finds and returns the greatest prime number that is lesser than or equal to n.
 	 * 
-	 * @param n The number to be tested.
-	 * @return
+	 * @param n The number.
+	 * @return The greatest prime that is smaller than or equal to the number specified.
 	 */
 	public long greatestLEPrime(long n) {
 		return greatestLEPrime(n, DEFAULT_ACCURACY);

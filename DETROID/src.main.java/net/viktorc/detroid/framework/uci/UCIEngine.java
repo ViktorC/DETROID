@@ -48,13 +48,14 @@ public interface UCIEngine {
 	 * @param setting The UCI option to set.
 	 * @param value The value to which the option should be set.
 	 * @return Whether the setting was successfully set to the value, e.g. it was an allowed value.
+	 * @param <T> The type of the value the option holds.
 	 */
 	<T> boolean setOption(Option<T> setting, T value);
 	/**
 	 * Notifies the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
 	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.
 	 * 
-	 * @param on Whehter the engine should run in debug mode.
+	 * @param on Whether the engine should run in debug mode.
 	 */
 	void setDebugMode(boolean on);
 	/**
@@ -91,7 +92,8 @@ public interface UCIEngine {
 	 * @param mateDistance Search for a mate in x.
 	 * @param searchTime Search exactly this number of ms.
 	 * @param infinite Whether the position should be searched infinitely.
-	 * @return The best move found and optionally the suggested ponder move in pure algebraic coordinate notation.
+	 * @return The best move found and optionally the suggested ponder move in pure algebraic coordinate notation and 
+	 * optionally the search score and search score type.
 	 */
 	SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth,

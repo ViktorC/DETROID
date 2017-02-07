@@ -108,7 +108,7 @@ final class Params extends EngineParameters {
 	byte tempoAdvantage;
 
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short lazyEvalMar;
 
 	// Game phase intervals.
@@ -116,51 +116,51 @@ final class Params extends EngineParameters {
 	short gamePhaseOpeningLower;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short gamePhaseOpeningUpper;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 8)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short gamePhaseEndgameLower;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short gamePhaseEndgameUpper;
 
 	// Search parameters.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte nullMoveReduction; // Null move pruning reduction.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte lateMoveReduction; // Late move reduction.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte lateMoveReductionMinActivationDepth; // Min. depth for late move reduction.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 3)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte minMovesSearchedForLmr; // Min. number of searched moves for late move reduction.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 9)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short futilityMargin1; // Futility margin.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short futilityMargin2; // Extended futility margin.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short futilityMargin3; // Deep futility margin.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short razoringMargin1; // Razoring margin.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short razoringMargin2; // Deep razoring margin.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short aspirationDelta; // The aspiration delta within iterative deepening.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 10)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short quiescenceDelta; // The margin for delta-pruning in the quiescence search.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte maxNominalSearchDepth; // The maximum nominal search depth.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte fullPly; // For fractional ply extensions.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte checkExt; // Fractional check extension.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte recapExt; // Fractional recapture extension.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte singleReplyExt; // Fractional single reply extension.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte iidMinActivationDepth; // The minimum depth at which IID is activated.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte iidRelDepthHth; // The portion of the total depth to which the position will be searched with IID.
 
 	// The relative history table's value depreciation factor.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
 	byte rhtDecrementFactor;
 
 	// The default hash size in megabytes.
@@ -169,27 +169,27 @@ final class Params extends EngineParameters {
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte tTshare;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
 	byte eTshare;
 
 	// The number of turns for which the different hash table's entries are retained by default.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
 	byte tTentryLifeCycle;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
 	byte eTentryLifeCycle;
 
 	// The values considered when calculating search time extensions.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 11)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	short scoreFluctuationLimit;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte fractionOfOrigSearchTimeSinceLastResultChangeLimitHth;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte resultChangesPerDepthLimit;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte avgMovesPerGame;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte movesToGoSafetyMargin;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte fractionOfTotalTimeToUseHth;
 
 	// Piece-square tables for openings and end games.

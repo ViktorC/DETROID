@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Viktor
  *
  */
-final class MatchTimer implements AutoCloseable {
+class MatchTimer implements AutoCloseable {
 
 	// A single thread fixed thread pool in case the timer needs to be restarted.
 	private ExecutorService pool;

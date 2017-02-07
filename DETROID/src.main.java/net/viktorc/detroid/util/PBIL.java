@@ -86,12 +86,12 @@ public abstract class PBIL {
 	 * will be used.
 	 * @param logger The logger used to log the current status of the optimization process. If it is 
 	 * null, no logging is performed.
-	 * @throws IllegalArgumentException
+	 * @throws IllegalArgumentException If the length of the genotype length is not greater than 0.
 	 */
 	protected PBIL(int genotypeLength, Integer populationSize, Double mutationProbability, Double mutationShift, Double learningRate,
 			Double negLearningRateAddition, Integer generations, double[] initialProbabilityVector, Logger logger) throws IllegalArgumentException {
 		if (genotypeLength <= 0)
-			throw new IllegalArgumentException("The value of genomeLength has to be greater than 0.");
+			throw new IllegalArgumentException("The genotype length has to be greater than 0.");
 		if (initialProbabilityVector == null) {
 			// Start with an unbiased probability vector.
 			probabilityVector = new double[genotypeLength];

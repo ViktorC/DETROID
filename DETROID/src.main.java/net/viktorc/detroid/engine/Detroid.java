@@ -35,6 +35,8 @@ import net.viktorc.detroid.util.LossyHashTable;
 import net.viktorc.detroid.util.SizeEstimator;
 
 /**
+ * A UCI compatible, tunable chess engine that utilizes magic bit boards and most search heuristics and supports Polyglot 
+ * opening books.
  * 
  * @author Viktor
  *
@@ -69,8 +71,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private Book book;
 	private Evaluator eval;
 	private RelativeHistoryTable hT;
-	private LossyHashTable<TTEntry> tT;		// Transposition table.
-	private LossyHashTable<ETEntry> eT;		// Evaluation hash table.
+	// Transposition table.
+	private LossyHashTable<TTEntry> tT;
+	// Evaluation hash table.
+	private LossyHashTable<ETEntry> eT;
 	private SearchInfo searchStats;
 	private Move searchResult;
 	private Short scoreFluctuation;
@@ -223,18 +227,18 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
 		ownBook = new Option.CheckOption("OwnBook", false);
-		primaryBookPath = new Option.StringOption("PrimaryBookPath", book == null ? null : book.getPrimaryFilePath());
-		secondaryBookPath = new Option.StringOption("SecondaryBookPath", null);
+		primaryBookPath = new Option.StringOption("PrimaryBookPath", DEFAULT_BOOK_FILE_PATH);
+		secondaryBookPath = new Option.StringOption("SecondaryBookPath", "");
 		parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
-		uciOpponent = new Option.StringOption("UCI_Opponent", null);
-		options.put(hashSize, hashSize.getDefaultValue());
-		options.put(clearHash, clearHash.getDefaultValue());
-		options.put(ponder, ponder.getDefaultValue());
-		options.put(ownBook, ownBook.getDefaultValue());
-		options.put(primaryBookPath, primaryBookPath.getDefaultValue());
-		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue());
-		options.put(parametersPath, parametersPath.getDefaultValue());
-		options.put(uciOpponent, uciOpponent.getDefaultValue());
+		uciOpponent = new Option.StringOption("UCI_Opponent", "?");
+		options.put(hashSize, hashSize.getDefaultValue().get());
+		options.put(clearHash, null);
+		options.put(ponder, ponder.getDefaultValue().get());
+		options.put(ownBook, ownBook.getDefaultValue().get());
+		options.put(primaryBookPath, primaryBookPath.getDefaultValue().get());
+		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue().get());
+		options.put(parametersPath, parametersPath.getDefaultValue().get());
+		options.put(uciOpponent, uciOpponent.getDefaultValue().get());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
 		setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.defaultHashSize);
@@ -264,11 +268,11 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public synchronized <T> boolean setOption(Option<T> setting, T value) {
 		try {
 			if (hashSize.equals(setting)) {
-				if (hashSize.getMin().intValue() <= ((Integer)value).intValue() &&
-						hashSize.getMax().intValue() >= ((Integer)value).intValue()) {
-					if (((Integer)value).intValue() != ((Integer)options.get(hashSize)).intValue()) {
+				if (hashSize.getMin().get().intValue() <= ((Integer) value).intValue() &&
+						hashSize.getMax().get().intValue() >= ((Integer) value).intValue()) {
+					if (((Integer) value).intValue() != ((Integer) options.get(hashSize)).intValue()) {
 						options.put(hashSize, value);
-						setHashSize(((Integer)value).intValue());
+						setHashSize(((Integer) value).intValue());
 					}
 					if (debugMode) debugInfo.set("Hash size successfully set to " + value);
 					return true;
@@ -391,8 +395,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		String bestMove, ponderMove;
 		long time, extraTime, bookSearchStart;
 		boolean doPonder, doInfinite;
+		boolean isBookMove;
 		doPonder = false;
 		doInfinite = infinite != null && infinite;
+		isBookMove = false;
 		stop = ponderHit = false;
 		// Reset search stats.
 		searchResLock.writeLock().lock();
@@ -419,8 +425,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			newGame = false;
 		}
 		// Search the book if possible.
-		if ((Boolean) options.get(ownBook) && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null &&
-				nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
+		if ((Boolean) options.get(ownBook) && !staticEvalTuningMode && !outOfBook && searchMoves == null && (ponder == null || !ponder) &&
+				depth == null && nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
 			search = executor.submit(() -> {
 				Move searchResult = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
@@ -430,6 +436,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			if (debugMode) debugInfo.set("Book search started");
 			try {
 				searchResult = (Move) search.get();
+				isBookMove = !searchResult.equals(Move.NULL_MOVE);
 			} catch (InterruptedException | ExecutionException e1) {
 				if (debugMode) debugInfo.set(e1.getMessage());
 			} catch (CancellationException e2) { }
@@ -495,8 +502,9 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						searchResLock.readLock().lock();
 						if (debugMode) debugInfo.set("Returning best move after ponderring was terminated.");
 						try {
-							return new SearchResults(searchResult == null || searchResult.equals(new Move()) ? getRandomMove().toString() :
-								searchResult.toString(), null);
+							return searchResult.equals(Move.NULL_MOVE) ? new SearchResults(getRandomMove().toString(),
+									null, null, null) : new SearchResults(searchResult.toString(), null, (int) searchStats.getScore(),
+									searchStats.getScoreType());
 						} finally {
 							searchResLock.readLock().unlock();
 						}
@@ -570,20 +578,31 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			pV = searchStats.getPv();
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
 		} if (staticEvalTuningMode)
-			return new SearchResults(null, null);
+			return new SearchResults(null, null, (int) searchStats.getScore(), searchStats.getScoreType());
+		Integer score;
+		ScoreType scoreType;
 		// Set final results.
 		searchResLock.readLock().lock();
 		try {
-			if (searchResult.equals(Move.NULL_MOVE)) {
+			if (isBookMove) {
+				bestMove = searchResult.toString();
+				score = null;
+				scoreType = null;
+			} else if (searchResult.equals(Move.NULL_MOVE)) {
 				bestMove = getRandomMove();
+				score = null;
+				scoreType = null;
 				if (debugMode) debugInfo.set("No valid PV root move found\n" +
 						"Random move selected");
-			} else
+			} else {
 				bestMove = searchResult.toString();
+				score = (int) searchStats.getScore();
+				scoreType = searchStats.getScoreType();
+			}
 		} finally {
 			searchResLock.readLock().unlock();
 		}
-		return new SearchResults(bestMove, ponderMove);
+		return new SearchResults(bestMove, ponderMove, score, scoreType);
 	}
 	@Override
 	public void stop() {

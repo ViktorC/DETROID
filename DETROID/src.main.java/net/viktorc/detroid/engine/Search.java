@@ -10,10 +10,10 @@ import net.viktorc.detroid.util.LossyHashTable;
 import net.viktorc.detroid.util.QuickSort;
 
 /**
- * A chess game tree search based on the PVS algorithm supported by a transposition table within an iterative deepening framework with aspiration windows utilizing
- * heuristics such as null move pruning; late move reductions; futility pruning; extended futility pruning; razoring; IID; quiescence search; and fractional depth
- * extensions such as check extension, mate threat extension, recapture extension, and one reply extension. For move ordering, it further relies on a table for killer
- * moves, a table for the relative history score of moves, and the MVVLVA and SEE heuristics.
+ * A chess game tree search based on the PVS algorithm supported by a transposition table and an evaluation hash table within an iterative deepening 
+ * framework with aspiration windows utilizing heuristics such as null move pruning; late move reductions; futility pruning; extended futility 
+ * pruning; razoring; IID; quiescence search; and fractional depth extensions such as check extension, recapture extension, and one reply extension. 
+ * For move ordering, it relies on a table for killer moves, a table for the relative history score of moves, and the MVVLVA and SEE heuristics.
  * 
  * @author Viktor
  *
@@ -24,9 +24,12 @@ class Search implements Runnable {
 	private final Position position;
 	private final Evaluator eval;
 	private final SearchInfo stats;
-	private final KillerTable kT;				// Killer heuristic table.
-	private final RelativeHistoryTable hT;		// History heuristic table.
-	private final LossyHashTable<TTEntry> tT;	// Transposition table.
+	// Killer heuristic table.
+	private final KillerTable kT;
+	// History heuristic table.
+	private final RelativeHistoryTable hT;
+	// Transposition table.
+	private final LossyHashTable<TTEntry> tT;
 	private final byte hashEntryGen;
 	// Whether heuristics such as forward pruning or those based on the null move observation such as stand-pat and NMP are applicable.
 	private final boolean isEndgame;
@@ -369,15 +372,15 @@ class Search implements Runnable {
 				}
 				break Search;
 			}
-			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
-				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
-				e = tT.get(position.key);
-				if (e != null && e.bestMove != 0) {
-					hashMove = Move.toMove(e.bestMove);
-					isThereHashMove = position.isLegalSoft(hashMove);
-				}
-			}
+//			// If there is no hash entry in a PV node that is to be searched deep, try IID.
+//			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
+//				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
+//				e = tT.get(position.key);
+//				if (e != null && e.bestMove != 0) {
+//					hashMove = Move.toMove(e.bestMove);
+//					isThereHashMove = position.isLegalSoft(hashMove);
+//				}
+//			}
 			lastMove = position.getLastMove();
 			lastMoveIsTactical = lastMove != null && lastMove.isMaterial();
 			// If there is a hash move, search that first.
@@ -629,10 +632,10 @@ class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
-							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
-							 * by a margin great enough to completely prune the branch. */
-							if (evalScore + params.razoringMargin1 <= alpha)
-								razRed = 1;
+//							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
+//							 * by a margin great enough to completely prune the branch. */
+//							if (evalScore + params.razoringMargin1 <= alpha)
+//								razRed = 1;
 						} break;
 						case 3: {
 							// Deep futility pruning.
@@ -641,9 +644,9 @@ class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
-							// Deep razoring.
-							if (evalScore + params.razoringMargin2 <= alpha)
-								razRed = 1;
+//							// Deep razoring.
+//							if (evalScore + params.razoringMargin2 <= alpha)
+//								razRed = 1;
 						}
 					}
 				}

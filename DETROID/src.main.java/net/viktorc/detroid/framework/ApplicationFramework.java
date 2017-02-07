@@ -22,6 +22,23 @@ import net.viktorc.detroid.framework.uci.UCI;
  * The application that serves as a chess engine framework handling communication via the UCI protocol, providing 
  * a GUI, and offering flexible engine parameter tuning methods using machine learning.
  * 
+ * The application framework offers six main functionalities: GUI mode, UCI mode, tuning, FEN-file generation, 
+ * FEN-file filtering, and parameter conversion. The default launch mode is the GUI mode which provides an interface 
+ * that allows for playing chess games against an engine and track its search statistics. The UCI mode implements the 
+ * Universal Chess Interface protocol as described at {@link #http://wbec-ridderkerk.nl/html/UCIProtocol.html} 
+ * by Stefan-Meyer Kahlen. Two different tuning methods are supported; an evolutionary algorithm for optimizing all 
+ * or only a certain type of engine parameters using self-play to assess the fitness of the different parameter sets 
+ * generated, and an adaptive stochastic gradient descent algorithm for training the engine by optimizing the static 
+ * evaluation parameters using the "Texel" cost function ({@link #https://chessprogramming.wikispaces.com/Texel's+Tuning+Method} 
+ * based on so called FEN-files which contain position descriptions in Forsyth-Edwards notation, each labelled by the 
+ * side that won the game in which the position occurred. The FEN-file generation mode provides the functionalities 
+ * needed to generate the files used for static evaluation tuning. They can be generated either by self-play or by 
+ * providing a Portable Game Notation file to convert. The FEN-file filtering mode allows for removing draws or opening 
+ * positions from the FEN-file which can, in certain cases, possibly improve the tuning results. Last but not least, the 
+ * conversion mode allows for converting the numbers logged by the tuning methods into XML files that the engine can read 
+ * its parameters' values from. The game play optimization algorithm logs the probability vector, while the static 
+ * evaluation tuning method logs the optimal values of the parameter fields.
+ * 
  * @author Viktor
  *
  */
@@ -51,9 +68,27 @@ public final class ApplicationFramework implements Runnable {
 	 * Constructs an instance of the application framework that is available for running with the specified arguments 
 	 * using the engine instances built by the provided engine factory.
 	 * 
+	 * If there are no program arguments, the application is started in GUI mode.
+	 * 
 	 * @param factory An instance of a class extending the {@link #EngineFactory EngineFactory} interface. It provides the 
 	 * engine instances required for different features of the framework.
-	 * @param args TODO Documentation!
+	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
+	 * UCI mode: {@code -u} </br>
+	 * Gameplay tuning: {@code -t gameplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | all> 
+	 * -inc <integer> -validfactor <decimal> -initprobvector <quoted_comma_separated_decimals> -log <string> 
+	 * -concurrency <integer>]} <br>
+	 * Static evaluation tuning: {@code -t staticeval -samplesize <integer> [-k <decimal> -fensfile <string> -log <string> 
+	 * -concurrency <integer>]} <br>
+	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> -destfile <string> 
+	 * -concurrency <integer>]} <br>
+	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer> 
+	 * -destfile <string>]} <br>
+	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string>]} <br>
+	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> [-firstxmoves <integer> -destfile <string>]} <br>
+	 * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals> 
+	 * [-paramtype <eval | control | all> -paramsfile <string>]} <br>
+	 * Parameter value array conversion to parameters file: {@code -c paramvalues -value <quoted_comma_separated_decimals> 
+	 * [-paramsfile <string>]}
 	 */
 	public ApplicationFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
@@ -65,6 +100,14 @@ public final class ApplicationFramework implements Runnable {
 			int concurrency = DEF_CONCURRENCY;
 			String arg0 = args[0];
 			switch (arg0) {
+				// UCI mode.
+				case "-u": {
+					try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
+						uci.run();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				} break;
 				// Tuning.
 				case "-t": {
 					String logFilePath = DEF_LOG_FILE_PATH;
@@ -149,11 +192,11 @@ public final class ApplicationFramework implements Runnable {
 								initProbVec, popSize, logger)) {
 							optimizer.optimize();
 						} catch (Exception e) {
-							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
 					} else if ("staticeval".equals(arg1)) {
 						Double k = null;
-						Integer sampleSize = null;
+						int sampleSize = -1;
 						String fensFilePath = DEF_FENS_FILE_PATH;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
@@ -177,6 +220,8 @@ public final class ApplicationFramework implements Runnable {
 									throw new IllegalArgumentException();
 							}
 						}
+						if (sampleSize == -1)
+							throw new IllegalArgumentException();
 						TunableEngine[] engines = new TunableEngine[concurrency];
 						for (int i = 0; i < concurrency; i++)
 							engines[i] = factory.newEngineInstance();
@@ -240,7 +285,7 @@ public final class ApplicationFramework implements Runnable {
 								engines[i] = new OptimizerEngines(factory.newEngineInstance(),
 										factory.newEngineInstance(), factory.newControllerEngineInstance());
 							} catch (Exception e) {
-								e.printStackTrace();
+								throw new IllegalArgumentException(e);
 							}
 						}
 						try {
@@ -251,7 +296,6 @@ public final class ApplicationFramework implements Runnable {
 								e.getController().quit();
 							}
 						} catch (NullPointerException | IOException e) {
-							e.printStackTrace();
 							throw new IllegalArgumentException(e);
 						}
 					} else if ("bypgnconversion".equals(arg1)) {
@@ -278,7 +322,6 @@ public final class ApplicationFramework implements Runnable {
 							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
 							engine.quit();
 						} catch (Exception e) {
-							e.printStackTrace();
 							throw new IllegalArgumentException(e);
 						}
 					} else
@@ -303,10 +346,12 @@ public final class ApplicationFramework implements Runnable {
 									throw new IllegalArgumentException();
 							}
 						}
+						if (sourceFile == null)
+							throw new IllegalArgumentException();
 						try {
 							FENFileUtil.filterDraws(sourceFile, destFile);
 						} catch (IOException e) {
-							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
 					} else if ("openings".equals(arg1)) {
 						int numOfPositionsToFilter = 0;
@@ -326,10 +371,11 @@ public final class ApplicationFramework implements Runnable {
 									throw new IllegalArgumentException();
 							}
 						}
+						if (sourceFile == null)
+							throw new IllegalArgumentException();
 						try {
 							FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
 						} catch (IOException e) {
-							e.printStackTrace();
 							throw new IllegalArgumentException(e);
 						}
 					} else
@@ -376,7 +422,7 @@ public final class ApplicationFramework implements Runnable {
 								throw new IllegalArgumentException();
 						}
 						params.set(binaryString, paramType);
-					} else if ("decimalvalues".equals(arg1)) {
+					} else if ("paramvalues".equals(arg1)) {
 						String val = args[3];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];
@@ -389,17 +435,8 @@ public final class ApplicationFramework implements Runnable {
 					int ind;
 					if ((ind = argList.indexOf("-paramsfile")) != -1)
 						destFile = argList.get(ind + 1);
-					System.out.println(params.toString());
 					params.writeToFile(destFile);
 					engine.quit();
-				} break;
-				// UCI mode.
-				case "-u": {
-					try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
-						uci.run();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
 				} break;
 				default:
 					throw new IllegalArgumentException();

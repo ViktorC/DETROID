@@ -23,6 +23,13 @@ public final class UCI implements Observer, Runnable, Closeable {
 	private final UCIEngine engine;
 	private final ExecutorService executor;
 	
+	/**
+	 * Constructs an instance to handle the UCI protocol.
+	 * 
+	 * @param engine The chess engine to run in UCI mode.
+	 * @param in The input stream.
+	 * @param out The output stream.
+	 */
 	public UCI(UCIEngine engine, InputStream in, OutputStream out) {
 		this.engine = engine;
 		this.in = new Scanner(in);
@@ -52,14 +59,15 @@ public final class UCI implements Observer, Runnable, Closeable {
 			Option<?> o = e.getKey();
 			option = "option name " + o.getName() + " type ";
 			if (o instanceof Option.CheckOption)
-				option += "check default " + (boolean) o.getDefaultValue();
+				option += "check default " + (boolean) o.getDefaultValue().get();
 			else if (o instanceof Option.SpinOption)
-				option += "spin default " + (Integer) o.getDefaultValue() + " min " + o.getMin() + " max " + o.getMax();
+				option += "spin default " + (Integer) o.getDefaultValue().get() + " min " + o.getMin().get() +
+				" max " + o.getMax().get();
 			else if (o instanceof Option.StringOption)
-				option += "string default " + (String) o.getDefaultValue();
+				option += "string default " + (String) o.getDefaultValue().get();
 			else if (o instanceof Option.ComboOption) {
-				option += "combo default " + (String) o.getDefaultValue() + " var";
-				for (Object v : o.getAllowedValues())
+				option += "combo default " + (String) o.getDefaultValue().get() + " var";
+				for (Object v : o.getAllowedValues().get())
 					option += " " + v;
 			} else if (o instanceof Option.ButtonOption)
 				option += "button";

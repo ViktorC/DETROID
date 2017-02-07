@@ -1,5 +1,10 @@
+.root {
+	-fx-accent: rgb(160, 160, 160);
+	-fx-focus-color: rgb(160, 160, 160);
+}
 .pane {
 	-fx-background-color: black;
+	-fx-border-color: white;
 }
 .menu-bar {
 	-fx-background-color: black;
@@ -50,11 +55,11 @@
 }
 .selectedSquare {
 	-fx-border-width: 3;
-	-fx-border-color: green;
+	-fx-border-color: purple;
 }
 .piece {
 	-fx-font-family: "Tahoma";
-	-fx-font-size: 26pt;
+	-fx-font-size: 28pt;
 	-fx-alignment: center;
 	-fx-text-alignment: center;
 }
@@ -67,6 +72,45 @@
 	-fx-text-fill: white;
 	-fx-font-family: "Lucida Console";
 	-fx-font-weight: 800;
+}
+.axis {
+	-fx-tick-label-fill: white;
+	-fx-tick-label-font-family: "Lucida Console";
+}
+.chart {
+	-fx-border-color: white;
+	-fx-padding: 10;
+}
+.chart-content {
+	-fx-background-color: black;
+}
+.chart-plot-background {
+	-fx-background-color: rgb(160, 160, 160);
+}
+.chart-vertical-grid-lines {
+	-fx-stroke: black;
+}
+.chart-horizontal-grid-lines {
+	-fx-stroke: black;
+}
+.chart-alternative-row-fill {
+	-fx-fill: rgb(235, 235, 235);
+	-fx-stroke: transparent;
+	-fx-stroke-width: 0;
+}
+.chart-legend {
+	-fx-background-color: black;
+	-fx-border-color: white;
+}
+.chart-legend-item {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.default-color0.chart-series-line {
+	-fx-stroke: purple;
+}
+.default-color0.chart-line-symbol {
+	-fx-background-color: purple, white;
 }
 .searchResults {
 	-fx-background-color: black;
@@ -126,9 +170,10 @@
 	-fx-background-color: black;
 	-fx-text-fill: white;
 	-fx-font-family: "Lucida Console";
+	-fx-highlight-fill: rgb(160, 160, 160);
+	-fx-highlight-text-fill: white;
 }
 .history .content {
 	-fx-text-fill: white;
 	-fx-background-color: black;
-	-fx-font-family: "Lucida Console";
 }

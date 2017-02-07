@@ -6,7 +6,7 @@ package net.viktorc.detroid.framework.gui.models;
  * @author Viktor
  *
  */
-public class TimeControl {
+public final class TimeControl {
 
 	private final long whiteTime;
 	private final long blackTime;

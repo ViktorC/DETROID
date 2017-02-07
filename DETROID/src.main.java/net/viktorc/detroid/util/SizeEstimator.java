@@ -18,7 +18,7 @@ public class SizeEstimator {
 	/**
 	 * Returns the single existing SizeEstimator instance.
 	 * 
-	 * @return
+	 * @return A singleton instance.
 	 */
 	public static SizeEstimator getInstance() {
 		return INSTANCE;
@@ -37,10 +37,10 @@ public class SizeEstimator {
 		return baseSize%8 == 0 ? baseSize : baseSize + 8 - baseSize%8;
 	}
 	/**
-	 * Returns an array list of all the non static fields of a class including the non static fields of all of its ancestors.
+	 * Returns an array list of all the non-static fields of a class including the non-static fields of all of its ancestors.
 	 * 
-	 * @param clazz
-	 * @return
+	 * @param clazz The class.
+	 * @return A list of its non-static fields including those inherited.
 	 */
 	public ArrayList<Field> getNonStaticFields(Class<?> clazz) {
 		ArrayList<Field> fields = new ArrayList<>();
@@ -60,8 +60,8 @@ public class SizeEstimator {
 	 * Returns whether all instances of the specified class must have the same memory requirements. This can be only guaranteed if all the non static
 	 * fields of the class are primitives.
 	 * 
-	 * @param clazz
-	 * @return
+	 * @param clazz The class.
+	 * @return Whether the size of its instances is constant.
 	 */
 	public boolean isInstanceSizeConstant(Class<?> clazz) {
 		ArrayList<Field> fields = getNonStaticFields(clazz);
@@ -74,8 +74,8 @@ public class SizeEstimator {
 	/**
 	 * Returns the size of a primitive field type.
 	 * 
-	 * @param fieldType
-	 * @return
+	 * @param fieldType The type of the field.
+	 * @return The size of it.
 	 */
 	private byte sizeOfPrimitiveField(Class<?> fieldType) {
 		if (fieldType.equals(boolean.class))
@@ -100,9 +100,9 @@ public class SizeEstimator {
 	/**
 	 * Estimates the size of an object including the sizes of all objects referenced in the object graph.
 	 * 
-	 * @param o
-	 * @param visitedObjects
-	 * @return
+	 * @param o The object.
+	 * @param visitedObjects A set of all visited objects in the object graph.
+	 * @return The size of the object graph that the specified object is the root of.
 	 */
 	private long sizeOf(Object o, Set<Object> visitedObjects) {
 		long size;
@@ -170,8 +170,8 @@ public class SizeEstimator {
 	 * Estimates the size of an object including the sizes of all objects referenced in the object graph. It traverses an acyclic graph by not visiting nodes more
 	 * than once and thus ensuring that even if there are multiple references pointing to the same object, its size is added to the graph's total size only once.
 	 * 
-	 * @param o
-	 * @return
+	 * @param o The object.
+	 * @return The size of the object.
 	 */
 	public long sizeOf(Object o) {
 		Set<Object> visitedNodes = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
@@ -182,8 +182,8 @@ public class SizeEstimator {
 	 * {@link #isInstanceSizeConstant(Class<?>) isInstanceSizeConstant} returns true, i.e. all the non static fields of the class and its ancestors
 	 * are primitives. The non-primitive non-static fields are assumed to be null references.
 	 * 
-	 * @param clazz
-	 * @return
+	 * @param clazz The class.
+	 * @return The static size of the class.
 	 */
 	public long sizeOf(Class<?> clazz) {
 		Class<?> fieldType;
