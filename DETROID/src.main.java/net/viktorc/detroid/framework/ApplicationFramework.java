@@ -25,11 +25,13 @@ import net.viktorc.detroid.framework.uci.UCI;
  * The application framework offers six main functionalities: GUI mode, UCI mode, tuning, FEN-file generation, 
  * FEN-file filtering, and parameter conversion. The default launch mode is the GUI mode which provides an interface 
  * that allows for playing chess games against an engine and track its search statistics. The UCI mode implements the 
- * Universal Chess Interface protocol as described at {@link #http://wbec-ridderkerk.nl/html/UCIProtocol.html} 
- * by Stefan-Meyer Kahlen. Two different tuning methods are supported; an evolutionary algorithm for optimizing all 
- * or only a certain type of engine parameters using self-play to assess the fitness of the different parameter sets 
- * generated, and an adaptive stochastic gradient descent algorithm for training the engine by optimizing the static 
- * evaluation parameters using the "Texel" cost function ({@link #https://chessprogramming.wikispaces.com/Texel's+Tuning+Method} 
+ * Universal Chess Interface protocol as described at 
+ * <a href="http://wbec-ridderkerk.nl/html/UCIProtocol.html">http://wbec-ridderkerk.nl/html/UCIProtocol.html</a> by 
+ * Stefan-Meyer Kahlen. Two different tuning methods are supported; an evolutionary algorithm for optimizing all or only 
+ * a certain type of engine parameters using self-play to assess the fitness of the different parameter sets generated, 
+ * and an adaptive stochastic gradient descent algorithm for training the engine by optimizing the static evaluation 
+ * parameters using the "Texel" cost function (
+ * <a href="https://chessprogramming.wikispaces.com/Texel's+Tuning+Method">https://chessprogramming.wikispaces.com/Texel's+Tuning+Method</a>)
  * based on so called FEN-files which contain position descriptions in Forsyth-Edwards notation, each labelled by the 
  * side that won the game in which the position occurred. The FEN-file generation mode provides the functionalities 
  * needed to generate the files used for static evaluation tuning. They can be generated either by self-play or by 

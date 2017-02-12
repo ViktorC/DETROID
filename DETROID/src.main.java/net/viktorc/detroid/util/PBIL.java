@@ -9,7 +9,7 @@ import java.util.logging.Logger;
  * by strings of binary digits. The fitness of the individuals in each population is measured by the abstract method
  * {@link #fitnessFunction(String) fitnessFunction} which must be implemented.
  * 
- * PBIL: http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.61.8554
+ * PBIL: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.61.8554">http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.61.8554</a>
  * 
  * @author Viktor
  * 

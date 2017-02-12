@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * {@link #sampleTrainingData() sampleTrainingData} which (random) samples the training data, and {@link #getTestData() getTestData} which returns 
  * the test data.
  * 
- * Nadam: http://cs229.stanford.edu/proj2015/054_report.pdf
+ * Nadam: <a href="http://cs229.stanford.edu/proj2015/054_report.pdf">http://cs229.stanford.edu/proj2015/054_report.pdf</a>
  * 
  * @author Viktor
  *
