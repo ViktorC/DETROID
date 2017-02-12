@@ -84,7 +84,7 @@ public final class ApplicationFramework implements Runnable {
 	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer> 
 	 * -destfile <string>]} <br>
 	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string>]} <br>
-	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> [-firstxmoves <integer> -destfile <string>]} <br>
+	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer> [-destfile <string>]} <br>
 	 * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals> 
 	 * [-paramtype <eval | control | all> -paramsfile <string>]} <br>
 	 * Parameter value array conversion to parameters file: {@code -c paramvalues -value <quoted_comma_separated_decimals> 
@@ -354,7 +354,7 @@ public final class ApplicationFramework implements Runnable {
 							throw new IllegalArgumentException(e);
 						}
 					} else if ("openings".equals(arg1)) {
-						int numOfPositionsToFilter = 0;
+						int numOfPositionsToFilter = -1;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -371,7 +371,7 @@ public final class ApplicationFramework implements Runnable {
 									throw new IllegalArgumentException();
 							}
 						}
-						if (sourceFile == null)
+						if (sourceFile == null || numOfPositionsToFilter <= 0)
 							throw new IllegalArgumentException();
 						try {
 							FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);

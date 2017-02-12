@@ -169,13 +169,13 @@ final class Params extends EngineParameters {
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte tTshare;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 4)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte eTshare;
 
 	// The number of turns for which the different hash table's entries are retained by default.
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte tTentryLifeCycle;
-	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 2)
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte eTentryLifeCycle;
 
 	// The values considered when calculating search time extensions.
@@ -191,6 +191,12 @@ final class Params extends EngineParameters {
 	byte movesToGoSafetyMargin;
 	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
 	byte fractionOfTotalTimeToUseHth;
+
+	// The amount of time the engine waits for the updated result after a search has been cancelled.
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
+	byte minSearchMilliSecondsForWaiting;
+	@Parameter (type = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER, binaryLengthLimit = 0)
+	int nanoSecondsToWaitForResult;
 
 	// Piece-square tables for openings and end games.
 	@Parameter

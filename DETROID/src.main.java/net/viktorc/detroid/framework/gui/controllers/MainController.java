@@ -98,6 +98,8 @@ public final class MainController implements AutoCloseable, Observer {
 	@FXML
 	private MenuItem timeSettings;
 	@FXML
+	private RadioMenuItem demo;
+	@FXML
 	private RadioMenuItem ponder;
 	@FXML
 	private MenuItem options;
@@ -145,6 +147,7 @@ public final class MainController implements AutoCloseable, Observer {
 	private volatile boolean isPondering;
 	private volatile boolean ponderHit;
 	private volatile boolean isSearching;
+	private volatile boolean isDemo;
 	
 	/**
 	 * Constructs an instance using the specified engines for game control and searching.
@@ -576,7 +579,10 @@ public final class MainController implements AutoCloseable, Observer {
 			dialog.show();
 		} else {
 			doTime = true;
-			if (!usersTurn) {
+			if (isDemo) {
+				startSearch();
+				return;
+			} else if (!usersTurn) {
 				if (!doPonder || !ponderHit)
 					startSearch();
 			} else if (doPonder)
@@ -639,7 +645,7 @@ public final class MainController implements AutoCloseable, Observer {
 			return;
 		}
 		doTime = true;
-		if (!usersTurn)
+		if (!usersTurn || isDemo)
 			startSearch();
 		else if (doPonder)
 			startPondering();
@@ -825,11 +831,15 @@ public final class MainController implements AutoCloseable, Observer {
 					selectedSource = null;
 				}
 				if (controllerEngine.isWhitesTurn()) {
-					if (whiteTimes.size() > 0)
+					if (whiteTimes.size() > 0) {
 						whiteTime.set(whiteTimes.peek());
+						setTimeField(true);
+					}
 				} else {
-					if (blackTimes.size() > 0)
+					if (blackTimes.size() > 0) {
 						blackTime.set(blackTimes.peek());
+						setTimeField(false);
+					}
 				}
 				searchStats.clear();
 				isUserWhite = !isUserWhite;
@@ -837,7 +847,7 @@ public final class MainController implements AutoCloseable, Observer {
 				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
 				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
 					doTime = true;
-					if (!usersTurn)
+					if (!usersTurn || isDemo)
 						startSearch();
 				}
 			}
@@ -875,8 +885,65 @@ public final class MainController implements AutoCloseable, Observer {
 					timeControl = res.get();
 				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
 					doTime = true;
-					if (!usersTurn)
+					if (!usersTurn || isDemo)
 						startSearch();
+				}
+			}
+		});
+		// Demo radio menu item handler: if selected the engine keeps playing against itself.
+		demo.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				isDemo = demo.selectedProperty().get();
+				if (isDemo) {
+					if (usersTurn && controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+						doTime = false;
+						isReset = true;
+						searchEngine.stop();
+						if (isPondering) {
+							while (isPondering) {
+								synchronized (MainController.this) {
+									try {
+										MainController.this.wait();
+									} catch (InterruptedException e) { }
+								}
+							}
+						}
+						searchEngine.setPosition(controllerEngine.getStartPosition());
+						for (String m : controllerEngine.getMoveHistory())
+							searchEngine.play(m);
+						if (selectedSource != null) {
+							board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+							selectedNodeInd = null;
+							selectedSource = null;
+						}
+						if (controllerEngine.isWhitesTurn()) {
+							if (whiteTimes.size() > 0) {
+								whiteTime.set(whiteTimes.peek());
+								setTimeField(true);
+							}
+						} else {
+							if (blackTimes.size() > 0) {
+								blackTime.set(blackTimes.peek());
+								setTimeField(false);
+							}
+						}
+						searchStats.clear();
+						doTime = true;
+						startSearch();
+					}
+					ponder.setDisable(true);
+					side.setDisable(true);
+					unmakeMove.setDisable(true);
+				} else {
+					if (usersTurn) {
+						isReset = true;
+						searchEngine.stop();
+					}
+					ponder.setDisable(false);
+					side.setDisable(false);
+					unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
 				}
 			}
 		});
@@ -931,7 +998,7 @@ public final class MainController implements AutoCloseable, Observer {
 				optionsDialog.showAndWait();
 				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
 					doTime = true;
-					if (!usersTurn)
+					if (!usersTurn || isDemo)
 						startSearch();
 				}
 			}

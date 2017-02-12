@@ -66,11 +66,11 @@
 <singleReplyExt>14</singleReplyExt>
 <iidMinActivationDepth>14</iidMinActivationDepth>
 <iidRelDepthHth>5</iidRelDepthHth>
-<rhtDecrementFactor>29</rhtDecrementFactor>
+<rhtDecrementFactor>97</rhtDecrementFactor>
 <defaultHashSize>64</defaultHashSize>
 <tTshare>8</tTshare>
 <eTshare>4</eTshare>
-<tTentryLifeCycle>0</tTentryLifeCycle>
+<tTentryLifeCycle>1</tTentryLifeCycle>
 <eTentryLifeCycle>2</eTentryLifeCycle>
 <scoreFluctuationLimit>263</scoreFluctuationLimit>
 <fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>50</fractionOfOrigSearchTimeSinceLastResultChangeLimitHth>
@@ -78,6 +78,8 @@
 <avgMovesPerGame>40</avgMovesPerGame>
 <movesToGoSafetyMargin>15</movesToGoSafetyMargin>
 <fractionOfTotalTimeToUseHth>102</fractionOfTotalTimeToUseHth>
+<minSearchMilliSecondsForWaiting>1</minSearchMilliSecondsForWaiting>
+<nanoSecondsToWaitForResult>750000</nanoSecondsToWaitForResult>
 <pstPawnOpening8>127</pstPawnOpening8>
 <pstPawnOpening9>127</pstPawnOpening9>
 <pstPawnOpening10>127</pstPawnOpening10>
