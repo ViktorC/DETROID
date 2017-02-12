@@ -79,7 +79,7 @@
 <movesToGoSafetyMargin>15</movesToGoSafetyMargin>
 <fractionOfTotalTimeToUseHth>102</fractionOfTotalTimeToUseHth>
 <minSearchMilliSecondsForWaiting>1</minSearchMilliSecondsForWaiting>
-<nanoSecondsToWaitForResult>750000</nanoSecondsToWaitForResult>
+<nanoSecondsToWaitForResult>500000</nanoSecondsToWaitForResult>
 <pstPawnOpening8>127</pstPawnOpening8>
 <pstPawnOpening9>127</pstPawnOpening9>
 <pstPawnOpening10>127</pstPawnOpening10>

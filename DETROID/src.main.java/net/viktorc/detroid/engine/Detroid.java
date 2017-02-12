@@ -43,7 +43,7 @@ import net.viktorc.detroid.util.SizeEstimator;
  */
 public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	
-	public final static float VERSION_NUMBER = 0.90f;
+	public final static float VERSION_NUMBER = 1.0f;
 	public final static String NAME = "DETROID " + VERSION_NUMBER;
 	public final static String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.

@@ -213,8 +213,8 @@ public final class UCI implements Observer, Runnable, Closeable {
 						String resultString;
 						SearchResults results = this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
 						resultString = "bestmove " + results.getBestMove();
-						if (results.getSuggestedPonderMove() != null)
-							resultString += " ponder " + results.getSuggestedPonderMove();
+						if (results.getSuggestedPonderMove().isPresent())
+							resultString += " ponder " + results.getSuggestedPonderMove().get();
 						out.println(resultString);
 					});
 				} break;

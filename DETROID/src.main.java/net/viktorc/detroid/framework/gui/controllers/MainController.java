@@ -263,7 +263,7 @@ public final class MainController implements AutoCloseable, Observer {
 
 			@Override
 			public void handle(Event event) {
-				if (!usersTurn || controllerEngine.getGameState() != GameState.IN_PROGRESS)
+				if (!usersTurn || isDemo || controllerEngine.getGameState() != GameState.IN_PROGRESS)
 					return;
 				if (!gameOn) {
 					gameOn = true;
@@ -531,7 +531,7 @@ public final class MainController implements AutoCloseable, Observer {
 		setMoveHistory();
 		setBoard(controllerEngine.toFEN());
 		legalMoves = controllerEngine.getLegalMoves();
-		if (usersTurn) {
+		if (usersTurn && !isDemo) {
 			// Handle pondering.
 			if (doPonder && isPondering) {
 				if (move.equals(ponderMove)) {
@@ -588,7 +588,7 @@ public final class MainController implements AutoCloseable, Observer {
 			} else if (doPonder)
 				startPondering();
 		}
-		if (usersTurn) {
+		if (usersTurn && !isDemo) {
 			if (moveHistList.size() > 1)
 				unmakeMove.setDisable(false);
 		}
@@ -616,7 +616,7 @@ public final class MainController implements AutoCloseable, Observer {
 			List<String> moveHistList = controllerEngine.getMoveHistory();
 			for (String m : moveHistList)
 				searchEngine.play(m);
-			unmakeMove.setDisable(isUserWhite != controllerEngine.isWhitesTurn() || moveHistList.size() < 2);
+			unmakeMove.setDisable(isUserWhite != controllerEngine.isWhitesTurn() || isDemo || moveHistList.size() < 2);
 		} else {
 			if (!controllerEngine.setPosition(position))
 				throw new IllegalArgumentException();
@@ -844,7 +844,7 @@ public final class MainController implements AutoCloseable, Observer {
 				searchStats.clear();
 				isUserWhite = !isUserWhite;
 				usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
-				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
+				unmakeMove.setDisable(!usersTurn || isDemo || controllerEngine.getMoveHistory().size() < 2);
 				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
 					doTime = true;
 					if (!usersTurn || isDemo)
@@ -865,7 +865,7 @@ public final class MainController implements AutoCloseable, Observer {
 					selectedNodeInd = null;
 					selectedSource = null;
 				}
-				if (!usersTurn) {
+				if (!usersTurn || isDemo) {
 					if (controllerEngine.isWhitesTurn()) {
 						if (whiteTimes.size() > 0) {
 							whiteTime.set(whiteTimes.peek());
@@ -940,6 +940,17 @@ public final class MainController implements AutoCloseable, Observer {
 					if (usersTurn) {
 						isReset = true;
 						searchEngine.stop();
+						if (controllerEngine.isWhitesTurn()) {
+							if (whiteTimes.size() > 0) {
+								whiteTime.set(whiteTimes.peek());
+								setTimeField(true);
+							}
+						} else {
+							if (blackTimes.size() > 0) {
+								blackTime.set(blackTimes.peek());
+								setTimeField(false);
+							}
+						}
 					}
 					ponder.setDisable(false);
 					side.setDisable(false);
@@ -980,7 +991,7 @@ public final class MainController implements AutoCloseable, Observer {
 					selectedNodeInd = null;
 					selectedSource = null;
 				}
-				if (!usersTurn) {
+				if (!usersTurn || isDemo) {
 					if (controllerEngine.isWhitesTurn()) {
 						if (whiteTimes.size() > 0) {
 							whiteTime.set(whiteTimes.peek());
@@ -1060,7 +1071,7 @@ public final class MainController implements AutoCloseable, Observer {
 
 					@Override
 					public void handle(Event event) {
-						if (!usersTurn || controllerEngine.getGameState() != GameState.IN_PROGRESS)
+						if (!usersTurn || isDemo || controllerEngine.getGameState() != GameState.IN_PROGRESS)
 							return;
 						if (selectedSource != null && legalDestinations.contains(sqr)) {
 							String move = selectedSource + "" + sqr;
