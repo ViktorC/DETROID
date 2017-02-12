@@ -186,7 +186,7 @@ public final class MainController implements AutoCloseable, Observer {
 							}
 							setTimeField(true);
 							Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
-							dialog.show();
+							dialog.showAndWait();
 						});
 					} else
 						Platform.runLater(() -> setTimeField(true));
@@ -205,7 +205,7 @@ public final class MainController implements AutoCloseable, Observer {
 							}
 							setTimeField(false);
 							Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
-							dialog.show();
+							dialog.showAndWait();
 						});
 					} else
 						Platform.runLater(() -> setTimeField(false));
@@ -560,7 +560,7 @@ public final class MainController implements AutoCloseable, Observer {
 			isReset = true;
 			searchEngine.stop();
 			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), false);
-			dialog.show();
+			dialog.showAndWait();
 		} else if (whiteTime.get() <= 0) {
 			isReset = true;
 			searchEngine.stop();
@@ -568,7 +568,7 @@ public final class MainController implements AutoCloseable, Observer {
 			controllerEngine.whiteForfeit();
 			setTimeField(true);
 			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
-			dialog.show();
+			dialog.showAndWait();
 		} else if (blackTime.get() <= 0) {
 			isReset = true;
 			searchEngine.stop();
@@ -576,7 +576,7 @@ public final class MainController implements AutoCloseable, Observer {
 			controllerEngine.blackForfeit();
 			setTimeField(false);
 			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
-			dialog.show();
+			dialog.showAndWait();
 		} else {
 			doTime = true;
 			if (isDemo) {
@@ -641,7 +641,7 @@ public final class MainController implements AutoCloseable, Observer {
 		searchStats.clear();
 		if (controllerEngine.getGameState() != GameState.IN_PROGRESS) {
 			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), false);
-			dialog.show();
+			dialog.showAndWait();
 			return;
 		}
 		doTime = true;
