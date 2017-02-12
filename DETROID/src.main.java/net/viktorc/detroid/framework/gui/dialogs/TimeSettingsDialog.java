@@ -12,7 +12,6 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.gui.models.TimeControl;
@@ -27,8 +26,7 @@ import net.viktorc.detroid.framework.gui.models.TimeControl;
  */
 public class TimeSettingsDialog extends Dialog<TimeControl> {
 
-	private static final String STYLE_PATH = "../styles/time-settings-dialog-style.css";
-	private static final String ICON_PATH = "../images/icon.png";
+	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/time-settings-dialog-style.css";
 	
 	/**
 	 * Constructs an instance based on the specified parameters.
@@ -38,8 +36,6 @@ public class TimeSettingsDialog extends Dialog<TimeControl> {
 	 */
 	public TimeSettingsDialog(Stage owner, TimeControl timeControl) {
 		initOwner(owner);
-		Stage stage = (Stage) getDialogPane().getScene().getWindow();
-		stage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
 		setDialogPane(new DialogPane() {
 			
 			@Override

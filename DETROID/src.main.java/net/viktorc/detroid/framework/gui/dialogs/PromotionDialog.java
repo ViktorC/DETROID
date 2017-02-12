@@ -2,7 +2,6 @@ package net.viktorc.detroid.framework.gui.dialogs;
 
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import net.viktorc.detroid.framework.gui.models.Piece;
 
@@ -15,8 +14,7 @@ import net.viktorc.detroid.framework.gui.models.Piece;
  */
 public class PromotionDialog extends Dialog<Piece> {
 
-	private static final String STYLE_PATH = "../styles/promotion-dialog-style.css";
-	private static final String ICON_PATH = "../images/icon.png";
+	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/promotion-dialog-style.css";
 	
 	/**
 	 * Constructs an instance based on the specified parameters.
@@ -26,8 +24,6 @@ public class PromotionDialog extends Dialog<Piece> {
 	 */
 	public PromotionDialog(Stage owner, boolean isWhitesTurn) {
 		initOwner(owner);
-		Stage stage = (Stage) getDialogPane().getScene().getWindow();
-		stage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
 		getDialogPane().getStylesheets().add(getClass().getResource(STYLE_PATH).toExternalForm());
 		setTitle("Promotion");
 		setHeaderText("Select a piece to promote to.");

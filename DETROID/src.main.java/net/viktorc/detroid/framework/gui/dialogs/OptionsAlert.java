@@ -15,7 +15,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ButtonBar.ButtonData;
-import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
@@ -36,8 +35,7 @@ import net.viktorc.detroid.framework.uci.Option.StringOption;
  */
 public class OptionsAlert extends Alert {
 
-	private static final String STYLE_PATH = "../styles/options-dialog-style.css";
-	private static final String ICON_PATH = "../images/icon.png";
+	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/options-dialog-style.css";
 	// The colour of the feedback message at the top of the pane after an option has been set.
 	private static final String SUCCESS_COLOR = "green";
 	private static final String ERROR_COLOR = "red";
@@ -51,8 +49,6 @@ public class OptionsAlert extends Alert {
 	public OptionsAlert(Stage owner, UCIEngine engine) {
 		super(AlertType.NONE);
 		initOwner(owner);
-		Stage stage = (Stage) getDialogPane().getScene().getWindow();
-		stage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
 		getDialogPane().getStylesheets().add(getClass().getResource(STYLE_PATH).toExternalForm());
 		setTitle("Options");
 		setHeaderText("The UCI options of the chess search engine.");
