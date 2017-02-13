@@ -20,7 +20,7 @@ The other optimization method is a stochastic gradient descent algorithm with [N
 The framework provides two different ways to generate a FEN-file for static evaluation tuning. The first way is self-play. With the exception of one, all parameters and their descriptions can be found in the paragraph describing the game play based optimization method. The only novel parameter is the target path for the FEN-file which defaults to "fens.txt".  
 **Usage:** `-g byselfplay -games 100 -tc 2000 [-inc 10 -destfile my_fens.txt -concurrency 4]`
 
-The other way is by PGN conversion. This requires a PGN file of chess games to be converted to a FEN-file. The only mandatory parameter is the file path to the PGN file. The optional parameters are the maximum number of games to convert from the PGN file, and the file path of the generated FEN-file.  
+The other way is PGN conversion. This requires a PGN file of chess games which can then be converted to a FEN-file. The only mandatory parameter is the file path to the PGN file. The optional parameters are the maximum number of games from the PGN file to convert, and the file path of the generated FEN-file.  
 **Usage:** `-g bypgnconversion -sourcefile my_pgn.pgn [-maxgames 50000 -destfile my_fens.txt]`
 
 The generated FEN-files can also be filtered to possibly improve the optimization results. For example, all the positions and their labels from drawn games can be removed from the FEN-file. The file path to the source FEN-file is a mandatory parameter, while the destination file path is optional and defaults to "fens.txt".  
@@ -29,7 +29,7 @@ The generated FEN-files can also be filtered to possibly improve the optimizatio
 Another way to filter FEN-files is removing the first *X* positions from each game. The only new parameter defines the value of *X*; the others are the same as above.  
 **Usage:** `-f openings -sourcefile old_fen.txt [-firstxmoves 8 -destfile new_fen.txt]`
 
-Last but not least, the outputs of the two optimization methods logged in their log files can be converted into XML files containing the optimized values of the parameters. The game play based PBIL algorithm logs the probability vector of each generation. This can be converted into an XML file by specifying the value argument using the probability vector from the log files. The other two optional parameters are the type of the parameters to convert which defaults to 'all' and the destination path for the XML file which defaults to "params.xml".  
+Last but not least, the outputs of the two optimization methods logged in their log files can be converted into XML files containing the optimized values of the parameters. The game play based PBIL algorithm logs the probability vector of each generation. This can be converted into an XML file by specifying the value argument using the probability vector from the log file. The other two optional parameters are the type of the parameters to convert which defaults to 'all' and the destination path for the XML file which defaults to "params.xml". The type should be the same as what was used for the optimization.  
 **Usage:** `-c probvector -value "0.9, 0.121, 0.4" [-paramtype control -paramsfile my_params.xml]`
 
 The static evaluation parameter optimization method using the Texel cost function logs the values of the optimized parameters as an array of decimals called 'features'. It can be converted to an XML file almost exactly as described above, but using the features instead to specify the value argument.  
