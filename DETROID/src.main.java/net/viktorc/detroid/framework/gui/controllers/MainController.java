@@ -78,8 +78,9 @@ public final class MainController implements AutoCloseable, Observer {
 	private static final long DEFAULT_TIME = 300000;
 	// How frequently the timer's are updated. Only the user's time is actually measured with such a low accuracy.
 	private static final long TIMER_RESOLUTION = 100;
-	// The number of data points from which on, symbols are not drawn on the chart.
+	// The number of data points from which on, symbols and grid lines are not drawn on the chart.
 	private static final int CHART_SYMBOL_LIMIT = 10;
+	private static final int GRID_LINE_LIMIT = 50;
 	
 	@FXML
 	private MenuItem reset;
@@ -424,6 +425,7 @@ public final class MainController implements AutoCloseable, Observer {
 					if (adjustedScore != null) {
 						dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
 						graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+						graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
 					}
 					makeMove(bestMove);
 				}
@@ -500,6 +502,7 @@ public final class MainController implements AutoCloseable, Observer {
 					if (adjustedScore != null) {
 						dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
 						graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+						graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
 					}
 					makeMove(bestMove);
 				} else
@@ -802,6 +805,7 @@ public final class MainController implements AutoCloseable, Observer {
 				}
 				dataPoints.removeAll(pointsToRemove);
 				graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+				graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
 				doTime = true;
 			}
 		});
