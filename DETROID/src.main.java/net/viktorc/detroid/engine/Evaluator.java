@@ -42,7 +42,6 @@ final class Evaluator {
 	private final LossyHashTable<ETEntry> eT;
 	// The sum of the respective weights of pieces for assessing the game phase.
 	private final int totalPhaseWeights;
-	private final int phaseScoreLimitForInsuffMaterial;
 	
 	private byte[] pstWpawnOpening;
 	private byte[] pstWpawnEndgame;
@@ -79,7 +78,6 @@ final class Evaluator {
 	Evaluator(Params params, LossyHashTable<ETEntry> evalTable) {
 		this.params = params;
 		totalPhaseWeights = 4*(params.knightPhaseWeight + params.bishopPhaseWeight + params.rookPhaseWeight) + 2*params.queenPhaseWeight;
-		phaseScoreLimitForInsuffMaterial = Math.min(phaseScore(0, 0, 2, 0), phaseScore(0, 0, 0, 2));
 		initPieceSquareArrays();
 		eT = evalTable;
 	}
@@ -276,31 +274,25 @@ final class Evaluator {
 	 * @return
 	 */
 	static boolean isMaterialInsufficient(Position pos) {
-		int numOfWhiteBishops, numOfWhiteKnights, numOfBlackBishops, numOfBlackKnights, numOfAllPieces;
-		int bishopColor, newBishopColor;
+		int numOfWhiteKnights, numOfBlackKnights, numOfAllPieces;
+		int bishopColor;
 		byte[] bishopSqrArr;
-		if (pos.whitePawns != 0 && pos.blackPawns != 0)
+		if (pos.whitePawns != 0 || pos.blackPawns != 0 || pos.whiteRooks != 0 || pos.blackRooks != 0 ||
+				pos.whiteQueens != 0 || pos.blackQueens != 0)
 			return false;
-		numOfWhiteBishops = BitOperations.hammingWeight(pos.whiteBishops);
 		numOfWhiteKnights = BitOperations.hammingWeight(pos.whiteKnights);
-		numOfBlackBishops = BitOperations.hammingWeight(pos.blackBishops);
 		numOfBlackKnights = BitOperations.hammingWeight(pos.blackKnights);
 		numOfAllPieces = BitOperations.hammingWeight(pos.allOccupied);
-		if (numOfAllPieces == 2 ||
-		(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
-								numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
-		(numOfAllPieces == 4 && numOfWhiteBishops == 1 && numOfBlackBishops == 1 &&
-		Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.whiteBishops)).ordinal()%2 ==
-		Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
+		if (numOfAllPieces == 2 || numOfAllPieces == 3)
 			return true;
-		if (numOfWhiteKnights == 0 && numOfBlackKnights == 0 && (numOfWhiteBishops + numOfBlackBishops) > 0) {
+		if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
 			bishopSqrArr = BitOperations.serialize(pos.whiteBishops | pos.blackBishops);
 			bishopColor = Diagonal.getBySquareIndex(bishopSqrArr[0]).ordinal()%2;
-			for (byte bishopField : bishopSqrArr) {
-				if ((newBishopColor = Diagonal.getBySquareIndex(bishopField).ordinal()%2) != bishopColor)
-					return true;
-				bishopColor = newBishopColor;
+			for (int i = 1; i < bishopSqrArr.length; i++) {
+				if (Diagonal.getBySquareIndex(bishopSqrArr[i]).ordinal()%2 != bishopColor)
+					return false;
 			}
+			return true;
 		}
 		return false;
 	}
@@ -454,6 +446,7 @@ final class Evaluator {
 	 */
 	int score(Position pos, byte hashGen, int alpha, int beta) {
 		final boolean isWhitesTurn = pos.isWhitesTurn;
+		boolean allSameColor;
 		byte numOfWhiteQueens, numOfWhiteRooks, numOfWhiteBishops, numOfWhiteKnights;
 		byte numOfBlackQueens, numOfBlackRooks, numOfBlackBishops, numOfBlackKnights;
 		byte numOfAllPieces;
@@ -461,7 +454,7 @@ final class Evaluator {
 		byte pinner;
 		byte checker;
 		short openingScore, endgameScore, score, tempScore;
-		int bishopColor, newBishopColor;
+		int bishopSqrColor;
 		int square;
 		int phase;
 		int whiteKingInd, blackKingInd;
@@ -497,30 +490,31 @@ final class Evaluator {
 			numOfBlackRooks = BitOperations.hammingWeight(pos.blackRooks);
 			numOfBlackBishops = BitOperations.hammingWeight(pos.blackBishops);
 			numOfBlackKnights = BitOperations.hammingWeight(pos.blackKnights);
-			phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
-					numOfWhiteKnights + numOfBlackKnights);
 			// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
-			if (phase >= phaseScoreLimitForInsuffMaterial && numOfWhiteQueens == 0 && numOfBlackQueens == 0 &&
-			numOfWhiteRooks == 0 && numOfBlackRooks == 0 && pos.whitePawns == 0 && pos.blackPawns == 0) {
+			if (pos.whitePawns == 0 && pos.blackPawns == 0 && numOfWhiteRooks == 0 && numOfBlackRooks == 0 &&
+					numOfWhiteQueens == 0 && numOfBlackQueens == 0) {
 				numOfAllPieces = BitOperations.hammingWeight(pos.allOccupied);
-				if (numOfAllPieces == 2 ||
-				(numOfAllPieces == 3 && (numOfWhiteBishops == 1 || numOfBlackBishops == 1 ||
-										numOfWhiteKnights == 1 || numOfBlackKnights == 1)) ||
-				(numOfAllPieces == 4 && numOfWhiteBishops == 1 && numOfBlackBishops == 1 &&
-				Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.whiteBishops)).ordinal()%2 ==
-				Diagonal.getBySquareIndex(BitOperations.indexOfBit(pos.blackBishops)).ordinal()%2))
+				if (numOfAllPieces == 2 || numOfAllPieces == 3)
 					return Termination.INSUFFICIENT_MATERIAL.score;
-				if (numOfWhiteKnights == 0 && numOfBlackKnights == 0 && (numOfWhiteBishops + numOfBlackBishops > 0)) {
+				if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
+					allSameColor = true;
 					bishopSet = pos.whiteBishops | pos.blackBishops;
-					bishopColor = Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2;
+					bishopSqrColor = Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2;
+					bishopSet = BitOperations.resetLSBit(bishopSet);
 					while (bishopSet != 0) {
-						if ((newBishopColor = Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2) != bishopColor)
-							return Termination.INSUFFICIENT_MATERIAL.score;
-						bishopColor = newBishopColor;
+						if (Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2 != bishopSqrColor) {
+							allSameColor = false;
+							break;
+						}
 						bishopSet = BitOperations.resetLSBit(bishopSet);
 					}
+					if (allSameColor)
+						return Termination.INSUFFICIENT_MATERIAL.score;
 				}
 			}
+			// Phase score for tapered evaluation.
+			phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
+					numOfWhiteKnights + numOfBlackKnights);
 			// Basic material score.
 			score += (numOfWhiteQueens - numOfBlackQueens)*params.queenValue;
 			score += (numOfWhiteRooks - numOfBlackRooks)*params.rookValue;
