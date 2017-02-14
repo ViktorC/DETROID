@@ -81,6 +81,10 @@ public final class MainController implements AutoCloseable, Observer {
 	// The number of data points from which on, symbols and grid lines are not drawn on the chart.
 	private static final int CHART_SYMBOL_LIMIT = 10;
 	private static final int GRID_LINE_LIMIT = 50;
+	/* The maximum absolute y-value a data point on the chart can have. This is the value mate scores are assigned. 
+	 * It's 33 because search scores are 16-bit integers and they are always displayed in 'pawns' instead of 
+	 * centipawns ((2^15-1)/100 = 32.767). */
+	private static final int MAX_ABS_Y = 33;
 	
 	@FXML
 	private MenuItem reset;
@@ -337,8 +341,8 @@ public final class MainController implements AutoCloseable, Observer {
 		graphData.add(series);
 		graph.setData(graphData);
 		NumberAxis yAxis = (NumberAxis) graph.getYAxis();
-		yAxis.setLowerBound(-32);
-		yAxis.setUpperBound(32);
+		yAxis.setLowerBound(-MAX_ABS_Y);
+		yAxis.setUpperBound(MAX_ABS_Y);
 		yAxis.setAutoRanging(true);
 	}
 	/**
@@ -413,9 +417,9 @@ public final class MainController implements AutoCloseable, Observer {
 				double score = res.getScore().get();
 				ScoreType type = res.getScoreType().get();
 				if (controllerEngine.isWhitesTurn())
-					score = type == ScoreType.MATE ? score > 0 ? 32 : -32 : score/100;
+					score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score/100;
 				else
-					score = type == ScoreType.MATE ? score > 0 ? -32 : 32 : -score/100;
+					score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score/100;
 				adjustedScore = score;
 			} else
 				adjustedScore = null;
@@ -490,9 +494,9 @@ public final class MainController implements AutoCloseable, Observer {
 				double score = res.getScore().get();
 				ScoreType type = res.getScoreType().get();
 				if (controllerEngine.isWhitesTurn())
-					score = type == ScoreType.MATE ? score > 0 ? 32 : -32 : score/100;
+					score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score/100;
 				else
-					score = type == ScoreType.MATE ? score > 0 ? -32 : 32 : -score/100;
+					score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score/100;
 				adjustedScore = score;
 			} else
 				adjustedScore = null;

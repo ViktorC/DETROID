@@ -503,7 +503,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						if (debugMode) debugInfo.set("Returning best move after ponderring was terminated.");
 						try {
 							return searchResult.equals(Move.NULL_MOVE) ? new SearchResults(getRandomMove().toString(),
-									null, null, null) : new SearchResults(searchResult.toString(), null, (int) searchStats.getScore(),
+									null, null, null) : new SearchResults(searchResult.toString(), null, searchStats.getScore(),
 									searchStats.getScoreType());
 						} finally {
 							searchResLock.readLock().unlock();
@@ -578,8 +578,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			pV = searchStats.getPv();
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
 		} if (staticEvalTuningMode)
-			return new SearchResults(null, null, (int) searchStats.getScore(), searchStats.getScoreType());
-		Integer score;
+			return new SearchResults(null, null, searchStats.getScore(), searchStats.getScoreType());
+		Short score;
 		ScoreType scoreType;
 		// Set final results.
 		searchResLock.readLock().lock();
@@ -596,7 +596,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						"Random move selected");
 			} else {
 				bestMove = searchResult.toString();
-				score = (int) searchStats.getScore();
+				score = searchStats.getScore();
 				scoreType = searchStats.getScoreType();
 			}
 		} finally {

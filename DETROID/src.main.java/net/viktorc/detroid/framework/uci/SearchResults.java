@@ -13,7 +13,7 @@ public class SearchResults {
 
 	private final String bestMove;
 	private final Optional<String> suggestedPonderMove;
-	private final Optional<Integer> score;
+	private final Optional<Short> score;
 	private final Optional<ScoreType> scoreType;
 	
 	/**
@@ -21,12 +21,12 @@ public class SearchResults {
 	 * 
 	 * @param bestMove The best move in PACN.
 	 * @param suggestedPonderMove The expected reply to the best move in PACN. It is optional and thus can be null.
-	 * @param score An optional search score value. If the move was found using other methods than classic search and there is no 
-	 * score associated with it, the score should be null.
+	 * @param score An optional search score value in centipawns. If the move was found using other methods than classic search 
+	 * and there is no score associated with it, the score should be null.
 	 * @param scoreType An optional search score type. If the score is not present, the score type is ignored. If the score is 
 	 * present, the score type cannot be null either.
 	 */
-	public SearchResults(String bestMove, String suggestedPonderMove, Integer score, ScoreType scoreType) {
+	public SearchResults(String bestMove, String suggestedPonderMove, Short score, ScoreType scoreType) {
 		this.bestMove = bestMove;
 		this.suggestedPonderMove = Optional.ofNullable(suggestedPonderMove);
 		this.score = Optional.ofNullable(score);
@@ -49,11 +49,12 @@ public class SearchResults {
 		return suggestedPonderMove;
 	}
 	/**
-	 * Returns an optional integer that may hold the score of the search results.
+	 * Returns an optional 16-bit integer that may hold the score of the search results in centipawns, or if it is a mate 
+	 * score, the mate distance.
 	 * 
 	 * @return The search score if it is available.
 	 */
-	public Optional<Integer> getScore() {
+	public Optional<Short> getScore() {
 		return score;
 	}
 	/**

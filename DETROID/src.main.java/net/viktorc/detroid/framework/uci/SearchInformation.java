@@ -44,7 +44,7 @@ public abstract class SearchInformation extends Observable {
 	/**
 	 * Returns the result score of the search for the side to move.
 	 * 
-	 * @return The search score.
+	 * @return The search score in centipawns or if it is a mate score, the mate distance.
 	 */
 	public abstract short getScore();
 	/**
