@@ -44,8 +44,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import net.viktorc.detroid.framework.control.ControllerEngine;
-import net.viktorc.detroid.framework.control.GameState;
 import net.viktorc.detroid.framework.gui.dialogs.GameOverAlert;
 import net.viktorc.detroid.framework.gui.dialogs.InfoAlert;
 import net.viktorc.detroid.framework.gui.dialogs.OptionsAlert;
@@ -60,6 +58,8 @@ import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchInformation;
 import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.GameState;
 
 /**
  * The controller class for the main view of the chess application.

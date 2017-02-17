@@ -10,9 +10,9 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import net.viktorc.detroid.framework.control.ControllerEngine;
 import net.viktorc.detroid.framework.gui.controllers.MainController;
 import net.viktorc.detroid.framework.uci.UCIEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
  * A simple GUI application controlled by a controller chess engine for playing chess games against another UCI compliant chess 

@@ -19,8 +19,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.viktorc.detroid.framework.control.ControllerEngine;
-import net.viktorc.detroid.framework.control.GameState;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.GameState;
 
 /**
  * A utility class for generating and filtering FEN files used for static evaluation tuning.

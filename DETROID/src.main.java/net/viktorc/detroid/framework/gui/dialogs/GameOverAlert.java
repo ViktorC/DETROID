@@ -2,7 +2,7 @@ package net.viktorc.detroid.framework.gui.dialogs;
 
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
-import net.viktorc.detroid.framework.control.GameState;
+import net.viktorc.detroid.framework.validation.GameState;
 
 /**
  * An alert to display the end result of a chess game to the user.

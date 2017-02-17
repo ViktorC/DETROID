@@ -3,8 +3,8 @@ package net.viktorc.detroid;
 import net.viktorc.detroid.engine.Detroid;
 import net.viktorc.detroid.framework.EngineFactory;
 import net.viktorc.detroid.framework.ApplicationFramework;
-import net.viktorc.detroid.framework.control.ControllerEngine;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
  * The main class for the engine and tuning framework.

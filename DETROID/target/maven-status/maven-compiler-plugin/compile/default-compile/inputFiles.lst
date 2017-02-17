@@ -7,8 +7,11 @@ C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Move
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Search.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\GamePlayOptimizer.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\gui\dialogs\PromotionDialog.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\ControllerEngine.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Termination.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\EPDTestSuite.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\gui\models\TimeControl.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\GameState.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\Launcher.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\gui\dialogs\ErrorAlert.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\uci\UCI.java
@@ -23,7 +26,6 @@ C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\t
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\util\ASGD.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\ZobristKeyGenerator.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\MatchResult.java
-C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\control\Elo.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\EngineFactory.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Game.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\ParameterException.java
@@ -41,14 +43,14 @@ C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\u
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Book.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\ChessParseException.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\gui\dialogs\TimeSettingsDialog.java
-C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\control\GameState.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\uci\ScoreType.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\util\Copiable.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\util\LossyHashTable.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\gui\models\Piece.java
-C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\control\ControllerEngine.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\Elo.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Evaluator.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\TTEntry.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\EPD.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\ParameterType.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Move.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\PolyglotBook.java
@@ -59,6 +61,8 @@ C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\Magi
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\uci\UCIEngine.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\Arena.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\Parameter.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\PerftRecord.java
+C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\validation\PerftSuite.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\framework\tuning\StaticEvaluationOptimizer.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\util\PBIL.java
 C:\Users\A6714\git\DETROID\DETROID\src.main.java\net\viktorc\detroid\engine\RelativeHistoryTable.java

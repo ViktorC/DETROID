@@ -13,7 +13,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import net.viktorc.detroid.framework.control.ControllerEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.EPD;
+import net.viktorc.detroid.framework.validation.EPDTestSuite;
 
 /**
  * Win at Chess test suite at 1 second per position.
@@ -22,10 +24,10 @@ import net.viktorc.detroid.framework.control.ControllerEngine;
  *
  */
 @RunWith(Parameterized.class)
-public class WinAtChessTest {
+public final class WinAtChessTest {
 
 	private static final String SUITE_NAME = "Win at Chess";
-	private static final String WAC_FILE_PATH = "wac.txt";
+	private static final String WAC_FILE_PATH = "wac.epd";
 	private static final long TIME_PER_POSITION = 1000;
 	private static final ControllerEngine CONTROLLER = new Detroid();
 	
@@ -42,26 +44,7 @@ public class WinAtChessTest {
 	}
 	@Test
 	public void search() throws Exception {
-		if (!CONTROLLER.isInit())
-			CONTROLLER.init();
-		CONTROLLER.newGame();
-		CONTROLLER.setPosition(record.getPosition());
-		String bestMove = CONTROLLER.search(null, null, null, null, null, null, null, null, null, null,
-				TIME_PER_POSITION, null).getBestMove();
-		boolean correct = false;
-		/* Convert the correct move from SAN to PACN and compare it to the found move instead of the other way around to 
-		 * potentially avoid not recognizing a correct solution due to (erroneous) notational differences in SAN. */
-		for (String san : record.getBestMoves()) {
-			String pacn = CONTROLLER.convertSANToPACN(san);
-			if (bestMove.equals(pacn)) {
-				correct = true;
-				break;
-			}
-		}
-		String log = String.format("%s - %s in %.3fs", record.toString(), CONTROLLER.convertPACNToSAN(bestMove),
-				((double) TIME_PER_POSITION)/1000);
-		System.out.println(log);
-		assumeTrue(correct);
+		assumeTrue(EPDTestSuite.searchTest(CONTROLLER, record, TIME_PER_POSITION));
 	}
 	@AfterClass
 	public static void cleanUp() {

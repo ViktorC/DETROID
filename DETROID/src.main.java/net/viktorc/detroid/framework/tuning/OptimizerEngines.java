@@ -1,6 +1,6 @@
 package net.viktorc.detroid.framework.tuning;
 
-import net.viktorc.detroid.framework.control.ControllerEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
  * A parameter class for {@link #EngineParameterOptimizer EngineParameterOptimizer} storing references to engines required to perform the

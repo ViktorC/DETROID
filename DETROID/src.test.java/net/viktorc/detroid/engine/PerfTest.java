@@ -1,6 +1,6 @@
 package net.viktorc.detroid.engine;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,7 +13,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import net.viktorc.detroid.framework.control.ControllerEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.PerftRecord;
+import net.viktorc.detroid.framework.validation.PerftSuite;
 
 /**
  * Perft result verification test.
@@ -22,7 +24,7 @@ import net.viktorc.detroid.framework.control.ControllerEngine;
  *
  */
 @RunWith(Parameterized.class)
-public class PerfTest {
+public final class PerfTest {
 
 	private static final String PERFT_FILE_PATH = "perft.txt";
 	private static final ControllerEngine CONTROLLER = new Detroid();
@@ -40,20 +42,7 @@ public class PerfTest {
 	}
 	@Test
 	public void perft() throws Exception {
-		long start, end;
-		long nodes;
-		if (!CONTROLLER.isInit())
-			CONTROLLER.init();
-		CONTROLLER.setControllerMode(true);
-		CONTROLLER.newGame();
-		CONTROLLER.setPosition(record.getPosition());
-		start = System.currentTimeMillis();
-		nodes = CONTROLLER.perft(record.getDepth());
-		end = System.currentTimeMillis();
-		String log = String.format("%s; %d; %d; - %d in %.3fs", record.getPosition(), record.getDepth(), record.getNodes(),
-				nodes, ((double) (end - start))/1000);
-		System.out.println(log);
-		assertEquals(record.getNodes(), nodes);
+		assertTrue(PerftSuite.perft(CONTROLLER, record));
 	}
 	@AfterClass
 	public static void cleanUp() {

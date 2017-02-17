@@ -119,8 +119,12 @@ public final class UCI implements Observer, Runnable, Closeable {
 					this.engine.newGame();
 				} break;
 				case "position": {
-					String pos = tokens[1];
-					int i = 2;
+					int i = 1;
+					/* In case the position definition looks e.g. like this: 
+					 * position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
+					if ("fen".equals(tokens[i]))
+						i++;
+					String pos = tokens[i++];
 					for (; i < tokens.length && !tokens[i].equals("moves"); i++)
 						pos += " " + tokens[i];
 					i++;

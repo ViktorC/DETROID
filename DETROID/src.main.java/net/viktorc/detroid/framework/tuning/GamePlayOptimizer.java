@@ -7,8 +7,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import net.viktorc.detroid.framework.control.Elo;
 import net.viktorc.detroid.framework.uci.UCIEngine;
+import net.viktorc.detroid.framework.validation.Elo;
 import net.viktorc.detroid.util.PBIL;
 
 /**

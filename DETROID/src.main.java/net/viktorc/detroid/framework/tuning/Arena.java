@@ -7,11 +7,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import net.viktorc.detroid.framework.control.ControllerEngine;
-import net.viktorc.detroid.framework.control.GameState;
 import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.GameState;
 
 /**
  * A class for pitting two UCI compatible engines against each other, supervised by a controller engine.

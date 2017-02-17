@@ -1,10 +1,10 @@
 net.viktorc.detroid.engine
 net.viktorc.detroid.framework
-net.viktorc.detroid.framework.control
 net.viktorc.detroid.framework.gui
 net.viktorc.detroid.framework.gui.controllers
 net.viktorc.detroid.framework.gui.dialogs
 net.viktorc.detroid.framework.gui.models
 net.viktorc.detroid.framework.tuning
 net.viktorc.detroid.framework.uci
+net.viktorc.detroid.framework.validation
 net.viktorc.detroid.util

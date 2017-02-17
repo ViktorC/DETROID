@@ -22,8 +22,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import net.viktorc.detroid.engine.Book.SelectionModel;
 import net.viktorc.detroid.engine.Game.Side;
-import net.viktorc.detroid.framework.control.ControllerEngine;
-import net.viktorc.detroid.framework.control.GameState;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
 import net.viktorc.detroid.framework.uci.DebugInformation;
@@ -31,6 +29,8 @@ import net.viktorc.detroid.framework.uci.Option;
 import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchInformation;
 import net.viktorc.detroid.framework.uci.SearchResults;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.GameState;
 import net.viktorc.detroid.util.LossyHashTable;
 import net.viktorc.detroid.util.SizeEstimator;
 

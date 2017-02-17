@@ -1,7 +1,7 @@
 package net.viktorc.detroid.framework;
 
-import net.viktorc.detroid.framework.control.ControllerEngine;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
  * An interface for factory classes providing new engine instances.

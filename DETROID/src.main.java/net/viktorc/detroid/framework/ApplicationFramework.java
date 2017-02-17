@@ -7,7 +7,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
 import javafx.application.Application;
-import net.viktorc.detroid.framework.control.ControllerEngine;
 import net.viktorc.detroid.framework.gui.GUI;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
 import net.viktorc.detroid.framework.tuning.FENFileUtil;
@@ -17,6 +16,7 @@ import net.viktorc.detroid.framework.tuning.ParameterType;
 import net.viktorc.detroid.framework.tuning.StaticEvaluationOptimizer;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
 import net.viktorc.detroid.framework.uci.UCI;
+import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
  * The application that serves as a chess engine framework handling communication via the UCI protocol, providing 
