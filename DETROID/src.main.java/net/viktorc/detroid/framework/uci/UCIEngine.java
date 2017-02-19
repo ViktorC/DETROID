@@ -3,6 +3,8 @@ package net.viktorc.detroid.framework.uci;
 import java.util.Map;
 import java.util.Set;
 
+import net.viktorc.detroid.framework.uci.Option.CheckOption;
+
 /**
  * The interface needed to be implemented by an engine to ensure it is UCI compliant.
  * 
@@ -10,6 +12,12 @@ import java.util.Set;
  *
  */
 public interface UCIEngine {
+
+	/**
+	 * A standard check type UCI option that determines whether the engine should use its own book. It is false by default. If the engine 
+	 * implementing the interface offers this option, it should use this instance.
+	 */
+	public static final CheckOption OWN_BOOK_OPTION = new CheckOption("OwnBook", false);
 	
 	/**
 	 * Initialises the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
@@ -47,7 +55,7 @@ public interface UCIEngine {
 	 * 
 	 * @param setting The UCI option to set.
 	 * @param value The value to which the option should be set.
-	 * @return Whether the setting was successfully set to the value, e.g. it was an allowed value.
+	 * @return Whether the setting was successfully set to the value, i.e. the option exists and it is an allowed value.
 	 * @param <T> The type of the value the option holds.
 	 */
 	<T> boolean setOption(Option<T> setting, T value);

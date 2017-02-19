@@ -635,10 +635,10 @@ class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
-//							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
-//							 * by a margin great enough to completely prune the branch. */
-//							if (evalScore + params.razoringMargin1 <= alpha)
-//								razRed = 1;
+							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
+							 * by a margin great enough to completely prune the branch. */
+							if (evalScore + params.razoringMargin1 <= alpha)
+								razRed = 1;
 						} break;
 						case 3: {
 							// Deep futility pruning.
@@ -647,9 +647,9 @@ class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
-//							// Deep razoring.
-//							if (evalScore + params.razoringMargin2 <= alpha)
-//								razRed = 1;
+							// Deep razoring.
+							if (evalScore + params.razoringMargin2 <= alpha)
+								razRed = 1;
 						}
 					}
 				}
@@ -857,10 +857,10 @@ class Search implements Runnable {
 			resultScore = score;
 		} else {
 			if (score <= lCheckMateLimit) {
-				resultScore = Termination.CHECK_MATE.score - score;
+				resultScore = (Termination.CHECK_MATE.score - score)/2;
 				scoreType = ScoreType.MATE;
 			} else if (score >= wCheckMateLimit) {
-				resultScore = -Termination.CHECK_MATE.score - score;
+				resultScore = -(Termination.CHECK_MATE.score - score)/2;
 				scoreType = ScoreType.MATE;
 			} else {
 				resultScore = score;

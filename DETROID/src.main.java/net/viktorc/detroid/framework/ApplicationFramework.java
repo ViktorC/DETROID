@@ -18,6 +18,7 @@ import net.viktorc.detroid.framework.tuning.ParameterType;
 import net.viktorc.detroid.framework.tuning.TexelOptimizer;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
 import net.viktorc.detroid.framework.uci.UCI;
+import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
@@ -80,11 +81,11 @@ public final class ApplicationFramework implements Runnable {
 	 * UCI mode: {@code -u} </br>
 	 * Gameplay tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | 
 	 * management | eval+control | control+management | all> -inc <integer> -validfactor <decimal> 
-	 * -initprobvector <quoted_comma_separated_decimals> -log <string> -concurrency <integer>]} <br>
+	 * -initprobvector <quoted_comma_separated_decimals> -trybook <true | false> -log <string> -concurrency <integer>]} <br>
 	 * Static evaluation tuning: {@code -t texel -samplesize <integer> [-k <decimal> -fensfile <string> -log <string> 
 	 * -concurrency <integer>]} <br>
-	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> -destfile <string> 
-	 * -concurrency <integer>]} <br>
+	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> -trybook <true | false> 
+	 * -destfile <string> -concurrency <integer>]} <br>
 	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer> 
 	 * -destfile <string>]} <br>
 	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string>]} <br>
@@ -124,6 +125,7 @@ public final class ApplicationFramework implements Runnable {
 						double validFactor = 0;
 						Set<ParameterType> paramTypes = null;
 						double[] initProbVec = null;
+						boolean useBook = false;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -174,6 +176,9 @@ public final class ApplicationFramework implements Runnable {
 								case "-validfactor": {
 									validFactor = Double.parseDouble(args[++i]);
 								} break;
+								case "-trybook": {
+									useBook = Boolean.parseBoolean(args[++i]);
+								} break;
 								case "-initprobvector": {
 									String vec = args[++i];
 									String[] probs = vec.split(",");
@@ -190,8 +195,12 @@ public final class ApplicationFramework implements Runnable {
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								engines[i] = new OptimizerEngines(factory.newEngineInstance(),
-										factory.newEngineInstance(), factory.newControllerEngineInstance());
+								TunableEngine engine1 = factory.newEngineInstance();
+								TunableEngine engine2 = factory.newEngineInstance();
+								engine1.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
+								engine2.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
+								engines[i] = new OptimizerEngines(engine1, engine2,
+										factory.newControllerEngineInstance());
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
@@ -269,6 +278,7 @@ public final class ApplicationFramework implements Runnable {
 						int games = -1;
 						long tc = -1;
 						long tcInc = 0;
+						boolean useBook = false;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -284,6 +294,9 @@ public final class ApplicationFramework implements Runnable {
 								case "-inc": {
 									tcInc = Long.parseLong(args[++i]);
 								} break;
+								case "-trybook": {
+									useBook = Boolean.parseBoolean(args[++i]);
+								} break;
 								case "-destfile": {
 									destFile = args[++i];
 								} break;
@@ -296,8 +309,12 @@ public final class ApplicationFramework implements Runnable {
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								engines[i] = new OptimizerEngines(factory.newEngineInstance(),
-										factory.newEngineInstance(), factory.newControllerEngineInstance());
+								TunableEngine engine1 = factory.newEngineInstance();
+								TunableEngine engine2 = factory.newEngineInstance();
+								engine1.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
+								engine2.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
+								engines[i] = new OptimizerEngines(engine1, engine2,
+										factory.newControllerEngineInstance());
 							} catch (Exception e) {
 								throw new IllegalArgumentException(e);
 							}
