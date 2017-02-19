@@ -1,6 +1,7 @@
 package net.viktorc.detroid.framework.tuning;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,11 +19,11 @@ import net.viktorc.detroid.util.PBIL;
  * @author Viktor
  *
  */
-public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
+public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	
 	private final OptimizerEngines[] engines;
 	private final Arena[] arenas;
-	private final ParameterType parameterType;
+	private final Set<ParameterType> parameterTypes;
 	private final int games;
 	private final long timePerGame;
 	private final long timeIncPerMove;
@@ -38,9 +39,9 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown.
-	 * @param parameterType Denotes the type of chess engine parameters to tune with game play. 
-	 * If it is null, all parameters will be tuned.
+	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * threads to use is the maximum of the number of available logical cores divided by two 
+	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -57,16 +58,21 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * binary string's length. If it is null, an array with a length equal to the parameters' 
 	 * binary string's length, only containing elements that have the value 0.5d will be used.
 	 * @param populationSize The number of samples to produce per generation.
-	 * @param logger A logger to log the optimization process. If it is null, no logging 
-	 * will be done.
+	 * @param logger A logger to log the optimization process. It cannot be null.
+	 * @param parameterTypes The set of chess engine parameter types to tune with game play. 
+	 * If it is null, all parameters will be tuned.
 	 * @throws Exception If the engines cannot be initialized.
+	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public GamePlayOptimizer(OptimizerEngines[] engines, ParameterType parameterType, int games, long timePerGame,
-			long timeIncPerMove, double validationFactor, double[] initialProbabilityVector, int populationSize,
-			Logger logger) throws Exception {
-		super(engines[0].getEngine().getParameters().toGrayCodeString(parameterType).length(),
+	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
+			double validationFactor, double[] initialProbabilityVector, int populationSize, Logger logger,
+			Set<ParameterType> parameterTypes) throws Exception, IllegalArgumentException {
+		super(engines[0].getEngine().getParameters().toGrayCodeString(parameterTypes).length(),
 				populationSize, null, null, null, null, null, initialProbabilityVector, logger);
-		this.parameterType = parameterType;
+		if (logger == null)
+			throw new IllegalArgumentException("The logger cannot be null.");
+		this.parameterTypes = parameterTypes;
+		logger.info("Tuning parameters of type: " + this.parameterTypes);
 		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
 		for (OptimizerEngines e : engines) {
 			if (e != null)
@@ -80,7 +86,8 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 		this.timePerGame = timePerGame;
 		this.timeIncPerMove = timeIncPerMove;
 		this.validationFactor = validationFactor;
-		pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), this.engines.length));
+		pool = Executors.newFixedThreadPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors()/2),
+				this.engines.length));
 		tempGeneration = -1;
 	}
 	/**
@@ -91,7 +98,9 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown.
+	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * threads to use is the maximum of the number of available logical cores divided by two 
+	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -105,15 +114,15 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * binary string's length. If it is null, an array with a length equal to the parameters' 
 	 * binary string's length, only containing elements that have the value 0.5d will be used.
 	 * @param populationSize The number of samples to produce per generation.
-	 * @param logger A logger to log the optimization process. If it is null, no logging 
-	 * will be done.
+	 * @param logger A logger to log the optimization process. It cannot be null.
 	 * @throws Exception If the engines cannot be initialized.
+	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
+	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
 			double validationFactor, double[] initialProbabilityVector, int populationSize, Logger logger)
-					throws Exception {
-		this(engines, null, games, timePerGame, timeIncPerMove, validationFactor, initialProbabilityVector,
-				populationSize, logger);
+					throws Exception, IllegalArgumentException {
+		this(engines, games, timePerGame, timeIncPerMove, validationFactor, initialProbabilityVector,
+				populationSize, logger, null);
 	}
 	/**
 	 * Constructs a new instance according to the specified parameters.
@@ -123,25 +132,28 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown.
-	 * @param parameterType Denotes the type of chess engine parameters to tune with game play. 
+	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * threads to use is the maximum of the number of available logical cores divided by two 
+	 * and 1.
+	 * @param games The number of games to play to assess the fitness of the parameters.
+	 * @param timePerGame The time each engine will have per game in milliseconds.
+	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
+	 * engine is incremented after each legal move.
+	 * @param validationFactor The factor of the original number of games to play in addition 
+	 * when assessing the fitness of a parameter set whose fitness surpassed the current highest 
+	 * fitness after having played the original number of games.
+	 * @param populationSize The number of samples to produce per generation.
+	 * @param logger A logger to log the optimization process. It cannot be null.
+	 * @param parameterTypes The set of chess engine parameter types to tune with game play. 
 	 * If it is null, all parameters will be tuned.
-	 * @param games The number of games to play to assess the fitness of the parameters.
-	 * @param timePerGame The time each engine will have per game in milliseconds.
-	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
-	 * engine is incremented after each legal move.
-	 * @param validationFactor The factor of the original number of games to play in addition 
-	 * when assessing the fitness of a parameter set whose fitness surpassed the current highest 
-	 * fitness after having played the original number of games.
-	 * @param populationSize The number of samples to produce per generation.
-	 * @param logger A logger to log the optimization process. If it is null, no logging 
-	 * will be done.
-	 * @throws Exception If the engines cannot be initialised.
+	 * @throws Exception If the engines cannot be initialized.
+	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public GamePlayOptimizer(OptimizerEngines[] engines, ParameterType parameterType, int games, long timePerGame,
-			long timeIncPerMove, double validationFactor, int populationSize, Logger logger) throws Exception {
-		this(engines, parameterType, games, timePerGame, timeIncPerMove, validationFactor, null,
-				populationSize, logger);
+	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
+			double validationFactor, int populationSize, Logger logger, Set<ParameterType> parameterTypes)
+					throws Exception, IllegalArgumentException {
+		this(engines, games, timePerGame, timeIncPerMove, validationFactor, null,
+				populationSize, logger, parameterTypes);
 	}
 	/**
 	 * Constructs a new instance according to the specified parameters.
@@ -151,7 +163,9 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown.
+	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * threads to use is the maximum of the number of available logical cores divided by two 
+	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -160,13 +174,13 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 	 * when assessing the fitness of a parameter set whose fitness surpassed the current highest 
 	 * fitness after having played the original number of games.
 	 * @param populationSize The number of samples to produce per generation.
-	 * @param logger A logger to log the optimization process. If it is null, no logging 
-	 * will be done.
-	 * @throws Exception If the engines cannot be initialised.
+	 * @param logger A logger to log the optimization process. It cannot be null.
+	 * @throws Exception If the engines cannot be initialized.
+	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public GamePlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			double validationFactor, int populationSize, Logger logger) throws Exception {
-		this(engines, null, games, timePerGame, timeIncPerMove, validationFactor, populationSize, logger);
+	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
+			double validationFactor, int populationSize, Logger logger) throws Exception, IllegalArgumentException {
+		this(engines, games, timePerGame, timeIncPerMove, validationFactor, populationSize, logger, null);
 	}
 	@Override
 	protected double fitnessFunction(String genotype) {
@@ -188,7 +202,7 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 						e.printStackTrace();
 					}
 				}
-				oppEngine.getParameters().set(set, parameterType);
+				oppEngine.getParameters().set(set, parameterTypes);
 				oppEngine.notifyParametersChanged();
 			}
 		}
@@ -205,7 +219,7 @@ public final class GamePlayOptimizer extends PBIL implements AutoCloseable {
 					tunEngine.init();
 				if (!oppEngine.isInit())
 					oppEngine.init();
-				tunEngine.getParameters().set(genotype, parameterType);
+				tunEngine.getParameters().set(genotype, parameterTypes);
 				tunEngine.notifyParametersChanged();
 				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
 			}));

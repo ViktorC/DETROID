@@ -1,4 +1,4 @@
-package net.viktorc.detroid.framework.validation;
+package net.viktorc.detroid.framework.tuning;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,13 +12,14 @@ import java.util.List;
  */
 public class EPD {
 	
-	private static final String BEST_MOVE_OP_CODE = "bm";
-	private static final String ID_OP_CODE = "id";
+	protected static final String BEST_MOVE_OP_CODE = "bm ";
+	protected static final String ID_OP_CODE = "id ";
 	
-	private final String epd;
-	private final String id;
-	private final String position;
-	private final List<String> bestMoves;
+	protected final String epd;
+	protected final String[] ops;
+	protected final String id;
+	protected final String position;
+	protected final List<String> bestMoves;
 	
 	/**
 	 * Constructs an instance based on the specified EPD record.
@@ -32,7 +33,7 @@ public class EPD {
 			throw new IllegalArgumentException("Illegal EPD format.");
 		position = String.join(" ", Arrays.copyOf(parts, 4)).trim();
 		String operations = epd.substring(position.length(), epd.length());
-		String[] ops = operations.trim().split(";");
+		ops = operations.trim().split(";");
 		String id = null;
 		String[] bestMoves = new String[0];
 		for (String op : ops) {

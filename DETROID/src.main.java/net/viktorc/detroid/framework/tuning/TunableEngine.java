@@ -20,11 +20,11 @@ public interface TunableEngine extends UCIEngine {
 	 */
 	void notifyParametersChanged();
 	/**
-	 * Sets whether the engine should run in static evaluation mode. Static evaluation mode should support 0-depth search 
-	 * which is a deterministic quiescent search.
+	 * Sets whether the engine should run in deterministic mode. This mode, besides not using hash tables such as a transposition 
+	 * table, should support 0-depth search which is a deterministic quiescent search.
 	 * 
-	 * @param on Whether the engine should run in static evaluation mode.
+	 * @param on Whether the engine should run in deterministic mode.
 	 */
-	void setStaticEvalTuningMode(boolean on);
+	void setDeterminism(boolean on);
 	
 }

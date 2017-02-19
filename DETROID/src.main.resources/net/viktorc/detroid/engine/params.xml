@@ -66,6 +66,8 @@
 <singleReplyExt>14</singleReplyExt>
 <iidMinActivationDepth>14</iidMinActivationDepth>
 <iidRelDepthHth>5</iidRelDepthHth>
+<minSearchMilliSecondsForWaiting>1</minSearchMilliSecondsForWaiting>
+<nanoSecondsToWaitForResult>500000</nanoSecondsToWaitForResult>
 <rhtDecrementFactor>97</rhtDecrementFactor>
 <defaultHashSize>64</defaultHashSize>
 <tTshare>8</tTshare>
@@ -78,8 +80,6 @@
 <avgMovesPerGame>40</avgMovesPerGame>
 <movesToGoSafetyMargin>15</movesToGoSafetyMargin>
 <fractionOfTotalTimeToUseHth>102</fractionOfTotalTimeToUseHth>
-<minSearchMilliSecondsForWaiting>1</minSearchMilliSecondsForWaiting>
-<nanoSecondsToWaitForResult>500000</nanoSecondsToWaitForResult>
 <pstPawnOpening8>127</pstPawnOpening8>
 <pstPawnOpening9>127</pstPawnOpening9>
 <pstPawnOpening10>127</pstPawnOpening10>

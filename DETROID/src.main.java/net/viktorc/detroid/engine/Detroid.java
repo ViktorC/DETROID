@@ -86,7 +86,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private volatile boolean isInit;
 	private volatile boolean debugMode;
 	private volatile boolean controllerMode;
-	private volatile boolean staticEvalTuningMode;
+	private volatile boolean deterministicMode;
 	private volatile boolean stop;
 	private volatile boolean cancelledResultsReady;
 	private volatile boolean ponderHit;
@@ -217,7 +217,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		debugInfo = new DebugInfo();
 		debugMode = false;
 		controllerMode = false;
-		staticEvalTuningMode = false;
+		deterministicMode = false;
 		ponderHit = false;
 		stop = false;
 		outOfBook = false;
@@ -234,14 +234,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		options.put(hashSize, hashSize.getDefaultValue().get());
 		options.put(clearHash, null);
 		options.put(ponder, ponder.getDefaultValue().get());
-		options.put(ownBook, ownBook.getDefaultValue().get());
+		options.put(ownBook, true);
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue().get());
 		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue().get());
 		options.put(parametersPath, parametersPath.getDefaultValue().get());
 		options.put(uciOpponent, uciOpponent.getDefaultValue().get());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
-		setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.defaultHashSize);
+		setHashSize(controllerMode || deterministicMode ? MIN_HASH_SIZE : params.defaultHashSize);
 		hT = new RelativeHistoryTable(params);
 		eval = new Evaluator(params, eT);
 		executor = Executors.newSingleThreadExecutor();
@@ -338,7 +338,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public synchronized void newGame() {
 		newGame = true;
 		outOfBook = false;
-		if (!controllerMode && !staticEvalTuningMode)
+		if (!controllerMode && !deterministicMode)
 			clearHash();
 	}
 	@Override
@@ -358,7 +358,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			else {
 				if (debugMode) debugInfo.set("Position set within the same game");
 				gen++;
-				if (!controllerMode && !staticEvalTuningMode) {
+				if (!controllerMode && !deterministicMode) {
 					if (gen == 127) {
 						tT.clear();
 						eT.clear();
@@ -425,7 +425,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			newGame = false;
 		}
 		// Search the book if possible.
-		if ((Boolean) options.get(ownBook) && !staticEvalTuningMode && !outOfBook && searchMoves == null && (ponder == null || !ponder) &&
+		if ((Boolean) options.get(ownBook) && !deterministicMode && !outOfBook && searchMoves == null && (ponder == null || !ponder) &&
 				depth == null && nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
 			search = executor.submit(() -> {
@@ -577,13 +577,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			// Set ponder move based on the PV.
 			pV = searchStats.getPv();
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
-		} if (staticEvalTuningMode)
-			return new SearchResults(null, null, searchStats.getScore(), searchStats.getScoreType());
+		}
 		Short score;
 		ScoreType scoreType;
 		// Set final results.
 		searchResLock.readLock().lock();
 		try {
+			if (deterministicMode)
+				return new SearchResults(searchResult.toString(), null, searchStats.getScore(), searchStats.getScoreType());
 			if (isBookMove) {
 				bestMove = searchResult.toString();
 				score = null;
@@ -765,15 +766,15 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return params;
 	}
 	@Override
-	public void notifyParametersChanged() {
+	public synchronized void notifyParametersChanged() {
 		if (isInit()) {
-			setHashSize(controllerMode || staticEvalTuningMode ? MIN_HASH_SIZE : params.defaultHashSize);
-			eval = new Evaluator(params, controllerMode || staticEvalTuningMode ? null : eT);
+			setHashSize(controllerMode || deterministicMode ? MIN_HASH_SIZE : params.defaultHashSize);
+			eval = new Evaluator(params, controllerMode || deterministicMode ? null : eT);
 		}
 	}
 	@Override
-	public void setStaticEvalTuningMode(boolean on) {
-		staticEvalTuningMode = on;
+	public synchronized void setDeterminism(boolean on) {
+		deterministicMode = on;
 		notifyParametersChanged();
 	}
 	@Override

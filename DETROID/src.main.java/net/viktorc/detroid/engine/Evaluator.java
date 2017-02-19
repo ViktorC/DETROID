@@ -40,6 +40,7 @@ final class Evaluator {
 	private final Params params;
 	// Evaluation score hash table.
 	private final LossyHashTable<ETEntry> eT;
+	private final boolean useEt;
 	// The sum of the respective weights of pieces for assessing the game phase.
 	private final int totalPhaseWeights;
 	
@@ -80,6 +81,7 @@ final class Evaluator {
 		totalPhaseWeights = 4*(params.knightPhaseWeight + params.bishopPhaseWeight + params.rookPhaseWeight) + 2*params.queenPhaseWeight;
 		initPieceSquareArrays();
 		eT = evalTable;
+		useEt = eT != null;
 	}
 	/**
 	 * Initializes the piece square arrays with the correct order of values.
@@ -473,7 +475,7 @@ final class Evaluator {
 		ETEntry eE;
 		score = 0;
 		// Probe evaluation hash table.
-		if (eT != null && (eE = eT.get(pos.key)) != null) {
+		if (useEt && (eE = eT.get(pos.key)) != null) {
 			eE.generation = hashGen;
 			score = eE.score;
 			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
@@ -544,7 +546,7 @@ final class Evaluator {
 			score += (isWhitesTurn ? params.tempoAdvantage : -params.tempoAdvantage);
 			// Non-exact score hashing.
 			tempScore = (short) (isWhitesTurn ? score : -score);
-			if (eT != null && (tempScore <= alpha - params.lazyEvalMar || tempScore >= beta + params.lazyEvalMar)) {
+			if (useEt && (tempScore <= alpha - params.lazyEvalMar || tempScore >= beta + params.lazyEvalMar)) {
 				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
 				return tempScore;
 			}
@@ -687,7 +689,7 @@ final class Evaluator {
 		score -= numOfWhiteQueens != 0 ? params.queenKingTropismWeight*whiteQueenKingTropism/numOfWhiteQueens : 0;
 		score += numOfBlackQueens != 0 ? params.queenKingTropismWeight*blackQueenKingTropism/numOfBlackQueens : 0;
 		score *= (isWhitesTurn ? 1 : -1);
-		if (eT != null)
+		if (useEt)
 			eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}

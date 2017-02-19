@@ -2,7 +2,9 @@ package net.viktorc.detroid.framework;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
@@ -10,10 +12,10 @@ import javafx.application.Application;
 import net.viktorc.detroid.framework.gui.GUI;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
 import net.viktorc.detroid.framework.tuning.FENFileUtil;
-import net.viktorc.detroid.framework.tuning.GamePlayOptimizer;
+import net.viktorc.detroid.framework.tuning.SelfPlayOptimizer;
 import net.viktorc.detroid.framework.tuning.OptimizerEngines;
 import net.viktorc.detroid.framework.tuning.ParameterType;
-import net.viktorc.detroid.framework.tuning.StaticEvaluationOptimizer;
+import net.viktorc.detroid.framework.tuning.TexelOptimizer;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
 import net.viktorc.detroid.framework.uci.UCI;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
@@ -76,10 +78,10 @@ public final class ApplicationFramework implements Runnable {
 	 * engine instances required for different features of the framework.
 	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
 	 * UCI mode: {@code -u} </br>
-	 * Gameplay tuning: {@code -t gameplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | all> 
-	 * -inc <integer> -validfactor <decimal> -initprobvector <quoted_comma_separated_decimals> -log <string> 
-	 * -concurrency <integer>]} <br>
-	 * Static evaluation tuning: {@code -t staticeval -samplesize <integer> [-k <decimal> -fensfile <string> -log <string> 
+	 * Gameplay tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | 
+	 * management | eval+control | control+management | all> -inc <integer> -validfactor <decimal> 
+	 * -initprobvector <quoted_comma_separated_decimals> -log <string> -concurrency <integer>]} <br>
+	 * Static evaluation tuning: {@code -t texel -samplesize <integer> [-k <decimal> -fensfile <string> -log <string> 
 	 * -concurrency <integer>]} <br>
 	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> -destfile <string> 
 	 * -concurrency <integer>]} <br>
@@ -88,9 +90,9 @@ public final class ApplicationFramework implements Runnable {
 	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string>]} <br>
 	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer> [-destfile <string>]} <br>
 	 * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals> 
-	 * [-paramtype <eval | control | all> -paramsfile <string>]} <br>
+	 * [-paramtype <eval | control | management | eval+control | control+management | all> -paramsfile <string>]} <br>
 	 * Parameter value array conversion to parameters file: {@code -c paramvalues -value <quoted_comma_separated_decimals> 
-	 * [-paramsfile <string>]}
+	 * [-paramtype <eval | control | management | eval+control | control+management | all> -paramsfile <string>]}
 	 */
 	public ApplicationFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
@@ -114,13 +116,13 @@ public final class ApplicationFramework implements Runnable {
 				case "-t": {
 					String logFilePath = DEF_LOG_FILE_PATH;
 					String arg1 = args[1];
-					if ("gameplay".equals(arg1)) {
+					if ("selfplay".equals(arg1)) {
 						int popSize = -1;
 						int games = -1;
 						long tc = -1;
 						long tcInc = 0;
 						double validFactor = 0;
-						ParameterType paramType = null;
+						Set<ParameterType> paramTypes = null;
 						double[] initProbVec = null;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
@@ -135,13 +137,23 @@ public final class ApplicationFramework implements Runnable {
 									String type = args[++i];
 									switch (type) {
 										case "eval":
-											paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER));
 											break;
 										case "control":
-											paramType = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER;
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER));
+											break;
+										case "management":
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+											break;
+										case "eval+control":
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER,
+													ParameterType.SEARCH_CONTROL_PARAMETER));
+											break;
+										case "control+management":
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER,
+													ParameterType.ENGINE_MANAGEMENT_PARAMETER));
 											break;
 										case "all":
-											paramType = null;
 											break;
 										default:
 											throw new IllegalArgumentException();
@@ -190,13 +202,13 @@ public final class ApplicationFramework implements Runnable {
 						} catch (SecurityException | IOException e) {
 							e.printStackTrace();
 						}
-						try (GamePlayOptimizer optimizer = new GamePlayOptimizer(engines, paramType, games, tc, tcInc, validFactor,
-								initProbVec, popSize, logger)) {
+						try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc, validFactor,
+								initProbVec, popSize, logger, paramTypes)) {
 							optimizer.optimize();
 						} catch (Exception e) {
 							throw new IllegalArgumentException(e);
 						}
-					} else if ("staticeval".equals(arg1)) {
+					} else if ("texel".equals(arg1)) {
 						Double k = null;
 						int sampleSize = -1;
 						String fensFilePath = DEF_FENS_FILE_PATH;
@@ -239,7 +251,7 @@ public final class ApplicationFramework implements Runnable {
 							e.printStackTrace();
 							throw new IllegalArgumentException(e);
 						}
-						try (StaticEvaluationOptimizer optimizer = new StaticEvaluationOptimizer(engines, sampleSize, fensFilePath,
+						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, fensFilePath,
 								k, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
@@ -387,6 +399,7 @@ public final class ApplicationFramework implements Runnable {
 				case "-c": {
 					String arg1 = args[1];
 					String destFile = DEF_CONVERTED_PARAMS_PATH;
+					Set<ParameterType> paramTypes = null;
 					TunableEngine engine = factory.newEngineInstance();
 					try {
 						engine.init();
@@ -396,41 +409,50 @@ public final class ApplicationFramework implements Runnable {
 					EngineParameters params = engine.getParameters();
 					if (!"-value".equals(args[2]))
 						throw new IllegalArgumentException();
+					if (args.length > 4) {
+						if ("-paramtype".equals(args[4])) {
+							switch (args[5]) {
+							case "eval":
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER));
+								break;
+							case "control":
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER));
+								break;
+							case "management":
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+								break;
+							case "eval+control":
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER,
+										ParameterType.SEARCH_CONTROL_PARAMETER));
+								break;
+							case "control+management":
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER,
+										ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+								break;
+							case "all":
+								break;
+							default:
+								throw new IllegalArgumentException();
+							}
+						} else
+							throw new IllegalArgumentException();
+					}
 					if ("probvector".equals(arg1)) {
 						String binaryString = "";
 						String vec = args[3];
-						ParameterType paramType = null;
 						String[] probs = vec.split(",");
 						for (int j = 0; j < probs.length; j++) {
 							double prob = Double.parseDouble(probs[j].trim());
 							binaryString += (prob >= 0.5 ? "1" : "0");
 						}
-						if (args.length > 4) {
-							if ("-paramtype".equals(args[4])) {
-								switch (args[5]) {
-									case "eval":
-										paramType = ParameterType.STATIC_EVALUATION_PARAMETER;
-										break;
-									case "control":
-										paramType = ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER;
-										break;
-									case "all":
-										paramType = null;
-										break;
-									default:
-										throw new IllegalArgumentException();
-								}
-							} else
-								throw new IllegalArgumentException();
-						}
-						params.set(binaryString, paramType);
+						params.set(binaryString, paramTypes);
 					} else if ("paramvalues".equals(arg1)) {
 						String val = args[3];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];
 						for (int j = 0; j < array.length; j++)
 							decimalArray[j] = Double.parseDouble(array[j].trim());
-						params.set(decimalArray, ParameterType.STATIC_EVALUATION_PARAMETER);
+						params.set(decimalArray, paramTypes);
 					} else
 						throw new IllegalArgumentException();
 					List<String> argList = Arrays.asList(args);

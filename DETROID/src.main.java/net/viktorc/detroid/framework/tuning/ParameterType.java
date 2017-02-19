@@ -13,11 +13,16 @@ public enum ParameterType {
 	 */
 	STATIC_EVALUATION_PARAMETER,
 	/**
-	 * Parameters that function in way or another as search control parameters such as margins or reductions 
-	 * and engine control parameters such as time spent on search, hash size distribution, etc. Parameters 
-	 * used both as static evaluation parameters and engine or search control parameters should be categorized 
+	 * Parameters that function in way or another as search control parameters such as margins or reductions. 
+	 * Parameters used both as static evaluation parameters and search control parameters should be categorized 
 	 * as the latter.
 	 */
-	ENGINE_OR_SEARCH_CONTROL_PARAMETER;
+	SEARCH_CONTROL_PARAMETER,
+	/**
+	 * Time management parameters, hash entry life-cycle parameters, etc. Parameters that can only be tuned by 
+	 * game play. If a parameter is both a static evaluation or search control parameter and an engine management 
+	 * parameter, it should be categorized as the latter.
+	 */
+	ENGINE_MANAGEMENT_PARAMETER;
 	
 }

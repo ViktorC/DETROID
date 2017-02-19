@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,7 +37,8 @@ import net.viktorc.detroid.util.GrayCode;
  * procedure reversed. Only those fields of the subclasses are handled by the class that are annotated with the {@link #Parameter Parameter} annotation. 
  * The annotation also has an optional attribute {@link #Parameter.binaryLengthLimit binaryLengthLimit} which marks the number of bits to consider when 
  * tuning the parameter. When applied to floating point values, it's effects are less intuitive as instead of ignoring bits of the number's binary 
- * representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be for integer numbers (2^[limit] - 1).
+ * representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be for integer numbers 
+ * (2^[limit] - 1).
  * 
  * WARNING: No negative values are supported, thus the most significant bit of each signed primitive (all except boolean and char) field will be ignored
  * when generating the binary string or setting the values of the fields based on a binary string and negative values will default to 0 when setting the
@@ -51,7 +53,8 @@ public abstract class EngineParameters {
 	
 	private final transient List<Field> allParamFields;
 	private final transient List<Field> staticEvalParamFields;
-	private final transient List<Field> engineOrSearchParamFields;
+	private final transient List<Field> searchControlParamFields;
+	private final transient List<Field> engineManagementParamFields;
 	
 	/**
 	 * Constructs an instance and scans the fields of the (extending) class for ones annotated as {@link #Parameter Parameter}.
@@ -61,7 +64,8 @@ public abstract class EngineParameters {
 	protected EngineParameters() throws ParameterException {
 		allParamFields = new ArrayList<>();
 		staticEvalParamFields = new ArrayList<>();
-		engineOrSearchParamFields = new ArrayList<>();
+		searchControlParamFields = new ArrayList<>();
+		engineManagementParamFields = new ArrayList<>();
 		int modifiers;
 		Parameter param;
 		Class<?> fieldType;
@@ -84,8 +88,10 @@ public abstract class EngineParameters {
 				allParamFields.add(f);
 				if (param.type() == ParameterType.STATIC_EVALUATION_PARAMETER)
 					staticEvalParamFields.add(f);
-				else if (param.type() == ParameterType.ENGINE_OR_SEARCH_CONTROL_PARAMETER)
-					engineOrSearchParamFields.add(f);
+				else if (param.type() == ParameterType.SEARCH_CONTROL_PARAMETER)
+					searchControlParamFields.add(f);
+				else if (param.type() == ParameterType.ENGINE_MANAGEMENT_PARAMETER)
+					engineManagementParamFields.add(f);
 			}
 		}
 	}
@@ -153,8 +159,8 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Writes the parameters to the specified file. If it does not exist, this method will attempt to create it. The method returns whether writing to the file
-	 * was successful.
+	 * Writes the parameters to the specified file. If it does not exist, this method will attempt to create it. The method returns whether writing to 
+	 * the file was successful.
 	 * 
 	 * @param filePath The path to the file.
 	 * @return Whether the parameters could be successfully written to the file.
@@ -185,27 +191,27 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Returns a reference to all parameter fields of the specified type. If type is null, all parameter fields are returned.
+	 * Returns a reference to all parameter fields of the specified types. If types is null, all parameter fields are returned.
 	 * 
-	 * @param type The type of the parameter fields (e.g. static evaluation parameter, search control parameter, etc.) wished to be returned.
-	 * @return All parameter fields of the specified type.
+	 * @param types A set of the types of the parameter fields to be returned.
+	 * @return All parameter fields of the specified types.
 	 */
-	private List<Field> getParamFields(ParameterType type) {
-		if (type == null)
+	private List<Field> getParamFields(Set<ParameterType> types) {
+		if (types == null)
 			return allParamFields;
-		switch (type) {
-			case STATIC_EVALUATION_PARAMETER:
-				return staticEvalParamFields;
-			case ENGINE_OR_SEARCH_CONTROL_PARAMETER:
-				return engineOrSearchParamFields;
-			default:
-				return allParamFields;
-		}
+		List<Field> fields = new ArrayList<>();
+		if (types.contains(ParameterType.STATIC_EVALUATION_PARAMETER))
+			fields.addAll(staticEvalParamFields);
+		if (types.contains(ParameterType.SEARCH_CONTROL_PARAMETER))
+			fields.addAll(searchControlParamFields);
+		if (types.contains(ParameterType.ENGINE_MANAGEMENT_PARAMETER))
+			fields.addAll(engineManagementParamFields);
+		return fields;
 	}
 	/**
 	 * Sets the values of the parameter fields of the instance. If a value in the array is negative, it will be taken for 0; if a value is greater than
-	 * what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the field will 
-	 * be set to its maximum allowed value. If the array is longer than the number of parameter fields, the extra elements will be ignored; if it is 
+	 * what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the field 
+	 * will be set to its maximum allowed value. If the array is longer than the number of parameter fields, the extra elements will be ignored; if it is 
 	 * shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value greater than or equal to 1 will default 
 	 * to true, everything else will default to false.
 	 * 
@@ -216,20 +222,20 @@ public abstract class EngineParameters {
 		return set(values, null);
 	}
 	/**
-	 * Sets the values of the parameter fields of the specified type. If a value in the array is negative, it will be taken for 0; if a value is greater than
-	 * what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the field will 
-	 * be set to its maximum allowed value. If the array is longer than the number of parameter fields of the specified type, the extra elements will be ignored; 
-	 * if it is shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value greater than or equal to 1 will 
-	 * default to true, everything else will default to false.
+	 * Sets the values of the parameter fields of the specified type. If a value in the array is negative, it will be taken for 0; if a value is greater 
+	 * than what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the 
+	 * field will be set to its maximum allowed value. If the array is longer than the number of parameter fields of the specified type, the extra 
+	 * elements will be ignored; if it is shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value 
+	 * greater than or equal to 1 will default to true, everything else will default to false.
 	 * 
 	 * @param values An array of values for the parameter fields of the specified type in the order of declaration.
-	 * @param type The type of parameter fields whose values should be set based on the input array. If it is null, the values will be applied to the set of 
-	 * all parameter fields.
+	 * @param types A set of the types of parameter fields whose values should be set based on the input array. If it is null, the values will be 
+	 * applied to the set of all parameter fields.
 	 * @return Whether the fields could be successfully set.
 	 */
-	public final boolean set(double[] values, ParameterType type) {
+	public final boolean set(double[] values, Set<ParameterType> types) {
 		try {
-			List<Field> params = getParamFields(type);
+			List<Field> params = getParamFields(types);
 			if (values == null)
 				return false;
 			int lim = Math.min(params.size(), values.length);
@@ -266,8 +272,8 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Sets the values of the parameter fields based on the binaryString in which each character represents a bit in the string of the individual gray code strings of the 
-	 * values of the parameter fields of the specified type in the order of declaration.
+	 * Sets the values of the parameter fields based on the binaryString in which each character represents a bit in the string of the individual gray 
+	 * code strings of the values of the parameter fields of the specified type in the order of declaration.
 	 * 
 	 * @param binaryString A binary string of gray code such as the output of {@link #toGrayCodeString() toGrayCodeString}.
 	 * @return Whether the binary string could be successfully applied to the fields.
@@ -276,17 +282,17 @@ public abstract class EngineParameters {
 		return set(binaryString, null);
 	}
 	/**
-	 * Sets the values of the parameter fields of the specified type based on the binaryString in which each character represents a bit in the string of the individual gray 
-	 * code strings of the values of the parameter fields of the specified type in the order of declaration.
+	 * Sets the values of the parameter fields of the specified type based on the binaryString in which each character represents a bit in the string of 
+	 * the individual gray code strings of the values of the parameter fields of the specified type in the order of declaration.
 	 * 
 	 * @param binaryString A binary string of gray code such as the output of {@link #toGrayCodeString() toGrayCodeString}.
-	 * @param type The type of parameter fields whose values should be derived from the binary string and set. If it is null, the values derived will be applied to all 
-	 * parameter fields.
+	 * @param types A set of the types of parameter fields whose values should be derived from the binary string and set. If it is null, the values 
+	 * derived will be applied to all parameter fields.
 	 * @return Whether the binary string could be successfully applied to the fields.
 	 */
-	public final boolean set(String binaryString, ParameterType type) {
+	public final boolean set(String binaryString, Set<ParameterType> types) {
 		try {
-			List<Field> params = getParamFields(type);
+			List<Field> params = getParamFields(types);
 			int i = 0;
 			for (Field f : params) {
 				Class<?> fieldType = f.getType();
@@ -326,14 +332,15 @@ public abstract class EngineParameters {
 		return values(null);
 	}
 	/**
-	 * Returns an array of doubles holding the values of all the fields declared as parameters of the specified type by the {@link #Parameter Parameter} annotation. 
-	 * Boolean values will be converted to either 1 or 0 depending on whether they are true or false.
+	 * Returns an array of doubles holding the values of all the fields declared as parameters of the specified type by the {@link #Parameter Parameter} 
+	 * annotation. Boolean values will be converted to either 1 or 0 depending on whether they are true or false.
 	 * 
-	 * @param type The type of parameter fields' max values to be returned. If it is null the max values for all parameter fields will be returned.
+	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for all parameter fields 
+	 * will be returned.
 	 * @return An array of doubles holding the values of all the parameter fields of the specified type.
 	 */
-	public final double[] values(ParameterType type) {
-		List<Field> params = getParamFields(type);
+	public final double[] values(Set<ParameterType> types) {
+		List<Field> params = getParamFields(types);
 		double[] arr = new double[params.size()];
 		int i = 0;
 		for (Field f : params) {
@@ -361,11 +368,12 @@ public abstract class EngineParameters {
 	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters of the specified type by the 
 	 * {@link #Parameter Parameter} annotation. The values are determined by the field type and the binaryLengthLimit attribute of the annotation.
 	 * 
-	 * @param type The type of parameter fields' max values to be returned. If it is null the max values for all parameter fields will be returned.
+	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for all parameter fields 
+	 * will be returned.
 	 * @return An array of doubles holding the maximum allowed values for the parameters of the specified type.
 	 */
-	public final double[] maxValues(ParameterType type) {
-		List<Field> params = getParamFields(type);
+	public final double[] maxValues(Set<ParameterType> types) {
+		List<Field> params = getParamFields(types);
 		double[] arr = new double[params.size()];
 		int i = 0;
 		for (Field f : params) {
@@ -405,11 +413,12 @@ public abstract class EngineParameters {
 	 * field. Floating point values will be cast to integer values (float to int, double to long) for their binary representation which may result in 
 	 * information loss.
 	 * 
-	 * @param type The type of parameters whose values are to be included in the string. If it is null, all parameters will be included.
+	 * @param types A set of the types of parameters whose values are to be included in the string. If it is null, all parameters' values will be 
+	 * included.
 	 * @return A binary string of all the bits of the parameter fields of the specified type concatenated field by field.
 	 */
-	public final String toGrayCodeString(ParameterType type) {
-		List<Field> params = getParamFields(type);
+	public final String toGrayCodeString(Set<ParameterType> types) {
+		List<Field> params = getParamFields(types);
 		String genome = "";
 		try {
 			for (Field f : params) {

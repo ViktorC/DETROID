@@ -1,6 +1,7 @@
 package net.viktorc.detroid.engine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +32,7 @@ class Search implements Runnable {
 	// Transposition table.
 	private final LossyHashTable<TTEntry> tT;
 	private final byte hashEntryGen;
+	private final boolean useTt;
 	// Whether heuristics such as forward pruning or those based on the null move observation such as stand-pat and NMP are applicable.
 	private final boolean isEndgame;
 	// Including extensions and quiescence search.
@@ -95,6 +97,7 @@ class Search implements Runnable {
 		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
+		useTt = tT != null;
 	}
 	@Override
 	public void run() {
@@ -201,7 +204,7 @@ class Search implements Runnable {
 		// Check extension.
 		depth = position.isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
 		// Hash look-up.
-		e = tT.get(position.key);
+		e = useTt ? tT.get(position.key) : null;
 		if (e != null) {
 			e.generation = hashEntryGen;
 			if (e.bestMove != 0)
@@ -326,7 +329,7 @@ class Search implements Runnable {
 			// Check extension.
 			depth = isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
-			e = tT.get(position.key);
+			e = useTt ? tT.get(position.key) : null;
 			if (e != null) {
 				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
@@ -691,7 +694,8 @@ class Search implements Runnable {
 			}
 		}
 		// Add new entry to the transposition table.
-		insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/params.fullPly));
+		if (useTt)
+			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/params.fullPly));
 		// Return the unadjusted best score.
 		return bestScore;
 	}
@@ -863,8 +867,9 @@ class Search implements Runnable {
 				scoreType = ScoreType.EXACT;
 			}
 		}
+		List<Move> pV = useTt ? extractPv(ply) : new ArrayList<>(Arrays.asList(currentMove));
 		// Update stats.
-		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType,
+		stats.set(pV, currentMove, moveNumber, ply, (short) resultScore, scoreType,
 				nodes, System.currentTimeMillis() - startTime, isCancelled);
 	}
 	/**

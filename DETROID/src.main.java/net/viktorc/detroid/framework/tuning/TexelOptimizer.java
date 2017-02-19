@@ -8,9 +8,11 @@ import java.lang.reflect.Array;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,7 +30,7 @@ import net.viktorc.detroid.util.ASGD;
  * @author Viktor
  *
  */
-public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseable {
+public final class TexelOptimizer extends ASGD<String,Float> implements AutoCloseable {
 
 	/**
 	 * The fraction of the complete data set used as a test data set.
@@ -38,13 +40,17 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 	 * The base step size for the gradient descent.
 	 */
 	private static final double BASE_LEARNING_RATE = 2;
+	/**
+	 * The only parameter type the optimizer is concerned with.
+	 */
+	private static final Set<ParameterType> TYPE = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER));
 	
 	private final TunableEngine[] engines;
 	private final double k;
 	private final int sampleSize;
 	private final int dataSetSize;
 	private final String fenFilePath;
-	private final List<Entry<Object, Object>> testData;
+	private final List<Entry<String,Float>> testData;
 	private final Random rand;
 	private final ExecutorService pool;
 	
@@ -64,15 +70,18 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
 	 * If it doesn't exist an {@link #IOException IOException} is thrown.
 	 * @param k A scaling constant for the sigmoid function used calculate the average error.
-	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
+	 * @param logger A logger to log the status of the optimization. It cannot be null.
 	 * @throws Exception If the engines cannot be initialised.
+	 * @throws IllegalArgumentException If the logger is null, or the sample size is not greater than 0, 
+	 * or the data set is too small.
 	 */
-	public StaticEvaluationOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
-			throws Exception {
-		super(engines[0].getParameters().values(ParameterType.STATIC_EVALUATION_PARAMETER),
-				(double[]) Array.newInstance(double.class, engines[0].getParameters().values(ParameterType.STATIC_EVALUATION_PARAMETER).length),
-				engines[0].getParameters().maxValues(ParameterType.STATIC_EVALUATION_PARAMETER), 1d, BASE_LEARNING_RATE, null, null, null, null,
-				null, logger);
+	public TexelOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
+			throws Exception, IllegalArgumentException {
+		super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
+				engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE),
+				1d, BASE_LEARNING_RATE, null, null, null, null, null, logger);
+		if (logger == null)
+			throw new IllegalArgumentException("The logger cannot be null.");
 		if (sampleSize < 1)
 			throw new IllegalArgumentException("The sample size has to be greater than 0.");
 		this.sampleSize = sampleSize;
@@ -86,13 +95,14 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 			if (e != null) {
 				if (!e.isInit())
 					e.init();
-				e.setStaticEvalTuningMode(true);
+				e.setDeterminism(true);
 				enginesList.add(e);
 			}
 		}
 		this.engines = enginesList.toArray(new TunableEngine[enginesList.size()]);
 		rand = new Random(System.nanoTime());
 		pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), this.engines.length));
+		logger.info("Tuning parameters of type: " + ParameterType.STATIC_EVALUATION_PARAMETER);
 		if (k == null) {
 			this.k = computeOptimalK();
 			if (logger != null)
@@ -102,43 +112,51 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 		testData = cacheData((int) (dataSetSize*(1 - TEST_DATA_PROPORTION)), dataSetSize);
 	}
 	/**
-	 * Computes the optimal scaling constant K for the sigmoid function used to calculate the evaluation error.
+	 * Computes the optimal scaling constant K for the sigmoid function used to calculate the evaluation error. It uses 
+	 * binary search with a minimum resolution of 0.005.
 	 * 
 	 * @return The value for K that locally minimizes the average error.
 	 * @throws IOException If the training data cannot be loaded from the FEN file.
 	 */
 	private double computeOptimalK() throws IOException {
-		final double resolution = 0.01;
+		final double minResolution = 0.005;
 		double k = 0;
-		List<Entry<Object, Object>> trainingData = cacheData(0, (int) (dataSetSize*(1 - TEST_DATA_PROPORTION)));
-		double kPlusErr = computeAverageError(features, k + resolution, trainingData);
-		double kMinusErr = computeAverageError(features, k - resolution, trainingData);
-		double minAvgErr = Math.min(kPlusErr, kMinusErr);
-		double startingValue = computeAverageError(features, k, trainingData);
+		List<Entry<String,Float>> trainingData = cacheData(0, (int) (dataSetSize*(1 - TEST_DATA_PROPORTION)));
+		double avgErr = computeAverageError(features, k, trainingData);
 		if (logger != null)
-			logger.info("K: " + k + "; Avg. error: " + startingValue + System.lineSeparator());
-		if (startingValue < minAvgErr)
+			logger.info("K: " + k + "; Avg. error: " + avgErr);
+		double kPlusErr = computeAverageError(features, k + minResolution, trainingData);
+		double kMinusErr = computeAverageError(features, k - minResolution, trainingData);
+		double minAvgErr = Math.min(kPlusErr, kMinusErr);
+		if (avgErr < minAvgErr)
 			return k;
 		boolean increase = kPlusErr < kMinusErr;
 		if (increase) {
-			k += resolution;
+			k += minResolution;
 			if (logger != null)
-				logger.info("K: " + k + "; Avg. error: " + kPlusErr + System.lineSeparator());
+				logger.info("K: " + k + "; Avg. error: " + kPlusErr);
 		} else {
-			k -= resolution;
+			k -= minResolution;
 			if (logger != null)
-				logger.info("K: " + k + "; Avg. error: " + kMinusErr + System.lineSeparator());
+				logger.info("K: " + k + "; Avg. error: " + kMinusErr);
 		}
+		avgErr = minAvgErr;
+		double resolution = 1;
 		double lastK = k;
 		while (true) {
-			k = increase? k + resolution : k - resolution;
-			double avgError = computeAverageError(features, k, trainingData);
+			k += increase ? resolution : -resolution;
+			double currAvgErr = computeAverageError(features, k, trainingData);
 			if (logger != null)
-				logger.info("K: " + k + "; Avg. error: " + avgError + System.lineSeparator());
-			if (avgError > minAvgErr)
-				break;
-			minAvgErr = Math.min(avgError, minAvgErr);
-			lastK = k;
+				logger.info("K: " + k + "; Avg. error: " + currAvgErr);
+			if (currAvgErr < avgErr) {
+				lastK = k;
+			} else {
+				increase = !increase;
+				resolution /= 2;
+				if (resolution < minResolution)
+					break;
+			}
+			avgErr = currAvgErr;
 		}
 		return lastK;
 	}
@@ -163,7 +181,7 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 	 * @param k The scaling constant K for the sigmoid function.
 	 * @return
 	 */
-	private double computeAverageError(double[] parameters, final double k, List<Entry<Object, Object>> dataSample) {
+	private double computeAverageError(double[] parameters, final double k, List<Entry<String,Float>> dataSample) {
 		double totalError = 0;
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
@@ -178,16 +196,16 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 					ex.printStackTrace();
 				}
 			}
-			e.getParameters().set(parameters, ParameterType.STATIC_EVALUATION_PARAMETER);
+			e.getParameters().set(parameters, TYPE);
 			e.notifyParametersChanged();
 			futures.add(pool.submit(() -> {
 				try {
 					double subTotalError = 0;
 					int endInd = Math.min(dataSample.size(), finalStartInd + workLoadPerThread);
 					for (int j = finalStartInd; j < endInd; j++) {
-						Entry<Object, Object> dataPair = dataSample.get(j);
-						String fen = (String) dataPair.getKey();
-						double result = (double) ((Float) dataPair.getValue()).floatValue();
+						Entry<String,Float> dataPair = dataSample.get(j);
+						String fen = dataPair.getKey();
+						float result = dataPair.getValue();
 						e.setPosition(fen);
 						SearchResults res = e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
 						double score = res.getScore().get();
@@ -242,8 +260,8 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 	 * @return The data held in the lines between the specified indices.
 	 * @throws IOException If there is an IO error reading the file.
 	 */
-	private List<Entry<Object, Object>> cacheData(int fromInd, int toInd) throws IOException {
-		List<Entry<Object, Object>> data = new ArrayList<>();
+	private List<Entry<String,Float>> cacheData(int fromInd, int toInd) throws IOException {
+		List<Entry<String,Float>> data = new ArrayList<>();
 		int count = 0;
 		try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
 			String line;
@@ -253,7 +271,7 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 					String[] parts = line.split(";");
 					String fen = parts[0];
 					Float result = Float.parseFloat(parts[1]);
-					data.add(new SimpleEntry<Object, Object>(fen, result));
+					data.add(new SimpleEntry<String,Float>(fen, result));
 				}
 				count++;
 			}
@@ -261,16 +279,16 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 		return data;
 	}
 	@Override
-	protected List<Entry<Object, Object>> getTestData() {
+	protected List<Entry<String,Float>> getTestData() {
 		return testData;
 	}
 	@Override
-	protected List<Entry<Object, Object>> sampleTrainingData() {
+	protected List<Entry<String,Float>> sampleTrainingData() {
 		int[] lines = new int[sampleSize];
 		for (int i = 0; i < sampleSize; i++)
 			lines[i] = (int) (rand.nextDouble()*(1 - TEST_DATA_PROPORTION)*dataSetSize);
 		Arrays.sort(lines);
-		List<Entry<Object, Object>> sample = new ArrayList<>();
+		List<Entry<String,Float>> sample = new ArrayList<>();
 		int i = 0;
 		int count = 0;
 		long nextLine = lines[0];
@@ -282,7 +300,7 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 					String[] parts = line.split(";");
 					String fen = parts[0];
 					Float result = Float.parseFloat(parts[1]);
-					sample.add(new SimpleEntry<Object, Object>(fen, result));
+					sample.add(new SimpleEntry<String,Float>(fen, result));
 					nextLine = lines[i++];
 				} else
 					count++;
@@ -293,7 +311,7 @@ public final class StaticEvaluationOptimizer extends ASGD implements AutoCloseab
 		return sample;
 	}
 	@Override
-	protected double costFunction(double[] features, List<Entry<Object, Object>> dataSample) {
+	protected double costFunction(double[] features, List<Entry<String,Float>> dataSample) {
 		return computeAverageError(features, k, dataSample);
 	}
 	@Override

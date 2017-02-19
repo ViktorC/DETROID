@@ -3,6 +3,8 @@ package net.viktorc.detroid.framework.tuning;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -16,8 +18,8 @@ import net.viktorc.detroid.framework.validation.GameState;
 /**
  * A class for pitting two UCI compatible engines against each other, supervised by a controller engine.
  * 
- * @see uci.UCIEngine
- * @see control.ControllerEngine
+ * @see UCIEngine
+ * @see ControllerEngine
  * @author Viktor
  *
  */
@@ -26,12 +28,10 @@ class Arena implements AutoCloseable {
 	/**
 	 * The arena event's impromptu name.
 	 */
-	public static final String EVENT = "Viktor Csomor's Computer Chess Arena";
-	private static final long TIMER_RESOLUTION = 3;
+	public static final String EVENT = "DETROID Computer Chess Arena";
 	
 	private ControllerEngine controller;
 	private ExecutorService pool;
-	private MatchTimer timer;
 	private Random rand;
 	private Logger resultLogger;
 	private Logger fenLogger;
@@ -55,7 +55,6 @@ class Arena implements AutoCloseable {
 			this.controller.init();
 		this.controller.setControllerMode(true);
 		pool = Executors.newCachedThreadPool();
-		timer = new MatchTimer(null, Long.MAX_VALUE, TIMER_RESOLUTION);
 		this.resultLogger = resultLogger;
 		this.fenLogger = fenLogger;
 		rand = new Random(System.nanoTime());
@@ -106,6 +105,7 @@ class Arena implements AutoCloseable {
 	 */
 	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame, long timeIncPerMove)
 			throws Exception {
+		Timer timer = null;
 		int engine1Wins = 0;
 		int engine2Wins = 0;
 		int draws = 0;
@@ -117,8 +117,6 @@ class Arena implements AutoCloseable {
 			engine1.init();
 		if (!engine2.isInit())
 			engine2.init();
-		timer.start();
-		timer.pause();
 		if (resultLogger != null) resultLogger.info("--------------------------------------MATCH STARTED--------------------------------------\n" +
 				"Arena: " + id + "\n" +
 				"Engine1: " + engine1.getName() + " - Engine2: " + engine2.getName() + "\n" +
@@ -126,15 +124,13 @@ class Arena implements AutoCloseable {
 		boolean engine1White = rand.nextBoolean();
 		Games: for (int i = 0; i < games; i++, engine1White = !engine1White) {
 			if (fenLogger != null) fenLog = new ArrayList<>();
-			if (!timer.isAlive()) {
-				timer.setDelay(Long.MAX_VALUE);
-				timer.start();
-				timer.pause();
-			}
 			SearchResults res = null;
 			long engine1Time = timePerGame;
 			long engine2Time = timePerGame;
 			boolean engine1Turn = engine1White;
+			if (timer != null)
+				timer.cancel();
+			timer = new Timer();
 			engine1.newGame();
 			engine2.newGame();
 			controller.newGame();
@@ -147,18 +143,24 @@ class Arena implements AutoCloseable {
 				controller.setSite("?");
 			}
 			while (controller.getGameState() == GameState.IN_PROGRESS) {
+				TimerTask task;
 				long start;
 				res = null;
 				if (engine1Turn) {
 					try {
-						timer.setCallBack(() -> engine1.stop());
-						timer.setDelay(engine1Time);
-						start = timer.getDelay();
-						timer.goOn();
+						task = new TimerTask() {
+							
+							@Override
+							public void run() {
+								engine1.stop();
+							}
+						};
+						timer.schedule(task, engine1Time);
+						start = System.nanoTime();
 						res = engine1.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
 								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null);
-						timer.pause();
-						engine1Time -= (start - timer.getDelay());
+						task.cancel();
+						engine1Time -= (System.nanoTime() - start)/1e6;
 						if (engine1Time <= 0 || !controller.play(res.getBestMove())) {
 							engine2Wins++;
 							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: " + (engine1Time <= 0 ?
@@ -167,7 +169,7 @@ class Arena implements AutoCloseable {
 							continue Games;
 						}
 					} catch (Exception e) {
-						timer.pause();
+						timer.cancel();
 						engine2Wins++;
 						if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost due to error.\n" +
 								controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
@@ -178,14 +180,19 @@ class Arena implements AutoCloseable {
 						fenLog.add(controller.toFEN());
 				} else {
 					try {
-						timer.setCallBack(() -> engine2.stop());
-						timer.setDelay(engine2Time);
-						start = timer.getDelay();
-						timer.goOn();
+						task = new TimerTask() {
+							
+							@Override
+							public void run() {
+								engine2.stop();
+							}
+						};
+						timer.schedule(task, engine2Time);
+						start = System.nanoTime();
 						res = engine2.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
 								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null);
-						timer.pause();
-						engine2Time -= (start - timer.getDelay());
+						task.cancel();
+						engine2Time -= (System.nanoTime() - start)/1e6;
 						if (engine2Time <= 0 || !controller.play(res.getBestMove())) {
 							engine1Wins++;
 							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: " + (engine2Time <= 0 ?
@@ -194,7 +201,7 @@ class Arena implements AutoCloseable {
 							continue Games;
 						}
 					} catch (Exception e) {
-						timer.pause();
+						timer.cancel();
 						engine1Wins++;
 						if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost due to error.\n" +
 								"STANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
@@ -270,7 +277,8 @@ class Arena implements AutoCloseable {
 				}
 			}
 		}
-		timer.cancel();
+		if (timer != null)
+			timer.cancel();
 		return new MatchResult(engine1Wins, engine2Wins, draws);
 	}
 	@Override
