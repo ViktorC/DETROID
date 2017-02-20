@@ -13,7 +13,7 @@ public enum ParameterType {
 	 */
 	STATIC_EVALUATION,
 	/**
-	 * Parameters that function in way or another as search control parameters such as margins or reductions. 
+	 * Parameters that function in one way or another as search control parameters such as margins or reductions. 
 	 * Parameters used both as static evaluation parameters and search control parameters should be categorized 
 	 * as the latter.
 	 */

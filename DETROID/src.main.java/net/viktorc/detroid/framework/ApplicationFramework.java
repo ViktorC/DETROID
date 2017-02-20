@@ -30,20 +30,19 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
  * that allows for playing chess games against an engine and track its search statistics. The UCI mode implements the 
  * Universal Chess Interface protocol as described at 
  * <a href="http://wbec-ridderkerk.nl/html/UCIProtocol.html">http://wbec-ridderkerk.nl/html/UCIProtocol.html</a> by 
- * Stefan-Meyer Kahlen. Three different tuning methods are supported; an evolutionary algorithm for optimizing all or only 
+ * Stefan-Meyer Kahlen. Two different tuning methods are supported; an evolutionary algorithm for optimizing all or only 
  * a certain type of engine parameters using self-play to assess the fitness of the different parameter sets generated, 
- * and two adaptive stochastic gradient descent algorithms, one for training the engine by optimizing the static evaluation 
+ * and an adaptive stochastic gradient descent algorithm for training the engine by optimizing the static evaluation 
  * parameters using the "Texel" cost function (
  * <a href="https://chessprogramming.wikispaces.com/Texel's+Tuning+Method">https://chessprogramming.wikispaces.com/Texel's+Tuning+Method</a>)
  * based on so called FEN-files which contain position descriptions in Forsyth-Edwards notation, each labelled by the 
- * side that won the game in which the position occurred, and one that can be used to tune both static evaluation and search 
- * control parameters using a cost function based on the <a href="https://sites.google.com/site/strategictestsuite/">Strategic Test Suite</a>. 
- * The FEN-file generation mode provides the functionalities needed to generate the files used for static evaluation tuning. 
- * They can be generated either by self-play or by providing a Portable Game Notation file to convert. The FEN-file filtering 
- * mode allows for removing draws or opening positions from the FEN-file which can, in certain cases, possibly improve the 
- * tuning results. Last but not least, the conversion mode allows for converting the numbers logged by the tuning methods into 
- * XML files that the engine can read its parameters' values from. The game play optimization algorithm logs the probability 
- * vector, while the static evaluation tuning method logs the optimal values of the parameter fields.
+ * side that won the game in which the position occurred. The FEN-file generation mode provides the functionalities 
+ * needed to generate the files used for static evaluation tuning. They can be generated either by self-play or by 
+ * providing a Portable Game Notation file to convert. The FEN-file filtering mode allows for removing draws or opening 
+ * positions from the FEN-file which can, in certain cases, possibly improve the tuning results. Last but not least, the 
+ * conversion mode allows for converting the numbers logged by the tuning methods into XML files that the engine can read 
+ * its parameters' values from. The game play optimization algorithm logs the probability vector, while the static 
+ * evaluation tuning method logs the optimal values of the parameter fields.
  * 
  * @author Viktor
  *
@@ -96,9 +95,8 @@ public final class ApplicationFramework implements Runnable {
 	 * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals> 
 	 * [-paramtype <eval | control | management | eval+control | control+management | all> {all}] [-paramsfile <string> 
 	 * {params.xml}]} <br>
-	 * Parameter value array conversion to parameters file: {@code -c paramvalues -value <quoted_comma_separated_decimals> 
-	 * [-paramtype <eval | control | management | eval+control | control+management | all> {all}] [-paramsfile <string> 
-	 * {params.xml}]}
+	 * Feature value array conversion to parameters file: {@code -c features -value <quoted_comma_separated_decimals> 
+	 * [-paramsfile <string> {params.xml}]}
 	 */
 	public ApplicationFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
@@ -421,7 +419,6 @@ public final class ApplicationFramework implements Runnable {
 				case "-c": {
 					String arg1 = args[1];
 					String destFile = DEF_CONVERTED_PARAMS_PATH;
-					Set<ParameterType> paramTypes = null;
 					TunableEngine engine = factory.newEngineInstance();
 					try {
 						engine.init();
@@ -431,50 +428,51 @@ public final class ApplicationFramework implements Runnable {
 					EngineParameters params = engine.getParameters();
 					if (!"-value".equals(args[2]))
 						throw new IllegalArgumentException();
-					if (args.length > 4) {
-						if ("-paramtype".equals(args[4])) {
-							switch (args[5]) {
-							case "eval":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
-								break;
-							case "control":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
-								break;
-							case "management":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
-								break;
-							case "eval+control":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
-										ParameterType.SEARCH_CONTROL));
-								break;
-							case "control+management":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
-										ParameterType.ENGINE_MANAGEMENT));
-								break;
-							case "all":
-								break;
-							default:
-								throw new IllegalArgumentException();
-							}
-						} else
-							throw new IllegalArgumentException();
-					}
 					if ("probvector".equals(arg1)) {
 						String binaryString = "";
 						String vec = args[3];
+						Set<ParameterType> paramTypes = null;
 						String[] probs = vec.split(",");
 						for (int j = 0; j < probs.length; j++) {
 							double prob = Double.parseDouble(probs[j].trim());
 							binaryString += (prob >= 0.5 ? "1" : "0");
 						}
+						if (args.length > 4) {
+							if ("-paramtype".equals(args[4])) {
+								switch (args[5]) {
+									case "eval":
+										paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
+										break;
+									case "control":
+										paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
+										break;
+									case "management":
+										paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
+										break;
+									case "eval+control":
+										paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
+												ParameterType.SEARCH_CONTROL));
+										break;
+									case "control+management":
+										paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
+												ParameterType.ENGINE_MANAGEMENT));
+										break;
+									case "all":
+										break;
+									default:
+										throw new IllegalArgumentException();
+								}
+							} else
+								throw new IllegalArgumentException();
+						}
 						params.set(binaryString, paramTypes);
-					} else if ("paramvalues".equals(arg1)) {
+					} else if ("features".equals(arg1)) {
 						String val = args[3];
 						String[] array = val.split(",");
 						double[] decimalArray = new double[array.length];
 						for (int j = 0; j < array.length; j++)
 							decimalArray[j] = Double.parseDouble(array[j].trim());
-						params.set(decimalArray, paramTypes);
+						params.set(decimalArray, new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION)));
 					} else
 						throw new IllegalArgumentException();
 					List<String> argList = Arrays.asList(args);
