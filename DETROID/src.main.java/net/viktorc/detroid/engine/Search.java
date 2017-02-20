@@ -853,10 +853,10 @@ class Search implements Runnable {
 			resultScore = score;
 		} else {
 			if (score <= lCheckMateLimit) {
-				resultScore = (Termination.CHECK_MATE.score - score)/2;
+				resultScore = (Termination.CHECK_MATE.score - score)/2 - 1;
 				scoreType = ScoreType.MATE;
 			} else if (score >= wCheckMateLimit) {
-				resultScore = (-Termination.CHECK_MATE.score - score)/2;
+				resultScore = (-Termination.CHECK_MATE.score - score)/2 + 1;
 				scoreType = ScoreType.MATE;
 			} else {
 				resultScore = score;

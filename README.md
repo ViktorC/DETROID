@@ -18,7 +18,7 @@ The other optimization method is a stochastic gradient descent algorithm with [N
 **Usage:** `-t texel -samplesize 16000 [-k 0.54 -fensfile my_fens.txt -log my_log.txt -concurrency 4]`
 
 The framework provides two different ways to generate a FEN-file for static evaluation tuning. The first way is self-play. With the exception of one, all parameters and their descriptions can be found in the paragraph describing the self-play based optimization method. The only novel parameter is the target path for the FEN-file which defaults to "fens.txt". Positions arising from book moves or positions in which the engines found a mate are not logged to the FEN-file. For short time controls (below 2s), concurrency is not recommended to have a value greater than the number of available physical cores divided by two.  
-**Usage:** `-g byselfplay -games 100 -tc 2000 [-inc 10 -trybook true -destfile my_fens.txt -concurrency 2]`
+**Usage:** `-g byselfplay -games 60000 -tc 2000 [-inc 10 -trybook true -destfile my_fens.txt -concurrency 2]`
 
 The other way is PGN conversion. This requires a PGN file of chess games which can then be converted to a FEN-file. The only mandatory parameter is the file path to the PGN file. The optional parameters are the maximum number of games from the PGN file to convert, and the file path of the generated FEN-file.  
 **Usage:** `-g bypgnconversion -sourcefile my_pgn.pgn [-maxgames 50000 -destfile my_fens.txt]`
