@@ -200,8 +200,12 @@ public final class ApplicationFramework implements Runnable {
 							try {
 								TunableEngine engine1 = factory.newEngineInstance();
 								TunableEngine engine2 = factory.newEngineInstance();
-								engine1.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
-								engine2.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
+								if (useBook) {
+									engine1.init();
+									engine1.setOption(UCIEngine.OWN_BOOK_OPTION, true);
+									engine2.init();
+									engine2.setOption(UCIEngine.OWN_BOOK_OPTION, true);
+								}
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
@@ -314,8 +318,12 @@ public final class ApplicationFramework implements Runnable {
 							try {
 								TunableEngine engine1 = factory.newEngineInstance();
 								TunableEngine engine2 = factory.newEngineInstance();
-								engine1.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
-								engine2.setOption(UCIEngine.OWN_BOOK_OPTION, useBook);
+								if (useBook) {
+									engine1.init();
+									engine1.setOption(UCIEngine.OWN_BOOK_OPTION, true);
+									engine2.init();
+									engine2.setOption(UCIEngine.OWN_BOOK_OPTION, true);
+								}
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {

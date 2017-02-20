@@ -4,7 +4,7 @@
   <artifactId>DETROID</artifactId>
   <version>1.0</version>
   <name>DETROID</name>
-  <description>Java chess engine.</description>
+  <description>Java chess engine and framework.</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

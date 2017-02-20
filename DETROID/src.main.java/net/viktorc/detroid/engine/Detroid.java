@@ -59,6 +59,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private Option<?> hashSize;
 	private Option<?> clearHash;
 	private Option<?> ponder;
+	private Option<?> ownBook;
 	private Option<?> primaryBookPath;
 	private Option<?> secondaryBookPath;
 	private Option<?> parametersPath;
@@ -226,6 +227,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		hashSize = new Option.SpinOption("Hash", Math.min(params.defaultHashSize, MAX_HASH_SIZE), MIN_HASH_SIZE, MAX_HASH_SIZE);
 		clearHash = new Option.ButtonOption("ClearHash");
 		ponder = new Option.CheckOption("Ponder", true);
+		ownBook = UCIEngine.OWN_BOOK_OPTION;
 		primaryBookPath = new Option.StringOption("PrimaryBookPath", DEFAULT_BOOK_FILE_PATH);
 		secondaryBookPath = new Option.StringOption("SecondaryBookPath", "");
 		parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
@@ -233,7 +235,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		options.put(hashSize, hashSize.getDefaultValue().get());
 		options.put(clearHash, null);
 		options.put(ponder, ponder.getDefaultValue().get());
-		options.put(UCIEngine.OWN_BOOK_OPTION, UCIEngine.OWN_BOOK_OPTION.getDefaultValue().get());
+		options.put(ownBook, ownBook.getDefaultValue().get());
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue().get());
 		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue().get());
 		options.put(parametersPath, parametersPath.getDefaultValue().get());
@@ -283,9 +285,9 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				options.put(ponder, value);
 				if (debugMode) debugInfo.set("Ponder successfully set to " + value);
 				return true;
-			} else if (UCIEngine.OWN_BOOK_OPTION.equals(setting)) {
+			} else if (ownBook.equals(setting)) {
 				if (book != null) {
-					options.put(UCIEngine.OWN_BOOK_OPTION, value);
+					options.put(ownBook, value);
 					if (debugMode) debugInfo.set("Use of own book successfully set to " + value);
 					return true;
 				}
@@ -424,7 +426,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			newGame = false;
 		}
 		// Search the book if possible.
-		if ((Boolean) options.get(UCIEngine.OWN_BOOK_OPTION) && !deterministicZeroDepthMode && !outOfBook && searchMoves == null &&
+		if ((Boolean) options.get(ownBook) && !deterministicZeroDepthMode && !outOfBook && searchMoves == null &&
 				(ponder == null || !ponder) && depth == null && nodes == null && mateDistance == null && searchTime == null &&
 				(infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
