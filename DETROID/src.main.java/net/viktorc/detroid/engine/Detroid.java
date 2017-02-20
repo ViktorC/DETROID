@@ -86,7 +86,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private volatile boolean isInit;
 	private volatile boolean debugMode;
 	private volatile boolean controllerMode;
-	private volatile boolean deterministicMode;
+	private volatile boolean deterministicZeroDepthMode;
 	private volatile boolean stop;
 	private volatile boolean cancelledResultsReady;
 	private volatile boolean ponderHit;
@@ -217,7 +217,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		debugInfo = new DebugInfo();
 		debugMode = false;
 		controllerMode = false;
-		deterministicMode = false;
+		deterministicZeroDepthMode = false;
 		ponderHit = false;
 		stop = false;
 		outOfBook = false;
@@ -240,7 +240,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		options.put(uciOpponent, uciOpponent.getDefaultValue().get());
 		searchStats = new SearchInfo();
 		searchStats.addObserver(this);
-		setHashSize(controllerMode || deterministicMode ? MIN_HASH_SIZE : params.defaultHashSize);
+		setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : params.defaultHashSize);
 		hT = new RelativeHistoryTable(params);
 		eval = new Evaluator(params, eT);
 		executor = Executors.newSingleThreadExecutor();
@@ -337,7 +337,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public synchronized void newGame() {
 		newGame = true;
 		outOfBook = false;
-		if (!controllerMode && !deterministicMode)
+		if (!controllerMode && !deterministicZeroDepthMode)
 			clearHash();
 	}
 	@Override
@@ -357,7 +357,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			else {
 				if (debugMode) debugInfo.set("Position set within the same game");
 				gen++;
-				if (!controllerMode && !deterministicMode) {
+				if (!controllerMode && !deterministicZeroDepthMode) {
 					if (gen == 127) {
 						tT.clear();
 						eT.clear();
@@ -424,7 +424,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			newGame = false;
 		}
 		// Search the book if possible.
-		if ((Boolean) options.get(UCIEngine.OWN_BOOK_OPTION) && !deterministicMode && !outOfBook && searchMoves == null &&
+		if ((Boolean) options.get(UCIEngine.OWN_BOOK_OPTION) && !deterministicZeroDepthMode && !outOfBook && searchMoves == null &&
 				(ponder == null || !ponder) && depth == null && nodes == null && mateDistance == null && searchTime == null &&
 				(infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
@@ -481,7 +481,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			Search: {
 				search = executor.submit(new Search(game.getPosition(), searchStats, doPonder || doInfinite,
 						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, deterministicMode ? null : tT, params));
+						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, tT, params));
 				if (debugMode) debugInfo.set("Search started");
 				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
 				if (doPonder) {
@@ -574,10 +574,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				}
 			}
 			if (debugMode) debugInfo.set("Search stopped");
-			if (deterministicMode) {
+			if (deterministicZeroDepthMode) {
 				searchResLock.readLock().lock();
 				try {
-					return new SearchResults(searchResult.toString(), null, searchStats.getScore(), searchStats.getScoreType());
+					return new SearchResults(null, null, searchStats.getScore(), searchStats.getScoreType());
 				} finally {
 					searchResLock.readLock().unlock();
 				}
@@ -774,13 +774,13 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public synchronized void notifyParametersChanged() {
 		if (isInit()) {
-			setHashSize(controllerMode || deterministicMode ? MIN_HASH_SIZE : params.defaultHashSize);
-			eval = new Evaluator(params, controllerMode || deterministicMode ? null : eT);
+			setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : params.defaultHashSize);
+			eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		}
 	}
 	@Override
-	public synchronized void setDeterminism(boolean on) {
-		deterministicMode = on;
+	public synchronized void setDeterministicZeroDepthMode(boolean on) {
+		deterministicZeroDepthMode = on;
 		notifyParametersChanged();
 	}
 	@Override

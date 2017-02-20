@@ -96,7 +96,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 			if (e != null) {
 				if (!e.isInit())
 					e.init();
-				e.setDeterminism(true);
+				e.setDeterministicZeroDepthMode(true);
 				enginesList.add(e);
 			}
 		}

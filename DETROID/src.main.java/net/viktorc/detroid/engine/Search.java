@@ -1,7 +1,6 @@
 package net.viktorc.detroid.engine;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -32,7 +31,6 @@ class Search implements Runnable {
 	// Transposition table.
 	private final LossyHashTable<TTEntry> tT;
 	private final byte hashEntryGen;
-	private final boolean useTt;
 	// Whether heuristics such as forward pruning or those based on the null move observation such as stand-pat and NMP are applicable.
 	private final boolean isEndgame;
 	// Including extensions and quiescence search.
@@ -97,7 +95,6 @@ class Search implements Runnable {
 		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
-		useTt = tT != null;
 	}
 	@Override
 	public void run() {
@@ -204,7 +201,7 @@ class Search implements Runnable {
 		// Check extension.
 		depth = position.isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
 		// Hash look-up.
-		e = useTt ? tT.get(position.key) : null;
+		e = tT.get(position.key);
 		if (e != null) {
 			e.generation = hashEntryGen;
 			if (e.bestMove != 0)
@@ -258,7 +255,7 @@ class Search implements Runnable {
 					if (score >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
-					if (!useTt || insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
+					if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
 						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
 					}
@@ -269,8 +266,7 @@ class Search implements Runnable {
 		}
 		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
-			if (useTt)
-				insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
+			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
 			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score, doStopSearch ||
 					Thread.currentThread().isInterrupted());
 		}
@@ -330,7 +326,7 @@ class Search implements Runnable {
 			// Check extension.
 			depth = isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
-			e = useTt ? tT.get(position.key) : null;
+			e = tT.get(position.key);
 			if (e != null) {
 				e.generation = hashEntryGen;
 				// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
@@ -695,8 +691,7 @@ class Search implements Runnable {
 			}
 		}
 		// Add new entry to the transposition table.
-		if (useTt)
-			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/params.fullPly));
+		insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) distFromRoot, (short) (depth/params.fullPly));
 		// Return the unadjusted best score.
 		return bestScore;
 	}
@@ -868,9 +863,8 @@ class Search implements Runnable {
 				scoreType = ScoreType.EXACT;
 			}
 		}
-		List<Move> pV = useTt ? extractPv(ply) : new ArrayList<>(Arrays.asList(currentMove));
 		// Update stats.
-		stats.set(pV, currentMove, moveNumber, ply, (short) resultScore, scoreType,
+		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType,
 				nodes, System.currentTimeMillis() - startTime, isCancelled);
 	}
 	/**
