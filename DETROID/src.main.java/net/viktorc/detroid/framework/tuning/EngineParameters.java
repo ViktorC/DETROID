@@ -86,11 +86,11 @@ public abstract class EngineParameters {
 					throw new ParameterException("Illegal field: " + f.getName() + "; Only non-static primitive, that is" +
 						"boolean, byte, short, int, long, float, double, and char fields are allowed to be annotated as Parameters.");
 				allParamFields.add(f);
-				if (param.type() == ParameterType.STATIC_EVALUATION_PARAMETER)
+				if (param.type() == ParameterType.STATIC_EVALUATION)
 					staticEvalParamFields.add(f);
-				else if (param.type() == ParameterType.SEARCH_CONTROL_PARAMETER)
+				else if (param.type() == ParameterType.SEARCH_CONTROL)
 					searchControlParamFields.add(f);
-				else if (param.type() == ParameterType.ENGINE_MANAGEMENT_PARAMETER)
+				else if (param.type() == ParameterType.ENGINE_MANAGEMENT)
 					engineManagementParamFields.add(f);
 			}
 		}
@@ -200,11 +200,11 @@ public abstract class EngineParameters {
 		if (types == null)
 			return allParamFields;
 		List<Field> fields = new ArrayList<>();
-		if (types.contains(ParameterType.STATIC_EVALUATION_PARAMETER))
+		if (types.contains(ParameterType.STATIC_EVALUATION))
 			fields.addAll(staticEvalParamFields);
-		if (types.contains(ParameterType.SEARCH_CONTROL_PARAMETER))
+		if (types.contains(ParameterType.SEARCH_CONTROL))
 			fields.addAll(searchControlParamFields);
-		if (types.contains(ParameterType.ENGINE_MANAGEMENT_PARAMETER))
+		if (types.contains(ParameterType.ENGINE_MANAGEMENT))
 			fields.addAll(engineManagementParamFields);
 		return fields;
 	}

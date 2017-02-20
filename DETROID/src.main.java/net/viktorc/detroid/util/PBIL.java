@@ -223,7 +223,7 @@ public abstract class PBIL {
 			}
 			if (logger != null)
 				logger.info("Generation: " + currentGeneration + "; Entropy: " + getEntropy() + System.lineSeparator() + 
-						"Probability vector: " + Arrays.toString(probabilityVector) + System.lineSeparator());
+						"Probability vector: " + Arrays.toString(probabilityVector));
 			currentGeneration++;
 			// Exit if the evolution has reached the desired stage.
 			if (isOptimized(currentGeneration))

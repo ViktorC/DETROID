@@ -258,7 +258,7 @@ class Search implements Runnable {
 					if (score >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
-					if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
+					if (!useTt || insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
 						statsUpdated = true;
 						updateInfo(move, i + 1, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
 					}
@@ -269,7 +269,8 @@ class Search implements Runnable {
 		}
 		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
-			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
+			if (useTt)
+				insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
 			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score, doStopSearch ||
 					Thread.currentThread().isInterrupted());
 		}
@@ -860,7 +861,7 @@ class Search implements Runnable {
 				resultScore = (Termination.CHECK_MATE.score - score)/2;
 				scoreType = ScoreType.MATE;
 			} else if (score >= wCheckMateLimit) {
-				resultScore = -(Termination.CHECK_MATE.score - score)/2;
+				resultScore = (-Termination.CHECK_MATE.score - score)/2;
 				scoreType = ScoreType.MATE;
 			} else {
 				resultScore = score;

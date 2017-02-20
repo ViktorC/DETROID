@@ -2,9 +2,7 @@ package net.viktorc.detroid.engine;
 
 import static org.junit.Assume.assumeTrue;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -15,11 +13,13 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import net.viktorc.detroid.framework.tuning.EPD;
+import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
+import net.viktorc.detroid.framework.validation.EPD;
+import net.viktorc.detroid.framework.validation.EPDTestSuite;
 
 /**
- * Win at Chess test suite at 1 second per position.
+ * Win at Chess test suite at half a second per position.
  * 
  * @author Viktor
  *
@@ -27,8 +27,10 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
 @RunWith(Parameterized.class)
 public final class WinAtChessTest {
 
+	private static final String SUITE_NAME = "Win at Chess";
 	private static final String WAC_FILE_PATH = "wac.epd";
-	private static final long TIME_PER_POSITION = 1000;
+	private static final long TIME_PER_POSITION = 500;
+	private static final UCIEngine ENGINE = new Detroid();
 	private static final ControllerEngine CONTROLLER = new Detroid();
 	
 	@Parameter
@@ -36,41 +38,20 @@ public final class WinAtChessTest {
 	
 	@Parameters
 	public static Collection<Object[]> provideData() throws IOException {
+		EPDTestSuite suite = new EPDTestSuite(SUITE_NAME, WAC_FILE_PATH);
 		Collection<Object[]> data = new ArrayList<>();
-		try (BufferedReader reader =
-				new BufferedReader(new InputStreamReader(WinAtChessTest.class.getResourceAsStream(WAC_FILE_PATH)))) {
-			String line;
-			while ((line = reader.readLine()) != null)
-				data.add(new Object[] { new EPD(line) });
-		}
+		for (EPD r : suite.getRecords())
+			data.add(new Object[] { r });
 		return data;
 	}
 	@Test
 	public void search() throws Exception {
-		if (!CONTROLLER.isInit())
-			CONTROLLER.init();
-		CONTROLLER.newGame();
-		CONTROLLER.setPosition(record.getPosition());
-		String bestMove = CONTROLLER.search(null, null, null, null, null, null, null, null, null, null,
-				TIME_PER_POSITION, null).getBestMove();
-		boolean correct = false;
-		/* Convert the correct move from SAN to PACN and compare it to the found move instead of the other way around to 
-		 * potentially avoid not recognizing a correct solution due to (occasional) notational differences in SAN. */
-		for (String san : record.getBestMoves()) {
-			String pacn = CONTROLLER.convertSANToPACN(san);
-			if (bestMove.equals(pacn)) {
-				correct = true;
-				break;
-			}
-		}
-		String log = String.format("%s - %s in %.3fs", record.toString(), CONTROLLER.convertPACNToSAN(bestMove),
-				((double) TIME_PER_POSITION)/1000);
-		System.out.println(log);
-		assumeTrue(correct);
+		assumeTrue(EPDTestSuite.searchTest(ENGINE, CONTROLLER, record, TIME_PER_POSITION));
 	}
 	@AfterClass
 	public static void cleanUp() {
 		CONTROLLER.quit();
+		ENGINE.quit();
 	}
 	
 }

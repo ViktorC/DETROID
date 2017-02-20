@@ -30,19 +30,20 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
  * that allows for playing chess games against an engine and track its search statistics. The UCI mode implements the 
  * Universal Chess Interface protocol as described at 
  * <a href="http://wbec-ridderkerk.nl/html/UCIProtocol.html">http://wbec-ridderkerk.nl/html/UCIProtocol.html</a> by 
- * Stefan-Meyer Kahlen. Two different tuning methods are supported; an evolutionary algorithm for optimizing all or only 
+ * Stefan-Meyer Kahlen. Three different tuning methods are supported; an evolutionary algorithm for optimizing all or only 
  * a certain type of engine parameters using self-play to assess the fitness of the different parameter sets generated, 
- * and an adaptive stochastic gradient descent algorithm for training the engine by optimizing the static evaluation 
+ * and two adaptive stochastic gradient descent algorithms, one for training the engine by optimizing the static evaluation 
  * parameters using the "Texel" cost function (
  * <a href="https://chessprogramming.wikispaces.com/Texel's+Tuning+Method">https://chessprogramming.wikispaces.com/Texel's+Tuning+Method</a>)
  * based on so called FEN-files which contain position descriptions in Forsyth-Edwards notation, each labelled by the 
- * side that won the game in which the position occurred. The FEN-file generation mode provides the functionalities 
- * needed to generate the files used for static evaluation tuning. They can be generated either by self-play or by 
- * providing a Portable Game Notation file to convert. The FEN-file filtering mode allows for removing draws or opening 
- * positions from the FEN-file which can, in certain cases, possibly improve the tuning results. Last but not least, the 
- * conversion mode allows for converting the numbers logged by the tuning methods into XML files that the engine can read 
- * its parameters' values from. The game play optimization algorithm logs the probability vector, while the static 
- * evaluation tuning method logs the optimal values of the parameter fields.
+ * side that won the game in which the position occurred, and one that can be used to tune both static evaluation and search 
+ * control parameters using a cost function based on the <a href="https://sites.google.com/site/strategictestsuite/">Strategic Test Suite</a>. 
+ * The FEN-file generation mode provides the functionalities needed to generate the files used for static evaluation tuning. 
+ * They can be generated either by self-play or by providing a Portable Game Notation file to convert. The FEN-file filtering 
+ * mode allows for removing draws or opening positions from the FEN-file which can, in certain cases, possibly improve the 
+ * tuning results. Last but not least, the conversion mode allows for converting the numbers logged by the tuning methods into 
+ * XML files that the engine can read its parameters' values from. The game play optimization algorithm logs the probability 
+ * vector, while the static evaluation tuning method logs the optimal values of the parameter fields.
  * 
  * @author Viktor
  *
@@ -79,21 +80,25 @@ public final class ApplicationFramework implements Runnable {
 	 * engine instances required for different features of the framework.
 	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
 	 * UCI mode: {@code -u} </br>
-	 * Gameplay tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | 
-	 * management | eval+control | control+management | all> -inc <integer> -validfactor <decimal> 
-	 * -initprobvector <quoted_comma_separated_decimals> -trybook <true | false> -log <string> -concurrency <integer>]} <br>
-	 * Static evaluation tuning: {@code -t texel -samplesize <integer> [-k <decimal> -fensfile <string> -log <string> 
-	 * -concurrency <integer>]} <br>
-	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> -trybook <true | false> 
-	 * -destfile <string> -concurrency <integer>]} <br>
-	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer> 
-	 * -destfile <string>]} <br>
-	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string>]} <br>
-	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer> [-destfile <string>]} <br>
+	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | 
+	 * management | eval+control | control+management | all> {all}] [-inc <integer> {0}] [-validfactor <decimal> {0}]
+	 * [-initprobvector <quoted_comma_separated_decimals>] [-trybook <true | false> {false}] [-log <string> {log.txt}] 
+	 * [-concurrency <integer>] {1}]} <br>
+	 * Texel tuning: {@code -t texel -samplesize <integer> [-k <decimal>] [-fensfile <string> {fens.txt}] [-log <string> {log.txt}] 
+	 * [-concurrency <integer> {1}]} <br>
+	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> {0}] [-trybook 
+	 * <true | false> {false}] [-destfile <string> {fens.txt}] [-concurrency <integer> {1}]} <br>
+	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer>] 
+	 * [-destfile <string> {fens.txt}]} <br>
+	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string> {fens.txt}]} <br>
+	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer> [-destfile <string> 
+	 * {fens.txt}]} <br>
 	 * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals> 
-	 * [-paramtype <eval | control | management | eval+control | control+management | all> -paramsfile <string>]} <br>
+	 * [-paramtype <eval | control | management | eval+control | control+management | all> {all}] [-paramsfile <string> 
+	 * {params.xml}]} <br>
 	 * Parameter value array conversion to parameters file: {@code -c paramvalues -value <quoted_comma_separated_decimals> 
-	 * [-paramtype <eval | control | management | eval+control | control+management | all> -paramsfile <string>]}
+	 * [-paramtype <eval | control | management | eval+control | control+management | all> {all}] [-paramsfile <string> 
+	 * {params.xml}]}
 	 */
 	public ApplicationFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
@@ -139,21 +144,21 @@ public final class ApplicationFramework implements Runnable {
 									String type = args[++i];
 									switch (type) {
 										case "eval":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER));
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
 											break;
 										case "control":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER));
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
 											break;
 										case "management":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
 											break;
 										case "eval+control":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER,
-													ParameterType.SEARCH_CONTROL_PARAMETER));
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
+													ParameterType.SEARCH_CONTROL));
 											break;
 										case "control+management":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER,
-													ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
+													ParameterType.ENGINE_MANAGEMENT));
 											break;
 										case "all":
 											break;
@@ -430,21 +435,21 @@ public final class ApplicationFramework implements Runnable {
 						if ("-paramtype".equals(args[4])) {
 							switch (args[5]) {
 							case "eval":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER));
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
 								break;
 							case "control":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER));
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
 								break;
 							case "management":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
 								break;
 							case "eval+control":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER,
-										ParameterType.SEARCH_CONTROL_PARAMETER));
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
+										ParameterType.SEARCH_CONTROL));
 								break;
 							case "control+management":
-								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL_PARAMETER,
-										ParameterType.ENGINE_MANAGEMENT_PARAMETER));
+								paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
+										ParameterType.ENGINE_MANAGEMENT));
 								break;
 							case "all":
 								break;

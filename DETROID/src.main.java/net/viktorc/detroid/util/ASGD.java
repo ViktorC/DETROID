@@ -224,7 +224,7 @@ public abstract class ASGD<D,L> {
 				// Log cost over the test data set. This is just a sanity check; it is not used for learning!
 				logger.info("Epoch: " + t + "; Cost: " + costFunction(features, getTestData()) + System.lineSeparator() + "Greatest deltas: " +
 						Arrays.toString(greatestDelta) + System.lineSeparator() + "Deltas: " + Arrays.toString(delta) + System.lineSeparator() + 
-						"Features: " + Arrays.toString(features) + System.lineSeparator());
+						"Features: " + Arrays.toString(features));
 			}
 			if (!changed)
 				break;

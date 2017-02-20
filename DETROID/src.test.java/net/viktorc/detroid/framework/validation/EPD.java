@@ -1,4 +1,4 @@
-package net.viktorc.detroid.framework.tuning;
+package net.viktorc.detroid.framework.validation;
 
 import java.util.ArrayList;
 import java.util.Arrays;

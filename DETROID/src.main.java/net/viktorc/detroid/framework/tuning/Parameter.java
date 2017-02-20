@@ -23,7 +23,7 @@ public @interface Parameter {
 	 * 
 	 * @return The type of the parameter.
 	 */
-	ParameterType type() default ParameterType.STATIC_EVALUATION_PARAMETER;
+	ParameterType type() default ParameterType.STATIC_EVALUATION;
 	/**
 	 * The number of bits to include in the binary output for the annotated field counting from the least significant bit. 
 	 * If it is less than zero or higher than the maximum number of bits in an unsigned primitive or the maximum number of 

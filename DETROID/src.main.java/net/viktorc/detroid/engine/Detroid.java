@@ -481,7 +481,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			Search: {
 				search = executor.submit(new Search(game.getPosition(), searchStats, doPonder || doInfinite,
 						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, tT, params));
+						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, deterministicMode ? null : tT, params));
 				if (debugMode) debugInfo.set("Search started");
 				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
 				if (doPonder) {
@@ -574,6 +574,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				}
 			}
 			if (debugMode) debugInfo.set("Search stopped");
+			if (deterministicMode) {
+				searchResLock.readLock().lock();
+				try {
+					return new SearchResults(searchResult.toString(), null, searchStats.getScore(), searchStats.getScoreType());
+				} finally {
+					searchResLock.readLock().unlock();
+				}
+			}
 			// Set ponder move based on the PV.
 			pV = searchStats.getPv();
 			ponderMove = pV != null && pV.length > 1 ? pV[1] : null;
@@ -583,8 +591,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		// Set final results.
 		searchResLock.readLock().lock();
 		try {
-			if (deterministicMode)
-				return new SearchResults(searchResult.toString(), null, searchStats.getScore(), searchStats.getScoreType());
 			if (isBookMove) {
 				bestMove = searchResult.toString();
 				score = null;
@@ -600,10 +606,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				score = searchStats.getScore();
 				scoreType = searchStats.getScoreType();
 			}
+			return new SearchResults(bestMove, ponderMove, score, scoreType);
 		} finally {
 			searchResLock.readLock().unlock();
 		}
-		return new SearchResults(bestMove, ponderMove, score, scoreType);
 	}
 	@Override
 	public void stop() {

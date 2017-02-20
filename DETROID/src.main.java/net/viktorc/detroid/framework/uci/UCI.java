@@ -44,17 +44,17 @@ public final class UCI implements Observer, Runnable, Closeable {
 		String header;
 		String option;
 		while (!in.nextLine().trim().equals("uci"));
-		if (!this.engine.isInit()) {
+		if (!engine.isInit()) {
 			try {
-				this.engine.init();
+				engine.init();
 			} catch (Exception e) {
 				out.println("Failed to initialize engine: " + e.getMessage());
 			}
 		}
-		this.engine.getSearchInfo().addObserver(this);
-		this.engine.getDebugInfo().addObserver(this);
-		out.println("id name " + this.engine.getName());
-		out.println("id author " + this.engine.getAuthor());
+		engine.getSearchInfo().addObserver(this);
+		engine.getDebugInfo().addObserver(this);
+		out.println("id name " + engine.getName());
+		out.println("id author " + engine.getAuthor());
 		for (Entry<Option<?>,Object> e : engine.getOptions().entrySet()) {
 			Option<?> o = e.getKey();
 			option = "option name " + o.getName() + " type ";
@@ -215,7 +215,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 					Boolean p11 = infinite;
 					executor.submit(() -> {
 						String resultString;
-						SearchResults results = this.engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
+						SearchResults results = engine.search(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
 						resultString = "bestmove " + results.getBestMove();
 						if (results.getSuggestedPonderMove().isPresent())
 							resultString += " ponder " + results.getSuggestedPonderMove().get();

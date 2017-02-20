@@ -5,7 +5,7 @@
 <rookValue>585</rookValue>
 <bishopValue>342</bishopValue>
 <knightValue>312</knightValue>
-<pawnValue>103</pawnValue>
+<pawnValue>100</pawnValue>
 <kingPhaseWeight>0</kingPhaseWeight>
 <queenPhaseWeight>4</queenPhaseWeight>
 <rookPhaseWeight>2</rookPhaseWeight>

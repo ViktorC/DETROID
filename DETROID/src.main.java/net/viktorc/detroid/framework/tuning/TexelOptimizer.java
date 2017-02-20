@@ -23,9 +23,11 @@ import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.util.ASGD;
 
 /**
- * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent algorithm 
- * with a possibly parallel cost function. The cost function is defined by "Texel's Tuning Method" which is 
- * the average error of the evaluation scores of a set of positions exported from games with known outcomes.
+ * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent 
+ * algorithm with a possibly parallel cost function. The cost function is that of the 
+ * <a href="https://chessprogramming.wikispaces.com/Texel's+Tuning+Method">Texel Tuning Method</a> 
+ * which is the average error of the evaluation scores of a set of positions exported from games 
+ * with known outcomes.
  * 
  * @author Viktor
  *
@@ -43,7 +45,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	/**
 	 * The only parameter type the optimizer is concerned with.
 	 */
-	private static final Set<ParameterType> TYPE = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION_PARAMETER));
+	private static final Set<ParameterType> TYPE = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
 	
 	private final TunableEngine[] engines;
 	private final double k;
@@ -55,16 +57,15 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	private final ExecutorService pool;
 	
 	/**
-	 * Constructs and returns a new StaticEvaluationOptimizer instance according to the specified 
-	 * parameters.
+	 * Constructs and returns a new instance according to the specified parameters.
 	 * 
 	 * @param engines An array of {@link #TunableEngine TunableEngine} instances (of which 
 	 * the parameters' gray code string should have the same length). For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the fitness function will be distributed and executed 
 	 * parallel on four threads. If the array or its first element are null or the method {@link 
-	 * #uci.UCIEngine.init() init} hasn't been called on the first element, a {@link 
-	 * #NullPointerException NullPointerException} is thrown.
+	 * #net.viktorc.detroid.frameworkuci.UCIEngine.init() init} hasn't been called on the first 
+	 * element, a {@link #NullPointerException NullPointerException} is thrown.
 	 * @param sampleSize The number of positions to include in one mini-batch. The higher this number
 	 * is, the slower but more stable the convergence will be.
 	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
@@ -102,7 +103,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		this.engines = enginesList.toArray(new TunableEngine[enginesList.size()]);
 		rand = new Random(System.nanoTime());
 		pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), this.engines.length));
-		logger.info("Tuning parameters of type: " + ParameterType.STATIC_EVALUATION_PARAMETER);
+		logger.info("Tuning parameters of type: " + ParameterType.STATIC_EVALUATION);
 		if (k == null) {
 			this.k = computeOptimalK();
 			if (logger != null)
@@ -177,11 +178,11 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * Computes the average evaluation error based on the FEN file in relation to the result of the games the
 	 * positions occurred in.
 	 * 
-	 * @param parameters The engine parameters.
+	 * @param features The engine parameters.
 	 * @param k The scaling constant K for the sigmoid function.
 	 * @return
 	 */
-	private double computeAverageError(double[] parameters, final double k, List<Entry<String,Float>> dataSample) {
+	private double computeAverageError(double[] features, final double k, List<Entry<String,Float>> dataSample) {
 		double totalError = 0;
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
@@ -196,7 +197,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 					ex.printStackTrace();
 				}
 			}
-			e.getParameters().set(parameters, TYPE);
+			e.getParameters().set(features, TYPE);
 			e.notifyParametersChanged();
 			futures.add(pool.submit(() -> {
 				try {
