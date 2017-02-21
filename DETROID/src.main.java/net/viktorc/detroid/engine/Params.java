@@ -67,24 +67,6 @@ final class Params extends EngineParameters {
 	@Parameter
 	byte stoppedPawnWeight;
 	@Parameter
-	byte pawnDefendedRookWeight;
-	@Parameter
-	byte pawnDefendedBishopWeight;
-	@Parameter
-	byte pawnDefendedKnightWeight;
-	@Parameter
-	byte pawnDefendedPawnWeight;
-	@Parameter
-	byte pawnAttackedQueenWeight;
-	@Parameter
-	byte pawnAttackedRookWeight;
-	@Parameter
-	byte pawnAttackedBishopWeight;
-	@Parameter
-	byte pawnAttackedKnightWeight;
-	@Parameter
-	byte pawnAttackedPawnWeight;
-	@Parameter
 	byte pinnedQueenWeight;
 	@Parameter
 	byte pinnedRookWeight;
@@ -92,6 +74,8 @@ final class Params extends EngineParameters {
 	byte pinnedBishopWeight;
 	@Parameter
 	byte pinnedKnightWeight;
+	@Parameter
+	byte pinnedPawnWeight;
 	@Parameter
 	byte rookMobilityWeight;
 	@Parameter

@@ -290,13 +290,13 @@ class Search implements Runnable {
 		final boolean isInCheck = position.isInCheck;
 		final boolean isPvNode = beta > origAlpha + 1;
 		int bestScore, score, evalScore;
-		int extension;
+		int reduction, extension;
 		int matMoveBreakInd;
 		int searchedMoves;
 		int kMove;
 		int razRed;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
-		boolean isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isDangerous, isReducible;
+		boolean doQuiescence, isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isDangerous, isReducible;
 		List<Move> tacticalMoves, quietMoves;
 		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
@@ -305,6 +305,7 @@ class Search implements Runnable {
 		bestMove = null;
 		searchedMoves = 0;
 		hashMove = killerMove1 = killerMove2 = null;
+		doQuiescence = false;
 		isThereHashMove = isThereKM1 = isThereKM2 = false;
 		tacticalMoves = quietMoves = null;
 		nodes++;
@@ -325,6 +326,8 @@ class Search implements Runnable {
 			}
 			// Check extension.
 			depth = isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
+			// Check the conditions for quiescence search.
+			doQuiescence = depth/params.fullPly <= 0;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
 			e = tT.get(position.key);
 			if (e != null) {
@@ -355,13 +358,13 @@ class Search implements Runnable {
 						return score;
 				}
 				// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
-				if (e.bestMove != 0) {
+				if (e.bestMove != 0 && !doQuiescence) {
 					hashMove = Move.toMove(e.bestMove);
 					isThereHashMove = position.isLegalSoft(hashMove);
 				}
 			}
-			// Return the score from the quiescence search in case a leaf node has been reached.
-			if (depth/params.fullPly <= 0) {
+			// Perform quiescence search.
+			if (doQuiescence) {
 				nodes--;
 				score = quiescence(distFromRoot, alpha, beta);
 				if (score > bestScore) {
@@ -372,15 +375,50 @@ class Search implements Runnable {
 				}
 				break Search;
 			}
-//			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-//			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
-//				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
-//				e = tT.get(position.key);
-//				if (e != null && e.bestMove != 0) {
-//					hashMove = Move.toMove(e.bestMove);
-//					isThereHashMove = position.isLegalSoft(hashMove);
-//				}
-//			}
+			isDangerous = isPvNode || isInCheck || isEndgame || Math.abs(beta) >= wCheckMateLimit ||
+					!position.areTherePiecesOtherThanKingsAndPawns();
+			// Try null move pruning if it is allowed and the position is 'safe'.
+			if (nullMoveAllowed && !isDangerous) {
+				reduction = Math.min(params.nullMoveReduction*params.fullPly, depth - params.fullPly);
+				position.makeNullMove();
+				// Do not allow consecutive null moves.
+				score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
+				position.unmakeMove();
+				if (score >= beta)
+					return score;
+			}
+			// If there is no hash entry in a PV node that is to be searched deep, try IID.
+			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
+				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
+				e = tT.get(position.key);
+				if (e != null && e.bestMove != 0) {
+					hashMove = Move.toMove(e.bestMove);
+					isThereHashMove = position.isLegalSoft(hashMove);
+				}
+			}
+			// If there was no hash move...
+			if (!isThereHashMove) {
+				// Generate material moves.
+				tacticalMoves = position.getTacticalMoves();
+				// If there were no material moves, perform a mate check.
+				if (tacticalMoves.size() == 0) {
+					quietMoves = position.getQuietMoves();
+					if (quietMoves.size() == 0) {
+						score = isInCheck ? mateScore : Termination.STALE_MATE.score;
+						if (score > bestScore) {
+							bestMove = null;
+							bestScore = score;
+							if (score > alpha)
+								alpha = score;
+						}
+						break Search;
+					}
+				}
+			}
+			// Check for the fifty-move rule; return a draw score if it applies.
+			if (position.fiftyMoveRuleClock >= 100)
+				return Termination.DRAW_CLAIMED.score;
+			// Check if a recapture extension could possibly be applied.
 			lastMove = position.getLastMove();
 			lastMoveIsTactical = lastMove != null && lastMove.isMaterial();
 			// If there is a hash move, search that first.
@@ -411,36 +449,9 @@ class Search implements Runnable {
 					// Record failure in the relative history table.
 					hT.recordUnsuccessfulMove(hashMove);
 			}
-			// Generate material moves.
-			tacticalMoves = position.getTacticalMoves();
-			// If there was no hash move or material moves, perform a mate check.
-			if (!isThereHashMove && tacticalMoves.size() == 0) {
-				quietMoves = position.getQuietMoves();
-				if (quietMoves.size() == 0) {
-					score = isInCheck ? mateScore : Termination.STALE_MATE.score;
-					if (score > bestScore) {
-						bestMove = null;
-						bestScore = score;
-						if (score > alpha)
-							alpha = score;
-					}
-					break Search;
-				}
-			}
-			// Check for the fifty-move rule; return a draw score if it applies.
-			if (position.fiftyMoveRuleClock >= 100)
-				return Termination.DRAW_CLAIMED.score;
-			isDangerous = isPvNode || isInCheck || isEndgame || Math.abs(beta) >= wCheckMateLimit ||
-					!position.areTherePiecesOtherThanKingsAndPawns();
-			// If it is not a terminal or PV node, try null move pruning if it is allowed and the side to move is not in check.
-			if (nullMoveAllowed && !isDangerous && depth/params.fullPly > params.nullMoveReduction) {
-				position.makeNullMove();
-				// Do not allow consecutive null moves.
-				score = -pVsearch(depth - (1 + params.nullMoveReduction)*params.fullPly, distFromRoot + 1, -beta, -beta + 1, false);
-				position.unmakeMove();
-				if (score >= beta)
-					return score;
-			}
+			// Generate the material moves if they are not generated yet.
+			if (tacticalMoves == null)
+				tacticalMoves = position.getTacticalMoves();
 			// Sort the material moves.
 			tacticalMovesArr = orderMaterialMovesMVVLVA(tacticalMoves);
 			matMoveBreakInd = 0;
@@ -654,7 +665,8 @@ class Search implements Runnable {
 				// Try late move reduction if not within the PV.
 				if (isReducible && depth/params.fullPly >= params.lateMoveReductionMinActivationDepth &&
 						searchedMoves > params.minMovesSearchedForLmr) {
-					score = -pVsearch(depth - params.lateMoveReduction*params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
+					reduction = Math.min(params.lateMoveReduction*params.fullPly, depth - params.fullPly);
+					score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -alpha - 1, -alpha, true);
 					// If it does not fail low, research with full window.
 					if (score > alpha)
 						score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
@@ -731,7 +743,7 @@ class Search implements Runnable {
 		moves = orderMaterialMovesSEE(position, moveList);
 		for (Move move : moves) {
 			// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-			if (move.value < 0 || (!isEndgame && !isInCheck && move.value < alpha - params.quiescenceDelta))
+			if (maxDepth != 0 && !isEndgame && !isInCheck && (move.value < 0 || move.value < alpha - params.quiescenceDelta))
 				break;
 			position.makeMove(move);
 			searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);
