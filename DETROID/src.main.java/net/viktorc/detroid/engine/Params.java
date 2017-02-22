@@ -87,13 +87,7 @@ final class Params extends EngineParameters {
 	@Parameter
 	byte bishopPairAdvantage;
 	@Parameter
-	byte liveEpAdvantage;
-	@Parameter
 	byte tempoAdvantage;
-
-	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
-	short lazyEvalMar;
 
 	// Game phase intervals.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
@@ -108,6 +102,10 @@ final class Params extends EngineParameters {
 	// Search parameters.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte nullMoveReduction; // Null move pruning reduction.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	byte extraNullMoveReduction; // Additional null move pruning reduction.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+	byte extraNullMoveReductionDepthLimit; // The depth limit at which the extra null move reduction is applied.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte lateMoveReduction; // Late move reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 3)
@@ -115,19 +113,19 @@ final class Params extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
 	byte minMovesSearchedForLmr; // Min. number of searched moves for late move reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
+	short razoringMargin1; // Razoring margin for pre-frontier nodes.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+	short razoringMargin2; // Limited razoring.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin1; // Futility margin.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
 	short futilityMargin2; // Extended futility margin.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
 	short futilityMargin3; // Deep futility margin.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
-	short razoringMargin1; // Razoring margin.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
-	short razoringMargin2; // Deep razoring margin.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+	short deltaPruningMargin; // The margin for delta-pruning in the quiescence search.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short aspirationDelta; // The aspiration delta within iterative deepening.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
-	short quiescenceDelta; // The margin for delta-pruning in the quiescence search.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte maxNominalSearchDepth; // The maximum nominal search depth.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)

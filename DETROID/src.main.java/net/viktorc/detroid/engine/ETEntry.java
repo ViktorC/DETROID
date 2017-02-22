@@ -19,18 +19,13 @@ class ETEntry implements LossyHashTable.Entry<ETEntry> {
 	 */
 	final short score;
 	/**
-	 * Whether the score stored is exact.
-	 */
-	final boolean isExact;
-	/**
 	 * The age of the entry.
 	 */
 	byte generation;
 
-	ETEntry(long key, short score, boolean isExact, byte age) {
+	ETEntry(long key, short score, byte age) {
 		this.key = key;
 		this.score = score;
-		this.isExact = isExact;
 		this.generation = age;
 	}
 	/**
@@ -38,7 +33,7 @@ class ETEntry implements LossyHashTable.Entry<ETEntry> {
 	 */
 	@Override
 	public int compareTo(ETEntry e) {
-		if ((isExact || !e.isExact) && generation >= e.generation)
+		if (generation >= e.generation)
 			return 1;
 		return -1;
 	}

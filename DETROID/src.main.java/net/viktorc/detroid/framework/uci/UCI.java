@@ -9,6 +9,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 
+import net.viktorc.detroid.framework.uci.Option.*;
+
 /**
  * An implementation of the Universal Chess Interface protocol which serves as a controller for a UCI compatible chess engine
  * when communicating with a UCI compatible GUI.
@@ -58,18 +60,18 @@ public final class UCI implements Observer, Runnable, Closeable {
 		for (Entry<Option<?>,Object> e : engine.getOptions().entrySet()) {
 			Option<?> o = e.getKey();
 			option = "option name " + o.getName() + " type ";
-			if (o instanceof Option.CheckOption)
-				option += "check default " + (boolean) o.getDefaultValue().get();
-			else if (o instanceof Option.SpinOption)
-				option += "spin default " + (Integer) o.getDefaultValue().get() + " min " + o.getMin().get() +
-				" max " + o.getMax().get();
-			else if (o instanceof Option.StringOption)
-				option += "string default " + (String) o.getDefaultValue().get();
-			else if (o instanceof Option.ComboOption) {
-				option += "combo default " + (String) o.getDefaultValue().get() + " var";
+			if (o instanceof CheckOption)
+				option += "check default " + ((CheckOption) o).getDefaultValue().get();
+			else if (o instanceof SpinOption)
+				option += "spin default " + ((SpinOption) o).getDefaultValue().get() + " min " +
+						o.getMin().get() + " max " + o.getMax().get();
+			else if (o instanceof StringOption)
+				option += "string default " + ((StringOption) o).getDefaultValue().get();
+			else if (o instanceof ComboOption) {
+				option += "combo default " + ((ComboOption) o).getDefaultValue().get() + " var";
 				for (Object v : o.getAllowedValues().get())
 					option += " " + v;
-			} else if (o instanceof Option.ButtonOption)
+			} else if (o instanceof ButtonOption)
 				option += "button";
 			out.println(option);
 		}
@@ -90,24 +92,24 @@ public final class UCI implements Observer, Runnable, Closeable {
 					for (Entry<Option<?>,Object> e : engine.getOptions().entrySet()) {
 						Option<?> o = e.getKey();
 						if (o.getName().equals(tokens[2])) {
-							if (o instanceof Option.CheckOption)
-								this.engine.setOption((Option.CheckOption) o, Boolean.parseBoolean(tokens[4]));
-							else if (o instanceof Option.SpinOption)
-								this.engine.setOption((Option.SpinOption) o, Integer.parseInt(tokens[4]));
-							else if (o instanceof Option.StringOption) {
+							if (o instanceof CheckOption)
+								this.engine.setOption((CheckOption) o, Boolean.parseBoolean(tokens[4]));
+							else if (o instanceof SpinOption)
+								this.engine.setOption((SpinOption) o, Integer.parseInt(tokens[4]));
+							else if (o instanceof StringOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.StringOption) o, value.equals("null") ? null : value);
-							} else if (o instanceof Option.ComboOption) {
+								this.engine.setOption((StringOption) o, value.equals("null") ? null : value);
+							} else if (o instanceof ComboOption) {
 								value = "";
 								for (int i = 4; i < tokens.length; i++)
 									value += tokens[i] + " ";
 								value = value.trim();
-								this.engine.setOption((Option.ComboOption) o, value.equals("null") ? null : value);
-							} else if (o instanceof Option.ButtonOption)
-								this.engine.setOption((Option.ButtonOption) o, null);
+								this.engine.setOption((ComboOption) o, value.equals("null") ? null : value);
+							} else if (o instanceof ButtonOption)
+								this.engine.setOption((ButtonOption) o, null);
 							break;
 						}
 					}

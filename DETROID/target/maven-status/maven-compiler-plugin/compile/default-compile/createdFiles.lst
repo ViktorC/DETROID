@@ -1,7 +1,6 @@
 net\viktorc\detroid\framework\uci\Option$1.class
 net\viktorc\detroid\framework\gui\controllers\MainController$17.class
 net\viktorc\detroid\framework\tuning\Arena$3.class
-net\viktorc\detroid\framework\gui\dialogs\GameOverAlert$1.class
 net\viktorc\detroid\engine\CastlingRights$1.class
 net\viktorc\detroid\engine\Position$1.class
-net\viktorc\detroid\engine\PolyglotBook$1.class
+net\viktorc\detroid\framework\tuning\FENFileUtil$1.class

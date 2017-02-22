@@ -294,7 +294,7 @@ class Search implements Runnable {
 		int matMoveBreakInd;
 		int searchedMoves;
 		int kMove;
-		int razRed;
+		int razMargin;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean doQuiescence, isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isDangerous, isReducible;
 		List<Move> tacticalMoves, quietMoves;
@@ -370,8 +370,6 @@ class Search implements Runnable {
 				if (score > bestScore) {
 					bestMove = null;
 					bestScore = score;
-					if (score > alpha)
-						alpha = score;
 				}
 				break Search;
 			}
@@ -379,14 +377,37 @@ class Search implements Runnable {
 					!position.areTherePiecesOtherThanKingsAndPawns();
 			// Try null move pruning if it is allowed and the position is 'safe'.
 			if (nullMoveAllowed && !isDangerous) {
-				reduction = Math.min(params.nullMoveReduction*params.fullPly, depth - params.fullPly);
+				// Dynamic depth reduction.
+				reduction = params.nullMoveReduction*params.fullPly +
+						params.extraNullMoveReduction*depth/params.extraNullMoveReductionDepthLimit;
+				reduction = Math.min(reduction, depth - params.fullPly);
 				position.makeNullMove();
 				// Do not allow consecutive null moves.
 				score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
 				position.unmakeMove();
-				if (score >= beta)
-					return score;
+				if (score >= beta) {
+					bestMove = null;
+					bestScore = score;
+					break Search;
+				}
 			}
+			evalScore = Integer.MIN_VALUE;
+			// Razoring.
+//			if (!isDangerous && Math.abs(alpha) < wCheckMateLimit) {
+//				razMargin = depth/params.fullPly == 2 ? params.razoringMargin1 :
+//						depth/params.fullPly == 3 ? params.razoringMargin2 : -1;
+//				if (razMargin != -1) {
+//					evalScore = eval.score(position, hashEntryGen);
+//					if (evalScore < beta - razMargin) {
+//						score = quiescence(distFromRoot, alpha, beta);
+//						if (score <= alpha - razMargin) {
+//							bestMove = null;
+//							bestScore = score;
+//							break Search;
+//						}
+//					}
+//				}
+//			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
 			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
 				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
@@ -601,7 +622,6 @@ class Search implements Runnable {
 			// One reply extension.
 			if (tacticalMoves.size() == 0 && quietMoves.size() == 1)
 				depth = Math.min(depthLimit, depth + params.singleReplyExt);
-			evalScore = Integer.MIN_VALUE;
 			// Order and search the non-material moves.
 			quietMovesArr = orderNonMaterialMoves(quietMoves);
 			for (int i = 0; i < quietMovesArr.length; i++) {
@@ -622,11 +642,10 @@ class Search implements Runnable {
 					continue;
 				}
 				isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
-				razRed = 0;
 				// Futility pruning, extended futility pruning, and razoring.
 				if (isReducible && depth/params.fullPly <= 3) {
 					if (evalScore == Integer.MIN_VALUE)
-						evalScore = eval.score(position, hashEntryGen, alpha, beta);
+						evalScore = eval.score(position, hashEntryGen);
 					switch (depth/params.fullPly) {
 						case 1: {
 							// Frontier futility pruning.
@@ -643,10 +662,6 @@ class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
-							/* Razoring (in most cases down to the quiescence search) if alpha doesn't exceed the static evaluation score  
-							 * by a margin great enough to completely prune the branch. */
-							if (evalScore + params.razoringMargin1 <= alpha)
-								razRed = 1;
 						} break;
 						case 3: {
 							// Deep futility pruning.
@@ -655,9 +670,6 @@ class Search implements Runnable {
 								hT.recordUnsuccessfulMove(move);
 								continue;
 							}
-							// Deep razoring.
-							if (evalScore + params.razoringMargin2 <= alpha)
-								razRed = 1;
 						}
 					}
 				}
@@ -671,13 +683,13 @@ class Search implements Runnable {
 					if (score > alpha)
 						score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 				}
-				// Else simple PVS with razoring.
+				// Else simple PVS.
 				else if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2 && tacticalMovesArr.length == 0)
-					score = -pVsearch(depth - (razRed + 1)*params.fullPly, distFromRoot + 1, -beta, -alpha, true);
+					score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 				else {
-					score = -pVsearch(depth - (razRed + 1)*params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
+					score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
 					if (score > alpha && score < beta)
-						score = -pVsearch(depth - (razRed + 1)*params.fullPly, distFromRoot + 1, -beta, -alpha, true);
+						score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 				}
 				position.unmakeMove();
 				searchedMoves++;
@@ -718,6 +730,7 @@ class Search implements Runnable {
 	 */
 	private int quiescence(int distFromRoot, int alpha, int beta) {
 		final boolean isInCheck = position.isInCheck;
+		final boolean canPrune = maxDepth != 0 && !isEndgame && !isInCheck;
 		List<Move> moveList;
 		Move[] moves;
 		int bestScore, searchScore;
@@ -726,12 +739,12 @@ class Search implements Runnable {
 			doStopSearch = true;
 		// Limit the maximum depth of the quiescence search.
 		if (distFromRoot > maxExpectedSearchDepth)
-			return eval.score(position, hashEntryGen, alpha, beta);
+			return eval.score(position, hashEntryGen);
 		// Fifty-move rule and repetition rule check.
 		if (position.fiftyMoveRuleClock >= 100 || position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
 		// Evaluate the position statically.
-		bestScore = eval.score(position, hashEntryGen, alpha, beta);
+		bestScore = eval.score(position, hashEntryGen);
 		// Fail soft.
 		if (bestScore > alpha) {
 			alpha = bestScore;
@@ -743,7 +756,7 @@ class Search implements Runnable {
 		moves = orderMaterialMovesSEE(position, moveList);
 		for (Move move : moves) {
 			// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-			if (maxDepth != 0 && !isEndgame && !isInCheck && (move.value < 0 || move.value < alpha - params.quiescenceDelta))
+			if (canPrune && (move.value < 0 || move.value <= alpha - params.deltaPruningMargin))
 				break;
 			position.makeMove(move);
 			searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);
