@@ -112,6 +112,8 @@ final class Params extends EngineParameters {
 	byte lateMoveReductionMinActivationDepth; // Min. depth for late move reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
 	byte minMovesSearchedForLmr; // Min. number of searched moves for late move reduction.
+	@Parameter (type = ParameterType.SEARCH_CONTROL)
+	boolean doRazor; // Whether razoring should be enabled.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short razoringMargin1; // Razoring margin for pre-frontier nodes.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)

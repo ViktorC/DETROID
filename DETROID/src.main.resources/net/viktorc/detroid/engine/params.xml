@@ -44,8 +44,9 @@
 <lateMoveReduction>1</lateMoveReduction>
 <lateMoveReductionMinActivationDepth>3</lateMoveReductionMinActivationDepth>
 <minMovesSearchedForLmr>0</minMovesSearchedForLmr>
-<razoringMargin1>248</razoringMargin1>
-<razoringMargin2>337</razoringMargin2>
+<doRazor>true</doRazor>
+<razoringMargin1>194</razoringMargin1>
+<razoringMargin2>257</razoringMargin2>
 <futilityMargin1>33</futilityMargin1>
 <futilityMargin2>100</futilityMargin2>
 <futilityMargin3>139</futilityMargin3>

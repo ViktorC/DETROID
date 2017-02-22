@@ -385,29 +385,23 @@ class Search implements Runnable {
 				// Do not allow consecutive null moves.
 				score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
 				position.unmakeMove();
-				if (score >= beta) {
-					bestMove = null;
-					bestScore = score;
-					break Search;
-				}
+				if (score >= beta)
+					return score;
 			}
 			evalScore = Integer.MIN_VALUE;
 			// Razoring.
-//			if (!isDangerous && Math.abs(alpha) < wCheckMateLimit) {
-//				razMargin = depth/params.fullPly == 2 ? params.razoringMargin1 :
-//						depth/params.fullPly == 3 ? params.razoringMargin2 : -1;
-//				if (razMargin != -1) {
-//					evalScore = eval.score(position, hashEntryGen);
-//					if (evalScore < beta - razMargin) {
-//						score = quiescence(distFromRoot, alpha, beta);
-//						if (score <= alpha - razMargin) {
-//							bestMove = null;
-//							bestScore = score;
-//							break Search;
-//						}
-//					}
-//				}
-//			}
+			if (params.doRazor && !isDangerous && Math.abs(alpha) < wCheckMateLimit) {
+				razMargin = depth/params.fullPly == 1 ? params.razoringMargin1 :
+						depth/params.fullPly == 2 ? params.razoringMargin2 : -1;
+				if (razMargin != -1) {
+					evalScore = eval.score(position, hashEntryGen);
+					if (evalScore < beta - razMargin) {
+						score = quiescence(distFromRoot, alpha, beta);
+						if (score <= alpha - razMargin)
+							return score;
+					}
+				}
+			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
 			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
 				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
