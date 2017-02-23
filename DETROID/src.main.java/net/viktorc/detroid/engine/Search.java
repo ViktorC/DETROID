@@ -118,39 +118,35 @@ class Search implements Runnable {
 			if (doStopSearch || Thread.currentThread().isInterrupted())
 				break;
 			// Aspiration windows with gradual widening.
-			// Disallowed in end games because it delays mate detection.
-			if (!isEndgame) {
-				if (score <= alpha) {
-					if (score <= lCheckMateLimit) {
-						alpha = Termination.CHECK_MATE.score;
-						beta = -Termination.CHECK_MATE.score;
-						failLow = 2;
-						failHigh = 2;
-					} else {
-						alpha = failLow == 0 ? Math.max(score - 2*params.aspirationDelta, Termination.CHECK_MATE.score) :
-								failLow == 1 ? Math.max(score - 4*params.aspirationDelta, Termination.CHECK_MATE.score) :
-								Termination.CHECK_MATE.score;
-						failLow++;
-					}
-					i--;
-				} else if (score >= beta) {
-					if (score >= wCheckMateLimit) {
-						alpha = Termination.CHECK_MATE.score;
-						beta = -Termination.CHECK_MATE.score;
-						failLow = 2;
-						failHigh = 2;
-					} else {
-						beta = failHigh == 0 ? Math.min(score + 2*params.aspirationDelta, -Termination.CHECK_MATE.score) :
-								failHigh == 1 ? Math.min(score + 4*params.aspirationDelta, -Termination.CHECK_MATE.score) :
-								-Termination.CHECK_MATE.score;
-						failHigh++;
-					}
-					i--;
+			if (score <= alpha) {
+				if (Math.abs(score) >= wCheckMateLimit) {
+					System.out.println("A - depth: " + i + ", score :" + score + ", alpha: " + alpha + ", beta: " + beta);
+					alpha = Termination.CHECK_MATE.score;
+					failLow = 2;
 				} else {
-					failHigh = failLow = 0;
-					alpha = score >= wCheckMateLimit ? alpha : Math.max(score - params.aspirationDelta, Termination.CHECK_MATE.score);
-					beta = score <= lCheckMateLimit ? beta : Math.min(score + params.aspirationDelta, -Termination.CHECK_MATE.score);
+					alpha = failLow == 0 ? Math.max(score - params.aspirationDelta, Termination.CHECK_MATE.score) :
+							failLow == 1 ? Math.max(score - 2*params.aspirationDelta, Termination.CHECK_MATE.score) :
+							Termination.CHECK_MATE.score;
+					failLow++;
 				}
+				i--;
+			} else if (score >= beta) {
+				if (Math.abs(score) >= wCheckMateLimit) {
+					System.out.println("B - depth: " + i + ", score :" + score + ", alpha: " + alpha + ", beta: " + beta);
+					beta = -Termination.CHECK_MATE.score;
+					failHigh = 2;
+				} else {
+					beta = failHigh == 0 ? Math.min(score + params.aspirationDelta, -Termination.CHECK_MATE.score) :
+							failHigh == 1 ? Math.min(score + 2*params.aspirationDelta, -Termination.CHECK_MATE.score) :
+							-Termination.CHECK_MATE.score;
+					failHigh++;
+				}
+				i--;
+			} else {
+				if (Math.abs(beta) < wCheckMateLimit && Math.abs(alpha) < wCheckMateLimit)
+					failHigh = failLow = 0;
+				alpha = Math.max(score - params.aspirationDelta, Termination.CHECK_MATE.score);
+				beta = Math.min(score + params.aspirationDelta, -Termination.CHECK_MATE.score);
 			}
 		}
 	}
@@ -396,7 +392,7 @@ class Search implements Runnable {
 				if (razMargin != -1) {
 					evalScore = eval.score(position, hashEntryGen);
 					if (evalScore < beta - razMargin) {
-						score = quiescence(distFromRoot, alpha, beta);
+						score = quiescence(distFromRoot, alpha - razMargin, beta - razMargin);
 						if (score <= alpha - razMargin)
 							return score;
 					}
@@ -724,7 +720,7 @@ class Search implements Runnable {
 	 */
 	private int quiescence(int distFromRoot, int alpha, int beta) {
 		final boolean isInCheck = position.isInCheck;
-		final boolean canPrune = maxDepth != 0 && !isEndgame && !isInCheck;
+		final boolean canPrune = !isEndgame && !isInCheck;
 		List<Move> moveList;
 		Move[] moves;
 		int bestScore, searchScore;
@@ -737,8 +733,8 @@ class Search implements Runnable {
 		// Fifty-move rule and repetition rule check.
 		if (position.fiftyMoveRuleClock >= 100 || position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
-		// Evaluate the position statically.
-		bestScore = eval.score(position, hashEntryGen);
+		// Evaluate the position statically if not in check.
+		bestScore = isInCheck ? alpha : eval.score(position, hashEntryGen);
 		// Fail soft.
 		if (bestScore > alpha) {
 			alpha = bestScore;
@@ -750,7 +746,7 @@ class Search implements Runnable {
 		moves = orderMaterialMovesSEE(position, moveList);
 		for (Move move : moves) {
 			// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-			if (canPrune && (move.value < 0 || move.value <= alpha - params.deltaPruningMargin))
+			if (canPrune && (move.value < 0 || (maxDepth != 0 && move.value <= alpha - params.deltaPruningMargin)))
 				break;
 			position.makeMove(move);
 			searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);
