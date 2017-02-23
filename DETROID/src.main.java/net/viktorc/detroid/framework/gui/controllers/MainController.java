@@ -420,7 +420,7 @@ public final class MainController implements AutoCloseable, Observer {
 					score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score/100;
 				else
 					score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score/100;
-				adjustedScore = score;
+				adjustedScore = Math.min(MAX_ABS_Y, Math.max(-MAX_ABS_Y, score));
 			} else
 				adjustedScore = null;
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
@@ -497,7 +497,7 @@ public final class MainController implements AutoCloseable, Observer {
 					score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score/100;
 				else
 					score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score/100;
-				adjustedScore = score;
+				adjustedScore = Math.min(MAX_ABS_Y, Math.max(-MAX_ABS_Y, score));
 			} else
 				adjustedScore = null;
 			boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="300" failures="0" name="net.viktorc.detroid.engine.WinAtChessTest" time="277.841" errors="0" skipped="26">
+<testsuite tests="300" failures="0" name="net.viktorc.detroid.engine.WinAtChessTest" time="277.461" errors="0" skipped="19">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.8.0_121\jre\bin"/>
@@ -27,9 +27,9 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="user.variant" value=""/>
     <property name="os.name" value="Windows 10"/>
-    <property name="classworlds.conf" value="C:\Users\Viktor\Documents\005 UNI\Tools\Eclipse Java Neon\workspace\.metadata\.plugins\org.eclipse.m2e.launching\launches\m2conf8625891158252141296.tmp"/>
+    <property name="classworlds.conf" value="C:\Users\Viktor\Documents\005 UNI\Tools\Eclipse Java Neon\workspace\.metadata\.plugins\org.eclipse.m2e.launching\launches\m2conf8489806586904710776.tmp"/>
     <property name="sun.jnu.encoding" value="Cp1252"/>
-    <property name="java.library.path" value="C:\Program Files\Java\jdk1.8.0_121\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:/Program Files/Java/jre1.8.0_121/bin/server;C:/Program Files/Java/jre1.8.0_121/bin;C:/Program Files/Java/jre1.8.0_121/lib/amd64;C:\ProgramData\Oracle\Java\javapath;C:\Program Files\Java\jre1.8.0_101\bin\;C:\Users\Viktor\Documents\006 AI\Chess\cutechess-cli\;C:\Program Files (x86)\Skype\Phone\;C:\Program Files\Microsoft SQL Server\130\Tools\Binn\;C:\Program Files (x86)\GNU\GnuPG\pub;C:\Program Files\nodejs\;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;C:\Users\Viktor\Documents\006 AI\Chess\cutechess-cli;C:\Users\Viktor\AppData\Roaming\npm;%USERPROFILE%\AppData\Local\Microsoft\WindowsApps;;C:\WINDOWS\system32;;."/>
+    <property name="java.library.path" value="C:\Program Files\Java\jdk1.8.0_121\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:/Program Files/Java/jre1.8.0_121/bin/server;C:/Program Files/Java/jre1.8.0_121/bin;C:/Program Files/Java/jre1.8.0_121/lib/amd64;C:\ProgramData\Oracle\Java\javapath;C:\Program Files\Java\jre1.8.0_101\bin\;C:\Users\Viktor\Documents\006 AI\Chess\cutechess-cli\;C:\Program Files (x86)\Skype\Phone\;C:\Program Files\Microsoft SQL Server\130\Tools\Binn\;C:\Program Files (x86)\GNU\GnuPG\pub;C:\Program Files\nodejs\;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;C:\Users\Viktor\Documents\006 AI\Chess\cutechess-cli;C:\Users\Viktor\AppData\Roaming\npm;%USERPROFILE%\AppData\Local\Microsoft\WindowsApps;;C:\Users\Viktor\Desktop;;."/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.class.version" value="52.0"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
@@ -61,408 +61,380 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[0]" time="0.525"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[1]" time="1.005">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[0]" time="0.259"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[1]" time="1.013">
     <skipped/>
-    <system-out>8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - bm Rxb2; id &quot;WAC.002&quot;; - c3 in 1.000s
+    <system-out>8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - bm Rxb2; id &quot;WAC.002&quot;; - Rb8 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[2]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[3]" time="0.044"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[4]" time="0.031"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[5]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[2]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[3]" time="0.031"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[4]" time="0.025"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[5]" time="1.005"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[6]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[7]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[8]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[9]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[10]" time="1.022"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[11]" time="0.018"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[12]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[13]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[14]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[15]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[16]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[17]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[10]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[11]" time="0.012"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[12]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[13]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[14]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[15]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[16]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[17]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[18]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[19]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[19]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[20]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[21]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[22]" time="1.005"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[23]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[24]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[25]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[21]" time="1.005"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[22]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[23]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[24]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[25]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[26]" time="0.014"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[27]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[28]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[29]" time="1.012"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[27]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[28]" time="1.005"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[29]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[30]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[31]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[31]" time="1.028"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[32]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[33]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[34]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[33]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[34]" time="1.028"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[35]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[36]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[37]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[36]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[37]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[38]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[39]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[40]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[41]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[40]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[41]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[42]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[43]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[43]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[44]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[45]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[46]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[47]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[46]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[47]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[48]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[49]" time="0.201"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[50]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[51]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[49]" time="0.188"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[50]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[51]" time="1.024"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[52]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[53]" time="0.045"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[54]" time="1.003">
-    <skipped/>
-    <system-out>r3r1k1/pp1q1pp1/4b1p1/3p2B1/3Q1R2/8/PPP3PP/4R1K1 w - - bm Qxg7+; id &quot;WAC.055&quot;; - Rff1 in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[55]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[56]" time="0.579"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[57]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[58]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[59]" time="0.017"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[53]" time="0.042"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[54]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[55]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[56]" time="0.552"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[57]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[58]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[59]" time="0.013"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[60]" time="0.03"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[61]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[61]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[62]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[63]" time="0.22"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[64]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[63]" time="0.218"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[64]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[65]" time="1.002">
     <skipped/>
     <system-out>1k1r2r1/ppq5/1bp4p/3pQ3/8/2P2N2/PP4P1/R4R1K b - - bm Qxe5; id &quot;WAC.066&quot;; - Qc7xe5 in 1.000s
 </system-out>
   </testcase>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[66]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[67]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[67]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[68]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[69]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[70]" time="1.003">
-    <skipped/>
-    <system-out>2kr3r/pp1q1ppp/5n2/1Nb5/2Pp1B2/7Q/P4PPP/1R3RK1 w - - bm Nxa7+; id &quot;WAC.071&quot;; - Qf3 in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[71]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[69]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[70]" time="1.001"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[71]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[72]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[73]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[73]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[74]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[75]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[76]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[77]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[78]" time="0.84"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[79]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[76]" time="1.02"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[77]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[78]" time="0.798"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[79]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[80]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[81]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[82]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[83]" time="0.048"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[81]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[82]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[83]" time="0.042"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[84]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[85]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[86]" time="1.002">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[85]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[86]" time="1.003">
     <skipped/>
     <system-out>8/p3k1p1/4r3/2ppNpp1/PP1P4/2P3KP/5P2/8 b - - bm Rxe5; id &quot;WAC.087&quot;; - xb4 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[87]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[88]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[89]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[90]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[87]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[88]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[89]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[90]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[91]" time="1.002">
     <skipped/>
     <system-out>r4rk1/1p2ppbp/p2pbnp1/q7/3BPPP1/2N2B2/PPP4P/R2Q1RK1 b - - bm Bxg4; id &quot;WAC.092&quot;; - Rac8 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[92]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[92]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[93]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[94]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[95]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[96]" time="0.357"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[97]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[98]" time="0.044"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[99]" time="1.003">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[95]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[96]" time="0.338"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[97]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[98]" time="0.033"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[99]" time="1.001">
     <skipped/>
     <system-out>8/k1b5/P4p2/1Pp2p1p/K1P2P1P/8/3B4/8 w - - bm Be3 b6+; id &quot;WAC.100&quot;; - Kb3 in 1.000s
 </system-out>
   </testcase>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[100]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[101]" time="0.599"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[102]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[101]" time="0.69"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[102]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[103]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[104]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[105]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[104]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[105]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[106]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[107]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[108]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[109]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[110]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[111]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[112]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[113]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[114]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[109]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[110]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[111]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[112]" time="1.001"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[113]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[114]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[115]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[116]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[117]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[118]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[116]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[117]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[118]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[119]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[120]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[121]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[122]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[123]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[121]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[122]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[123]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[124]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[125]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[126]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[127]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[128]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[129]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[130]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[131]" time="0.586"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[125]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[126]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[127]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[128]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[129]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[130]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[131]" time="0.562"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[132]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[133]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[134]" time="1.014"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[133]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[134]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[135]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[136]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[137]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[138]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[139]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[140]" time="1.001">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[136]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[137]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[138]" time="1.013"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[139]" time="1.012"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[140]" time="1.002">
     <skipped/>
     <system-out>4r1k1/p1qr1p2/2pb1Bp1/1p5p/3P1n1R/1B3P2/PP3PK1/2Q4R w - - bm Qxf4; id &quot;WAC.141&quot;; - Kf1 in 1.000s
 </system-out>
   </testcase>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[141]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[142]" time="0.558"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[143]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[144]" time="1.001">
-    <skipped/>
-    <system-out>r1bq4/1p4kp/3p1n2/p4pB1/2pQ4/8/1P4PP/4RRK1 w - - bm Re8; id &quot;WAC.145&quot;; - Rf3 in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[145]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[146]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[147]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[142]" time="0.458"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[143]" time="1.01"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[144]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[145]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[146]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[147]" time="1.018"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[148]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[149]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[150]" time="1.004">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[150]" time="1.002">
     <skipped/>
     <system-out>8/3b2kp/4p1p1/pr1n4/N1N4P/1P4P1/1K3P2/3R4 w - - bm Nc3; id &quot;WAC.151&quot;; - Nd6 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[151]" time="1.002">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[151]" time="1.004">
     <skipped/>
     <system-out>1br2rk1/1pqb1ppp/p3pn2/8/1P6/P1N1PN1P/1B3PP1/1QRR2K1 w - - bm Ne4; id &quot;WAC.152&quot;; - Nd5 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[152]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[153]" time="0.017"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[152]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[153]" time="0.014"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[154]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[155]" time="0.031"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[156]" time="1.002">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[155]" time="0.025"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[156]" time="1.004">
     <skipped/>
-    <system-out>5rk1/p4ppp/2p1b3/3Nq3/4P1n1/1p1B2QP/1PPr2P1/1K2R2R w - - bm Ne7+; id &quot;WAC.157&quot;; - Qf4 in 1.000s
+    <system-out>5rk1/p4ppp/2p1b3/3Nq3/4P1n1/1p1B2QP/1PPr2P1/1K2R2R w - - bm Ne7+; id &quot;WAC.157&quot;; - xg4 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[157]" time="0.766"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[158]" time="1.005"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[159]" time="0.049"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[157]" time="0.787"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[158]" time="1.001"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[159]" time="0.045"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[160]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[161]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[161]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[162]" time="1.003">
     <skipped/>
-    <system-out>5rk1/2p4p/2p4r/3P4/4p1b1/1Q2NqPp/PP3P1K/R4R2 b - - bm Qg2+; id &quot;WAC.163&quot;; - xd5 in 1.000s
+    <system-out>5rk1/2p4p/2p4r/3P4/4p1b1/1Q2NqPp/PP3P1K/R4R2 b - - bm Qg2+; id &quot;WAC.163&quot;; - c5 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[163]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[164]" time="1.022"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[163]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[164]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[165]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[166]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[167]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[168]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[167]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[168]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[169]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[170]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[171]" time="0.755"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[172]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[170]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[171]" time="0.806"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[172]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[173]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[174]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[175]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[176]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[177]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[178]" time="0.925"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[179]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[180]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[174]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[175]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[176]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[177]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[178]" time="1.019"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[179]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[180]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[181]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[182]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[183]" time="0.041"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[182]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[183]" time="0.033"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[184]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[185]" time="0.96"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[186]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[187]" time="0.039"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[188]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[189]" time="1.003">
-    <skipped/>
-    <system-out>8/p2b2kp/1q1p2p1/1P1Pp3/4P3/3B2P1/P2Q3P/2Nn3K b - - bm Bh3; id &quot;WAC.190&quot;; - Nf2+ in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[190]" time="0.64"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[185]" time="0.884"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[186]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[187]" time="0.028"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[188]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[189]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[190]" time="0.664"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[191]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[192]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[193]" time="1.028"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[192]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[193]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[194]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[195]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[196]" time="0.124"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[195]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[196]" time="0.129"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[197]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[198]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[199]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[200]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[200]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[201]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[202]" time="0.732"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[203]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[202]" time="0.631"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[203]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[204]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[205]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[205]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[206]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[207]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[208]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[209]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[210]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[207]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[208]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[209]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[210]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[211]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[212]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[212]" time="1.012"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[213]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[214]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[215]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[216]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[217]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[218]" time="0.379"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[214]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[215]" time="1.013"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[216]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[217]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[218]" time="0.35"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[219]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[220]" time="1.004">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[220]" time="1.003">
     <skipped/>
     <system-out>r3k3/P5bp/2N1bp2/4p3/2p5/6NP/1PP2PP1/3R2K1 w q - bm Rd8+; id &quot;WAC.221&quot;; - Nh5 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[221]" time="1.02">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[221]" time="1.004">
     <skipped/>
     <system-out>2r1r2k/1q3ppp/p2Rp3/2p1P3/6QB/p3P3/bP3PPP/3R2K1 w - - bm Bf6; id &quot;WAC.222&quot;; - xa3 in 1.000s
 </system-out>
   </testcase>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[222]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[223]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[224]" time="0.282"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[225]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[223]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[224]" time="0.324"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[225]" time="1.003">
+    <skipped/>
+    <system-out>2b2rk1/p1p4p/2p1p1p1/br2N1Q1/1p2q3/8/PB3PPP/3R1RK1 w - - bm Nf7; id &quot;WAC.226&quot;; - Rd8 in 1.000s
+</system-out>
+  </testcase>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[226]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[227]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[228]" time="1.003">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[227]" time="1.027"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[228]" time="1.002">
     <skipped/>
     <system-out>8/8/8/1p5r/p1p1k1pN/P2pBpP1/1P1K1P2/8 b - - bm Rxh4 b4; id &quot;WAC.229&quot;; - Re5 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[229]" time="1.003">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[229]" time="1.002">
     <skipped/>
-    <system-out>2b5/1r6/2kBp1p1/p2pP1P1/2pP4/1pP3K1/1R3P2/8 b - - bm Rb4; id &quot;WAC.230&quot;; - a4 in 1.000s
+    <system-out>2b5/1r6/2kBp1p1/p2pP1P1/2pP4/1pP3K1/1R3P2/8 b - - bm Rb4; id &quot;WAC.230&quot;; - Kb5 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[230]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[230]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[231]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[232]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[233]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[234]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[235]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[236]" time="1.004">
-    <skipped/>
-    <system-out>r5k1/pQp2qpp/8/4pbN1/3P4/6P1/PPr4P/1K1R3R b - - bm Rc1+; id &quot;WAC.237&quot;; - Rc5 in 1.000s
-</system-out>
-  </testcase>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[232]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[233]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[234]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[235]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[236]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[237]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[238]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[239]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[240]" time="1.002">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[238]" time="1.027"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[239]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[240]" time="1.003">
     <skipped/>
-    <system-out>2rq1rk1/pp3ppp/2n2b2/4NR2/3P4/PB5Q/1P4PP/3R2K1 w - - bm Qxh7+; id &quot;WAC.241&quot;; - Rf2 in 1.000s
+    <system-out>2rq1rk1/pp3ppp/2n2b2/4NR2/3P4/PB5Q/1P4PP/3R2K1 w - - bm Qxh7+; id &quot;WAC.241&quot;; - Bxf7+ in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[241]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[242]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[243]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[244]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[245]" time="0.022"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[246]" time="1.003">
-    <skipped/>
-    <system-out>2k1r3/1p2Bq2/p2Qp3/Pb1p1p1P/2pP1P2/2P5/2P2KP1/1R6 w - - bm Rxb5; id &quot;WAC.247&quot;; - Qc5+ in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[247]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[248]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[249]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[241]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[242]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[243]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[244]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[245]" time="0.012"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[246]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[247]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[248]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[249]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[250]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[251]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[252]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[252]" time="1.006"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[253]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[254]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[255]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[256]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[257]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[258]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[259]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[254]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[255]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[256]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[257]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[258]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[259]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[260]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[261]" time="1.002"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[262]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[263]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[264]" time="1.005">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[263]" time="1.009"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[264]" time="1.002">
     <skipped/>
     <system-out>2r1k2r/2pn1pp1/1p3n1p/p3PP2/4q2B/P1P5/2Q1N1PP/R4RK1 w k - bm exf6; id &quot;WAC.265&quot;; - Qxe4 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[265]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[266]" time="1.013"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[265]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[266]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[267]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[268]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[269]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[270]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[268]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[269]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[270]" time="1.001"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[271]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[272]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[273]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[274]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[275]" time="1.001"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[274]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[275]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[276]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[277]" time="1.019"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[277]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[278]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[279]" time="1.003">
-    <skipped/>
-    <system-out>r1r2bk1/5p1p/pn4p1/N2b4/3Pp3/B3P3/2q1BPPP/RQ3RK1 b - - bm Bxa3; id &quot;WAC.280&quot;; - Qxe2 in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[280]" time="1.021"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[281]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[282]" time="1.003">
-    <skipped/>
-    <system-out>3q1rk1/4bp1p/1n2P2Q/3p1p2/6r1/Pp2R2N/1B4PP/7K w - - bm Ng5; id &quot;WAC.283&quot;; - Nf4 in 1.000s
-</system-out>
-  </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[283]" time="1.004"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[284]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[285]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[286]" time="1.001"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[287]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[288]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[279]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[280]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[281]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[282]" time="1.003"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[283]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[284]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[285]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[286]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[287]" time="1.001"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[288]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[289]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[290]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[291]" time="1.002"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[291]" time="1.003"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[292]" time="1.003">
     <skipped/>
-    <system-out>1nbq1r1k/3rbp1p/p1p1pp1Q/1p6/P1pPN3/5NP1/1P2PPBP/R4RK1 w - - bm Nfg5; id &quot;WAC.293&quot;; - e3 in 1.000s
+    <system-out>1nbq1r1k/3rbp1p/p1p1pp1Q/1p6/P1pPN3/5NP1/1P2PPBP/R4RK1 w - - bm Nfg5; id &quot;WAC.293&quot;; - Nc5 in 1.000s
 </system-out>
   </testcase>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[293]" time="1.003"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[294]" time="0.459"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[295]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[296]" time="1.003">
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[293]" time="1.004"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[294]" time="0.464"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[295]" time="1.005"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[296]" time="1.002">
     <skipped/>
     <system-out>3r1rk1/p3qp1p/2bb2p1/2p5/3P4/1P6/PBQN1PPP/2R2RK1 b - - bm Bxg2 Bxh2+; id &quot;WAC.297&quot;; - Rfe8 in 1.000s
 </system-out>
   </testcase>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[297]" time="1.004"/>
   <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[298]" time="1.002"/>
-  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[299]" time="1.005"/>
+  <testcase classname="net.viktorc.detroid.engine.WinAtChessTest" name="search[299]" time="1.003"/>
 </testsuite>

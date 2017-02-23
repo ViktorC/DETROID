@@ -118,26 +118,24 @@ class Search implements Runnable {
 			if (doStopSearch || Thread.currentThread().isInterrupted())
 				break;
 			// Aspiration windows with gradual widening.
-			if (score <= alpha) {
-				if (Math.abs(score) >= wCheckMateLimit) {
-					System.out.println("A - depth: " + i + ", score :" + score + ", alpha: " + alpha + ", beta: " + beta);
+			if (score <= alpha && alpha != Termination.CHECK_MATE.score) {
+				if (score <= lCheckMateLimit) {
 					alpha = Termination.CHECK_MATE.score;
 					failLow = 2;
 				} else {
-					alpha = failLow == 0 ? Math.max(score - params.aspirationDelta, Termination.CHECK_MATE.score) :
-							failLow == 1 ? Math.max(score - 2*params.aspirationDelta, Termination.CHECK_MATE.score) :
+					alpha = failLow == 0 ? Math.max(score - 2*params.aspirationDelta, Termination.CHECK_MATE.score) :
+							failLow == 1 ? Math.max(score - 4*params.aspirationDelta, Termination.CHECK_MATE.score) :
 							Termination.CHECK_MATE.score;
 					failLow++;
 				}
 				i--;
-			} else if (score >= beta) {
-				if (Math.abs(score) >= wCheckMateLimit) {
-					System.out.println("B - depth: " + i + ", score :" + score + ", alpha: " + alpha + ", beta: " + beta);
+			} else if (score >= beta && beta != -Termination.CHECK_MATE.score) {
+				if (score >= wCheckMateLimit) {
 					beta = -Termination.CHECK_MATE.score;
 					failHigh = 2;
 				} else {
-					beta = failHigh == 0 ? Math.min(score + params.aspirationDelta, -Termination.CHECK_MATE.score) :
-							failHigh == 1 ? Math.min(score + 2*params.aspirationDelta, -Termination.CHECK_MATE.score) :
+					beta = failHigh == 0 ? Math.min(score + 2*params.aspirationDelta, -Termination.CHECK_MATE.score) :
+							failHigh == 1 ? Math.min(score + 4*params.aspirationDelta, -Termination.CHECK_MATE.score) :
 							-Termination.CHECK_MATE.score;
 					failHigh++;
 				}
@@ -263,8 +261,8 @@ class Search implements Runnable {
 		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
 			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null ? bestScore : e.score, doStopSearch ||
-					Thread.currentThread().isInterrupted());
+			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null || bestScore >= beta || bestScore <= origAlpha ?
+					bestScore : e.score, doStopSearch || Thread.currentThread().isInterrupted());
 		}
 		return bestScore;
 	}
@@ -868,10 +866,10 @@ class Search implements Runnable {
 			resultScore = score;
 		} else {
 			if (score <= lCheckMateLimit) {
-				resultScore = (Termination.CHECK_MATE.score - score)/2 - 1;
+				resultScore = (int) Math.floor(((double) (Termination.CHECK_MATE.score - score))/2);
 				scoreType = ScoreType.MATE;
 			} else if (score >= wCheckMateLimit) {
-				resultScore = (-Termination.CHECK_MATE.score - score)/2 + 1;
+				resultScore = (int) Math.ceil(((double) (-Termination.CHECK_MATE.score - score))/2);
 				scoreType = ScoreType.MATE;
 			} else {
 				resultScore = score;
