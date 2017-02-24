@@ -443,9 +443,11 @@ final class Evaluator {
 	 * 
 	 * @param pos
 	 * @param hashGen
+	 * @param alpha
+	 * @param beta
 	 * @return
 	 */
-	int score(Position pos, byte hashGen) {
+	int score(Position pos, byte hashGen, int alpha, int beta) {
 		final boolean isWhitesTurn = pos.isWhitesTurn;
 		boolean allSameColor;
 		byte numOfWhiteQueens, numOfWhiteRooks, numOfWhiteBishops, numOfWhiteKnights;
@@ -454,7 +456,7 @@ final class Evaluator {
 		byte pieceInd;
 		byte pieceType;
 		byte pinner;
-		short openingScore, endgameScore, score;
+		short openingScore, endgameScore, score, tempScore;
 		int bishopSqrColor;
 		int square;
 		int phase;
@@ -479,70 +481,94 @@ final class Evaluator {
 		byte[] offsetBoard;
 		long[] whitePinLines, blackPinLines;
 		ETEntry eE;
+		score = 0;
 		// Probe evaluation hash table.
 		if (useEt && (eE = eT.get(pos.key)) != null) {
 			eE.generation = hashGen;
-			return eE.score;
-		}
-		score = 0;
-		numOfWhiteQueens = BitOperations.hammingWeight(pos.whiteQueens);
-		numOfWhiteRooks = BitOperations.hammingWeight(pos.whiteRooks);
-		numOfWhiteBishops = BitOperations.hammingWeight(pos.whiteBishops);
-		numOfWhiteKnights = BitOperations.hammingWeight(pos.whiteKnights);
-		numOfBlackQueens = BitOperations.hammingWeight(pos.blackQueens);
-		numOfBlackRooks = BitOperations.hammingWeight(pos.blackRooks);
-		numOfBlackBishops = BitOperations.hammingWeight(pos.blackBishops);
-		numOfBlackKnights = BitOperations.hammingWeight(pos.blackKnights);
-		// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
-		if (pos.whitePawns == 0 && pos.blackPawns == 0 && numOfWhiteRooks == 0 && numOfBlackRooks == 0 &&
-				numOfWhiteQueens == 0 && numOfBlackQueens == 0) {
-			numOfAllPieces = BitOperations.hammingWeight(pos.allOccupied);
-			if (numOfAllPieces == 2 || numOfAllPieces == 3)
-				return Termination.INSUFFICIENT_MATERIAL.score;
-			if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
-				allSameColor = true;
-				bishopSet = pos.whiteBishops | pos.blackBishops;
-				bishopSqrColor = Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2;
-				bishopSet = BitOperations.resetLSBit(bishopSet);
-				while (bishopSet != 0) {
-					if (Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2 != bishopSqrColor) {
-						allSameColor = false;
-						break;
-					}
-					bishopSet = BitOperations.resetLSBit(bishopSet);
-				}
-				if (allSameColor)
+			score = eE.score;
+			// If the entry is exact or would also trigger lazy eval within the current alpha-beta context, return the score.
+			if (eE.isExact || score >= beta + params.lazyEvalMar || score <= alpha - params.lazyEvalMar)
+				return eE.score;
+			// If not, make sure the score is from white's point of view as that's how the rest of the evaluation is made.
+			if (!isWhitesTurn)
+				score *= -1;
+		} else {
+			// In case of no hash hit, calculate the base score from scratch.
+			numOfWhiteQueens = BitOperations.hammingWeight(pos.whiteQueens);
+			numOfWhiteRooks = BitOperations.hammingWeight(pos.whiteRooks);
+			numOfWhiteBishops = BitOperations.hammingWeight(pos.whiteBishops);
+			numOfWhiteKnights = BitOperations.hammingWeight(pos.whiteKnights);
+			numOfBlackQueens = BitOperations.hammingWeight(pos.blackQueens);
+			numOfBlackRooks = BitOperations.hammingWeight(pos.blackRooks);
+			numOfBlackBishops = BitOperations.hammingWeight(pos.blackBishops);
+			numOfBlackKnights = BitOperations.hammingWeight(pos.blackKnights);
+			// Check for insufficient material. Only consider the widely acknowledged scenarios without blocked position testing.
+			if (pos.whitePawns == 0 && pos.blackPawns == 0 && numOfWhiteRooks == 0 && numOfBlackRooks == 0 &&
+					numOfWhiteQueens == 0 && numOfBlackQueens == 0) {
+				numOfAllPieces = BitOperations.hammingWeight(pos.allOccupied);
+				if (numOfAllPieces == 2 || numOfAllPieces == 3)
 					return Termination.INSUFFICIENT_MATERIAL.score;
+				if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
+					allSameColor = true;
+					bishopSet = pos.whiteBishops | pos.blackBishops;
+					bishopSqrColor = Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2;
+					bishopSet = BitOperations.resetLSBit(bishopSet);
+					while (bishopSet != 0) {
+						if (Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(bishopSet)).ordinal()%2 != bishopSqrColor) {
+							allSameColor = false;
+							break;
+						}
+						bishopSet = BitOperations.resetLSBit(bishopSet);
+					}
+					if (allSameColor)
+						return Termination.INSUFFICIENT_MATERIAL.score;
+				}
+			}
+			// Phase score for tapered evaluation.
+			phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
+					numOfWhiteKnights + numOfBlackKnights);
+			// Basic material score.
+			score += params.queenValue*(numOfWhiteQueens - numOfBlackQueens);
+			score += params.rookValue*(numOfWhiteRooks - numOfBlackRooks);
+			score += params.bishopValue*(numOfWhiteBishops - numOfBlackBishops);
+			score += params.knightValue*(numOfWhiteKnights - numOfBlackKnights);
+			// Piece-square scores.
+			openingScore = endgameScore = 0;
+			offsetBoard = pos.offsetBoard;
+			for (int i = 0; i < offsetBoard.length; i++) {
+				square = offsetBoard[i] - 1;
+				if (square < Piece.NULL.ind)
+					continue;
+				openingScore += pstOpening[square][i];
+				endgameScore += pstEndgame[square][i];
+			}
+			score += (short) taperedEvalScore(openingScore, endgameScore, phase);
+			// Bishop pair advantage.
+			if (numOfWhiteBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(pos.whiteBishops)).ordinal()%2 !=
+					Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(BitOperations.resetLSBit(pos.whiteBishops))).ordinal()%2)
+				score += params.bishopPairAdvantage;
+			if (numOfBlackBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(pos.blackBishops)).ordinal()%2 !=
+					Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(BitOperations.resetLSBit(pos.blackBishops))).ordinal()%2)
+				score -= params.bishopPairAdvantage;
+			// Tempo advantage
+			if (isWhitesTurn) {
+				score += params.tempoAdvantage;
+				tempScore = score;
+			} else {
+				score -= params.tempoAdvantage;
+				tempScore = (short) -score;
+			}
+			// Non-exact score hashing.
+			if (useEt && (tempScore <= alpha - params.lazyEvalMar || tempScore >= beta + params.lazyEvalMar)) {
+				eT.put(new ETEntry(pos.key, tempScore, false, hashGen));
+				return tempScore;
 			}
 		}
-		// Phase score for tapered evaluation.
-		phase = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks, numOfWhiteBishops + numOfBlackBishops,
-				numOfWhiteKnights + numOfBlackKnights);
-		// Basic material score.
-		score += params.queenValue*(numOfWhiteQueens - numOfBlackQueens);
-		score += params.rookValue*(numOfWhiteRooks - numOfBlackRooks);
-		score += params.bishopValue*(numOfWhiteBishops - numOfBlackBishops);
-		score += params.knightValue*(numOfWhiteKnights - numOfBlackKnights);
 		// Pawn structure.
 		score += pawnKingStructureScore(pos.whiteKing, pos.blackKing, pos.whitePawns, pos.blackPawns);
-		// Piece-square scores.
-		openingScore = endgameScore = 0;
-		offsetBoard = pos.offsetBoard;
-		for (int i = 0; i < offsetBoard.length; i++) {
-			square = offsetBoard[i] - 1;
-			if (square < Piece.NULL.ind)
-				continue;
-			openingScore += pstOpening[square][i];
-			endgameScore += pstEndgame[square][i];
-		}
-		score += (short) taperedEvalScore(openingScore, endgameScore, phase);
-		// Bishop pair advantage.
-		if (numOfWhiteBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(pos.whiteBishops)).ordinal()%2 !=
-				Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(BitOperations.resetLSBit(pos.whiteBishops))).ordinal()%2)
-			score += params.bishopPairAdvantage;
-		if (numOfBlackBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(pos.blackBishops)).ordinal()%2 !=
-				Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(BitOperations.resetLSBit(pos.blackBishops))).ordinal()%2)
-			score -= params.bishopPairAdvantage;
+		// Stopped pawns.
+		score += params.stoppedPawnWeight*(BitOperations.hammingWeight((pos.blackPawns >>> 8) & (pos.allWhiteOccupied^pos.whitePawns)) -
+				BitOperations.hammingWeight((pos.whitePawns << 8) & (pos.allBlackOccupied^pos.blackPawns)));
 		// Pinned pieces.
 		whiteKingInd = BitOperations.indexOfBit(pos.whiteKing);
 		blackKingInd = BitOperations.indexOfBit(pos.blackKing);
@@ -578,9 +604,6 @@ final class Evaluator {
 				BitOperations.hammingWeight(pos.whiteKnights & whitePinnedPieces));
 		score += params.pinnedPawnWeight*(BitOperations.hammingWeight(pos.blackPawns & blackPinnedPieces) -
 				BitOperations.hammingWeight(pos.whitePawns & whitePinnedPieces));
-		// Stopped pawns.
-		score += params.stoppedPawnWeight*(BitOperations.hammingWeight((pos.blackPawns >>> 8) & (pos.allWhiteOccupied^pos.whitePawns)) -
-				BitOperations.hammingWeight((pos.whitePawns << 8) & (pos.allBlackOccupied^pos.blackPawns)));
 		// Iterate over pieces to assess their mobility and distance from the opponent's king.
 		whitePieceSet = pos.allWhiteOccupied^pos.whiteKing^pos.whitePawns;
 		blackPieceSet = pos.allBlackOccupied^pos.blackKing^pos.blackPawns;
@@ -720,10 +743,8 @@ final class Evaluator {
 			else if ((blackKnightAttacks & pos.whiteBishops) != 0)
 				score += params.bishopValue - params.knightValue;
 		}
-		// Tempo advantage.
-		score += params.tempoAdvantage;
 		if (useEt)
-			eT.put(new ETEntry(pos.key, score, hashGen));
+			eT.put(new ETEntry(pos.key, score, true, hashGen));
 		return score;
 	}
 	

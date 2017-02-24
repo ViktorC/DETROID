@@ -388,7 +388,7 @@ class Search implements Runnable {
 				razMargin = depth/params.fullPly == 1 ? params.razoringMargin1 :
 						depth/params.fullPly == 2 ? params.razoringMargin2 : -1;
 				if (razMargin != -1) {
-					evalScore = eval.score(position, hashEntryGen);
+					evalScore = eval.score(position, hashEntryGen, alpha, beta);
 					if (evalScore < beta - razMargin) {
 						score = quiescence(distFromRoot, alpha - razMargin, beta - razMargin);
 						if (score <= alpha - razMargin)
@@ -633,7 +633,7 @@ class Search implements Runnable {
 				// Futility pruning, extended futility pruning, and razoring.
 				if (isReducible && depth/params.fullPly <= 3) {
 					if (evalScore == Integer.MIN_VALUE)
-						evalScore = eval.score(position, hashEntryGen);
+						evalScore = eval.score(position, hashEntryGen, alpha, beta);
 					switch (depth/params.fullPly) {
 						case 1: {
 							// Frontier futility pruning.
@@ -727,12 +727,12 @@ class Search implements Runnable {
 			doStopSearch = true;
 		// Limit the maximum depth of the quiescence search.
 		if (distFromRoot > maxExpectedSearchDepth)
-			return eval.score(position, hashEntryGen);
+			return eval.score(position, hashEntryGen, alpha, beta);
 		// Fifty-move rule and repetition rule check.
 		if (position.fiftyMoveRuleClock >= 100 || position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
 		// Evaluate the position statically if not in check.
-		bestScore = isInCheck ? alpha : eval.score(position, hashEntryGen);
+		bestScore = isInCheck ? alpha : eval.score(position, hashEntryGen, alpha, beta);
 		// Fail soft.
 		if (bestScore > alpha) {
 			alpha = bestScore;

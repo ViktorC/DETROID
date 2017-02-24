@@ -101,6 +101,9 @@ final class Params extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	short gamePhaseEndgameUpper;
 
+	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
+	short lazyEvalMar;
 	// Search parameters.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte nullMoveReduction; // Null move pruning reduction.

@@ -19,7 +19,7 @@
 <kingOpponentNormalPawnTropismWeight>15</kingOpponentNormalPawnTropismWeight>
 <kingFriendlyOpenBackwardPawnTropismWeight>0</kingFriendlyOpenBackwardPawnTropismWeight>
 <kingOpponentOpenBackwardPawnTropismWeight>29</kingOpponentOpenBackwardPawnTropismWeight>
-<kingFriendlyPassedPawnTropismWeight>7</kingFriendlyPassedPawnTropismWeight>
+<kingFriendlyPassedPawnTropismWeight>0</kingFriendlyPassedPawnTropismWeight>
 <kingOpponentPassedPawnTropismWeight>7</kingOpponentPassedPawnTropismWeight>
 <passedPawnWeight>46</passedPawnWeight>
 <openBackwardPawnWeight>20</openBackwardPawnWeight>
@@ -39,6 +39,7 @@
 <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
 <gamePhaseEndgameLower>241</gamePhaseEndgameLower>
 <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
+<lazyEvalMar>521</lazyEvalMar>
 <nullMoveReduction>2</nullMoveReduction>
 <extraNullMoveReduction>1</extraNullMoveReduction>
 <extraNullMoveReductionDepthLimit>7</extraNullMoveReductionDepthLimit>
