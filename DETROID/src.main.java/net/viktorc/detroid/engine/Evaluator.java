@@ -404,9 +404,10 @@ final class Evaluator {
 		while (whitePawnSet != 0) {
 			pawn = BitOperations.getLSBit(whitePawnSet);
 			pawnInd = BitOperations.indexOfBit(pawn);
-			if ((whitePassedPawns & pawn) != 0)
+			if ((whitePassedPawns & pawn) != 0) {
+				whiteKingWhitePawnTropism += params.kingFriendlyPassedPawnTropismWeight*MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
 				blackKingWhitePawnTropism += params.kingOpponentPassedPawnTropismWeight*MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-			else if ((whiteOpenBackwardPawns & pawn) != 0) {
+			} else if ((whiteOpenBackwardPawns & pawn) != 0) {
 				whiteKingWhitePawnTropism += params.kingFriendlyOpenBackwardPawnTropismWeight*MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
 				blackKingWhitePawnTropism += params.kingOpponentOpenBackwardPawnTropismWeight*MANHATTAN_DISTANCE[blackKingInd][pawnInd];
 			} else {
@@ -420,9 +421,10 @@ final class Evaluator {
 		while (blackPawnSet != 0) {
 			pawn = BitOperations.getLSBit(blackPawnSet);
 			pawnInd = BitOperations.indexOfBit(pawn);
-			if ((blackPassedPawns & pawn) != 0)
+			if ((blackPassedPawns & pawn) != 0) {
 				whiteKingBlackPawnTropism += params.kingOpponentPassedPawnTropismWeight*MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-			else if ((blackOpenBackwardPawns & pawn) != 0) {
+				blackKingBlackPawnTropism += params.kingFriendlyPassedPawnTropismWeight*MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+			} else if ((blackOpenBackwardPawns & pawn) != 0) {
 				whiteKingBlackPawnTropism += params.kingOpponentOpenBackwardPawnTropismWeight*MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
 				blackKingBlackPawnTropism += params.kingFriendlyOpenBackwardPawnTropismWeight*MANHATTAN_DISTANCE[blackKingInd][pawnInd];
 			} else {
@@ -669,30 +671,30 @@ final class Evaluator {
 			pawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & ~whitePinnedPieces, pos.allBlackOccupied);
 			/* The order assumes the following approximate scores for the pieces:
 			 * Queen: 1400
-			 * Rook: 580
-			 * Bishop: 330
-			 * Knight: 310
+			 * Rook: 530
+			 * Bishop: 360
+			 * Knight: 300
 			 * Pawn: 100
 			 */
-			if ((pawnAttacks & pos.blackQueens) != 0)
+			if ((pawnAttacks & pos.blackQueens) != 0) // Q - P = 1300
 				score += params.queenValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackQueens) != 0)
+			else if ((whiteKnightAttacks & pos.blackQueens) != 0) // Q - N = 1100
 				score += params.queenValue - params.knightValue;
-			else if ((whiteBishopAttacks & pos.blackQueens) != 0)
+			else if ((whiteBishopAttacks & pos.blackQueens) != 0) // Q - B = 1040
 				score += params.queenValue - params.bishopValue;
-			else if ((whiteRookAttacks & pos.blackQueens) != 0)
+			else if ((whiteRookAttacks & pos.blackQueens) != 0) // Q - R = 870
 				score += params.queenValue - params.rookValue;
-			else if ((pawnAttacks & pos.blackRooks) != 0)
+			else if ((pawnAttacks & pos.blackRooks) != 0) // R - P = 430
 				score += params.rookValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackRooks) != 0)
-				score += params.rookValue - params.knightValue;
-			else if ((whiteBishopAttacks & pos.blackRooks) != 0)
-				score += params.rookValue - params.bishopValue;
-			else if ((pawnAttacks & pos.blackBishops) != 0)
+			else if ((pawnAttacks & pos.blackBishops) != 0) // B - P = 260
 				score += params.bishopValue - params.pawnValue;
-			else if ((pawnAttacks & pos.blackKnights) != 0)
+			else if ((whiteKnightAttacks & pos.blackRooks) != 0) // R - N = 230
+				score += params.rookValue - params.knightValue;
+			else if ((pawnAttacks & pos.blackKnights) != 0) // N - P = 200
 				score += params.knightValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackBishops) != 0)
+			else if ((whiteBishopAttacks & pos.blackRooks) != 0) // R - B = 170
+				score += params.rookValue - params.bishopValue;
+			else if ((whiteKnightAttacks & pos.blackBishops) != 0) // B - N = 60
 				score += params.bishopValue - params.knightValue;
 		} else {
 			score *= -1;
@@ -707,14 +709,14 @@ final class Evaluator {
 				score += params.queenValue - params.rookValue;
 			else if ((pawnAttacks & pos.whiteRooks) != 0)
 				score += params.rookValue - params.pawnValue;
-			else if ((blackKnightAttacks & pos.whiteRooks) != 0)
-				score += params.rookValue - params.knightValue;
-			else if ((blackBishopAttacks & pos.whiteRooks) != 0)
-				score += params.rookValue - params.bishopValue;
 			else if ((pawnAttacks & pos.whiteBishops) != 0)
 				score += params.bishopValue - params.pawnValue;
+			else if ((blackKnightAttacks & pos.whiteRooks) != 0)
+				score += params.rookValue - params.knightValue;
 			else if ((pawnAttacks & pos.whiteKnights) != 0)
 				score += params.knightValue - params.pawnValue;
+			else if ((blackBishopAttacks & pos.whiteRooks) != 0)
+				score += params.rookValue - params.bishopValue;
 			else if ((blackKnightAttacks & pos.whiteBishops) != 0)
 				score += params.bishopValue - params.knightValue;
 		}

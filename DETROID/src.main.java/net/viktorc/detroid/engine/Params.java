@@ -59,6 +59,8 @@ final class Params extends EngineParameters {
 	@Parameter
 	byte kingOpponentOpenBackwardPawnTropismWeight;
 	@Parameter
+	byte kingFriendlyPassedPawnTropismWeight;
+	@Parameter
 	byte kingOpponentPassedPawnTropismWeight;
 	@Parameter
 	byte passedPawnWeight;
@@ -94,7 +96,7 @@ final class Params extends EngineParameters {
 	short gamePhaseOpeningLower;
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	short gamePhaseOpeningUpper;
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 8)
 	short gamePhaseEndgameLower;
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	short gamePhaseEndgameUpper;
