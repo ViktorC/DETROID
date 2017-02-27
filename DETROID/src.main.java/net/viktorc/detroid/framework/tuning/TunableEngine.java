@@ -16,7 +16,10 @@ public interface TunableEngine extends UCIEngine {
 	 */
 	EngineParameters getParameters();
 	/**
-	 * Notifies the engine that the parameters have changed and that if it uses cached values, it should reload them.
+	 * Notifies the engine that the parameters have changed and that if it uses cached values, it should reload them. If 
+	 * reloading a parameter would affect a UCI setting whose current value is not the default value, it should not be 
+	 * reloaded. (E.g. if the hash size is defined in the parameter configuration XML file, but the UCI option "Hash" has 
+	 * been set to a value other than its default value, the hash size used should remain unchanged.)
 	 */
 	void notifyParametersChanged();
 	/**

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -17,6 +18,9 @@ import net.viktorc.detroid.framework.tuning.OptimizerEngines;
 import net.viktorc.detroid.framework.tuning.ParameterType;
 import net.viktorc.detroid.framework.tuning.TexelOptimizer;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
+import net.viktorc.detroid.framework.uci.Option;
+import net.viktorc.detroid.framework.uci.Option.CheckOption;
+import net.viktorc.detroid.framework.uci.Option.SpinOption;
 import net.viktorc.detroid.framework.uci.UCI;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
@@ -81,12 +85,12 @@ public final class ApplicationFramework implements Runnable {
 	 * UCI mode: {@code -u} </br>
 	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | 
 	 * management | eval+control | control+management | all> {all}] [-inc <integer> {0}] [-validfactor <decimal> {0}]
-	 * [-initprobvector <quoted_comma_separated_decimals>] [-trybook <true | false> {false}] [-log <string> {log.txt}] 
-	 * [-concurrency <integer>] {1}]} <br>
-	 * Texel tuning: {@code -t texel -samplesize <integer> [-k <decimal>] [-fensfile <string> {fens.txt}] [-log <string> {log.txt}] 
-	 * [-concurrency <integer> {1}]} <br>
+	 * [-initprobvector <quoted_comma_separated_decimals>] [-trybook <true | false> {false}] [-tryhash <integer>] 
+	 * [-log <string> {log.txt}] [-concurrency <integer>] {1}]} <br>
+	 * Texel tuning: {@code -t texel -samplesize <integer> [-learningrate <decimal> {1}] [-k <decimal>] [-fensfile <string> {fens.txt}] 
+	 * [-log <string> {log.txt}] [-concurrency <integer> {1}]} <br>
 	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> {0}] [-trybook 
-	 * <true | false> {false}] [-destfile <string> {fens.txt}] [-concurrency <integer> {1}]} <br>
+	 * <true | false> {false}] [-tryhash <integer>] [-destfile <string> {fens.txt}] [-concurrency <integer> {1}]} <br>
 	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer>] 
 	 * [-destfile <string> {fens.txt}]} <br>
 	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string> {fens.txt}]} <br>
@@ -101,6 +105,65 @@ public final class ApplicationFramework implements Runnable {
 	public ApplicationFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
 		this.args = Arrays.copyOf(args, args.length);
+	}
+	/**
+	 * Resolves the set of parameter types specified by the program argument.
+	 * 
+	 * @param arg The program argument specifying the types of parameters.
+	 * @return A set of {@link #ParameterType ParameterTypes}.
+	 */
+	private Set<ParameterType> resolveParamTypes(String arg) {
+		Set<ParameterType> paramTypes = null;
+		switch (arg) {
+			case "eval":
+				paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
+				break;
+			case "control":
+				paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
+				break;
+			case "management":
+				paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
+				break;
+			case "eval+control":
+				paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
+						ParameterType.SEARCH_CONTROL));
+				break;
+			case "control+management":
+				paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
+						ParameterType.ENGINE_MANAGEMENT));
+				break;
+			case "all":
+				break;
+			default:
+				throw new IllegalArgumentException();
+		}
+		return paramTypes;
+	}
+	/**
+	 * Attempts to set the corresponding UCI options of an engine to the provided values. If the options 
+	 * are not supported by the engine or the values are not accepted, the call of this method has no effect.
+	 * 
+	 * @param engine The {@link #UCIEngine UCIEngine} whose options are to be set.
+	 * @param tryUseBook Whether the engine's OwnBook option should be set to true, if it exists.
+	 * @param hash The value the engine's Hash option should be set to, if it exists.
+	 */
+	private void trySetOptions(UCIEngine engine, boolean tryUseBook, Integer hash) {
+		CheckOption useBookOption = null;
+		SpinOption hashOption = null;
+		Map<Option<?>, Object> options = engine.getOptions();
+		for (Option<?> o : options.keySet()) {
+			if (UCIEngine.USE_OWN_BOOK_OPTION_NAME.equals(o.getName()) &&
+					o instanceof CheckOption) {
+				useBookOption = (CheckOption) o;
+			} else if (UCIEngine.HASH_SIZE_OPTION_NAME.equals(o.getName()) &&
+					o instanceof SpinOption) {
+				hashOption = (SpinOption) o;
+			}
+		}
+		if (tryUseBook && useBookOption != null)
+			engine.setOption(useBookOption, true);
+		if (hash != null && hashOption != null)
+			engine.setOption(hashOption, hash);
 	}
 	@Override
 	public synchronized void run() {
@@ -129,6 +192,7 @@ public final class ApplicationFramework implements Runnable {
 						Set<ParameterType> paramTypes = null;
 						double[] initProbVec = null;
 						boolean useBook = false;
+						Integer hash = null;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -140,29 +204,7 @@ public final class ApplicationFramework implements Runnable {
 								} break;
 								case "-paramtype": {
 									String type = args[++i];
-									switch (type) {
-										case "eval":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
-											break;
-										case "control":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
-											break;
-										case "management":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
-											break;
-										case "eval+control":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
-													ParameterType.SEARCH_CONTROL));
-											break;
-										case "control+management":
-											paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
-													ParameterType.ENGINE_MANAGEMENT));
-											break;
-										case "all":
-											break;
-										default:
-											throw new IllegalArgumentException();
-									}
+									paramTypes = resolveParamTypes(type);
 								} break;
 								case "-games": {
 									games = Integer.parseInt(args[++i]);
@@ -182,6 +224,9 @@ public final class ApplicationFramework implements Runnable {
 								case "-trybook": {
 									useBook = Boolean.parseBoolean(args[++i]);
 								} break;
+								case "-tryhash": {
+									hash = Integer.parseInt(args[++i]);
+								} break;
 								case "-initprobvector": {
 									String vec = args[++i];
 									String[] probs = vec.split(",");
@@ -200,12 +245,10 @@ public final class ApplicationFramework implements Runnable {
 							try {
 								TunableEngine engine1 = factory.newEngineInstance();
 								TunableEngine engine2 = factory.newEngineInstance();
-								if (useBook) {
-									engine1.init();
-									engine1.setOption(UCIEngine.OWN_BOOK_OPTION, true);
-									engine2.init();
-									engine2.setOption(UCIEngine.OWN_BOOK_OPTION, true);
-								}
+								engine1.init();
+								engine2.init();
+								trySetOptions(engine1, useBook, hash);
+								trySetOptions(engine2, useBook, hash);
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
@@ -226,6 +269,7 @@ public final class ApplicationFramework implements Runnable {
 						}
 					} else if ("texel".equals(arg1)) {
 						Double k = null;
+						Double learningRate = null;
 						int sampleSize = -1;
 						String fensFilePath = DEF_FENS_FILE_PATH;
 						for (int i = 2; i < args.length; i++) {
@@ -236,6 +280,9 @@ public final class ApplicationFramework implements Runnable {
 								} break;
 								case "-concurrency": {
 									concurrency = Integer.parseInt(args[++i]);
+								} break;
+								case "-learningrate": {
+									learningRate = Double.parseDouble(args[++i]);
 								} break;
 								case "-k": {
 									k = Double.parseDouble(args[++i]);
@@ -267,8 +314,8 @@ public final class ApplicationFramework implements Runnable {
 							e.printStackTrace();
 							throw new IllegalArgumentException(e);
 						}
-						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, fensFilePath,
-								k, logger)) {
+						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, learningRate, 
+								fensFilePath, k, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -286,6 +333,7 @@ public final class ApplicationFramework implements Runnable {
 						long tc = -1;
 						long tcInc = 0;
 						boolean useBook = false;
+						Integer hash = null;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -304,6 +352,9 @@ public final class ApplicationFramework implements Runnable {
 								case "-trybook": {
 									useBook = Boolean.parseBoolean(args[++i]);
 								} break;
+								case "-tryhash": {
+									hash = Integer.parseInt(args[++i]);
+								} break;
 								case "-destfile": {
 									destFile = args[++i];
 								} break;
@@ -318,12 +369,10 @@ public final class ApplicationFramework implements Runnable {
 							try {
 								TunableEngine engine1 = factory.newEngineInstance();
 								TunableEngine engine2 = factory.newEngineInstance();
-								if (useBook) {
-									engine1.init();
-									engine1.setOption(UCIEngine.OWN_BOOK_OPTION, true);
-									engine2.init();
-									engine2.setOption(UCIEngine.OWN_BOOK_OPTION, true);
-								}
+								engine1.init();
+								engine2.init();
+								trySetOptions(engine1, useBook, hash);
+								trySetOptions(engine2, useBook, hash);
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
@@ -446,31 +495,9 @@ public final class ApplicationFramework implements Runnable {
 							binaryString += (prob >= 0.5 ? "1" : "0");
 						}
 						if (args.length > 4) {
-							if ("-paramtype".equals(args[4])) {
-								switch (args[5]) {
-									case "eval":
-										paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
-										break;
-									case "control":
-										paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
-										break;
-									case "management":
-										paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
-										break;
-									case "eval+control":
-										paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
-												ParameterType.SEARCH_CONTROL));
-										break;
-									case "control+management":
-										paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
-												ParameterType.ENGINE_MANAGEMENT));
-										break;
-									case "all":
-										break;
-									default:
-										throw new IllegalArgumentException();
-								}
-							} else
+							if ("-paramtype".equals(args[4]))
+								paramTypes = resolveParamTypes(args[5]);
+							else
 								throw new IllegalArgumentException();
 						}
 						params.set(binaryString, paramTypes);

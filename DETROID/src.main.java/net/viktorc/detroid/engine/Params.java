@@ -158,8 +158,6 @@ final class Params extends EngineParameters {
 
 	// The amount of time the engine waits for the updated result after a search has been cancelled.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-	byte minSearchMilliSecondsForWaiting;
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	int nanoSecondsToWaitForResult;
 	
 	// The relative history table's value depreciation factor.

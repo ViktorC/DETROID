@@ -68,6 +68,8 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * element, a {@link #NullPointerException NullPointerException} is thrown.
 	 * @param sampleSize The number of positions to include in one mini-batch. The higher this number
 	 * is, the slower but more stable the convergence will be.
+	 * @param baseLearningRate The base step size for the gradient descent. If it is null, it 
+	 * defaults to 1.
 	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
 	 * If it doesn't exist an {@link #IOException IOException} is thrown.
 	 * @param k A scaling constant for the sigmoid function used calculate the average error.
@@ -76,15 +78,18 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * @throws IllegalArgumentException If the logger is null, or the sample size is not greater than 0, 
 	 * or the data set is too small.
 	 */
-	public TexelOptimizer(TunableEngine[] engines, int sampleSize, String fenFilePath, Double k, Logger logger)
-			throws Exception, IllegalArgumentException {
+	public TexelOptimizer(TunableEngine[] engines, int sampleSize, Double baseLearningRate, String fenFilePath,
+			Double k, Logger logger) throws Exception, IllegalArgumentException {
 		super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
 				engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE),
-				1d, BASE_LEARNING_RATE, null, null, null, null, null, logger);
+				1d, baseLearningRate == null ? BASE_LEARNING_RATE : baseLearningRate, null, null, null, null,
+				null, logger);
 		if (logger == null)
 			throw new IllegalArgumentException("The logger cannot be null.");
 		if (sampleSize < 1)
 			throw new IllegalArgumentException("The sample size has to be greater than 0.");
+		if (baseLearningRate != null && baseLearningRate <= 0)
+			throw new IllegalArgumentException("The base learning rate has to be greater than 0.");
 		this.sampleSize = sampleSize;
 		this.fenFilePath = fenFilePath;
 		dataSetSize = countDataSetSize();

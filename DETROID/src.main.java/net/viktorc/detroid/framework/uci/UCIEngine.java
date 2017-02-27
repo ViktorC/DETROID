@@ -3,8 +3,6 @@ package net.viktorc.detroid.framework.uci;
 import java.util.Map;
 import java.util.Set;
 
-import net.viktorc.detroid.framework.uci.Option.CheckOption;
-
 /**
  * The interface needed to be implemented by an engine to ensure it is UCI compliant.
  * 
@@ -14,10 +12,13 @@ import net.viktorc.detroid.framework.uci.Option.CheckOption;
 public interface UCIEngine {
 
 	/**
-	 * A standard check type UCI option that determines whether the engine should use its own book. It is false by default. If the engine 
-	 * implementing the interface offers this option, it should use this instance.
+	 * A standard check type UCI option that determines whether the engine should use its own book. It should be false by default.
 	 */
-	public static final CheckOption OWN_BOOK_OPTION = new CheckOption("OwnBook", false);
+	public static final String USE_OWN_BOOK_OPTION_NAME = "OwnBook";
+	/**
+	 * A standard spin type UCI option that determines the size of the hash tables used by the chess engine. Its unit is MB.
+	 */
+	public static final String HASH_SIZE_OPTION_NAME = "Hash";
 	
 	/**
 	 * Initialises the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
