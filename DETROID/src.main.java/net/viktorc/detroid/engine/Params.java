@@ -125,13 +125,13 @@ final class Params extends EngineParameters {
 	short razoringMargin2; // Limited razoring.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin1; // Futility margin.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin2; // Extended futility margin.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin3; // Deep futility margin.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
 	short deltaPruningMargin; // The margin for delta-pruning in the quiescence search.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 8)
 	short aspirationDelta; // The aspiration delta within iterative deepening.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte maxNominalSearchDepth; // The maximum nominal search depth.
@@ -143,6 +143,8 @@ final class Params extends EngineParameters {
 	byte recapExt; // Fractional recapture extension.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
 	byte singleReplyExt; // Fractional single reply extension.
+	@Parameter (type = ParameterType.SEARCH_CONTROL)
+	boolean doIid; // Whether IID should be applied.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte iidMinActivationDepth; // The minimum depth at which IID is activated.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)

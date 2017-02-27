@@ -439,7 +439,7 @@ final class Evaluator {
 	}
 	/**
 	 * A static evaluation of the chess position from the color to move's point of view. It considers material imbalance, coverage, pawn structure,
-	 * king safety, king tropism, king mobility, trapped pieces, etc.
+	 * queen-king tropism, mobility, immediate captures, etc. It assumes that the position is not a check.
 	 * 
 	 * @param pos
 	 * @param hashGen
@@ -605,8 +605,8 @@ final class Evaluator {
 		score += params.pinnedPawnWeight*(BitOperations.hammingWeight(pos.blackPawns & blackPinnedPieces) -
 				BitOperations.hammingWeight(pos.whitePawns & whitePinnedPieces));
 		// Iterate over pieces to assess their mobility and distance from the opponent's king.
-		whitePieceSet = pos.allWhiteOccupied^pos.whiteKing^pos.whitePawns;
-		blackPieceSet = pos.allBlackOccupied^pos.blackKing^pos.blackPawns;
+		whitePieceSet = ((pos.allWhiteOccupied^pos.whiteKing)^pos.whitePawns);
+		blackPieceSet = ((pos.allBlackOccupied^pos.blackKing)^pos.blackPawns);
 		numOfWhiteQueens = numOfBlackQueens = 0;
 		whiteQueenKingTropism = blackQueenKingTropism = 0;
 		whiteKnightAttacks = whiteBishopAttacks = whiteRookAttacks = 0;
@@ -692,30 +692,30 @@ final class Evaluator {
 		// Find the most valuable immediate capture by the least valuable piece.
 		if (isWhitesTurn) {
 			pawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & ~whitePinnedPieces, pos.allBlackOccupied);
-			/* The order assumes the following approximate scores for the pieces:
-			 * Queen: 1400
-			 * Rook: 530
-			 * Bishop: 360
-			 * Knight: 300
+			/* The order assumes the following material values:
+			 * Queen: 1305
+			 * Rook: 463
+			 * Bishop: 338
+			 * Knight: 278
 			 * Pawn: 100
 			 */
-			if ((pawnAttacks & pos.blackQueens) != 0) // Q - P = 1300
+			if ((pawnAttacks & pos.blackQueens) != 0) // Q - P = 1205
 				score += params.queenValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackQueens) != 0) // Q - N = 1100
+			else if ((whiteKnightAttacks & pos.blackQueens) != 0) // Q - N = 1027
 				score += params.queenValue - params.knightValue;
-			else if ((whiteBishopAttacks & pos.blackQueens) != 0) // Q - B = 1040
+			else if ((whiteBishopAttacks & pos.blackQueens) != 0) // Q - B = 967
 				score += params.queenValue - params.bishopValue;
-			else if ((whiteRookAttacks & pos.blackQueens) != 0) // Q - R = 870
+			else if ((whiteRookAttacks & pos.blackQueens) != 0) // Q - R = 852
 				score += params.queenValue - params.rookValue;
-			else if ((pawnAttacks & pos.blackRooks) != 0) // R - P = 430
+			else if ((pawnAttacks & pos.blackRooks) != 0) // R - P = 363
 				score += params.rookValue - params.pawnValue;
-			else if ((pawnAttacks & pos.blackBishops) != 0) // B - P = 260
+			else if ((pawnAttacks & pos.blackBishops) != 0) // B - P = 238
 				score += params.bishopValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackRooks) != 0) // R - N = 230
+			else if ((whiteKnightAttacks & pos.blackRooks) != 0) // R - N = 185
 				score += params.rookValue - params.knightValue;
-			else if ((pawnAttacks & pos.blackKnights) != 0) // N - P = 200
+			else if ((pawnAttacks & pos.blackKnights) != 0) // N - P = 178
 				score += params.knightValue - params.pawnValue;
-			else if ((whiteBishopAttacks & pos.blackRooks) != 0) // R - B = 170
+			else if ((whiteBishopAttacks & pos.blackRooks) != 0) // R - B = 125
 				score += params.rookValue - params.bishopValue;
 			else if ((whiteKnightAttacks & pos.blackBishops) != 0) // B - N = 60
 				score += params.bishopValue - params.knightValue;

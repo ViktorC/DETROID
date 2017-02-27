@@ -288,7 +288,7 @@ class Search implements Runnable {
 		int matMoveBreakInd;
 		int searchedMoves;
 		int kMove;
-		int razMargin;
+		int razMargin, futMargin;
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean doQuiescence, isThereHashMove, isThereKM1, isThereKM2, lastMoveIsTactical, isDangerous, isReducible;
 		List<Move> tacticalMoves, quietMoves;
@@ -379,8 +379,11 @@ class Search implements Runnable {
 				// Do not allow consecutive null moves.
 				score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
 				position.unmakeMove();
-				if (score >= beta)
-					return score;
+				if (score >= beta) {
+					bestMove = null;
+					bestScore = score;
+					break Search;
+				}
 			}
 			evalScore = Integer.MIN_VALUE;
 			// Razoring.
@@ -397,7 +400,7 @@ class Search implements Runnable {
 				}
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-			if (isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
+			if (isPvNode && !isThereHashMove && params.doIid && depth/params.fullPly >= params.iidMinActivationDepth) {
 				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
 				e = tT.get(position.key);
 				if (e != null && e.bestMove != 0) {
@@ -632,33 +635,26 @@ class Search implements Runnable {
 				isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
 				// Futility pruning, extended futility pruning, and razoring.
 				if (isReducible && depth/params.fullPly <= 3) {
-					if (evalScore == Integer.MIN_VALUE)
-						evalScore = eval.score(position, hashEntryGen, alpha, beta);
+					futMargin = 0;
 					switch (depth/params.fullPly) {
-						case 1: {
+						case 1:
 							// Frontier futility pruning.
-							if (evalScore + params.futilityMargin1 <= alpha) {
-								// Record failure in the relative history table.
-								hT.recordUnsuccessfulMove(move);
-								continue;
-							}
-						} break;
-						case 2: {
+							futMargin = params.futilityMargin1;
+							break;
+						case 2:
 							// Extended futility pruning.
-							if (evalScore + params.futilityMargin2 <= alpha) {
-								// Record failure in the relative history table.
-								hT.recordUnsuccessfulMove(move);
-								continue;
-							}
-						} break;
-						case 3: {
+							futMargin = params.futilityMargin2;
+							break;
+						case 3:
 							// Deep futility pruning.
-							if (evalScore + params.futilityMargin3 <= alpha) {
-								// Record failure in the relative history table.
-								hT.recordUnsuccessfulMove(move);
-								continue;
-							}
-						}
+							futMargin = params.futilityMargin3;
+					}
+					if (evalScore == Integer.MIN_VALUE)
+						evalScore = eval.score(position, hashEntryGen, alpha - futMargin, beta - futMargin);
+					if (evalScore <= alpha - futMargin) {
+						// Record failure in the relative history table.
+						hT.recordUnsuccessfulMove(move);
+						continue;
 					}
 				}
 				position.makeMove(move);
@@ -725,9 +721,6 @@ class Search implements Runnable {
 		nodes++;
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = true;
-		// Limit the maximum depth of the quiescence search.
-		if (distFromRoot > maxExpectedSearchDepth)
-			return eval.score(position, hashEntryGen, alpha, beta);
 		// Fifty-move rule and repetition rule check.
 		if (position.fiftyMoveRuleClock >= 100 || position.getNumberOfRepetitions(distFromRoot) >= 2)
 			return Termination.DRAW_CLAIMED.score;
@@ -739,6 +732,9 @@ class Search implements Runnable {
 			if (bestScore >= beta)
 				return bestScore;
 		}
+		// Limit the maximum depth of the quiescence search.
+		if (distFromRoot > maxExpectedSearchDepth)
+			return eval.score(position, hashEntryGen, alpha, beta);
 		// Generate all the material moves or all moves if in check.
 		moveList = position.getTacticalMoves();
 		moves = orderMaterialMovesSEE(position, moveList);

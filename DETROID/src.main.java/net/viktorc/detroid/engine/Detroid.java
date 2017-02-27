@@ -244,7 +244,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		searchStats.addObserver(this);
 		setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : params.defaultHashSize);
 		hT = new RelativeHistoryTable(params);
-		eval = new Evaluator(params, eT);
+		eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		executor = Executors.newSingleThreadExecutor();
 		searchResLock = new ReentrantReadWriteLock();
 		isInit = true;
@@ -719,7 +719,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public void setControllerMode(boolean on) {
 		controllerMode = on;
-		notifyParametersChanged();
+		if (isInit)
+			notifyParametersChanged();
 	}
 	@Override
 	public void drawByAgreement() {
@@ -783,7 +784,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public synchronized void setDeterministicZeroDepthMode(boolean on) {
 		deterministicZeroDepthMode = on;
-		notifyParametersChanged();
+		if (isInit)
+			notifyParametersChanged();
 	}
 	@Override
 	public void update(Observable o, Object arg) {

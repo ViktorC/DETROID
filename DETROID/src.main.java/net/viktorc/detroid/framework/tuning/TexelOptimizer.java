@@ -41,7 +41,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	/**
 	 * The base step size for the gradient descent.
 	 */
-	private static final double BASE_LEARNING_RATE = 2;
+	private static final double BASE_LEARNING_RATE = 1;
 	/**
 	 * The only parameter type the optimizer is concerned with.
 	 */
