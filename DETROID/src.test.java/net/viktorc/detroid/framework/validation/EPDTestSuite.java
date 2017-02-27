@@ -72,6 +72,7 @@ public class EPDTestSuite {
 		controllerEngine.setPosition(record.getPosition());
 		if (!engine.isInit())
 			engine.init();
+		engine.newGame();
 		engine.setPosition(record.getPosition());
 		String bestMove = engine.search(null, null, null, null, null, null, null, null, null, null,
 				timePerPos, null).getBestMove();

@@ -37,7 +37,7 @@
 <tempoAdvantage>48</tempoAdvantage>
 <gamePhaseOpeningLower>0</gamePhaseOpeningLower>
 <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
-<gamePhaseEndgameLower>241</gamePhaseEndgameLower>
+<gamePhaseEndgameLower>176</gamePhaseEndgameLower>
 <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
 <lazyEvalMar>521</lazyEvalMar>
 <nullMoveReduction>2</nullMoveReduction>
@@ -47,11 +47,14 @@
 <lateMoveReductionMinActivationDepth>3</lateMoveReductionMinActivationDepth>
 <minMovesSearchedForLmr>0</minMovesSearchedForLmr>
 <doRazor>false</doRazor>
-<razoringMargin1>194</razoringMargin1>
-<razoringMargin2>257</razoringMargin2>
+<razoringMargin1>487</razoringMargin1>
+<razoringMargin2>789</razoringMargin2>
+<razoringMargin3>1221</razoringMargin3>
 <futilityMargin1>33</futilityMargin1>
 <futilityMargin2>100</futilityMargin2>
 <futilityMargin3>139</futilityMargin3>
+<futilityMargin4>234</futilityMargin4>
+<futilityMargin5>364</futilityMargin5>
 <deltaPruningMargin>247</deltaPruningMargin>
 <aspirationDelta>68</aspirationDelta>
 <maxNominalSearchDepth>64</maxNominalSearchDepth>
@@ -62,8 +65,8 @@
 <doIid>false</doIid>
 <iidMinActivationDepth>6</iidMinActivationDepth>
 <iidRelDepthHth>5</iidRelDepthHth>
-<minSearchMilliSecondsForWaiting>1</minSearchMilliSecondsForWaiting>
-<nanoSecondsToWaitForResult>500000</nanoSecondsToWaitForResult>
+<minSearchMilliSecondsForWaiting>2</minSearchMilliSecondsForWaiting>
+<nanoSecondsToWaitForResult>999999</nanoSecondsToWaitForResult>
 <rhtDecrementFactor>97</rhtDecrementFactor>
 <defaultHashSize>64</defaultHashSize>
 <tTshare>8</tTshare>

@@ -92,13 +92,13 @@ final class Params extends EngineParameters {
 	byte tempoAdvantage;
 
 	// Game phase intervals.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	@Parameter (binaryLengthLimit = 0)
 	short gamePhaseOpeningLower;
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	@Parameter (binaryLengthLimit = 0)
 	short gamePhaseOpeningUpper;
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 8)
+	@Parameter (binaryLengthLimit = 0)
 	short gamePhaseEndgameLower;
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	@Parameter (binaryLengthLimit = 0)
 	short gamePhaseEndgameUpper;
 
 	// The margin for lazy evaluation. The extended score should be very unlikely to differ by more than this amount from the core score.
@@ -123,12 +123,18 @@ final class Params extends EngineParameters {
 	short razoringMargin1; // Razoring margin for pre-frontier nodes.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
 	short razoringMargin2; // Limited razoring.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
+	short razoringMargin3; // Extended razoring.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin1; // Futility margin.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin2; // Extended futility margin.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
 	short futilityMargin3; // Deep futility margin.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+	short futilityMargin4; // Deep+ futility margin.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
+	short futilityMargin5; // Deep++ futility margin.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
 	short deltaPruningMargin; // The margin for delta-pruning in the quiescence search.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 8)
@@ -166,7 +172,7 @@ final class Params extends EngineParameters {
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
 	byte tTshare;
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
 	byte eTshare;
 
 	// The number of turns for which the different hash table's entries are retained by default.

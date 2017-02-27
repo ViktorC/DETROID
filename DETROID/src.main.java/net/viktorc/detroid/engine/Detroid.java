@@ -790,6 +790,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		cancelledResultsReady = false;
+		short score;
 		SearchInfo stats = (SearchInfo) o;
 		if (stats.getDepth() == 0)
 			return;
@@ -802,9 +803,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				timeOfLastSearchResChange = System.currentTimeMillis();
 				numOfSearchResChanges++;
 			}
-			scoreFluctuation = (short) (stats.getScore() - searchResult.value);
+			if (stats.isCancelled() && !Move.NULL_MOVE.equals(searchResult) &&
+					(stats.getScoreType() == ScoreType.LOWER_BOUND || stats.getScoreType() == ScoreType.UPPER_BOUND))
+				score = searchResult.value;
+			else
+				score = stats.getScore();
+			scoreFluctuation = (short) (score - searchResult.value);
 			searchResult = !newSearchRes.equals(Move.NULL_MOVE) ? newSearchRes : searchResult;
-			searchResult.value = stats.getScore();
+			searchResult.value = score;
 		} finally {
 			searchResLock.writeLock().unlock();
 		}
