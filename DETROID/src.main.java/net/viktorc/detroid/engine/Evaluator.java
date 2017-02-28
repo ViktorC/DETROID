@@ -693,31 +693,31 @@ final class Evaluator {
 		if (isWhitesTurn) {
 			pawnAttacks = MultiMoveSets.whitePawnCaptureSets(pos.whitePawns & ~whitePinnedPieces, pos.allBlackOccupied);
 			/* The order assumes the following material values:
-			 * Queen: 1305
-			 * Rook: 463
-			 * Bishop: 338
-			 * Knight: 278
+			 * Queen: 1200
+			 * Rook: 415
+			 * Bishop: 330
+			 * Knight: 275
 			 * Pawn: 100
 			 */
-			if ((pawnAttacks & pos.blackQueens) != 0) // Q - P = 1205
+			if ((pawnAttacks & pos.blackQueens) != 0) // Q - P = 1100
 				score += params.queenValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackQueens) != 0) // Q - N = 1027
+			else if ((whiteKnightAttacks & pos.blackQueens) != 0) // Q - N = 925
 				score += params.queenValue - params.knightValue;
-			else if ((whiteBishopAttacks & pos.blackQueens) != 0) // Q - B = 967
+			else if ((whiteBishopAttacks & pos.blackQueens) != 0) // Q - B = 870
 				score += params.queenValue - params.bishopValue;
-			else if ((whiteRookAttacks & pos.blackQueens) != 0) // Q - R = 852
+			else if ((whiteRookAttacks & pos.blackQueens) != 0) // Q - R = 785
 				score += params.queenValue - params.rookValue;
-			else if ((pawnAttacks & pos.blackRooks) != 0) // R - P = 363
+			else if ((pawnAttacks & pos.blackRooks) != 0) // R - P = 315
 				score += params.rookValue - params.pawnValue;
-			else if ((pawnAttacks & pos.blackBishops) != 0) // B - P = 238
+			else if ((pawnAttacks & pos.blackBishops) != 0) // B - P = 230
 				score += params.bishopValue - params.pawnValue;
-			else if ((whiteKnightAttacks & pos.blackRooks) != 0) // R - N = 185
-				score += params.rookValue - params.knightValue;
-			else if ((pawnAttacks & pos.blackKnights) != 0) // N - P = 178
+			else if ((pawnAttacks & pos.blackKnights) != 0) // N - P = 175
 				score += params.knightValue - params.pawnValue;
-			else if ((whiteBishopAttacks & pos.blackRooks) != 0) // R - B = 125
+			else if ((whiteKnightAttacks & pos.blackRooks) != 0) // R - N = 130
+				score += params.rookValue - params.knightValue;
+			else if ((whiteBishopAttacks & pos.blackRooks) != 0) // R - B = 85
 				score += params.rookValue - params.bishopValue;
-			else if ((whiteKnightAttacks & pos.blackBishops) != 0) // B - N = 60
+			else if ((whiteKnightAttacks & pos.blackBishops) != 0) // B - N = 55
 				score += params.bishopValue - params.knightValue;
 		} else {
 			score *= -1;
@@ -734,10 +734,10 @@ final class Evaluator {
 				score += params.rookValue - params.pawnValue;
 			else if ((pawnAttacks & pos.whiteBishops) != 0)
 				score += params.bishopValue - params.pawnValue;
-			else if ((blackKnightAttacks & pos.whiteRooks) != 0)
-				score += params.rookValue - params.knightValue;
 			else if ((pawnAttacks & pos.whiteKnights) != 0)
 				score += params.knightValue - params.pawnValue;
+			else if ((blackKnightAttacks & pos.whiteRooks) != 0)
+				score += params.rookValue - params.knightValue;
 			else if ((blackBishopAttacks & pos.whiteRooks) != 0)
 				score += params.rookValue - params.bishopValue;
 			else if ((blackKnightAttacks & pos.whiteBishops) != 0)
