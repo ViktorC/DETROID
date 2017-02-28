@@ -417,7 +417,7 @@ class Search implements Runnable {
 				}
 			}
 			// If there is no hash entry in a PV node that is to be searched deep, try IID.
-			if (isPvNode && !isThereHashMove && params.doIid && depth/params.fullPly >= params.iidMinActivationDepth) {
+			if (params.doIid && isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
 				pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
 				e = tT.get(position.key);
 				if (e != null && e.bestMove != 0) {
@@ -687,7 +687,7 @@ class Search implements Runnable {
 				}
 				position.makeMove(move);
 				// Try late move reduction if not within the PV.
-				if (isReducible && depth/params.fullPly >= params.lateMoveReductionMinActivationDepth &&
+				if (isReducible && !isPvNode && depth/params.fullPly >= params.lateMoveReductionMinActivationDepth &&
 						searchedMoves > params.minMovesSearchedForLmr) {
 					reduction = params.lateMoveReduction*params.fullPly;
 					score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -alpha - 1, -alpha, true);
@@ -733,7 +733,8 @@ class Search implements Runnable {
 	}
 	/**
 	 * A search algorithm for diminishing the horizon effect once the main search algorithm has reached a leaf node. It keeps searching until
-	 * the side to move is not in check and does not have any legal winning captures according to SEE.
+	 * the side to move does not have any legal winning captures or even exchanges according to SEE; or the absolute maximmum search depth is 
+	 * reached.
 	 * 
 	 * @param distFromRoot
 	 * @param alpha
