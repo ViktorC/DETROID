@@ -790,24 +790,19 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public void update(Observable o, Object arg) {
 		cancelledResultsReady = false;
-		short score;
 		SearchInfo stats = (SearchInfo) o;
 		if (stats.getDepth() == 0)
 			return;
-		Move newSearchRes = stats.getPvMoveList() != null && stats.getPvMoveList().size() > 0 ?
-				stats.getPvMoveList().get(0) : Move.NULL_MOVE;
-		newSearchRes = newSearchRes == null ? Move.NULL_MOVE : newSearchRes;
 		searchResLock.writeLock().lock();
 		try {
+			List<Move> pvList = stats.getPvMoveList();
+			Move newSearchRes = pvList != null && pvList.size() > 0 ? pvList.get(0) : Move.NULL_MOVE;
+			newSearchRes = newSearchRes == null ? Move.NULL_MOVE : newSearchRes;
 			if (!searchResult.equals(newSearchRes)) {
 				timeOfLastSearchResChange = System.currentTimeMillis();
 				numOfSearchResChanges++;
 			}
-			if (stats.isCancelled() && !Move.NULL_MOVE.equals(searchResult) &&
-					(stats.getScoreType() == ScoreType.LOWER_BOUND || stats.getScoreType() == ScoreType.UPPER_BOUND))
-				score = searchResult.value;
-			else
-				score = stats.getScore();
+			short score = stats.getScore();
 			scoreFluctuation = (short) (score - searchResult.value);
 			searchResult = !newSearchRes.equals(Move.NULL_MOVE) ? newSearchRes : searchResult;
 			searchResult.value = score;

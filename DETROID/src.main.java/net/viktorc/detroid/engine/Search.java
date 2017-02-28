@@ -258,8 +258,8 @@ class Search implements Runnable {
 		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
 			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null || bestScore >= beta || bestScore <= origAlpha ?
-					bestScore : e.score, doStopSearch || Thread.currentThread().isInterrupted());
+			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null && e.depth >= ply ? bestScore : e.score,
+					doStopSearch || Thread.currentThread().isInterrupted());
 		}
 		return bestScore;
 	}

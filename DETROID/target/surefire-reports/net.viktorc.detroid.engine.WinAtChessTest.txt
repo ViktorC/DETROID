@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: net.viktorc.detroid.engine.WinAtChessTest
 -------------------------------------------------------------------------------
-Tests run: 300, Failures: 0, Errors: 0, Skipped: 24, Time elapsed: 279.756 sec
+Tests run: 300, Failures: 0, Errors: 0, Skipped: 24, Time elapsed: 279.406 sec
