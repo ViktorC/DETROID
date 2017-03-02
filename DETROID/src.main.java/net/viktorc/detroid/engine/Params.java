@@ -180,12 +180,10 @@ final class Params extends EngineParameters {
 	byte eTentryLifeCycle;
 
 	// The values considered when calculating search time extensions.
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 11)
 	short scoreFluctuationLimit;
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT)
 	byte fractionOfOrigSearchTimeSinceLastResultChangeLimitHth;
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-	byte resultChangesPerDepthLimit;
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
 	byte avgMovesPerGame;
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)

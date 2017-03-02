@@ -157,6 +157,7 @@ class Search implements Runnable {
 		int depth = ply*params.fullPly;
 		final int depthLimit = depth + params.fullPly;
 		final int origAlpha = alpha;
+		int moveInd;
 		int score, bestScore, extension, numOfMoves;
 		Move hashMove, bestMove, move, lastMove;
 		boolean lastMoveIsMaterial, statsUpdated;
@@ -195,6 +196,27 @@ class Search implements Runnable {
 		e = tT.get(position.key);
 		if (e != null) {
 			e.generation = hashEntryGen;
+			// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
+			if (e.depth > depth/params.fullPly) {
+				score = e.score;
+				/* If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
+				 * node and is greater than or equal to beta, return the score. */
+				if (e.type == NodeType.EXACT.ind ||
+						/* To make sure that a score that might not have been the exact score for the subtree below the node regardless of the
+						 * alpha-beta boundaries is not treated as an exact score in the current context, we can not allow it to fall between
+						 * the current alpha and beta. If it was a fail high node, the score is a lower boundary of the exact score of the
+						 * node due to there possibly being siblings to the right of the child node [that raised alpha higher than beta and
+						 * caused a cut-off] that could raise alpha even higher. If it was a fail low node, the score is a higher boundary for
+						 * the exact score of the node, because all children of a fail low node are fail high nodes (-score <= alpha ->
+						 * score >= -alpha [-alpha = beta in the child node]). To keep the interval of values the exact score could take on
+						 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
+						 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
+						 */
+						(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
+					updateInfo(null, 0, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
+					return score;
+				}
+			}
 			if (e.bestMove != 0)
 				hashMove = Move.toMove(e.bestMove);
 		}
@@ -220,15 +242,16 @@ class Search implements Runnable {
 		allMovesArr = allMoves.toArray(allMovesArr);
 		lastMove = position.getLastMove();
 		lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
+		move = null;
 		// Iterate over moves.
-		for (int i = 0; i < allMovesArr.length; i++) {
-			move = allMovesArr[i];
+		for (moveInd = 0; moveInd < allMovesArr.length; moveInd++) {
+			move = allMovesArr[moveInd];
 			// Recapture extension.
 			extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
 				params.recapExt : 0;
 			position.makeMove(move);
 			// Full window search for the first move...
-			if (i == 0)
+			if (moveInd == 0)
 				score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -beta, -alpha, true);
 			// PVS for the rest.
 			else {
@@ -241,25 +264,26 @@ class Search implements Runnable {
 			if (score > bestScore) {
 				bestMove = move;
 				bestScore = score;
-				if (score > alpha) {
-					alpha = score;
-					if (score >= beta)
+				if (bestScore > alpha) {
+					alpha = bestScore;
+					if (bestScore >= beta)
 						break;
 					// Insert into TT and update stats if applicable.
 					if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
 						statsUpdated = true;
-						updateInfo(move, i + 1, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
+						updateInfo(move, moveInd + 1, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
 					}
 				}
 			}
 			if (doStopSearch || Thread.currentThread().isInterrupted())
 				break;
 		}
-		// If the search stats have not been updated yet, probably due to failing low or high, do it now.
+		// If the search stats have not been updated for the current ply yet, probably due to failing low or high, do it now.
 		if (!statsUpdated) {
 			insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-			updateInfo(null, 0, ply, origAlpha, beta, hashMove == null && e.depth >= ply ? bestScore : e.score,
-					doStopSearch || Thread.currentThread().isInterrupted());
+			e = tT.get(position.key);
+			updateInfo(move, move != null ? Math.min(allMovesArr.length, moveInd + 1) : 0, ply, origAlpha, beta,
+					e != null ? e.score : bestScore, doStopSearch || Thread.currentThread().isInterrupted());
 		}
 		return bestScore;
 	}
@@ -292,7 +316,7 @@ class Search implements Runnable {
 		boolean doQuiescence;
 		boolean isThereHashMove, isThereKM1, isThereKM2;
 		boolean lastMoveIsTactical;
-		boolean isDangerous, isReducible, mateThreat;
+		boolean isDangerous, isReducible;
 		List<Move> tacticalMoves, quietMoves;
 		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
@@ -339,18 +363,8 @@ class Search implements Runnable {
 						score = e.score;
 					/* If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
 					 * node and is greater than or equal to beta, return the score. */
-					if (!isPvNode && (e.type == NodeType.EXACT.ind ||
-							/* To make sure that a score that might not have been the exact score for the subtree below the node regardless of the
-							 * alpha-beta boundaries is not treated as an exact score in the current context, we can not allow it to fall between
-							 * the current alpha and beta. If it was a fail high node, the score is a lower boundary of the exact score of the
-							 * node due to there possibly being siblings to the right of the child node [that raised alpha higher than beta and
-							 * caused a cut-off] that could raise alpha even higher. If it was a fail low node, the score is a higher boundary for
-							 * the exact score of the node, because all children of a fail low node are fail high nodes (-score <= alpha ->
-							 * score >= -alpha [-alpha = beta in the child node]). To keep the interval of values the exact score could take on
-							 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
-							 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
-							 */
-							(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)))
+					if (!isPvNode && (e.type == NodeType.EXACT.ind || (e.type == NodeType.FAIL_HIGH.ind && score >= beta) ||
+							(e.type == NodeType.FAIL_LOW.ind && score <= alpha)))
 						return score;
 				}
 				// Check for the stored move and make it the best guess if it is not null and the node is not fail low.
@@ -370,10 +384,11 @@ class Search implements Runnable {
 				break Search;
 			}
 			evalScore = Integer.MIN_VALUE;
-			isDangerous = isInCheck || !position.areTherePiecesOtherThanKingsAndPawns();
-			mateThreat = Math.abs(beta) >= wCheckMateLimit;
+			// Assess if the position is 'dangerous'.
+			isDangerous = isInCheck ||  Math.abs(alpha) >= wCheckMateLimit || Math.abs(beta) >= wCheckMateLimit ||
+					!position.areTherePiecesOtherThanKingsAndPawns();
 			// Try null move pruning if it is allowed and the position is 'safe'.
-			if (nullMoveAllowed && !isPvNode && !isDangerous && !mateThreat) {
+			if (nullMoveAllowed && !isPvNode && !isDangerous) {
 				evalScore = eval.score(position, hashEntryGen, alpha, beta);
 				if (evalScore >= beta) {
 					// Dynamic depth reduction.
@@ -387,11 +402,12 @@ class Search implements Runnable {
 						bestMove = null;
 						bestScore = score;
 						break Search;
-					}
+					} else if (score <= lCheckMateLimit)
+						isDangerous = true;
 				}
 			}
 			// Try razoring if it is allowed and the position is 'safe'.
-			if (params.doRazor && !isPvNode && !isDangerous && !mateThreat && depth/params.fullPly <= 3) {
+			if (params.doRazor && !isPvNode && !isDangerous && depth/params.fullPly <= 3) {
 				switch (depth/params.fullPly) {
 					case 1:
 						// Retrograde pre-frontier razoring.
@@ -676,7 +692,7 @@ class Search implements Runnable {
 				}
 				isReducible = !isDangerous && !position.givesCheck(move);
 				// Futility pruning, extended futility pruning, and razoring.
-				if (isReducible && !mateThreat && Math.abs(alpha) < wCheckMateLimit && depth/params.fullPly <= 5) {
+				if (isReducible && depth/params.fullPly <= 5) {
 					if (evalScore == Integer.MIN_VALUE)
 						evalScore = eval.score(position, hashEntryGen, alpha - futMargin, beta - futMargin);
 					if (evalScore <= alpha - futMargin) {
@@ -790,25 +806,22 @@ class Search implements Runnable {
 	/**
 	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
 	 * 
-	 * @param ply
 	 * @return
 	 */
 	private List<Move> extractPv(int ply) {
-		Move[] pVarr = new Move[ply];
 		List<Move> pV = new ArrayList<>();
 		TTEntry e;
 		Move bestMove;
-		int i, j;
-		i = j = 0;
+		int i;
+		i = 0;
 		while ((e = tT.get(position.key)) != null && e.bestMove != 0 && i < ply) {
 			bestMove = Move.toMove(e.bestMove);
 			position.makeMove(bestMove);
-			pVarr[i++] = bestMove;
+			pV.add(bestMove);
+			i++;
 		}
 		for (int k = 0; k < i; k++)
 			position.unmakeMove();
-		while (j < pVarr.length && pVarr[j] != null)
-			pV.add(pVarr[j++]);
 		return pV;
 	}
 	/**

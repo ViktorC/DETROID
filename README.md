@@ -50,4 +50,4 @@ The engine offers the following UCI options:
 * **ParametersPath [string]**: The path to the XML file containing the values for all parameters.
 * **UCI_Opponent [string]**: The name of the opponent.
 
-On an i7-4710HQ @2.50GHz CPU, perft to a depth of 6 in the starting position takes the engine 5.8s with staged move generation and the Zobrist hashing of each position, it solves 281 out of the 300 positions of [Win at Chess](https://chessprogramming.wikispaces.com/Win+at+Chess) in 1s per position, and the average search speed of the engine when searching the starting position to a depth of 17 is around 650 knps.
+On an i7-4710HQ @2.50GHz CPU, perft to a depth of 6 in the starting position takes the engine 4.9s with staged move generation and the Zobrist hashing of each position, it solves 281 out of the 300 positions of [Win at Chess](https://chessprogramming.wikispaces.com/Win+at+Chess) in 1s per position, and the average search speed of the engine when searching the starting position to a depth of 17 is around 650 knps.

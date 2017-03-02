@@ -180,8 +180,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					blackTime - origSearchTime > 1000*params.movesToGoSafetyMargin) &&
 					(searchStats.getScoreType() == ScoreType.LOWER_BOUND || searchStats.getScoreType() == ScoreType.UPPER_BOUND ||
 					Math.abs(scoreFluctuation) >= params.scoreFluctuationLimit || timeOfLastSearchResChange >= System.currentTimeMillis() -
-					origSearchTime*params.fractionOfOrigSearchTimeSinceLastResultChangeLimitHth/100 ||
-					numOfSearchResChanges/searchStats.getDepth() >= params.resultChangesPerDepthLimit)) {
+					origSearchTime*params.fractionOfOrigSearchTimeSinceLastResultChangeLimitHth/100)) {
 				return computeSearchTime(game.getSideToMove() == Side.WHITE ?  new Long(whiteTime - origSearchTime) : whiteTime,
 						game.getSideToMove() == Side.WHITE ? blackTime : new Long(blackTime - origSearchTime),
 						whiteIncrement, blackIncrement, movesToGo);

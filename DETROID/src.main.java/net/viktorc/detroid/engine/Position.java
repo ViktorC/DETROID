@@ -308,7 +308,7 @@ class Position implements Copiable<Position>, Hashable {
 	 * x number of moves specified by sensitiveHalfMoveWindow, the maximum integer value is returned.
 	 * 
 	 * @param sensitiveHalfMoveWindow The number of moves preceding the current position within which if the position has already occured twice, 
-	 * the maximum integer value is returned.
+	 * the maximum integer value is returned. If its value is <= 0, there is no sensitive half-move window.
 	 * @return The number of times the position has recurred. If it recurred within the specified half-move window, the maximum integer value is 
 	 * returned.
 	 */
