@@ -316,7 +316,7 @@ class Search implements Runnable {
 		boolean doQuiescence;
 		boolean isThereHashMove, isThereKM1, isThereKM2;
 		boolean lastMoveIsTactical;
-		boolean isDangerous, isReducible;
+		boolean isDangerous, mateThreat, isReducible;
 		List<Move> tacticalMoves, quietMoves;
 		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
@@ -333,7 +333,7 @@ class Search implements Runnable {
 			doStopSearch = true;
 		Search: {
 			// Check for the repetition rule; return a draw score if it applies.
-			if (position.hasRepeated(distFromRoot >= 2 ? 1 : 2))
+			if (position.hasRepeated(distFromRoot > 2 ? 1 : 2))
 				return Termination.DRAW_CLAIMED.score;
 			// Mate distance pruning.
 			if (-mateScore < beta) {
@@ -385,9 +385,10 @@ class Search implements Runnable {
 			}
 			evalScore = Integer.MIN_VALUE;
 			// Assess if the position is 'dangerous'.
-			isDangerous = isInCheck ||  Math.abs(beta) >= wCheckMateLimit || !position.areTherePiecesOtherThanKingsAndPawns();
+			isDangerous = isInCheck || !position.areTherePiecesOtherThanKingsAndPawns();
+			mateThreat = Math.abs(beta) >= wCheckMateLimit || Math.abs(alpha) >= wCheckMateLimit;
 			// Try null move pruning if it is allowed and the position is 'safe'.
-			if (nullMoveAllowed && !isPvNode && !isDangerous) {
+			if (nullMoveAllowed && !isPvNode && !isDangerous && !mateThreat) {
 				evalScore = eval.score(position, hashEntryGen, alpha, beta);
 				if (evalScore >= beta) {
 					// Dynamic depth reduction.
@@ -397,16 +398,14 @@ class Search implements Runnable {
 					// Do not allow consecutive null moves.
 					score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
 					position.unmakeMove();
-					if (score >= beta) {
-						bestMove = null;
-						bestScore = score;
-						break Search;
-					} else if (score <= lCheckMateLimit)
-						isDangerous = true;
+					if (score >= beta)
+						return score;
+					if (score <= lCheckMateLimit)
+						mateThreat = true;
 				}
 			}
 			// Try razoring if it is allowed and the position is 'safe'.
-			if (params.doRazor && !isPvNode && !isDangerous && depth/params.fullPly <= 3) {
+			if (params.doRazor && !isPvNode && !isDangerous && !mateThreat && depth/params.fullPly <= 3) {
 				switch (depth/params.fullPly) {
 					case 1:
 						// Retrograde pre-frontier razoring.
@@ -646,29 +645,29 @@ class Search implements Runnable {
 			if (tacticalMoves.size() == 0 && quietMoves.size() == 1)
 				depth = Math.min(depthLimit, depth + params.singleReplyExt);
 			// Futility pruning margin calculation.
-			switch (depth/params.fullPly) {
-				case 1:
-					// Frontier futility pruning.
-					futMargin = params.futilityMargin1;
-					break;
-				case 2:
-					// Extended futility pruning.
-					futMargin = params.futilityMargin2;
-					break;
-				case 3:
-					// Deep futility pruning.
-					futMargin = params.futilityMargin3;
-					break;
-				case 4:
-					// Deep+ futility pruning.
-					futMargin = params.futilityMargin4;
-					break;
-				case 5:
-					// Deep++ futility pruning.
-					futMargin = params.futilityMargin5;
-					break;
-				default:
-					futMargin = 0;
+			futMargin = 0;
+			if (!isDangerous) {
+				switch (depth/params.fullPly) {
+					case 1:
+						// Frontier futility pruning.
+						futMargin = params.futilityMargin1;
+						break;
+					case 2:
+						// Extended futility pruning.
+						futMargin = params.futilityMargin2;
+						break;
+					case 3:
+						// Deep futility pruning.
+						futMargin = params.futilityMargin3;
+						break;
+					case 4:
+						// Deep+ futility pruning.
+						futMargin = params.futilityMargin4;
+						break;
+					case 5:
+						// Deep++ futility pruning.
+						futMargin = params.futilityMargin5;
+				}
 			}
 			// Order and search the non-material moves.
 			quietMovesArr = orderNonMaterialMoves(quietMoves);
@@ -689,7 +688,7 @@ class Search implements Runnable {
 					isThereKM2 = false;
 					continue;
 				}
-				isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
+				isReducible = !isDangerous && !position.givesCheck(move);
 				// Futility pruning, extended futility pruning, and razoring.
 				if (isReducible && depth/params.fullPly <= 5) {
 					if (evalScore == Integer.MIN_VALUE)
@@ -765,7 +764,7 @@ class Search implements Runnable {
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = true;
 		// Fifty-move rule and repetition rule check.
-		if (position.fiftyMoveRuleClock >= 100 || position.hasRepeated(distFromRoot >= 2 ? 1 : 2))
+		if (position.fiftyMoveRuleClock >= 100 || position.hasRepeated(distFromRoot > 2 ? 1 : 2))
 			return Termination.DRAW_CLAIMED.score;
 		// Evaluate the position statically.
 		bestScore = eval.score(position, hashEntryGen, alpha, beta);

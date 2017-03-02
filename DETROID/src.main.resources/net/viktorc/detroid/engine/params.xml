@@ -39,7 +39,7 @@
 <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
 <gamePhaseEndgameLower>176</gamePhaseEndgameLower>
 <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
-<lazyEvalMar>1400</lazyEvalMar>
+<lazyEvalMar>752</lazyEvalMar>
 <nullMoveReduction>2</nullMoveReduction>
 <extraNullMoveReduction>1</extraNullMoveReduction>
 <extraNullMoveReductionDepthLimit>7</extraNullMoveReductionDepthLimit>
@@ -55,7 +55,7 @@
 <futilityMargin3>139</futilityMargin3>
 <futilityMargin4>234</futilityMargin4>
 <futilityMargin5>364</futilityMargin5>
-<deltaPruningMargin>907</deltaPruningMargin>
+<deltaPruningMargin>350</deltaPruningMargin>
 <aspirationDelta>68</aspirationDelta>
 <maxNominalSearchDepth>64</maxNominalSearchDepth>
 <fullPly>8</fullPly>
