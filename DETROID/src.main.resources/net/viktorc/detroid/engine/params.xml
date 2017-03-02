@@ -39,7 +39,7 @@
 <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
 <gamePhaseEndgameLower>176</gamePhaseEndgameLower>
 <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
-<lazyEvalMar>521</lazyEvalMar>
+<lazyEvalMar>1400</lazyEvalMar>
 <nullMoveReduction>2</nullMoveReduction>
 <extraNullMoveReduction>1</extraNullMoveReduction>
 <extraNullMoveReductionDepthLimit>7</extraNullMoveReductionDepthLimit>

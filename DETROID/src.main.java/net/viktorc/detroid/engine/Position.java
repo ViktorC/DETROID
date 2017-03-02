@@ -304,28 +304,24 @@ class Position implements Copiable<Position>, Hashable {
 			unmakeRegisterHistory.add(u);
 	}
 	/**
-	 * Returns the number of times the current position has already occurred before. If the position has already occurred before within the last
-	 * x number of moves specified by sensitiveHalfMoveWindow, the maximum integer value is returned.
+	 * Returns whether the current position has already occurred before at least the specified number of times.
 	 * 
-	 * @param sensitiveHalfMoveWindow The number of moves preceding the current position within which if the position has already occured twice, 
-	 * the maximum integer value is returned. If its value is <= 0, there is no sensitive half-move window.
-	 * @return The number of times the position has recurred. If it recurred within the specified half-move window, the maximum integer value is 
-	 * returned.
+	 * @param numberOfTimes The hypothetical number of times the position has occurred before. E.g. for a three-fold repetition check, it would 
+	 * be 2.
+	 * @return Whether the current position has already occurred before at least the specified number of times.
 	 */
-	int getNumberOfRepetitions(int sensitiveHalfMoveWindow) {
+	boolean hasRepeated(int numberOfTimes) {
 		int repetitions = 0;
 		if (fiftyMoveRuleClock >= 4) {
 			for (int i = halfMoveIndex - 4; i >= halfMoveIndex - fiftyMoveRuleClock; i -= 2) {
 				if (keyHistory[i] == key) {
 					repetitions++;
-					if (i > halfMoveIndex - sensitiveHalfMoveWindow) {
-						repetitions = Integer.MAX_VALUE;
-						break;
-					}
+					if (repetitions >= numberOfTimes)
+						return true;
 				}
 			}
 		}
-		return repetitions;
+		return repetitions >= numberOfTimes;
 	}
 	/**
 	 * Returns the number of pieces on the board.

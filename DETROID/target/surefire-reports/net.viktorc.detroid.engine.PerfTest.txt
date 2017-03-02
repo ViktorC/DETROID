@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: net.viktorc.detroid.engine.PerfTest
 -------------------------------------------------------------------------------
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 42.713 sec
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 47.888 sec

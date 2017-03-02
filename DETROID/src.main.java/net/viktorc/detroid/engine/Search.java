@@ -175,7 +175,7 @@ class Search implements Runnable {
 		}
 		tacticalMoves = quietMoves = null;
 		// Check for the 3-fold repetition rule.
-		if (position.getNumberOfRepetitions(0) >= 2)
+		if (position.hasRepeated(2))
 			return Termination.DRAW_CLAIMED.score;
 		// Generate moves.
 		tacticalMoves = position.getTacticalMoves();
@@ -333,7 +333,7 @@ class Search implements Runnable {
 			doStopSearch = true;
 		Search: {
 			// Check for the repetition rule; return a draw score if it applies.
-			if (position.getNumberOfRepetitions(distFromRoot) >= 2)
+			if (position.hasRepeated(distFromRoot >= 2 ? 1 : 2))
 				return Termination.DRAW_CLAIMED.score;
 			// Mate distance pruning.
 			if (-mateScore < beta) {
@@ -385,8 +385,7 @@ class Search implements Runnable {
 			}
 			evalScore = Integer.MIN_VALUE;
 			// Assess if the position is 'dangerous'.
-			isDangerous = isInCheck ||  Math.abs(alpha) >= wCheckMateLimit || Math.abs(beta) >= wCheckMateLimit ||
-					!position.areTherePiecesOtherThanKingsAndPawns();
+			isDangerous = isInCheck ||  Math.abs(beta) >= wCheckMateLimit || !position.areTherePiecesOtherThanKingsAndPawns();
 			// Try null move pruning if it is allowed and the position is 'safe'.
 			if (nullMoveAllowed && !isPvNode && !isDangerous) {
 				evalScore = eval.score(position, hashEntryGen, alpha, beta);
@@ -690,7 +689,7 @@ class Search implements Runnable {
 					isThereKM2 = false;
 					continue;
 				}
-				isReducible = !isDangerous && !position.givesCheck(move);
+				isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
 				// Futility pruning, extended futility pruning, and razoring.
 				if (isReducible && depth/params.fullPly <= 5) {
 					if (evalScore == Integer.MIN_VALUE)
@@ -766,7 +765,7 @@ class Search implements Runnable {
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = true;
 		// Fifty-move rule and repetition rule check.
-		if (position.fiftyMoveRuleClock >= 100 || position.getNumberOfRepetitions(distFromRoot) >= 2)
+		if (position.fiftyMoveRuleClock >= 100 || position.hasRepeated(distFromRoot >= 2 ? 1 : 2))
 			return Termination.DRAW_CLAIMED.score;
 		// Evaluate the position statically.
 		bestScore = eval.score(position, hashEntryGen, alpha, beta);

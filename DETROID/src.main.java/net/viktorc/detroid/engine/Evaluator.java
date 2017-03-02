@@ -701,29 +701,30 @@ final class Evaluator {
 		// Asymmetric evaluation terms for possible captures and promotions.
 		// Find the most valuable immediate promotion or capture.
 		if (isWhitesTurn) {
-			/* The below capture orders assume the following material values:
+			/* The capture orders below assume the following material values:
 			 * Queen: 1161
 			 * Rook: 417
 			 * Bishop: 322
 			 * Knight: 255
 			 * Pawn: 100
 			 */
-			if ((pos.whitePawns & Rank.R7.bits) != 0) { // Imminent promotions.
-				if ((whitePawnCaptures & Rank.R8.bits) != 0) {
-					score += params.queenValue - params.pawnValue; // Q - P = 1061
-					whitePawnCaptures &= Rank.R8.bits;
-					if ((whitePawnCaptures & pos.blackQueens) != 0) // += 1161
-						score += params.queenValue;
-					else if ((whitePawnCaptures & pos.blackRooks) != 0) // += 417
-						score += params.rookValue;
-					else if ((whitePawnCaptures & pos.blackBishops) != 0) // += 322
-						score += params.bishopValue;
-					else if ((whitePawnCaptures & pos.blackKnights) != 0) // += 255
-						score += params.knightValue;
-				} else if ((MultiMoveSets.whitePawnAdvanceSets(pos.whitePawns &
-						~whitePinnedPieces, pos.allEmpty) & Rank.R8.bits) != 0)
-					score += params.queenValue - params.pawnValue; // Q - P = 1061
-			} else { // Imminent captures.
+			if ((whitePawnCaptures & Rank.R8.bits) != 0) {
+				// Imminent capture promotions.
+				score += params.queenValue - params.pawnValue; // Q - P = 1061
+				whitePawnCaptures &= Rank.R8.bits;
+				if ((whitePawnCaptures & pos.blackQueens) != 0) // += 1161
+					score += params.queenValue;
+				else if ((whitePawnCaptures & pos.blackRooks) != 0) // += 417
+					score += params.rookValue;
+				else if ((whitePawnCaptures & pos.blackBishops) != 0) // += 322
+					score += params.bishopValue;
+				else if ((whitePawnCaptures & pos.blackKnights) != 0) // += 255
+					score += params.knightValue;
+			} else if ((MultiMoveSets.whitePawnAdvanceSets(pos.whitePawns & ~whitePinnedPieces, pos.allEmpty) & Rank.R8.bits) != 0) {
+				// Imminent non-capture promotions.
+				score += params.queenValue - params.pawnValue; // Q - P = 1061
+			} else {
+				// Imminent captures.
 				if ((whitePawnCaptures & pos.blackQueens) != 0) // Q - P = 1061
 					score += params.queenValue - params.pawnValue;
 				else if ((whiteKnightAttacks & pos.blackQueens) != 0) // Q - N = 906
@@ -747,22 +748,23 @@ final class Evaluator {
 			}
 		} else {
 			score *= -1;
-			if ((pos.blackPawns & Rank.R2.bits) != 0) { // Imminent promotions.
-				if ((blackPawnCaptures & Rank.R1.bits) != 0) {
-					score += params.queenValue - params.pawnValue;
-					blackPawnCaptures &= Rank.R1.bits;
-					if ((blackPawnCaptures & pos.whiteQueens) != 0)
-						score += params.queenValue;
-					else if ((blackPawnCaptures & pos.whiteRooks) != 0)
-						score += params.rookValue;
-					else if ((blackPawnCaptures & pos.whiteBishops) != 0)
-						score += params.bishopValue;
-					else if ((blackPawnCaptures & pos.whiteKnights) != 0)
-						score += params.knightValue;
-				} else if ((MultiMoveSets.blackPawnAdvanceSets(pos.blackPawns &
-						~blackPinnedPieces, pos.allEmpty) & Rank.R1.bits) != 0)
-					score += params.queenValue - params.pawnValue;
-			} else { // Imminent captures.
+			if ((blackPawnCaptures & Rank.R1.bits) != 0) {
+				// Imminent capture promotions.
+				score += params.queenValue - params.pawnValue;
+				blackPawnCaptures &= Rank.R1.bits;
+				if ((blackPawnCaptures & pos.whiteQueens) != 0)
+					score += params.queenValue;
+				else if ((blackPawnCaptures & pos.whiteRooks) != 0)
+					score += params.rookValue;
+				else if ((blackPawnCaptures & pos.whiteBishops) != 0)
+					score += params.bishopValue;
+				else if ((blackPawnCaptures & pos.whiteKnights) != 0)
+					score += params.knightValue;
+			} else if ((MultiMoveSets.blackPawnAdvanceSets(pos.blackPawns & ~blackPinnedPieces, pos.allEmpty) & Rank.R1.bits) != 0) {
+				// Imminent non-capture promotions.
+				score += params.queenValue - params.pawnValue;
+			} else {
+				// Imminent captures.
 				if ((blackPawnCaptures & pos.whiteQueens) != 0)
 					score += params.queenValue - params.pawnValue;
 				else if ((blackKnightAttacks & pos.whiteQueens) != 0)

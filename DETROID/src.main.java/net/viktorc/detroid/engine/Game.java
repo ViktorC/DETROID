@@ -335,7 +335,7 @@ class Game {
 		else {
 			if (Evaluator.isMaterialInsufficient(position))
 				state = GameState.DRAW_BY_INSUFFICIENT_MATERIAL;
-			else if (position.getNumberOfRepetitions(0) >= 2)
+			else if (position.hasRepeated(2))
 				state = GameState.DRAW_BY_3_FOLD_REPETITION;
 			else if (position.fiftyMoveRuleClock >= 100)
 				state = GameState.DRAW_BY_50_MOVE_RULE;
