@@ -646,8 +646,10 @@ class Search implements Runnable {
 			if (quietMoves == null)
 				quietMoves = position.getQuietMoves();
 			// One reply extension.
-			if (tacticalMoves.size() == 0 && quietMoves.size() == 1)
+			if (tacticalMoves.size() == 0 && quietMoves.size() == 1) {
+				isDangerous = true;
 				depth = Math.min(depthLimit, depth + params.singleReplyExtension);
+			}
 			// Futility pruning margin calculation.
 			futMargin = 0;
 			if (!isDangerous) {
