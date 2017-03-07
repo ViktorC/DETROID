@@ -82,7 +82,7 @@ class Search implements Runnable {
 		doStopSearch = false;
  		/* In case all the extensions are activated during the search and the quiscence search probes 2 fold beyond
  		 * the main search depth. */
-		maxExpectedSearchDepth = 2*2*this.maxDepth;
+		maxExpectedSearchDepth = 2*4*this.maxDepth;
 		lCheckMateLimit = Termination.CHECK_MATE.score + maxExpectedSearchDepth;
 		wCheckMateLimit = -lCheckMateLimit;
 		if (this.maxDepth > 0)
@@ -155,7 +155,7 @@ class Search implements Runnable {
 	 */
 	private int search(short ply, int alpha, int beta) {
 		int depth = ply*params.fullPly;
-		final int depthLimit = depth + params.fullPly;
+		final int depthLimit = depth + 2*params.fullPly;
 		final int origAlpha = alpha;
 		int moveInd;
 		int score, bestScore, extension, numOfMoves;
@@ -186,12 +186,15 @@ class Search implements Runnable {
 			return position.isInCheck ? Termination.CHECK_MATE.score : Termination.STALE_MATE.score;
 		// One reply extension.
 		else if (numOfMoves == 1)
-			depth = Math.min(depthLimit, depth + params.singleReplyExt);
+			depth = Math.min(depthLimit, depth + params.singleReplyExtension);
 		// Check for the 50 move rule.
 		if (position.fiftyMoveRuleClock >= 100)
 			return Termination.DRAW_CLAIMED.score;
 		// Check extension.
-		depth = position.isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
+		depth = position.isInCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
+		// Pawn push extension
+		lastMove = position.getLastMove();
+		depth = lastMove != null && isPawnPush(lastMove) ? Math.min(depthLimit, depth + params.pawnPushExtension) : depth;
 		// Hash look-up.
 		e = tT.get(position.key);
 		if (e != null) {
@@ -240,7 +243,6 @@ class Search implements Runnable {
 			allMoves.retainAll(allowedRootMoves);
 		allMovesArr = new Move[allMoves.size()];
 		allMovesArr = allMoves.toArray(allMovesArr);
-		lastMove = position.getLastMove();
 		lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
 		move = null;
 		// Iterate over moves.
@@ -248,7 +250,7 @@ class Search implements Runnable {
 			move = allMovesArr[moveInd];
 			// Recapture extension.
 			extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
-				params.recapExt : 0;
+				params.recapExtension : 0;
 			position.makeMove(move);
 			// Full window search for the first move...
 			if (moveInd == 0)
@@ -303,7 +305,7 @@ class Search implements Runnable {
 		depth = Math.max(depth, 0);
 		final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
 		final int origAlpha = alpha;
-		final int depthLimit = distFromRoot >= maxDepth ? depth : depth + params.fullPly;
+		final int depthLimit = distFromRoot >= maxDepth ? depth : depth + 2*params.fullPly;
 		final boolean isInCheck = position.isInCheck;
 		final boolean isPvNode = beta > origAlpha + 1;
 		int bestScore, score, evalScore;
@@ -315,8 +317,8 @@ class Search implements Runnable {
 		Move hashMove, bestMove, killerMove1, killerMove2, move, lastMove;
 		boolean doQuiescence;
 		boolean isThereHashMove, isThereKM1, isThereKM2;
-		boolean lastMoveIsTactical;
-		boolean isDangerous, mateThreat, isReducible;
+		boolean lastMoveIsTactical, pawnPushed;
+		boolean isDangerous, isReducible, mateThreat;
 		List<Move> tacticalMoves, quietMoves;
 		Move[] tacticalMovesArr, quietMovesArr;
 		TTEntry e;
@@ -345,7 +347,11 @@ class Search implements Runnable {
 					  return mateScore;
 			}
 			// Check extension.
-			depth = isInCheck ? Math.min(depthLimit, depth + params.checkExt) : depth;
+			depth = isInCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
+			// Pawn push extension
+			lastMove = position.getLastMove();
+			pawnPushed = isPawnPush(lastMove);
+			depth = pawnPushed ? Math.min(depthLimit, depth + params.pawnPushExtension) : depth;
 			// Check the conditions for quiescence search.
 			doQuiescence = depth/params.fullPly <= 0;
 			// Check the hash move and return its score for the position if it is exact or set alpha or beta according to its score if it is not.
@@ -385,8 +391,8 @@ class Search implements Runnable {
 			}
 			evalScore = Integer.MIN_VALUE;
 			// Assess if the position is 'dangerous'.
-			isDangerous = isInCheck || !position.areTherePiecesOtherThanKingsAndPawns();
-			mateThreat = Math.abs(beta) >= wCheckMateLimit || Math.abs(alpha) >= wCheckMateLimit;
+			isDangerous = isInCheck || pawnPushed || !position.areTherePiecesOtherThanKingsAndPawns();
+			mateThreat = Math.abs(beta) >= wCheckMateLimit;
 			// Try null move pruning if it is allowed and the position is 'safe'.
 			if (nullMoveAllowed && !isPvNode && !isDangerous && !mateThreat) {
 				evalScore = eval.score(position, hashEntryGen, alpha, beta);
@@ -400,12 +406,10 @@ class Search implements Runnable {
 					position.unmakeMove();
 					if (score >= beta)
 						return score;
-					if (score <= lCheckMateLimit)
-						mateThreat = true;
 				}
 			}
 			// Try razoring if it is allowed and the position is 'safe'.
-			if (params.doRazor && !isPvNode && !isDangerous && !mateThreat && depth/params.fullPly <= 3) {
+			if (params.doRazor && !isPvNode && !isDangerous && Math.abs(alpha) < wCheckMateLimit && depth/params.fullPly <= 3) {
 				switch (depth/params.fullPly) {
 					case 1:
 						// Retrograde pre-frontier razoring.
@@ -467,7 +471,7 @@ class Search implements Runnable {
 			// If there is a hash move, search that first.
 			if (isThereHashMove) {
 				// Recapture extension (includes capturing newly promoted pieces).
-				extension = lastMoveIsTactical && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? params.recapExt : 0;
+				extension = lastMoveIsTactical && hashMove.capturedPiece != Piece.NULL.ind && hashMove.to == lastMove.to ? params.recapExtension : 0;
 				position.makeMove(hashMove);
 				score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 				position.unmakeMove();
@@ -513,7 +517,7 @@ class Search implements Runnable {
 				}
 				// Recapture extension (includes capturing newly promoted pieces).
 				extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
-						params.recapExt : 0;
+						params.recapExtension : 0;
 				position.makeMove(move);
 				// PVS.
 				if (i == 0)
@@ -614,7 +618,7 @@ class Search implements Runnable {
 					continue;
 				}
 				// Recapture extension.
-				extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.recapExt : 0;
+				extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.recapExtension : 0;
 				position.makeMove(move);
 				// PVS.
 				if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
@@ -643,7 +647,7 @@ class Search implements Runnable {
 				quietMoves = position.getQuietMoves();
 			// One reply extension.
 			if (tacticalMoves.size() == 0 && quietMoves.size() == 1)
-				depth = Math.min(depthLimit, depth + params.singleReplyExt);
+				depth = Math.min(depthLimit, depth + params.singleReplyExtension);
 			// Futility pruning margin calculation.
 			futMargin = 0;
 			if (!isDangerous) {
@@ -690,7 +694,7 @@ class Search implements Runnable {
 				}
 				isReducible = !isDangerous && !position.givesCheck(move);
 				// Futility pruning, extended futility pruning, and razoring.
-				if (isReducible && depth/params.fullPly <= 5) {
+				if (isReducible && !mateThreat && Math.abs(alpha) < wCheckMateLimit && depth/params.fullPly <= 5) {
 					if (evalScore == Integer.MIN_VALUE)
 						evalScore = eval.score(position, hashEntryGen, alpha - futMargin, beta - futMargin);
 					if (evalScore <= alpha - futMargin) {
@@ -756,7 +760,6 @@ class Search implements Runnable {
 	 * @return
 	 */
 	private int quiescence(int distFromRoot, int alpha, int beta) {
-		boolean canPrune;
 		List<Move> moveList;
 		Move[] moves;
 		int bestScore, searchScore;
@@ -777,13 +780,12 @@ class Search implements Runnable {
 		// Limit the maximum depth of the quiescence search.
 		if (distFromRoot > maxExpectedSearchDepth)
 			return eval.score(position, hashEntryGen, alpha, beta);
-		canPrune = position.areTherePiecesOtherThanKingsAndPawns();
 		// Generate all the material moves or all moves if in check.
 		moveList = position.getTacticalMoves();
 		moves = orderMaterialMovesSEE(position, moveList);
 		for (Move move : moves) {
 			// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-			if (canPrune && (move.value < 0 || (maxDepth != 0 && move.value <= alpha - params.deltaPruningMargin)))
+			if (move.value < 0 || (maxDepth != 0 && move.value <= alpha - params.deltaPruningMargin))
 				break;
 			position.makeMove(move);
 			searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);
@@ -802,25 +804,14 @@ class Search implements Runnable {
 		return bestScore;
 	}
 	/**
-	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
+	 * Returns whether a move is a pawn push. A pawn push is a pawn move to the last or the one before the last rank.
 	 * 
+	 * @param move
 	 * @return
 	 */
-	private List<Move> extractPv(int ply) {
-		List<Move> pV = new ArrayList<>();
-		TTEntry e;
-		Move bestMove;
-		int i;
-		i = 0;
-		while ((e = tT.get(position.key)) != null && e.bestMove != 0 && i < ply) {
-			bestMove = Move.toMove(e.bestMove);
-			position.makeMove(bestMove);
-			pV.add(bestMove);
-			i++;
-		}
-		for (int k = 0; k < i; k++)
-			position.unmakeMove();
-		return pV;
+	private boolean isPawnPush(Move move) {
+		return (move.movedPiece == Piece.W_PAWN.ind && move.to >= 48) ||
+				(move.movedPiece == Piece.B_PAWN.ind && move.to < 16);
 	}
 	/**
 	 * Orders material moves and checks, the former of which according to the SEE swap algorithm.
@@ -882,6 +873,61 @@ class Search implements Runnable {
 		return QuickSort.sort(arr);
 	}
 	/**
+	 * Inserts a node into the transposition table according to the specified parameters.
+	 * 
+	 * @param key
+	 * @param alpha
+	 * @param beta
+	 * @param bestMove
+	 * @param bestScore
+	 * @param distFromRoot
+	 * @param depth
+	 * @return
+	 */
+	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
+		int score;
+		int bestMoveInt;
+		byte type;
+		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
+		if (bestScore <= lCheckMateLimit)
+			score = bestScore - distFromRoot;
+		else if (bestScore >= wCheckMateLimit)
+			score = bestScore + distFromRoot;
+		else
+			score = bestScore;
+		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
+		// Determine node type.
+		if (bestScore <= alpha)
+			type = NodeType.FAIL_LOW.ind;
+		else if (bestScore >= beta)
+			type = NodeType.FAIL_HIGH.ind;
+		else
+			type = NodeType.EXACT.ind;
+		//	Add new entry to the transposition table.
+		return tT.put(new TTEntry(key, depth, type, (short) score, bestMoveInt, hashEntryGen));
+	}
+	/**
+	 * Returns a queue of Move objects according to the best line of play extracted form the transposition table.
+	 * 
+	 * @return
+	 */
+	private List<Move> extractPv(int ply) {
+		List<Move> pV = new ArrayList<>();
+		TTEntry e;
+		Move bestMove;
+		int i;
+		i = 0;
+		while ((e = tT.get(position.key)) != null && e.bestMove != 0 && i < ply) {
+			bestMove = Move.toMove(e.bestMove);
+			position.makeMove(bestMove);
+			pV.add(bestMove);
+			i++;
+		}
+		for (int k = 0; k < i; k++)
+			position.unmakeMove();
+		return pV;
+	}
+	/**
 	 * Updates the observable search info according to the specified parameters.
 	 * 
 	 * @param ply
@@ -915,40 +961,6 @@ class Search implements Runnable {
 		// Update stats.
 		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType,
 				nodes, System.currentTimeMillis() - startTime, isCancelled);
-	}
-	/**
-	 * Inserts a node into the transposition table according to the specified parameters.
-	 * 
-	 * @param key
-	 * @param alpha
-	 * @param beta
-	 * @param bestMove
-	 * @param bestScore
-	 * @param distFromRoot
-	 * @param depth
-	 * @return
-	 */
-	private boolean insertNodeIntoTt(long key, int alpha, int beta, Move bestMove, int bestScore, short distFromRoot, short depth) {
-		int score;
-		int bestMoveInt;
-		byte type;
-		// Adjustment of the best score for TT insertion according to the distance from the mate position in case it's a check mate score.
-		if (bestScore <= lCheckMateLimit)
-			score = bestScore - distFromRoot;
-		else if (bestScore >= wCheckMateLimit)
-			score = bestScore + distFromRoot;
-		else
-			score = bestScore;
-		bestMoveInt = bestMove == null ? 0 : bestMove.toInt();
-		// Determine node type.
-		if (bestScore <= alpha)
-			type = NodeType.FAIL_LOW.ind;
-		else if (bestScore >= beta)
-			type = NodeType.FAIL_HIGH.ind;
-		else
-			type = NodeType.EXACT.ind;
-		//	Add new entry to the transposition table.
-		return tT.put(new TTEntry(key, depth, type, (short) score, bestMoveInt, hashEntryGen));
 	}
 	
 }

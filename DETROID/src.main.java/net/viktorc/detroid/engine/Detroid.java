@@ -773,10 +773,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public synchronized void notifyParametersChanged() {
-		if (isInit()) {
+		if (isInit) {
 			setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE :
 					options.get(hashSize) == hashSize.getDefaultValue() ? params.defaultHashSize :
-					(short) ((Integer) options.get(hashSize)).shortValue());
+					((Integer) options.get(hashSize)).shortValue());
 			eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		}
 	}

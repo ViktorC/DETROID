@@ -83,24 +83,24 @@ public final class ApplicationFramework implements Runnable {
 	 * engine instances required for different features of the framework.
 	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
 	 * UCI mode: {@code -u} </br>
-	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [-paramtype <eval | control | 
-	 * management | eval+control | control+management | all> {all}] [-inc <integer> {0}] [-validfactor <decimal> {0}]
-	 * [-initprobvector <quoted_comma_separated_decimals>] [-trybook <true | false> {false}] [-tryhash <integer>] 
-	 * [-log <string> {log.txt}] [-concurrency <integer>] {1}]} <br>
-	 * Texel tuning: {@code -t texel -samplesize <integer> [-learningrate <decimal> {1}] [-k <decimal>] [-fensfile <string> {fens.txt}] 
-	 * [-log <string> {log.txt}] [-concurrency <integer> {1}]} <br>
-	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [-inc <integer> {0}] [-trybook 
-	 * <true | false> {false}] [-tryhash <integer>] [-destfile <string> {fens.txt}] [-concurrency <integer> {1}]} <br>
-	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [-maxgames <integer>] 
-	 * [-destfile <string> {fens.txt}]} <br>
-	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [-destfile <string> {fens.txt}]} <br>
-	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer> [-destfile <string> 
+	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | 
+	 * management | eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}]
+	 * [--initprobvector <quoted_comma_separated_decimals>] [--trybook <true | false> {false}] [--tryhash <integer>] 
+	 * [--log <string> {log.txt}] [--concurrency <integer>] {1}]} <br>
+	 * Texel tuning: {@code -t texel -samplesize <integer> [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] 
+	 * [--log <string> {log.txt}] [--concurrency <integer> {1}]} <br>
+	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}] [--trybook 
+	 * <true | false> {false}] [--tryhash <integer>] [--destfile <string> {fens.txt}] [--concurrency <integer> {1}]} <br>
+	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>] 
+	 * [--destfile <string> {fens.txt}]} <br>
+	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile <string> {fens.txt}]} <br>
+	 * Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer> [--destfile <string> 
 	 * {fens.txt}]} <br>
 	 * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals> 
-	 * [-paramtype <eval | control | management | eval+control | control+management | all> {all}] [-paramsfile <string> 
+	 * [--paramtype <eval | control | management | eval+control | control+management | all> {all}] [--paramsfile <string> 
 	 * {params.xml}]} <br>
 	 * Feature value array conversion to parameters file: {@code -c features -value <quoted_comma_separated_decimals> 
-	 * [-paramsfile <string> {params.xml}]}
+	 * [--paramsfile <string> {params.xml}]}
 	 */
 	public ApplicationFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
@@ -196,16 +196,6 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-log": {
-									logFilePath = args[++i];
-								} break;
-								case "-concurrency": {
-									concurrency = Integer.parseInt(args[++i]);
-								} break;
-								case "-paramtype": {
-									String type = args[++i];
-									paramTypes = resolveParamTypes(type);
-								} break;
 								case "-games": {
 									games = Integer.parseInt(args[++i]);
 								} break;
@@ -215,19 +205,29 @@ public final class ApplicationFramework implements Runnable {
 								case "-tc": {
 									tc = Long.parseLong(args[++i]);
 								} break;
-								case "-inc": {
+								case "--log": {
+									logFilePath = args[++i];
+								} break;
+								case "--concurrency": {
+									concurrency = Integer.parseInt(args[++i]);
+								} break;
+								case "--paramtype": {
+									String type = args[++i];
+									paramTypes = resolveParamTypes(type);
+								} break;
+								case "--inc": {
 									tcInc = Long.parseLong(args[++i]);
 								} break;
-								case "-validfactor": {
+								case "--validfactor": {
 									validFactor = Double.parseDouble(args[++i]);
 								} break;
-								case "-trybook": {
+								case "--trybook": {
 									useBook = Boolean.parseBoolean(args[++i]);
 								} break;
-								case "-tryhash": {
+								case "--tryhash": {
 									hash = Integer.parseInt(args[++i]);
 								} break;
-								case "-initprobvector": {
+								case "--initprobvector": {
 									String vec = args[++i];
 									String[] probs = vec.split(",");
 									initProbVec = new double[probs.length];
@@ -275,22 +275,22 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-log": {
-									logFilePath = args[++i];
-								} break;
-								case "-concurrency": {
-									concurrency = Integer.parseInt(args[++i]);
-								} break;
-								case "-learningrate": {
-									learningRate = Double.parseDouble(args[++i]);
-								} break;
-								case "-k": {
-									k = Double.parseDouble(args[++i]);
-								} break;
 								case "-samplesize": {
 									sampleSize = Integer.parseInt(args[++i]);
 								} break;
-								case "-fensfile": {
+								case "--log": {
+									logFilePath = args[++i];
+								} break;
+								case "--concurrency": {
+									concurrency = Integer.parseInt(args[++i]);
+								} break;
+								case "--learningrate": {
+									learningRate = Double.parseDouble(args[++i]);
+								} break;
+								case "--k": {
+									k = Double.parseDouble(args[++i]);
+								} break;
+								case "--fensfile": {
 									fensFilePath = args[++i];
 								} break;
 								default:
@@ -337,25 +337,25 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-concurrency": {
-									concurrency = Integer.parseInt(args[++i]);
-								} break;
 								case "-games": {
 									games = Integer.parseInt(args[++i]);
 								} break;
 								case "-tc": {
 									tc = Long.parseLong(args[++i]);
 								} break;
-								case "-inc": {
+								case "--concurrency": {
+									concurrency = Integer.parseInt(args[++i]);
+								} break;
+								case "--inc": {
 									tcInc = Long.parseLong(args[++i]);
 								} break;
-								case "-trybook": {
+								case "--trybook": {
 									useBook = Boolean.parseBoolean(args[++i]);
 								} break;
-								case "-tryhash": {
+								case "--tryhash": {
 									hash = Integer.parseInt(args[++i]);
 								} break;
-								case "-destfile": {
+								case "--destfile": {
 									destFile = args[++i];
 								} break;
 								default:
@@ -395,13 +395,13 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-maxgames": {
-									maxNumOfGames = Integer.parseInt(args[++i]);
-								} break;
 								case "-sourcefile": {
 									sourceFile = args[++i];
 								} break;
-								case "-destfile": {
+								case "--maxgames": {
+									maxNumOfGames = Integer.parseInt(args[++i]);
+								} break;
+								case "--destfile": {
 									destFile = args[++i];
 								} break;
 								default:
@@ -430,7 +430,7 @@ public final class ApplicationFramework implements Runnable {
 								case "-sourcefile": {
 									sourceFile = args[++i];
 								} break;
-								case "-destfile": {
+								case "--destfile": {
 									destFile = args[++i];
 								} break;
 								default:
@@ -455,7 +455,7 @@ public final class ApplicationFramework implements Runnable {
 								case "-sourcefile": {
 									sourceFile = args[++i];
 								} break;
-								case "-destfile": {
+								case "--destfile": {
 									destFile = args[++i];
 								} break;
 								default:
@@ -495,7 +495,7 @@ public final class ApplicationFramework implements Runnable {
 							binaryString += (prob >= 0.5 ? "1" : "0");
 						}
 						if (args.length > 4) {
-							if ("-paramtype".equals(args[4]))
+							if ("--paramtype".equals(args[4]))
 								paramTypes = resolveParamTypes(args[5]);
 							else
 								throw new IllegalArgumentException();
@@ -512,7 +512,7 @@ public final class ApplicationFramework implements Runnable {
 						throw new IllegalArgumentException();
 					List<String> argList = Arrays.asList(args);
 					int ind;
-					if ((ind = argList.indexOf("-paramsfile")) != -1)
+					if ((ind = argList.indexOf("--paramsfile")) != -1)
 						destFile = argList.get(ind + 1);
 					params.writeToFile(destFile);
 					engine.quit();

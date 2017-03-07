@@ -144,11 +144,13 @@ final class Params extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte fullPly; // For fractional ply extensions.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-	byte checkExt; // Fractional check extension.
+	byte checkExtension; // Fractional check extension.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-	byte recapExt; // Fractional recapture extension.
+	byte recapExtension; // Fractional recapture extension.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-	byte singleReplyExt; // Fractional single reply extension.
+	byte singleReplyExtension; // Fractional single reply extension.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+	byte pawnPushExtension; // Pawn push extension.
 	@Parameter (type = ParameterType.SEARCH_CONTROL)
 	boolean doIid; // Whether IID should be applied.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
