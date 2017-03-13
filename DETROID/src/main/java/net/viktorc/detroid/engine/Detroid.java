@@ -648,10 +648,17 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public void quit() {
-		if (debugMode) debugInfo.set("Shutting down...");
-		try {
-			book.close();
-		} catch (IOException e) { e.printStackTrace(); }
+		if (isInit) {
+			if (debugMode) debugInfo.set("Shutting down...");
+		} else {
+			if (debugMode) debugInfo.set("The engine has not been initialized yet; cannot shut down.");
+			return;
+		}
+		if (book != null) {
+			try {
+				book.close();
+			} catch (IOException e) { e.printStackTrace(); }
+		}
 		executor.shutdown();
 		searchStats.deleteObservers();
 		hT = null;

@@ -1128,7 +1128,10 @@ public final class MainController implements AutoCloseable, Observer {
 		SearchData stats = new SearchData("" + info.getDepth(), String.format("%.2f", (double) info.getTime()/1000),
 				"" + info.getNodes(), "" + info.getCurrentMoveNumber(), String.join(" ", info.getPv()), score, "" + (info.getTime() == 0 ?
 				0 : info.getNodes()/info.getTime()), String.format("%.2f", (double) searchEngine.getHashLoadPermill()/1000));
-		Platform.runLater(() -> searchStats.add(stats));
+		Platform.runLater(() -> {
+			searchStats.add(stats);
+			searchStatView.scrollTo(searchStats.size() - 1);
+		});
 	}
 	@Override
 	public void close() throws Exception {

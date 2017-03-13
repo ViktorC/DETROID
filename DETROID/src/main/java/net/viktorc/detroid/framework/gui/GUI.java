@@ -1,6 +1,7 @@
 package net.viktorc.detroid.framework.gui;
 
 import java.io.IOException;
+import java.util.logging.LogManager;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -59,6 +60,8 @@ public final class GUI extends Application {
 	}
 	@Override
 	public void start(Stage primaryStage) throws IOException {
+		// To get rid of the undesired maxCellCount INFO messages.
+		LogManager.getLogManager().reset();
 		try {
 			FXMLLoader loader = new FXMLLoader();
 			loader.setControllerFactory(new Callback<Class<?>, Object>() {
