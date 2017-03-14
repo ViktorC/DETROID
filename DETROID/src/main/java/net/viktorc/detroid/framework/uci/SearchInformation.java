@@ -36,11 +36,17 @@ public abstract class SearchInformation extends Observable {
 	 */
 	public abstract int getCurrentMoveNumber();
 	/**
-	 * Returns the greatest nominal depth of the search.
+	 * Returns the nominal depth of the search.
 	 * 
 	 * @return The nominal depth of the search.
 	 */
 	public abstract short getDepth();
+	/**
+	 * Returns the greatest depth of the search.
+	 * 
+	 * @return The greatest depth of the search.
+	 */
+	public abstract short getSelectiveDepth();
 	/**
 	 * Returns the result score of the search for the side to move.
 	 * 

@@ -43,7 +43,8 @@ class Search implements Runnable {
 	
 	private Long startTime;
 	private long nodes;
-	private boolean doStopSearch;
+	private volatile int selDepth;
+	private volatile boolean doStopSearch;
 	
 	/**
 	 * Creates a new Search thread instance for searching a position for the specified amount of time, maximum number of searched nodes, and
@@ -105,6 +106,7 @@ class Search implements Runnable {
 	private void iterativeDeepening() {
 		int alpha, beta, score, failHigh, failLow;
 		nodes = 0;
+		selDepth = 0;
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
 		// The number of consecutive fail-highs/fail-lows.
@@ -167,6 +169,8 @@ class Search implements Runnable {
 		statsUpdated = false;
 		bestScore = Integer.MIN_VALUE;
 		bestMove = hashMove = null;
+		nodes++;
+		selDepth = Math.max(selDepth, ply);
 		// If ply equals 0, perform only quiescence search.
 		if (ply == 0) {
 			bestScore = quiescence(0, alpha, beta);
@@ -213,9 +217,9 @@ class Search implements Runnable {
 						 * the exact score of the node, because all children of a fail low node are fail high nodes (-score <= alpha ->
 						 * score >= -alpha [-alpha = beta in the child node]). To keep the interval of values the exact score could take on
 						 * out of (alpha, beta), the score has to be lower than or equal to alpha if it is a higher boundary, i.e. fail low
-						 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score.
-						 */
+						 * score, and it has to be greater than or equal to beta if it is a lower boundary i.e. fail high score. */
 						(e.type == NodeType.FAIL_HIGH.ind && score >= beta) || (e.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
+					selDepth = Math.max(selDepth, e.depth);
 					updateInfo(null, 0, ply, origAlpha, beta, score, doStopSearch || Thread.currentThread().isInterrupted());
 					return score;
 				}
@@ -331,6 +335,8 @@ class Search implements Runnable {
 		isThereHashMove = isThereKM1 = isThereKM2 = false;
 		tacticalMoves = quietMoves = null;
 		nodes++;
+		if (distFromRoot > selDepth)
+			selDepth = distFromRoot;
 		if ((!ponder && nodes >= maxNodes) || Thread.currentThread().isInterrupted())
 			doStopSearch = true;
 		Search: {
@@ -961,7 +967,7 @@ class Search implements Runnable {
 			}
 		}
 		// Update stats.
-		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) resultScore, scoreType,
+		stats.set(extractPv(ply), currentMove, moveNumber, ply, (short) selDepth, (short) resultScore, scoreType,
 				nodes, System.currentTimeMillis() - startTime, isCancelled);
 	}
 	

@@ -1125,7 +1125,7 @@ public final class MainController implements AutoCloseable, Observer {
 		default:
 			return;
 		}
-		SearchData stats = new SearchData("" + info.getDepth(), String.format("%.2f", (double) info.getTime()/1000),
+		SearchData stats = new SearchData(info.getDepth() + "/" + info.getSelectiveDepth(), String.format("%.2f", (double) info.getTime()/1000),
 				"" + info.getNodes(), "" + info.getCurrentMoveNumber(), String.join(" ", info.getPv()), score, "" + (info.getTime() == 0 ?
 				0 : info.getNodes()/info.getTime()), String.format("%.2f", (double) searchEngine.getHashLoadPermill()/1000));
 		Platform.runLater(() -> {

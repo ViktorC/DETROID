@@ -22,8 +22,10 @@ class SearchInfo extends SearchInformation {
 	private Move currentMove;
 	// The ordinal of the move currently being searched in the root position's move list.
 	private int currentMoveNumber;
-	// The depth to which the PV has been searched.
+	// The nominal depth of the search.
 	private short nominalDepth;
+	// The greatest depth of the search.
+	private short selectiveDepth;
 	// The result score of the search.
 	private short score;
 	/* Whether it is a mate score, in which case the score denotes the mate distance, an exact score, 
@@ -51,6 +53,7 @@ class SearchInfo extends SearchInformation {
 	 * @param currentMove
 	 * @param currentMoveNumber
 	 * @param nominalDepth
+	 * @param selectiveDepth
 	 * @param score
 	 * @param scoreType
 	 * @param nodes
@@ -58,13 +61,14 @@ class SearchInfo extends SearchInformation {
 	 * @param isCancelled
 	 */
 	void set(List<Move> PVline, Move currentMove, int currentMoveNumber, short nominalDepth,
-			short score, ScoreType scoreType, long nodes, long time, boolean isCancelled) {
+			short selectiveDepth, short score, ScoreType scoreType, long nodes, long time, boolean isCancelled) {
 		lock.writeLock().lock();
 		try {
 			this.pVline = PVline;
 			this.currentMove = currentMove;
 			this.currentMoveNumber = currentMoveNumber;
 			this.nominalDepth = nominalDepth;
+			this.selectiveDepth = selectiveDepth;
 			this.score = score;
 			this.scoreType = scoreType;
 			this.nodes = nodes;
@@ -184,6 +188,15 @@ class SearchInfo extends SearchInformation {
 		lock.readLock().lock();
 		try {
 			return nominalDepth;
+		} finally {
+			lock.readLock().unlock();
+		}
+	}
+	@Override
+	public short getSelectiveDepth() {
+		lock.readLock().lock();
+		try {
+			return selectiveDepth;
 		} finally {
 			lock.readLock().unlock();
 		}

@@ -243,7 +243,8 @@ public final class UCI implements Observer, Runnable, Closeable {
 	{
 		if (p1 instanceof SearchInformation) {
 			SearchInformation stats = (SearchInformation) p1;
-			String info = "info depth " + stats.getDepth() + " time " + stats.getTime() + " nodes " + stats.getNodes() + " ";
+			String info = "info depth " + stats.getDepth() + " seldepth " + stats.getSelectiveDepth() + " time " +
+					stats.getTime() + " nodes " + stats.getNodes() + " ";
 			if (stats.getCurrentMove() != null) {
 				info += "currmove " + stats.getCurrentMove() + " ";
 				if (stats.getCurrentMoveNumber() != 0)
