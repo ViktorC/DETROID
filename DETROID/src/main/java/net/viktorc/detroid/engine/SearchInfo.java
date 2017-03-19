@@ -35,8 +35,6 @@ class SearchInfo extends SearchInformation {
 	private long nodes;
 	// Time spent on the search.
 	private long time;
-	// Denotes whether the statistics are the final results after a cancellation.
-	private boolean isCancelled;
 	// A lock ensuring integrity among the accessed field values.
 	private ReadWriteLock lock;
 	
@@ -61,7 +59,7 @@ class SearchInfo extends SearchInformation {
 	 * @param isCancelled
 	 */
 	void set(List<Move> PVline, Move currentMove, int currentMoveNumber, short nominalDepth,
-			short selectiveDepth, short score, ScoreType scoreType, long nodes, long time, boolean isCancelled) {
+			short selectiveDepth, short score, ScoreType scoreType, long nodes, long time) {
 		lock.writeLock().lock();
 		try {
 			this.pVline = PVline;
@@ -73,7 +71,6 @@ class SearchInfo extends SearchInformation {
 			this.scoreType = scoreType;
 			this.nodes = nodes;
 			this.time = time;
-			this.isCancelled = isCancelled;
 		} finally {
 			lock.writeLock().unlock();
 		}
@@ -89,19 +86,6 @@ class SearchInfo extends SearchInformation {
 		lock.readLock().lock();
 		try {
 			return pVline;
-		} finally {
-			lock.readLock().unlock();
-		}
-	}
-	/**
-	 * Returns whether the statistics are the final results after a cancellation.
-	 * 
-	 * @return
-	 */
-	boolean isCancelled() {
-		lock.readLock().lock();
-		try {
-			return isCancelled;
 		} finally {
 			lock.readLock().unlock();
 		}

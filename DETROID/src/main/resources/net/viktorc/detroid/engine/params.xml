@@ -66,9 +66,9 @@
 <doIid>false</doIid>
 <iidMinActivationDepth>6</iidMinActivationDepth>
 <iidRelDepthHth>5</iidRelDepthHth>
-<nanoSecondsToWaitForResult>999999</nanoSecondsToWaitForResult>
-<rhtDecrementFactor>97</rhtDecrementFactor>
+<defaultSearchThreads>2</defaultSearchThreads>
 <defaultHashSize>64</defaultHashSize>
+<rhtDecrementFactor>97</rhtDecrementFactor>
 <tTshare>8</tTshare>
 <eTshare>4</eTshare>
 <tTentryLifeCycle>1</tTentryLifeCycle>

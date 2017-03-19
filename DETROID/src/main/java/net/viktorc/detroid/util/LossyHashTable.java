@@ -22,30 +22,15 @@ import java.util.function.Predicate;
  */
 public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterable<T> {
 	
-	/**
-	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
-	 * 
-	 * @author Viktor
-	 *
-	 * @param <T> The type of the hash table entry that implements this interface.
-	 */
-	public static interface Entry<T extends LossyHashTable.Entry<T>> extends Comparable<T>, Hashable {
-		
-	}
-	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
 	private static final float T1_SHARE = 0.6f;
 	private static final float T2_SHARE = 0.4f;
+	private static final int MAX_CAPACITY = 1 << 30; // The maximum number of slots.
+	private static final int MIN_CAPACITY = 1 << 10; // The minimum number of slots.
 	
-	private static final int MAX_CAPACITY = 1 << 30;	// The maximum number of slots.
-	private static final int MIN_CAPACITY = 1 << 10;	// The minimum number of slots.
-	
-	private long capacity;	// The number of hash table slots.
-	
-	private long load = 0;	// Load counter.
-	
-	private T[] t1, t2;	// The two hash tables.
+	private final long capacity; // The number of hash table slots.
+	private T[] t1, t2; // The two hash tables.
 	
 	/**
 	 * Initializes a hash table with a capacity of the closest lesser than or equal prime number to the specified maximum capacity. The capacity has
@@ -79,6 +64,15 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * @return The number of entries in the table.
 	 */
 	public long getLoad() {
+		long load = 0;
+		for (Entry<?> e : t1) {
+			if (e != null)
+				load++;
+		}
+		for (Entry<?> e : t2) {
+			if (e != null)
+				load++;
+		}
 		return load;
 	}
 	/**
@@ -127,12 +121,10 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		// If there was no entry with the same key, but there was at least one empty slot, insert the entry into it.
 		if (slot1IsEmpty) {
 			t1[ind1] = e;
-			load++;
 			return true;
 		}
 		if (slot2IsEmpty) {
 			t2[ind2] = e;
-			load++;
 			return true;
 		}
 		/* If the method is still executing, there was no empty slot or an entry with an identical key, so we will check if the new entry is
@@ -151,16 +143,12 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 			if (slot1IsInT1) {
 				t1[ind1] = e;
 				// If the entry that is about to get pushed out's alternative slot is empty insert the entry there.
-				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null) {
+				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null)
 					t2[altInd] = slot1;
-					load++;
-				}
 			} else {
 				t2[ind2] = e;
-				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null) {
+				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null)
 					t1[altInd] = slot1;
-					load++;
-				}
 			}
 			return true;
 		}
@@ -168,16 +156,12 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 			altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
 			if (slot1IsInT1) {
 				t2[ind2] = e;
-				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null) {
+				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null)
 					t1[altInd] = slot2;
-					load++;
-				}
 			} else {
 				t1[ind1] = e;
-				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null) {
+				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null)
 					t2[altInd] = slot2;
-					load++;
-				}
 			}
 			return true;
 		}
@@ -212,12 +196,10 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		long absKey = key & Long.MAX_VALUE;
 		if ((e = t1[(ind = (int) (absKey%t1.length))]) != null && e.hashKey() == key) {
 			t1[ind] = null;
-			load--;
 			return true;
 		}
 		if ((e = t2[(ind = (int) (absKey%t2.length))]) != null && e.hashKey() == key) {
 			t2[ind] = null;
-			load--;
 			return true;
 		}
 		return false;
@@ -231,17 +213,13 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		T e;
 		for (int i = 0; i < t1.length; i++) {
 			e = t1[i];
-			if (e != null && condition.test(e)) {
+			if (e != null && condition.test(e))
 				t1[i] = null;
-				load--;
-			}
 		}
 		for (int i = 0; i < t2.length; i++) {
 			e = t2[i];
-			if (e != null && condition.test(e)) {
+			if (e != null && condition.test(e))
 				t2[i] = null;
-				load--;
-			}
 		}
 	}
 	/**
@@ -249,7 +227,6 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 */
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
-		load = 0;
 		t1 = (T[])new Entry[t1.length];
 		t2 = (T[])new Entry[t2.length];
 	}
@@ -263,9 +240,21 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	}
 	@Override
 	public String toString() {
+		long load = getLoad();
 		return "Load/Capacity: " + load + "/" + capacity + "; " +
 				String.format("Factor: %.1f", (load*100)/(double) capacity) + "%\n" +
 				String.format("Size: %.2fMB", SizeEstimator.getInstance().sizeOf(this)/(double) (1 << 20));
+	}
+	
+	/**
+	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
+	 * 
+	 * @author Viktor
+	 *
+	 * @param <T> The type of the hash table entry that implements this interface.
+	 */
+	public static interface Entry<T extends LossyHashTable.Entry<T>> extends Comparable<T>, Hashable {
+		
 	}
 	
 }

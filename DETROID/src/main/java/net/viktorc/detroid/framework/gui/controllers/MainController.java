@@ -126,6 +126,8 @@ public final class MainController implements AutoCloseable, Observer {
 	private TableView<SearchData> searchStatView;
 	
 	private final Stage stage;
+	private final Object updateLock;
+	private final Map<Long,Boolean> updates;
 	private ObservableList<Data<String, Number>> dataPoints;
 	private ObservableList<SearchData> searchStats;
 	private ExecutorService executor;
@@ -164,6 +166,8 @@ public final class MainController implements AutoCloseable, Observer {
 	 */
 	public MainController(Stage stage, ControllerEngine controllerEngine, UCIEngine searchEngine) {
 		this.stage = stage;
+		updateLock = new Object();
+		updates = new HashMap<>();
 		executor = Executors.newSingleThreadExecutor();
 		this.controllerEngine = controllerEngine;
 		this.searchEngine = searchEngine;
@@ -402,6 +406,14 @@ public final class MainController implements AutoCloseable, Observer {
 			SearchResults res = searchEngine.search(null, null, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
 					timeControl.getBlackInc(), null, null, null, null, null, null);
 			timeLeft -= (System.currentTimeMillis() - start);
+			synchronized (updateLock) {
+				while (updates.values().contains(Boolean.FALSE)) {
+					try {
+						updateLock.wait();
+					} catch (InterruptedException e) { }
+				}
+			}
+			updates.clear();
 			searchEngine.getSearchInfo().deleteObserver(this);
 			isSearching = false;
 			if (isReset)
@@ -468,6 +480,14 @@ public final class MainController implements AutoCloseable, Observer {
 			SearchResults res = searchEngine.search(null, true, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
 					timeControl.getBlackInc(), null, null, null, null, null, null);
 			long end = System.currentTimeMillis();
+			synchronized (updateLock) {
+				while (updates.values().contains(Boolean.FALSE)) {
+					try {
+						updateLock.wait();
+					} catch (InterruptedException e) { }
+				}
+			}
+			updates.clear();
 			searchEngine.getSearchInfo().deleteObserver(this);
 			isPondering = false;
 			if (isReset) {
@@ -1107,6 +1127,8 @@ public final class MainController implements AutoCloseable, Observer {
 	public synchronized void update(Observable o, Object arg) {
 		if (isReset || (!isPondering && !isSearching))
 			return;
+		long updated = System.nanoTime();
+		updates.put(updated, Boolean.FALSE);
 		SearchInformation info = (SearchInformation) o;
 		String score;
 		switch (info.getScoreType()) {
@@ -1131,6 +1153,10 @@ public final class MainController implements AutoCloseable, Observer {
 		Platform.runLater(() -> {
 			searchStats.add(stats);
 			searchStatView.scrollTo(searchStats.size() - 1);
+			updates.put(updated, Boolean.TRUE);
+			synchronized (updateLock) {
+				updateLock.notifyAll();
+			}
 		});
 	}
 	@Override

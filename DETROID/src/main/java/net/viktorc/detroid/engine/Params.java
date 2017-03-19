@@ -157,18 +157,18 @@ final class Params extends EngineParameters {
 	byte iidMinActivationDepth; // The minimum depth at which IID is activated.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte iidRelDepthHth; // The portion of the total depth to which the position will be searched with IID.
-
-	// The amount of time the engine waits for the updated result after a search has been cancelled.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-	int nanoSecondsToWaitForResult;
 	
+	// The default number of search threads to use.
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+	short defaultSearchThreads;
+	// The default hash size in megabytes.
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+	short defaultHashSize;
+		
 	// The relative history table's value depreciation factor.
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
 	byte rhtDecrementFactor;
 
-	// The default hash size in megabytes.
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-	short defaultHashSize;
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
 	byte tTshare;

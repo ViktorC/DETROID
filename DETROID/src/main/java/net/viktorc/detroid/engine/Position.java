@@ -741,33 +741,13 @@ class Position implements Copiable<Position>, Hashable {
 	 * @return Whether the move would give check or not in this position.
 	 */
 	boolean givesCheck(Move move) {
-		MoveSetDatabase db;
-		long toBit = 1L << move.to;
-		if (isWhitesTurn) {
-			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(blackKing));
-			if (move.movedPiece == Piece.W_QUEEN.ind)
-				return (db.getQueenMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
-			else if (move.movedPiece == Piece.W_ROOK.ind)
-				return (db.getRookMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
-			else if (move.movedPiece == Piece.W_BISHOP.ind)
-				return (db.getBishopMoveSet(allNonWhiteOccupied, allOccupied) & toBit) != 0;
-			else if (move.movedPiece == Piece.W_KNIGHT.ind)
-				return (db.getKnightMoveSet(allNonWhiteOccupied) & toBit) != 0;
-			else
-				return (db.pawnBlackCaptureMoveMask & toBit) != 0;
-		} else {
-			db = MoveSetDatabase.getByIndex(BitOperations.indexOfBit(whiteKing));
-			if (move.movedPiece == Piece.B_QUEEN.ind)
-				return (db.getQueenMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
-			else if (move.movedPiece == Piece.B_ROOK.ind)
-				return (db.getRookMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
-			else if (move.movedPiece == Piece.B_BISHOP.ind)
-				return (db.getBishopMoveSet(allNonBlackOccupied, allOccupied) & toBit) != 0;
-			else if (move.movedPiece == Piece.B_KNIGHT.ind)
-				return (db.getKnightMoveSet(allNonBlackOccupied) & toBit) != 0;
-			else
-				return (db.pawnWhiteCaptureMoveMask & toBit) != 0;
-		}
+		boolean givesCheck = false;
+		makeMoveOnBoard(move);
+		isWhitesTurn = !isWhitesTurn;
+		givesCheck = getCheckers() != 0;
+		isWhitesTurn = !isWhitesTurn;
+		unmakeMoveOnBoard(move);
+		return givesCheck;
 	}
 	/**
 	 * Generates and adds only the pinned-piece-moves that change the material balance on the board (captures/promotions) to the input
