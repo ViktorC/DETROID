@@ -108,7 +108,8 @@ class Search implements Runnable, Future<SearchResults> {
 		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
-		this.numOfHelperThreads = numOfSearchThreads - 1;
+		this.numOfHelperThreads = this.maxDepth > 1 ? numOfSearchThreads - 1 : 1;
+		System.out.println(numOfHelperThreads);
 	}
 	/**
 	 * Returns a list of Move objects according to the best line of play extracted form the transposition table.
@@ -241,8 +242,7 @@ class Search implements Runnable, Future<SearchResults> {
 		if (maxDepth == 0) {
 			masterThread = new SearchThread(rootPosition, (short) 0, alpha, beta, null);
 			score = masterThread.quiescence(0, alpha, beta);
-			adjustedScore = adjustScore(score, alpha, beta);
-			return new SearchResults(null, null, adjustedScore.getKey(), adjustedScore.getValue());
+			return new SearchResults(null, null, (short) score, ScoreType.EXACT);
 		}
 		// The number of consecutive fail-highs/fail-lows.
 		failHigh = failLow = 0;
@@ -250,7 +250,7 @@ class Search implements Runnable, Future<SearchResults> {
 		for (short i = 1;; i++) {
 			masterThread = new SearchThread(rootPosition.deepCopy(), i, alpha, beta, null);
 			// Launch helper threads.
-			if (numOfHelperThreads > 0) {
+			if (numOfHelperThreads > 0 && i != 1) {
 				latch = new CountDownLatch(numOfHelperThreads);
 				slaveThreads = new ArrayList<>();
 				even = true;
@@ -263,7 +263,7 @@ class Search implements Runnable, Future<SearchResults> {
 			// Launch the master thread.
 			score = masterThread.call();
 			// Interrupt the helpers thread and wait for them to terminate.
-			if (numOfHelperThreads > 0) {
+			if (numOfHelperThreads > 0 && i != 1) {
 				for (SearchThread t : slaveThreads)
 					t.stop();
 				try {
@@ -318,28 +318,24 @@ class Search implements Runnable, Future<SearchResults> {
 				adjustedScore.getKey(), adjustedScore.getValue());
 	}
 	@Override
-	public SearchResults get() {
+	public synchronized SearchResults get() {
 		while (!isDone) {
-			synchronized (this) {
-				try {
-					wait();
-				} catch (InterruptedException e) { }
-			}
+			try {
+				wait();
+			} catch (InterruptedException e) { }
 		}
 		return results;
 	}
 	@Override
-	public SearchResults get(long timeout, TimeUnit unit) {
+	public synchronized SearchResults get(long timeout, TimeUnit unit) {
 		long timeoutMs = unit.toMillis(timeout);
 		long start = System.currentTimeMillis();
 		while (!isDone && timeoutMs > 0) {
-			synchronized (this) {
-				try {
-					wait(timeoutMs);
-					break;
-				} catch (InterruptedException e) {
-					timeoutMs -= (System.currentTimeMillis() - start);
-				}
+			try {
+				wait(timeoutMs);
+				break;
+			} catch (InterruptedException e) {
+				timeoutMs -= (System.currentTimeMillis() - start);
 			}
 		}
 		return results;
@@ -387,7 +383,7 @@ class Search implements Runnable, Future<SearchResults> {
 	private class SearchThread implements Callable<Integer> {
 
 		private final Position origPosition; // The original position to search.
-		private final Position position; // The position instance to use for the search.
+		private Position position; // The position instance to use for the search.
 		private final short ply;
 		private final SearchThread master;
 		private final boolean isMainSearchThread;
@@ -1129,10 +1125,8 @@ class Search implements Runnable, Future<SearchResults> {
 				// If the search stats have not been updated for the current ply yet, probably due to failing low or high, do it now.
 				if (!statsUpdated) {
 					insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-					entry = tT.get(position.key);
 					if (isMainSearchThread)
-						updateInfo(position, move, move != null ? Math.min(allMovesArr.length, moveInd + 1) : 0, ply,
-								origAlpha, beta, entry != null ? entry.score : bestScore);
+						updateInfo(position, move, move != null ? Math.min(allMovesArr.length, moveInd + 1) : 0, ply, origAlpha, beta, bestScore);
 				}
 				return bestScore;
 			} catch (AbnormalSearchTerminationException e) {

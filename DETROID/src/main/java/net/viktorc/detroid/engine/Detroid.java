@@ -499,7 +499,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				search = gameTreeSearch;
 				executor.submit(gameTreeSearch);
 				if (debugMode) debugInfo.set("Search started");
-				// If in ponder mode, run the search until the ponderhit signal or until it is externally stopped. 
+				// If in ponder mode, run the search until the ponder hit signal or until it is externally stopped. 
 				if (doPonder) {
 					if (debugMode) debugInfo.set("In ponder mode");
 					while (!stop && !ponderHit) {
@@ -508,7 +508,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						} catch (InterruptedException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 					}
 					if (debugMode) debugInfo.set("Ponder stopped");
-					// If the search terminated due to a ponderhit, keep searching...
+					// If the search terminated due to a ponder hit, keep searching...
 					if (ponderHit) {
 						if (debugMode) debugInfo.set("Ponderhit acknowledged");
 						ponderHit = false;
@@ -576,7 +576,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			try {
 				results = search.get();
 			} catch (InterruptedException | ExecutionException e) { }
-			if (results.getBestMove() == null)
+			if (!deterministicZeroDepthMode && results.getBestMove() == null)
 				results = new SearchResults(getRandomMove().toString(), null, results.getScore().get(),
 						results.getScoreType().get());
 		}
