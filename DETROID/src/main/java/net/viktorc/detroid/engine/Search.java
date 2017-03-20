@@ -109,7 +109,6 @@ class Search implements Runnable, Future<SearchResults> {
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
 		this.numOfHelperThreads = this.maxDepth > 1 ? numOfSearchThreads - 1 : 1;
-		System.out.println(numOfHelperThreads);
 	}
 	/**
 	 * Returns a list of Move objects according to the best line of play extracted form the transposition table.
