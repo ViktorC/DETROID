@@ -254,7 +254,8 @@ class Search implements Runnable, Future<SearchResults> {
 				slaveThreads = new ArrayList<>();
 				even = true;
 				for (int j = 0; j < numOfHelperThreads; j++, even = !even) {
-					slaveThread = new SearchThread(rootPosition.deepCopy(), (short) (even ? i + 1 : i), alpha, beta, masterThread);
+					slaveThread = new SearchThread(rootPosition.deepCopy(), (short) (even && i != maxDepth ? i + 1 : i),
+							alpha, beta, masterThread);
 					slaveThreads.add(slaveThread);
 					executor.submit(slaveThread);
 				}
@@ -582,6 +583,7 @@ class Search implements Runnable, Future<SearchResults> {
 			doQuiescence = false;
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			tacticalMoves = quietMoves = null;
+			kE = null;
 			if ((!ponder && nodes.get() >= maxNodes) || ownerThread.isInterrupted())
 				doStopSearch = true;
 			if (doStopSearch|| doStopSearchThread)
@@ -705,14 +707,21 @@ class Search implements Runnable, Future<SearchResults> {
 					tacticalMoves = position.getTacticalMoves();
 					// If there were no material moves, perform a mate check.
 					if (tacticalMoves.size() == 0) {
-						quietMoves = position.getQuietMoves();
-						if (quietMoves.size() == 0) {
-							score = isInCheck ? mateScore : Termination.STALE_MATE.score;
-							if (score > bestScore) {
-								bestMove = null;
-								bestScore = score;
+						kE = kT.retrieve(distFromRoot);
+						if (kE.getMove1() != 0 && position.isLegalSoft(killerMove1 = Move.toMove(kE.getMove1())))
+							isThereKM1 = true;
+						else if (kE.getMove2() != 0 && position.isLegalSoft(killerMove2 = Move.toMove(kE.getMove2())))
+							isThereKM2 = true;
+						if (!isThereKM1 && !isThereKM2) {
+							quietMoves = position.getQuietMoves();
+							if (quietMoves.size() == 0) {
+								score = isInCheck ? mateScore : Termination.STALE_MATE.score;
+								if (score > bestScore) {
+									bestMove = null;
+									bestScore = score;
+								}
+								break Search;
 							}
-							break Search;
 						}
 					}
 				}
@@ -794,10 +803,10 @@ class Search implements Runnable, Future<SearchResults> {
 					}
 				}
 				// If there are no more winning or equal captures, check and search the killer moves if legal from this position.
-				kE = kT.retrieve(distFromRoot);
+				kE = kE == null ? kT.retrieve(distFromRoot) : kE;
 				if ((kMove = kE.getMove1()) != 0) {	// Killer move no. 1.
-					killerMove1 = Move.toMove(kMove);
-					if (position.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove))) {
+					killerMove1 = killerMove1 != null ? killerMove1 : Move.toMove(kMove);
+					if (isThereKM1 || (position.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove)))) {
 						isThereKM1 = true;
 						position.makeMove(killerMove1);
 						if (!isThereHashMove && matMoveBreakInd == 0)
@@ -826,8 +835,8 @@ class Search implements Runnable, Future<SearchResults> {
 					}
 				}
 				if ((kMove = kE.getMove2()) != 0) {
-					killerMove2 = Move.toMove(kMove);
-					if (position.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove))) {
+					killerMove2 = killerMove2 != null ? killerMove2 : Move.toMove(kMove);
+					if (isThereKM2 || (position.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove)))) {
 						isThereKM2 = true;
 						position.makeMove(killerMove2);
 						if (!isThereHashMove && !isThereKM1 && matMoveBreakInd == 0)
@@ -1007,9 +1016,9 @@ class Search implements Runnable, Future<SearchResults> {
 			List<Move> tacticalMoves, quietMoves, allMoves;
 			Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
 			TTEntry entry;
-			statsUpdated = false;
 			bestScore = Integer.MIN_VALUE;
 			bestMove = hashMove = null;
+			statsUpdated = false;
 			try {
 				nodes.incrementAndGet();
 				// If ply equals 0, perform only quiescence search.
@@ -1057,8 +1066,10 @@ class Search implements Runnable, Future<SearchResults> {
 								(entry.type == NodeType.FAIL_HIGH.ind && score >= beta) || (entry.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
 							if (entry.depth > selDepth)
 								selDepth = entry.depth;
-							if (isMainSearchThread)
+							if (isMainSearchThread) {
 								updateInfo(position, null, 0, ply, origAlpha, beta, score);
+								statsUpdated = true;
+							}
 							return score;
 						}
 					}
@@ -1110,28 +1121,32 @@ class Search implements Runnable, Future<SearchResults> {
 						bestScore = score;
 						if (bestScore > alpha) {
 							alpha = bestScore;
+							// Insert into TT and update stats if applicable.
+							insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly));
+							if (isMainSearchThread) {
+								updateInfo(position, move, moveInd + 1, ply, origAlpha, beta, score);
+								statsUpdated = true;
+							}
 							if (bestScore >= beta)
 								break;
-							// Insert into TT and update stats if applicable.
-							if (insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly))) {
-								statsUpdated = true;
-								if (isMainSearchThread)
-									updateInfo(position, move, moveInd + 1, ply, origAlpha, beta, score);
-							}
 						}
 					}
 				}
-				// If the search stats have not been updated for the current ply yet, probably due to failing low or high, do it now.
-				if (!statsUpdated) {
+				// If the search stats have not been updated for the current ply yet, due to failing low, do it now.
+				if (bestScore <= origAlpha) {
 					insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-					if (isMainSearchThread)
+					if (isMainSearchThread) {
 						updateInfo(position, move, move != null ? Math.min(allMovesArr.length, moveInd + 1) : 0, ply, origAlpha, beta, bestScore);
+						statsUpdated = true;
+					}
 				}
 				return bestScore;
 			} catch (AbnormalSearchTerminationException e) {
 				entry = tT.get(origPosition.key);
 				if (entry != null)
 					bestScore = entry.score;
+				if (isMainSearchThread && !statsUpdated)
+					updateInfo(origPosition, null, 0, ply, origAlpha, beta, bestScore);
 				return bestScore;
 			} finally {
 				if (!isMainSearchThread) {

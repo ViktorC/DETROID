@@ -465,7 +465,7 @@ class Position implements Copiable<Position>, Hashable {
 		long attackers = 0;
 		int sqrInd;
 		MoveSetDatabase dB;
-		if (this.isWhitesTurn) {
+		if (isWhitesTurn) {
 			sqrInd = BitOperations.indexOfBit(whiteKing);
 			dB = MoveSetDatabase.getByIndex(sqrInd);
 			attackers = blackKnights & dB.knightMoveMask;
@@ -743,9 +743,7 @@ class Position implements Copiable<Position>, Hashable {
 	boolean givesCheck(Move move) {
 		boolean givesCheck = false;
 		makeMoveOnBoard(move);
-		isWhitesTurn = !isWhitesTurn;
-		givesCheck = getCheckers() != 0;
-		isWhitesTurn = !isWhitesTurn;
+		givesCheck = isAttacked(BitOperations.indexOfBit(isWhitesTurn ? blackKing : whiteKing), isWhitesTurn);
 		unmakeMoveOnBoard(move);
 		return givesCheck;
 	}

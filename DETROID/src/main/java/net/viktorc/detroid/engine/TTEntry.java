@@ -15,7 +15,7 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 	/**
 	 * The 64-bit position hash key.
 	 */
-	final long key;
+	private final long key;
 	/**
 	 * How deep the position has been searched.
 	 */
@@ -38,7 +38,7 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 	byte generation;
 	
 	TTEntry(long key, short depth, byte type, short score, int bestMove, byte age) {
-		this.key = key;
+		this.key = (key^depth^type^score^bestMove);
 		this.depth = depth;
 		this.type = type;
 		this.score = score;
@@ -69,7 +69,7 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 	 */
 	@Override
 	public long hashKey() {
-		return key;
+		return key^depth^type^score^bestMove;
 	}
 	/**
 	 * Returns a String representation of the object state.

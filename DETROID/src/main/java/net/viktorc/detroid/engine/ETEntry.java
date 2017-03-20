@@ -13,7 +13,7 @@ class ETEntry implements LossyHashTable.Entry<ETEntry> {
 	/**
 	 * The 64-bit position hash key.
 	 */
-	final long key;
+	private final long key;
 	/**
 	 * The evaluation score.
 	 */
@@ -28,7 +28,7 @@ class ETEntry implements LossyHashTable.Entry<ETEntry> {
 	byte generation;
 
 	ETEntry(long key, short score, boolean isExact, byte age) {
-		this.key = key;
+		this.key = (key^score^(isExact ? 1 : 0));
 		this.score = score;
 		this.isExact = isExact;
 		this.generation = age;
@@ -47,7 +47,7 @@ class ETEntry implements LossyHashTable.Entry<ETEntry> {
 	 */
 	@Override
 	public long hashKey() {
-		return key;
+		return (key^score^(isExact ? 1 : 0));
 	}
 	
 }
