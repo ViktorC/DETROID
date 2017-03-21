@@ -107,7 +107,9 @@ final class Params extends EngineParameters {
 	// Search parameters.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte nullMoveReduction; // Null move pruning reduction.
-	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
+	byte nullMoveReductionMinActivationDepth; // Min. depth for null move reductions.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte extraNullMoveReduction; // Additional null move pruning reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
 	byte extraNullMoveReductionDepthLimit; // The depth limit at which the extra null move reduction is applied.
@@ -116,7 +118,7 @@ final class Params extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 3)
 	byte lateMoveReductionMinActivationDepth; // Min. depth for late move reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-	byte minMovesSearchedForLmr; // Min. number of searched moves for late move reduction.
+	byte minMovesSearchedForLmr; // Min. number of searched moves for late move reductions.
 	@Parameter (type = ParameterType.SEARCH_CONTROL)
 	boolean doRazor; // Whether razoring should be enabled.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)

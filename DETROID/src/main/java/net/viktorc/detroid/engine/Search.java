@@ -652,9 +652,9 @@ class Search implements Runnable, Future<SearchResults> {
 				isDangerous = isInCheck || pawnPushed || !position.areTherePiecesOtherThanKingsAndPawns();
 				mateThreat = Math.abs(beta) >= wCheckMateLimit;
 				// Try null move pruning if it is allowed and the position is 'safe'.
-				if (nullMoveAllowed && !isPvNode && !isDangerous && !mateThreat) {
+				if (nullMoveAllowed && !isPvNode && !isDangerous && !mateThreat && depth/ply >= params.nullMoveReductionMinActivationDepth) {
 					evalScore = eval.score(position, hashEntryGen, alpha, beta);
-					if (evalScore >= beta) {
+					if (evalScore > alpha) {
 						// Dynamic depth reduction.
 						reduction = params.nullMoveReduction*params.fullPly +
 								params.extraNullMoveReduction*depth/params.extraNullMoveReductionDepthLimit;
@@ -664,21 +664,20 @@ class Search implements Runnable, Future<SearchResults> {
 						position.unmakeMove();
 						if (score >= beta)
 							return score;
+						if (score <= lCheckMateLimit)
+							mateThreat = true;
 					}
 				}
 				// Try razoring if it is allowed and the position is 'safe'.
-				if (params.doRazor && !isPvNode && !isDangerous && Math.abs(alpha) < wCheckMateLimit && depth/params.fullPly <= 3) {
+				if (params.doRazor && !isPvNode && !isDangerous && !mateThreat && Math.abs(alpha) < wCheckMateLimit && depth/params.fullPly <= 3) {
 					switch (depth/params.fullPly) {
-						case 1:
-							// Retrograde pre-frontier razoring.
+						case 1: // Retrograde pre-frontier razoring.
 							razMargin = params.razoringMargin1;
 							break;
-						case 2:
-							// Retrograde limited razoring.
+						case 2: // Retrograde limited razoring.
 							razMargin = params.razoringMargin2;
 							break;
-						case 3:
-							// Retrograde deep razoring.
+						case 3: // Retrograde deep razoring.
 							razMargin = params.razoringMargin3;
 							break;
 						default:
@@ -705,13 +704,14 @@ class Search implements Runnable, Future<SearchResults> {
 				if (!isThereHashMove) {
 					// Generate material moves.
 					tacticalMoves = position.getTacticalMoves();
-					// If there were no material moves, perform a mate check.
+					// If there were no material moves, check killer moves...
 					if (tacticalMoves.size() == 0) {
 						kE = kT.retrieve(distFromRoot);
 						if (kE.getMove1() != 0 && position.isLegalSoft(killerMove1 = Move.toMove(kE.getMove1())))
 							isThereKM1 = true;
 						else if (kE.getMove2() != 0 && position.isLegalSoft(killerMove2 = Move.toMove(kE.getMove2())))
 							isThereKM2 = true;
+						// If there were no legal killer moves, generate the quiet moves and perform a mate check.
 						if (!isThereKM1 && !isThereKM2) {
 							quietMoves = position.getQuietMoves();
 							if (quietMoves.size() == 0) {
