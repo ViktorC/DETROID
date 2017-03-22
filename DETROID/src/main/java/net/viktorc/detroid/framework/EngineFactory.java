@@ -1,5 +1,6 @@
 package net.viktorc.detroid.framework;
 
+import net.viktorc.detroid.framework.engine.Detroid;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 
@@ -22,6 +23,8 @@ public interface EngineFactory {
 	 * 
 	 * @return A new controller engine instance.
 	 */
-	ControllerEngine newControllerEngineInstance();
+	default ControllerEngine newControllerEngineInstance() {
+		return new Detroid();
+	}
 
 }

@@ -25,8 +25,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import net.viktorc.detroid.util.BitOperations;
-import net.viktorc.detroid.util.GrayCode;
+import net.viktorc.detroid.framework.util.BitOperations;
+import net.viktorc.detroid.framework.util.GrayCode;
 
 /**
  * An abstract base class for engine parameter definitions that influence the performance of the chess engine and thus should be highly optimized. 

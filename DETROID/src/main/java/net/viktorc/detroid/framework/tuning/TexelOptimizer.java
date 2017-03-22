@@ -20,7 +20,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import net.viktorc.detroid.framework.uci.SearchResults;
-import net.viktorc.detroid.util.ASGD;
+import net.viktorc.detroid.framework.util.ASGD;
 
 /**
  * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent 

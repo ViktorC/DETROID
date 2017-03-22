@@ -9,8 +9,8 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import net.viktorc.detroid.framework.uci.UCIEngine;
+import net.viktorc.detroid.framework.util.PBIL;
 import net.viktorc.detroid.framework.validation.Elo;
-import net.viktorc.detroid.util.PBIL;
 
 /**
  * A class for optimizing chess engine parameters using a PBIL algorithm with a possibly parallel, game play based 
