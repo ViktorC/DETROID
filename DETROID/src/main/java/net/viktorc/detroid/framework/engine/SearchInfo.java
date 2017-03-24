@@ -2,6 +2,7 @@ package net.viktorc.detroid.framework.engine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -78,6 +79,14 @@ class SearchInfo extends SearchInformation {
 		notifyObservers();
 	}
 	/**
+	 * Returns a read lock for the instance.
+	 * 
+	 * @return
+	 */
+	Lock getLock() {
+		return lock.readLock();
+	}
+	/**
 	 * Returns the principal variation of the search as a list of moves.
 	 * 
 	 * @return
@@ -128,107 +137,52 @@ class SearchInfo extends SearchInformation {
 	}
 	@Override
 	public int getPvNumber() {
-		lock.readLock().lock();
-		try {
-			return 0;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return 0;
 	}
 	@Override
 	public String[] getPv() {
-		lock.readLock().lock();
-		try {
-			if (pVline == null)
-				return null;
-			ArrayList<String> pV = new ArrayList<>(pVline.size());
-			for (Move m : pVline)
-				pV.add(m.toString());
-			return pV.toArray(new String[pV.size()]);
-		} finally {
-			lock.readLock().unlock();
-		}
+		if (pVline == null)
+			return null;
+		ArrayList<String> pV = new ArrayList<>(pVline.size());
+		for (Move m : pVline)
+			pV.add(m.toString());
+		return pV.toArray(new String[pV.size()]);
 	}
 	@Override
 	public String getCurrentMove() {
-		lock.readLock().lock();
-		try {
-			return currentMove == null ? null : currentMove.toString();
-		} finally {
-			lock.readLock().unlock();
-		}
+		return currentMove == null ? null : currentMove.toString();
 	}
 	@Override
 	public int getCurrentMoveNumber() {
-		lock.readLock().lock();
-		try {
-			return currentMoveNumber;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return currentMoveNumber;
 	}
 	@Override
 	public short getDepth() {
-		lock.readLock().lock();
-		try {
-			return nominalDepth;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return nominalDepth;
 	}
 	@Override
 	public short getSelectiveDepth() {
-		lock.readLock().lock();
-		try {
-			return selectiveDepth;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return selectiveDepth;
 	}
 	@Override
 	public short getScore() {
-		lock.readLock().lock();
-		try {
-			return score;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return score;
 	}
 	@Override
 	public ScoreType getScoreType() {
-		lock.readLock().lock();
-		try {
-			return scoreType;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return scoreType;
 	}
 	@Override
 	public long getNodes() {
-		lock.readLock().lock();
-		try {
-			return nodes;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return nodes;
 	}
 	@Override
 	public long getTime() {
-		lock.readLock().lock();
-		try {
-			return time;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return time;
 	}
 	@Override
 	public String toString() {
-		lock.readLock().lock();
-		try {
-			return getPvString() + getStatString();
-		} finally {
-			lock.readLock().unlock();
-		}
+		return getPvString() + getStatString();
 	}
 	
 }

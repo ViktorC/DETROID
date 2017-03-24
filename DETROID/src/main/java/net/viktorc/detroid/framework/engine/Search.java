@@ -53,7 +53,6 @@ class Search implements Runnable, Future<SearchResults> {
 	private final int numOfHelperThreads;
 
 	private Long startTime;
-	private Thread ownerThread;
 	private ExecutorService executor;
 	private CountDownLatch latch;
 	private AtomicLong nodes;
@@ -361,7 +360,6 @@ class Search implements Runnable, Future<SearchResults> {
 	public void run() {
 		startTime = System.currentTimeMillis();
 		isDone = doStopSearch = false;
-		ownerThread = Thread.currentThread();
 		if (numOfHelperThreads > 0)
 			executor = Executors.newFixedThreadPool(numOfHelperThreads);
 		results = iterativeDeepening();
@@ -384,12 +382,12 @@ class Search implements Runnable, Future<SearchResults> {
 	private class SearchThread implements Callable<Integer> {
 
 		private final Position origPosition; // The original position to search.
-		private Position position; // The position instance to use for the search.
 		private final short ply;
 		private final SearchThread master;
 		private final boolean isMainSearchThread;
-		private int alpha;
-		private int beta;
+		private final int alpha;
+		private final int beta;
+		private Position position; // The position instance to use for the search.
 		private volatile boolean doStopSearchThread;
 		
 		/**
@@ -404,7 +402,6 @@ class Search implements Runnable, Future<SearchResults> {
 		 */
 		SearchThread(Position position, short ply, int alpha, int beta, SearchThread master) {
 			origPosition = position;
-			this.position = origPosition.deepCopy();
 			this.ply = ply;
 			this.master = master;
 			this.isMainSearchThread = master == null;
@@ -501,7 +498,7 @@ class Search implements Runnable, Future<SearchResults> {
 			List<Move> moveList;
 			Move[] moves;
 			int bestScore, searchScore;
-			if ((!ponder && nodes.get() >= maxNodes) || ownerThread.isInterrupted())
+			if (!ponder && nodes.get() >= maxNodes)
 				doStopSearch = true;
 			if (doStopSearch|| doStopSearchThread)
 				throw new AbnormalSearchTerminationException();
@@ -585,7 +582,7 @@ class Search implements Runnable, Future<SearchResults> {
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			tacticalMoves = quietMoves = null;
 			kE = null;
-			if ((!ponder && nodes.get() >= maxNodes) || ownerThread.isInterrupted())
+			if (!ponder && nodes.get() >= maxNodes)
 				doStopSearch = true;
 			if (doStopSearch|| doStopSearchThread)
 				throw new AbnormalSearchTerminationException();
@@ -1011,6 +1008,8 @@ class Search implements Runnable, Future<SearchResults> {
 			int depth = ply*params.fullPly;
 			final int depthLimit = depth + 2*params.fullPly;
 			final int origAlpha = alpha;
+			int alpha = this.alpha;
+			int beta = this.beta;
 			int moveInd;
 			int score, bestScore, extension, numOfMoves;
 			Move hashMove, bestMove, move, lastMove;
@@ -1022,6 +1021,7 @@ class Search implements Runnable, Future<SearchResults> {
 			bestMove = hashMove = null;
 			statsUpdated = false;
 			try {
+				position = origPosition.deepCopy();
 				nodes.incrementAndGet();
 				// If ply equals 0, perform only quiescence search.
 				tacticalMoves = quietMoves = null;

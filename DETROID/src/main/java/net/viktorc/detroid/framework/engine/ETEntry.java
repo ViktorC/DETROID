@@ -1,6 +1,6 @@
 package net.viktorc.detroid.framework.engine;
 
-import net.viktorc.detroid.framework.util.LossyHashTable;
+import net.viktorc.detroid.framework.util.LossyHashTable.Entry;
 
 /**
  * An evaluation hash table entry that stores information about the static evaluation scores of leaf nodes.
@@ -8,7 +8,7 @@ import net.viktorc.detroid.framework.util.LossyHashTable;
  * @author Viktor
  *
  */
-class ETEntry implements LossyHashTable.Entry<ETEntry> {
+class ETEntry implements Entry<ETEntry> {
 
 	/**
 	 * The 64-bit position hash key.

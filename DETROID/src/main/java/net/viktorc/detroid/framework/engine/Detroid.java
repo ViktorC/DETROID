@@ -17,8 +17,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import net.viktorc.detroid.framework.engine.Book.SelectionModel;
 import net.viktorc.detroid.framework.engine.Game.Side;
@@ -76,13 +74,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private Book book;
 	private Evaluator eval;
 	private RelativeHistoryTable hT;
-	// Transposition table.
 	private LossyHashTable<TTEntry> tT;
-	// Evaluation hash table.
 	private LossyHashTable<ETEntry> eT;
 	private ExecutorService executor;
 	private Future<SearchResults> search;
-	private ReadWriteLock searchResLock;
 	private SearchInfo searchInfo;
 	private Move searchResult;
 	private Short scoreFluctuation;
@@ -170,7 +165,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	 */
 	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo) {
-		searchResLock.readLock().lock();
+		searchInfo.getLock().lock();
 		try {
 			if (debugMode)
 				debugInfo.set("Search time extension data\n" +
@@ -191,7 +186,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			}
 			return 0;
 		} finally {
-			searchResLock.readLock().unlock();
+			searchInfo.getLock().unlock();
 		}
 	}
 	/**
@@ -252,7 +247,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		hT = new RelativeHistoryTable(params);
 		eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		executor = Executors.newSingleThreadExecutor();
-		searchResLock = new ReentrantReadWriteLock();
 		isInit = true;
 	}
 	@Override
@@ -416,14 +410,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		isBookMove = false;
 		stop = ponderHit = false;
 		// Reset search stats.
-		searchResLock.writeLock().lock();
+		searchInfo.getLock().lock();
 		try {
 			searchResult = new Move();
 			scoreFluctuation = 0;
 			timeOfLastSearchResChange = System.currentTimeMillis();
 			numOfSearchResChanges = 0;
 		} finally {
-			searchResLock.writeLock().unlock();
+			searchInfo.getLock().unlock();
 		}
 		// Set the names of the players once it is known which colour we are playing.
 		if (newGame) {
@@ -607,12 +601,23 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public short getHashLoadPermill() {
-		long load, capacity;
-		capacity = tT.getCapacity() + eT.getCapacity();
-		load = tT.getLoad() + eT.getLoad();
-		if (debugMode) debugInfo.set("Total hash size in MB - " + String.format("%.2f",
-				(float) ((double) (SizeEstimator.getInstance().sizeOf(tT) + SizeEstimator.getInstance().sizeOf(eT)))/(1L << 20)));
-		return (short) (1000*load/capacity);
+		long transLoad, transCapacity;
+		long evalLoad, evalCapacity;
+		long totalLoad, totalCapacity;
+		transLoad = tT.getLoad();
+		evalLoad = eT.getLoad();
+		totalLoad = transLoad + evalLoad;
+		transCapacity = tT.getCapacity();
+		evalCapacity = eT.getCapacity();
+		totalCapacity = transCapacity + evalCapacity ;
+		if (debugMode) {
+			debugInfo.set(String.format("TT load factor - %.2f\nET load factor - %.2f\nPT load factor - %.2f",
+					((float) transLoad)/transCapacity, ((float) evalLoad)/evalCapacity));
+			SizeEstimator estimator = SizeEstimator.getInstance();
+			debugInfo.set(String.format("Total hash size in MB - %.2f", (float) ((double) (estimator.sizeOf(tT) +
+					estimator.sizeOf(eT)))/(1L << 20)));
+		}
+		return (short) (1000*totalLoad/totalCapacity);
 	}
 	@Override
 	public DebugInformation getDebugInfo() {
@@ -770,7 +775,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		SearchInfo stats = (SearchInfo) o;
 		if (stats.getDepth() == 0)
 			return;
-		searchResLock.writeLock().lock();
+		searchInfo.getLock().lock();
 		try {
 			List<Move> pvList = stats.getPvMoveList();
 			Move newSearchRes = pvList != null && pvList.size() > 0 ? pvList.get(0) : Move.NULL_MOVE;
@@ -784,7 +789,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			searchResult = !newSearchRes.equals(Move.NULL_MOVE) ? newSearchRes : searchResult;
 			searchResult.value = score;
 		} finally {
-			searchResLock.writeLock().unlock();
+			searchInfo.getLock().unlock();
 		}
 	}
 	

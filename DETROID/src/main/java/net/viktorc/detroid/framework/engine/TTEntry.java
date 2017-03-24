@@ -1,6 +1,6 @@
 package net.viktorc.detroid.framework.engine;
 
-import net.viktorc.detroid.framework.util.LossyHashTable;
+import net.viktorc.detroid.framework.util.LossyHashTable.Entry;
 
 /**
  * A transposition table entry that stores information about searched positions identified by the key such as the depth of the search, the best move from this
@@ -10,7 +10,7 @@ import net.viktorc.detroid.framework.util.LossyHashTable;
  * @author Viktor
  *
  */
-class TTEntry implements LossyHashTable.Entry<TTEntry> {
+class TTEntry implements Entry<TTEntry> {
 	
 	/**
 	 * The 64-bit position hash key.
@@ -50,19 +50,20 @@ class TTEntry implements LossyHashTable.Entry<TTEntry> {
 	 */
 	@Override
 	public int compareTo(TTEntry e) {
-		if (generation < e.generation || depth < e.depth)
-			return -1;
-		if (type == e.type) {
-			// To increase the chances of the score being greater than any beta and thus produce more frequent ready-to-return hash hits...
-			if (type == NodeType.FAIL_HIGH.ind)
-				return score - e.score;
-			// To increase the chances of the score being lower than any alpha.
-			else if (type == NodeType.FAIL_LOW.ind)
-				return e.score - score;
-			else
-				return 1;
-		} else
-			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind ? 1 : -1;
+//		if (generation < e.generation || depth < e.depth)
+//			return -1;
+//		if (type == e.type) {
+//			// To increase the chances of the score being greater than any beta and thus produce more frequent ready-to-return hash hits...
+//			if (type == NodeType.FAIL_HIGH.ind)
+//				return score - e.score;
+//			// To increase the chances of the score being lower than any alpha.
+//			else if (type == NodeType.FAIL_LOW.ind)
+//				return e.score - score;
+//			else
+//				return 1;
+//		} else
+//			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind ? 1 : -1;
+		return generation >= e.generation ? 1 : -1; // Lazy SMP performs better with an always-replace scheme.
 	}
 	/**
 	 * Returns a 64-bit hash code identifying this object.
