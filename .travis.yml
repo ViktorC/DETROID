@@ -1,5 +1,6 @@
+sudo: required
+dist: trusty
 language: java
-sudo: false
 jdk: oraclejdk8
 install: mvn install
 script: "mvn cobertura:cobertura"
