@@ -8,8 +8,6 @@ addons:
             secure: $SONAR_TOKEN
 install: true
 script: mvn clean install jacoco:report coveralls:report sonar:sonar
-after_success:
-    - bash <(curl -s https://codecov.io/bash)
 cache:
     directories:
         - $HOME/.m2
