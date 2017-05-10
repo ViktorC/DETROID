@@ -9,6 +9,11 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	<scm>
+		<connection>scm:git:git@github.com:ViktorC/DETROID.git</connection>
+		<developerConnection>scm:git:git@github.com:ViktorC/DETROID.git</developerConnection>
+		<url>https://github.com/ViktorC/DETROID</url>
+	</scm>
 	<profiles>
 		<profile>
 			<id>java8-doclint-disabled</id>
