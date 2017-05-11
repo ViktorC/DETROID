@@ -84,6 +84,13 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<forkMode>pertest</forkMode>
+					<argLine>-Xmx512m</argLine>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
