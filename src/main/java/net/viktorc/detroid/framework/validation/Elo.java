@@ -28,7 +28,7 @@ public final class Elo {
 	 * @param wins The number of wins. It has to be 0 or greater.
 	 * @param losses The number of losses. It has to be  0 or greater.
 	 * @param draws The number of draws. It has to be 0 or greater.
-	 * @return
+	 * @return The Elo rating difference.
 	 */
 	public final static int calculateDifference(int wins, int losses, int draws) {
 		if (wins < 0 || draws < 0 || losses < 0)
@@ -44,7 +44,7 @@ public final class Elo {
 	 * opponent.
 	 * 
 	 * @param winRatio The win ratio. It has to between 0 and 1.
-	 * @return
+	 * @return The Elo rating difference.
 	 */
 	public final static int calculateDifference(double winRatio) {
 		if (winRatio < 0 || winRatio > 1)

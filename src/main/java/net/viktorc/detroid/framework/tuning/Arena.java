@@ -283,7 +283,7 @@ class Arena implements AutoCloseable {
 	}
 	@Override
 	public void close() {
-		controller.quit();
+		controller.close();
 		pool.shutdown();
 	}
 

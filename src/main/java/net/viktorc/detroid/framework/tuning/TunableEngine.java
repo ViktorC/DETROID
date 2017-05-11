@@ -25,7 +25,7 @@ public interface TunableEngine extends UCIEngine {
 	/**
 	 * Sets whether the engine should support deterministic 0-depth search which is a quiescence search without the use of hash tables 
 	 * such as a transposition table or any other mechanisms that bring non-determinism to the search. A 0-depth search is triggered by 
-	 * calling the {@link #search(java.util.Set, Boolean, Long, Long, Long, Long, Integer, Integer, Long, Integer, Long, Boolean) #search} 
+	 * calling the {@link #search(java.util.Set, Boolean, Long, Long, Long, Long, Integer, Integer, Long, Integer, Long, Boolean) search} 
 	 * method with depth set to 0 and everything else to null while deterministic 0-depth mode is set to true. A 0-depth search is not 
 	 * expected to return a move, only a score. When in deterministic 0-depth mode, engines should keep their hash size minimal.
 	 * 

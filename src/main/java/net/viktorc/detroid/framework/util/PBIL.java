@@ -61,7 +61,7 @@ public abstract class PBIL {
 	 * 
 	 * @param genotypeLength The number of genes in the genotypes, i.e. the number of binary digits
 	 * needed to represent the parameters to be optimized. It has to be greater than 0 or an
-	 * {@link #IllegalArgumentException IllegalArgumentException} is thrown.
+	 * {@link java.lang.IllegalArgumentException} is thrown.
 	 * @param populationSize The number of genotypes to produce per generation. If it is null, a 
 	 * default value of 100 will be used.
 	 * @param mutationProbability The probability of mutation for each gene. If it is null, a default 

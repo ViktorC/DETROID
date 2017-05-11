@@ -10,7 +10,8 @@ import java.util.function.Predicate;
  * inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and constant time insertion that, instead of pushing out
  * and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, just does the equivalent of
  * one and a half iterations of the standard cuckoo insertion loop in case of a hash conflict. Entries of the hash table implement
- * {@link #HashTable.Entry Entry} and thus implement the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
+ * {@link net.viktorc.detroid.framework.util.LossyHashTable.Entry} and thus implement the {@link java.lang.Comparable} and 
+ * {@link net.viktorc.detroid.framework.util.Hashable} interfaces.
  * 
  * The storage scheme is based on asymmetric hashing with two hash tables with different sizes in decreasing order, thus it does not really have
  * two unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
@@ -18,7 +19,7 @@ import java.util.function.Predicate;
  * 
  * @author Viktor
  *
- * @param <T> The hash table entry type that implements the {@link #HashTable.Entry Entry} interface.
+ * @param <T> The hash table entry type that implements the {@link net.viktorc.detroid.framework.util.LossyHashTable.Entry} interface.
  */
 public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterable<T> {
 	
@@ -247,7 +248,8 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	}
 	
 	/**
-	 * An interface for hash table entries that implicitly extends the {@link #Comparable Comparable} and {@link #Hashable Hashable} interfaces.
+	 * An interface for hash table entries that implicitly extends the {@link java.lang.Comparable} and 
+	 * {@link net.viktorc.detroid.framework.util.Hashable} interfaces.
 	 * 
 	 * @author Viktor
 	 *

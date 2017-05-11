@@ -34,12 +34,12 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
+	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
 	 * threads to use is the maximum of the number of available logical cores divided by two 
 	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
@@ -93,12 +93,12 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
+	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
 	 * threads to use is the maximum of the number of available logical cores divided by two 
 	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
@@ -127,12 +127,12 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
+	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
 	 * threads to use is the maximum of the number of available logical cores divided by two 
 	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
@@ -158,12 +158,12 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
+	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
 	 * each contain the engines needed for one optimization thread. For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the games in the fitness function will be distributed
 	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link #NullPointerException NullPointerException} is thrown. The maximum number of 
+	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
 	 * threads to use is the maximum of the number of available logical cores divided by two 
 	 * and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
@@ -266,9 +266,9 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 		for (Arena a : arenas)
 			a.close();
 		for (OptimizerEngines e : engines) {
-			e.getEngine().quit();
-			e.getOpponentEngine().quit();
-			e.getController().quit();
+			e.getEngine().close();
+			e.getOpponentEngine().close();
+			e.getController().close();
 		}
 	}
 

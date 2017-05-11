@@ -13,13 +13,13 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
 public interface EngineFactory {
 
 	/**
-	 * Returns a new {@link #TunableEngine TunableEngine} instance.
+	 * Returns a new {@link net.viktorc.detroid.framework.tuning.TunableEngine} instance.
 	 * 
 	 * @return A new tunable, UCI compatible engine instance.
 	 */
 	TunableEngine newEngineInstance();
 	/**
-	 * Returns a new {@link #ControllerEngine ControllerEngine} instance.
+	 * Returns a new {@link net.viktorc.detroid.framework.validation.ControllerEngine} instance.
 	 * 
 	 * @return A new controller engine instance.
 	 */

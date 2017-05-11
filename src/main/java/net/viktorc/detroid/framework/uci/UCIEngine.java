@@ -1,5 +1,6 @@
 package net.viktorc.detroid.framework.uci;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.Set;
 
@@ -9,7 +10,7 @@ import java.util.Set;
  * @author Viktor
  *
  */
-public interface UCIEngine {
+public interface UCIEngine extends Closeable {
 
 	/**
 	 * A standard check type UCI option that determines whether the engine should use its own book. It should be false by default.
@@ -61,8 +62,8 @@ public interface UCIEngine {
 	 */
 	<T> boolean setOption(Option<T> setting, T value);
 	/**
-	 * Notifies the engine whether it should keep updating the {@link #uci.DebugInfo DebugInfo} instance exposed by
-	 * {@link #uci.Engine.getDebugInfo getDebugInfo} with debug information strings.
+	 * Notifies the engine whether it should keep updating the {@link net.viktorc.detroid.framework.uci.DebugInformation} 
+	 * instance exposed by the {@link #getDebugInfo() getDebugInfo} method with debug information strings.
 	 * 
 	 * @param on Whether the engine should run in debug mode.
 	 */
@@ -140,5 +141,9 @@ public interface UCIEngine {
 	 * Signals the engine that it should clean up and free the resources it has been using.
 	 */
 	void quit();
+	@Override
+	default void close() {
+		quit();
+	}
 	
 }

@@ -79,7 +79,7 @@ public final class ApplicationFramework implements Runnable {
 	 * 
 	 * If there are no program arguments, the application is started in GUI mode.
 	 * 
-	 * @param factory An instance of a class extending the {@link #EngineFactory EngineFactory} interface. It provides the 
+	 * @param factory An instance of a class extending the {@link net.viktorc.detroid.framework.EngineFactory} interface. It provides the 
 	 * engine instances required for different features of the framework.
 	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
 	 * UCI mode: {@code -u} </br>
@@ -110,7 +110,7 @@ public final class ApplicationFramework implements Runnable {
 	 * Resolves the set of parameter types specified by the program argument.
 	 * 
 	 * @param arg The program argument specifying the types of parameters.
-	 * @return A set of {@link #ParameterType ParameterTypes}.
+	 * @return A set of {@link net.viktorc.detroid.framework.tuning.ParameterType}.
 	 */
 	private Set<ParameterType> resolveParamTypes(String arg) {
 		Set<ParameterType> paramTypes = null;
@@ -143,7 +143,7 @@ public final class ApplicationFramework implements Runnable {
 	 * Attempts to set the corresponding UCI options of an engine to the provided values. If the options 
 	 * are not supported by the engine or the values are not accepted, the call of this method has no effect.
 	 * 
-	 * @param engine The {@link #UCIEngine UCIEngine} whose options are to be set.
+	 * @param engine The {@link net.viktorc.detroid.framework.uci.UCIEngine} whose options are to be set.
 	 * @param tryUseBook Whether the engine's OwnBook option should be set to true, if it exists.
 	 * @param hash The value the engine's Hash option should be set to, if it exists.
 	 */
@@ -382,9 +382,9 @@ public final class ApplicationFramework implements Runnable {
 						try {
 							FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
 							for (OptimizerEngines e : engines) {
-								e.getEngine().quit();
-								e.getOpponentEngine().quit();
-								e.getController().quit();
+								e.getEngine().close();
+								e.getOpponentEngine().close();
+								e.getController().close();
 							}
 						} catch (NullPointerException | IOException e) {
 							throw new IllegalArgumentException(e);
@@ -411,7 +411,7 @@ public final class ApplicationFramework implements Runnable {
 						try {
 							ControllerEngine engine = factory.newControllerEngineInstance();
 							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
-							engine.quit();
+							engine.close();
 						} catch (Exception e) {
 							throw new IllegalArgumentException(e);
 						}
@@ -515,7 +515,7 @@ public final class ApplicationFramework implements Runnable {
 					if ((ind = argList.indexOf("--paramsfile")) != -1)
 						destFile = argList.get(ind + 1);
 					params.writeToFile(destFile);
-					engine.quit();
+					engine.close();
 				} break;
 				default:
 					throw new IllegalArgumentException();
@@ -526,8 +526,8 @@ public final class ApplicationFramework implements Runnable {
 			TunableEngine searchEngine = factory.newEngineInstance();
 			GUI.setEngines(controller, searchEngine);
 			Application.launch(GUI.class);
-			controller.quit();
-			searchEngine.quit();
+			controller.close();
+			searchEngine.close();
 		}
 	}
 	

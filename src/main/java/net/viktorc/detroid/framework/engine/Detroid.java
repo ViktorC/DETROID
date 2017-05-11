@@ -41,21 +41,21 @@ import net.viktorc.detroid.framework.validation.GameState;
  */
 public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	
-	public final static float VERSION_NUMBER = 1.0f;
-	public final static String NAME = "DETROID " + VERSION_NUMBER;
-	public final static String AUTHOR = "Viktor Csomor";
+	public static final float VERSION_NUMBER = 1.0f;
+	public static final String NAME = "DETROID " + VERSION_NUMBER;
+	public static final String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.
-	public final static String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
+	public static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
-	public final static String DEFAULT_BOOK_FILE_PATH = "book.bin";
+	public static final String DEFAULT_BOOK_FILE_PATH = "book.bin";
 	// The minimum allowed hash size in MB.
-	private final static int MIN_HASH_SIZE = 1;
+	private static final int MIN_HASH_SIZE = 1;
 	// The maximum allowed hash size in MB.
-	private final static int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
+	private static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
 	// The minimum allowed number of search threads to use.
-	private final static int MIN_SEARCH_THREADS = 1;
+	private static final int MIN_SEARCH_THREADS = 1;
 	// The maximum allowed number of search threads to use.
-	private final static int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
+	private static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
 	
 	private Option<?> hashSize;
 	private Option<?> clearHash;
@@ -295,7 +295,9 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			} else if (primaryBookPath.equals(setting)) {
 				try {
 					PolyglotBook newBook = new PolyglotBook((String) value, book.getSecondaryFilePath());
-					book.close();
+					try {
+						book.close();
+					} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 					book = newBook;
 					options.put(primaryBookPath, book.getPrimaryFilePath());
 					if (debugMode) debugInfo.set("Primary book file path successfully set to " + value);
@@ -304,7 +306,9 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			} else if (secondaryBookPath.equals(setting)) {
 				try {
 					PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
-					book.close();
+					try {
+						book.close();
+					} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 					book = newBook;
 					options.put(secondaryBookPath, book.getSecondaryFilePath());
 					if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
@@ -405,7 +409,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		boolean isBookMove;
 		SearchResults results;
 		doPonder = false;
-		doInfinite = (infinite != null && infinite) || ((ponder == null || ponder == false) && whiteTime == null && blackTime == null &&
+		doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null && blackTime == null &&
 				depth == null && nodes == null && mateDistance == null && searchTime == null);
 		isBookMove = false;
 		stop = ponderHit = false;
@@ -571,7 +575,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				results = search.get();
 			} catch (InterruptedException | ExecutionException e) { }
 			if (!deterministicZeroDepthMode && results.getBestMove() == null)
-				results = new SearchResults(getRandomMove().toString(), null, results.getScore().get(),
+				results = new SearchResults(getRandomMove(), null, results.getScore().get(),
 						results.getScoreType().get());
 		}
 		return results;
@@ -611,7 +615,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		evalCapacity = eT.getCapacity();
 		totalCapacity = transCapacity + evalCapacity ;
 		if (debugMode) {
-			debugInfo.set(String.format("TT load factor - %.2f\nET load factor - %.2f\nPT load factor - %.2f",
+			debugInfo.set(String.format("TT load factor - %.2f%nET load factor - %.2f",
 					((float) transLoad)/transCapacity, ((float) evalLoad)/evalCapacity));
 			SizeEstimator estimator = SizeEstimator.getInstance();
 			debugInfo.set(String.format("Total hash size in MB - %.2f", (float) ((double) (estimator.sizeOf(tT) +

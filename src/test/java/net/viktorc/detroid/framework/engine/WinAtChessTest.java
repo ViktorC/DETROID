@@ -51,8 +51,8 @@ public final class WinAtChessTest {
 	}
 	@AfterClass
 	public static void cleanUp() {
-		CONTROLLER.quit();
-		ENGINE.quit();
+		CONTROLLER.close();
+		ENGINE.close();
 	}
 	
 }

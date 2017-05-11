@@ -1,7 +1,7 @@
 package net.viktorc.detroid.framework.tuning;
 
 /**
- * An exception for when a field declared as an engine parameter by the {@link #Parameter Parameter} annotation is a static or 
+ * An exception for when a field declared as an engine parameter by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation is a static or 
  * non-primitive field.
  * 
  * @author Viktor

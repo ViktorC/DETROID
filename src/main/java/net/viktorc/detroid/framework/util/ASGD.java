@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 /**
  * An adaptive stochastic gradient descent implementation for supervised learning. It is based on the Nadam (Nesterov-accelerated adaptive 
  * moment estimation) algorithm. It can be employed as a stochastic, mini-batch, or standard batch gradient descent algorithm. There are three 
- * abstract methods to implement for its subclasses, {@link #costFunction(double[], ArrayList) costFunction} which is ideally a differentiable, 
+ * abstract methods to implement for its subclasses, {@link #costFunction(double[], List)} which is ideally a differentiable, 
  * smooth, convex function whose (global) minimum is to be found (if the function is not convex, the algorithm might converge to a local minimum), 
  * {@link #sampleTrainingData() sampleTrainingData} which (random) samples the training data, and {@link #getTestData() getTestData} which returns 
  * the test data.

@@ -31,7 +31,7 @@ public interface ControllerEngine extends UCIEngine {
 	 */
 	String getStartPosition();
 	/**
-	 * Returns the current game state as labelled by {@link #uibase.GameState GameState}.
+	 * Returns the current game state as labelled by {@link net.viktorc.detroid.framework.validation.GameState}.
 	 * 
 	 * @return The current game state.
 	 */

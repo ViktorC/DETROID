@@ -34,11 +34,11 @@ import net.viktorc.detroid.framework.util.GrayCode;
  * contents of an instance to a file or reading, parsing, and setting the fields of an instance based on such a file. It is possible to retrieve 
  * the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded and 
  * concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
- * procedure reversed. Only those fields of the subclasses are handled by the class that are annotated with the {@link #Parameter Parameter} annotation. 
- * The annotation also has an optional attribute {@link #Parameter.binaryLengthLimit binaryLengthLimit} which marks the number of bits to consider when 
- * tuning the parameter. When applied to floating point values, it's effects are less intuitive as instead of ignoring bits of the number's binary 
- * representation, it just sets a maximum for the values it can take on which will be equal to what this maximum would be for integer numbers 
- * (2^[limit] - 1).
+ * procedure reversed. Only those fields of the subclasses are handled by the class that are annotated with the {@link net.viktorc.detroid.framework.tuning.Parameter} 
+ * annotation. The annotation also has an optional attribute {@link net.viktorc.detroid.framework.tuning.Parameter#binaryLengthLimit() binaryLengthLimit} 
+ * which marks the number of bits to consider when tuning the parameter. When applied to floating point values, it's effects are less intuitive as 
+ * instead of ignoring bits of the number's binary representation, it just sets a maximum for the values it can take on which will be equal to what 
+ * this maximum would be for integer numbers (2^[limit] - 1).
  * 
  * WARNING: No negative values are supported, thus the most significant bit of each signed primitive (all except boolean and char) field will be ignored
  * when generating the binary string or setting the values of the fields based on a binary string and negative values will default to 0 when setting the
@@ -57,9 +57,9 @@ public abstract class EngineParameters {
 	private final transient List<Field> engineManagementParamFields;
 	
 	/**
-	 * Constructs an instance and scans the fields of the (extending) class for ones annotated as {@link #Parameter Parameter}.
+	 * Constructs an instance and scans the fields of the (extending) class for ones annotated as {@link net.viktorc.detroid.framework.tuning.Parameter}.
 	 * 
-	 * @throws ParameterException If a static or non-primitive field is annotated as {@link #Parameter Parameter}.
+	 * @throws ParameterException If a static or non-primitive field is annotated as {@link net.viktorc.detroid.framework.tuning.Parameter}.
 	 */
 	protected EngineParameters() throws ParameterException {
 		allParamFields = new ArrayList<>();
@@ -210,7 +210,7 @@ public abstract class EngineParameters {
 	}
 	/**
 	 * Sets the values of the parameter fields of the instance. If a value in the array is negative, it will be taken for 0; if a value is greater than
-	 * what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the field 
+	 * what the respective field's type or the bit limit specified by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation's attribute would allow for, the field 
 	 * will be set to its maximum allowed value. If the array is longer than the number of parameter fields, the extra elements will be ignored; if it is 
 	 * shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value greater than or equal to 1 will default 
 	 * to true, everything else will default to false.
@@ -223,7 +223,7 @@ public abstract class EngineParameters {
 	}
 	/**
 	 * Sets the values of the parameter fields of the specified type. If a value in the array is negative, it will be taken for 0; if a value is greater 
-	 * than what the respective field's type or the bit limit specified by the {@link #Parameter Parameter} annotation's attribute would allow for, the 
+	 * than what the respective field's type or the bit limit specified by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation's attribute would allow for, the 
 	 * field will be set to its maximum allowed value. If the array is longer than the number of parameter fields of the specified type, the extra 
 	 * elements will be ignored; if it is shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value 
 	 * greater than or equal to 1 will default to true, everything else will default to false.
@@ -323,8 +323,8 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Returns an array of doubles holding the values of all the fields declared as parameters by the {@link #Parameter Parameter} annotation. Boolean 
-	 * values will be converted to either 1 or 0 depending on whether they are true or false.
+	 * Returns an array of doubles holding the values of all the fields declared as parameters by the {@link net.viktorc.detroid.framework.tuning.Parameter} 
+	 * annotation. Boolean values will be converted to either 1 or 0 depending on whether they are true or false.
 	 * 
 	 * @return An array of doubles holding the values of all the parameter fields.
 	 */
@@ -332,8 +332,9 @@ public abstract class EngineParameters {
 		return values(null);
 	}
 	/**
-	 * Returns an array of doubles holding the values of all the fields declared as parameters of the specified type by the {@link #Parameter Parameter} 
-	 * annotation. Boolean values will be converted to either 1 or 0 depending on whether they are true or false.
+	 * Returns an array of doubles holding the values of all the fields declared as parameters of the specified type by the 
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. Boolean values will be converted to either 1 or 0 
+	 * depending on whether they are true or false.
 	 * 
 	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for all parameter fields 
 	 * will be returned.
@@ -356,8 +357,9 @@ public abstract class EngineParameters {
 		return arr;
 	}
 	/**
-	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters by the {@link #Parameter Parameter} 
-	 * annotation. The values are determined by the field type and the binaryLengthLimit attribute of the annotation.
+	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters by the 
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The values are determined by the field type and 
+	 * the binaryLengthLimit attribute of the annotation.
 	 * 
 	 * @return An array of doubles holding the maximum allowed values for all parameters.
 	 */
@@ -365,11 +367,12 @@ public abstract class EngineParameters {
 		return maxValues(null);
 	}
 	/**
-	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters of the specified type by the 
-	 * {@link #Parameter Parameter} annotation. The values are determined by the field type and the binaryLengthLimit attribute of the annotation.
+	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters of the specified 
+	 * type by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The values are determined by the field type 
+	 * and the binaryLengthLimit attribute of the annotation.
 	 * 
-	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for all parameter fields 
-	 * will be returned.
+	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for 
+	 * all parameter fields will be returned.
 	 * @return An array of doubles holding the maximum allowed values for the parameters of the specified type.
 	 */
 	public final double[] maxValues(Set<ParameterType> types) {
@@ -400,8 +403,9 @@ public abstract class EngineParameters {
 		return arr;
 	}
 	/**
-	 * Returns a binary string of all the bits of all the fields annotated as a {@link #Parameter Parameter} concatenated field by field. Floating point 
-	 * values will be cast to integer values (float to int, double to long) for their binary representation which may result in information loss.
+	 * Returns a binary string of all the bits of all the fields annotated as a {@link net.viktorc.detroid.framework.tuning.Parameter} 
+	 * concatenated field by field. Floating point values will be cast to integer values (float to int, double to long) for their binary 
+	 * representation which may result in information loss.
 	 * 
 	 * @return A binary string of all the bits of all parameter fields concatenated field by field.
 	 */
@@ -409,9 +413,9 @@ public abstract class EngineParameters {
 		return toGrayCodeString(null);
 	}
 	/**
-	 * Returns a binary string of all the bits of the fields annotated as a {@link #Parameter Parameter} of the specified type concatenated field by 
-	 * field. Floating point values will be cast to integer values (float to int, double to long) for their binary representation which may result in 
-	 * information loss.
+	 * Returns a binary string of all the bits of the fields annotated as a {@link net.viktorc.detroid.framework.tuning.Parameter} of the specified 
+	 * type concatenated field by field. Floating point values will be cast to integer values (float to int, double to long) for their binary 
+	 * representation which may result in information loss.
 	 * 
 	 * @param types A set of the types of parameters whose values are to be included in the string. If it is null, all parameters' values will be 
 	 * included.

@@ -1432,24 +1432,23 @@ class Position implements Copiable<Position>, Hashable {
 				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
 			// Check for en passant moves.
-			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveSetBase.getByIndex(to = (byte) (EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights))
-						.getBlackPawnCaptureSet(pawnPieceSet)) != 0) {
-					kingDb = MoveSetBase.getByIndex(king);
-					while (pieceSet != 0) {
-						piece = BitOperations.indexOfLSBit(pieceSet);
-						// Make sure that the en passant does not leave the king exposed to check.
-						enPassAttBits = ((1L << piece) | (1L << to));
-						enPassBits = enPassAttBits | (1L << (to - 8));
-						allNonWhiteOccupied ^= enPassAttBits;
-						allOccupied ^= enPassBits;
-						if (((blackQueens | blackRooks) & kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied)) == 0 &&
-								((blackQueens | blackBishops) & kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied)) == 0)
-							moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
-						allNonWhiteOccupied ^= enPassAttBits;
-						allOccupied ^= enPassBits;
-						pieceSet = BitOperations.resetLSBit(pieceSet);
-					}
+			if (enPassantRights != EnPassantRights.NONE.ind &&
+					(pieceSet = MoveSetBase.getByIndex(to = (byte) (EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights))
+					.getBlackPawnCaptureSet(pawnPieceSet)) != 0) {
+				kingDb = MoveSetBase.getByIndex(king);
+				while (pieceSet != 0) {
+					piece = BitOperations.indexOfLSBit(pieceSet);
+					// Make sure that the en passant does not leave the king exposed to check.
+					enPassAttBits = ((1L << piece) | (1L << to));
+					enPassBits = enPassAttBits | (1L << (to - 8));
+					allNonWhiteOccupied ^= enPassAttBits;
+					allOccupied ^= enPassBits;
+					if (((blackQueens | blackRooks) & kingDb.getRookMoveSet(allNonWhiteOccupied, allOccupied)) == 0 &&
+							((blackQueens | blackBishops) & kingDb.getBishopMoveSet(allNonWhiteOccupied, allOccupied)) == 0)
+						moves.add(new Move(piece, to, Piece.W_PAWN.ind, Piece.B_PAWN.ind, MoveType.EN_PASSANT.ind));
+					allNonWhiteOccupied ^= enPassAttBits;
+					allOccupied ^= enPassBits;
+					pieceSet = BitOperations.resetLSBit(pieceSet);
 				}
 			}
 		}
@@ -1527,24 +1526,23 @@ class Position implements Copiable<Position>, Hashable {
 				pieceSet = BitOperations.resetLSBit(pieceSet);
 			}
 			// Check for en passant moves.
-			if (enPassantRights != EnPassantRights.NONE.ind) {
-				if ((pieceSet = MoveSetBase.getByIndex(to = (byte) (EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights))
-						.getWhitePawnCaptureSet(pawnPieceSet)) != 0) {
-					kingDb = MoveSetBase.getByIndex(king);
-					while (pieceSet != 0) {
-						piece = BitOperations.indexOfLSBit(pieceSet);
-						// Make sure that the en passant does not leave the king exposed to check.
-						enPassAttBits = ((1L << piece) | (1L << to));
-						enPassBits = enPassAttBits | (1L << (to + 8));
-						allNonBlackOccupied ^= enPassAttBits;
-						allOccupied ^= enPassBits;
-						if (((whiteQueens | whiteRooks) & kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied)) == 0 &&
-								((whiteQueens | whiteBishops) & kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied)) == 0)
-							moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
-						allNonBlackOccupied ^= enPassAttBits;
-						allOccupied ^= enPassBits;
-						pieceSet = BitOperations.resetLSBit(pieceSet);
-					}
+			if (enPassantRights != EnPassantRights.NONE.ind &&
+					(pieceSet = MoveSetBase.getByIndex(to = (byte) (EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights))
+					.getWhitePawnCaptureSet(pawnPieceSet)) != 0) {
+				kingDb = MoveSetBase.getByIndex(king);
+				while (pieceSet != 0) {
+					piece = BitOperations.indexOfLSBit(pieceSet);
+					// Make sure that the en passant does not leave the king exposed to check.
+					enPassAttBits = ((1L << piece) | (1L << to));
+					enPassBits = enPassAttBits | (1L << (to + 8));
+					allNonBlackOccupied ^= enPassAttBits;
+					allOccupied ^= enPassBits;
+					if (((whiteQueens | whiteRooks) & kingDb.getRookMoveSet(allNonBlackOccupied, allOccupied)) == 0 &&
+							((whiteQueens | whiteBishops) & kingDb.getBishopMoveSet(allNonBlackOccupied, allOccupied)) == 0)
+						moves.add(new Move(piece, to, Piece.B_PAWN.ind, Piece.W_PAWN.ind, MoveType.EN_PASSANT.ind));
+					allNonBlackOccupied ^= enPassAttBits;
+					allOccupied ^= enPassBits;
+					pieceSet = BitOperations.resetLSBit(pieceSet);
 				}
 			}
 		}
@@ -3023,7 +3021,6 @@ class Position implements Copiable<Position>, Hashable {
 				restriction = Bitboard.FULL_BOARD;
 			} else if (san.matches("^[a-h][1-8][+#]?[//?!]{0,2}$")) {
 				to = (byte) ((int) (chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1));
-				mT = MoveSetBase.getByIndex(to);
 				if (isWhitesTurn) {
 					movedPiece = Piece.W_PAWN.ind;
 					pawnAdvancer = (1L << (to - 8)) & whitePawns & movablePieces;
@@ -3038,7 +3035,6 @@ class Position implements Copiable<Position>, Hashable {
 				restriction = Bitboard.FULL_BOARD;
 			} else if (san.matches("^[a-h][1-8]=[QRBN][+#]?[//?!]{0,2}$")) {
 				to = (byte) ((int) (chars[0] - 'a') + 8*(Integer.parseInt(Character.toString(chars[1])) - 1));
-				mT = MoveSetBase.getByIndex(to);
 				if (isWhitesTurn) {
 					movedPiece = Piece.W_PAWN.ind;
 					pawnAdvancer = (1L << (to - 8)) & whitePawns & movablePieces;

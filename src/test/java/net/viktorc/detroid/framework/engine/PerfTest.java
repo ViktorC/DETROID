@@ -47,7 +47,7 @@ public final class PerfTest {
 	}
 	@AfterClass
 	public static void cleanUp() {
-		CONTROLLER.quit();
+		CONTROLLER.close();
 	}
 	
 }

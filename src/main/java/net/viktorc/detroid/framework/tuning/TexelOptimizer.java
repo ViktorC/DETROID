@@ -59,19 +59,19 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	/**
 	 * Constructs and returns a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link #TunableEngine TunableEngine} instances (of which 
+	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.TunableEngine} instances (of which 
 	 * the parameters' gray code string should have the same length). For each non-null element
 	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
 	 * array of four non-null elements, the fitness function will be distributed and executed 
-	 * parallel on four threads. If the array or its first element are null or the method {@link 
-	 * #net.viktorc.detroid.frameworkuci.UCIEngine.init() init} hasn't been called on the first 
-	 * element, a {@link #NullPointerException NullPointerException} is thrown.
+	 * parallel on four threads. If the array or its first element are null or the method 
+	 * {@link net.viktorc.detroid.framework.uci.UCIEngine#init() init} hasn't been called on the first 
+	 * element, a {@link java.lang.NullPointerException} is thrown.
 	 * @param sampleSize The number of positions to include in one mini-batch. The higher this number
 	 * is, the slower but more stable the convergence will be.
 	 * @param baseLearningRate The base step size for the gradient descent. If it is null, it 
 	 * defaults to 1.
 	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
-	 * If it doesn't exist an {@link #IOException IOException} is thrown.
+	 * If it doesn't exist an {@link java.io.IOException} is thrown.
 	 * @param k A scaling constant for the sigmoid function used calculate the average error.
 	 * @param logger A logger to log the status of the optimization. It cannot be null.
 	 * @throws Exception If the engines cannot be initialised.
@@ -324,7 +324,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	public void close() throws Exception {
 		pool.shutdown();
 		for (TunableEngine e : engines)
-			e.quit();
+			e.close();
 	}
 	
 }

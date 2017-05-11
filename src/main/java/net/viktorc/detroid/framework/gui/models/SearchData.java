@@ -1,7 +1,7 @@
 package net.viktorc.detroid.framework.gui.models;
 
 /**
- * A view model bean for {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation}.
+ * A view model bean for {@link net.viktorc.detroid.framework.uci.SearchInformation}.
  * 
  * @author Viktor
  *
@@ -45,37 +45,37 @@ public final class SearchData {
 		this.hash = hash;
 	}
 	/**
-	 * See the corresponding {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation} method.
+	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
 	 */
 	public String getDepth() {
 		return depth;
 	}
 	/**
-	 * See the corresponding {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation} method.
+	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
 	 */
 	public String getTime() {
 		return time;
 	}
 	/**
-	 * See the corresponding {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation} method.
+	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
 	 */
 	public String getNodes() {
 		return nodes;
 	}
 	/**
-	 * See the corresponding {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation} method.
+	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
 	 */
 	public String getMoveNo() {
 		return moveNo;
 	}
 	/**
-	 * See the corresponding {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation} method.
+	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
 	 */
 	public String getPrincipalVar() {
 		return principalVar;
 	}
 	/**
-	 * See the corresponding {@link #net.viktorc.detroid.framework.uci.SearchInformation SearchInformation} method.
+	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
 	 */
 	public String getScore() {
 		return score;

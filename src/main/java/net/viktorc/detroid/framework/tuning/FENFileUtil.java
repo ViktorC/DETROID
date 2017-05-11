@@ -98,12 +98,12 @@ public final class FENFileUtil {
 	 * Generates a file of lines of FEN strings with the results of the games the positions occurred in 
 	 * appended to them. This file can then be used for the optimization of engine parameters.
 	 * 
-	 * @param engines An array of {@link #OptimizerEngines OptimizerEngines} instances that
-	 * each contain the engines needed for playing games in the {@link #Arena Arena}. For each 
-	 * non-null element in the array, a new thread will be utilized for the optimization. E.g. 
+	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
+	 * each contain the engines needed for playing games in the {@link net.viktorc.detroid.framework.tuning.Arena}. 
+	 * For each non-null element in the array, a new thread will be utilized for the optimization. E.g. 
 	 * if engines is an array of four non-null elements, the games in the fitness function will 
 	 * be distributed and played parallel on four threads. The array's first element cannot be 
-	 * null or a {@link #NullPointerException NullPointerException} is thrown.
+	 * null or a {@link java.lang.NullPointerException} is thrown.
 	 * @param games The number of games to play.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an

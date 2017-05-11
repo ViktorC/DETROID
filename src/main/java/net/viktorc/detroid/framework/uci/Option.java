@@ -43,8 +43,8 @@ public class Option<T> {
 		return name;
 	}
 	/**
-	 * Returns the optional default value of the setting. For a {@link #ButtonOption}, it is never present; for all other 
-	 * option types, it is always present.
+	 * Returns the optional default value of the setting. For a {@link net.viktorc.detroid.framework.uci.Option.ButtonOption}, 
+	 * it is never present; for all other option types, it is always present.
 	 * 
 	 * @return The default value of the option.
 	 */
@@ -52,8 +52,8 @@ public class Option<T> {
 		return defaultValue;
 	}
 	/**
-	 * Returns an optional set of values a {@link #ComboOption} can possibly take on. For all other option types, it is 
-	 * never present.
+	 * Returns an optional set of values a {@link net.viktorc.detroid.framework.uci.Option.ComboOption} can possibly take on. 
+	 * For all other option types, it is never present.
 	 * 
 	 * @return The set of allowed values for this option.
 	 */
@@ -61,8 +61,8 @@ public class Option<T> {
 		return allowedValues;
 	}
 	/**
-	 * Returns the optional minimum value for the setting. For option types other than {@link #SpinOption}, it is never 
-	 * present.
+	 * Returns the optional minimum value for the setting. For option types other than {@link net.viktorc.detroid.framework.uci.Option.SpinOption}, 
+	 * it is never present.
 	 * 
 	 * @return The minimum allowed value for this option.
 	 */
@@ -70,8 +70,8 @@ public class Option<T> {
 		return min;
 	}
 	/**
-	 * Returns the optional maximum value for the setting. For option types other than {@link #SpinOption}, it is never 
-	 * present.
+	 * Returns the optional maximum value for the setting. For option types other than {@link net.viktorc.detroid.framework.uci.Option.SpinOption}, 
+	 * it is never present.
 	 * 
 	 * @return The maximum allowed value for this option.
 	 */

@@ -4,7 +4,7 @@ import java.util.Collection;
 
 /**
  * An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
- * {@link #Comparable Comparable} interface.
+ * {@link java.lang.Comparable} interface.
  * 
  * @author Viktor
  *
@@ -15,8 +15,9 @@ public final class QuickSort {
 		
 	}
 	/**
-	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the {@link #Comparable Comparable}
-	 * interface. It is recommended to use {@link #java.util.Collection Collection}'s {@link #java.util.Collection.sort sort} method if performance is important.
+	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the {@link java.lang.Comparable}
+	 * interface. It is recommended to use {@link java.util.Collections}'s {@link java.util.Collections#sort(java.util.List) sort} method if performance 
+	 * is important.
 	 * 
 	 * @param container The list to be sorted.
 	 * @return A sorted array.
@@ -35,7 +36,7 @@ public final class QuickSort {
 		return null;
 	}
 	/**
-	 * Sorts and returns the array. The elements have to implement the {@link #Comparable Comparable} interface.
+	 * Sorts and returns the array. The elements have to implement the {@link java.lang.Comparable} interface.
 	 * 
 	 * @param array The array to be sorted.
 	 * @return The sorted array.

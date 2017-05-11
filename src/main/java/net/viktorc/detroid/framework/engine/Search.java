@@ -238,6 +238,7 @@ class Search implements Runnable, Future<SearchResults> {
 		slaveThreads = null;
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
+		// If maxDepth equals 0, perform only quiescence search.
 		if (maxDepth == 0) {
 			masterThread = new SearchThread(rootPosition, (short) 0, alpha, beta, null);
 			score = masterThread.quiescence(0, alpha, beta);
@@ -305,7 +306,7 @@ class Search implements Runnable, Future<SearchResults> {
 		bestMove = ponderMove = null;
 		entry = tT.get(rootPosition.key);
 		pV = extractPv(rootPosition, 2);
-		if (pV != null && pV.size() > 0) {
+		if (pV != null && !pV.isEmpty()) {
 			bestMove = pV.get(0);
 			if (pV.size() > 1)
 				ponderMove = pV.get(1);
@@ -391,7 +392,7 @@ class Search implements Runnable, Future<SearchResults> {
 		private volatile boolean doStopSearchThread;
 		
 		/**
-		 * Constructs a {@link #SearchThread} instance using the specified arguments. If the parameter master is null, 
+		 * Constructs an instance using the specified arguments. If the parameter master is null, 
 		 * the search thread will be constructed as a master search thread itself.
 		 * 
 		 * @param position
@@ -904,7 +905,6 @@ class Search implements Runnable, Future<SearchResults> {
 					depth = Math.min(depthLimit, depth + params.singleReplyExtension);
 				}
 				// Futility pruning margin calculation.
-				futMargin = 0;
 				if (!isDangerous) {
 					switch (depth/params.fullPly) {
 						case 1:
@@ -926,8 +926,12 @@ class Search implements Runnable, Future<SearchResults> {
 						case 5:
 							// Deep++ futility pruning.
 							futMargin = params.futilityMargin5;
+							break;
+						default:
+							futMargin = 0;
 					}
-				}
+				} else
+					futMargin = 0;
 				// Order and search the non-material moves.
 				quietMovesArr = orderNonMaterialMoves(quietMoves);
 				for (int i = 0; i < quietMovesArr.length; i++) {
@@ -1023,8 +1027,6 @@ class Search implements Runnable, Future<SearchResults> {
 			try {
 				position = origPosition.deepCopy();
 				nodes.incrementAndGet();
-				// If ply equals 0, perform only quiescence search.
-				tacticalMoves = quietMoves = null;
 				// Check for the 3-fold repetition rule.
 				if (position.hasRepeated(2))
 					return (int) Termination.DRAW_CLAIMED.score;
@@ -1068,10 +1070,8 @@ class Search implements Runnable, Future<SearchResults> {
 								(entry.type == NodeType.FAIL_HIGH.ind && score >= beta) || (entry.type == NodeType.FAIL_LOW.ind && score <= alpha)) {
 							if (entry.depth > selDepth)
 								selDepth = entry.depth;
-							if (isMainSearchThread) {
+							if (isMainSearchThread)
 								updateInfo(position, null, 0, ply, origAlpha, beta, score);
-								statsUpdated = true;
-							}
 							return score;
 						}
 					}
@@ -1084,8 +1084,6 @@ class Search implements Runnable, Future<SearchResults> {
 				allMoves = new ArrayList<>();
 				if (hashMove != null && (quietMoves.contains(hashMove) || tacticalMoves.contains(hashMove)))
 					allMoves.add(hashMove);
-				else
-					hashMove = null;
 				for (int i = 0; i < tacticalMovesArr.length; i++) {
 					if (!allMoves.contains(tacticalMovesArr[i]))
 						allMoves.add(tacticalMovesArr[i]);
@@ -1161,7 +1159,7 @@ class Search implements Runnable, Future<SearchResults> {
 	}
 	
 	/**
-	 * A {@link #RuntimeException} for when a search is cancelled or the maximum number of nodes to search have been exceeded and thus 
+	 * A {@link java.lang.RuntimeException} for when a search is cancelled or the maximum number of nodes to search have been exceeded and thus 
 	 * the search is interrupted resulting in an abrupt, disorderly termination.
 	 * 
 	 * @author Viktor

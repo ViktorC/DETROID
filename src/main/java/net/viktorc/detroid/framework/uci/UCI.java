@@ -287,7 +287,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 	}
 	@Override
 	public void close() throws IOException {
-		engine.quit();
+		engine.close();
 		executor.shutdown();
 		in.close();
 		out.close();

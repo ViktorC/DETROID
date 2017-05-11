@@ -178,9 +178,9 @@ public class SizeEstimator {
 		return sizeOf(o, visitedNodes);
 	}
 	/**
-	 * Statically estimates the size of the instance of a class. The estimate is only reliable if
-	 * {@link #isInstanceSizeConstant(Class<?>) isInstanceSizeConstant} returns true, i.e. all the non static fields of the class and its ancestors
-	 * are primitives. The non-primitive non-static fields are assumed to be null references.
+	 * Statically estimates the size of the instance of a class. The estimate is only reliable if {@link #isInstanceSizeConstant(Class) isInstanceSizeConstant} 
+	 * returns true, i.e. all the non static fields of the class and its ancestors are primitives. The non-primitive non-static fields are assumed to be null 
+	 * references.
 	 * 
 	 * @param clazz The class.
 	 * @return The static size of the class.
