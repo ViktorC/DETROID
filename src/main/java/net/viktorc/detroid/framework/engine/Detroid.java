@@ -587,7 +587,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			stop = true;
 			search.cancel(true);
 			synchronized (this) {
-				notify();
+				notifyAll();
 			}
 		}
 	}
@@ -596,7 +596,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		if (debugMode) debugInfo.set("Signaling ponderhit...");
 		ponderHit = true;
 		synchronized (this) {
-			notify();
+			notifyAll();
 		}
 	}
 	@Override

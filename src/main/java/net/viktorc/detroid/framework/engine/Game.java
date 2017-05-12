@@ -423,7 +423,6 @@ class Game {
 		pgn += "[Round \"" + (round == -1 ? "?" : round) + "\"]\n";
 		pgn += "[White \"" + (whitePlayerName == null ? "N/A" : whitePlayerName) + "\"]\n";
 		pgn += "[Black \"" + (blackPlayerName == null ? "N/A" : blackPlayerName) + "\"]\n";
-		result = "";
 		if (state == GameState.IN_PROGRESS)
 			result = "*";
 		else if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN)

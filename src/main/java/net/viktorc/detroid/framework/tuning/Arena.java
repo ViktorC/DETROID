@@ -145,7 +145,6 @@ class Arena implements AutoCloseable {
 			while (controller.getGameState() == GameState.IN_PROGRESS) {
 				TimerTask task;
 				long start;
-				res = null;
 				if (engine1Turn) {
 					try {
 						task = new TimerTask() {

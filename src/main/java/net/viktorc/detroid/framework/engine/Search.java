@@ -579,7 +579,6 @@ class Search implements Runnable, Future<SearchResults> {
 			bestMove = null;
 			searchedMoves = 0;
 			hashMove = killerMove1 = killerMove2 = null;
-			doQuiescence = false;
 			isThereHashMove = isThereKM1 = isThereKM2 = false;
 			tacticalMoves = quietMoves = null;
 			kE = null;
@@ -1135,10 +1134,8 @@ class Search implements Runnable, Future<SearchResults> {
 				// If the search stats have not been updated for the current ply yet, due to failing low, do it now.
 				if (bestScore <= origAlpha) {
 					insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
-					if (isMainSearchThread) {
+					if (isMainSearchThread)
 						updateInfo(position, move, move != null ? Math.min(allMovesArr.length, moveInd + 1) : 0, ply, origAlpha, beta, bestScore);
-						statsUpdated = true;
-					}
 				}
 				return bestScore;
 			} catch (AbnormalSearchTerminationException e) {

@@ -183,8 +183,9 @@ class PolyglotBook extends Book {
 				randomDouble = rand.nextDouble();
 				weightSum = 0;
 				e = null;
+				totalWeight = Math.max(Double.MIN_VALUE, totalWeight);
 				for (Entry ent : relEntries) {
-					weightSum += ((double)ent.weight/totalWeight);
+					weightSum += ((double) ent.weight)/totalWeight;
 					if (weightSum >= randomDouble) {
 						e = ent;
 						break;

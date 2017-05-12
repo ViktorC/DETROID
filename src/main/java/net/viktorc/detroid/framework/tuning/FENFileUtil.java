@@ -223,8 +223,10 @@ public final class FENFileUtil {
 				BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				double result = Double.parseDouble(line.split(";")[1]);
-				if (result != 0.5)
+				String res = line.split(";")[1];
+				if (res != null)
+					res = res.trim();
+				if (!"0.5".equals(res))
 					writer.write(line + System.lineSeparator());
 			}
 		}

@@ -492,7 +492,7 @@ public final class MainController implements AutoCloseable, Observer {
 			isPondering = false;
 			if (isReset) {
 				synchronized (MainController.this) {
-					MainController.this.notify();
+					MainController.this.notifyAll();
 				}
 				return;
 			}
