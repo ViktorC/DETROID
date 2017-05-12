@@ -453,6 +453,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				isBookMove = results != null && results.getBestMove() != null;
 			} catch (InterruptedException | ExecutionException e1) {
 				if (debugMode) debugInfo.set(e1.getMessage());
+				Thread.currentThread().interrupt();
+				return null;
 			} catch (CancellationException e2) { }
 			if (debugMode) debugInfo.set("Book search done");
 			// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
@@ -503,7 +505,11 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					while (!stop && !ponderHit) {
 						try {
 							wait();
-						} catch (InterruptedException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+						} catch (InterruptedException e) {
+							if (debugMode) debugInfo.set(e.getMessage());
+							Thread.currentThread().interrupt();
+							return null;
+						}
 					}
 					if (debugMode) debugInfo.set("Ponder stopped");
 					// If the search terminated due to a ponder hit, keep searching...
@@ -515,7 +521,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					else {
 						try {
 							search.get();
-						} catch (InterruptedException | ExecutionException e) { }
+						} catch (InterruptedException e) {
+							if (debugMode) debugInfo.set(e.getMessage());
+							Thread.currentThread().interrupt();
+							return null;
+						} catch (ExecutionException e) {
+							if (debugMode) debugInfo.set(e.getMessage());
+							return null;
+						}
 						break Search;
 					}
 				}
@@ -524,7 +537,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					if (debugMode) debugInfo.set("In infinite mode");
 					try {
 						search.get();
-					} catch (InterruptedException | ExecutionException e) { }
+					} catch (InterruptedException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						Thread.currentThread().interrupt();
+						return null;
+					} catch (ExecutionException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						return null;
+					}
 					break Search;
 				}
 				// Fixed node or depth search
@@ -532,7 +552,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					if (debugMode) debugInfo.set("In fixed mode");
 					try {
 						search.get();
-					} catch (InterruptedException | ExecutionException e) { }
+					} catch (InterruptedException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						Thread.currentThread().interrupt();
+						return null;
+					} catch (ExecutionException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						return null;
+					}
 					break Search;
 				}
 				// Compute search time and wait for the search to terminate for the computed amount of time.
@@ -541,11 +568,16 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				if (debugMode) debugInfo.set("Base search time - " + time);
 				try {
 					search.get(time, TimeUnit.MILLISECONDS);
-				} catch (InterruptedException | ExecutionException e1) {
-					if (debugMode) debugInfo.set(e1.getMessage());
-				} catch (TimeoutException e2) {
+				} catch (InterruptedException e) {
+					if (debugMode) debugInfo.set(e.getMessage());
+					Thread.currentThread().interrupt();
+					return null;
+				} catch (ExecutionException e) {
+					if (debugMode) debugInfo.set(e.getMessage());
+					return null;
+				} catch (TimeoutException e) {
 					if (debugMode) debugInfo.set("Base search time up");
-				} catch (CancellationException e3) { }
+				} catch (CancellationException e) { }
 				// If time was up, check if the search should be extended.
 				if (!search.isDone() && searchTime == null) {
 					try {
@@ -553,18 +585,30 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						if (debugMode) debugInfo.set("Extra search time - " + extraTime);
 						if (extraTime > 0)
 							search.get(extraTime, TimeUnit.MILLISECONDS);
-					} catch (InterruptedException | ExecutionException e1) {
-						if (debugMode) debugInfo.set(e1.getMessage());
-					} catch (TimeoutException e2) {
+					} catch (InterruptedException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						Thread.currentThread().interrupt();
+						return null;
+					} catch (ExecutionException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						return null;
+					} catch (TimeoutException e) {
 						if (debugMode) debugInfo.set("Extra time up");
-					} catch (CancellationException e3) { }
+					} catch (CancellationException e) { }
 				}
 				// Time is up, cancel the search.
 				if (!search.isDone()) {
 					search.cancel(true);
 					try {
 						search.get();
-					} catch (InterruptedException | ExecutionException e) { }
+					} catch (InterruptedException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						Thread.currentThread().interrupt();
+						return null;
+					} catch (ExecutionException e) {
+						if (debugMode) debugInfo.set(e.getMessage());
+						return null;
+					}
 				}
 			}
 			if (debugMode) debugInfo.set("Search stopped");
@@ -573,10 +617,21 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		if (!isBookMove) {
 			try {
 				results = search.get();
-			} catch (InterruptedException | ExecutionException e) { }
-			if (!deterministicZeroDepthMode && results.getBestMove() == null)
-				results = new SearchResults(getRandomMove(), null, results.getScore().get(),
-						results.getScoreType().get());
+			} catch (InterruptedException e) {
+				if (debugMode) debugInfo.set(e.getMessage());
+				Thread.currentThread().interrupt();
+				return null;
+			} catch (ExecutionException e) {
+				if (debugMode) debugInfo.set(e.getMessage());
+				return null;
+			}
+			if (!deterministicZeroDepthMode) {
+				if (results == null)
+					results = new SearchResults(getRandomMove(), null, null, null);
+				else if (results.getBestMove() == null)
+					results = new SearchResults(getRandomMove(), null, results.getScore().get(),
+							results.getScoreType().get());
+			}
 		}
 		return results;
 	}

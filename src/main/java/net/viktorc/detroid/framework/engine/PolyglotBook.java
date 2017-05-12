@@ -207,8 +207,8 @@ class PolyglotBook extends Book {
 			default: return null;
 		}
 		try {
-			return p.parsePACN(polyglotMoveToPACN(p, e.move));
-		} catch (ChessParseException | NullPointerException | IllegalArgumentException ex) {
+			return e == null ? null : p.parsePACN(polyglotMoveToPACN(p, e.move));
+		} catch (ChessParseException | IllegalArgumentException ex) {
 			ex.printStackTrace();
 			return null;
 		}

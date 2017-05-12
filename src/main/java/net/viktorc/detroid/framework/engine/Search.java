@@ -269,7 +269,9 @@ class Search implements Runnable, Future<SearchResults> {
 					t.stop();
 				try {
 					latch.await();
-				} catch (InterruptedException e) { }
+				} catch (InterruptedException e) {
+					doStopSearch = true;
+				}
 			}
 			if (doStopSearch || i == maxDepth)
 				break;
@@ -319,25 +321,19 @@ class Search implements Runnable, Future<SearchResults> {
 				adjustedScore.getKey(), adjustedScore.getValue());
 	}
 	@Override
-	public synchronized SearchResults get() {
+	public synchronized SearchResults get() throws InterruptedException {
 		while (!isDone) {
-			try {
-				wait();
-			} catch (InterruptedException e) { }
+			wait();
 		}
 		return results;
 	}
 	@Override
-	public synchronized SearchResults get(long timeout, TimeUnit unit) {
+	public synchronized SearchResults get(long timeout, TimeUnit unit) throws InterruptedException {
 		long timeoutMs = unit.toMillis(timeout);
 		long start = System.currentTimeMillis();
 		while (!isDone && timeoutMs > 0) {
-			try {
-				wait(timeoutMs);
-				break;
-			} catch (InterruptedException e) {
-				timeoutMs -= (System.currentTimeMillis() - start);
-			}
+			wait(timeoutMs);
+			timeoutMs -= (System.currentTimeMillis() - start);
 		}
 		return results;
 	}

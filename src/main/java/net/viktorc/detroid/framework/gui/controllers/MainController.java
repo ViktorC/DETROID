@@ -410,7 +410,10 @@ public final class MainController implements AutoCloseable, Observer {
 				while (updates.values().contains(Boolean.FALSE)) {
 					try {
 						updateLock.wait();
-					} catch (InterruptedException e) { }
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						return;
+					}
 				}
 			}
 			updates.clear();
@@ -484,7 +487,10 @@ public final class MainController implements AutoCloseable, Observer {
 				while (updates.values().contains(Boolean.FALSE)) {
 					try {
 						updateLock.wait();
-					} catch (InterruptedException e) { }
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						return;
+					}
 				}
 			}
 			updates.clear();
@@ -570,7 +576,10 @@ public final class MainController implements AutoCloseable, Observer {
 					while (isPondering) {
 						try {
 							wait();
-						} catch (InterruptedException e) { }
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							return;
+						}
 					}
 				}
 			}
@@ -616,7 +625,7 @@ public final class MainController implements AutoCloseable, Observer {
 				startPondering();
 		}
 		if (usersTurn && !isDemo) {
-			if (moveHistList.size() > 1)
+			if (moveHistList != null && moveHistList.size() > 1)
 				unmakeMove.setDisable(false);
 		}
 	}
@@ -691,7 +700,10 @@ public final class MainController implements AutoCloseable, Observer {
 						synchronized (MainController.this) {
 							try {
 								MainController.this.wait();
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								return;
+							}
 						}
 					}
 				}
@@ -710,7 +722,10 @@ public final class MainController implements AutoCloseable, Observer {
 						synchronized (MainController.this) {
 							try {
 								MainController.this.wait();
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								return;
+							}
 						}
 					}
 				}
@@ -737,7 +752,10 @@ public final class MainController implements AutoCloseable, Observer {
 						synchronized (MainController.this) {
 							try {
 								MainController.this.wait();
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								return;
+							}
 						}
 					}
 				}
@@ -789,7 +807,10 @@ public final class MainController implements AutoCloseable, Observer {
 						synchronized (MainController.this) {
 							try {
 								MainController.this.wait();
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								return;
+							}
 						}
 					}
 				}
@@ -846,7 +867,10 @@ public final class MainController implements AutoCloseable, Observer {
 						synchronized (MainController.this) {
 							try {
 								MainController.this.wait();
-							} catch (InterruptedException e) { }
+							} catch (InterruptedException e) {
+								Thread.currentThread().interrupt();
+								return;
+							}
 						}
 					}
 				}
@@ -934,7 +958,10 @@ public final class MainController implements AutoCloseable, Observer {
 								synchronized (MainController.this) {
 									try {
 										MainController.this.wait();
-									} catch (InterruptedException e) { }
+									} catch (InterruptedException e) {
+										Thread.currentThread().interrupt();
+										return;
+									}
 								}
 							}
 						}

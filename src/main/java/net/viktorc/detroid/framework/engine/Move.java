@@ -103,7 +103,8 @@ class Move implements Comparable<Move> {
 	 * @return
 	 */
 	boolean equals(Move m) {
-		return (from == m.from && to == m.to && movedPiece == m.movedPiece && capturedPiece == m.capturedPiece && type == m.type);
+		return m != null && from == m.from && to == m.to && movedPiece == m.movedPiece && capturedPiece == m.capturedPiece &&
+				type == m.type;
 	}
 	/**
 	 * Returns whether this move is equal to the input parameter 'compressed' move.
