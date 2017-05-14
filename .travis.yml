@@ -14,3 +14,10 @@ cache:
         - $HOME/.sonar/cache
 notifications:
     email: false
+deploy:
+    provider: pages
+    local_dir: /home/travis/build/ViktorC/DETROID/docs
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    on:
+        branch: master
