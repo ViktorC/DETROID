@@ -191,7 +191,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		double totalError = 0;
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
-		int workLoadPerThread = (int) Math.ceil(dataSample.size()/engines.length);
+		int workLoadPerThread = (int) Math.ceil(((double) dataSample.size())/engines.length);
 		for (int i = 0; i < engines.length && startInd < dataSample.size(); i++) {
 			final int finalStartInd = startInd;
 			final TunableEngine e = engines[i];

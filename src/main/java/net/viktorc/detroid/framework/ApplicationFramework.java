@@ -176,7 +176,7 @@ public final class ApplicationFramework implements Runnable {
 					try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
 						uci.run();
 					} catch (IOException e) {
-						e.printStackTrace();
+						throw new RuntimeException(e);
 					}
 				} break;
 				// Tuning.
@@ -196,44 +196,44 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-games": {
+								case "-games":
 									games = Integer.parseInt(args[++i]);
-								} break;
-								case "-population": {
+									break;
+								case "-population":
 									popSize = Integer.parseInt(args[++i]);
-								} break;
-								case "-tc": {
+									break;
+								case "-tc":
 									tc = Long.parseLong(args[++i]);
-								} break;
-								case "--log": {
+									break;
+								case "--log":
 									logFilePath = args[++i];
-								} break;
-								case "--concurrency": {
+									break;
+								case "--concurrency":
 									concurrency = Integer.parseInt(args[++i]);
-								} break;
-								case "--paramtype": {
+									break;
+								case "--paramtype":
 									String type = args[++i];
 									paramTypes = resolveParamTypes(type);
-								} break;
-								case "--inc": {
+									break;
+								case "--inc":
 									tcInc = Long.parseLong(args[++i]);
-								} break;
-								case "--validfactor": {
+									break;
+								case "--validfactor":
 									validFactor = Double.parseDouble(args[++i]);
-								} break;
-								case "--trybook": {
+									break;
+								case "--trybook":
 									useBook = Boolean.parseBoolean(args[++i]);
-								} break;
-								case "--tryhash": {
+									break;
+								case "--tryhash":
 									hash = Integer.parseInt(args[++i]);
-								} break;
-								case "--initprobvector": {
+									break;
+								case "--initprobvector":
 									String vec = args[++i];
 									String[] probs = vec.split(",");
 									initProbVec = new double[probs.length];
 									for (int j = 0; j < probs.length; j++)
 										initProbVec[j] = Double.parseDouble(probs[j].trim());
-								} break;
+									break;
 								default:
 									throw new IllegalArgumentException();
 							}
@@ -252,7 +252,7 @@ public final class ApplicationFramework implements Runnable {
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
-								e.printStackTrace();
+								throw new RuntimeException(e);
 							}
 						}
 						Logger logger = Logger.getAnonymousLogger();
@@ -275,24 +275,24 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-samplesize": {
+								case "-samplesize":
 									sampleSize = Integer.parseInt(args[++i]);
-								} break;
-								case "--log": {
+									break;
+								case "--log":
 									logFilePath = args[++i];
-								} break;
-								case "--concurrency": {
+									break;
+								case "--concurrency":
 									concurrency = Integer.parseInt(args[++i]);
-								} break;
-								case "--learningrate": {
+									break;
+								case "--learningrate":
 									learningRate = Double.parseDouble(args[++i]);
-								} break;
-								case "--k": {
+									break;
+								case "--k":
 									k = Double.parseDouble(args[++i]);
-								} break;
-								case "--fensfile": {
+									break;
+								case "--fensfile":
 									fensFilePath = args[++i];
-								} break;
+									break;
 								default:
 									throw new IllegalArgumentException();
 							}
@@ -305,7 +305,7 @@ public final class ApplicationFramework implements Runnable {
 						try {
 							engines[0].init();
 						} catch (Exception e) {
-							e.printStackTrace();
+							throw new RuntimeException(e);
 						}
 						Logger logger = Logger.getAnonymousLogger();
 						try {
@@ -318,8 +318,7 @@ public final class ApplicationFramework implements Runnable {
 								fensFilePath, k, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
-							e.printStackTrace();
-							throw new IllegalArgumentException(e);
+							throw new RuntimeException(e);
 						}
 					} else
 						throw new IllegalArgumentException();
@@ -337,27 +336,27 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-games": {
+								case "-games":
 									games = Integer.parseInt(args[++i]);
-								} break;
-								case "-tc": {
+									break;
+								case "-tc":
 									tc = Long.parseLong(args[++i]);
-								} break;
-								case "--concurrency": {
+									break;
+								case "--concurrency":
 									concurrency = Integer.parseInt(args[++i]);
-								} break;
-								case "--inc": {
+									break;
+								case "--inc":
 									tcInc = Long.parseLong(args[++i]);
-								} break;
-								case "--trybook": {
+									break;
+								case "--trybook":
 									useBook = Boolean.parseBoolean(args[++i]);
-								} break;
-								case "--tryhash": {
+									break;
+								case "--tryhash":
 									hash = Integer.parseInt(args[++i]);
-								} break;
-								case "--destfile": {
+									break;
+								case "--destfile":
 									destFile = args[++i];
-								} break;
+									break;
 								default:
 									throw new IllegalArgumentException();
 							}
@@ -376,7 +375,7 @@ public final class ApplicationFramework implements Runnable {
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
-								throw new IllegalArgumentException(e);
+								throw new RuntimeException(e);
 							}
 						}
 						try {
@@ -386,8 +385,8 @@ public final class ApplicationFramework implements Runnable {
 								e.getOpponentEngine().close();
 								e.getController().close();
 							}
-						} catch (NullPointerException | IOException e) {
-							throw new IllegalArgumentException(e);
+						} catch (IOException e) {
+							throw new RuntimeException(e);
 						}
 					} else if ("bypgnconversion".equals(arg1)) {
 						String sourceFile = null;
@@ -395,15 +394,15 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-sourcefile": {
+								case "-sourcefile":
 									sourceFile = args[++i];
-								} break;
-								case "--maxgames": {
+									break;
+								case "--maxgames":
 									maxNumOfGames = Integer.parseInt(args[++i]);
-								} break;
-								case "--destfile": {
+									break;
+								case "--destfile":
 									destFile = args[++i];
-								} break;
+									break;
 								default:
 									throw new IllegalArgumentException();
 							}
@@ -413,7 +412,7 @@ public final class ApplicationFramework implements Runnable {
 							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
 							engine.close();
 						} catch (Exception e) {
-							throw new IllegalArgumentException(e);
+							throw new RuntimeException(e);
 						}
 					} else
 						throw new IllegalArgumentException();
@@ -427,12 +426,12 @@ public final class ApplicationFramework implements Runnable {
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-sourcefile": {
+								case "-sourcefile":
 									sourceFile = args[++i];
-								} break;
-								case "--destfile": {
+									break;
+								case "--destfile":
 									destFile = args[++i];
-								} break;
+									break;
 								default:
 									throw new IllegalArgumentException();
 							}
@@ -442,22 +441,22 @@ public final class ApplicationFramework implements Runnable {
 						try {
 							FENFileUtil.filterDraws(sourceFile, destFile);
 						} catch (IOException e) {
-							throw new IllegalArgumentException(e);
+							throw new RuntimeException(e);
 						}
 					} else if ("openings".equals(arg1)) {
 						int numOfPositionsToFilter = -1;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
-								case "-firstxmoves": {
+								case "-firstxmoves":
 									numOfPositionsToFilter = Integer.parseInt(args[++i]);
-								} break;
-								case "-sourcefile": {
+									break;
+								case "-sourcefile":
 									sourceFile = args[++i];
-								} break;
-								case "--destfile": {
+									break;
+								case "--destfile":
 									destFile = args[++i];
-								} break;
+									break;
 								default:
 									throw new IllegalArgumentException();
 							}
@@ -467,7 +466,7 @@ public final class ApplicationFramework implements Runnable {
 						try {
 							FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
 						} catch (IOException e) {
-							throw new IllegalArgumentException(e);
+							throw new RuntimeException(e);
 						}
 					} else
 						throw new IllegalArgumentException();
@@ -480,7 +479,7 @@ public final class ApplicationFramework implements Runnable {
 					try {
 						engine.init();
 					} catch (Exception e) {
-						e.printStackTrace();
+						throw new RuntimeException(e);
 					}
 					EngineParameters params = engine.getParameters();
 					if (!"-value".equals(args[2]))

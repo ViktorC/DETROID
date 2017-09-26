@@ -241,7 +241,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 			futures = new ArrayList<>(engines.length);
 			for (int i = 0; i < engines.length && addGamesPlayed < encore; i++) {
 				int index = i;
-				int gamesToPlay = (int) Math.min(encore - addGamesPlayed, Math.ceil(encore/engines.length));
+				int gamesToPlay = (int) Math.min(encore - addGamesPlayed, Math.ceil(((double) encore)/engines.length));
 				futures.add(pool.submit(() -> arenas[index].match(engines[index].getEngine(), engines[index].getOpponentEngine(),
 						gamesToPlay, timePerGame, timeIncPerMove)));
 				addGamesPlayed += gamesToPlay;

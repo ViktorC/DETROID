@@ -101,14 +101,14 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	 * @param hashSize
 	 */
 	private void setHashSize(int hashSize) {
-		long sizeInBytes = hashSize*1024*1024;
+		long sizeInBytes = hashSize*1024L*1024L;
 		int totalHashShares = params.tTshare + params.eTshare;
 		SizeEstimator estimator = SizeEstimator.getInstance();
 		tT = new LossyHashTable<>((int) (sizeInBytes*params.tTshare/totalHashShares/estimator.sizeOf(TTEntry.class)));
 		eT = new LossyHashTable<>((int) (sizeInBytes*params.eTshare/totalHashShares/estimator.sizeOf(ETEntry.class)));
 		if (debugMode) debugInfo.set("Hash capacity data\n" +
-				"Transposition table capacity - " + tT.getCapacity() + "\n" +
-				"Evaluation table capacity - " + eT.getCapacity());
+				"Transposition table capacity - " + tT.capacity() + "\n" +
+				"Evaluation table capacity - " + eT.capacity());
 	}
 	/**
 	 * Clears the transposition, pawn, evaluation, and history tables.
@@ -659,11 +659,11 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		long transLoad, transCapacity;
 		long evalLoad, evalCapacity;
 		long totalLoad, totalCapacity;
-		transLoad = tT.getLoad();
-		evalLoad = eT.getLoad();
+		transLoad = tT.load();
+		evalLoad = eT.load();
 		totalLoad = transLoad + evalLoad;
-		transCapacity = tT.getCapacity();
-		evalCapacity = eT.getCapacity();
+		transCapacity = tT.capacity();
+		evalCapacity = eT.capacity();
 		totalCapacity = transCapacity + evalCapacity ;
 		if (debugMode) {
 			debugInfo.set(String.format("TT load factor - %.2f%nET load factor - %.2f",

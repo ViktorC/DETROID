@@ -130,7 +130,7 @@ public class TimeSettingsDialog extends Dialog<TimeControl> {
 		if (minutes < 0 || seconds < 0 || seconds > 59)
 			throw new Exception("Illegal time unit value. Neither minutes nor seconds can be less than 0 and seconds " +
 					"cannot exceed 59");
-		return minutes*60000 + seconds*1000;
+		return minutes*60000L + seconds*1000L;
 	}
 	
 	/**

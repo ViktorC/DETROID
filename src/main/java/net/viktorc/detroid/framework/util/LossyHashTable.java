@@ -2,7 +2,10 @@ package net.viktorc.detroid.framework.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -21,7 +24,7 @@ import java.util.function.Predicate;
  *
  * @param <T> The hash table entry type that implements the {@link net.viktorc.detroid.framework.util.LossyHashTable.Entry} interface.
  */
-public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterable<T> {
+public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collection<T> {
 	
 	/* The lengths of the four inner hash tables are not equal so as to avoid the need for unique hash functions for each; and for faster access
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
@@ -51,14 +54,14 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 			tL2 = tL2 >= 3 ? MillerRabin.greatestLEPrime(tL2 - 1) : MillerRabin.leastGEPrime(tL1 + 1);
 		t1 = (T[]) new Entry[(int) tL1];
 		t2 = (T[]) new Entry[(int) tL2];
-		this.capacity = t1.length + t2.length;
+		this.capacity = ((long) t1.length) + t2.length;
 	}
 	/**
 	 * Returns the number of occupied slots in the hash table.
 	 * 
 	 * @return The number of entries in the table.
 	 */
-	public long getLoad() {
+	public long load() {
 		long load = 0;
 		for (Entry<?> e : t1) {
 			if (e != null)
@@ -75,7 +78,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 * 
 	 * @return The total number of entry slots.
 	 */
-	public long getCapacity() {
+	public long capacity() {
 		return capacity;
 	}
 	/**
@@ -222,8 +225,31 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	 */
 	@SuppressWarnings({"unchecked"})
 	public void clear() {
-		t1 = (T[])new Entry[t1.length];
-		t2 = (T[])new Entry[t2.length];
+		t1 = (T[]) new Entry[t1.length];
+		t2 = (T[]) new Entry[t2.length];
+	}
+	/**
+	 * Fills the specified array with the contents of the tables.
+	 * 
+	 * @param arr The array to fill.
+	 */
+	private void toObjectArray(Object[] arr) {
+		int i;
+		for (i = 0; i < t1.length; i++)
+			arr[i] = t1[i];
+		for (int j = i + 1; j < t2.length && j < arr.length; j++)
+			arr[j] = t1[j];
+	}
+	@Override
+	public Object[] toArray() {
+		Object[] arr = new Object[size()];
+		toObjectArray(arr);
+		return arr;
+	}
+	@Override
+	public <U> U[] toArray(U[] a) {
+		toObjectArray(a);
+		return a;
 	}
 	@Override
 	public Iterator<T> iterator() {
@@ -234,8 +260,79 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 		return list.iterator();
 	}
 	@Override
+	public int size() {
+		return (int) Math.min(Integer.MAX_VALUE, load());
+	}
+	@Override
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+	@Override
+	public boolean contains(Object o) {
+		return o instanceof Entry &&  o.equals(get(((Entry<?>) o).hashKey()));
+	}
+	@Override
+	public boolean add(T e) {
+		return put(e);
+	}
+	@Override
+	public boolean remove(Object o) {
+		if (o instanceof Entry) {
+			int ind;
+			Entry<?> e = (Entry<?>) o;
+			long key = e.hashKey();
+			long absKey = key & Long.MAX_VALUE;
+			if (t1[(ind = (int) (absKey%t1.length))].equals(o)) {
+				t1[ind] = null;
+				return true;
+			}
+			if (t2[(ind = (int) (absKey%t2.length))].equals(o)) {
+				t2[ind] = null;
+				return true;
+			}
+			return false;
+		}
+		return false;
+	}
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		for (Object o : c) {
+			if (!contains(o))
+				return false;
+		}
+		return true;
+	}
+	@Override
+	public boolean addAll(Collection<? extends T> c) {
+		return c.stream().map(this::put).anyMatch(b -> b);
+	}
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		return c.stream().map(this::remove).anyMatch(b -> b);
+	}
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		boolean changed = false;
+		Set<?> set = new HashSet<>(c);
+		for (int i = 0; i < t1.length; i++) {
+			T e = t1[i];
+			if (e != null && !set.contains(e)) {
+				t1[i] = null;
+				changed = true;
+			}
+		}
+		for (int i = 0; i < t2.length; i++) {
+			T e = t2[i];
+			if (e != null && !set.contains(e)) {
+				t2[i] = null;
+				changed = true;
+			}
+		}
+		return changed;
+	}
+	@Override
 	public String toString() {
-		long load = getLoad();
+		long load = load();
 		return String.format("Load/Capacity: %s; Factor: %.1f%\nSize: %.2fMB", load, capacity,
 				(load*100)/(double) capacity, SizeEstimator.getInstance().sizeOf(this)/(double)
 				(1 << 20));
