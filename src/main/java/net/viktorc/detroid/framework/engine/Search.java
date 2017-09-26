@@ -34,14 +34,8 @@ class Search implements Runnable, Future<SearchResults> {
 	private final Position rootPosition;
 	private final Evaluator eval;
 	private final SearchInfo info;
-	// Killer heuristic table.
-	private final KillerTable kT;
-	// History heuristic table.
-	private final RelativeHistoryTable hT;
-	// Transposition table.
 	private final LossyHashTable<TTEntry> tT;
 	private final byte hashEntryGen;
-	// Including extensions and quiescence search.
 	private final int maxExpectedSearchDepth;
 	private final int lCheckMateLimit;
 	private final int wCheckMateLimit;
@@ -51,7 +45,6 @@ class Search implements Runnable, Future<SearchResults> {
 	private final ArrayList<Move> allowedRootMoves;
 	private final boolean areMovesRestricted;
 	private final int numOfHelperThreads;
-
 	private Long startTime;
 	private ExecutorService executor;
 	private CountDownLatch latch;
@@ -79,8 +72,8 @@ class Search implements Runnable, Future<SearchResults> {
 	 * @param numOfSearchThreads
 	 */
 	Search(Position position, SearchInfo info, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
-			Evaluator eval, RelativeHistoryTable historyTable, final byte hashEntryGen,
-			LossyHashTable<TTEntry> transposTable, Params params, int numOfSearchThreads) {
+			Evaluator eval, byte hashEntryGen, LossyHashTable<TTEntry> transposTable, Params params,
+			int numOfSearchThreads) {
 		this.params = params;
 		this.info = info;
 		this.eval = eval;
@@ -101,11 +94,6 @@ class Search implements Runnable, Future<SearchResults> {
 		maxExpectedSearchDepth = 2*4*this.maxDepth;
 		lCheckMateLimit = Termination.CHECK_MATE.score + maxExpectedSearchDepth;
 		wCheckMateLimit = -lCheckMateLimit;
-		if (this.maxDepth > 0)
-			kT = new KillerTable(this.maxDepth*2);
-		else
-			kT = null;
-		this.hT = historyTable;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
 		this.numOfHelperThreads = this.maxDepth > 1 ? numOfSearchThreads - 1 : 1;
@@ -226,7 +214,6 @@ class Search implements Runnable, Future<SearchResults> {
 		int alpha, beta, score, failHigh, failLow;
 		boolean even;
 		SearchThread masterThread;
-		SearchThread slaveThread;
 		List<SearchThread> slaveThreads;
 		Entry<Short,ScoreType> adjustedScore;
 		TTEntry entry;
@@ -238,27 +225,29 @@ class Search implements Runnable, Future<SearchResults> {
 		slaveThreads = null;
 		alpha = Termination.CHECK_MATE.score;
 		beta = -alpha;
+		masterThread = new SearchThread(rootPosition, alpha, beta, null);
 		// If maxDepth equals 0, perform only quiescence search.
 		if (maxDepth == 0) {
-			masterThread = new SearchThread(rootPosition, (short) 0, alpha, beta, null);
 			score = masterThread.quiescence(0, alpha, beta);
 			return new SearchResults(null, null, (short) score, ScoreType.EXACT);
+		}
+		if (numOfHelperThreads > 0) {
+			slaveThreads = new ArrayList<>();
+			for (int i = 0; i < numOfHelperThreads; i++)
+				slaveThreads.add(new SearchThread(rootPosition.deepCopy(), alpha, beta, masterThread));
 		}
 		// The number of consecutive fail-highs/fail-lows.
 		failHigh = failLow = 0;
 		// Iterative deepening.
 		for (short i = 1;; i++) {
-			masterThread = new SearchThread(rootPosition.deepCopy(), i, alpha, beta, null);
+			masterThread.setPly(i);
 			// Launch helper threads.
 			if (numOfHelperThreads > 0 && i != 1) {
 				latch = new CountDownLatch(numOfHelperThreads);
-				slaveThreads = new ArrayList<>();
-				even = true;
-				for (int j = 0; j < numOfHelperThreads; j++, even = !even) {
-					slaveThread = new SearchThread(rootPosition.deepCopy(), (short) (even && i != maxDepth ? i + 1 : i),
-							alpha, beta, masterThread);
-					slaveThreads.add(slaveThread);
-					executor.submit(slaveThread);
+				even = false;
+				for (SearchThread t : slaveThreads) {
+					t.setPly((short) (even ? i + 1 : i));
+					executor.submit(t);
 				}
 			}
 			// Launch the master thread.
@@ -379,12 +368,14 @@ class Search implements Runnable, Future<SearchResults> {
 	private class SearchThread implements Callable<Integer> {
 
 		private final Position origPosition; // The original position to search.
-		private final short ply;
 		private final SearchThread master;
 		private final boolean isMainSearchThread;
 		private final int alpha;
 		private final int beta;
+		private final KillerTable kT;
+		private final RelativeHistoryTable hT;
 		private Position position; // The position instance to use for the search.
+		private short ply;
 		private volatile boolean doStopSearchThread;
 		
 		/**
@@ -397,13 +388,27 @@ class Search implements Runnable, Future<SearchResults> {
 		 * @param beta
 		 * @param master
 		 */
-		SearchThread(Position position, short ply, int alpha, int beta, SearchThread master) {
+		SearchThread(Position position, int alpha, int beta, SearchThread master) {
 			origPosition = position;
-			this.ply = ply;
 			this.master = master;
 			this.isMainSearchThread = master == null;
 			this.alpha = alpha;
 			this.beta = beta;
+			if (maxDepth > 0) {
+				kT = new KillerTable(maxDepth*2);
+				hT = new RelativeHistoryTable();
+			} else {
+				kT = null;
+				hT = null;
+			}
+		}
+		/**
+		 * Sets the depth to which the position is to be searched.
+		 * 
+		 * @param ply
+		 */
+		void setPly(short ply) {
+			this.ply = ply;
 		}
 		/**
 		 * Interrupts the search thread.
@@ -590,14 +595,10 @@ class Search implements Runnable, Future<SearchResults> {
 				if (position.hasRepeated(distFromRoot > 2 ? 1 : 2))
 					return Termination.DRAW_CLAIMED.score;
 				// Mate distance pruning.
-				if (-mateScore < beta) {
-					if (alpha >= -mateScore)
-						return -mateScore;
-				}
-				if (mateScore > alpha) {
-					  if (beta <= mateScore)
-						  return mateScore;
-				}
+				if (-mateScore < beta && alpha >= -mateScore)
+					return -mateScore;
+				if (mateScore > alpha && beta <= mateScore)
+					return mateScore;
 				// Check extension.
 				depth = isInCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
 				// Pawn push extension
@@ -947,7 +948,7 @@ class Search implements Runnable, Future<SearchResults> {
 						continue;
 					}
 					isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
-					// Futility pruning, extended futility pruning, and razoring.
+					// Futility pruning.
 					if (isReducible && !mateThreat && depth/params.fullPly <= 5) {
 						if (evalScore == Integer.MIN_VALUE)
 							evalScore = eval.score(position, hashEntryGen, alpha - futMargin, beta - futMargin);
@@ -1020,6 +1021,7 @@ class Search implements Runnable, Future<SearchResults> {
 			bestMove = hashMove = null;
 			statsUpdated = false;
 			try {
+				doStopSearchThread = false;
 				position = origPosition.deepCopy();
 				nodes.incrementAndGet();
 				// Check for the 3-fold repetition rule.
@@ -1166,6 +1168,5 @@ class Search implements Runnable, Future<SearchResults> {
 		private static final long serialVersionUID = 1L;
 		
 	}
-	
 	
 }

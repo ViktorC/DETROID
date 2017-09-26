@@ -8,9 +8,7 @@ package net.viktorc.detroid.framework.util;
  */
 public class GrayCode {
 	
-	private GrayCode() {
-		
-	}
+	private GrayCode() { }
 	/**
 	 * Converts a number to its gray coded value.
 	 * 

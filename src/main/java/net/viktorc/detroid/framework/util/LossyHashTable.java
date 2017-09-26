@@ -42,19 +42,13 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	@SuppressWarnings({"unchecked"})
 	public LossyHashTable(int capacity) {
 		long tL1, tL2;
-		MillerRabin prim;
 		if (capacity < MIN_CAPACITY || capacity > MAX_CAPACITY)
-			throw new IllegalArgumentException("Illegal capacity. The capacity has to be between " + MIN_CAPACITY + " and " + MAX_CAPACITY + ".");
+			throw new IllegalArgumentException("Illegal capacity. The capacity has to be between " +
+					MIN_CAPACITY + " and " + MAX_CAPACITY + ".");
 		// Ensuring all tables have prime lengths.
-		tL1 = tL2 = 0;
-		prim = new MillerRabin();
-		tL2 = prim.greatestLEPrime((long) (T2_SHARE*capacity));
-		if ((tL1 = prim.greatestLEPrime((long) (T1_SHARE*capacity))) == tL2) {
-			if (tL2 >= 3)
-				tL2 = prim.greatestLEPrime(tL2 - 1);
-			else
-				tL1 = prim.leastGEPrime(tL1 + 1);
-		}
+		tL2 = MillerRabin.greatestLEPrime((long) (T2_SHARE*capacity));
+		if ((tL1 = MillerRabin.greatestLEPrime((long) (T1_SHARE*capacity))) == tL2)
+			tL2 = tL2 >= 3 ? MillerRabin.greatestLEPrime(tL2 - 1) : MillerRabin.leastGEPrime(tL1 + 1);
 		t1 = (T[]) new Entry[(int) tL1];
 		t2 = (T[]) new Entry[(int) tL2];
 		this.capacity = t1.length + t2.length;
@@ -242,9 +236,9 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Iterab
 	@Override
 	public String toString() {
 		long load = getLoad();
-		return "Load/Capacity: " + load + "/" + capacity + "; " +
-				String.format("Factor: %.1f", (load*100)/(double) capacity) + "%\n" +
-				String.format("Size: %.2fMB", SizeEstimator.getInstance().sizeOf(this)/(double) (1 << 20));
+		return String.format("Load/Capacity: %s; Factor: %.1f%\nSize: %.2fMB", load, capacity,
+				(load*100)/(double) capacity, SizeEstimator.getInstance().sizeOf(this)/(double)
+				(1 << 20));
 	}
 	
 	/**

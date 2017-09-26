@@ -15,12 +15,10 @@ class RelativeHistoryTable {
 	 */
 	private final short maxScore;
 	
-	private final Params params;
 	private final long[][] historyT;	// A [piece][destination square] table for the history heuristic.
 	private final long[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
 	
-	RelativeHistoryTable(Params params) {
-		this.params = params;
+	RelativeHistoryTable() {
 		maxScore = Short.MAX_VALUE;
 		/* The numbering of the pieces starts from one, so each table has a redundant first row to save
 		 * the expenses of always subtracting one from the moved piece numeral both on read and write. */
@@ -45,18 +43,6 @@ class RelativeHistoryTable {
 		butterflyT[m.movedPiece][m.to]++;
 	}
 	/**
-	 * Decreases the current values in the tables by a certain factor for when a new search is started allowing for more significance associated
-	 * with the new values than with the old ones.
-	 */
-	void decreaseCurrentValues() {
-		for (int i = 1; i < historyT.length; i++) {
-			for (int j = 0; j < 64; j++) {
-				historyT[i][j] /= params.rhtDecrementFactor;
-				butterflyT[i][j] /= params.rhtDecrementFactor;
-			}
-		}
-	}
-	/**
 	 * Returns the relative history heuristic score for the move parameter.
 	 * 
 	 * @param m The move to be scored.
@@ -67,17 +53,6 @@ class RelativeHistoryTable {
 		long bTscore;
 		bTscore = butterflyT[m.movedPiece][m.to];
 		return bTscore != 0 ? (short) (maxScore*historyT[m.movedPiece][m.to]/bTscore) : 0;
-	}
-	/**
-	 * Resets all values in the tables to zero.
-	 */
-	void reset() {
-		for (int i = 1; i < historyT.length; i++) {
-			for (int j = 0; j < 64; j++) {
-				historyT[i][j] = 0;
-				butterflyT[i][j] = 0;
-			}
-		}
 	}
 	
 }

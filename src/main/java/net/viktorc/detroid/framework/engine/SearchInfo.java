@@ -92,12 +92,7 @@ class SearchInfo extends SearchInformation {
 	 * @return
 	 */
 	List<Move> getPvMoveList() {
-		lock.readLock().lock();
-		try {
-			return pVline;
-		} finally {
-			lock.readLock().unlock();
-		}
+		return pVline;
 	}
 	/**
 	 * Returns a one-line String representation of the principal variation result.

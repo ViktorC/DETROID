@@ -171,10 +171,6 @@ final class Params extends EngineParameters {
 	// The default hash size in megabytes.
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
 	short defaultHashSize;
-		
-	// The relative history table's value depreciation factor.
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-	byte rhtDecrementFactor;
 
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)

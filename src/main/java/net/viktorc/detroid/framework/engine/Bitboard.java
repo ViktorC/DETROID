@@ -13,12 +13,12 @@ final class Bitboard {
 	/**
 	 * A bitboard with all the 64 bits set.
 	 */
-	final static long FULL_BOARD = -1L;
+	static final long FULL_BOARD = -1L;
 	/**
 	 * A straight line, if one exists, between an [origin square] and a [target square] for each two-square combination. If the two squares do not fall on the same
 	 * rank, file, diagonal, or anti-diagonal the line is '0'.
 	 */
-	final static long[][] LINE_SEGMENTS;
+	static final long[][] LINE_SEGMENTS;
 	static {
 		Rays originRays, targetRays;
 		long line;
@@ -92,6 +92,7 @@ final class Bitboard {
 					throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
+		
 	}
 
 	/**
@@ -144,6 +145,7 @@ final class Bitboard {
 		static File getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd & 7);
 		}
+		
 	}
 	
 	/**
@@ -196,6 +198,7 @@ final class Bitboard {
 		static Rank getBySquareIndex(int sqrInd) {
 			return getByIndex(sqrInd >>> 3);
 		}
+		
 	}
 	
 	/**
@@ -258,6 +261,7 @@ final class Bitboard {
 		static Diagonal getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (sqrInd >>> 3));
 		}
+		
 	}
 	
 	/**
@@ -319,6 +323,7 @@ final class Bitboard {
 		static AntiDiagonal getBySquareIndex(int sqrInd) {
 			return getByIndex((sqrInd & 7) + (7 - (sqrInd >>> 3)));
 		}
+		
 	}
 	/**
 	 * An enum type for all the eight different rays on the chess board for each square.
@@ -384,6 +389,7 @@ final class Bitboard {
 				default: throw new IllegalArgumentException("Invalid square index.");
 			}
 		}
+		
 	}
 	
 	private Bitboard() {
@@ -398,11 +404,11 @@ final class Bitboard {
 	 * @return
 	 */
 	static long northFill(long generator, long propagator) {
-		generator  |= (generator  << 8)  & propagator;
+		generator |= (generator << 8) & propagator;
 		propagator &= (propagator << 8);
-		generator  |= (generator  << 16) & propagator;
+		generator |= (generator << 16) & propagator;
 		propagator &= (propagator << 16);
-		generator  |= (generator  << 32) & propagator;
+		generator |= (generator << 32) & propagator;
 		return generator;
 	}
 	/**
@@ -414,11 +420,11 @@ final class Bitboard {
 	 * @return
 	 */
 	static long southFill(long generator, long propagator) {
-		generator  |= (generator  >>> 8)  & propagator;
+		generator |= (generator >>> 8) & propagator;
 		propagator &= (propagator >>> 8);
-		generator  |= (generator  >>> 16) & propagator;
+		generator |= (generator >>> 16) & propagator;
 		propagator &= (propagator >>> 16);
-		generator  |= (generator  >>> 32) & propagator;
+		generator |= (generator >>> 32) & propagator;
 		return generator;
 	}
 	/**
@@ -432,11 +438,11 @@ final class Bitboard {
 	 */
 	static long westFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
-		generator  |= (generator  >>> 1) & propagator;
+		generator |= (generator >>> 1) & propagator;
 		propagator &= (propagator >>> 1);
-		generator  |= (generator  >>> 2) & propagator;
+		generator |= (generator >>> 2) & propagator;
 		propagator &= (propagator >>> 2);
-		generator  |= (generator  >>> 4) & propagator;
+		generator |= (generator >>> 4) & propagator;
 		return generator;
 	}
 	/**
@@ -450,11 +456,11 @@ final class Bitboard {
 	 */
 	static long eastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
-		generator  |= (generator  << 1) & propagator;
+		generator |= (generator  << 1) & propagator;
 		propagator &= (propagator << 1);
-		generator  |= (generator  << 2) & propagator;
+		generator |= (generator  << 2) & propagator;
 		propagator &= (propagator << 2);
-		generator  |= (generator  << 4) & propagator;
+		generator |= (generator  << 4) & propagator;
 		return generator;
 	}
 	/**
@@ -468,11 +474,11 @@ final class Bitboard {
 	 */
 	static long northWestFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
-		generator  |= (generator  << 7)  & propagator;
+		generator |= (generator  << 7) & propagator;
 		propagator &= (propagator << 7);
-		generator  |= (generator  << 14) & propagator;
+		generator |= (generator  << 14) & propagator;
 		propagator &= (propagator << 14);
-		generator  |= (generator  << 28) & propagator;
+		generator |= (generator  << 28) & propagator;
 		return generator;
 	}
 	/**
@@ -486,11 +492,11 @@ final class Bitboard {
 	 */
 	static long northEastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
-		generator  |= (generator  << 9)  & propagator;
+		generator |= (generator << 9) & propagator;
 		propagator &= (propagator << 9);
-		generator  |= (generator  << 18) & propagator;
+		generator |= (generator << 18) & propagator;
 		propagator &= (propagator << 18);
-		generator  |= (generator  << 36) & propagator;
+		generator |= (generator << 36) & propagator;
 		return generator;
 	}
 	/**
@@ -504,11 +510,11 @@ final class Bitboard {
 	 */
 	static long southWestFill(long generator, long propagator) {
 		propagator &= 0b0111111101111111011111110111111101111111011111110111111101111111L;
-		generator  |= (generator  >>> 9)  & propagator;
+		generator |= (generator >>> 9) & propagator;
 		propagator &= (propagator >>> 9);
-		generator  |= (generator  >>> 18) & propagator;
+		generator |= (generator >>> 18) & propagator;
 		propagator &= (propagator >>> 18);
-		generator  |= (generator  >>> 36) & propagator;
+		generator |= (generator >>> 36) & propagator;
 		return generator;
 	}
 	/**
@@ -522,11 +528,11 @@ final class Bitboard {
 	 */
 	static long southEastFill(long generator, long propagator) {
 		propagator &= 0b1111111011111110111111101111111011111110111111101111111011111110L;
-		generator  |= (generator  >>> 7)  & propagator;
+		generator |= (generator >>> 7) & propagator;
 		propagator &= (propagator >>> 7);
-		generator  |= (generator  >>> 14) & propagator;
+		generator |= (generator >>> 14) & propagator;
 		propagator &= (propagator >>> 14);
-		generator  |= (generator  >>> 28) & propagator;
+		generator |= (generator >>> 28) & propagator;
 		return generator;
 	}
 	/**

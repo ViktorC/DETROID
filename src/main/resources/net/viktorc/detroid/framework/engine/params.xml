@@ -71,7 +71,6 @@
 <iidRelDepthHth>30</iidRelDepthHth>
 <defaultSearchThreads>1</defaultSearchThreads>
 <defaultHashSize>64</defaultHashSize>
-<rhtDecrementFactor>97</rhtDecrementFactor>
 <tTshare>8</tTshare>
 <eTshare>2</eTshare>
 <tTentryLifeCycle>1</tTentryLifeCycle>

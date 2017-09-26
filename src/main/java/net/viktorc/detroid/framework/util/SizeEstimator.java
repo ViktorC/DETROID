@@ -23,9 +23,7 @@ public class SizeEstimator {
 	public static SizeEstimator getInstance() {
 		return INSTANCE;
 	}
-	private SizeEstimator() {
-		
-	}
+	private SizeEstimator() { }
 	/**
 	 * Returns the total memory overhead in bytes.
 	 * 

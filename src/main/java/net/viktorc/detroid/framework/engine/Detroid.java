@@ -73,7 +73,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private DebugInfo debugInfo;
 	private Book book;
 	private Evaluator eval;
-	private RelativeHistoryTable hT;
 	private LossyHashTable<TTEntry> tT;
 	private LossyHashTable<ETEntry> eT;
 	private ExecutorService executor;
@@ -117,7 +116,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private void clearHash() {
 		tT.clear();
 		eT.clear();
-		hT.reset();
 		gen = 0;
 		if (debugMode) debugInfo.set("Hash tables cleared");
 	}
@@ -244,7 +242,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		searchInfo = new SearchInfo();
 		searchInfo.addObserver(this);
 		setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : params.defaultHashSize);
-		hT = new RelativeHistoryTable(params);
 		eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		executor = Executors.newSingleThreadExecutor();
 		isInit = true;
@@ -379,7 +376,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						tT.remove(e -> e.generation < gen - params.tTentryLifeCycle);
 						eT.remove(e -> e.generation < gen - params.eTentryLifeCycle);
 					}
-					hT.decreaseCurrentValues();
 				}
 				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
 			}
@@ -495,7 +491,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				numOfSearchThreads = deterministicZeroDepthMode ? 1 : (int) options.get(this.numOfSearchThreads);
 				Search gameTreeSearch = new Search(game.getPosition(), searchInfo, doPonder || doInfinite,
 						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, hT, gen, tT, params, numOfSearchThreads);
+						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, gen, tT, params, numOfSearchThreads);
 				search = gameTreeSearch;
 				executor.submit(gameTreeSearch);
 				if (debugMode) debugInfo.set("Search started");
@@ -697,7 +693,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		}
 		executor.shutdown();
 		searchInfo.deleteObservers();
-		hT = null;
 		tT = null;
 		eT = null;
 		isInit = false;

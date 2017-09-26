@@ -12,20 +12,17 @@ public final class MillerRabin {
 	
 	// The default number of times the witness loop is run.
 	private static final int DEFAULT_ACCURACY = 7;
+	private static final Random RAND = new Random();
 	
-	private Random rand;
-	
-	public MillerRabin() {
-		rand = new Random(System.currentTimeMillis());
-	}
+	private MillerRabin() { }
 	/**
 	 * Returns random long within the specified range by adjoining two random integers;
 	 * 
 	 * @param upperBound Exclusive upper bound.
 	 * @return A random number between zero (inclusive) and the specified upper bound
 	 */
-	private long nextLong(long upperBound) {
-		long r = rand.nextLong() & ((1L << 63) - 1); // Taking the absolute value of the random long.
+	private static long nextLong(long upperBound) {
+		long r = RAND.nextLong() & ((1L << 63) - 1); // Taking the absolute value of the random long.
 		return r%upperBound;
 	}
 	/**
@@ -57,7 +54,7 @@ public final class MillerRabin {
 	 * @param k The accuracy of the primality test.
 	 * @return Whether the number is probably prime or not.
 	 */
-	public boolean isPrime(long n, int k) {
+	public static boolean isPrime(long n, int k) {
 		long d, s, a, x;
 		if (n < 2)
 			return false;
@@ -98,7 +95,7 @@ public final class MillerRabin {
 	 * @param n The number to be tested.
 	 * @return Whether the number is probably prime or not.
 	 */
-	public boolean isPrime(long n) {
+	public static boolean isPrime(long n) {
 		return isPrime(n, DEFAULT_ACCURACY);
 	}
 	/**
@@ -108,7 +105,7 @@ public final class MillerRabin {
 	 * @param k The accuracy of the primality test.
 	 * @return The smallest prime that is greater than or equal to the number specified.
 	 */
-	public long leastGEPrime(long n, int k) {
+	public static long leastGEPrime(long n, int k) {
 		if (n < 0)
 			throw new IllegalArgumentException("n has to be positive.");
 		if (n%2 == 0 && n != 2)
@@ -123,7 +120,7 @@ public final class MillerRabin {
 	 * @param n The number.
 	 * @return The smallest prime that is greater than or equal to the number specified.
 	 */
-	public long leastGEPrime(long n) {
+	public static long leastGEPrime(long n) {
 		return leastGEPrime(n, DEFAULT_ACCURACY);
 	}
 	/**
@@ -133,7 +130,7 @@ public final class MillerRabin {
 	 * @param k The accuracy of the primality test.
 	 * @return The greatest prime that is smaller than or equal to the number specified.
 	 */
-	public long greatestLEPrime(long n, int k) {
+	public static long greatestLEPrime(long n, int k) {
 		if (n < 2)
 			throw new IllegalArgumentException("n has to be >= 2.");
 		if (n%2 == 0 && n != 2)
@@ -148,7 +145,7 @@ public final class MillerRabin {
 	 * @param n The number.
 	 * @return The greatest prime that is smaller than or equal to the number specified.
 	 */
-	public long greatestLEPrime(long n) {
+	public static long greatestLEPrime(long n) {
 		return greatestLEPrime(n, DEFAULT_ACCURACY);
 	}
 	

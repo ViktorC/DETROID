@@ -18,9 +18,7 @@ public final class Elo {
 	 */
 	private static final double MAX_WIN_RATIO = 1 - MIN_WIN_RATIO;
 	
-	private Elo() {
-		
-	}
+	private Elo() { }
 	/**
 	 * Calculates the Elo rating difference between a player and its opponent based on the match record against
 	 * this opponent.

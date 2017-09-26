@@ -89,7 +89,7 @@ class Position implements Copiable<Position>, Hashable {
 	/**A stack history of castling rights, en passant rights, fifty-move rule clock, repetitions, and check info. */
 	ArrayDeque<UnmakeMoveRecord> unmakeRegisterHistory;
 	
-	/**A Zobrist key generator instance. */
+	/**A Zobrist key generator reference. */
 	ZobristKeyGenerator gen;
 	/**A Zobrist key that is fairly close to a unique representation of the state of the Position instance in one 64 bit number. */
 	long key;
