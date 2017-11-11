@@ -68,9 +68,9 @@ public final class UCI implements Observer, Runnable, Closeable {
 			else if (o instanceof StringOption)
 				option += "string default " + ((StringOption) o).getDefaultValue().get();
 			else if (o instanceof ComboOption) {
-				option += "combo default " + ((ComboOption) o).getDefaultValue().get() + " var";
+				option += "combo default " + ((ComboOption) o).getDefaultValue().get();
 				for (Object v : o.getAllowedValues().get())
-					option += " " + v;
+					option += " var " + v;
 			} else if (o instanceof ButtonOption)
 				option += "button";
 			out.println(option);

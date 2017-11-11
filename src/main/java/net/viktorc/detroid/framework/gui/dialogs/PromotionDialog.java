@@ -14,7 +14,7 @@ import net.viktorc.detroid.framework.gui.models.Piece;
  */
 public class PromotionDialog extends Dialog<Piece> {
 
-	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/promotion-dialog-style.css";
+	private static final String STYLE_PATH = "/gui/styles/promotion-dialog-style.css";
 	
 	/**
 	 * Constructs an instance based on the specified parameters.

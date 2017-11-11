@@ -110,7 +110,8 @@ public abstract class EngineParameters {
 		Field field;
 		Class<?> fieldType;
 		file = new File(filePath);
-		try (InputStream input = file.exists() ? new FileInputStream(filePath) : clazz.getResourceAsStream(filePath)) {
+		try (InputStream input = file.exists() ? new FileInputStream(filePath) : ClassLoader.getSystemClassLoader()
+				.getResourceAsStream(filePath)) {
 			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document document = builder.parse(input);
 			document.getDocumentElement().normalize();

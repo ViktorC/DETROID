@@ -25,8 +25,8 @@ enum Piece {
 	B_KNIGHT('n'),
 	B_PAWN	('p');
 	
-	final byte  ind;		// A number that generally represents the respective piece, among others, for example on the offset board.
-	final char letter;	// A character denoting the piece-type in chess notation.
+	final byte  ind; // A number that generally represents the respective piece, among others, for example on the offset board.
+	final char letter; // A character denoting the piece-type in chess notation.
 	
 	private Piece(char fen) {
 		this.ind = (byte) ordinal();

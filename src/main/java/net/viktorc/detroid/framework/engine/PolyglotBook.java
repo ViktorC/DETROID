@@ -13,10 +13,10 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
  * @author Viktor
  *
  */
-class PolyglotBook extends Book {
+class PolyglotBook extends OpeningBook {
 	
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
-	private final static byte ENTRY_SIZE = 8 + 2 + 2 + 4;
+	private static final byte ENTRY_SIZE = 8 + 2 + 2 + 4;
 
 	private ZobristKeyGenerator gen;
 	

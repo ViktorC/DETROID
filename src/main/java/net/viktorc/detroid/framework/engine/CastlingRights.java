@@ -8,15 +8,12 @@ package net.viktorc.detroid.framework.engine;
  */
 enum CastlingRights {
 	
-	NONE,
-	SHORT,
-	LONG,
-	ALL;
+	NONE, SHORT, LONG, ALL;
 	
 	final byte ind;	// Numeric representation of the the castling rights.
 	
 	private CastlingRights() {
-		ind = (byte)ordinal();
+		ind = (byte) ordinal();
 	}
 	/**
 	 * Returns a CastlingRights type based on the argument numeral.

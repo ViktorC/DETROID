@@ -16,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -327,7 +329,8 @@ public final class MainController implements AutoCloseable, Observer {
 		String pgn = controllerEngine.toPGN();
 		String moveList = pgn.substring(pgn.lastIndexOf(']') + 1).trim();
 		moveList = moveList.replaceAll("\n", "");
-		moveHistory.setText(moveList);
+		moveHistory.setText("");
+		moveHistory.appendText(moveList);
 	}
 	/**
 	 * Sets the axes of the chart, assigns a new series to it, creates a new list of data points and 
@@ -1140,7 +1143,16 @@ public final class MainController implements AutoCloseable, Observer {
 				board.add(n, j, i);
 			}
 		}
+		/* Make sure the text in the move history text area is wrapped and that it scrolls to the bottom as new 
+		 * lines are added. */
 		moveHistory.setWrapText(true);
+		moveHistory.textProperty().addListener(new ChangeListener<String>() {
+
+			@Override
+			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+				moveHistory.setScrollTop(Double.MAX_VALUE);
+			}
+		});
 		// Set up the chart.
 		resetChart();
 		// Set up the search stats.

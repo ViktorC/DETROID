@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.RadioMenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<BorderPane prefHeight="820.0" prefWidth="880.0" scaleShape="false" styleClass="pane" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.viktorc.detroid.framework.gui.controllers.MainController">
+   <center>
+      <GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="745.0" prefWidth="838.0" BorderPane.alignment="CENTER">
+        <columnConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="385.0" minWidth="10.0" prefWidth="385.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="374.0" minWidth="10.0" prefWidth="25.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="374.0" minWidth="10.0" prefWidth="17.0" />
+            <ColumnConstraints hgrow="SOMETIMES" maxWidth="411.0" minWidth="10.0" prefWidth="409.0" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints maxHeight="318.0" minHeight="10.0" prefHeight="17.0" vgrow="SOMETIMES" />
+          <RowConstraints maxHeight="392.0" minHeight="10.0" prefHeight="383.0" vgrow="SOMETIMES" />
+          <RowConstraints maxHeight="318.0" minHeight="10.0" prefHeight="27.0" vgrow="SOMETIMES" />
+            <RowConstraints maxHeight="318.0" minHeight="0.0" prefHeight="14.0" vgrow="SOMETIMES" />
+            <RowConstraints maxHeight="299.0" minHeight="10.0" prefHeight="299.0" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <GridPane fx:id="board" gridLinesVisible="true" prefHeight="318.0" prefWidth="386.0" styleClass="chessBoard" GridPane.hgrow="NEVER" GridPane.rowIndex="1" GridPane.vgrow="NEVER">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+            </GridPane>
+            <GridPane GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER">
+              <columnConstraints>
+                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label styleClass="coords" text="A" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="B" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="C" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="D" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="E" GridPane.columnIndex="4" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="F" GridPane.columnIndex="5" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="G" GridPane.columnIndex="6" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="H" GridPane.columnIndex="7" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+               </children>
+            </GridPane>
+            <GridPane prefHeight="275.0" prefWidth="22.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label styleClass="coords" text="8" GridPane.halignment="CENTER" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="7" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="6" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="5" GridPane.halignment="CENTER" GridPane.rowIndex="3" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="4" GridPane.halignment="CENTER" GridPane.rowIndex="4" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="3" GridPane.halignment="CENTER" GridPane.rowIndex="5" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="2" GridPane.halignment="CENTER" GridPane.rowIndex="6" GridPane.valignment="CENTER" />
+                  <Label styleClass="coords" text="1" GridPane.halignment="CENTER" GridPane.rowIndex="7" GridPane.valignment="CENTER" />
+               </children>
+            </GridPane>
+            <TableView fx:id="searchStatView" prefHeight="285.0" prefWidth="800.0" styleClass="searchResults" GridPane.columnSpan="4" GridPane.rowIndex="4">
+              <columns>
+                <TableColumn editable="false" prefWidth="57.0" sortable="false" text="Depth">
+                	 <cellValueFactory><PropertyValueFactory property="depth" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="68.0" sortable="false" text="Time">
+                	 <cellValueFactory><PropertyValueFactory property="time" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="81.0" sortable="false" text="Nodes">
+                	 <cellValueFactory><PropertyValueFactory property="nodes" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="85.0" sortable="false" text="Move No.">
+                	 <cellValueFactory><PropertyValueFactory property="moveNo" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="323.0" sortable="false" text="Principal Variation">
+                	 <cellValueFactory><PropertyValueFactory property="principalVar" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="63.0" sortable="false" text="Score">
+                	 <cellValueFactory><PropertyValueFactory property="score" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="74.0" sortable="false" text="KNPS">
+                	 <cellValueFactory><PropertyValueFactory property="nps" /></cellValueFactory>
+               	</TableColumn>
+                <TableColumn editable="false" prefWidth="57.0" sortable="false" text="Hash">
+                	 <cellValueFactory><PropertyValueFactory property="hash" /></cellValueFactory>
+               	</TableColumn>
+              </columns>
+            </TableView>
+            <GridPane GridPane.columnIndex="3" GridPane.rowIndex="1">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+              </columnConstraints>
+              <rowConstraints>
+                  <RowConstraints maxHeight="189.0" minHeight="10.0" prefHeight="29.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="143.0" minHeight="0.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="111.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="32.0" vgrow="SOMETIMES" />
+                  <RowConstraints maxHeight="323.0" minHeight="10.0" prefHeight="174.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <TextArea fx:id="moveHistory" editable="false" prefHeight="200.0" prefWidth="200.0" styleClass="history" GridPane.rowIndex="2" />
+                  <Label styleClass="labels" text="Move History:" GridPane.rowIndex="1" GridPane.valignment="BOTTOM">
+                     <padding>
+                        <Insets bottom="5.0" />
+                     </padding></Label>
+                  <GridPane prefHeight="45.0" prefWidth="292.0">
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <TextField fx:id="wTime" editable="false" prefHeight="78.0" prefWidth="141.0" styleClass="timer">
+                           <GridPane.margin>
+                              <Insets right="5.0" />
+                           </GridPane.margin>
+                        </TextField>
+                        <TextField fx:id="bTime" editable="false" prefHeight="46.0" prefWidth="141.0" styleClass="timer" GridPane.columnIndex="1">
+                           <GridPane.margin>
+                              <Insets left="5.0" />
+                           </GridPane.margin>
+                        </TextField>
+                     </children>
+                  </GridPane>
+                  <Label styleClass="labels" text="Search Score History:" GridPane.rowIndex="3" GridPane.valignment="BOTTOM">
+                     <padding>
+                        <Insets bottom="5.0" />
+                     </padding></Label>
+                  <LineChart fx:id="graph" legendSide="LEFT" GridPane.rowIndex="4">
+                    <xAxis>
+                      <CategoryAxis side="BOTTOM" />
+                    </xAxis>
+                    <yAxis>
+                      <NumberAxis side="LEFT" />
+                    </yAxis>
+                  </LineChart>
+               </children>
+            </GridPane>
+            <Label styleClass="labels" text="Chess Board:" GridPane.valignment="BOTTOM">
+               <padding>
+                  <Insets bottom="5.0" />
+               </padding></Label>
+            <Label styleClass="labels" text="Time Left:" GridPane.columnIndex="3" GridPane.valignment="BOTTOM">
+               <GridPane.margin>
+                  <Insets bottom="5.0" />
+               </GridPane.margin></Label>
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </BorderPane.margin>
+      </GridPane>
+   </center>
+   <top>
+      <MenuBar prefHeight="34.0" prefWidth="801.0" styleClass="menuBar" BorderPane.alignment="CENTER">
+        <menus>
+          <Menu mnemonicParsing="false" styleClass="menuTab" text="Game">
+            <items>
+                  <MenuItem fx:id="reset" mnemonicParsing="false" styleClass="innerMenuItem" text="Reset" />
+                  <MenuItem fx:id="pasteFen" mnemonicParsing="false" styleClass="innerMenuItem" text="Paste FEN from Clipboard" />
+                  <MenuItem fx:id="pastePgn" mnemonicParsing="false" styleClass="innerMenuItem" text="Paste PGN from Clipboard" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="copyFen" mnemonicParsing="false" styleClass="innerMenuItem" text="Copy FEN to Clipboard" />
+                  <MenuItem fx:id="copyPgn" mnemonicParsing="false" styleClass="innerMenuItem" text="Copy PGN to Clipboard" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+              	  <MenuItem fx:id="unmakeMove" mnemonicParsing="false" styleClass="innerMenuItem" text="Unmake Move" />
+                  <RadioMenuItem fx:id="side" mnemonicParsing="false" selected="true" styleClass="innerMenuItem" text="Play as White" />
+                  <MenuItem fx:id="timeSettings" mnemonicParsing="false" styleClass="innerMenuItem" text="Time Control Settings" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" styleClass="menuTab" text="Engine">
+               <items>
+                  <RadioMenuItem fx:id="demo" mnemonicParsing="false" selected="false" styleClass="innerMenuItem" text="Demo" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <RadioMenuItem fx:id="ponder" mnemonicParsing="false" selected="false" styleClass="innerMenuItem" text="Ponder" />
+                  <MenuItem fx:id="options" mnemonicParsing="false" styleClass="innerMenuItem" text="Options" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="debugConsole" mnemonicParsing="false" styleClass="innerMenuItem" text="Debug Console" />
+                  <MenuItem fx:id="about" mnemonicParsing="false" styleClass="innerMenuItem" text="About" />
+               </items></Menu>
+        </menus>
+      </MenuBar>
+   </top>
+</BorderPane>

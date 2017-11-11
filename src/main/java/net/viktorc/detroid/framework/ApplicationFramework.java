@@ -243,8 +243,8 @@ public final class ApplicationFramework implements Runnable {
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								TunableEngine engine1 = factory.newEngineInstance();
-								TunableEngine engine2 = factory.newEngineInstance();
+								TunableEngine engine1 = factory.newTunableEngineInstance();
+								TunableEngine engine2 = factory.newTunableEngineInstance();
 								engine1.init();
 								engine2.init();
 								trySetOptions(engine1, useBook, hash);
@@ -301,7 +301,7 @@ public final class ApplicationFramework implements Runnable {
 							throw new IllegalArgumentException();
 						TunableEngine[] engines = new TunableEngine[concurrency];
 						for (int i = 0; i < concurrency; i++)
-							engines[i] = factory.newEngineInstance();
+							engines[i] = factory.newTunableEngineInstance();
 						try {
 							engines[0].init();
 						} catch (Exception e) {
@@ -366,8 +366,8 @@ public final class ApplicationFramework implements Runnable {
 						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								TunableEngine engine1 = factory.newEngineInstance();
-								TunableEngine engine2 = factory.newEngineInstance();
+								TunableEngine engine1 = factory.newTunableEngineInstance();
+								TunableEngine engine2 = factory.newTunableEngineInstance();
 								engine1.init();
 								engine2.init();
 								trySetOptions(engine1, useBook, hash);
@@ -475,7 +475,7 @@ public final class ApplicationFramework implements Runnable {
 				case "-c": {
 					String arg1 = args[1];
 					String destFile = DEF_CONVERTED_PARAMS_PATH;
-					TunableEngine engine = factory.newEngineInstance();
+					TunableEngine engine = factory.newTunableEngineInstance();
 					try {
 						engine.init();
 					} catch (Exception e) {
@@ -522,7 +522,7 @@ public final class ApplicationFramework implements Runnable {
 		} else {
 			// GUI mode.
 			ControllerEngine controller = factory.newControllerEngineInstance();
-			TunableEngine searchEngine = factory.newEngineInstance();
+			UCIEngine searchEngine = factory.newEngineInstance();
 			GUI.setEngines(controller, searchEngine);
 			Application.launch(GUI.class);
 			controller.close();

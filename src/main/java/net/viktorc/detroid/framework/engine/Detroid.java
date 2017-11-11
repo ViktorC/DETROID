@@ -2,6 +2,7 @@ package net.viktorc.detroid.framework.engine;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -17,9 +19,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
-import net.viktorc.detroid.framework.engine.Book.SelectionModel;
+import net.viktorc.detroid.framework.engine.OpeningBook.SelectionModel;
 import net.viktorc.detroid.framework.engine.Game.Side;
+import net.viktorc.detroid.framework.engine.GaviotaTableBaseJNI.CompressionScheme;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
 import net.viktorc.detroid.framework.uci.DebugInformation;
@@ -41,21 +45,44 @@ import net.viktorc.detroid.framework.validation.GameState;
  */
 public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	
-	public static final float VERSION_NUMBER = 1.0f;
-	public static final String NAME = "DETROID " + VERSION_NUMBER;
-	public static final String AUTHOR = "Viktor Csomor";
+	static final float VERSION_NUMBER = 1.0f;
+	static final String NAME = "DETROID " + VERSION_NUMBER;
+	static final String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.
-	public static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
+	static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
 	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
-	public static final String DEFAULT_BOOK_FILE_PATH = "book.bin";
-	// The minimum allowed hash size in MB.
-	private static final int MIN_HASH_SIZE = 1;
-	// The maximum allowed hash size in MB.
-	private static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
+	static final String DEFAULT_BOOK_FILE_PATH = "book.bin";
+	// The default path to the Gaviota probing library.
+	static final String DEFAULT_EGTB_LIB_PATH;
+	static {
+		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
+		boolean arch32 = "32".equals(System.getProperty("sun.arch.data.model"));
+		String lib = windows ? arch32 ? "gtb32.dll" : "gtb.dll" :
+				arch32 ? "libgtb32.so" : "libgtb.so";
+		DEFAULT_EGTB_LIB_PATH = "gtb/" + lib;
+	}
+	// The default path to the 3 and 4 men Gaviota endgame tablebases.
+	static final String DEFAULT_EGTB_FOLDERS_PATH = "gtb/3;gtb/4";
+	// The default compression scheme of the Gaviotat endgame tablebase files.
+	static final CompressionScheme DEFAULT_EGTB_COMP_SCHEME = CompressionScheme.CP4;
 	// The minimum allowed number of search threads to use.
 	private static final int MIN_SEARCH_THREADS = 1;
 	// The maximum allowed number of search threads to use.
 	private static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
+	// The default number of search threads to use.
+	private static final int DEFAULT_SEARCH_THREADS = Math.max(MIN_SEARCH_THREADS, MAX_SEARCH_THREADS/2);
+	// The minimum allowed hash size in MB.
+	private static final int MIN_HASH_SIZE = 1;
+	// The maximum allowed hash size in MB.
+	private static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
+	// The default hash size in MB.
+	private static final int DEFAULT_HASH_SIZE = Math.min(DEFAULT_SEARCH_THREADS*32, MAX_HASH_SIZE);
+	// The minimum allowed endgame tablebase cache size in MB.
+	private static final int MIN_EGTB_CACHE_SIZE = 0;
+	// The maximum allowed endgame tablebase cache size in MB.
+	private static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
+	// The default endgame tablebase cache size in MB.
+	private static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS*8, MAX_EGTB_CACHE_SIZE);
 	
 	private Option<?> hashSize;
 	private Option<?> clearHash;
@@ -63,21 +90,28 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private Option<?> ownBook;
 	private Option<?> primaryBookPath;
 	private Option<?> secondaryBookPath;
+	private Option<?> egtbLibPath;
+	private Option<?> egtbFilesPath;
+	private Option<?> egtbCompScheme;
+	private Option<?> egtbCacheSize;
+	private Option<?> egtbClearCache;
 	private Option<?> numOfSearchThreads;
 	private Option<?> parametersPath;
 	private Option<?> uciOpponent;
+	private Option<?> uciAnalysis;
 	private Map<Option<?>, Object> options;
 	
-	private Params params;
+	private DetroidParameters params;
 	private Game game;
-	private DebugInfo debugInfo;
-	private Book book;
+	private DetroidDebugInfo debugInfo;
+	private OpeningBook book;
+	private EndGameTableBase egtb;
 	private Evaluator eval;
 	private LossyHashTable<TTEntry> tT;
 	private LossyHashTable<ETEntry> eT;
 	private ExecutorService executor;
 	private Future<SearchResults> search;
-	private SearchInfo searchInfo;
+	private DetroidSearchInformation searchInfo;
 	private Move searchResult;
 	private Short scoreFluctuation;
 	private Long timeOfLastSearchResChange;
@@ -92,9 +126,6 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private volatile boolean outOfBook;
 	private volatile byte gen;
 	
-	public Detroid() {
-		
-	}
 	/**
 	 * Sets the hash tables according to the hash size limit defined in megabytes.
 	 * 
@@ -106,6 +137,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		SizeEstimator estimator = SizeEstimator.getInstance();
 		tT = new LossyHashTable<>((int) (sizeInBytes*params.tTshare/totalHashShares/estimator.sizeOf(TTEntry.class)));
 		eT = new LossyHashTable<>((int) (sizeInBytes*params.eTshare/totalHashShares/estimator.sizeOf(ETEntry.class)));
+		// Prompt for garbage collection.
+		System.gc();
 		if (debugMode) debugInfo.set("Hash capacity data\n" +
 				"Transposition table capacity - " + tT.capacity() + "\n" +
 				"Evaluation table capacity - " + eT.capacity());
@@ -188,6 +221,43 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		}
 	}
 	/**
+	 * Manges the amount of time spent on searching the position unless it is fixed.
+	 * 
+	 * @param searchTime
+	 * @param whiteTime
+	 * @param blackTime
+	 * @param whiteIncrement
+	 * @param blackIncrement
+	 * @param movesToGo
+	 * @throws Exception
+	 */
+	private void manageSearchTime(Long searchTime, Long whiteTime, Long blackTime,
+			Long whiteIncrement, Long blackIncrement, Integer movesToGo) throws Exception {
+		// Compute search time and wait for the search to terminate for the computed amount of time.
+		long time = searchTime == null || searchTime == 0 ?
+				computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo) : searchTime;
+		if (debugMode) debugInfo.set("Base search time - " + time);
+		try {
+			search.get(time, TimeUnit.MILLISECONDS);
+		} catch (TimeoutException e) {
+			if (debugMode) debugInfo.set("Base search time up");
+		} catch (CancellationException e) { }
+		// If time was up, check if the search should be extended.
+		if (!search.isDone() && (searchTime == null || searchTime == 0)) {
+			try {
+				long extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
+				if (debugMode) debugInfo.set("Extra search time - " + extraTime);
+				if (extraTime > 0)
+					search.get(extraTime, TimeUnit.MILLISECONDS);
+			} catch (TimeoutException e) {
+				if (debugMode) debugInfo.set("Extra time up");
+			} catch (CancellationException e) { }
+		}
+		// Time is up, cancel the search.
+		if (!search.isDone())
+			search.cancel(true);
+	}
+	/**
 	 * Picks a move from the list of legal moves for the current position and returns a String representation of it in pure algebraic coordinate
 	 * notation.
 	 * 
@@ -205,12 +275,17 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public synchronized void init() throws Exception {
-		params = new Params();
+		params = new DetroidParameters();
 		params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
 		try {
 			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
 		} catch (IOException e) { }
-		debugInfo = new DebugInfo();
+		egtb = GaviotaTableBaseJNI.getInstance();
+		egtb.loadProbingLibrary(DEFAULT_EGTB_LIB_PATH);
+		if (egtb.isProbingLibLoaded())
+			egtb.init(DEFAULT_EGTB_FOLDERS_PATH, DEFAULT_EGTB_CACHE_SIZE*1024L*1024L,
+					DEFAULT_EGTB_COMP_SCHEME);
+		debugInfo = new DetroidDebugInfo();
 		debugMode = false;
 		controllerMode = false;
 		deterministicZeroDepthMode = false;
@@ -219,29 +294,40 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		outOfBook = false;
 		game = new Game();
 		options = new LinkedHashMap<>();
-		hashSize = new Option.SpinOption(HASH_SIZE_OPTION_NAME, Math.min(params.defaultHashSize, MAX_HASH_SIZE),
-				MIN_HASH_SIZE, MAX_HASH_SIZE);
-		clearHash = new Option.ButtonOption("ClearHash");
-		ponder = new Option.CheckOption("Ponder", true);
-		ownBook = new Option.CheckOption(USE_OWN_BOOK_OPTION_NAME, false);
-		primaryBookPath = new Option.StringOption("PrimaryBookPath", DEFAULT_BOOK_FILE_PATH);
-		secondaryBookPath = new Option.StringOption("SecondaryBookPath", "");
-		numOfSearchThreads = new Option.SpinOption("SearchThreads", Math.min(params.defaultSearchThreads, MAX_SEARCH_THREADS),
-				MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
 		parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
+		numOfSearchThreads = new Option.SpinOption("Threads", DEFAULT_SEARCH_THREADS, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
+		hashSize = new Option.SpinOption(HASH_SIZE_OPTION_NAME, DEFAULT_HASH_SIZE, MIN_HASH_SIZE, MAX_HASH_SIZE);
+		clearHash = new Option.ButtonOption("ClearHash");
+		ownBook = new Option.CheckOption(USE_OWN_BOOK_OPTION_NAME, false);
+		primaryBookPath = new Option.StringOption("PolyglotBookPrimaryPath", DEFAULT_BOOK_FILE_PATH);
+		secondaryBookPath = new Option.StringOption("PolyglotBookSecondaryPath", "");
+		egtbLibPath = new Option.StringOption("GaviotaTbLibPath", DEFAULT_EGTB_LIB_PATH);
+		egtbFilesPath = new Option.StringOption("GaviotaTbPath", DEFAULT_EGTB_FOLDERS_PATH);
+		egtbCompScheme = new Option.ComboOption("GaviotaTbCompScheme", DEFAULT_EGTB_COMP_SCHEME.toString(),
+				new TreeSet<>(Arrays.stream(CompressionScheme.values()).map(c -> c.toString()).collect(Collectors.toList())));
+		egtbCacheSize = new Option.SpinOption("GaviotaTbCache", DEFAULT_EGTB_CACHE_SIZE, MIN_EGTB_CACHE_SIZE, MAX_EGTB_CACHE_SIZE);
+		egtbClearCache = new Option.ButtonOption("GaviotaTbClearCache");
+		ponder = new Option.CheckOption("Ponder", true);
 		uciOpponent = new Option.StringOption("UCI_Opponent", "?");
+		uciAnalysis = new Option.CheckOption("UCI_AnalyseMode", false);
+		options.put(parametersPath, parametersPath.getDefaultValue().get());
+		options.put(numOfSearchThreads, numOfSearchThreads.getDefaultValue().get());
 		options.put(hashSize, hashSize.getDefaultValue().get());
 		options.put(clearHash, null);
-		options.put(ponder, ponder.getDefaultValue().get());
 		options.put(ownBook, ownBook.getDefaultValue().get());
 		options.put(primaryBookPath, primaryBookPath.getDefaultValue().get());
 		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue().get());
-		options.put(numOfSearchThreads, numOfSearchThreads.getDefaultValue().get());
-		options.put(parametersPath, parametersPath.getDefaultValue().get());
+		options.put(egtbLibPath, egtbLibPath.getDefaultValue().get());
+		options.put(egtbFilesPath, egtbFilesPath.getDefaultValue().get());
+		options.put(egtbCompScheme, DEFAULT_EGTB_COMP_SCHEME);
+		options.put(egtbCacheSize, egtbCacheSize.getDefaultValue().get());
+		options.put(egtbClearCache, null);
+		options.put(ponder, ponder.getDefaultValue().get());
 		options.put(uciOpponent, uciOpponent.getDefaultValue().get());
-		searchInfo = new SearchInfo();
+		options.put(uciAnalysis, uciAnalysis.getDefaultValue().get());
+		searchInfo = new DetroidSearchInformation();
 		searchInfo.addObserver(this);
-		setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : params.defaultHashSize);
+		setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
 		eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		executor = Executors.newSingleThreadExecutor();
 		isInit = true;
@@ -266,11 +352,11 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public synchronized <T> boolean setOption(Option<T> setting, T value) {
 		try {
 			if (hashSize.equals(setting)) {
-				if (MIN_HASH_SIZE <= ((Integer) value).intValue() &&
-						MAX_HASH_SIZE >= ((Integer) value).intValue()) {
-					if (((Integer) value).intValue() != ((Integer) options.get(hashSize)).intValue()) {
+				int val = (Integer) value;
+				if (MIN_HASH_SIZE <= val && MAX_HASH_SIZE >= val) {
+					if (val != ((Integer) options.get(hashSize)).intValue()) {
+						setHashSize(val);
 						options.put(hashSize, value);
-						setHashSize(((Integer) value).intValue());
 					}
 					if (debugMode) debugInfo.set("Hash size successfully set to " + value);
 					return true;
@@ -311,6 +397,65 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
 					return true;
 				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+			} else if (egtbLibPath.equals(setting)) {
+				try {
+					egtb.loadProbingLibrary((String) value);
+					if (egtb.isProbingLibLoaded()) {
+						options.put(egtbLibPath, value);
+						if (debugMode) debugInfo.set("EGTB library path successfully set to " + value);
+						return true;
+					}
+				} catch (Exception e) { if (debugMode) debugInfo.set(e.getMessage()); }
+			} else if (egtbFilesPath.equals(setting)) {
+				if (egtb.isProbingLibLoaded()) {
+					egtb.init((String) value, ((Integer) options.get(egtbCacheSize))*1024L*1024L,
+							((CompressionScheme) options.get(egtbCompScheme)));
+					if (egtb.isInit()) {
+						options.put(egtbFilesPath, value);
+						if (debugMode) debugInfo.set("EGTB files path successfully set to " + value);
+						return true;
+					} else
+						egtb.init((String) options.get(egtbFilesPath), ((Integer) options
+								.get(egtbCacheSize))*1024L*1024L, ((CompressionScheme) options
+								.get(egtbCompScheme)));
+				}
+			} else if (egtbCompScheme.equals(setting)) {
+				if (egtb.isProbingLibLoaded()) {
+					String comp = (String) value;
+					CompressionScheme scheme = Arrays.stream(CompressionScheme.values())
+							.filter(c -> comp.equals(c.name()))
+							.collect(Collectors.toList()).get(0);
+					egtb.init((String) options.get(egtbFilesPath), ((Integer) options
+							.get(egtbCacheSize))*1024L*1024L, scheme);
+					if (egtb.isInit()) {
+						options.put(egtbCompScheme, scheme);
+						if (debugMode) debugInfo.set("EGTB compression scheme successfully set to " + value);
+						return true;
+					} else
+						egtb.init((String) options.get(egtbFilesPath), ((Integer) options
+								.get(egtbCacheSize))*1024L*1024L, ((CompressionScheme) options
+								.get(egtbCompScheme)));
+				}
+			} else if (egtbCacheSize.equals(setting)) {
+				if (egtb.isProbingLibLoaded()) {
+					int val = (Integer) value;
+					if (MIN_EGTB_CACHE_SIZE <= val && MAX_EGTB_CACHE_SIZE >= val) {
+						if (val != ((Integer) options.get(egtbCacheSize)).intValue()) {
+							egtb.init((String) options.get(egtbFilesPath), val*1024L*1024L,
+									((CompressionScheme) options.get(egtbCompScheme)));
+							options.put(egtbCacheSize, value);
+						}
+						if (egtb.isInit()) {
+							if (debugMode) debugInfo.set("EGTB cache size successfully set to " + value);
+							return true;
+						}
+					}
+				}
+			} else if (egtbClearCache.equals(setting)) {
+				if (egtb.isProbingLibLoaded()) {
+					egtb.clearCache();
+					return true;
+				}
 			} else if (numOfSearchThreads.equals(setting)) {
 				if (value != null && MIN_SEARCH_THREADS <= (Integer) value &&
 						MAX_SEARCH_THREADS >= (Integer) value) {
@@ -331,6 +476,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				options.put(uciOpponent, value);
 				if (debugMode) debugInfo.set("Opponent name successfully set to " + value);
 				return true;
+			} else if (uciAnalysis.equals(setting)) {
+				options.put(uciAnalysis, value);
+				if (debugMode) debugInfo.set("Analysis mode successfully set to " + value);
+				return true;
 			}
 			if (debugMode) debugInfo.set("The setting was not accepted");
 			return false;
@@ -349,6 +498,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		outOfBook = false;
 		if (!controllerMode && !deterministicZeroDepthMode)
 			clearHash();
+		if (egtb.isProbingLibLoaded())
+			egtb.clearCache();
 	}
 	@Override
 	public synchronized boolean setPosition(String fen) {
@@ -400,7 +551,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			Long searchTime, Boolean infinite) {
 		Set<Move> moves;
 		int numOfSearchThreads;
-		long time, extraTime, bookSearchStart;
+		long bookSearchStart;
+		boolean analysisMode;
 		boolean doPonder, doInfinite;
 		boolean isBookMove;
 		SearchResults results;
@@ -434,10 +586,11 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			newGame = false;
 		}
 		results = null;
+		analysisMode = (Boolean) options.get(uciAnalysis);
 		// Search the book if possible.
-		if ((Boolean) options.get(ownBook) && !deterministicZeroDepthMode && !outOfBook && searchMoves == null &&
-				(ponder == null || !ponder) && depth == null && nodes == null && mateDistance == null && searchTime == null &&
-				(infinite == null || !infinite)) {
+		if ((Boolean) options.get(ownBook) && !analysisMode && !deterministicZeroDepthMode && !outOfBook &&
+				searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
+				mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
 			bookSearchStart = System.currentTimeMillis();
 			search = executor.submit(() -> {
 				Move bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
@@ -489,9 +642,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			// Start the search.
 			Search: {
 				numOfSearchThreads = deterministicZeroDepthMode ? 1 : (int) options.get(this.numOfSearchThreads);
-				Search gameTreeSearch = new Search(game.getPosition(), searchInfo, doPonder || doInfinite,
-						depth == null ? (mateDistance == null ?  Integer.MAX_VALUE : mateDistance) : depth,
-						nodes == null ? Long.MAX_VALUE : nodes, moves, eval, gen, tT, params, numOfSearchThreads);
+				Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo,
+						numOfSearchThreads, tT, gen, analysisMode, doPonder || doInfinite, depth == null ?
+						(mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ?
+						Long.MAX_VALUE : nodes, moves);
 				search = gameTreeSearch;
 				executor.submit(gameTreeSearch);
 				if (debugMode) debugInfo.set("Search started");
@@ -558,53 +712,12 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 					}
 					break Search;
 				}
-				// Compute search time and wait for the search to terminate for the computed amount of time.
-				time = searchTime == null || searchTime == 0 ?
-						computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo) : searchTime;
-				if (debugMode) debugInfo.set("Base search time - " + time);
 				try {
-					search.get(time, TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					if (debugMode) debugInfo.set(e.getMessage());
-					Thread.currentThread().interrupt();
-					return null;
-				} catch (ExecutionException e) {
+					// Time based search.
+					manageSearchTime(searchTime, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
+				} catch (Exception e) {
 					if (debugMode) debugInfo.set(e.getMessage());
 					return null;
-				} catch (TimeoutException e) {
-					if (debugMode) debugInfo.set("Base search time up");
-				} catch (CancellationException e) { }
-				// If time was up, check if the search should be extended.
-				if (!search.isDone() && searchTime == null) {
-					try {
-						extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
-						if (debugMode) debugInfo.set("Extra search time - " + extraTime);
-						if (extraTime > 0)
-							search.get(extraTime, TimeUnit.MILLISECONDS);
-					} catch (InterruptedException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						Thread.currentThread().interrupt();
-						return null;
-					} catch (ExecutionException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						return null;
-					} catch (TimeoutException e) {
-						if (debugMode) debugInfo.set("Extra time up");
-					} catch (CancellationException e) { }
-				}
-				// Time is up, cancel the search.
-				if (!search.isDone()) {
-					search.cancel(true);
-					try {
-						search.get();
-					} catch (InterruptedException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						Thread.currentThread().interrupt();
-						return null;
-					} catch (ExecutionException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						return null;
-					}
 				}
 			}
 			if (debugMode) debugInfo.set("Search stopped");
@@ -659,8 +772,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		long transLoad, transCapacity;
 		long evalLoad, evalCapacity;
 		long totalLoad, totalCapacity;
-		transLoad = tT.load();
-		evalLoad = eT.load();
+		transLoad = tT.size();
+		evalLoad = eT.size();
 		totalLoad = transLoad + evalLoad;
 		transCapacity = tT.capacity();
 		evalCapacity = eT.capacity();
@@ -689,7 +802,12 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		if (book != null) {
 			try {
 				book.close();
-			} catch (IOException e) { e.printStackTrace(); }
+			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+		}
+		if (egtb.isProbingLibLoaded()) {
+			try {
+				egtb.close();
+			} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
 		}
 		executor.shutdown();
 		searchInfo.deleteObservers();
@@ -813,8 +931,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public synchronized void notifyParametersChanged() {
 		if (isInit) {
 			setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE :
-					options.get(hashSize) == hashSize.getDefaultValue() ? params.defaultHashSize :
-					((Integer) options.get(hashSize)).shortValue());
+					options.get(hashSize) == hashSize.getDefaultValue() ? DEFAULT_HASH_SIZE :
+					(Integer) options.get(hashSize));
 			eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
 		}
 	}
@@ -826,7 +944,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public void update(Observable o, Object arg) {
-		SearchInfo stats = (SearchInfo) o;
+		DetroidSearchInformation stats = (DetroidSearchInformation) o;
 		if (stats.getDepth() == 0)
 			return;
 		searchInfo.getLock().lock();

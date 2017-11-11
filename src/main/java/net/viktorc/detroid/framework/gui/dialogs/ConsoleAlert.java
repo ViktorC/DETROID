@@ -18,7 +18,7 @@ import net.viktorc.detroid.framework.uci.DebugInformation;
  */
 public class ConsoleAlert extends Alert implements Observer {
 
-	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/console-dialog-style.css";
+	private static final String STYLE_PATH = "/gui/styles/console-dialog-style.css";
 	
 	private TextArea area;
 	

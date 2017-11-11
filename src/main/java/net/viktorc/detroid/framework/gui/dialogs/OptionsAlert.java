@@ -35,7 +35,7 @@ import net.viktorc.detroid.framework.uci.Option.StringOption;
  */
 public class OptionsAlert extends Alert {
 
-	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/options-dialog-style.css";
+	private static final String STYLE_PATH = "/gui/styles/options-dialog-style.css";
 	// The colour of the feedback message at the top of the pane after an option has been set.
 	private static final String SUCCESS_COLOR = "green";
 	private static final String ERROR_COLOR = "red";

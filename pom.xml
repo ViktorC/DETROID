@@ -33,7 +33,18 @@
 				<directory>src/main/resources</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
+					<exclude>book.bin</exclude>
+					<exclude>gtb/**</exclude>
 				</excludes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>params.xml</include>
+					<include>book.bin</include>
+					<include>gtb/**</include>
+				</includes>
+				<targetPath>..</targetPath>
 			</resource>
 		</resources>
 		<testResources>

@@ -284,7 +284,7 @@ class Game {
 	 * @return
 	 */
 	Side getSideToMove() {
-		return position.isWhitesTurn ? Side.WHITE : Side.BLACK;
+		return position.whitesTurn ? Side.WHITE : Side.BLACK;
 	}
 	/**
 	 * Returns the game of the state according to {@link #uibase.GameState GameState}.
@@ -331,7 +331,7 @@ class Game {
 	 */
 	private void setState() {
 		if (position.getMoves().size() == 0)
-			state = position.isInCheck ? position.isWhitesTurn ? GameState.BLACK_MATES : GameState.WHITE_MATES : GameState.STALE_MATE;
+			state = position.inCheck ? position.whitesTurn ? GameState.BLACK_MATES : GameState.WHITE_MATES : GameState.STALE_MATE;
 		else {
 			if (Evaluator.isMaterialInsufficient(position))
 				state = GameState.DRAW_BY_INSUFFICIENT_MATERIAL;

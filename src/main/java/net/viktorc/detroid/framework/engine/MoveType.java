@@ -17,7 +17,8 @@ enum MoveType {
 	PROMOTION_TO_BISHOP,
 	PROMOTION_TO_KNIGHT;
 	
-	final byte ind;	// A numeric representation of the move type; to avoid the overhead of calling the ordinal function.
+	// A numeric representation of the move type; to avoid the overhead of calling the ordinal function.
+	final byte ind;
 	
 	private MoveType() {
 		ind = (byte)ordinal();

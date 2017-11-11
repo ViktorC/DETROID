@@ -26,7 +26,7 @@ import net.viktorc.detroid.framework.gui.models.TimeControl;
  */
 public class TimeSettingsDialog extends Dialog<TimeControl> {
 
-	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/time-settings-dialog-style.css";
+	private static final String STYLE_PATH = "/gui/styles/time-settings-dialog-style.css";
 	
 	/**
 	 * Constructs an instance based on the specified parameters.

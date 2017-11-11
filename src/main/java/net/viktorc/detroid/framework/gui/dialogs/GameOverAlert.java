@@ -12,7 +12,7 @@ import net.viktorc.detroid.framework.validation.GameState;
  */
 public class GameOverAlert extends Alert {
 
-	private static final String STYLE_PATH = "/net/viktorc/detroid/framework/gui/styles/dialog-style.css";
+	private static final String STYLE_PATH = "/gui/styles/dialog-style.css";
 	
 	/**
 	 * Constructs an instance based on the specified parameters.

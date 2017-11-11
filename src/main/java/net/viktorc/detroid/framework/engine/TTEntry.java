@@ -63,7 +63,6 @@ class TTEntry implements Entry<TTEntry> {
 				return 1;
 		} else
 			return type == NodeType.EXACT.ind || e.type != NodeType.EXACT.ind ? 1 : -1;
-//		return generation >= e.generation ? 1 : -1; // Lazy SMP performs better with an always-replace scheme.
 	}
 	/**
 	 * Returns a 64-bit hash code identifying this object.
@@ -89,7 +88,8 @@ class TTEntry implements Entry<TTEntry> {
 			case 2:
 				type = NodeType.FAIL_LOW.toString();
 		}
-		return String.format("%-17s %2d %-9s %7d  %10s %2d",Long.toHexString(key), depth, type, score, move, generation);
+		return String.format("%-17s %2d %-9s %7d %10s %2d", Long.toHexString(key), depth, type, score,
+				move, generation);
 	}
 	
 }

@@ -263,7 +263,7 @@ final class ZobristKeyGenerator {
 	long generateHashKey(Position p) {
 		byte[] offsetBoard = p.offsetBoard;
 		long key = 0;
-		if (!p.isWhitesTurn)
+		if (!p.whitesTurn)
 			key ^= turn;
 		for (int i = 0; i < offsetBoard.length; i++)
 			key ^= board[offsetBoard[i]][i];
@@ -283,7 +283,7 @@ final class ZobristKeyGenerator {
 		long[] movedRow;
 		long key = p.key;
 		Move move = p.getLastMove();
-		UnmakeMoveRecord unmakeReg = p.getUnmakeRegister();
+		PositionStateRecord unmakeReg = p.getUnmakeRegister();
 		key ^= turn;
 		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];
 		key ^= blackCastlingRights[unmakeReg.blackCastlingRights];
@@ -392,7 +392,7 @@ final class ZobristKeyGenerator {
 		int wCastlingRights = p.whiteCastlingRights;
 		int bCastlingRights = p.blackCastlingRights;
 		int enPassantRights = p.enPassantRights;
-		boolean whitesTurn = p.isWhitesTurn;
+		boolean whitesTurn = p.whitesTurn;
 		MoveSetBase mD;
 		for (int i = 0; i < offBoard.length; i++) {
 			piece = offBoard[i];

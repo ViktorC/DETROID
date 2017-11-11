@@ -1,0 +1,34 @@
+.dialog-pane {
+    -fx-background-color: black;
+	-fx-border-color: white;
+}
+.dialog-pane .label {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.dialog-pane:header .header-panel {
+    -fx-background-color: black;
+}
+.dialog-pane:header .header-panel .label {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.button {
+	-fx-border-color: white;
+	-fx-background-color: black;
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}
+.button:hover {
+	-fx-border-color: rgb(160, 160, 160);
+	-fx-text-fill: rgb(160, 160, 160);
+}
+.button:pressed {
+	-fx-border-color: black;
+	-fx-background-color: rgb(160, 160, 160);
+	-fx-text-fill: black;
+}
+.text {
+	-fx-text-fill: white;
+	-fx-font-family: "Lucida Console";
+}

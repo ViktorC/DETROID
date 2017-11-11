@@ -1,5 +1,10 @@
 package net.viktorc.detroid.framework.engine;
 
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+
 import net.viktorc.detroid.framework.engine.Bitboard.Diagonal;
 import net.viktorc.detroid.framework.engine.Bitboard.File;
 import net.viktorc.detroid.framework.engine.Bitboard.Rank;
@@ -14,6 +19,48 @@ import net.viktorc.detroid.framework.util.LossyHashTable;
  *
  */
 final class Evaluator {
+	
+	// MVV/LVA piece values.
+	private static final byte[] MVV_LVA_PIECE_VALUES = new byte[] {
+				0, 6, 5, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1 };
+	// The values of different captor-victim combinations for MVV/LVA move assessment.
+	private static final byte[][] MVV_LVA;
+	
+	static {
+		short comb;
+		byte assignedVal;
+		int attackerVal, victimVal, lastVal;
+		int attacker, victim;
+		Entry<Short,Integer> entry;
+		byte kingValue = MVV_LVA_PIECE_VALUES[Piece.W_KING.ind];
+		MVV_LVA = new byte[13][13];
+		List<Entry<Short,Integer>> combVals = new ArrayList<>();
+		// Ignore the illogical combinations for the sake of better performance.
+		for (Piece a : Piece.values()) {
+			if (a != Piece.NULL) {
+				for (Piece v : Piece.values()) {
+					if (v != Piece.NULL) {
+						comb = (short) (v.ind | (a.ind << 7));
+						attackerVal = MVV_LVA_PIECE_VALUES[a.ind];
+						victimVal = MVV_LVA_PIECE_VALUES[v.ind];
+						victimVal *= kingValue;
+						combVals.add(new SimpleEntry<>(comb, victimVal - attackerVal));
+					}
+				}
+			}
+		}
+		combVals.sort((e1, e2) -> e1.getValue() - e2.getValue());
+		lastVal = assignedVal = 0;
+		for (int i = 0; i < combVals.size(); i++) {
+			entry = combVals.get(i);
+			if (entry.getValue() > lastVal)
+				assignedVal++;
+			lastVal = entry.getValue();
+			victim = entry.getKey() & 127;
+			attacker = entry.getKey() >>> 7;
+			MVV_LVA[attacker][victim] = assignedVal;
+		}
+	}
 	
 	// Distance tables for tropism.
 	private static final byte[][] MANHATTAN_DISTANCE = new byte[64][64];
@@ -37,7 +84,7 @@ final class Evaluator {
 		}
 	}
 	
-	private final Params params;
+	private final DetroidParameters params;
 	// Evaluation score hash table.
 	private final LossyHashTable<ETEntry> eT;
 	private final boolean useEt;
@@ -76,12 +123,12 @@ final class Evaluator {
 	 * @param evalTable
 	 * @param pawnTable
 	 */
-	Evaluator(Params params, LossyHashTable<ETEntry> evalTable) {
+	Evaluator(DetroidParameters params, LossyHashTable<ETEntry> evalTable) {
 		this.params = params;
 		totalPhaseWeights = 4*(params.knightPhaseWeight + params.bishopPhaseWeight + params.rookPhaseWeight) + 2*params.queenPhaseWeight;
-		initPieceSquareArrays();
 		eT = evalTable;
 		useEt = eT != null;
+		initPieceSquareArrays();
 	}
 	/**
 	 * Initializes the piece square arrays with the correct order of values.
@@ -177,6 +224,22 @@ final class Evaluator {
 		else return 0;
 	}
 	/**
+	 * Returns the MVV/LVA score of the specified move.
+	 * 
+	 * @param move The move to score.
+	 * @return The MVV/LVA score.
+	 */
+	short MVVLVA(Move move) {
+		byte queenValue;
+		short score = 0;
+		if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
+			queenValue = MVV_LVA_PIECE_VALUES[Piece.W_QUEEN.ind];
+			score += queenValue*queenValue;
+		}
+		score += MVV_LVA[move.movedPiece][move.capturedPiece];
+		return score;
+	}
+	/**
 	 * A static exchange evaluation algorithm for determining a close approximation of a capture's value. It is mainly used for move ordering
 	 * in the quiescence search.
 	 * 
@@ -216,7 +279,7 @@ final class Evaluator {
 		} else
 			attackerVal = materialValueByPieceInd(move.movedPiece);
 		occupied = (pos.allOccupied^(1L << move.from));
-		whitesTurn = pos.isWhitesTurn;
+		whitesTurn = pos.whitesTurn;
 		dB = MoveSetBase.getByIndex(move.to);
 		do {
 			i++;
@@ -448,7 +511,7 @@ final class Evaluator {
 	 * @return
 	 */
 	int score(Position pos, byte hashGen, int alpha, int beta) {
-		final boolean isWhitesTurn = pos.isWhitesTurn;
+		final boolean isWhitesTurn = pos.whitesTurn;
 		boolean allSameColor;
 		byte numOfWhiteQueens, numOfWhiteRooks, numOfWhiteBishops, numOfWhiteKnights;
 		byte numOfBlackQueens, numOfBlackRooks, numOfBlackBishops, numOfBlackKnights;
@@ -509,7 +572,7 @@ final class Evaluator {
 					numOfWhiteQueens == 0 && numOfBlackQueens == 0) {
 				numOfAllPieces = BitOperations.hammingWeight(pos.allOccupied);
 				if (numOfAllPieces == 2 || numOfAllPieces == 3)
-					return Termination.INSUFFICIENT_MATERIAL.score;
+					return Score.INSUFFICIENT_MATERIAL.value;
 				if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
 					allSameColor = true;
 					bishopSet = pos.whiteBishops | pos.blackBishops;
@@ -523,7 +586,7 @@ final class Evaluator {
 						bishopSet = BitOperations.resetLSBit(bishopSet);
 					}
 					if (allSameColor)
-						return Termination.INSUFFICIENT_MATERIAL.score;
+						return Score.INSUFFICIENT_MATERIAL.value;
 				}
 			}
 			// Phase score for tapered evaluation.

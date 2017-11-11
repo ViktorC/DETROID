@@ -10,10 +10,8 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
  */
 enum EnPassantRights {
 	
-	A, B, C, D, E, F, G, H,
-	NONE;
+	A, B, C, D, E, F, G, H, NONE;
 	
-	final byte ind;	// Numeric representation of the the en passant rights.
 	/**
 	 * The difference between the EP right index and the square index of the destination of EP for white.
 	 */
@@ -31,8 +29,10 @@ enum EnPassantRights {
 	 */
 	final static byte TO_B_VICT_SQR_IND = Square.A4.ind;
 	
+	final byte ind;	// Numeric representation of the the en passant rights.
+	
 	private EnPassantRights() {
-		ind = (byte)ordinal();
+		ind = (byte) ordinal();
 	}
 	/**
 	 * Returns a EnPassantRights type based on the argument numeral.

@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A generic hash table for statistical or turn-based game AI applications with massive storage requirements where losslessness is
@@ -30,48 +31,32 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
 	private static final float T1_SHARE = 0.6f;
 	private static final float T2_SHARE = 0.4f;
-	private static final int MAX_CAPACITY = 1 << 30; // The maximum number of slots.
-	private static final int MIN_CAPACITY = 1 << 10; // The minimum number of slots.
+	private static final int MAX_CAPACITY = Integer.MAX_VALUE; // The maximum number of slots.
 	
-	private final long capacity; // The number of hash table slots.
+	private final long capacity;
 	private T[] t1, t2; // The two hash tables.
 	
 	/**
-	 * Initializes a hash table with a capacity of the closest lesser than or equal prime number to the specified maximum capacity. The capacity has
-	 * to be at least 1024 (2^10) and at most 1073741824 (2^30).
+	 * Constructs a lossy hash table with at least the specified capacity.
 	 * 
-	 * @param capacity Maximum hash table capacity.
+	 * @param capacity The guaranteed minimum capacity the hash table is to have.
 	 */
 	@SuppressWarnings({"unchecked"})
 	public LossyHashTable(int capacity) {
-		long tL1, tL2;
-		if (capacity < MIN_CAPACITY || capacity > MAX_CAPACITY)
-			throw new IllegalArgumentException("Illegal capacity. The capacity has to be between " +
-					MIN_CAPACITY + " and " + MAX_CAPACITY + ".");
-		// Ensuring all tables have prime lengths.
-		tL2 = MillerRabin.greatestLEPrime((long) (T2_SHARE*capacity));
-		if ((tL1 = MillerRabin.greatestLEPrime((long) (T1_SHARE*capacity))) == tL2)
-			tL2 = tL2 >= 3 ? MillerRabin.greatestLEPrime(tL2 - 1) : MillerRabin.leastGEPrime(tL1 + 1);
+		long s1, s2, tL1, tL2;
+		if (capacity <= 0 || capacity > MAX_CAPACITY)
+			throw new IllegalArgumentException("Illegal capacity. The capacity has to be greater " +
+					"than 0 and lesser than " + MAX_CAPACITY + ".");
+		s1 = Math.round(T1_SHARE*capacity);
+		s2 = Math.round(T2_SHARE*capacity);
+		// Ensure all tables have unique prime lengths.
+		tL1 = MillerRabin.leastGEPrime(Math.max(2, s1));
+		tL2 = MillerRabin.leastGEPrime(Math.max(2, s2));
+		if (tL1 == tL2)
+			tL2 = MillerRabin.leastGEPrime(tL2 + 1);
 		t1 = (T[]) new Entry[(int) tL1];
 		t2 = (T[]) new Entry[(int) tL2];
 		this.capacity = ((long) t1.length) + t2.length;
-	}
-	/**
-	 * Returns the number of occupied slots in the hash table.
-	 * 
-	 * @return The number of entries in the table.
-	 */
-	public long load() {
-		long load = 0;
-		for (Entry<?> e : t1) {
-			if (e != null)
-				load++;
-		}
-		for (Entry<?> e : t2) {
-			if (e != null)
-				load++;
-		}
-		return load;
 	}
 	/**
 	 * Returns the total number of slots in the hash tables.
@@ -80,6 +65,14 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 	 */
 	public long capacity() {
 		return capacity;
+	}
+	/**
+	 * Returns the estimated size of the hash table in bytes.
+	 * 
+	 * @return The size of the hash table in bytes.
+	 */
+	public long memorySize() {
+		return SizeEstimator.getInstance().sizeOf(this);
 	}
 	/**
 	 * Inserts an entry into the hash table. No null checks are made.
@@ -93,7 +86,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 		T slot1, slot2, temp;
 		long key = e.hashKey();
 		boolean slot1IsEmpty, slot2IsEmpty, slot1IsInT1;
-		long altAbsKey, absKey = key & Long.MAX_VALUE;
+		long altAbsKey, absKey = e.hashKey() & Long.MAX_VALUE;
 		slot1IsEmpty = slot2IsEmpty = true;
 		// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
 		if ((slot1 = t1[(ind1 = (int) (absKey%t1.length))]) != null) {
@@ -125,17 +118,14 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 			t2[ind2] = e;
 			return true;
 		}
-		/* If the method is still executing, there was no empty slot or an entry with an identical key, so we will check if the new entry is
-		 * better than any of the entries with different keys. To make sure that the least valuable entry gets pushed out, we first check the
-		 * new entry against the "weaker" old entry.
-		 */
-		if (slot1.compareTo(slot2) > 0) {
+		/* If the method is still executing, there was no empty slot or an entry with an identical key, so we will check 
+		 * if the new entry is better than the "weaker" of the two old entries. */
+		slot1IsInT1 = slot1.compareTo(slot2) <= 0;
+		if (!slot1IsInT1) {
 			temp = slot1;
 			slot1 = slot2;
 			slot2 = temp;
-			slot1IsInT1 = false;
-		} else
-			slot1IsInT1 = true;
+		}
 		if (e.compareTo(slot1) > 0) {
 			altAbsKey = slot1.hashKey() & Long.MAX_VALUE;
 			if (slot1IsInT1) {
@@ -150,20 +140,7 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 			}
 			return true;
 		}
-		if (e.compareTo(slot2) > 0) {
-			altAbsKey = slot2.hashKey() & Long.MAX_VALUE;
-			if (slot1IsInT1) {
-				t2[ind2] = e;
-				if (t1[(altInd = (int) (altAbsKey%t1.length))] == null)
-					t1[altInd] = slot2;
-			} else {
-				t1[ind1] = e;
-				if (t2[(altInd = (int) (altAbsKey%t2.length))] == null)
-					t2[altInd] = slot2;
-			}
-			return true;
-		}
-		// The new entry is weaker than the old entries with colliding hash keys are.
+		// The new entry is weaker than the weaker of the two old colliding entries.
 		return false;
 	}
 	/**
@@ -235,10 +212,16 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 	 */
 	private void toObjectArray(Object[] arr) {
 		int i;
-		for (i = 0; i < t1.length; i++)
-			arr[i] = t1[i];
-		for (int j = i + 1; j < t2.length && j < arr.length; j++)
-			arr[j] = t1[j];
+		for (i = 0; i < t1.length && i < arr.length; i++) {
+			T e = t1[i];
+			if (e != null)
+			arr[i] = e;
+		}
+		for (; i < t2.length && i < arr.length; i++) {
+			T e = t2[i];
+			if (e != null)
+			arr[i] = e;
+		}
 	}
 	@Override
 	public Object[] toArray() {
@@ -255,13 +238,22 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 	public Iterator<T> iterator() {
 		ArrayList<T> list;
 		list = new ArrayList<T>();
-		list.addAll(Arrays.asList(t1));
-		list.addAll(Arrays.asList(t2));
+		list.addAll(Arrays.stream(t1).filter(e -> e != null).collect(Collectors.toList()));
+		list.addAll(Arrays.stream(t2).filter(e -> e != null).collect(Collectors.toList()));
 		return list.iterator();
 	}
 	@Override
 	public int size() {
-		return (int) Math.min(Integer.MAX_VALUE, load());
+		int load = 0;
+		for (Entry<?> e : t1) {
+			if (e != null)
+				load++;
+		}
+		for (Entry<?> e : t2) {
+			if (e != null)
+				load++;
+		}
+		return load;
 	}
 	@Override
 	public boolean isEmpty() {
@@ -332,9 +324,9 @@ public class LossyHashTable<T extends LossyHashTable.Entry<T>> implements Collec
 	}
 	@Override
 	public String toString() {
-		long load = load();
+		long load = size();
 		return String.format("Load/Capacity: %s; Factor: %.1f%\nSize: %.2fMB", load, capacity,
-				(load*100)/(double) capacity, SizeEstimator.getInstance().sizeOf(this)/(double)
+				(load*100)/(double) capacity, memorySize()/(double)
 				(1 << 20));
 	}
 	

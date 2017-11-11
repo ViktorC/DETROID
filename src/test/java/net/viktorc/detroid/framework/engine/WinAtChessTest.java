@@ -29,7 +29,7 @@ import net.viktorc.detroid.framework.validation.EPDTestSuite;
 public final class WinAtChessTest {
 
 	private static final String SUITE_NAME = "Win at Chess";
-	private static final String WAC_FILE_PATH = "wac.epd";
+	private static final String WAC_FILE_PATH = "/wac.epd";
 	private static final long TIME_PER_POSITION = 1000;
 	private static final UCIEngine ENGINE = new Detroid();
 	private static final ControllerEngine CONTROLLER = new Detroid();

@@ -27,7 +27,7 @@ import net.viktorc.detroid.framework.validation.PerftSuite;
 @RunWith(Parameterized.class)
 public final class PerfTest {
 
-	private static final String PERFT_FILE_PATH = "perft.txt";
+	private static final String PERFT_FILE_PATH = "/perft.txt";
 	private static final ControllerEngine CONTROLLER = new Detroid();
 	
 	@Parameter

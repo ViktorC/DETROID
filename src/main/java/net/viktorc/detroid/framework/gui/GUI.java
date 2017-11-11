@@ -25,9 +25,9 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
 public final class GUI extends Application {
 
 	private static final String TITLE = "DETROID Chess GUI";
-	private static final String VIEW_PATH = "views/MainLayout.fxml";
-	private static final String STYLE_PATH = "styles/main-style.css";
-	private static final String ICON_PATH = "images/icon.png";
+	private static final String VIEW_PATH = "/gui/views/MainLayout.fxml";
+	private static final String STYLE_PATH = "/gui/styles/main-style.css";
+	private static final String ICON_PATH = "/gui/images/icon.png";
 	
 	private static ControllerEngine controllerEngine;
 	private static UCIEngine searchEngine;

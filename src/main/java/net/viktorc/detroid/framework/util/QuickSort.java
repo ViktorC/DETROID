@@ -1,7 +1,5 @@
 package net.viktorc.detroid.framework.util;
 
-import java.util.Collection;
-
 /**
  * An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
  * {@link java.lang.Comparable} interface.
@@ -13,27 +11,6 @@ public final class QuickSort {
 	
 	private QuickSort() {
 		
-	}
-	/**
-	 * Returns a sorted array of the container's elements if its length is greater than 0. The elements have to implement the {@link java.lang.Comparable}
-	 * interface. It is recommended to use {@link java.util.Collections}'s {@link java.util.Collections#sort(java.util.List) sort} method if performance 
-	 * is important.
-	 * 
-	 * @param container The list to be sorted.
-	 * @return A sorted array.
-	 */
-	@SuppressWarnings("unchecked")
-	public static <T extends Comparable<T>> T[] sort(Collection<T> container) {
-		int left, right;
-		T[] array;
-		if (container.size() != 0) {
-			array = (T[]) container.toArray();
-			left = 0;
-			right = array.length - 1;
-			quickSort(array, left, right);
-			return array;
-		}
-		return null;
 	}
 	/**
 	 * Sorts and returns the array. The elements have to implement the {@link java.lang.Comparable} interface.

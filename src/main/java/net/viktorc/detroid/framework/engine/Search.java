@@ -1,7 +1,10 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Set;
@@ -13,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.viktorc.detroid.framework.engine.EndGameTableBase.DTM;
 import net.viktorc.detroid.framework.engine.KillerTable.KillerTableEntry;
 import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchResults;
@@ -30,25 +34,31 @@ import net.viktorc.detroid.framework.util.QuickSort;
  */
 class Search implements Runnable, Future<SearchResults> {
 	
-	private final Params params;
+	private static final short INITIAL_DEPTH = 1;
+	
 	private final Position rootPosition;
+	private final DetroidParameters params;
 	private final Evaluator eval;
-	private final SearchInfo info;
+	private final EndGameTableBase egtb;
+	private final boolean useEgtb;
+	private final Set<Integer> availableEgtbs;
+	private final DetroidSearchInformation info;
 	private final LossyHashTable<TTEntry> tT;
 	private final byte hashEntryGen;
+	private final int numOfHelperThreads;
+	private final boolean analysisMode;
+	private final boolean ponder;
 	private final int maxExpectedSearchDepth;
 	private final int lCheckMateLimit;
 	private final int wCheckMateLimit;
 	private final int maxDepth;
 	private final long maxNodes;
-	private final boolean ponder;
-	private final ArrayList<Move> allowedRootMoves;
+	private final List<Move> allowedRootMoves;
 	private final boolean areMovesRestricted;
-	private final int numOfHelperThreads;
+	private final Map<Move,AtomicLong> movesToNodes;
 	private Long startTime;
 	private ExecutorService executor;
 	private CountDownLatch latch;
-	private AtomicLong nodes;
 	private boolean isDone;
 	private volatile int selDepth;
 	private volatile boolean doStopSearch;
@@ -56,28 +66,42 @@ class Search implements Runnable, Future<SearchResults> {
 	
 	
 	/**
-	 * Constructs a new {@link #Search} instance.
+	 * Constructs a new instance using the specified parameters.
 	 * 
-	 * @param position
-	 * @param info
-	 * @param ponder
-	 * @param maxDepth
-	 * @param maxNodes
-	 * @param moves
-	 * @param eval
-	 * @param historyTable
-	 * @param hashEntryGen
-	 * @param transposTable
-	 * @param params
-	 * @param numOfSearchThreads
+	 * @param position The root position to search.
+	 * @param params The engine parameters.
+	 * @param eval The evaluator object.
+	 * @param egtb The endgame tablebase object to use.
+	 * @param info The object to update with search information.
+	 * @param numOfSearchThreads The number of search threads to use.
+	 * @param transposTable The transposition table to use.
+	 * @param hashEntryGen The current hash entry generation.
+	 * @param ponder Whether the search should run in ponder mode.
+	 * @param maxDepth The maximum depth to search to.
+	 * @param maxNodes The maximum number of positions to search.
+	 * @param moves The only moves from the root position that should be searched. If it is <code>null</code>, 
+	 * all moves are to be searched.
+	 * @param analysisMode Whether the search should run in analysis mode. In analysis mode, the endgame 
+	 * tablebases are not used and single move root positions are searched, too.
 	 */
-	Search(Position position, SearchInfo info, boolean ponder, int maxDepth, long maxNodes, Set<Move> moves,
-			Evaluator eval, byte hashEntryGen, LossyHashTable<TTEntry> transposTable, Params params,
-			int numOfSearchThreads) {
+	Search(Position position, DetroidParameters params, Evaluator eval, EndGameTableBase egtb, DetroidSearchInformation info,
+			int numOfSearchThreads, LossyHashTable<TTEntry> transposTable, byte hashEntryGen, boolean analysisMode, boolean ponder,
+			int maxDepth, long maxNodes, Set<Move> moves) {
 		this.params = params;
 		this.info = info;
 		this.eval = eval;
+		this.egtb = egtb;
+		useEgtb = !analysisMode && egtb.isProbingLibLoaded() && egtb.isInit();
+		if (useEgtb) {
+			availableEgtbs = new HashSet<>();
+			for (int i = 3; i <= EndGameTableBase.MAX_NUMBER_OF_PIECES; i++) {
+				if (egtb.areTableBasesAvailable(i))
+					availableEgtbs.add(i);
+			}
+		} else
+			availableEgtbs = null;
 		this.rootPosition = position;
+		this.analysisMode = analysisMode;
 		this.ponder = ponder;
 		if (!ponder) {
 			maxDepth = Math.max(0, maxDepth);
@@ -92,11 +116,23 @@ class Search implements Runnable, Future<SearchResults> {
  		/* In case all the extensions are activated during the search and the quiscence search probes 2 fold beyond
  		 * the main search depth. */
 		maxExpectedSearchDepth = 2*4*this.maxDepth;
-		lCheckMateLimit = Termination.CHECK_MATE.score + maxExpectedSearchDepth;
+		lCheckMateLimit = Score.LOSING_CHECK_MATE.value + maxExpectedSearchDepth;
 		wCheckMateLimit = -lCheckMateLimit;
 		this.tT = transposTable;
 		this.hashEntryGen = hashEntryGen;
-		this.numOfHelperThreads = this.maxDepth > 1 ? numOfSearchThreads - 1 : 1;
+		this.numOfHelperThreads = this.maxDepth > 1 ? numOfSearchThreads - 1 : 0;
+		movesToNodes = new HashMap<>();
+	}
+	/**
+	 * Returns the cumulative total number of nodes searched.
+	 * 
+	 * @return
+	 */
+	private long getTotalNodes() {
+		long totalNodes = 0;
+		for (AtomicLong n : movesToNodes.values())
+			totalNodes += n.get();
+		return totalNodes;
 	}
 	/**
 	 * Returns a list of Move objects according to the best line of play extracted form the transposition table.
@@ -132,8 +168,10 @@ class Search implements Runnable, Future<SearchResults> {
 	private Entry<Short,ScoreType> adjustScore(int score, int alpha, int beta) {
 		int resultScore;
 		ScoreType scoreType;
+		if (score == Score.NULL.value)
+			return null;
 		// Determine score type and value in case it's a mate score.
-		if (score >= beta) {
+		else if (score >= beta) {
 			scoreType = ScoreType.UPPER_BOUND;
 			resultScore = score;
 		} else if (score <= alpha) {
@@ -141,10 +179,10 @@ class Search implements Runnable, Future<SearchResults> {
 			resultScore = score;
 		} else {
 			if (score <= lCheckMateLimit) {
-				resultScore = (int) Math.floor(((double) (Termination.CHECK_MATE.score - score))/2);
+				resultScore = (int) Math.floor(((double) (Score.LOSING_CHECK_MATE.value - score))/2);
 				scoreType = ScoreType.MATE;
 			} else if (score >= wCheckMateLimit) {
-				resultScore = (int) Math.ceil(((double) (-Termination.CHECK_MATE.score - score))/2);
+				resultScore = (int) Math.ceil(((double) (Score.WINNING_CHECK_MATE.value - score))/2);
 				scoreType = ScoreType.MATE;
 			} else {
 				resultScore = score;
@@ -168,8 +206,9 @@ class Search implements Runnable, Future<SearchResults> {
 		// Determine score type and value in case it's a mate score.
 		Entry<Short,ScoreType> adjustedScore = adjustScore(score, alpha, beta);
 		// Update stats.
-		info.set(extractPv(position, ply), currentMove, moveNumber, ply, (short) selDepth, adjustedScore.getKey(),
-				adjustedScore.getValue(), nodes.get(), System.currentTimeMillis() - startTime);
+		if (adjustedScore != null)
+			info.set(extractPv(position, ply), currentMove, moveNumber, ply, (short) selDepth, adjustedScore.getKey(),
+					adjustedScore.getValue(), getTotalNodes(), System.currentTimeMillis() - startTime);
 	}
 	/**
 	 * Inserts a node into the transposition table according to the specified parameters.
@@ -219,18 +258,19 @@ class Search implements Runnable, Future<SearchResults> {
 		TTEntry entry;
 		List<Move> pV;
 		Move bestMove, ponderMove;
-		nodes = new AtomicLong(0);
 		selDepth = 0;
 		doStopSearch = false;
 		slaveThreads = null;
-		alpha = Termination.CHECK_MATE.score;
-		beta = -alpha;
+		alpha = Score.MIN.value;
+		beta = Score.MAX.value;
 		masterThread = new SearchThread(rootPosition, alpha, beta, null);
 		// If maxDepth equals 0, perform only quiescence search.
 		if (maxDepth == 0) {
 			score = masterThread.quiescence(0, alpha, beta);
 			return new SearchResults(null, null, (short) score, ScoreType.EXACT);
 		}
+		for (Move m : areMovesRestricted ? allowedRootMoves : rootPosition.getMoves())
+			movesToNodes.put(m, new AtomicLong(0));
 		if (numOfHelperThreads > 0) {
 			slaveThreads = new ArrayList<>();
 			for (int i = 0; i < numOfHelperThreads; i++)
@@ -239,10 +279,10 @@ class Search implements Runnable, Future<SearchResults> {
 		// The number of consecutive fail-highs/fail-lows.
 		failHigh = failLow = 0;
 		// Iterative deepening.
-		for (short i = 1;; i++) {
+		for (short i = INITIAL_DEPTH;; i++) {
 			masterThread.setPly(i);
 			// Launch helper threads.
-			if (numOfHelperThreads > 0 && i != 1) {
+			if (numOfHelperThreads > 0 && i != INITIAL_DEPTH) {
 				latch = new CountDownLatch(numOfHelperThreads);
 				even = false;
 				for (SearchThread t : slaveThreads) {
@@ -253,7 +293,7 @@ class Search implements Runnable, Future<SearchResults> {
 			// Launch the master thread.
 			score = masterThread.call();
 			// Interrupt the helpers thread and wait for them to terminate.
-			if (numOfHelperThreads > 0 && i != 1) {
+			if (numOfHelperThreads > 0 && i != INITIAL_DEPTH) {
 				for (SearchThread t : slaveThreads)
 					t.stop();
 				try {
@@ -262,36 +302,35 @@ class Search implements Runnable, Future<SearchResults> {
 					doStopSearch = true;
 				}
 			}
-			if (doStopSearch || i == maxDepth)
+			if (doStopSearch || i == maxDepth || score == Score.NULL.value)
 				break;
 			// Aspiration windows with gradual widening.
-			if (score <= alpha && alpha != Termination.CHECK_MATE.score) {
+			if (score <= alpha) {
 				if (score <= lCheckMateLimit) {
-					alpha = Termination.CHECK_MATE.score;
+					alpha = Score.MIN.value;
 					failLow = 2;
 				} else {
-					alpha = failLow == 0 ? Math.max(score - 2*params.aspirationDelta, Termination.CHECK_MATE.score) :
-							failLow == 1 ? Math.max(score - 4*params.aspirationDelta, Termination.CHECK_MATE.score) :
-							Termination.CHECK_MATE.score;
+					alpha = failLow == 0 ? Math.max(score - 2*params.aspirationDelta, Score.MIN.value) :
+							failLow == 1 ? Math.max(score - 4*params.aspirationDelta, Score.MIN.value) :
+							Score.MIN.value;
 					failLow++;
 				}
 				i--;
-			} else if (score >= beta && beta != -Termination.CHECK_MATE.score) {
+			} else if (score >= beta) {
 				if (score >= wCheckMateLimit) {
-					beta = -Termination.CHECK_MATE.score;
+					beta = Score.MAX.value;
 					failHigh = 2;
 				} else {
-					beta = failHigh == 0 ? Math.min(score + 2*params.aspirationDelta, -Termination.CHECK_MATE.score) :
-							failHigh == 1 ? Math.min(score + 4*params.aspirationDelta, -Termination.CHECK_MATE.score) :
-							-Termination.CHECK_MATE.score;
+					beta = failHigh == 0 ? Math.min(score + 2*params.aspirationDelta, Score.MAX.value) :
+							failHigh == 1 ? Math.min(score + 4*params.aspirationDelta, Score.MAX.value) :
+							Score.MAX.value;
 					failHigh++;
 				}
 				i--;
 			} else {
-				if (Math.abs(beta) < wCheckMateLimit && Math.abs(alpha) < wCheckMateLimit)
-					failHigh = failLow = 0;
-				alpha = Math.max(score - params.aspirationDelta, Termination.CHECK_MATE.score);
-				beta = Math.min(score + params.aspirationDelta, -Termination.CHECK_MATE.score);
+				alpha = Math.max(score - params.aspirationDelta, Score.MIN.value);
+				beta = Math.min(score + params.aspirationDelta, Score.MAX.value);
+				failHigh = failLow = 0;
 			}
 		}
 		bestMove = ponderMove = null;
@@ -306,8 +345,9 @@ class Search implements Runnable, Future<SearchResults> {
 			adjustedScore = adjustScore(entry.score, alpha, beta);
 		else
 			adjustedScore = adjustScore(score, alpha, beta);
-		return new SearchResults(bestMove == null ? null : bestMove.toString(), ponderMove == null ? null : ponderMove.toString(),
-				adjustedScore.getKey(), adjustedScore.getValue());
+		return adjustedScore == null ? new SearchResults(bestMove == null ? null : bestMove.toString(),
+				null, null, null) : new SearchResults(bestMove == null ? null : bestMove.toString(), ponderMove == null ? null :
+				ponderMove.toString(), adjustedScore.getKey(), adjustedScore.getValue());
 	}
 	@Override
 	public synchronized SearchResults get() throws InterruptedException {
@@ -375,6 +415,7 @@ class Search implements Runnable, Future<SearchResults> {
 		private final KillerTable kT;
 		private final RelativeHistoryTable hT;
 		private Position position; // The position instance to use for the search.
+		private AtomicLong nodes;
 		private short ply;
 		private volatile boolean doStopSearchThread;
 		
@@ -437,13 +478,13 @@ class Search implements Runnable, Future<SearchResults> {
 			Move[] arr = new Move[moves.size()];
 			int i = 0;
 			for (Move move : moves) {
-				move.value = eval.SEE(pos, move);	// Static exchange evaluation.
+				move.value = eval.SEE(pos, move); // Static exchange evaluation.
 				arr[i++] = move;
 			}
 			return QuickSort.sort(arr);
 		}
 		/**
-		 * Orders captures and promotions according to the MVV-LVA principle; in case of a promotion, add the standard value of a queen to the score.
+		 * Orders captures and promotions according to the MVV-LVA principle.
 		 * 
 		 * @param moves
 		 * @return
@@ -452,20 +493,7 @@ class Search implements Runnable, Future<SearchResults> {
 			Move[] arr = new Move[moves.size()];
 			int i = 0;
 			for (Move move : moves) {
-				if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) { // If promotion.
-					if (move.type == MoveType.PROMOTION_TO_QUEEN.ind)
-						move.value = params.queenValue;
-					else if (move.type == MoveType.PROMOTION_TO_ROOK.ind)
-						move.value = params.rookValue;
-					else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind)
-						move.value = params.bishopValue;
-					else // PROMOTION_TO_KNIGHT
-						move.value = params.knightValue;
-					move.value -= params.pawnValue;
-					if (move.capturedPiece != Piece.NULL.ind)
-						move.value += eval.materialValueByPieceInd(move.capturedPiece);
-				} else
-					move.value = (short) (eval.materialValueByPieceInd(move.capturedPiece) - eval.materialValueByPieceInd(move.movedPiece));
+				move.value = eval.MVVLVA(move);
 				arr[i++] = move;
 			}
 			return QuickSort.sort(arr);
@@ -497,19 +525,21 @@ class Search implements Runnable, Future<SearchResults> {
 		 * @throws AbnormalSearchTerminationException
 		 */
 		private int quiescence(int distFromRoot, int alpha, int beta) throws AbnormalSearchTerminationException {
-			List<Move> moveList;
-			Move[] moves;
-			int bestScore, searchScore;
+			List<Move> moves;
+			Move[] sortedMoves;
+			int bestScore, searchScore, moveValue;
+			int mateValue = Score.LOSING_CHECK_MATE.value + distFromRoot;
+			boolean inCheck = position.inCheck;
 			if (!ponder && nodes.get() >= maxNodes)
 				doStopSearch = true;
-			if (doStopSearch|| doStopSearchThread)
+			if (doStopSearch || doStopSearchThread)
 				throw new AbnormalSearchTerminationException();
 			nodes.incrementAndGet();
 			// Fifty-move rule and repetition rule check.
 			if (position.fiftyMoveRuleClock >= 100 || position.hasRepeated(distFromRoot > 2 ? 1 : 2))
-				return Termination.DRAW_CLAIMED.score;
+				return Score.DRAW_CLAIMED.value;
 			// Evaluate the position statically.
-			bestScore = eval.score(position, hashEntryGen, alpha, beta);
+			bestScore = inCheck ? mateValue : eval.score(position, hashEntryGen, alpha, beta);
 			// Fail soft.
 			if (bestScore > alpha) {
 				alpha = bestScore;
@@ -518,14 +548,17 @@ class Search implements Runnable, Future<SearchResults> {
 			}
 			// Limit the maximum depth of the quiescence search.
 			if (distFromRoot > maxExpectedSearchDepth)
-				return eval.score(position, hashEntryGen, alpha, beta);
-			// Generate all the material moves or all moves if in check.
-			moveList = position.getTacticalMoves();
-			moves = orderMaterialMovesSEE(position, moveList);
-			for (Move move : moves) {
-				// If the SEE value is below 0 or the delta pruning limit, break the search because the rest of the moves are even worse.
-				if (move.value < 0 || (maxDepth != 0 && move.value <= alpha - params.deltaPruningMargin))
-					break;
+				return alpha;
+			// Generate all the material moves or if in check, all moves.
+			moves = inCheck ? position.getMoves() : position.getTacticalMoves();
+			sortedMoves = orderMaterialMovesMVVLVA(moves);
+			for (Move move : sortedMoves) {
+				if (!inCheck) {
+					// If the SEE value is below 0 or the delta pruning limit, skip.
+					moveValue = eval.SEE(position, move);
+					if (moveValue < 0 || moveValue <= alpha - params.deltaPruningMargin)
+						continue;
+				}
 				position.makeMove(move);
 				searchScore = -quiescence(distFromRoot + 1, -beta, -alpha);
 				position.unmakeMove();
@@ -556,14 +589,14 @@ class Search implements Runnable, Future<SearchResults> {
 				throws AbnormalSearchTerminationException {
 			// Do not allow negative depths for the full effect of check extensions.
 			depth = Math.max(depth, 0);
-			final int mateScore = Termination.CHECK_MATE.score + distFromRoot;
+			final int mateScore = Score.LOSING_CHECK_MATE.value + distFromRoot;
 			final int origAlpha = alpha;
 			final int depthLimit = distFromRoot >= maxDepth ? depth : depth + 2*params.fullPly;
-			final boolean isInCheck = position.isInCheck;
-			final boolean isPvNode = beta > origAlpha + 1;
+			final boolean inCheck = position.inCheck;
+			final boolean pvNode = beta > origAlpha + 1;
 			int bestScore, score, evalScore;
 			int reduction, extension;
-			int matMoveBreakInd;
+			int numOfPieces;
 			int searchedMoves;
 			int kMove;
 			int razMargin, futMargin;
@@ -571,9 +604,9 @@ class Search implements Runnable, Future<SearchResults> {
 			boolean doQuiescence;
 			boolean isThereHashMove, isThereKM1, isThereKM2;
 			boolean lastMoveIsTactical, pawnPushed;
-			boolean isDangerous, isReducible, mateThreat;
-			List<Move> tacticalMoves, quietMoves;
-			Move[] tacticalMovesArr, quietMovesArr;
+			boolean dangerous, prunable, reducible;
+			List<Move> tacticalMoves, quietMoves, losingCaptures;
+			Move[] tacticalMovesArr, quietMovesArr, losingCapturesArr;
 			TTEntry e;
 			KillerTableEntry kE;
 			bestScore = mateScore;
@@ -585,7 +618,7 @@ class Search implements Runnable, Future<SearchResults> {
 			kE = null;
 			if (!ponder && nodes.get() >= maxNodes)
 				doStopSearch = true;
-			if (doStopSearch|| doStopSearchThread)
+			if (doStopSearch || doStopSearchThread)
 				throw new AbnormalSearchTerminationException();
 			nodes.incrementAndGet();
 			if (distFromRoot > selDepth)
@@ -593,14 +626,36 @@ class Search implements Runnable, Future<SearchResults> {
 			Search: {
 				// Check for the repetition rule; return a draw score if it applies.
 				if (position.hasRepeated(distFromRoot > 2 ? 1 : 2))
-					return Termination.DRAW_CLAIMED.score;
+					return Score.DRAW_CLAIMED.value;
 				// Mate distance pruning.
 				if (-mateScore < beta && alpha >= -mateScore)
 					return -mateScore;
 				if (mateScore > alpha && beta <= mateScore)
 					return mateScore;
+				// Probe endgame tablebases if applicable.
+				if (useEgtb && distFromRoot <= params.maxDepthForEgtbProbe) {
+					numOfPieces = position.getNumberOfPieces();
+					// Check if there are tablebases loaded for the current number of pieces on the board.
+					if (numOfPieces <= EndGameTableBase.MAX_NUMBER_OF_PIECES && availableEgtbs.contains(numOfPieces)) {
+						DTM dtm = egtb.probeDTM(position, distFromRoot > params.maxDepthForHardEgtbProbe);
+						// If the position is found...
+						if (dtm != null && dtm.getWdl() != null) {
+							// Return the appropriate score.
+							switch (dtm.getWdl()) {
+								case DRAW:
+									return Score.STALE_MATE.value;
+								case LOSS:
+									return mateScore + dtm.getDistance();
+								case WIN:
+									return -mateScore - dtm.getDistance();
+								default:
+									break;
+							}
+						}
+					}
+				}
 				// Check extension.
-				depth = isInCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
+				depth = inCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
 				// Pawn push extension
 				lastMove = position.getLastMove();
 				pawnPushed = isPawnPush(lastMove);
@@ -612,7 +667,7 @@ class Search implements Runnable, Future<SearchResults> {
 				if (e != null) {
 					e.generation = hashEntryGen;
 					// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
-					if (e.depth >= depth/params.fullPly) {
+					if (e.depth >= depth/params.fullPly && e.score != Score.NULL.value) {
 						// Mate score adjustment to root distance.
 						if (e.score <= lCheckMateLimit)
 							score = e.score + distFromRoot;
@@ -642,52 +697,49 @@ class Search implements Runnable, Future<SearchResults> {
 					}
 					break Search;
 				}
-				evalScore = Integer.MIN_VALUE;
-				// Assess if the position is 'dangerous'.
-				isDangerous =  isPvNode || isInCheck || pawnPushed || !position.areTherePiecesOtherThanKingsAndPawns();
-				mateThreat = Math.abs(beta) >= wCheckMateLimit;
-				// Try null move pruning if it is allowed and the position is 'safe'.
-				if (nullMoveAllowed && !isDangerous && !mateThreat && depth/ply >= params.nullMoveReductionMinActivationDepth) {
-					evalScore = eval.score(position, hashEntryGen, alpha, beta);
-					if (evalScore > alpha) {
-						// Dynamic depth reduction.
-						reduction = params.nullMoveReduction*params.fullPly +
-								params.extraNullMoveReduction*depth/params.extraNullMoveReductionDepthLimit;
-						position.makeNullMove();
-						// Do not allow consecutive null moves.
-						score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
-						position.unmakeMove();
-						if (score >= beta)
-							return score;
-						if (score <= lCheckMateLimit)
-							mateThreat = true;
+				evalScore = Score.NULL.value;
+				// Assess if the position is 'safe'...
+				if (!pvNode && !inCheck && !pawnPushed && Math.abs(beta) < wCheckMateLimit &&
+						position.areTherePiecesOtherThanKingsAndPawns()) {
+					// Try reverse futility pruning or 'static null move pruning' if the conditions are met.
+					if (depth/params.fullPly <= 3 && params.doRazor) {
+						switch (depth/params.fullPly) {
+							case 1: // Reverse pre-frontier futility pruning.
+								razMargin = params.revFutitilityMargin1;
+								break;
+							case 2: // Reverse limited futility pruning.
+								razMargin = params.revFutitilityMargin2;
+								break;
+							case 3: // Reverse deep futility pruning.
+								razMargin = params.revFutitilityMargin3;
+								break;
+							default:
+								razMargin = 0;
+						}
+						if (evalScore == Score.NULL.value)
+							evalScore = eval.score(position, hashEntryGen, alpha, beta);
+						if (evalScore - razMargin >= beta)
+							return evalScore - razMargin;
 					}
-				}
-				// Try razoring if it is allowed and the position is 'safe'.
-				if (params.doRazor && !isDangerous && !mateThreat && Math.abs(alpha) < wCheckMateLimit && depth/params.fullPly <= 3) {
-					switch (depth/params.fullPly) {
-						case 1: // Retrograde pre-frontier razoring.
-							razMargin = params.razoringMargin1;
-							break;
-						case 2: // Retrograde limited razoring.
-							razMargin = params.razoringMargin2;
-							break;
-						case 3: // Retrograde deep razoring.
-							razMargin = params.razoringMargin3;
-							break;
-						default:
-							razMargin = 0;
-					}
-					if (evalScore == Integer.MIN_VALUE)
-						evalScore = eval.score(position, hashEntryGen, alpha, beta);
-					if (evalScore < beta - razMargin) {
-						score = quiescence(distFromRoot, alpha - razMargin, beta - razMargin);
-						if (score <= alpha - razMargin)
-							return score;
+					// Try null move pruning if the conditions are met.
+					if (nullMoveAllowed && depth/ply >= params.nullMoveReductionMinActivationDepth) {
+						if (evalScore == Score.NULL.value)
+							evalScore = eval.score(position, hashEntryGen, alpha, beta);
+						if (evalScore > alpha) {
+							// Dynamic depth reduction.
+							reduction = params.nullMoveReduction*params.fullPly +
+									params.extraNullMoveReduction*depth/params.extraNullMoveReductionDepthLimit;
+							position.makeNullMove();
+							// Do not allow consecutive null moves.
+							score = -pVsearch(depth - (params.fullPly + reduction), distFromRoot + 1, -beta, -beta + 1, false);
+							position.unmakeMove();
+							if (score >= beta)
+								return score;
+						}
 					}
 				}
 				// If there is no hash entry in a PV node that is to be searched deep, try IID.
-				if (params.doIid && isPvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
+				if (params.doIid && pvNode && !isThereHashMove && depth/params.fullPly >= params.iidMinActivationDepth) {
 					pVsearch(depth*params.iidRelDepthHth/100, distFromRoot, alpha, beta, true);
 					e = tT.get(position.key);
 					if (e != null && e.bestMove != 0) {
@@ -710,7 +762,7 @@ class Search implements Runnable, Future<SearchResults> {
 						if (!isThereKM1 && !isThereKM2) {
 							quietMoves = position.getQuietMoves();
 							if (quietMoves.size() == 0) {
-								score = isInCheck ? mateScore : Termination.STALE_MATE.score;
+								score = inCheck ? mateScore : Score.STALE_MATE.value;
 								if (score > bestScore) {
 									bestMove = null;
 									bestScore = score;
@@ -722,7 +774,7 @@ class Search implements Runnable, Future<SearchResults> {
 				}
 				// Check for the fifty-move rule; return a draw score if it applies.
 				if (position.fiftyMoveRuleClock >= 100)
-					return Termination.DRAW_CLAIMED.score;
+					return Score.DRAW_CLAIMED.value;
 				// Check if a recapture extension could possibly be applied.
 				lastMove = position.getLastMove();
 				lastMoveIsTactical = lastMove != null && lastMove.isMaterial();
@@ -757,9 +809,9 @@ class Search implements Runnable, Future<SearchResults> {
 				// Generate the material moves if they are not generated yet.
 				if (tacticalMoves == null)
 					tacticalMoves = position.getTacticalMoves();
+				losingCaptures = null;
 				// Sort the material moves.
 				tacticalMovesArr = orderMaterialMovesMVVLVA(tacticalMoves);
-				matMoveBreakInd = 0;
 				// Search winning and equal captures.
 				for (int i = 0; i < tacticalMovesArr.length; i++) {
 					move = tacticalMovesArr[i];
@@ -768,17 +820,23 @@ class Search implements Runnable, Future<SearchResults> {
 						isThereHashMove = false;
 						continue;
 					}
-					// If the current move's order-value indicates a losing capture, break the search to check the killer moves.
-					if (move.value < 0) {
-						matMoveBreakInd = i;
-						break;
-					}
 					// Recapture extension (includes capturing newly promoted pieces).
 					extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
 							params.recapExtension : 0;
+					// If it is not a recapture...
+					if (extension == 0) {
+						// and the current move's SEE value indicates a losing capture, put it in the losing captures list.
+						move.value = eval.SEE(position, move);
+						if (move.value < 0) {
+							if (losingCaptures == null)
+								losingCaptures = new ArrayList<>();
+							losingCaptures.add(move);
+							continue;
+						}
+					}
 					position.makeMove(move);
 					// PVS.
-					if (i == 0)
+					if (searchedMoves == 0)
 						score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 					else {
 						score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
@@ -804,7 +862,7 @@ class Search implements Runnable, Future<SearchResults> {
 					if (isThereKM1 || (position.isLegalSoft(killerMove1) && (!isThereHashMove || !killerMove1.equals(hashMove)))) {
 						isThereKM1 = true;
 						position.makeMove(killerMove1);
-						if (!isThereHashMove && matMoveBreakInd == 0)
+						if (searchedMoves == 0)
 							score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 						else {
 							score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
@@ -834,7 +892,7 @@ class Search implements Runnable, Future<SearchResults> {
 					if (isThereKM2 || (position.isLegalSoft(killerMove2) && (!isThereHashMove || !killerMove2.equals(hashMove)))) {
 						isThereKM2 = true;
 						position.makeMove(killerMove2);
-						if (!isThereHashMove && !isThereKM1 && matMoveBreakInd == 0)
+						if (searchedMoves == 0)
 							score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
 						else {
 							score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
@@ -861,47 +919,50 @@ class Search implements Runnable, Future<SearchResults> {
 						hT.recordUnsuccessfulMove(killerMove2);
 					}
 				}
-				// Search losing captures if there are any.
-				for (int i = matMoveBreakInd; i < tacticalMovesArr.length; i++) {
-					move = tacticalMovesArr[i];
-					// If this move was the hash move, skip it.
-					if (isThereHashMove && move.equals(hashMove)) {
-						isThereHashMove = false;
-						continue;
-					}
-					// Recapture extension.
-					extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.recapExtension : 0;
-					position.makeMove(move);
-					// PVS.
-					if (i == 0 && !isThereHashMove && !isThereKM1 && !isThereKM2)
-						score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
-					else {
-						score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
-						if (score > alpha && score < beta)
+				// If there are any losing captures...
+				if (losingCaptures != null) {
+					// Sort them based on their already assigned SEE scores.
+					losingCapturesArr = QuickSort.sort(losingCaptures.toArray(new Move[losingCaptures.size()]));
+					// And search them.
+					for (int i = 0; i < losingCapturesArr.length; i++) {
+						move = losingCapturesArr[i];
+						// No need to check if it is the hash move as that was done before it was added to the losing captures.
+						// Recapture extension.
+						extension = lastMoveIsTactical && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ? params.recapExtension : 0;
+						position.makeMove(move);
+						// PVS.
+						if (searchedMoves == 0)
 							score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
-					}
-					position.unmakeMove();
-					searchedMoves++;
-					if (score > bestScore) {
-						bestMove = move;
-						bestScore = score;
-						if (score > alpha) {
-							alpha = score;
-							if (alpha >= beta)
-								break Search;
+						else {
+							score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha, true);
+							if (score > alpha && score < beta)
+								score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1, -beta, -alpha, true);
+						}
+						position.unmakeMove();
+						searchedMoves++;
+						if (score > bestScore) {
+							bestMove = move;
+							bestScore = score;
+							if (score > alpha) {
+								alpha = score;
+								if (alpha >= beta)
+									break Search;
+							}
 						}
 					}
 				}
 				// Generate the non-material legal moves if they are not generated yet.
 				if (quietMoves == null)
 					quietMoves = position.getQuietMoves();
+				dangerous = inCheck || pawnPushed;
 				// One reply extension.
 				if (tacticalMoves.size() == 0 && quietMoves.size() == 1) {
-					isDangerous = true;
+					dangerous = true;
 					depth = Math.min(depthLimit, depth + params.singleReplyExtension);
 				}
+				prunable = !pvNode && !dangerous && Math.abs(alpha) < wCheckMateLimit;
 				// Futility pruning margin calculation.
-				if (!isDangerous) {
+				if (prunable) {
 					switch (depth/params.fullPly) {
 						case 1:
 							// Frontier futility pruning.
@@ -947,11 +1008,11 @@ class Search implements Runnable, Future<SearchResults> {
 						isThereKM2 = false;
 						continue;
 					}
-					isReducible = !isDangerous && Math.abs(alpha) < wCheckMateLimit && !position.givesCheck(move);
+					reducible = !position.givesCheck(move);
 					// Futility pruning.
-					if (isReducible && !mateThreat && depth/params.fullPly <= 5) {
-						if (evalScore == Integer.MIN_VALUE)
-							evalScore = eval.score(position, hashEntryGen, alpha - futMargin, beta - futMargin);
+					if (reducible && prunable && depth/params.fullPly <= 5) {
+						if (evalScore == Score.NULL.value)
+							evalScore = eval.score(position, hashEntryGen, alpha, beta);
 						if (evalScore <= alpha - futMargin) {
 							// Record failure in the relative history table.
 							hT.recordUnsuccessfulMove(move);
@@ -960,7 +1021,7 @@ class Search implements Runnable, Future<SearchResults> {
 					}
 					position.makeMove(move);
 					// Try late move reduction.
-					if (isReducible && depth/params.fullPly >= params.lateMoveReductionMinActivationDepth &&
+					if (reducible && !dangerous && depth/params.fullPly >= params.lateMoveReductionMinActivationDepth &&
 							searchedMoves > params.minMovesSearchedForLmr) {
 						reduction = params.lateMoveReduction*params.fullPly +
 								params.extraLateMoveReduction*depth/params.extraLateMoveReductionDepthLimit;
@@ -1011,37 +1072,37 @@ class Search implements Runnable, Future<SearchResults> {
 			int alpha = this.alpha;
 			int beta = this.beta;
 			int moveInd;
-			int score, bestScore, extension, numOfMoves;
-			Move hashMove, bestMove, move, lastMove;
-			boolean lastMoveIsMaterial, statsUpdated;
-			List<Move> tacticalMoves, quietMoves, allMoves;
-			Move[] tacticalMovesArr, quietMovesArr, allMovesArr;
+			int score, bestScore, extension;
+			Move hashMove, finalHashMove, bestMove, move, lastMove;
+			boolean lastMoveIsMaterial;
+			List<Move> moves, temp;
+			Move[] sortedMoves;
 			TTEntry entry;
-			bestScore = Integer.MIN_VALUE;
+			bestScore = Score.MIN.value;
 			bestMove = hashMove = null;
-			statsUpdated = false;
 			try {
 				doStopSearchThread = false;
 				position = origPosition.deepCopy();
-				nodes.incrementAndGet();
 				// Check for the 3-fold repetition rule.
 				if (position.hasRepeated(2))
-					return (int) Termination.DRAW_CLAIMED.score;
+					return (int) Score.DRAW_CLAIMED.value;
 				// Generate moves.
-				tacticalMoves = position.getTacticalMoves();
-				quietMoves = position.getQuietMoves();
-				numOfMoves = tacticalMoves.size() + quietMoves.size();
+				moves = position.getMoves();
 				// Mate check.
-				if (numOfMoves == 0)
-					return (int) (position.isInCheck ? Termination.CHECK_MATE.score : Termination.STALE_MATE.score);
-				// One reply extension.
-				else if (numOfMoves == 1)
-					depth = Math.min(depthLimit, depth + params.singleReplyExtension);
+				if (moves.isEmpty())
+					return (int) (position.inCheck ? Score.LOSING_CHECK_MATE.value : Score.STALE_MATE.value);
 				// Check for the 50 move rule.
 				if (position.fiftyMoveRuleClock >= 100)
-					return (int) Termination.DRAW_CLAIMED.score;
+					return (int) Score.DRAW_CLAIMED.value;
+				// In non-analysis mode, terminate prematurely if there is only one legal response at the root.
+				if (!analysisMode && moves.size() == 1) {
+					bestScore = Score.NULL.value;
+					bestMove = moves.get(0);
+					insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
+					return bestScore;
+				}
 				// Check extension.
-				depth = position.isInCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
+				depth = position.inCheck ? Math.min(depthLimit, depth + params.checkExtension) : depth;
 				// Pawn push extension
 				lastMove = position.getLastMove();
 				depth = lastMove != null && isPawnPush(lastMove) ? Math.min(depthLimit, depth + params.pawnPushExtension) : depth;
@@ -1050,7 +1111,7 @@ class Search implements Runnable, Future<SearchResults> {
 				if (entry != null) {
 					entry.generation = hashEntryGen;
 					// If the hashed entry's depth is greater than or equal to the current search depth, check if the stored score is usable.
-					if (entry.depth > depth/params.fullPly) {
+					if (entry.depth > depth/params.fullPly && entry.score != Score.NULL.value) {
 						score = entry.score;
 						/* If the score was exact, or it was the score of an all node and is smaller than or equal to alpha, or it is that of a cut
 						 * node and is greater than or equal to beta, return the score. */
@@ -1075,32 +1136,44 @@ class Search implements Runnable, Future<SearchResults> {
 					if (entry.bestMove != 0)
 						hashMove = Move.toMove(entry.bestMove);
 				}
-				// Sort moves.
-				tacticalMovesArr = orderMaterialMovesSEE(position, tacticalMoves);
-				quietMovesArr = orderNonMaterialMoves(quietMoves);
-				allMoves = new ArrayList<>();
-				if (hashMove != null && (quietMoves.contains(hashMove) || tacticalMoves.contains(hashMove)))
-					allMoves.add(hashMove);
-				for (int i = 0; i < tacticalMovesArr.length; i++) {
-					if (!allMoves.contains(tacticalMovesArr[i]))
-						allMoves.add(tacticalMovesArr[i]);
-				}
-				for (int i = 0; i < quietMovesArr.length; i++) {
-					if (!allMoves.contains(quietMovesArr[i]))
-						allMoves.add(quietMovesArr[i]);
+				// Sort moves...
+				if (ply == INITIAL_DEPTH) { // First iteration.
+					// Based on hash and SEE.
+					sortedMoves = orderMaterialMovesSEE(position, moves);
+					temp = new ArrayList<>();
+					if (hashMove != null && moves.contains(hashMove))
+						temp.add(hashMove);
+					for (int i = 0; i < sortedMoves.length; i++) {
+						if (!temp.contains(sortedMoves[i]))
+							temp.add(sortedMoves[i]);
+					}
+					moves = temp;
+				} else {
+					// Based on hash and cumulative subtree sizes under the moves.
+					finalHashMove = hashMove;
+					moves.sort((m1, m2) -> {
+						if (finalHashMove != null) {
+							if (m1.equals(finalHashMove))
+								return -1;
+							else if (m2.equals(finalHashMove))
+								return 1;
+						}
+						long val1 = movesToNodes.get(m1).get();
+						long val2 = movesToNodes.get(m2).get();
+						return val1 > val2 ? -1 : val1 == val2 ? 0 : 1;
+					});
 				}
 				if (areMovesRestricted)
-					allMoves.retainAll(allowedRootMoves);
-				allMovesArr = new Move[allMoves.size()];
-				allMovesArr = allMoves.toArray(allMovesArr);
+					moves.retainAll(allowedRootMoves);
 				lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
 				move = null;
 				// Iterate over moves.
-				for (moveInd = 0; moveInd < allMovesArr.length; moveInd++) {
-					move = allMovesArr[moveInd];
+				for (moveInd = 0; moveInd < moves.size(); moveInd++) {
+					move = moves.get(moveInd);
+					nodes = movesToNodes.get(move);
 					// Recapture extension.
 					extension = lastMoveIsMaterial && move.capturedPiece != Piece.NULL.ind && move.to == lastMove.to ?
-						params.recapExtension : 0;
+							params.recapExtension : 0;
 					position.makeMove(move);
 					// Full window search for the first move...
 					if (moveInd == 0)
@@ -1120,10 +1193,8 @@ class Search implements Runnable, Future<SearchResults> {
 							alpha = bestScore;
 							// Insert into TT and update stats if applicable.
 							insertNodeIntoTt(position.key, origAlpha, beta, move, score, (short) 0, (short) (depth/params.fullPly));
-							if (isMainSearchThread) {
+							if (isMainSearchThread)
 								updateInfo(position, move, moveInd + 1, ply, origAlpha, beta, score);
-								statsUpdated = true;
-							}
 							if (bestScore >= beta)
 								break;
 						}
@@ -1133,15 +1204,13 @@ class Search implements Runnable, Future<SearchResults> {
 				if (bestScore <= origAlpha) {
 					insertNodeIntoTt(position.key, origAlpha, beta, bestMove, bestScore, (short) 0, (short) (depth/params.fullPly));
 					if (isMainSearchThread)
-						updateInfo(position, move, move != null ? Math.min(allMovesArr.length, moveInd + 1) : 0, ply, origAlpha, beta, bestScore);
+						updateInfo(position, move, move != null ? Math.min(moves.size(), moveInd + 1) : 0, ply, origAlpha, beta, bestScore);
 				}
 				return bestScore;
 			} catch (AbnormalSearchTerminationException e) {
 				entry = tT.get(origPosition.key);
 				if (entry != null)
 					bestScore = entry.score;
-				if (isMainSearchThread && !statsUpdated)
-					updateInfo(origPosition, null, 0, ply, origAlpha, beta, bestScore);
 				return bestScore;
 			} finally {
 				if (!isMainSearchThread) {
