@@ -2,8 +2,8 @@ package net.viktorc.detroid.framework.util;
 
 
 /**
- * A static class exclusively for bitwise operations. Some of them are implemented in the Java API, but to have a clear idea about
- * the costs and to understand the logic, they are re-implemented and provided here.
+ * A utility class for bitwise operations. Even though some of them are already implemented in the standard Java libraries, to have a clear idea 
+ * about the costs and to understand the logic, they are re-implemented and provided here.
  * 
  * @author Viktor
  *

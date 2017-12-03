@@ -29,11 +29,11 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	static final int DTM_SOFT_PROB = 6;
 	static final int DTM_CACHE_SIZE = 7;
 	static final int TOTAL_HITS = 8;
-	static final int MEMORY_HITS = 10;
-	static final int DRIVE_HITS = 11;
-	static final int DRIVE_MISSES = 12;
-	static final int BYTES_READ = 13;
-	static final int FILES_OPENED = 14;
+	static final int MEMORY_HITS = 9;
+	static final int DRIVE_HITS = 10;
+	static final int DRIVE_MISSES = 11;
+	static final int BYTES_READ = 12;
+	static final int FILES_OPENED = 13;
 	
 	// Floating point statistics indices.
 	static final int WDL_OCCUPANCY = 0;
@@ -390,6 +390,15 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 			return (availability() & mask) != 0;
 		}
 		return false;
+	}
+	@Override
+	EGTBStats getStats() {
+		long[] intStats = new long[14];
+		double[] fpStats = new double[3];
+		getStats(intStats, fpStats);
+		return new EGTBStats(intStats[WDL_HARD_PROB] + intStats[DTM_HARD_PROB],
+				intStats[WDL_SOFT_PROB] + intStats[DTM_SOFT_PROB],
+				intStats[DRIVE_HITS], intStats[MEMORY_HITS]);
 	}
 	@Override
 	void init(String path, long cacheSize, Object... args) {

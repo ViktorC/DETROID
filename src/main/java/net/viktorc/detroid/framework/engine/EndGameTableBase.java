@@ -24,7 +24,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * 
 	 * @param path The path to the shared library containing the probing code.
 	 */
-	void loadProbingLibrary(String path) {
+	synchronized void loadProbingLibrary(String path) {
 		try {
 			System.load(Paths.get(path).toAbsolutePath().toString());
 			probingLibLoaded = true;
@@ -38,7 +38,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * 
 	 * @return Whether the last library loading attempt has been successful.
 	 */
-	boolean isProbingLibLoaded() {
+	synchronized boolean isProbingLibLoaded() {
 		return probingLibLoaded;
 	}
 	/**
@@ -69,6 +69,16 @@ abstract class EndGameTableBase implements Closeable {
 	 * of men on the board.
 	 */
 	abstract boolean areTableBasesAvailable(int piecesOnBoard);
+	/**
+	 * Returns some basic usage stats about the endgame tablebase.
+	 * 
+	 * @return Endgame tablebase stats.
+	 */
+	abstract EGTBStats getStats();
+	/**
+	 * Resets the endgame tablebase stats.
+	 */
+	abstract void resetStats();
 	/**
 	 * It probes for the given position and if found, it returns whether it is 
 	 * a winning position, a losing position, or a draw; else it returns null.
@@ -144,6 +154,60 @@ abstract class EndGameTableBase implements Closeable {
 		@Override
 		public String toString() {
 			return String.format("WDL: %s; DTM: %d", wdl == null ? "?" : wdl.name(), distance);
+		}
+		
+	}
+	
+	/**
+	 * A simple container class for basic endgame tablebase probing stats.
+	 * 
+	 * @author Viktor
+	 *
+	 */
+	static class EGTBStats {
+
+		private final long totalHardProbes;
+		private final long totalSoftProbes;
+		private final long totalDriveHits;
+		private final long totalCacheHits;
+		
+		EGTBStats(long totalHardProbes, long totalSoftProbes, long totalDriveHits, long totalCacheHits) {
+			this.totalHardProbes = totalHardProbes;
+			this.totalSoftProbes = totalSoftProbes;
+			this.totalDriveHits = totalDriveHits;
+			this.totalCacheHits = totalCacheHits;
+		}
+		/**
+		 * Returns the total number of hard probes.
+		 * 
+		 * @return The total number of probes that may go to the drive.
+		 */
+		long getTotalHardProbes() {
+			return totalHardProbes;
+		}
+		/**
+		 * Returns the total number of soft probes.
+		 * 
+		 * @return The total number of probes only into the cache.
+		 */
+		long getTotalSoftProbes() {
+			return totalSoftProbes;
+		}
+		/**
+		 * Returns the total number of drive hits.
+		 * 
+		 * @return The number of drive hits.
+		 */
+		long getTotalDriveHits() {
+			return totalDriveHits;
+		}
+		/**
+		 * Return the total number of cache hits.
+		 * 
+		 * @return The number of memory hits.
+		 */
+		long getTotalCacheHits() {
+			return totalCacheHits;
 		}
 		
 	}

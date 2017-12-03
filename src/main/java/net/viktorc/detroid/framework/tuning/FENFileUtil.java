@@ -35,9 +35,7 @@ public final class FENFileUtil {
 	 */
 	private static final String FIRST_PGN_LINE_PATTERN = "(?i)^\\[EVENT (.)+\\]$";
 	
-	private FENFileUtil() {
-		
-	}
+	private FENFileUtil() { }
 	/**
 	 * Generates a file of lines of FEN strings with the results of the games the positions occurred in 
 	 * appended to them. This file can then be used for the optimization of engine parameters.
@@ -112,9 +110,14 @@ public final class FENFileUtil {
 	 * @throws IOException If the file specified by filePath doesn't exist and cannot be created.
 	 * @throws NullPointerException If the parameter engines is null.
 	 * @throws IllegalArgumentException If engines doesn't contain at least one non-null element.
+	 * @throws ExecutionException If an execution exception occurs in one of the threads.
+	 * @throws InterruptedException If the current thread is interrupted while waiting for 
+	 * the worker threads to finish.
 	 */
 	public static void generateFENFile(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			String fenFilePath) throws IOException, NullPointerException, IllegalArgumentException {
+			String fenFilePath)
+					throws IOException, NullPointerException, IllegalArgumentException,
+					InterruptedException, ExecutionException {
 		File destinationFile = new File(fenFilePath);
 		if (!destinationFile.exists())
 			Files.createFile(destinationFile.toPath());
@@ -154,11 +157,7 @@ public final class FENFileUtil {
 				}));
 			}
 			for (Future<?> f : futures) {
-				try {
-					f.get();
-				} catch (InterruptedException | ExecutionException e1) {
-					e1.printStackTrace();
-				}
+				f.get();
 			}
 		} finally {
 			pool.shutdown();

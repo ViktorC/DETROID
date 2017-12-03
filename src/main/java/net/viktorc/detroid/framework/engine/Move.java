@@ -45,8 +45,8 @@ class Move implements Comparable<Move> {
 	 */
 	final byte type;
 	/**
-	 * The value assigned to the move at move ordering (or the value returned by the search algorithm based on the evaluator's
-	 * scoring for the position that the move leads to).
+	 * A field for temporarily storing information associated with the move such as the value assigned to it at move 
+	 * ordering or the depth to which it should be searched.
 	 */
 	short value;
 	

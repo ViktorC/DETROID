@@ -28,12 +28,12 @@ public class GrayCode {
 	 * @return The natural value of the number.
 	 */
 	public final static long decode(long g) {
-		g = g^(g >> 32);
-		g = g^(g >> 16);
-		g = g^(g >> 8);
-		g = g^(g >> 4);
-	    g = g^(g >> 2);
-	    g = g^(g >> 1);
+		g ^= (g >> 32);
+		g ^= (g >> 16);
+		g ^= (g >> 8);
+		g ^= (g >> 4);
+	    g ^= (g >> 2);
+	    g ^= (g >> 1);
 	    return g;
 	}
 	

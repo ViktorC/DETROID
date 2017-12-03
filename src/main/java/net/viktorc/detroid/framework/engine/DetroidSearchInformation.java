@@ -18,7 +18,7 @@ import net.viktorc.detroid.framework.uci.SearchInformation;
 class DetroidSearchInformation extends SearchInformation {
 	
 	// Principal variation.
-	private List<Move> pVline;
+	private List<Move> pvLine;
 	// The root move currently being searched.
 	private Move currentMove;
 	// The ordinal of the move currently being searched in the root position's move list.
@@ -36,8 +36,12 @@ class DetroidSearchInformation extends SearchInformation {
 	private long nodes;
 	// Time spent on the search.
 	private long time;
+	// Number of endgame tablebase hits.
+	private long egtbHits;
+	// Search statistics information.
+	private String stats;
 	// A lock ensuring integrity among the accessed field values.
-	private ReadWriteLock lock;
+	private final ReadWriteLock lock;
 	
 	/**
 	 * Constructs a default instance.
@@ -48,7 +52,7 @@ class DetroidSearchInformation extends SearchInformation {
 	/**
 	 * Sets the search results according to the specified parameters.
 	 * 
-	 * @param PVline
+	 * @param pvLine
 	 * @param currentMove
 	 * @param currentMoveNumber
 	 * @param nominalDepth
@@ -57,13 +61,15 @@ class DetroidSearchInformation extends SearchInformation {
 	 * @param scoreType
 	 * @param nodes
 	 * @param time
-	 * @param isCancelled
+	 * @param egtbHits
+	 * @param stats
 	 */
-	void set(List<Move> PVline, Move currentMove, int currentMoveNumber, short nominalDepth,
-			short selectiveDepth, short score, ScoreType scoreType, long nodes, long time) {
+	void set(List<Move> pvLine, Move currentMove, int currentMoveNumber,
+			short nominalDepth, short selectiveDepth, short score, ScoreType scoreType,
+			long nodes, long time, long egtbHits, String stats) {
 		lock.writeLock().lock();
 		try {
-			this.pVline = PVline;
+			this.pvLine = pvLine;
 			this.currentMove = currentMove;
 			this.currentMoveNumber = currentMoveNumber;
 			this.nominalDepth = nominalDepth;
@@ -72,11 +78,13 @@ class DetroidSearchInformation extends SearchInformation {
 			this.scoreType = scoreType;
 			this.nodes = nodes;
 			this.time = time;
+			this.egtbHits = egtbHits;
+			this.stats = stats;
+			setChanged();
+			notifyObservers();
 		} finally {
 			lock.writeLock().unlock();
 		}
-		setChanged();
-		notifyObservers();
 	}
 	/**
 	 * Returns a read lock for the instance.
@@ -92,7 +100,7 @@ class DetroidSearchInformation extends SearchInformation {
 	 * @return
 	 */
 	List<Move> getPvMoveList() {
-		return pVline;
+		return pvLine;
 	}
 	/**
 	 * Returns a one-line String representation of the principal variation result.
@@ -103,7 +111,7 @@ class DetroidSearchInformation extends SearchInformation {
 		lock.readLock().lock();
 		try {
 			String out = "";
-			for (Move m : pVline)
+			for (Move m : pvLine)
 				out += m.toString() + " ";
 			out += "\n";
 			return out;
@@ -136,10 +144,10 @@ class DetroidSearchInformation extends SearchInformation {
 	}
 	@Override
 	public String[] getPv() {
-		if (pVline == null)
+		if (pvLine == null)
 			return null;
-		ArrayList<String> pV = new ArrayList<>(pVline.size());
-		for (Move m : pVline)
+		ArrayList<String> pV = new ArrayList<>(pvLine.size());
+		for (Move m : pvLine)
 			pV.add(m.toString());
 		return pV.toArray(new String[pV.size()]);
 	}
@@ -178,6 +186,18 @@ class DetroidSearchInformation extends SearchInformation {
 	@Override
 	public String toString() {
 		return getPvString() + getStatString();
+	}
+	@Override
+	public long getEndgameTablebaseHits() {
+		return egtbHits;
+	}
+	@Override
+	public int getCurrentLine() {
+		return 0;
+	}
+	@Override
+	public String getString() {
+		return stats;
 	}
 	
 }

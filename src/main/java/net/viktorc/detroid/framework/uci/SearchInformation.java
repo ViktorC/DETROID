@@ -11,8 +11,8 @@ import java.util.Observable;
 public abstract class SearchInformation extends Observable {
 
 	/**
-	 * Returns the index of the PV line. If multi-PV is not supported, it should always return 0. If it is supported, the numbering 
-	 * should start from 1 with the best line.
+	 * Returns the index of the PV line. If multi-PV is not supported, it should always return <code>0</code>. If it 
+	 * is supported, the numbering should start from <code>1</code> with the best line.
 	 * 
 	 * @return The index of the PV line.
 	 */
@@ -24,13 +24,15 @@ public abstract class SearchInformation extends Observable {
 	 */
 	public abstract String[] getPv();
 	/**
-	 * Returns the currently searched root move in Pure Algebraic Coordinate Notation.
+	 * Returns the currently searched root move in Pure Algebraic Coordinate Notation. If it returns <code>null</code>, 
+	 * it is ignored.
 	 * 
 	 * @return The currently search root move in PACN.
 	 */
 	public abstract String getCurrentMove();
 	/**
-	 * Returns the number of the currently searched move in the move list of the root position.
+	 * Returns the number of the currently searched move in the move list of the root position. If it returns 
+	 * <code>0</code>, it is ignored.
 	 * 
 	 * @return The current move index in the list of legal moves.
 	 */
@@ -72,5 +74,24 @@ public abstract class SearchInformation extends Observable {
 	 * @return The time spent searching in milliseconds.
 	 */
 	public abstract long getTime();
+	/**
+	 * Returns the number of endgame tablebase hits while searching.
+	 * 
+	 * @return The number of endgame tablebase hits.
+	 */
+	public abstract long getEndgameTablebaseHits();
+	/**
+	 * Returns the number of the line the engine is currently calculating. In concurrent engines, this may be the 
+	 * thread/process number. It should start <code>1</code>. If it is <code>0</code> or less, it is ignored.
+	 * 
+	 * @return The current line number.
+	 */
+	public abstract int getCurrentLine();
+	/**
+	 * Returns any additional information the engine wants to send. If it is <code>null</code>, it is ignored.
+	 * 
+	 * @return Any additional information.
+	 */
+	public abstract String getString();
 	
 }

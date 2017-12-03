@@ -2,7 +2,7 @@ package net.viktorc.detroid.framework.validation;
 
 /**
  * A performance test record holding a position, a depth, and the correct node count for the test. 
- * The entries use the format <FEN>; <depth>; <nodes>;.
+ * The entries use the format '[FEN]; [depth]; [nodes];'.
  * 
  * 
  * @author Viktor
@@ -18,7 +18,7 @@ public class PerftRecord {
 	/**
 	 * Constructs a perft record based on the specified string.
 	 * 
-	 * @param perftRecord A perft record of the format [<FEN>; <depth>; <nodes>;].
+	 * @param perftRecord A perft record of the format '[FEN]; [depth]; [nodes];'.
 	 */
 	public PerftRecord(String perftRecord) {
 		this.perftRecord = perftRecord;

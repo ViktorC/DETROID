@@ -250,7 +250,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 				if (stats.getCurrentMoveNumber() != 0)
 					info += "currmovenumber " + stats.getCurrentMoveNumber() + " ";
 			}
-			if (stats.getPvNumber() != 0)
+			if (stats.getPvNumber() > 0)
 				info += "multipv " + stats.getPvNumber() + " ";
 			String[] pV = stats.getPv();
 			if (pV != null && pV.length > 0) {
@@ -273,8 +273,13 @@ public final class UCI implements Observer, Runnable, Closeable {
 				info += "upperbound ";
 				break;
 			}
-			info += stats.getScore() + " nps " + (int) 1000*stats.getNodes()/Math.max(1, stats.getTime());
+			info += stats.getScore() + " nps " + (int) 1000*stats.getNodes()/Math.max(1, stats.getTime()) + " ";
+			info += "tbhits " + stats.getEndgameTablebaseHits();
+			if (stats.getCurrentLine() > 0)
+				info += " currline " + stats.getCurrentLine();
 			out.println(info);
+			if (stats.getString() != null)
+				out.println("info string " + stats.getString());
 			out.println("info hashfull " + engine.getHashLoadPermill());
 		}
 		else if (p1 instanceof DebugInformation) {

@@ -10,30 +10,30 @@ import net.viktorc.detroid.framework.uci.UCIEngine;
 
 /**
  * An implementation for an EPD test suite for sanity checks and the rough estimation of the tactical strength of a chess engine.
- * Each instance has a name and holds a list of EPD records.
+ * Each instance has a name and holds a list of {@link net.viktorc.detroid.framework.validation.EPDRecord} instances.
  * 
  * @author Viktor
  *
  */
-public class EPDTestSuite {
+public class EPDSuite {
 
 	private final String name;
-	private final List<EPD> records;
+	private final List<EPDRecord> records;
 	
 	/**
 	 * Parses the EPD records in the specified file and holds them in a list.
 	 * 
 	 * @param name The name of the test suite.
-	 * @param testSuiteFilePath The path to the file holding the EPD records.
+	 * @param testSuiteFilePath The path to the file holding the EPDRecord records.
 	 * @throws IOException If the file does not exist or cannot be read.
 	 */
-	public EPDTestSuite(String name, String testSuiteFilePath) throws IOException {
+	public EPDSuite(String name, String testSuiteFilePath) throws IOException {
 		records = new ArrayList<>();
 		try (BufferedReader reader =
 				new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(testSuiteFilePath)))) {
 			String line;
 			while ((line = reader.readLine()) != null)
-				records.add(new EPD(line));
+				records.add(new EPDRecord(line));
 		}
 		this.name = name;
 	}
@@ -46,25 +46,25 @@ public class EPDTestSuite {
 		return name;
 	}
 	/**
-	 * Returns the EPD records held in the test suite.
+	 * Returns the EPDRecord records held in the test suite.
 	 * 
-	 * @return The EPD records in the test suite.
+	 * @return The EPDRecord records in the test suite.
 	 */
-	public List<EPD> getRecords() {
+	public List<EPDRecord> getRecords() {
 		return new ArrayList<>(records);
 	}
 	/**
-	 * Searches the position defined in the EPD record for the specified amount of time using the provided engine and returns 
+	 * Searches the position defined in the EPDRecord record for the specified amount of time using the provided engine and returns 
 	 * if the engine found any one of the best moves noted in the record.
 	 * 
 	 * @param engine The engine to test.
 	 * @param controllerEngine The controller engine.
-	 * @param record The EPD record specifying the position and the best move(s).
+	 * @param record The EPDRecord record specifying the position and the best move(s).
 	 * @param timePerPos How long the engine should search the position in milliseconds.
 	 * @return Whether the engine found any one of the best moves.
 	 * @throws Exception If the engine initialization fails.
 	 */
-	public static boolean searchTest(UCIEngine engine, ControllerEngine controllerEngine, EPD record, long timePerPos)
+	public static boolean searchTest(UCIEngine engine, ControllerEngine controllerEngine, EPDRecord record, long timePerPos)
 			throws Exception {
 		if (!controllerEngine.isInit())
 			controllerEngine.init();

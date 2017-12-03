@@ -1,6 +1,6 @@
 package net.viktorc.detroid.framework.engine;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.Assert;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public final class PerfTest {
 	}
 	@Test
 	public void perft() throws Exception {
-		assertTrue(PerftSuite.perft(CONTROLLER, record));
+		Assert.assertTrue(PerftSuite.perft(CONTROLLER, record));
 	}
 	@AfterClass
 	public static void cleanUp() {

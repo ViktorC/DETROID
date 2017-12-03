@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.viktorc.detroid.framework.uci.SearchResults;
@@ -122,9 +123,10 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * binary search with a minimum resolution of 0.005.
 	 * 
 	 * @return The value for K that locally minimizes the average error.
-	 * @throws IOException If the training data cannot be loaded from the FEN file.
+	 * @throws IOException If the training data cannot be loaded from the FEN file or if something goes wrong 
+	 * during the error calculation.
 	 */
-	private double computeOptimalK() throws IOException {
+	private double computeOptimalK() throws Exception {
 		final double minResolution = 0.005;
 		double k = 0;
 		List<Entry<String,Float>> trainingData = cacheData(0, (int) (dataSetSize*(1 - TEST_DATA_PROPORTION)));
@@ -186,8 +188,12 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * @param features The engine parameters.
 	 * @param k The scaling constant K for the sigmoid function.
 	 * @return
+	 * @throws ExecutionException If an execution error happens in one of the threads.
+	 * @throws InterruptedException If the current thread is interrupted while waiting for the worker threads 
+	 * to finish.
 	 */
-	private double computeAverageError(double[] features, final double k, List<Entry<String,Float>> dataSample) {
+	private double computeAverageError(double[] features, final double k, List<Entry<String,Float>> dataSample)
+			throws InterruptedException, ExecutionException {
 		double totalError = 0;
 		ArrayList<Future<Double>> futures = new ArrayList<>();
 		int startInd = 0;
@@ -195,13 +201,6 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		for (int i = 0; i < engines.length && startInd < dataSample.size(); i++) {
 			final int finalStartInd = startInd;
 			final TunableEngine e = engines[i];
-			if (!e.isInit()) {
-				try {
-					e.init();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
 			e.getParameters().set(features, TYPE);
 			e.notifyParametersChanged();
 			futures.add(pool.submit(() -> {
@@ -223,19 +222,13 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 					}
 					return subTotalError;
 				} catch (Exception e1) {
-					e1.printStackTrace();
-					return 0d;
+					throw new RuntimeException(e1);
 				}
 			}));
 			startInd += workLoadPerThread;
 		}
-		for (Future<Double> f : futures) {
-			try {
-				totalError += f.get();
-			} catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
-			}
-		}
+		for (Future<Double> f : futures)
+			totalError += f.get();
 		return totalError/dataSample.size();
 	}
 	/**
@@ -312,13 +305,20 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 					count++;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 		return sample;
 	}
 	@Override
 	protected double costFunction(double[] features, List<Entry<String,Float>> dataSample) {
-		return computeAverageError(features, k, dataSample);
+		try {
+			return computeAverageError(features, k, dataSample);
+		} catch (InterruptedException | ExecutionException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
+		}
 	}
 	@Override
 	public void close() throws Exception {

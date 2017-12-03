@@ -273,6 +273,81 @@ final class ZobristKeyGenerator {
 		return key;
 	}
 	/**
+	 * Generates a Zobrist hash key for the pawn-king structure on the board.
+	 * 
+	 * @param p
+	 * @return
+	 */
+	long generatePawnKingHashKey(Position p) {
+		long key = 0;
+		long whitePawns = p.whitePawns;
+		long blackPawns = p.blackPawns;
+		while (whitePawns != 0) {
+			key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
+			whitePawns = BitOperations.resetLSBit(whitePawns);
+		}
+		while (blackPawns != 0) {
+			key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
+			blackPawns = BitOperations.resetLSBit(blackPawns);
+		}
+		key ^= board[Piece.W_KING.ind][BitOperations.indexOfBit(p.whiteKing)];
+		key ^= board[Piece.B_KING.ind][BitOperations.indexOfBit(p.blackKing)];
+		return key;
+	}
+	/**
+	 * Returns the 64 bit hash key used for positions in PolyGlot opening books.
+	 * 
+	 * @param p
+	 * @return
+	 */
+	long generatePolyglotHashKey(Position p) {
+		long key = 0L;
+		int piece, pieceNote;
+		byte[] offBoard = p.offsetBoard;
+		int wCastlingRights = p.whiteCastlingRights;
+		int bCastlingRights = p.blackCastlingRights;
+		int enPassantRights = p.enPassantRights;
+		boolean whitesTurn = p.whitesTurn;
+		MoveSetBase mD;
+		for (int i = 0; i < offBoard.length; i++) {
+			piece = offBoard[i];
+			if (piece == Piece.NULL.ind) continue;
+			else if (piece == Piece.B_PAWN.ind) pieceNote = 0;
+			else if (piece == Piece.W_PAWN.ind) pieceNote = 1;
+			else if (piece == Piece.B_KNIGHT.ind) pieceNote = 2;
+			else if (piece == Piece.W_KNIGHT.ind) pieceNote = 3;
+			else if (piece == Piece.B_BISHOP.ind) pieceNote = 4;
+			else if (piece == Piece.W_BISHOP.ind) pieceNote = 5;
+			else if (piece == Piece.B_ROOK.ind) pieceNote = 6;
+			else if (piece == Piece.W_ROOK.ind) pieceNote = 7;
+			else if (piece == Piece.B_QUEEN.ind) pieceNote = 8;
+			else if (piece == Piece.W_QUEEN.ind) pieceNote = 9;
+			else if (piece == Piece.B_KING.ind) pieceNote = 10;
+			else pieceNote = 11;
+			key ^= POLYGLOT_RANDOM_64[64*pieceNote + 8*(i/8) + i%8];
+		}
+		if (wCastlingRights == CastlingRights.ALL.ind) key ^= POLYGLOT_RANDOM_64[768]^POLYGLOT_RANDOM_64[769];
+		else if (wCastlingRights == CastlingRights.SHORT.ind)key ^= POLYGLOT_RANDOM_64[768];
+		else if (wCastlingRights == CastlingRights.LONG.ind) key ^= POLYGLOT_RANDOM_64[769];
+		if (bCastlingRights == CastlingRights.ALL.ind) key ^= POLYGLOT_RANDOM_64[770]^POLYGLOT_RANDOM_64[771];
+		else if (bCastlingRights == CastlingRights.SHORT.ind)key ^= POLYGLOT_RANDOM_64[770];
+		else if (bCastlingRights == CastlingRights.LONG.ind) key ^= POLYGLOT_RANDOM_64[771];
+		if (enPassantRights != EnPassantRights.NONE.ind) {
+			if (whitesTurn) {
+				mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND);
+				if (mD.getBlackPawnCaptureSet(p.whitePawns) != 0)
+					key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
+			} else {
+				mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND);
+				if (mD.getWhitePawnCaptureSet(p.blackPawns) != 0)
+					key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
+			}
+		}
+		if (whitesTurn)
+			key ^= POLYGLOT_RANDOM_64[780];
+		return key;
+	}
+	/**
 	 * Returns an updated version of a Position object's hash key according to the changes made by the last move.
 	 * 
 	 * @param p
@@ -355,81 +430,6 @@ final class ZobristKeyGenerator {
 					key ^= board[Piece.B_KNIGHT.ind][move.to];
 			}
 		}
-		return key;
-	}
-	/**
-	 * Generates a Zobrist hash key for the pawn-king structure on the board.
-	 * 
-	 * @param p
-	 * @return
-	 */
-	long generatePawnKingHashKey(Position p) {
-		long key = 0;
-		long whitePawns = p.whitePawns;
-		long blackPawns = p.blackPawns;
-		while (whitePawns != 0) {
-			key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
-			whitePawns = BitOperations.resetLSBit(whitePawns);
-		}
-		while (blackPawns != 0) {
-			key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
-			blackPawns = BitOperations.resetLSBit(blackPawns);
-		}
-		key ^= board[Piece.W_KING.ind][BitOperations.indexOfBit(p.whiteKing)];
-		key ^= board[Piece.B_KING.ind][BitOperations.indexOfBit(p.blackKing)];
-		return key;
-	}
-	/**
-	 * Returns the 64 bit hash key used for positions in PolyGlot opening books.
-	 * 
-	 * @param p
-	 * @return
-	 */
-	long generatePolyglotHashKey(Position p) {
-		long key = 0L;
-		int piece, pieceNote;
-		byte[] offBoard = p.offsetBoard;
-		int wCastlingRights = p.whiteCastlingRights;
-		int bCastlingRights = p.blackCastlingRights;
-		int enPassantRights = p.enPassantRights;
-		boolean whitesTurn = p.whitesTurn;
-		MoveSetBase mD;
-		for (int i = 0; i < offBoard.length; i++) {
-			piece = offBoard[i];
-			if (piece == Piece.NULL.ind) continue;
-			else if (piece == Piece.B_PAWN.ind) pieceNote = 0;
-			else if (piece == Piece.W_PAWN.ind) pieceNote = 1;
-			else if (piece == Piece.B_KNIGHT.ind) pieceNote = 2;
-			else if (piece == Piece.W_KNIGHT.ind) pieceNote = 3;
-			else if (piece == Piece.B_BISHOP.ind) pieceNote = 4;
-			else if (piece == Piece.W_BISHOP.ind) pieceNote = 5;
-			else if (piece == Piece.B_ROOK.ind) pieceNote = 6;
-			else if (piece == Piece.W_ROOK.ind) pieceNote = 7;
-			else if (piece == Piece.B_QUEEN.ind) pieceNote = 8;
-			else if (piece == Piece.W_QUEEN.ind) pieceNote = 9;
-			else if (piece == Piece.B_KING.ind) pieceNote = 10;
-			else pieceNote = 11;
-			key ^= POLYGLOT_RANDOM_64[64*pieceNote + 8*(i/8) + i%8];
-		}
-		if (wCastlingRights == CastlingRights.ALL.ind) key ^= POLYGLOT_RANDOM_64[768]^POLYGLOT_RANDOM_64[769];
-		else if (wCastlingRights == CastlingRights.SHORT.ind)key ^= POLYGLOT_RANDOM_64[768];
-		else if (wCastlingRights == CastlingRights.LONG.ind) key ^= POLYGLOT_RANDOM_64[769];
-		if (bCastlingRights == CastlingRights.ALL.ind) key ^= POLYGLOT_RANDOM_64[770]^POLYGLOT_RANDOM_64[771];
-		else if (bCastlingRights == CastlingRights.SHORT.ind)key ^= POLYGLOT_RANDOM_64[770];
-		else if (bCastlingRights == CastlingRights.LONG.ind) key ^= POLYGLOT_RANDOM_64[771];
-		if (enPassantRights != EnPassantRights.NONE.ind) {
-			if (whitesTurn) {
-				mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND);
-				if (mD.getBlackPawnCaptureSet(p.whitePawns) != 0)
-					key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
-			} else {
-				mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND);
-				if (mD.getWhitePawnCaptureSet(p.blackPawns) != 0)
-					key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
-			}
-		}
-		if (whitesTurn)
-			key ^= POLYGLOT_RANDOM_64[780];
 		return key;
 	}
 	

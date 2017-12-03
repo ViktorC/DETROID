@@ -10,7 +10,7 @@ import java.util.List;
  * @author Viktor
  *
  */
-public class EPD {
+public class EPDRecord {
 	
 	protected static final String BEST_MOVE_OP_CODE = "bm ";
 	protected static final String ID_OP_CODE = "id ";
@@ -22,11 +22,11 @@ public class EPD {
 	protected final List<String> bestMoves;
 	
 	/**
-	 * Constructs an instance based on the specified EPD record.
+	 * Constructs an instance based on the specified EPDRecord record.
 	 * 
 	 * @param epd The EPD record.
 	 */
-	public EPD(String epd) {
+	public EPDRecord(String epd) {
 		this.epd = epd;
 		String[] parts = epd.split(" ");
 		if (parts.length < 4)

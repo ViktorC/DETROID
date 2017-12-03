@@ -115,7 +115,7 @@ public class OptionsAlert extends Alert {
 			} else if (option instanceof StringOption) {
 				Label label = new Label(name + ":");
 				TextField field = new TextField();
-				field.setText(option.getDefaultValue().get().toString());
+				field.setText(value.toString());
 				Button button = new Button("Set");
 				button.setMinWidth(50);
 				button.setOnAction(new EventHandler<ActionEvent>() {

@@ -38,7 +38,7 @@ public final class Elo {
 		return calculateDifference(points/games);
 	}
 	/**
-	 * Calculates the Elo rating difference between a player and its opponent based on the win ration against this
+	 * Calculates the Elo rating difference between a player and its opponent based on the win ratio against this
 	 * opponent.
 	 * 
 	 * @param winRatio The win ratio. It has to between 0 and 1.

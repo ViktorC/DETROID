@@ -8,8 +8,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
@@ -31,7 +29,7 @@ import net.viktorc.detroid.framework.uci.Option;
 import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchInformation;
 import net.viktorc.detroid.framework.uci.SearchResults;
-import net.viktorc.detroid.framework.util.LossyHashTable;
+import net.viktorc.detroid.framework.util.Cache;
 import net.viktorc.detroid.framework.util.SizeEstimator;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.GameState;
@@ -43,17 +41,19 @@ import net.viktorc.detroid.framework.validation.GameState;
  * @author Viktor
  *
  */
-public class Detroid implements ControllerEngine, TunableEngine, Observer {
+public class Detroid implements ControllerEngine, TunableEngine {
 	
 	static final float VERSION_NUMBER = 1.0f;
 	static final String NAME = "DETROID " + VERSION_NUMBER;
 	static final String AUTHOR = "Viktor Csomor";
 	// Search, evaluation, and time control parameters.
 	static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
-	// An own opening book compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w.
+	// The default path to the Polyglot opening book (compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w).
 	static final String DEFAULT_BOOK_FILE_PATH = "book.bin";
 	// The default path to the Gaviota probing library.
 	static final String DEFAULT_EGTB_LIB_PATH;
+
+	// Determine the default path to the Gaviota EGTB probing library based on the OS.
 	static {
 		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
 		boolean arch32 = "32".equals(System.getProperty("sun.arch.data.model"));
@@ -61,28 +61,31 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 				arch32 ? "libgtb32.so" : "libgtb.so";
 		DEFAULT_EGTB_LIB_PATH = "gtb/" + lib;
 	}
+	
 	// The default path to the 3 and 4 men Gaviota endgame tablebases.
 	static final String DEFAULT_EGTB_FOLDERS_PATH = "gtb/3;gtb/4";
 	// The default compression scheme of the Gaviotat endgame tablebase files.
 	static final CompressionScheme DEFAULT_EGTB_COMP_SCHEME = CompressionScheme.CP4;
 	// The minimum allowed number of search threads to use.
-	private static final int MIN_SEARCH_THREADS = 1;
+	static final int MIN_SEARCH_THREADS = 1;
 	// The maximum allowed number of search threads to use.
-	private static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
+	static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
 	// The default number of search threads to use.
-	private static final int DEFAULT_SEARCH_THREADS = Math.max(MIN_SEARCH_THREADS, MAX_SEARCH_THREADS/2);
+	static final int DEFAULT_SEARCH_THREADS = Math.max(MIN_SEARCH_THREADS, MAX_SEARCH_THREADS/2);
 	// The minimum allowed hash size in MB.
-	private static final int MIN_HASH_SIZE = 1;
+	static final int MIN_HASH_SIZE = 1;
 	// The maximum allowed hash size in MB.
-	private static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
+	static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory()/(2L << 20));
 	// The default hash size in MB.
-	private static final int DEFAULT_HASH_SIZE = Math.min(DEFAULT_SEARCH_THREADS*32, MAX_HASH_SIZE);
+	static final int DEFAULT_HASH_SIZE = Math.min(DEFAULT_SEARCH_THREADS*32, MAX_HASH_SIZE);
 	// The minimum allowed endgame tablebase cache size in MB.
-	private static final int MIN_EGTB_CACHE_SIZE = 0;
+	static final int MIN_EGTB_CACHE_SIZE = 0;
 	// The maximum allowed endgame tablebase cache size in MB.
-	private static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
+	static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
 	// The default endgame tablebase cache size in MB.
-	private static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS*8, MAX_EGTB_CACHE_SIZE);
+	static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS*16, MAX_EGTB_CACHE_SIZE);
+	
+	private final Object lock;
 	
 	private Option<?> hashSize;
 	private Option<?> clearHash;
@@ -102,30 +105,34 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	private Map<Option<?>, Object> options;
 	
 	private DetroidParameters params;
-	private Game game;
+	private DetroidSearchInformation searchInfo;
 	private DetroidDebugInfo debugInfo;
 	private OpeningBook book;
 	private EndGameTableBase egtb;
+	private Game game;
 	private Evaluator eval;
-	private LossyHashTable<TTEntry> tT;
-	private LossyHashTable<ETEntry> eT;
+	private Cache<TTEntry> tT;
+	private Cache<ETEntry> eT;
 	private ExecutorService executor;
 	private Future<SearchResults> search;
-	private DetroidSearchInformation searchInfo;
-	private Move searchResult;
-	private Short scoreFluctuation;
-	private Long timeOfLastSearchResChange;
-	private Integer numOfSearchResChanges;
-	private volatile boolean isInit;
+	private volatile int movesOutOfBook;
+	private volatile boolean bookMove;
+	private volatile boolean outOfBook;
+	private volatile boolean init;
 	private volatile boolean debugMode;
 	private volatile boolean controllerMode;
 	private volatile boolean deterministicZeroDepthMode;
 	private volatile boolean stop;
 	private volatile boolean ponderHit;
 	private volatile boolean newGame;
-	private volatile boolean outOfBook;
 	private volatile byte gen;
 	
+	/**
+	 * Instantiates the chess engine object.
+	 */
+	public Detroid() {
+		lock = new Object();
+	}
 	/**
 	 * Sets the hash tables according to the hash size limit defined in megabytes.
 	 * 
@@ -135,8 +142,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		long sizeInBytes = hashSize*1024L*1024L;
 		int totalHashShares = params.tTshare + params.eTshare;
 		SizeEstimator estimator = SizeEstimator.getInstance();
-		tT = new LossyHashTable<>((int) (sizeInBytes*params.tTshare/totalHashShares/estimator.sizeOf(TTEntry.class)));
-		eT = new LossyHashTable<>((int) (sizeInBytes*params.eTshare/totalHashShares/estimator.sizeOf(ETEntry.class)));
+		tT = new Cache<>(TTEntry::new,
+				(int) (sizeInBytes*params.tTshare/totalHashShares/estimator.sizeOf(TTEntry.class)));
+		eT = new Cache<>(ETEntry::new,
+				(int) (sizeInBytes*params.eTshare/totalHashShares/estimator.sizeOf(ETEntry.class)));
 		// Prompt for garbage collection.
 		System.gc();
 		if (debugMode) debugInfo.set("Hash capacity data\n" +
@@ -153,17 +162,32 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		if (debugMode) debugInfo.set("Hash tables cleared");
 	}
 	/**
-	 * Computes and returns the number of milliseconds the engine should initially spend on searching the current position.
+	 * A logistic function for determining the expected number of moves left based on the mate score calculated 
+	 * from the material on the board.
+	 * 
+	 * @param phaseScore The phase score calculated from the material on the board.
+	 * @return The expected number of moves.
+	 */
+	private int movesLeftBasedOnPhaseScore(int phaseScore) {
+		double L = params.maxMovesToGo - params.minMovesToGo;
+		double exp = Math.pow(Math.E, 3.5e-2*(phaseScore -
+				(params.gamePhaseOpeningLower + params.gamePhaseEndgameUpper)/2));
+		double res = L/(1 + exp);
+		return (int) Math.round(res + params.minMovesToGo);
+	}
+	/**
+	 * Computes and returns the number of milliseconds the engine should spend on searching the current position.
 	 * 
 	 * @param whiteTime
 	 * @param blackTime
 	 * @param whiteIncrement
 	 * @param blackIncrement
 	 * @param movesToGo
+	 * @param phaseScore
 	 * @return
 	 */
-	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement, Long blackIncrement, Integer movesToGo) {
-		int phaseScore;
+	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement,
+			Long blackIncrement, Integer movesToGo, int phaseScore) {
 		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
 		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
 		if ((game.getSideToMove() == Side.WHITE && (whiteTime == null || whiteTime <= 0) ||
@@ -171,54 +195,35 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			return 0;
 		if (movesToGo == null) {
 			phaseScore = eval.phaseScore(game.getPosition());
-			movesToGo = params.avgMovesPerGame - params.avgMovesPerGame*phaseScore/params.gamePhaseEndgameUpper +
-					params.movesToGoSafetyMargin;
+			movesToGo = movesLeftBasedOnPhaseScore(phaseScore);
 			if (debugMode) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);
 		}
-		return game.getSideToMove() == Side.WHITE ?
-				Math.max(1, (whiteTime + Math.max(0, movesToGo - 1)*whiteIncrement)*
-				params.fractionOfTotalTimeToUseHth/100/(movesToGo + 1)) :
-				Math.max(1, (blackTime + Math.max(0, movesToGo - 1)*blackIncrement)*
-				params.fractionOfTotalTimeToUseHth/100/(movesToGo + 1));
+		long target = game.getSideToMove() == Side.WHITE ?
+				Math.max(1, (whiteTime + Math.max(0, movesToGo)*whiteIncrement)/Math.max(1, movesToGo)) :
+				Math.max(1, (blackTime + Math.max(0, movesToGo)*blackIncrement)/Math.max(1, movesToGo));
+		// Extended thinking time for the first moves out of the book based on Hyatt's Using Time Wisely.
+		return Math.round(target*(2d - ((double) Math.min(movesOutOfBook, 10))/10));
 	}
 	/**
-	 * Computes and returns the search time extension in milliseconds if the search should be extended at all.
+	 * Determines whether the search time should be extended.
 	 * 
-	 * @param origSearchTime
-	 * @param whiteTime
-	 * @param blackTime
-	 * @param whiteIncrement
-	 * @param blackIncrement
-	 * @param movesToGo
 	 * @return
 	 */
-	private long computeSearchTimeExtension(long origSearchTime, Long whiteTime, Long blackTime, Long whiteIncrement,
-			Long blackIncrement, Integer movesToGo) {
-		searchInfo.getLock().lock();
-		try {
-			if (debugMode)
-				debugInfo.set("Search time extension data\n" +
-						"PV root move invalid - " + searchResult.equals(new Move()) + "\n" +
-						"Score fluctuation - " + Math.abs(scoreFluctuation) + "\n" +
-						"Score type - " + searchInfo.getScoreType() + "\n" +
-						"Last PV root change " + (System.currentTimeMillis() - timeOfLastSearchResChange) + "ms ago\n" +
-						"Number of PV root changes per depth - " + numOfSearchResChanges/searchInfo.getDepth());
-			if (searchResult.equals(new Move()) || (game.getSideToMove() == Side.WHITE ?
-					whiteTime - origSearchTime > 1000*params.movesToGoSafetyMargin :
-					blackTime - origSearchTime > 1000*params.movesToGoSafetyMargin) &&
-					(searchInfo.getScoreType() == ScoreType.LOWER_BOUND || searchInfo.getScoreType() == ScoreType.UPPER_BOUND ||
-					Math.abs(scoreFluctuation) >= params.scoreFluctuationLimit || timeOfLastSearchResChange >= System.currentTimeMillis() -
-					origSearchTime*params.fractionOfOrigSearchTimeSinceLastResultChangeLimitHth/100)) {
-				return computeSearchTime(game.getSideToMove() == Side.WHITE ?  new Long(whiteTime - origSearchTime) : whiteTime,
-						game.getSideToMove() == Side.WHITE ? blackTime : new Long(blackTime - origSearchTime),
-						whiteIncrement, blackIncrement, movesToGo);
-			}
-			return 0;
-		} finally {
-			searchInfo.getLock().unlock();
-		}
+	private boolean doExtendSearch() {
+		return searchInfo.getScoreType() == ScoreType.LOWER_BOUND || searchInfo.getScoreType() == ScoreType.UPPER_BOUND;
+	}
+	/**
+	 * Determines whether the search should be cancelled without waiting for the allotted time to pass.
+	 * 
+	 * @param searchTime
+	 * @param timeLeft
+	 * @return
+	 */
+	private boolean doTerminateSearchPrematurely(long searchTime, long timeLeft) {
+		return timeLeft < searchTime*params.minTimePortionNeededForExtraDepth64th/64 &&
+				!doExtendSearch();
 	}
 	/**
 	 * Manges the amount of time spent on searching the position unless it is fixed.
@@ -233,29 +238,48 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	 */
 	private void manageSearchTime(Long searchTime, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo) throws Exception {
-		// Compute search time and wait for the search to terminate for the computed amount of time.
-		long time = searchTime == null || searchTime == 0 ?
-				computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo) : searchTime;
-		if (debugMode) debugInfo.set("Base search time - " + time);
 		try {
-			search.get(time, TimeUnit.MILLISECONDS);
-		} catch (TimeoutException e) {
-			if (debugMode) debugInfo.set("Base search time up");
-		} catch (CancellationException e) { }
-		// If time was up, check if the search should be extended.
-		if (!search.isDone() && (searchTime == null || searchTime == 0)) {
-			try {
-				long extraTime = computeSearchTimeExtension(time, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
-				if (debugMode) debugInfo.set("Extra search time - " + extraTime);
-				if (extraTime > 0)
-					search.get(extraTime, TimeUnit.MILLISECONDS);
-			} catch (TimeoutException e) {
-				if (debugMode) debugInfo.set("Extra time up");
-			} catch (CancellationException e) { }
+			boolean fixed = searchTime != null && searchTime > 0;
+			if (debugMode) debugInfo.set("Search time fixed: " + fixed);
+			if (fixed)
+				search.get(searchTime, TimeUnit.MILLISECONDS);
+			else {
+				// Calculate phase score.
+				int phaseScore = eval.phaseScore(game.getPosition());
+				long time = computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo, phaseScore);
+				long timeLeft = time;
+				boolean doTerminate = false;
+				if (debugMode) debugInfo.set("Base search time - " + time);
+				synchronized (search) {
+					while (!search.isDone() && timeLeft > 0 && !doTerminate) {
+						long start = System.currentTimeMillis();
+						search.wait(timeLeft);
+						timeLeft -= (System.currentTimeMillis() - start);
+						doTerminate = doTerminate || (!search.isDone() && timeLeft > 0 && doTerminateSearchPrematurely(time, timeLeft));
+					}
+				}
+				if (debugMode) {
+					String reason = search.isDone() ? "search terminated" : doTerminate ?
+							"search cancelled to save time" : "time up";
+					debugInfo.set(String.format("Base search over. Reason: %s", reason));
+				}
+				// If time was up, check if the search should be extended.
+				if (!doTerminate && !search.isDone() && doExtendSearch()) {
+					try {
+						if (debugMode) debugInfo.set("Search extended.");
+						search.get(computeSearchTime(game.getSideToMove() == Side.WHITE ? whiteTime - time :
+								whiteTime, game.getSideToMove() == Side.WHITE ? blackTime : blackTime - time,
+								whiteIncrement, blackIncrement, movesToGo, phaseScore), TimeUnit.MILLISECONDS);
+					} catch (TimeoutException e) {
+						if (debugMode) debugInfo.set("Extra time up");
+					} catch (CancellationException e) { }
+				}
+			}
+		} finally {
+			// Time is up, cancel the search.
+			if (!search.isDone())
+				search.cancel(true);
 		}
-		// Time is up, cancel the search.
-		if (!search.isDone())
-			search.cancel(true);
 	}
 	/**
 	 * Picks a move from the list of legal moves for the current position and returns a String representation of it in pure algebraic coordinate
@@ -274,67 +298,68 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return arr[(int) (Math.random()*arr.length)];
 	}
 	@Override
-	public synchronized void init() throws Exception {
-		params = new DetroidParameters();
-		params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
-		try {
-			book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
-		} catch (IOException e) { }
-		egtb = GaviotaTableBaseJNI.getInstance();
-		egtb.loadProbingLibrary(DEFAULT_EGTB_LIB_PATH);
-		if (egtb.isProbingLibLoaded())
-			egtb.init(DEFAULT_EGTB_FOLDERS_PATH, DEFAULT_EGTB_CACHE_SIZE*1024L*1024L,
-					DEFAULT_EGTB_COMP_SCHEME);
-		debugInfo = new DetroidDebugInfo();
-		debugMode = false;
-		controllerMode = false;
-		deterministicZeroDepthMode = false;
-		ponderHit = false;
-		stop = false;
-		outOfBook = false;
-		game = new Game();
-		options = new LinkedHashMap<>();
-		parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
-		numOfSearchThreads = new Option.SpinOption("Threads", DEFAULT_SEARCH_THREADS, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
-		hashSize = new Option.SpinOption(HASH_SIZE_OPTION_NAME, DEFAULT_HASH_SIZE, MIN_HASH_SIZE, MAX_HASH_SIZE);
-		clearHash = new Option.ButtonOption("ClearHash");
-		ownBook = new Option.CheckOption(USE_OWN_BOOK_OPTION_NAME, false);
-		primaryBookPath = new Option.StringOption("PolyglotBookPrimaryPath", DEFAULT_BOOK_FILE_PATH);
-		secondaryBookPath = new Option.StringOption("PolyglotBookSecondaryPath", "");
-		egtbLibPath = new Option.StringOption("GaviotaTbLibPath", DEFAULT_EGTB_LIB_PATH);
-		egtbFilesPath = new Option.StringOption("GaviotaTbPath", DEFAULT_EGTB_FOLDERS_PATH);
-		egtbCompScheme = new Option.ComboOption("GaviotaTbCompScheme", DEFAULT_EGTB_COMP_SCHEME.toString(),
-				new TreeSet<>(Arrays.stream(CompressionScheme.values()).map(c -> c.toString()).collect(Collectors.toList())));
-		egtbCacheSize = new Option.SpinOption("GaviotaTbCache", DEFAULT_EGTB_CACHE_SIZE, MIN_EGTB_CACHE_SIZE, MAX_EGTB_CACHE_SIZE);
-		egtbClearCache = new Option.ButtonOption("GaviotaTbClearCache");
-		ponder = new Option.CheckOption("Ponder", true);
-		uciOpponent = new Option.StringOption("UCI_Opponent", "?");
-		uciAnalysis = new Option.CheckOption("UCI_AnalyseMode", false);
-		options.put(parametersPath, parametersPath.getDefaultValue().get());
-		options.put(numOfSearchThreads, numOfSearchThreads.getDefaultValue().get());
-		options.put(hashSize, hashSize.getDefaultValue().get());
-		options.put(clearHash, null);
-		options.put(ownBook, ownBook.getDefaultValue().get());
-		options.put(primaryBookPath, primaryBookPath.getDefaultValue().get());
-		options.put(secondaryBookPath, secondaryBookPath.getDefaultValue().get());
-		options.put(egtbLibPath, egtbLibPath.getDefaultValue().get());
-		options.put(egtbFilesPath, egtbFilesPath.getDefaultValue().get());
-		options.put(egtbCompScheme, DEFAULT_EGTB_COMP_SCHEME);
-		options.put(egtbCacheSize, egtbCacheSize.getDefaultValue().get());
-		options.put(egtbClearCache, null);
-		options.put(ponder, ponder.getDefaultValue().get());
-		options.put(uciOpponent, uciOpponent.getDefaultValue().get());
-		options.put(uciAnalysis, uciAnalysis.getDefaultValue().get());
-		searchInfo = new DetroidSearchInformation();
-		searchInfo.addObserver(this);
-		setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
-		eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
-		executor = Executors.newSingleThreadExecutor();
-		isInit = true;
+	public void init() throws Exception {
+		synchronized (lock) {
+			params = new DetroidParameters();
+			params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
+			try {
+				book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
+			} catch (IOException e) { }
+			egtb = GaviotaTableBaseJNI.getInstance();
+			egtb.loadProbingLibrary(DEFAULT_EGTB_LIB_PATH);
+			if (egtb.isProbingLibLoaded())
+				egtb.init(DEFAULT_EGTB_FOLDERS_PATH, DEFAULT_EGTB_CACHE_SIZE*1024L*1024L,
+						DEFAULT_EGTB_COMP_SCHEME);
+			debugInfo = new DetroidDebugInfo();
+			debugMode = false;
+			controllerMode = false;
+			deterministicZeroDepthMode = false;
+			ponderHit = false;
+			stop = false;
+			game = new Game();
+			options = new LinkedHashMap<>();
+			parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
+			numOfSearchThreads = new Option.SpinOption(THREADS_OPTION_NAME, DEFAULT_SEARCH_THREADS, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
+			hashSize = new Option.SpinOption(HASH_OPTION_NAME, DEFAULT_HASH_SIZE, MIN_HASH_SIZE, MAX_HASH_SIZE);
+			clearHash = new Option.ButtonOption("ClearHash");
+			ownBook = new Option.CheckOption(OWN_BOOK_OPTION_NAME, true);
+			primaryBookPath = new Option.StringOption("PolyglotBookPrimaryPath", DEFAULT_BOOK_FILE_PATH);
+			secondaryBookPath = new Option.StringOption("PolyglotBookSecondaryPath", "");
+			egtbLibPath = new Option.StringOption("GaviotaTbLibPath", DEFAULT_EGTB_LIB_PATH);
+			egtbFilesPath = new Option.StringOption("GaviotaTbPath", DEFAULT_EGTB_FOLDERS_PATH);
+			egtbCompScheme = new Option.ComboOption("GaviotaTbCompScheme", DEFAULT_EGTB_COMP_SCHEME.toString(),
+					new TreeSet<>(Arrays.stream(CompressionScheme.values()).map(c -> c.toString()).collect(Collectors.toList())));
+			egtbCacheSize = new Option.SpinOption("GaviotaTbCache", DEFAULT_EGTB_CACHE_SIZE, MIN_EGTB_CACHE_SIZE, MAX_EGTB_CACHE_SIZE);
+			egtbClearCache = new Option.ButtonOption("GaviotaTbClearCache");
+			ponder = new Option.CheckOption("Ponder", true);
+			uciOpponent = new Option.StringOption("UCI_Opponent", "?");
+			uciAnalysis = new Option.CheckOption("UCI_AnalyseMode", false);
+			options.put(parametersPath, parametersPath.getDefaultValue().get());
+			options.put(numOfSearchThreads, numOfSearchThreads.getDefaultValue().get());
+			options.put(hashSize, hashSize.getDefaultValue().get());
+			options.put(clearHash, null);
+			options.put(ownBook, ownBook.getDefaultValue().get());
+			options.put(primaryBookPath, primaryBookPath.getDefaultValue().get());
+			options.put(secondaryBookPath, secondaryBookPath.getDefaultValue().get());
+			options.put(egtbLibPath, egtbLibPath.getDefaultValue().get());
+			options.put(egtbFilesPath, egtbFilesPath.getDefaultValue().get());
+			options.put(egtbCompScheme, DEFAULT_EGTB_COMP_SCHEME);
+			options.put(egtbCacheSize, egtbCacheSize.getDefaultValue().get());
+			options.put(egtbClearCache, null);
+			options.put(ponder, ponder.getDefaultValue().get());
+			options.put(uciOpponent, uciOpponent.getDefaultValue().get());
+			options.put(uciAnalysis, uciAnalysis.getDefaultValue().get());
+			searchInfo = new DetroidSearchInformation();
+			setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
+			eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+			executor = Executors.newSingleThreadExecutor();
+			init = true;
+			
+		}
 	}
 	@Override
 	public boolean isInit() {
-		return isInit;
+		return init;
 	}
 	@Override
 	public String getName() {
@@ -349,143 +374,154 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return new LinkedHashMap<>(options);
 	}
 	@Override
-	public synchronized <T> boolean setOption(Option<T> setting, T value) {
-		try {
-			if (hashSize.equals(setting)) {
-				int val = (Integer) value;
-				if (MIN_HASH_SIZE <= val && MAX_HASH_SIZE >= val) {
-					if (val != ((Integer) options.get(hashSize)).intValue()) {
-						setHashSize(val);
-						options.put(hashSize, value);
-					}
-					if (debugMode) debugInfo.set("Hash size successfully set to " + value);
-					return true;
-				}
-			} else if (clearHash.equals(setting)) {
-				clearHash();
-				return true;
-			} else if (ponder.equals(setting)) {
-				options.put(ponder, value);
-				if (debugMode) debugInfo.set("Ponder successfully set to " + value);
-				return true;
-			} else if (ownBook.equals(setting)) {
-				if (book != null) {
-					options.put(ownBook, value);
-					if (debugMode) debugInfo.set("Use of own book successfully set to " + value);
-					return true;
-				}
-				if (debugMode) debugInfo.set("No book file found at " + options.get(primaryBookPath));
-			} else if (primaryBookPath.equals(setting)) {
-				try {
-					PolyglotBook newBook = new PolyglotBook((String) value, book.getSecondaryFilePath());
-					try {
-						book.close();
-					} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-					book = newBook;
-					options.put(primaryBookPath, book.getPrimaryFilePath());
-					if (debugMode) debugInfo.set("Primary book file path successfully set to " + value);
-					return true;
-				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-			} else if (secondaryBookPath.equals(setting)) {
-				try {
-					PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
-					try {
-						book.close();
-					} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-					book = newBook;
-					options.put(secondaryBookPath, book.getSecondaryFilePath());
-					if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
-					return true;
-				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-			} else if (egtbLibPath.equals(setting)) {
-				try {
-					egtb.loadProbingLibrary((String) value);
-					if (egtb.isProbingLibLoaded()) {
-						options.put(egtbLibPath, value);
-						if (debugMode) debugInfo.set("EGTB library path successfully set to " + value);
-						return true;
-					}
-				} catch (Exception e) { if (debugMode) debugInfo.set(e.getMessage()); }
-			} else if (egtbFilesPath.equals(setting)) {
-				if (egtb.isProbingLibLoaded()) {
-					egtb.init((String) value, ((Integer) options.get(egtbCacheSize))*1024L*1024L,
-							((CompressionScheme) options.get(egtbCompScheme)));
-					if (egtb.isInit()) {
-						options.put(egtbFilesPath, value);
-						if (debugMode) debugInfo.set("EGTB files path successfully set to " + value);
-						return true;
-					} else
-						egtb.init((String) options.get(egtbFilesPath), ((Integer) options
-								.get(egtbCacheSize))*1024L*1024L, ((CompressionScheme) options
-								.get(egtbCompScheme)));
-				}
-			} else if (egtbCompScheme.equals(setting)) {
-				if (egtb.isProbingLibLoaded()) {
-					String comp = (String) value;
-					CompressionScheme scheme = Arrays.stream(CompressionScheme.values())
-							.filter(c -> comp.equals(c.name()))
-							.collect(Collectors.toList()).get(0);
-					egtb.init((String) options.get(egtbFilesPath), ((Integer) options
-							.get(egtbCacheSize))*1024L*1024L, scheme);
-					if (egtb.isInit()) {
-						options.put(egtbCompScheme, scheme);
-						if (debugMode) debugInfo.set("EGTB compression scheme successfully set to " + value);
-						return true;
-					} else
-						egtb.init((String) options.get(egtbFilesPath), ((Integer) options
-								.get(egtbCacheSize))*1024L*1024L, ((CompressionScheme) options
-								.get(egtbCompScheme)));
-				}
-			} else if (egtbCacheSize.equals(setting)) {
-				if (egtb.isProbingLibLoaded()) {
+	public <T> boolean setOption(Option<T> setting, T value) {
+		synchronized (lock) {
+			try {
+				if (hashSize.equals(setting)) {
 					int val = (Integer) value;
-					if (MIN_EGTB_CACHE_SIZE <= val && MAX_EGTB_CACHE_SIZE >= val) {
-						if (val != ((Integer) options.get(egtbCacheSize)).intValue()) {
-							egtb.init((String) options.get(egtbFilesPath), val*1024L*1024L,
-									((CompressionScheme) options.get(egtbCompScheme)));
-							options.put(egtbCacheSize, value);
+					if (MIN_HASH_SIZE <= val && MAX_HASH_SIZE >= val) {
+						if (val != ((Integer) options.get(hashSize)).intValue()) {
+							setHashSize(val);
+							eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+							options.put(hashSize, value);
 						}
-						if (egtb.isInit()) {
-							if (debugMode) debugInfo.set("EGTB cache size successfully set to " + value);
+						if (debugMode) debugInfo.set("Hash size successfully set to " + value);
+						return true;
+					}
+				} else if (clearHash.equals(setting)) {
+					clearHash();
+					return true;
+				} else if (ponder.equals(setting)) {
+					options.put(ponder, value);
+					if (debugMode) debugInfo.set("Ponder successfully set to " + value);
+					return true;
+				} else if (ownBook.equals(setting)) {
+					if (book != null) {
+						options.put(ownBook, value);
+						outOfBook = false;
+						if (debugMode) debugInfo.set("Use of own book successfully set to " + value);
+						return true;
+					}
+					if (debugMode) debugInfo.set("No book file found at " + options.get(primaryBookPath));
+				} else if (primaryBookPath.equals(setting)) {
+					try {
+						String secondaryFilePath = book == null ? null : book.getSecondaryFilePath();
+						PolyglotBook newBook = new PolyglotBook((String) value, secondaryFilePath);
+						if (book != null) {
+							try {
+								book.close();
+							} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+						}
+						book = newBook;
+						options.put(primaryBookPath, book.getPrimaryFilePath());
+						outOfBook = false;
+						if (debugMode) debugInfo.set("Primary book file path successfully set to " + value);
+						return true;
+					} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+				} else if (secondaryBookPath.equals(setting)) {
+					if (book != null) {
+						try {
+							PolyglotBook newBook = new PolyglotBook(book.getPrimaryFilePath(), (String) value);
+							try {
+								book.close();
+							} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+							book = newBook;
+							options.put(secondaryBookPath, book.getSecondaryFilePath());
+							outOfBook = false;
+							if (debugMode) debugInfo.set("Secondary book file path successfully set to " + value);
+							return true;
+						} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+					}
+				} else if (egtbLibPath.equals(setting)) {
+					try {
+						egtb.loadProbingLibrary((String) value);
+						if (egtb.isProbingLibLoaded()) {
+							options.put(egtbLibPath, value);
+							if (debugMode) debugInfo.set("EGTB library path successfully set to " + value);
 							return true;
 						}
+					} catch (Exception e) { if (debugMode) debugInfo.set(e.getMessage()); }
+				} else if (egtbFilesPath.equals(setting)) {
+					if (egtb.isProbingLibLoaded()) {
+						egtb.init((String) value, ((Integer) options.get(egtbCacheSize))*1024L*1024L,
+								((CompressionScheme) options.get(egtbCompScheme)));
+						if (egtb.isInit()) {
+							options.put(egtbFilesPath, value);
+							if (debugMode) debugInfo.set("EGTB files path successfully set to " + value);
+							return true;
+						} else
+							egtb.init((String) options.get(egtbFilesPath), ((Integer) options
+									.get(egtbCacheSize))*1024L*1024L, ((CompressionScheme) options
+									.get(egtbCompScheme)));
 					}
-				}
-			} else if (egtbClearCache.equals(setting)) {
-				if (egtb.isProbingLibLoaded()) {
-					egtb.clearCache();
+				} else if (egtbCompScheme.equals(setting)) {
+					if (egtb.isProbingLibLoaded()) {
+						String comp = (String) value;
+						CompressionScheme scheme = Arrays.stream(CompressionScheme.values())
+								.filter(c -> comp.equals(c.name()))
+								.collect(Collectors.toList()).get(0);
+						egtb.init((String) options.get(egtbFilesPath), ((Integer) options
+								.get(egtbCacheSize))*1024L*1024L, scheme);
+						if (egtb.isInit()) {
+							options.put(egtbCompScheme, scheme);
+							if (debugMode) debugInfo.set("EGTB compression scheme successfully set to " + value);
+							return true;
+						} else
+							egtb.init((String) options.get(egtbFilesPath), ((Integer) options
+									.get(egtbCacheSize))*1024L*1024L, ((CompressionScheme) options
+									.get(egtbCompScheme)));
+					}
+				} else if (egtbCacheSize.equals(setting)) {
+					if (egtb.isProbingLibLoaded()) {
+						int val = (Integer) value;
+						if (MIN_EGTB_CACHE_SIZE <= val && MAX_EGTB_CACHE_SIZE >= val) {
+							if (val != ((Integer) options.get(egtbCacheSize)).intValue()) {
+								egtb.init((String) options.get(egtbFilesPath), val*1024L*1024L,
+										((CompressionScheme) options.get(egtbCompScheme)));
+								options.put(egtbCacheSize, value);
+							}
+							if (egtb.isInit()) {
+								if (debugMode) debugInfo.set("EGTB cache size successfully set to " + value);
+								return true;
+							}
+						}
+					}
+				} else if (egtbClearCache.equals(setting)) {
+					if (egtb.isProbingLibLoaded()) {
+						egtb.clearCache();
+						return true;
+					}
+				} else if (numOfSearchThreads.equals(setting)) {
+					if (value != null && MIN_SEARCH_THREADS <= (Integer) value &&
+							MAX_SEARCH_THREADS >= (Integer) value) {
+						options.put(numOfSearchThreads, value);
+						if (debugMode) debugInfo.set("Number of search threads successfully set to " + value);
+						return true;
+					}
+				} else if (parametersPath.equals(setting)) {
+					try {
+						String filePath = (String) value;
+						params.loadFrom(filePath);
+						options.put(parametersPath, filePath);
+						notifyParametersChanged();
+						if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
+						return true;
+					} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
+				} else if (uciOpponent.equals(setting)) {
+					options.put(uciOpponent, value);
+					if (debugMode) debugInfo.set("Opponent name successfully set to " + value);
+					return true;
+				} else if (uciAnalysis.equals(setting)) {
+					options.put(uciAnalysis, value);
+					if (debugMode) debugInfo.set("Analysis mode successfully set to " + value);
 					return true;
 				}
-			} else if (numOfSearchThreads.equals(setting)) {
-				if (value != null && MIN_SEARCH_THREADS <= (Integer) value &&
-						MAX_SEARCH_THREADS >= (Integer) value) {
-					options.put(numOfSearchThreads, value);
-					if (debugMode) debugInfo.set("Number of search threads successfully set to " + value);
-					return true;
-				}
-			} else if (parametersPath.equals(setting)) {
-				try {
-					String filePath = (String) value;
-					params.loadFrom(filePath);
-					options.put(parametersPath, filePath);
-					notifyParametersChanged();
-					if (debugMode) debugInfo.set("Parameters file path successfully set to " + value);
-					return true;
-				} catch (IOException e) { if (debugMode) debugInfo.set(e.getMessage()); }
-			} else if (uciOpponent.equals(setting)) {
-				options.put(uciOpponent, value);
-				if (debugMode) debugInfo.set("Opponent name successfully set to " + value);
-				return true;
-			} else if (uciAnalysis.equals(setting)) {
-				options.put(uciAnalysis, value);
-				if (debugMode) debugInfo.set("Analysis mode successfully set to " + value);
-				return true;
+				if (debugMode) debugInfo.set("The setting was not accepted");
+				return false;
+			} catch (Exception e) {
+				if (debugMode) debugInfo.set("The setting was not accepted\n" + e.getMessage());
+				return false;
 			}
-			if (debugMode) debugInfo.set("The setting was not accepted");
-			return false;
-		} catch (Exception e) {
-			if (debugMode) debugInfo.set("The setting was not accepted\n" + e.getMessage());
-			return false;
 		}
 	}
 	@Override
@@ -493,182 +529,200 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		debugMode = on;
 	}
 	@Override
-	public synchronized void newGame() {
-		newGame = true;
-		outOfBook = false;
-		if (!controllerMode && !deterministicZeroDepthMode)
-			clearHash();
-		if (egtb.isProbingLibLoaded())
-			egtb.clearCache();
+	public void newGame() {
+		synchronized (lock) {
+			newGame = true;
+			outOfBook = false;
+			movesOutOfBook = 0;
+			if (!controllerMode && !deterministicZeroDepthMode)
+				clearHash();
+			if (egtb.isProbingLibLoaded())
+				egtb.clearCache();
+		}
 	}
 	@Override
-	public synchronized boolean setPosition(String fen) {
-		try {
-			Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
-			// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
-			if (newGame) {
-				if (debugMode) debugInfo.set("New game set");
-				game = new Game(pos);
-			} else if (!game.getStartPos().toString().equals(pos.toString())) {
-				newGame();
-				if (debugMode) debugInfo.set("New game set due to new start position");
-				game = new Game(pos);
-			}
-			// Otherwise just clear the 'ancient' entries from the hash tables and decrement the history values.
-			else {
-				if (debugMode) debugInfo.set("Position set within the same game");
-				gen++;
-				if (!controllerMode && !deterministicZeroDepthMode) {
-					if (gen == 127) {
-						tT.clear();
-						eT.clear();
-						gen = 0;
-					} else {
-						tT.remove(e -> e.generation < gen - params.tTentryLifeCycle);
-						eT.remove(e -> e.generation < gen - params.eTentryLifeCycle);
-					}
+	public boolean setPosition(String fen) {
+		synchronized (lock) {
+			try {
+				Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
+				// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
+				if (newGame) {
+					if (debugMode) debugInfo.set("New game set");
+					game = new Game(pos);
+				} else if (!game.getStartPos().toString().equals(pos.toString())) {
+					newGame();
+					if (debugMode) debugInfo.set("New game set due to new start position");
+					game = new Game(pos);
 				}
-				game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
+				// Otherwise just clear the obsolete entries from the hash tables.
+				else {
+					if (debugMode) debugInfo.set("Position set within the same game");
+					gen++;
+					if (!bookMove)
+						movesOutOfBook++;
+					if (!controllerMode && !deterministicZeroDepthMode) {
+						if (gen == 127) {
+							tT.clear();
+							eT.clear();
+							gen = 0;
+						} else {
+							tT.remove(e -> e.generation < gen - params.tTentryLifeCycle);
+							eT.remove(e -> e.generation < gen - params.eTentryLifeCycle);
+						}
+					}
+					game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
+				}
+				return true;
+			} catch (ChessParseException | NullPointerException e) {
+				if (debugMode) debugInfo.set(e.getMessage());
+				return false;
 			}
-			return true;
-		} catch (ChessParseException | NullPointerException e) {
-			if (debugMode) debugInfo.set(e.getMessage());
+		}
+	}
+	@Override
+	public boolean play(String pacn) {
+		synchronized (lock) {
+			if (game.play(pacn)) {
+				if (debugMode) debugInfo.set("Move \"" + pacn + "\" played successfully");
+				return true;
+			}
+			if (debugMode) debugInfo.set("Move \"" + pacn + "\" could not be played");
 			return false;
 		}
 	}
 	@Override
-	public synchronized boolean play(String pacn) {
-		if (game.play(pacn)) {
-			if (debugMode) debugInfo.set("Move \"" + pacn + "\" played successfully");
-			return true;
-		}
-		if (debugMode) debugInfo.set("Move \"" + pacn + "\" could not be played");
-		return false;
-	}
-	@Override
-	public synchronized SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
+	public SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
 			Long searchTime, Boolean infinite) {
-		Set<Move> moves;
-		int numOfSearchThreads;
-		long bookSearchStart;
-		boolean analysisMode;
-		boolean doPonder, doInfinite;
-		boolean isBookMove;
-		SearchResults results;
-		doPonder = false;
-		doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null && blackTime == null &&
-				depth == null && nodes == null && mateDistance == null && searchTime == null);
-		isBookMove = false;
-		stop = ponderHit = false;
-		// Reset search stats.
-		searchInfo.getLock().lock();
-		try {
-			searchResult = new Move();
-			scoreFluctuation = 0;
-			timeOfLastSearchResChange = System.currentTimeMillis();
-			numOfSearchResChanges = 0;
-		} finally {
-			searchInfo.getLock().unlock();
-		}
-		// Set the names of the players once it is known which colour we are playing.
-		if (newGame) {
-			if (game.getSideToMove() == Side.WHITE) {
-				game.setWhitePlayerName(NAME);
-				game.setBlackPlayerName((String) options.get(uciOpponent));
-			} else {
-				game.setWhitePlayerName((String) options.get(uciOpponent));
-				game.setBlackPlayerName(NAME);
-			}
-			if (debugMode) debugInfo.set("Players' names set\n" +
-					"White - " + game.getWhitePlayerName() + "\n" +
-					"Black - " + game.getBlackPlayerName());
-			newGame = false;
-		}
-		results = null;
-		analysisMode = (Boolean) options.get(uciAnalysis);
-		// Search the book if possible.
-		if ((Boolean) options.get(ownBook) && !analysisMode && !deterministicZeroDepthMode && !outOfBook &&
-				searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
-				mateDistance == null && searchTime == null && (infinite == null || !infinite)) {
-			bookSearchStart = System.currentTimeMillis();
-			search = executor.submit(() -> {
-				Move bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
-				return new SearchResults(bookMove == null ? null : bookMove.toString(), null, null, null);
-			});
-			if (debugMode) debugInfo.set("Book search started");
-			try {
-				results = search.get();
-				isBookMove = results != null && results.getBestMove() != null;
-			} catch (InterruptedException | ExecutionException e1) {
-				if (debugMode) debugInfo.set(e1.getMessage());
-				Thread.currentThread().interrupt();
-				return null;
-			} catch (CancellationException e2) { }
-			if (debugMode) debugInfo.set("Book search done");
-			// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
-			if (!stop && !isBookMove) {
-				if (debugMode) debugInfo.set("No book move found. Out of book.");
-				outOfBook = true;
-				search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? (whiteTime != null ?
-						whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
-						game.getSideToMove() == Side.WHITE ? blackTime : (blackTime != null ?
-						blackTime - (System.currentTimeMillis() - bookSearchStart) : null), whiteIncrement,
-						blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
-			}
-		}
-		// Run a game tree search.
-		else {
-			// Check if pondering is possible.
-			if (ponder != null && ponder) {
-				if (!(Boolean) options.get(this.ponder)) {
-					if (debugMode) debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
-					return null;
-				} else
-					doPonder = true;
-			}
-			// Set root move restrictions if there are any.
-			if (searchMoves != null && !searchMoves.isEmpty()) {
-				moves = new HashSet<>();
-				try {
-					for (String s : searchMoves)
-						moves.add(game.getPosition().parsePACN(s));
-				} catch (ChessParseException | NullPointerException e) {
-					if (debugMode) debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
-					return null;
+		synchronized (lock) {
+			Set<Move> allowedMoves;
+			int numOfSearchThreads;
+			long bookSearchStart;
+			boolean analysisMode;
+			boolean doPonder, doInfinite;
+			SearchResults results;
+			doPonder = false;
+			doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null && blackTime == null &&
+					depth == null && nodes == null && mateDistance == null && searchTime == null);
+			bookMove = false;
+			stop = ponderHit = false;
+			// Set the names of the players once it is known which colour we are playing.
+			if (newGame) {
+				if (game.getSideToMove() == Side.WHITE) {
+					game.setWhitePlayerName(NAME);
+					game.setBlackPlayerName((String) options.get(uciOpponent));
+				} else {
+					game.setWhitePlayerName((String) options.get(uciOpponent));
+					game.setBlackPlayerName(NAME);
 				}
-			} else
-				moves = null;
-			// Start the search.
-			Search: {
-				numOfSearchThreads = deterministicZeroDepthMode ? 1 : (int) options.get(this.numOfSearchThreads);
-				Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo,
-						numOfSearchThreads, tT, gen, analysisMode, doPonder || doInfinite, depth == null ?
-						(mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ?
-						Long.MAX_VALUE : nodes, moves);
-				search = gameTreeSearch;
-				executor.submit(gameTreeSearch);
-				if (debugMode) debugInfo.set("Search started");
-				// If in ponder mode, run the search until the ponder hit signal or until it is externally stopped. 
-				if (doPonder) {
-					if (debugMode) debugInfo.set("In ponder mode");
-					while (!stop && !ponderHit) {
-						try {
-							wait();
-						} catch (InterruptedException e) {
-							if (debugMode) debugInfo.set(e.getMessage());
-							Thread.currentThread().interrupt();
-							return null;
+				if (debugMode) debugInfo.set("Players' names set\n" +
+						"White - " + game.getWhitePlayerName() + "\n" +
+						"Black - " + game.getBlackPlayerName());
+				newGame = false;
+			}
+			results = null;
+			analysisMode = (Boolean) options.get(uciAnalysis);
+			// Search the book if possible.
+			if (book != null && !deterministicZeroDepthMode && !analysisMode && !outOfBook &&
+					searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
+					mateDistance == null && searchTime == null && (infinite == null || !infinite) &&
+					(Boolean) options.get(ownBook)) {
+				bookSearchStart = System.currentTimeMillis();
+				search = executor.submit(() -> {
+					Move bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+					return new SearchResults(bookMove == null ? null : bookMove.toString(), null, null, null);
+				});
+				if (debugMode) debugInfo.set("Book search started");
+				try {
+					results = search.get();
+					bookMove = results != null && results.getBestMove() != null;
+				} catch (InterruptedException | ExecutionException e1) {
+					if (debugMode) debugInfo.set(e1.getMessage());
+					Thread.currentThread().interrupt();
+					return null;
+				} catch (CancellationException e2) { }
+				if (debugMode) debugInfo.set("Book search done");
+				// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
+				if (!stop && !bookMove) {
+					if (debugMode) debugInfo.set("No book move found. Out of book.");
+					outOfBook = true;
+					search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? (whiteTime != null ?
+							whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
+							game.getSideToMove() == Side.WHITE ? blackTime : (blackTime != null ?
+							blackTime - (System.currentTimeMillis() - bookSearchStart) : null), whiteIncrement,
+							blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
+				}
+			}
+			// Run a game tree search.
+			else {
+				// Check if pondering is possible.
+				if (ponder != null && ponder) {
+					if (!(Boolean) options.get(this.ponder)) {
+						if (debugMode) debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
+						return null;
+					} else
+						doPonder = true;
+				}
+				// Set root move restrictions if there are any.
+				if (searchMoves != null && !searchMoves.isEmpty()) {
+					allowedMoves = new HashSet<>();
+					try {
+						for (String s : searchMoves)
+							allowedMoves.add(game.getPosition().parsePACN(s));
+					} catch (ChessParseException | NullPointerException e) {
+						if (debugMode) debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
+						return null;
+					}
+				} else
+					allowedMoves = null;
+				// Start the search.
+				Search: {
+					if (egtb.isProbingLibLoaded() && egtb.isInit())
+						egtb.resetStats();
+					numOfSearchThreads = deterministicZeroDepthMode ? 1 : (int) options.get(this.numOfSearchThreads);
+					Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo,
+							numOfSearchThreads, tT, gen, analysisMode, doPonder || doInfinite, depth == null ?
+							(mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ?
+							Long.MAX_VALUE : nodes, allowedMoves);
+					search = gameTreeSearch;
+					executor.submit(gameTreeSearch);
+					if (debugMode) debugInfo.set("Search started");
+					// If in ponder mode, run the search until the ponder hit signal or until it is externally stopped. 
+					if (doPonder) {
+						if (debugMode) debugInfo.set("In ponder mode");
+						while (!stop && !ponderHit) {
+							try {
+								lock.wait();
+							} catch (InterruptedException e) {
+								if (debugMode) debugInfo.set(e.getMessage());
+								Thread.currentThread().interrupt();
+								return null;
+							}
+						}
+						if (debugMode) debugInfo.set("Ponder stopped");
+						// If the search terminated due to a ponder hit, keep searching...
+						if (ponderHit) {
+							if (debugMode) debugInfo.set("Ponderhit acknowledged");
+							ponderHit = false;
+						}
+						// If it did not, return the best move found.
+						else {
+							try {
+								search.get();
+							} catch (InterruptedException e) {
+								if (debugMode) debugInfo.set(e.getMessage());
+								Thread.currentThread().interrupt();
+								return null;
+							} catch (ExecutionException e) {
+								if (debugMode) debugInfo.set(e.getMessage());
+								return null;
+							}
+							break Search;
 						}
 					}
-					if (debugMode) debugInfo.set("Ponder stopped");
-					// If the search terminated due to a ponder hit, keep searching...
-					if (ponderHit) {
-						if (debugMode) debugInfo.set("Ponderhit acknowledged");
-						ponderHit = false;
-					}
-					// If it did not, return the best move found.
-					else {
+					// If in infinite mode, let the search run until it is externally stopped.
+					else if (doInfinite) {
+						if (debugMode) debugInfo.set("In infinite mode");
 						try {
 							search.get();
 						} catch (InterruptedException e) {
@@ -681,68 +735,48 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 						}
 						break Search;
 					}
-				}
-				// If in infinite mode, let the search run until it is externally stopped.
-				else if (doInfinite) {
-					if (debugMode) debugInfo.set("In infinite mode");
+					// Fixed node or depth search
+					else if (whiteTime == null && blackTime == null && searchTime == null) {
+						if (debugMode) debugInfo.set("In fixed mode");
+						try {
+							search.get();
+						} catch (InterruptedException e) {
+							if (debugMode) debugInfo.set(e.getMessage());
+							Thread.currentThread().interrupt();
+							return null;
+						} catch (ExecutionException e) {
+							if (debugMode) debugInfo.set(e.getMessage());
+							return null;
+						}
+						break Search;
+					}
 					try {
-						search.get();
-					} catch (InterruptedException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						Thread.currentThread().interrupt();
-						return null;
-					} catch (ExecutionException e) {
+						// Time based search.
+						manageSearchTime(searchTime, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
+					} catch (Exception e) {
 						if (debugMode) debugInfo.set(e.getMessage());
 						return null;
 					}
-					break Search;
 				}
-				// Fixed node or depth search
-				else if (whiteTime == null && blackTime == null && searchTime == null) {
-					if (debugMode) debugInfo.set("In fixed mode");
-					try {
-						search.get();
-					} catch (InterruptedException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						Thread.currentThread().interrupt();
-						return null;
-					} catch (ExecutionException e) {
-						if (debugMode) debugInfo.set(e.getMessage());
-						return null;
-					}
-					break Search;
-				}
+				if (debugMode) debugInfo.set("Search stopped");
+			}
+			// Return the final results.
+			if (!bookMove) {
 				try {
-					// Time based search.
-					manageSearchTime(searchTime, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
-				} catch (Exception e) {
+					results = search.get();
+				} catch (InterruptedException e) {
+					if (debugMode) debugInfo.set(e.getMessage());
+					Thread.currentThread().interrupt();
+					return null;
+				} catch (ExecutionException e) {
 					if (debugMode) debugInfo.set(e.getMessage());
 					return null;
 				}
-			}
-			if (debugMode) debugInfo.set("Search stopped");
-		}
-		// Return the final results.
-		if (!isBookMove) {
-			try {
-				results = search.get();
-			} catch (InterruptedException e) {
-				if (debugMode) debugInfo.set(e.getMessage());
-				Thread.currentThread().interrupt();
-				return null;
-			} catch (ExecutionException e) {
-				if (debugMode) debugInfo.set(e.getMessage());
-				return null;
-			}
-			if (!deterministicZeroDepthMode) {
-				if (results == null)
+				if (!deterministicZeroDepthMode && (results == null || results.getBestMove() == null))
 					results = new SearchResults(getRandomMove(), null, null, null);
-				else if (results.getBestMove() == null)
-					results = new SearchResults(getRandomMove(), null, results.getScore().get(),
-							results.getScoreType().get());
 			}
+			return results;
 		}
-		return results;
 	}
 	@Override
 	public void stop() {
@@ -750,8 +784,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 			if (debugMode) debugInfo.set("Stopping search...");
 			stop = true;
 			search.cancel(true);
-			synchronized (this) {
-				notifyAll();
+			synchronized (lock) {
+				lock.notifyAll();
 			}
 		}
 	}
@@ -759,8 +793,8 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	public void ponderHit() {
 		if (debugMode) debugInfo.set("Signaling ponderhit...");
 		ponderHit = true;
-		synchronized (this) {
-			notifyAll();
+		synchronized (lock) {
+			lock.notifyAll();
 		}
 	}
 	@Override
@@ -781,11 +815,12 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		if (debugMode) {
 			debugInfo.set(String.format("TT load factor - %.2f%nET load factor - %.2f",
 					((float) transLoad)/transCapacity, ((float) evalLoad)/evalCapacity));
-			SizeEstimator estimator = SizeEstimator.getInstance();
-			debugInfo.set(String.format("Total hash size in MB - %.2f", (float) ((double) (estimator.sizeOf(tT) +
-					estimator.sizeOf(eT)))/(1L << 20)));
+			debugInfo.set(String.format("Total hash size in MB - %.2f", (float) ((double) tT.memorySize() +
+					eT.memorySize())/(1L << 20)));
 		}
-		return (short) (1000*totalLoad/totalCapacity);
+		/* Due to the non-thread-safe nature of the hash tables, incorrect size values may be returned; ensure 
+		 * the load does not exceed 1000. */
+		return (short) Math.min(1000, 1000*totalLoad/totalCapacity);
 	}
 	@Override
 	public DebugInformation getDebugInfo() {
@@ -793,7 +828,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	}
 	@Override
 	public void quit() {
-		if (isInit) {
+		if (init) {
 			if (debugMode) debugInfo.set("Shutting down...");
 		} else {
 			if (debugMode) debugInfo.set("The engine has not been initialized yet; cannot shut down.");
@@ -813,7 +848,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		searchInfo.deleteObservers();
 		tT = null;
 		eT = null;
-		isInit = false;
+		init = false;
 	}
 	@Override
 	public boolean isWhitesTurn() {
@@ -824,8 +859,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return game.getStartPos().toString();
 	}
 	@Override
-	public synchronized GameState getGameState() {
-		return game.getState();
+	public GameState getGameState() {
+		synchronized (lock) {
+			return game.getState();
+		}
 	}
 	@Override
 	public List<String> getMoveHistory() {
@@ -845,15 +882,17 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return moveStrings;
 	}
 	@Override
-	public synchronized boolean setGame(String pgn) {
-		try {
-			newGame();
-			game = Game.parse(pgn);
-			if (debugMode) debugInfo.set("Game successfully set to:\n" + pgn);
-			return true;
-		} catch (ChessParseException e) {
-			if (debugMode) debugInfo.set("Game could not be set. Invalid PGN:\n" + pgn);
-			return false;
+	public boolean setGame(String pgn) {
+		synchronized (lock) {
+			try {
+				newGame();
+				game = Game.parse(pgn);
+				if (debugMode) debugInfo.set("Game successfully set to:\n" + pgn);
+				return true;
+			} catch (ChessParseException e) {
+				if (debugMode) debugInfo.set("Game could not be set. Invalid PGN:\n" + pgn);
+				return false;
+			}
 		}
 	}
 	@Override
@@ -872,7 +911,7 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 	@Override
 	public void setControllerMode(boolean on) {
 		controllerMode = on;
-		if (isInit)
+		if (init)
 			notifyParametersChanged();
 	}
 	@Override
@@ -888,8 +927,10 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		game.setState(GameState.UNSPECIFIED_WHITE_WIN);
 	}
 	@Override
-	public synchronized String unplayLastMove() {
-		return game.unplay();
+	public String unplayLastMove() {
+		synchronized (lock) {
+			return game.unplay();
+		}
 	}
 	@Override
 	public String convertPACNToSAN(String move) {
@@ -912,12 +953,16 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		}
 	}
 	@Override
-	public synchronized String toPGN() {
-		return game.toString();
+	public String toPGN() {
+		synchronized (lock) {
+			return game.toString();
+		}
 	}
 	@Override
-	public synchronized String toFEN() {
-		return game.getPosition().toString();
+	public String toFEN() {
+		synchronized (lock) {
+			return game.getPosition().toString();
+		}
 	}
 	@Override
 	public long perft(int depth) {
@@ -928,40 +973,22 @@ public class Detroid implements ControllerEngine, TunableEngine, Observer {
 		return params;
 	}
 	@Override
-	public synchronized void notifyParametersChanged() {
-		if (isInit) {
-			setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE :
-					options.get(hashSize) == hashSize.getDefaultValue() ? DEFAULT_HASH_SIZE :
-					(Integer) options.get(hashSize));
-			eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+	public void notifyParametersChanged() {
+		synchronized (lock) {
+			if (init) {
+				setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE :
+						options.get(hashSize) == hashSize.getDefaultValue() ? DEFAULT_HASH_SIZE :
+						(Integer) options.get(hashSize));
+				eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+			}
 		}
 	}
 	@Override
-	public synchronized void setDeterministicZeroDepthMode(boolean on) {
-		deterministicZeroDepthMode = on;
-		if (isInit)
-			notifyParametersChanged();
-	}
-	@Override
-	public void update(Observable o, Object arg) {
-		DetroidSearchInformation stats = (DetroidSearchInformation) o;
-		if (stats.getDepth() == 0)
-			return;
-		searchInfo.getLock().lock();
-		try {
-			List<Move> pvList = stats.getPvMoveList();
-			Move newSearchRes = pvList != null && pvList.size() > 0 ? pvList.get(0) : Move.NULL_MOVE;
-			newSearchRes = newSearchRes == null ? Move.NULL_MOVE : newSearchRes;
-			if (!searchResult.equals(newSearchRes)) {
-				timeOfLastSearchResChange = System.currentTimeMillis();
-				numOfSearchResChanges++;
-			}
-			short score = stats.getScore();
-			scoreFluctuation = (short) (score - searchResult.value);
-			searchResult = !newSearchRes.equals(Move.NULL_MOVE) ? newSearchRes : searchResult;
-			searchResult.value = score;
-		} finally {
-			searchInfo.getLock().unlock();
+	public void setDeterministicZeroDepthMode(boolean on) {
+		synchronized (lock) {
+			deterministicZeroDepthMode = on;
+			if (init)
+				notifyParametersChanged();
 		}
 	}
 	

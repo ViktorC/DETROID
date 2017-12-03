@@ -19,6 +19,7 @@ final class Bitboard {
 	 * rank, file, diagonal, or anti-diagonal the line is '0'.
 	 */
 	static final long[][] LINE_SEGMENTS;
+	
 	static {
 		Rays originRays, targetRays;
 		long line;

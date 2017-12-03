@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
@@ -18,9 +18,6 @@ import net.viktorc.detroid.framework.tuning.OptimizerEngines;
 import net.viktorc.detroid.framework.tuning.ParameterType;
 import net.viktorc.detroid.framework.tuning.TexelOptimizer;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
-import net.viktorc.detroid.framework.uci.Option;
-import net.viktorc.detroid.framework.uci.Option.CheckOption;
-import net.viktorc.detroid.framework.uci.Option.SpinOption;
 import net.viktorc.detroid.framework.uci.UCI;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
@@ -51,7 +48,7 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
  * @author Viktor
  *
  */
-public final class ApplicationFramework implements Runnable {
+public final class EngineFramework implements Runnable {
 
 	/**
 	 * The default number of threads to use.
@@ -86,11 +83,12 @@ public final class ApplicationFramework implements Runnable {
 	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | 
 	 * management | eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}]
 	 * [--initprobvector <quoted_comma_separated_decimals>] [--trybook <true | false> {false}] [--tryhash <integer>] 
-	 * [--log <string> {log.txt}] [--concurrency <integer>] {1}]} <br>
+	 * [--trythreads <integer>] [--log <string> {log.txt}] [--concurrency <integer>] {1}]} <br>
 	 * Texel tuning: {@code -t texel -samplesize <integer> [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] 
 	 * [--log <string> {log.txt}] [--concurrency <integer> {1}]} <br>
 	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}] [--trybook 
-	 * <true | false> {false}] [--tryhash <integer>] [--destfile <string> {fens.txt}] [--concurrency <integer> {1}]} <br>
+	 * <true | false> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}] 
+	 * [--concurrency <integer> {1}]} <br>
 	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>] 
 	 * [--destfile <string> {fens.txt}]} <br>
 	 * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile <string> {fens.txt}]} <br>
@@ -102,7 +100,7 @@ public final class ApplicationFramework implements Runnable {
 	 * Feature value array conversion to parameters file: {@code -c features -value <quoted_comma_separated_decimals> 
 	 * [--paramsfile <string> {params.xml}]}
 	 */
-	public ApplicationFramework(EngineFactory factory, String[] args) {
+	public EngineFramework(EngineFactory factory, String[] args) {
 		this.factory = factory;
 		this.args = Arrays.copyOf(args, args.length);
 	}
@@ -144,26 +142,20 @@ public final class ApplicationFramework implements Runnable {
 	 * are not supported by the engine or the values are not accepted, the call of this method has no effect.
 	 * 
 	 * @param engine The {@link net.viktorc.detroid.framework.uci.UCIEngine} whose options are to be set.
-	 * @param tryUseBook Whether the engine's OwnBook option should be set to true, if it exists.
-	 * @param hash The value the engine's Hash option should be set to, if it exists.
+	 * @param tryUseBook Whether the engine's {@link net.viktorc.detroid.framework.uci.UCIEngine#OWN_BOOK_OPTION_NAME} 
+	 * option should be set to true, if it exists.
+	 * @param hash The value the engine's Hash {@link net.viktorc.detroid.framework.uci.UCIEngine#HASH_OPTION_NAME} 
+	 * should be set to, if it exists.
+	 * @param threads The value the engine's {@link net.viktorc.detroid.framework.uci.UCIEngine#THREADS_OPTION_NAME} 
+	 * option should be set to.
 	 */
-	private void trySetOptions(UCIEngine engine, boolean tryUseBook, Integer hash) {
-		CheckOption useBookOption = null;
-		SpinOption hashOption = null;
-		Map<Option<?>, Object> options = engine.getOptions();
-		for (Option<?> o : options.keySet()) {
-			if (UCIEngine.USE_OWN_BOOK_OPTION_NAME.equals(o.getName()) &&
-					o instanceof CheckOption) {
-				useBookOption = (CheckOption) o;
-			} else if (UCIEngine.HASH_SIZE_OPTION_NAME.equals(o.getName()) &&
-					o instanceof SpinOption) {
-				hashOption = (SpinOption) o;
-			}
-		}
-		if (tryUseBook && useBookOption != null)
-			engine.setOption(useBookOption, true);
-		if (hash != null && hashOption != null)
-			engine.setOption(hashOption, hash);
+	private void trySetOptions(UCIEngine engine, Boolean tryUseBook, Integer hash, Integer threads) {
+		if (tryUseBook != null)
+			engine.setOwnBookOption(tryUseBook);
+		if (hash != null)
+			engine.setHashSizeOption(hash);
+		if (threads != null)
+			engine.setThreadsOption(threads);
 	}
 	@Override
 	public synchronized void run() {
@@ -191,8 +183,9 @@ public final class ApplicationFramework implements Runnable {
 						double validFactor = 0;
 						Set<ParameterType> paramTypes = null;
 						double[] initProbVec = null;
-						boolean useBook = false;
+						Boolean useBook = null;
 						Integer hash = null;
+						Integer threads = null;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -227,6 +220,9 @@ public final class ApplicationFramework implements Runnable {
 								case "--tryhash":
 									hash = Integer.parseInt(args[++i]);
 									break;
+								case "--trythreads":
+									threads = Integer.parseInt(args[++i]);
+									break;
 								case "--initprobvector":
 									String vec = args[++i];
 									String[] probs = vec.split(",");
@@ -247,8 +243,8 @@ public final class ApplicationFramework implements Runnable {
 								TunableEngine engine2 = factory.newTunableEngineInstance();
 								engine1.init();
 								engine2.init();
-								trySetOptions(engine1, useBook, hash);
-								trySetOptions(engine2, useBook, hash);
+								trySetOptions(engine1, useBook, hash, threads);
+								trySetOptions(engine2, useBook, hash, threads);
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
@@ -259,7 +255,7 @@ public final class ApplicationFramework implements Runnable {
 						try {
 							logger.addHandler(new FileHandler(logFilePath, true));
 						} catch (SecurityException | IOException e) {
-							e.printStackTrace();
+							throw new IllegalArgumentException(e);
 						}
 						try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc, validFactor,
 								initProbVec, popSize, logger, paramTypes)) {
@@ -331,8 +327,9 @@ public final class ApplicationFramework implements Runnable {
 						int games = -1;
 						long tc = -1;
 						long tcInc = 0;
-						boolean useBook = false;
+						Boolean useBook = null;
 						Integer hash = null;
+						Integer threads = null;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
 							switch (arg) {
@@ -354,6 +351,9 @@ public final class ApplicationFramework implements Runnable {
 								case "--tryhash":
 									hash = Integer.parseInt(args[++i]);
 									break;
+								case "--trythreads":
+									threads = Integer.parseInt(args[++i]);
+									break;
 								case "--destfile":
 									destFile = args[++i];
 									break;
@@ -370,8 +370,8 @@ public final class ApplicationFramework implements Runnable {
 								TunableEngine engine2 = factory.newTunableEngineInstance();
 								engine1.init();
 								engine2.init();
-								trySetOptions(engine1, useBook, hash);
-								trySetOptions(engine2, useBook, hash);
+								trySetOptions(engine1, useBook, hash, threads);
+								trySetOptions(engine2, useBook, hash, threads);
 								engines[i] = new OptimizerEngines(engine1, engine2,
 										factory.newControllerEngineInstance());
 							} catch (Exception e) {
@@ -379,7 +379,12 @@ public final class ApplicationFramework implements Runnable {
 							}
 						}
 						try {
-							FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
+							try {
+								FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
+							} catch (NullPointerException | IllegalArgumentException | InterruptedException
+									| ExecutionException e) {
+								throw new RuntimeException(e);
+							}
 							for (OptimizerEngines e : engines) {
 								e.getEngine().close();
 								e.getOpponentEngine().close();

@@ -8,8 +8,6 @@ import net.viktorc.detroid.framework.tuning.ParameterType;
 /**
  * The definitions of the evaluation, search, and hash and time management parameters used in the chess engine.
  * 
- * The suffix 'Hth' marks that the number denotes a factor of one given in hundreths and thus should be divided by 100 when used.
- * 
  * @author Viktor
  *
  */
@@ -26,6 +24,8 @@ final class DetroidParameters extends EngineParameters {
 	short bishopValue;
 	@Parameter (binaryLengthLimit = 9)
 	short knightValue;
+	@Parameter (binaryLengthLimit = 7)
+	short pawnEndgameValue;
 	@Parameter (binaryLengthLimit = 0)
 	short pawnValue;
 
@@ -109,7 +109,7 @@ final class DetroidParameters extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte nullMoveReduction; // Null move pruning reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
-	byte nullMoveReductionMinActivationDepth; // Min. depth for null move reductions.
+	byte nullMoveReductionMinDepthLeft; // Min. depth for null move reductions.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte extraNullMoveReduction; // Additional, depth dependent null move pruning reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
@@ -117,7 +117,7 @@ final class DetroidParameters extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
 	byte lateMoveReduction; // Late move reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 3)
-	byte lateMoveReductionMinActivationDepth; // Min. depth for late move reduction.
+	byte lateMoveReductionMinDepthLeft; // Min. depth for late move reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
 	byte extraLateMoveReduction; // Additional, depth dependent late move pruning reduction.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
@@ -161,13 +161,15 @@ final class DetroidParameters extends EngineParameters {
 	@Parameter (type = ParameterType.SEARCH_CONTROL)
 	boolean doIid; // Whether IID should be applied.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-	byte iidMinActivationDepth; // The minimum depth at which IID is activated.
+	byte iidMinDepthLeft; // The minimum depth at which IID is activated.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-	byte iidRelDepthHth; // The portion of the total depth to which the position will be searched with IID.
+	byte iidRelDepth64th; // The portion of the total depth to which the position will be searched with IID.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-	byte maxDepthForEgtbProbe; // The maximum allowed depth for any EGTB probe.
+	byte maxDistFromRootForEgtbProbe; // The maximum allowed depth for any EGTB probe.
 	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-	byte maxDepthForHardEgtbProbe; // The maximum allowed depth for a hard EGTB file probe.
+	byte maxDistFromRootForHardEgtbProbe; // The maximum allowed depth for a hard EGTB file probe.
+	@Parameter (type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+	byte nodeBusinessCheckMinDepthLeft; // The minimum depth left for rescheduling the search of nodes currently searched by other threads.
 
 	// The shares of the different hash tables of the total hash size.
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
@@ -182,16 +184,12 @@ final class DetroidParameters extends EngineParameters {
 	byte eTentryLifeCycle;
 
 	// The values considered when calculating search time extensions.
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 11)
-	short scoreFluctuationLimit;
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT)
-	byte fractionOfOrigSearchTimeSinceLastResultChangeLimitHth;
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-	byte avgMovesPerGame;
 	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
-	byte movesToGoSafetyMargin;
-	@Parameter (type = ParameterType.ENGINE_MANAGEMENT)
-	byte fractionOfTotalTimeToUseHth;
+	byte minTimePortionNeededForExtraDepth64th;
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 5)
+	byte minMovesToGo;
+	@Parameter (type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
+	byte maxMovesToGo;
 
 	// Piece-square tables for openings and end games.
 	@Parameter

@@ -1,6 +1,6 @@
 package net.viktorc.detroid.framework.engine;
 
-import static org.junit.Assume.assumeTrue;
+import org.junit.Assume;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,8 +16,8 @@ import org.junit.runners.Parameterized.Parameters;
 import net.viktorc.detroid.framework.engine.Detroid;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
-import net.viktorc.detroid.framework.validation.EPD;
-import net.viktorc.detroid.framework.validation.EPDTestSuite;
+import net.viktorc.detroid.framework.validation.EPDRecord;
+import net.viktorc.detroid.framework.validation.EPDSuite;
 
 /**
  * Win at Chess test suite at half a second per position.
@@ -35,19 +35,19 @@ public final class WinAtChessTest {
 	private static final ControllerEngine CONTROLLER = new Detroid();
 	
 	@Parameter
-	public EPD record;
+	public EPDRecord record;
 	
 	@Parameters
 	public static Collection<Object[]> provideData() throws IOException {
-		EPDTestSuite suite = new EPDTestSuite(SUITE_NAME, WAC_FILE_PATH);
+		EPDSuite suite = new EPDSuite(SUITE_NAME, WAC_FILE_PATH);
 		Collection<Object[]> data = new ArrayList<>();
-		for (EPD r : suite.getRecords())
+		for (EPDRecord r : suite.getRecords())
 			data.add(new Object[] { r });
 		return data;
 	}
 	@Test
 	public void search() throws Exception {
-		assumeTrue(EPDTestSuite.searchTest(ENGINE, CONTROLLER, record, TIME_PER_POSITION));
+		Assume.assumeTrue(EPDSuite.searchTest(ENGINE, CONTROLLER, record, TIME_PER_POSITION));
 	}
 	@AfterClass
 	public static void cleanUp() {

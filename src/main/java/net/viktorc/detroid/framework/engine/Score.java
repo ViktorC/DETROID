@@ -8,7 +8,7 @@ package net.viktorc.detroid.framework.engine;
  */
 enum Score {
 	
-	NULL(Short.MIN_VALUE),
+	NULL(Short.MIN_VALUE + 2),
 	MIN(Short.MIN_VALUE + 1),
 	MAX(Short.MAX_VALUE),
 	LOSING_CHECK_MATE ((Short.MIN_VALUE + 2)/2),

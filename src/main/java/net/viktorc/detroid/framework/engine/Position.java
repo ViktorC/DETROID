@@ -7,8 +7,6 @@ import java.util.List;
 
 import net.viktorc.detroid.framework.engine.Bitboard.*;
 import net.viktorc.detroid.framework.util.BitOperations;
-import net.viktorc.detroid.framework.util.Copiable;
-import net.viktorc.detroid.framework.util.Hashable;
 
 /**
  * A bit board based chess position class whose instances hold information amongst others on the current board position, on all the previous moves 
@@ -23,7 +21,7 @@ import net.viktorc.detroid.framework.util.Hashable;
  * @author Viktor
  * 
  */
-class Position implements Copiable<Position>, Hashable {
+class Position {
 	
 	/**
 	 * A FEN string for the starting chess position.
@@ -329,12 +327,16 @@ class Position implements Copiable<Position>, Hashable {
 		for (int i = 0; i < pos.keyHistory.length; i++)
 			keyHistory[i] = pos.keyHistory[i];
 		gen = pos.gen;
-		moveList = new ArrayDeque<>();
-		for (Move m : pos.moveList)
-			moveList.add(m);
-		unmakeRegisterHistory = new ArrayDeque<>();
-		for (PositionStateRecord u : pos.unmakeRegisterHistory)
-			unmakeRegisterHistory.add(u);
+		moveList = new ArrayDeque<>(pos.moveList);
+		unmakeRegisterHistory = new ArrayDeque<>(pos.unmakeRegisterHistory);
+	}
+	/**
+	 * Returns a deep copy of the object.
+	 * 
+	 * @return A deep copy.
+	 */
+	Position deepCopy() {
+		return new Position(this);
 	}
 	/**
 	 * Returns whether the current position has already occurred before at least the specified number of times.
@@ -379,6 +381,14 @@ class Position implements Copiable<Position>, Hashable {
 	 */
 	PositionStateRecord getUnmakeRegister() {
 		return unmakeRegisterHistory.peekFirst();
+	}
+	/**
+	 * Returns a 64 bit Zobrist hash key representing the position.
+	 * 
+	 * @return The Zobrist key of the current position.
+	 */
+	long getKey() {
+		return key;
 	}
 	/**
 	 * Returns a 64 bit Zobrist hash key for the pawn-king structure on the board.
@@ -3462,14 +3472,6 @@ class Position implements Copiable<Position>, Hashable {
 			spMoveSuffix = "";
 		check = givesCheck(move) ? "+" : "";
 		return movedPiece + origin + capture + destFile + destRank + spMoveSuffix + check;
-	}
-	@Override
-	public long hashKey() {
-		return key;
-	}
-	@Override
-	public Position deepCopy() {
-		return new Position(this);
 	}
 	@Override
 	public String toString() {

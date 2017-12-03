@@ -1,7 +1,7 @@
 package net.viktorc.detroid;
 
 import net.viktorc.detroid.framework.engine.Detroid;
-import net.viktorc.detroid.framework.ApplicationFramework;
+import net.viktorc.detroid.framework.EngineFramework;
 
 /**
  * The main class for the engine and tuning framework.
@@ -17,7 +17,7 @@ class Launcher {
 	 * @param args The same as for {@link #FrameworkApplication}.
 	 */
 	public static void main(String[] args) {
-		(new ApplicationFramework(Detroid::new, args)).run();
+		(new EngineFramework(Detroid::new, args)).run();
 	}
 	
 }

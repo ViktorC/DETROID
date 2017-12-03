@@ -4,6 +4,9 @@ import java.io.Closeable;
 import java.util.Map;
 import java.util.Set;
 
+import net.viktorc.detroid.framework.uci.Option.CheckOption;
+import net.viktorc.detroid.framework.uci.Option.SpinOption;
+
 /**
  * The interface needed to be implemented by an engine to ensure it is UCI compliant.
  * 
@@ -15,11 +18,15 @@ public interface UCIEngine extends Closeable {
 	/**
 	 * A standard check type UCI option that determines whether the engine should use its own book. It should be false by default.
 	 */
-	public static final String USE_OWN_BOOK_OPTION_NAME = "OwnBook";
+	public static final String OWN_BOOK_OPTION_NAME = "OwnBook";
+	/**
+	 * A standard spin type UCI option that determines the number of search threads to use.
+	 */
+	public static final String THREADS_OPTION_NAME = "Threads";
 	/**
 	 * A standard spin type UCI option that determines the size of the hash tables used by the chess engine. Its unit is MB.
 	 */
-	public static final String HASH_SIZE_OPTION_NAME = "Hash";
+	public static final String HASH_OPTION_NAME = "Hash";
 	
 	/**
 	 * Initialises the engine; e.g. set up the tables, load parameters, etc. The engine is not expected to function properly without calling
@@ -141,6 +148,52 @@ public interface UCIEngine extends Closeable {
 	 * Signals the engine that it should clean up and free the resources it has been using.
 	 */
 	void quit();
+	/**
+	 * It looks for an option of the specified type and name among the options provided by the engine, and if it is found, it 
+	 * attempts to set it to the specified value.
+	 * 
+	 * @param optionType The type of the option to look for.
+	 * @param optionName The name of the option.
+	 * @param value The value to which it should be set.
+	 * @return Whether the option was found and successfully set.
+	 */
+	@SuppressWarnings("unchecked")
+	default <T,U extends Option<T>> boolean setOption(Class<U> optionType, String optionName, T value) {
+		U option = null;
+		Map<Option<?>, Object> options = getOptions();
+		for (Option<?> o : options.keySet()) {
+			if (optionName.equals(o.getName()) && o.getClass().equals(optionType))
+				option = (U) o;
+		}
+		return option != null && setOption(option, value);
+	}
+	/**
+	 * It attempts to set whether the engine should use its own opening book if the option is provided by the engine.
+	 * 
+	 * @param value Whether the engine should use its own opening book.
+	 * @return Whether the option was successfully set.
+	 */
+	default boolean setOwnBookOption(boolean value) {
+		return setOption(CheckOption.class, OWN_BOOK_OPTION_NAME, value);
+	}
+	/**
+	 * It attempts to set the hash size the engine should use if the option is provided by the engine.
+	 * 
+	 * @param value The hash size to use (in bytes).
+	 * @return Whether the option was successfully set.
+	 */
+	default boolean setHashSizeOption(int value) {
+		return setOption(SpinOption.class, HASH_OPTION_NAME, value);
+	}
+	/**
+	 * It attempts to set the number of threads the engine should use if the option is provided by the engine.
+	 * 
+	 * @param value The number of search threads the engine should use.
+	 * @return Whether the option was successfully set.
+	 */
+	default boolean setThreadsOption(int value) {
+		return setOption(SpinOption.class, THREADS_OPTION_NAME, value);
+	}
 	@Override
 	default void close() {
 		quit();

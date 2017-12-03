@@ -231,7 +231,8 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 				engine2Wins += res.getEngine2Wins();
 				draws += res.getDraws();
 			} catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
+				throw new RuntimeException(e);
 			}
 		}
 		double fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
@@ -253,7 +254,8 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 					engine2Wins += res.getEngine2Wins();
 					draws += res.getDraws();
 				} catch (InterruptedException | ExecutionException e) {
-					e.printStackTrace();
+					Thread.currentThread().interrupt();
+					throw new RuntimeException(e);
 				}
 			}
 			fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);

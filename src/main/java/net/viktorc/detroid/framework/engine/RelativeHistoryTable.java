@@ -1,5 +1,7 @@
 package net.viktorc.detroid.framework.engine;
 
+import net.viktorc.detroid.framework.engine.Bitboard.Square;
+
 /**
  * A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only incremented upon a cutoff
  * and a butterfly table that is incremented upon every searched move no matter what. Using these two tables' respective values for the same
@@ -22,8 +24,8 @@ class RelativeHistoryTable {
 		maxScore = Short.MAX_VALUE;
 		/* The numbering of the pieces starts from one, so each table has a redundant first row to save
 		 * the expenses of always subtracting one from the moved piece numeral both on read and write. */
-		historyT = new long[13][64];
-		butterflyT = new long[13][64];
+		historyT = new long[Piece.values().length][Square.values().length];
+		butterflyT = new long[Piece.values().length][Square.values().length];
 	}
 	/**
 	 * If a move causes a cut-off, this method updates the relative history table accordingly.
