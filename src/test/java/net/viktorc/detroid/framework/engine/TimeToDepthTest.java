@@ -55,19 +55,17 @@ public final class TimeToDepthTest {
 		UCIEngine engine = new Detroid();
 		engine.init();
 		try {
+			int depthAdjustment = -1;
 			// Warm up.
 			System.out.printf("%n%n%nWARM UP%n%n%n");
-			test(engine, suite, 4, 0);
+			test(engine, suite, 4, depthAdjustment);
 			System.out.printf("%n%n%nSTART%n%n%n");
 			long time1, time2, time3, time4;
-			time1 = time2 = time3 = time4 = 1;
-			int depthAdjustment = -1;
-			for (int i = 0; i < 4; i++) {
-				time1 += test(engine, suite, 1, depthAdjustment);
-				time2 += test(engine, suite, 2, depthAdjustment);
-				time3 += test(engine, suite, 3, depthAdjustment);
-				time4 += test(engine, suite, 4, depthAdjustment);
-			}
+			time1 = time2 = time3 = time4 = 0;
+			time1 += test(engine, suite, 1, depthAdjustment);
+			time2 += test(engine, suite, 2, depthAdjustment);
+			time3 += test(engine, suite, 3, depthAdjustment);
+			time4 += test(engine, suite, 4, depthAdjustment);
 			Assume.assumeTrue(time1 > time2 && time2 > time3 && time3 > time4);
 		} finally {
 			engine.close();

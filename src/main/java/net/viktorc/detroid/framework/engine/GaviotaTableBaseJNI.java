@@ -1,6 +1,8 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.util.Arrays;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import net.viktorc.detroid.framework.util.BitOperations;
 
@@ -69,14 +71,14 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	
 	private static final GaviotaTableBaseJNI INSTANCE = new GaviotaTableBaseJNI();
 	
-	private final Object probeLock;
+	private final Lock probeLock;
 	private boolean hasBeenInit;
 	
 	/**
 	 * Singleton...
 	 */
 	private GaviotaTableBaseJNI() {
-		probeLock = new Object();
+		probeLock = new ReentrantLock(true);
 	}
 	/**
 	 * Returns the only instance of the class.
@@ -117,6 +119,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * the <code>dtm</code> argument; else null.
 	 */
 	private Object probe(Position pos, boolean dtm, boolean soft) {
+		boolean lockAcquired = false;
 		int sideToMove = pos.whitesTurn ? 0 : 1;
 		int enPassant = pos.enPassantRights == EnPassantRights.NONE.ind ? NO_SQUARE :
 				pos.enPassantRights + (pos.whitesTurn ? EnPassantRights.TO_W_DEST_SQR_IND :
@@ -149,19 +152,30 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 		}
 		bSquares[i] = NO_SQUARE;
 		bPieces[i] = NO_PIECE;
-		synchronized (probeLock) {
-			if (dtm) {
-				int[] res = soft ? probeSoft(sideToMove, enPassant, castling, wSquares, bSquares,
-						wPieces, bPieces) : probe(sideToMove, enPassant, castling, wSquares,
-						bSquares, wPieces, bPieces);
-				if (res == null)
-					return null;
-				return new DTM(resIntToWDL(res[0], pos.whitesTurn), res[1]);
-			} else
-				return resIntToWDL(soft ? probeSoftWDL(sideToMove, enPassant, castling, wSquares,
-						bSquares, wPieces, bPieces) : probeWDL(sideToMove, enPassant, castling,
-						wSquares, bSquares, wPieces, bPieces), pos.whitesTurn);
+		if (soft)
+			lockAcquired = probeLock.tryLock();
+		else {
+			probeLock.lock();
+			lockAcquired = true;
 		}
+		if (lockAcquired) {
+			try {
+				if (dtm) {
+					int[] res = soft ? probeSoft(sideToMove, enPassant, castling, wSquares, bSquares,
+							wPieces, bPieces) : probe(sideToMove, enPassant, castling, wSquares,
+							bSquares, wPieces, bPieces);
+					if (res == null)
+						return null;
+					return new DTM(resIntToWDL(res[0], pos.whitesTurn), res[1]);
+				} else
+					return resIntToWDL(soft ? probeSoftWDL(sideToMove, enPassant, castling, wSquares,
+							bSquares, wPieces, bPieces) : probeWDL(sideToMove, enPassant, castling,
+							wSquares, bSquares, wPieces, bPieces), pos.whitesTurn);
+			} finally {
+				probeLock.unlock();
+			}
+		} else
+			return null;
 	}
 	/**
 	 * Initializes the Gaviota probing library using the specified parameters.

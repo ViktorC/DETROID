@@ -170,9 +170,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	 */
 	private int movesLeftBasedOnPhaseScore(int phaseScore) {
 		double L = params.maxMovesToGo - params.minMovesToGo;
-		double exp = Math.pow(Math.E, 3.5e-2*(phaseScore -
-				(params.gamePhaseOpeningLower + params.gamePhaseEndgameUpper)/2));
-		double res = L/(1 + exp);
+		double exp = Math.pow(Math.E, 3.5e-2d*((double) (phaseScore - (params.gamePhaseOpeningLower +
+				params.gamePhaseEndgameUpper))/2));
+		double res = L/(1d + exp);
 		return (int) Math.round(res + params.minMovesToGo);
 	}
 	/**
@@ -194,7 +194,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				(game.getSideToMove() == Side.BLACK && (blackTime == null || blackTime <= 0))))
 			return 0;
 		if (movesToGo == null) {
-			phaseScore = eval.phaseScore(game.getPosition());
 			movesToGo = movesLeftBasedOnPhaseScore(phaseScore);
 			if (debugMode) debugInfo.set("Search time data\n" +
 					"Phase score - " + phaseScore + "/256\n" +

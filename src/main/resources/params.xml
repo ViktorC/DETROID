@@ -70,8 +70,8 @@
 <doIid>true</doIid>
 <iidMinDepthLeft>6</iidMinDepthLeft>
 <iidRelDepth64th>24</iidRelDepth64th>
-<maxDistFromRootForEgtbProbe>15</maxDistFromRootForEgtbProbe>
-<maxDistFromRootForHardEgtbProbe>3</maxDistFromRootForHardEgtbProbe>
+<maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
+<maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
 <nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
 <tTshare>8</tTshare>
 <eTshare>2</eTshare>

@@ -35,12 +35,12 @@ final class Evaluator {
 		byte kingValue = MVV_LVA_PIECE_VALUES[Piece.W_KING.ind];
 		MVV_LVA = new byte[13][13];
 		List<Entry<Short,Integer>> combVals = new ArrayList<>();
-		// Ignore the illogical combinations for the sake of better performance.
+		// Include illogical combinations without discrimination for the sake of better performance.
 		for (Piece a : Piece.values()) {
 			if (a != Piece.NULL) {
 				for (Piece v : Piece.values()) {
 					if (v != Piece.NULL) {
-						comb = (short) (v.ind | (a.ind << 7));
+						comb = (short) (((short) v.ind) | (((short) a.ind) << 7));
 						attackerVal = MVV_LVA_PIECE_VALUES[a.ind];
 						victimVal = MVV_LVA_PIECE_VALUES[v.ind];
 						victimVal *= kingValue;
