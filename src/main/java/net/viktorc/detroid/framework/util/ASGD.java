@@ -61,7 +61,8 @@ public abstract class ASGD<D,L> {
 	protected final double momentumDecayRate;
 	protected final double normDecayRate;
 	protected final double annealingRate;
-	protected final Integer maxEpoch;
+	protected final int batchSize;
+	protected final int epochs;
 	
 	protected final Logger logger;
 	
@@ -98,17 +99,19 @@ public abstract class ASGD<D,L> {
 	 * changed, the new value has to be within the range of 0 (inclusive) and 1 (inclusive).
 	 * @param annealingExponent A constant that determines the momentum's annealing schedule. If it is null, it defaults to 4e-3. It is 
 	 * not recommended to change this value.
-	 * @param maxEpoch The maximum number of iterations. If it is null, the optimization process will only stop if the gradient of the 
-	 * cost function is 0 for each feature.
+	 * @param batchSize The number of samples in the mini-batches used for training.
+	 * @param epochs The maximum number of iterations. If it is 0, the loop is endless.
 	 * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
 	 * @throws IllegalArgumentException If features is null or its length is 0. If the decay rate is greater than 1 or smaller than 0. If 
 	 * an element in minValues is greater than the respective element in maxValues.
 	 */
 	protected ASGD(double[] features, double[] minValues, double[] maxValues, Double h, Double baseLearningRate, Double epsilon,
-			Double momentumDecayRate, Double normDecayRate, Double annealingExponent, Integer maxEpoch, Logger logger)
+			Double momentumDecayRate, Double normDecayRate, Double annealingExponent, int batchSize, int epochs, Logger logger)
 					throws IllegalArgumentException {
 		if (features == null || features.length == 0)
 			throw new IllegalArgumentException("The array features cannot be null and its length has to be greater than 0.");
+		if (batchSize <= 0)
+			throw new IllegalArgumentException("The batch size has to be greater than 0.");
 		indicesToIgnore = new HashSet<>();
 		if (minValues != null && maxValues != null) {
 			int length = Math.min(minValues.length, maxValues.length);
@@ -149,7 +152,8 @@ public abstract class ASGD<D,L> {
 			throw new IllegalArgumentException("The norm decay rate cannot be greater than 1 or smaller than 0.");
 		this.normDecayRate = (normDecayRate == null ? NORM_DECY_RATE : normDecayRate);
 		this.annealingRate = (annealingExponent == null ? ANNEALING_EXPONENT : annealingExponent);
-		this.maxEpoch = maxEpoch;
+		this.batchSize = batchSize;
+		this.epochs = epochs;
 		this.logger = logger;
 	}
 	/**
@@ -171,45 +175,41 @@ public abstract class ASGD<D,L> {
 		// Initialize the momentum decay rate sequence product.
 		double momentumPi = computeMomentumSchedule(1);
 		momDecayRateT = momentumPi;
-		for (int t = 1;; t++) {
-			// Random sample the training data.
-			List<Entry<D,L>> sample = sampleTrainingData();
-			// Compute the gradient.
-			double[] gradient = computeGradient(sample);
-			boolean changed = false;
-			for (int i = 0; i < features.length; i++) {
-				g = gradient[i];
-				/* Correct the gradient vector initialization bias by 1 - the product of the sequence of annealed momentum decay 
-				 * rates up until t. */
-				gPrime = g/(1 - momentumPi);
-				// Update the momentum vector, the accumulated first moment estimates of the gradients.
-				m = momentumDecayRate*momentumVector[i] + (1 - momentumDecayRate)*g;
-				momentumVector[i] = m;
-				// Compute the annealed momentum decay rate for the next epoch.
-				momDecayRateTplus1 = computeMomentumSchedule(t + 1);
-				// Update the total product of annealed momentum decay rates.
-				momentumPi *= momDecayRateTplus1;
-				// Correct the momentum vector initialization bias by the momentum Pi for t + 1.
-				mPrime = m/(1 - momentumPi);
-				// Update the norm vector.
-				n = normDecayRate*normVector[i] + (1 - normDecayRate)*Math.pow(g, 2);
-				normVector[i] = n;
-				// Correct the norm vector initialization bias by the norm decay rate to the power of t.
-				nPrime = n/(1 - Math.pow(normDecayRate, t));
-				// Compute the Nesterov-accelerated learning rate factor.
-				mBar = (1 - momDecayRateT)*gPrime + momDecayRateTplus1*mPrime;
-				// The current epoch's next annealed decay rate is the next epoch's current annealed decay rate...
-				momDecayRateT = momDecayRateTplus1;
-				// Delta.
-				d = learningRate*mBar/(Math.sqrt(nPrime) + epsilon);
-				delta[i] = d;
-				features[i] -= d;
-				// Constraints.
-				features[i] = Math.min(features[i], maxValues[i]);
-				features[i] = Math.max(features[i], minValues[i]);
-				// If g is not 0, the minimum has not been reached with respect to feature j yet.
-				if (g != 0)
-					changed = true;
+		for (int t = 1; epochs <= 0 && t <= epochs; t++) {
+			resetTrainingDataReader();
+			List<Entry<D,L>> sample;
+			while (!(sample = getTrainingData(batchSize)).isEmpty()) {
+				double batchSizeBiasOffset = ((double) sample.size())/batchSize;
+				// Compute the gradient.
+				double[] gradient = computeGradient(sample);
+				for (int i = 0; i < features.length; i++) {
+					// Ensure that the magnitude of the gradient is proportional to the batch size.
+					g = gradient[i] * batchSizeBiasOffset;
+					/* Correct the gradient vector initialization bias by 1 - the product of the sequence of annealed momentum decay 
+					 * rates up until t. */
+					gPrime = g/(1 - momentumPi);
+					// Update the momentum vector, the accumulated first moment estimates of the gradients.
+					m = momentumDecayRate*momentumVector[i] + (1 - momentumDecayRate)*g;
+					momentumVector[i] = m;
+					// Compute the annealed momentum decay rate for the next epoch.
+					momDecayRateTplus1 = computeMomentumSchedule(t + 1);
+					momentumPi *= momDecayRateTplus1;
+					// Correct the momentum vector initialization bias by the updated momentum for t + 1.
+					mPrime = m/(1 - momentumPi);
+					n = normDecayRate*normVector[i] + (1 - normDecayRate)*Math.pow(g, 2);
+					normVector[i] = n;
+					// Correct the norm vector initialization bias by the norm decay rate to the power of t.
+					nPrime = n/(1 - Math.pow(normDecayRate, t));
+					// Compute the Nesterov-accelerated learning rate factor.
+					mBar = (1 - momDecayRateT)*gPrime + momDecayRateTplus1*mPrime;
+					momDecayRateT = momDecayRateTplus1;
+					d = learningRate*mBar/(Math.sqrt(nPrime) + epsilon);
+					delta[i] = d;
+					features[i] -= d;
+					// Constraints.
+					features[i] = Math.min(features[i], maxValues[i]);
+					features[i] = Math.max(features[i], minValues[i]);
+				}
 			}
 			// Log information about the current state.
 			if (logger != null) {
@@ -221,15 +221,11 @@ public abstract class ASGD<D,L> {
 				double[] greatestDelta = new double[Math.min(delta.length, 5)];
 				for (int j = 0; j < greatestDelta.length; j++)
 					greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
-				// Log cost over the test data set. This is just a sanity check; it is not used for learning!
+				// Log cost over the test data set. This is just to test how well the parameters generalize; it is not used for learning!
 				logger.info("Epoch: " + t + "; Cost: " + costFunction(features, getTestData()) + System.lineSeparator() + "Greatest deltas: " +
 						Arrays.toString(greatestDelta) + System.lineSeparator() + "Deltas: " + Arrays.toString(delta) + System.lineSeparator() + 
 						"Features: " + Arrays.toString(features));
 			}
-			if (!changed)
-				break;
-			if (maxEpoch != null && t >= maxEpoch)
-				break;
 		}
 		return features;
 	}
@@ -289,19 +285,26 @@ public abstract class ASGD<D,L> {
 		return (cost1 - cost2)/denominator;
 	}
 	/**
-	 * Returns the test data set as a list of key-value pairs where the key is the data and the value is the ground truth label. The list should 
-	 * contain at least one data set. The test data should never be included in the training data samples.
+	 * Resets the training data reader enanbling the resampling of already sampled data points. E.g. if the data provider reads the data from a 
+	 * file line by line, the invocation of this method should set the file stream back to the first line.
+	 */
+	protected abstract void resetTrainingDataReader();
+	/**
+	 * Extracts a sample from the training data set and loads it into a list of key-value pairs where the key is the data and the value is the 
+	 * ground truth. It should never extract the same data point twice until the {@link #resetTrainingDataReader()} method is called. If there is no 
+	 * more training data left, an empty list should be returned. The list should never be null.
 	 * 
-	 * @return An list holding the validation data mapped to the correct labels.
+	 * @param batchSize The maximum number of entries the returned list is to have. It is never less than 1.
+	 * @return A list holding the observation-label pairs.
+	 */
+	protected abstract List<Entry<D,L>> getTrainingData(int batchSize);
+	/**
+	 * Returns the entire test data set as a list of key-value pairs where the key is the data and the value is the ground truth label. The list 
+	 * should contain at least one data set. The test data should never be included in the training data samples.
+	 * 
+	 * @return A list holding the validation data mapped to the correct labels.
 	 */
 	protected abstract List<Entry<D,L>> getTestData();
-	/**
-	 * Extracts a random sample from the training data set and loads it into a list of key-value pairs where the key is the data and the value is the 
-	 * ground truth. The list should contain at least one data set.
-	 * 
-	 * @return An list holding the training data mapped to the correct labels.
-	 */
-	protected abstract List<Entry<D,L>> sampleTrainingData();
 	/**
 	 * Calculates the costs associated with the given feature set for the specified data sample. The better the system performs, the lower the costs 
 	 * should be. Ideally, the cost function is differentiable, smooth, and convex, but these are not requirements.

@@ -62,29 +62,26 @@ public final class GUI extends Application {
 	public void start(Stage primaryStage) throws IOException {
 		// To get rid of the undesired maxCellCount INFO messages.
 		LogManager.getLogManager().reset();
-		try {
-			FXMLLoader loader = new FXMLLoader();
-			loader.setControllerFactory(new Callback<Class<?>, Object>() {
-				
-				@Override
-				public Object call(Class<?> param) {
-					if (param.equals(MainController.class))
-						return new MainController(primaryStage, controllerEngine, searchEngine);
-					return null;
-				}
-			});
-			BorderPane root = (BorderPane) loader.load(getClass().getResourceAsStream(VIEW_PATH));
-			Scene scene = new Scene(root);
-			scene.getStylesheets().add(getClass().getResource(STYLE_PATH).toExternalForm());
-			controller = loader.getController();
-			primaryStage.setScene(scene);
-			primaryStage.setTitle(TITLE);
-			primaryStage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
-			primaryStage.setResizable(false);
-			primaryStage.show();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		FXMLLoader loader = new FXMLLoader();
+		loader.setControllerFactory(new Callback<Class<?>, Object>() {
+			
+			@Override
+			public Object call(Class<?> param) {
+				if (param.equals(MainController.class))
+					return new MainController(primaryStage, controllerEngine, searchEngine);
+				return null;
+			}
+		});
+		BorderPane root = (BorderPane) loader.load(getClass().getResourceAsStream(VIEW_PATH));
+		Scene scene = new Scene(root);
+		scene.getStylesheets().add(getClass().getResource(STYLE_PATH).toExternalForm());
+		controller = loader.getController();
+		primaryStage.setScene(scene);
+		primaryStage.setTitle(TITLE);
+		primaryStage.getIcons().add(new Image(getClass().getResourceAsStream(ICON_PATH)));
+		primaryStage.setResizable(false);
+		primaryStage.show();
+		
 	}
 	@Override
 	public void stop() throws Exception {

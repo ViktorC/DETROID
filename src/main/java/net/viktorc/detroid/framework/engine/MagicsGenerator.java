@@ -76,8 +76,11 @@ final class MagicsGenerator {
 	 * @param rook
 	 * @param enhanced
 	 * @return
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
-	synchronized Magics generateMagics(int sqrInd, boolean rook, boolean enhanced) {
+	synchronized Magics generateMagics(int sqrInd, boolean rook, boolean enhanced)
+			throws InterruptedException, ExecutionException {
 		final Random random = new Random();
 		int shift;
 		long[] occVar, attVar;
@@ -125,9 +128,7 @@ final class MagicsGenerator {
 			futures = new ArrayList<>();
 			for (int i = 0; i < numOfProcessors; i++)
 				futures.add(pool.submit(() -> gen.apply(shift + 1)));
-			try {
-				num = pool.take().get();
-			} catch (InterruptedException | ExecutionException e) { num = 0; e.printStackTrace(); }
+			num = pool.take().get();
 			for (Future<Long> f : futures)
 				f.cancel(true);
 		} else
@@ -143,8 +144,11 @@ final class MagicsGenerator {
 	 * @param print
 	 * @param enhancedSquares
 	 * @return
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
-	synchronized Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares) {
+	synchronized Magics[] generateAllMagics(boolean rook, boolean print, int... enhancedSquares)
+			throws InterruptedException, ExecutionException {
 		Magics[] allMagics = new Magics[64];
 		Magics m;
 		if (print)

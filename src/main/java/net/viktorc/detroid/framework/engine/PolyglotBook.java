@@ -1,7 +1,7 @@
 package net.viktorc.detroid.framework.engine;
 
-import java.io.*;
-import java.nio.*;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -158,11 +158,8 @@ class PolyglotBook extends OpeningBook {
 		}
 		return pacn + promPiece;
 	}
-	/* (non-Javadoc)
-	 * @see engine.IBook#getMove(engine.Position, engine.Book.SelectionModel)
-	 */
 	@Override
-	Move getMove(Position p, SelectionModel selection) {
+	Move getMove(Position p, SelectionModel selection) throws Exception {
 		short max;
 		double totalWeight, randomDouble, weightSum;
 		Entry e;
@@ -206,12 +203,7 @@ class PolyglotBook extends OpeningBook {
 			break;
 			default: return null;
 		}
-		try {
-			return e == null ? null : p.parsePACN(polyglotMoveToPACN(p, e.move));
-		} catch (ChessParseException | IllegalArgumentException ex) {
-			ex.printStackTrace();
-			return null;
-		}
+		return e == null ? null : p.parsePACN(polyglotMoveToPACN(p, e.move));
 	}
 	
 	/**

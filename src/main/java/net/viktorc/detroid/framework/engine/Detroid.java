@@ -628,7 +628,12 @@ public class Detroid implements ControllerEngine, TunableEngine {
 					(Boolean) options.get(ownBook)) {
 				bookSearchStart = System.currentTimeMillis();
 				search = executor.submit(() -> {
-					Move bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+					Move bookMove;
+					try {
+						bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+					} catch (Exception e) {
+						bookMove = null;
+					}
 					return new SearchResults(bookMove == null ? null : bookMove.toString(), null, null, null);
 				});
 				if (debugMode) debugInfo.set("Book search started");

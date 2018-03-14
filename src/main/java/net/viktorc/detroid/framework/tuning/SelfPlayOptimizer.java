@@ -204,7 +204,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 					try {
 						oppEngine.init();
 					} catch (Exception e) {
-						e.printStackTrace();
+						throw new RuntimeException(e);
 					}
 				}
 				oppEngine.getParameters().set(set, parameterTypes);
@@ -248,7 +248,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 			futures = new ArrayList<>(engines.size());
 			for (int i = 0; i < engines.size() && addGamesPlayed < encore; i++) {
 				int index = i;
-				int gamesToPlay = (int) Math.min(encore - addGamesPlayed,
+				int gamesToPlay = (int) Math.min((double) encore - addGamesPlayed,
 						Math.ceil(((double) encore)/engines.size()));
 				futures.add(pool.submit(() -> arenas[index].match(engines.get(index).getEngine(),
 						engines.get(index).getOpponentEngine(), gamesToPlay, timePerGame, timeIncPerMove)));

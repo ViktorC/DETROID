@@ -2,7 +2,6 @@ package net.viktorc.detroid.framework.tuning;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -99,10 +98,9 @@ public abstract class EngineParameters {
 	 * Reads the parameter values from an XML file and sets the instance's fields accordingly.
 	 * 
 	 * @param filePath The path to the file.
-	 * @return Whether fields recorded in the file could be successfully set.
-	 * @throws IOException If the file does not exist or cannot be read.
+	 * @throws Exception If an error occurs from which it is not possible to recover.
 	 */
-	public final boolean loadFrom(String filePath) throws IOException {
+	public final void loadFrom(String filePath) throws Exception {
 		File file;
 		String name;
 		String value;
@@ -125,7 +123,6 @@ public abstract class EngineParameters {
 				try {
 					field = clazz.getDeclaredField(name);
 				} catch (NoSuchFieldException | SecurityException e1) {
-					e1.printStackTrace();
 					continue;
 				}
 				if (!allParamFields.contains(field))
@@ -152,11 +149,6 @@ public abstract class EngineParameters {
 				else if (fieldType.equals(char.class))
 					field.set(this, value.charAt(0));
 			}
-			return true;
-		}
-		catch (Exception e2) {
-			e2.printStackTrace();
-			return false;
 		}
 	}
 	/**
@@ -352,7 +344,7 @@ public abstract class EngineParameters {
 				else
 					arr[i++] = f.getDouble(this);
 			} catch (IllegalArgumentException | IllegalAccessException e) {
-				e.printStackTrace();
+				continue;
 			}
 		}
 		return arr;

@@ -61,8 +61,9 @@ abstract class OpeningBook implements Closeable {
 	 * @param selection An enumeration of type {@link #Book.SelectionModel SelectionModel} that specifies the mathematical model to be applied when
 	 * selecting the move.
 	 * @return An opening move.
+	 * @throws Exception If anything goes wrong.
 	 */
-	abstract Move getMove(Position p, SelectionModel selection);
+	abstract Move getMove(Position p, SelectionModel selection) throws Exception;
 	
 	/**
 	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening moves for a position.

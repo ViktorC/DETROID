@@ -157,7 +157,9 @@ public class SizeEstimator {
 				else {
 					try {
 						size += sizeOf(f.get(o), visitedObjects);
-					} catch (IllegalAccessException e) { e.printStackTrace(); }
+					} catch (IllegalAccessException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
 		}

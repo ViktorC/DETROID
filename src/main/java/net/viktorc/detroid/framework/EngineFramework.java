@@ -266,7 +266,9 @@ public final class EngineFramework implements Runnable {
 					} else if ("texel".equals(arg1)) {
 						Double k = null;
 						Double learningRate = null;
+						Double testDataProp = null;
 						int sampleSize = -1;
+						int epochs = 0;
 						String fensFilePath = DEF_FENS_FILE_PATH;
 						for (int i = 2; i < args.length; i++) {
 							String arg = args[i];
@@ -280,11 +282,17 @@ public final class EngineFramework implements Runnable {
 								case "--concurrency":
 									concurrency = Integer.parseInt(args[++i]);
 									break;
+								case "--epochs":
+									epochs = Integer.parseInt(args[++i]);
+									break;
 								case "--learningrate":
 									learningRate = Double.parseDouble(args[++i]);
 									break;
 								case "--k":
 									k = Double.parseDouble(args[++i]);
+									break;
+								case "--testdataprop":
+									testDataProp = Double.parseDouble(args[++i]);
 									break;
 								case "--fensfile":
 									fensFilePath = args[++i];
@@ -309,8 +317,8 @@ public final class EngineFramework implements Runnable {
 						} catch (SecurityException | IOException e) {
 							throw new IllegalArgumentException(e);
 						}
-						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, learningRate, 
-								fensFilePath, k, logger)) {
+						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, epochs,
+								learningRate, fensFilePath, k, testDataProp, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
 							throw new RuntimeException(e);
