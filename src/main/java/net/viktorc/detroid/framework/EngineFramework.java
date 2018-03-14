@@ -1,11 +1,11 @@
 package net.viktorc.detroid.framework;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
@@ -14,7 +14,7 @@ import net.viktorc.detroid.framework.gui.GUI;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
 import net.viktorc.detroid.framework.tuning.FENFileUtil;
 import net.viktorc.detroid.framework.tuning.SelfPlayOptimizer;
-import net.viktorc.detroid.framework.tuning.OptimizerEngines;
+import net.viktorc.detroid.framework.tuning.SelfPlayEngines;
 import net.viktorc.detroid.framework.tuning.ParameterType;
 import net.viktorc.detroid.framework.tuning.TexelOptimizer;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
@@ -79,7 +79,7 @@ public final class EngineFramework implements Runnable {
 	 * @param factory An instance of a class extending the {@link net.viktorc.detroid.framework.EngineFactory} interface. It provides the 
 	 * engine instances required for different features of the framework.
 	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
-	 * UCI mode: {@code -u} </br>
+	 * UCI mode: {@code -u} <br>
 	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | 
 	 * management | eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}]
 	 * [--initprobvector <quoted_comma_separated_decimals>] [--trybook <true | false> {false}] [--tryhash <integer>] 
@@ -236,7 +236,7 @@ public final class EngineFramework implements Runnable {
 						}
 						if (games == -1 || tc == -1 || popSize == -1)
 							throw new IllegalArgumentException();
-						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
+						List<SelfPlayEngines<TunableEngine>> engines = new ArrayList<>(concurrency);
 						for (int i = 0; i < concurrency; i++) {
 							try {
 								TunableEngine engine1 = factory.newTunableEngineInstance();
@@ -245,8 +245,8 @@ public final class EngineFramework implements Runnable {
 								engine2.init();
 								trySetOptions(engine1, useBook, hash, threads);
 								trySetOptions(engine2, useBook, hash, threads);
-								engines[i] = new OptimizerEngines(engine1, engine2,
-										factory.newControllerEngineInstance());
+								engines.add(new SelfPlayEngines<>(engine1, engine2,
+										factory.newControllerEngineInstance()));
 							} catch (Exception e) {
 								throw new RuntimeException(e);
 							}
@@ -257,8 +257,8 @@ public final class EngineFramework implements Runnable {
 						} catch (SecurityException | IOException e) {
 							throw new IllegalArgumentException(e);
 						}
-						try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc, validFactor,
-								initProbVec, popSize, logger, paramTypes)) {
+						try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc,
+								validFactor, initProbVec, popSize, logger, paramTypes)) {
 							optimizer.optimize();
 						} catch (Exception e) {
 							throw new IllegalArgumentException(e);
@@ -307,7 +307,6 @@ public final class EngineFramework implements Runnable {
 						try {
 							logger.addHandler(new FileHandler(logFilePath, true));
 						} catch (SecurityException | IOException e) {
-							e.printStackTrace();
 							throw new IllegalArgumentException(e);
 						}
 						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, learningRate, 
@@ -363,35 +362,31 @@ public final class EngineFramework implements Runnable {
 						}
 						if (games == -1 || tc == -1)
 							throw new IllegalArgumentException();
-						OptimizerEngines[] engines = new OptimizerEngines[concurrency];
+						List<SelfPlayEngines<UCIEngine>> engines = new ArrayList<>(concurrency);
 						for (int i = 0; i < concurrency; i++) {
 							try {
-								TunableEngine engine1 = factory.newTunableEngineInstance();
-								TunableEngine engine2 = factory.newTunableEngineInstance();
+								UCIEngine engine1 = factory.newEngineInstance();
+								UCIEngine engine2 = factory.newEngineInstance();
 								engine1.init();
 								engine2.init();
 								trySetOptions(engine1, useBook, hash, threads);
 								trySetOptions(engine2, useBook, hash, threads);
-								engines[i] = new OptimizerEngines(engine1, engine2,
-										factory.newControllerEngineInstance());
+								engines.add(new SelfPlayEngines<>(engine1, engine2,
+										factory.newControllerEngineInstance()));
 							} catch (Exception e) {
 								throw new RuntimeException(e);
 							}
 						}
 						try {
-							try {
-								FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
-							} catch (NullPointerException | IllegalArgumentException | InterruptedException
-									| ExecutionException e) {
-								throw new RuntimeException(e);
-							}
-							for (OptimizerEngines e : engines) {
+							FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						} finally {
+							for (SelfPlayEngines<UCIEngine> e : engines) {
 								e.getEngine().close();
 								e.getOpponentEngine().close();
 								e.getController().close();
 							}
-						} catch (IOException e) {
-							throw new RuntimeException(e);
 						}
 					} else if ("bypgnconversion".equals(arg1)) {
 						String sourceFile = null;
@@ -412,10 +407,8 @@ public final class EngineFramework implements Runnable {
 									throw new IllegalArgumentException();
 							}
 						}
-						try {
-							ControllerEngine engine = factory.newControllerEngineInstance();
+						try (ControllerEngine engine = factory.newControllerEngineInstance()) {
 							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
-							engine.close();
 						} catch (Exception e) {
 							throw new RuntimeException(e);
 						}
@@ -526,12 +519,11 @@ public final class EngineFramework implements Runnable {
 			}
 		} else {
 			// GUI mode.
-			ControllerEngine controller = factory.newControllerEngineInstance();
-			UCIEngine searchEngine = factory.newEngineInstance();
-			GUI.setEngines(controller, searchEngine);
-			Application.launch(GUI.class);
-			controller.close();
-			searchEngine.close();
+			try (ControllerEngine controller = factory.newControllerEngineInstance();
+				UCIEngine searchEngine = factory.newEngineInstance()) {
+				GUI.setEngines(controller, searchEngine);
+				Application.launch(GUI.class);
+			}
 		}
 	}
 	

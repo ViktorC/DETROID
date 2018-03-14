@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +20,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.GameState;
 
@@ -96,17 +98,18 @@ public final class FENFileUtil {
 	 * Generates a file of lines of FEN strings with the results of the games the positions occurred in 
 	 * appended to them. This file can then be used for the optimization of engine parameters.
 	 * 
-	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
+	 * @param engines A list of {@link net.viktorc.detroid.framework.tuning.SelfPlayEngines} instances that
 	 * each contain the engines needed for playing games in the {@link net.viktorc.detroid.framework.tuning.Arena}. 
-	 * For each non-null element in the array, a new thread will be utilized for the optimization. E.g. 
-	 * if engines is an array of four non-null elements, the games in the fitness function will 
-	 * be distributed and played parallel on four threads. The array's first element cannot be 
+	 * For each non-null element in the list, a new thread will be utilized for the optimization. E.g. 
+	 * if engines is a list of four non-null elements, the games in the fitness function will 
+	 * be distributed and played parallel on four threads. The list's first element cannot be 
 	 * null or a {@link java.lang.NullPointerException} is thrown.
 	 * @param games The number of games to play.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
 	 * engine is incremented after each legal move.
 	 * be done.
+	 * @param fenFilePath The path to the FEN-file.
 	 * @throws IOException If the file specified by filePath doesn't exist and cannot be created.
 	 * @throws NullPointerException If the parameter engines is null.
 	 * @throws IllegalArgumentException If engines doesn't contain at least one non-null element.
@@ -114,15 +117,15 @@ public final class FENFileUtil {
 	 * @throws InterruptedException If the current thread is interrupted while waiting for 
 	 * the worker threads to finish.
 	 */
-	public static void generateFENFile(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			String fenFilePath)
+	public static void generateFENFile(List<SelfPlayEngines<UCIEngine>> engines, int games, long timePerGame,
+			long timeIncPerMove, String fenFilePath)
 					throws IOException, NullPointerException, IllegalArgumentException,
 					InterruptedException, ExecutionException {
 		File destinationFile = new File(fenFilePath);
 		if (!destinationFile.exists())
 			Files.createFile(destinationFile.toPath());
-		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
-		for (OptimizerEngines e : engines) {
+		ArrayList<SelfPlayEngines<UCIEngine>> enginesList = new ArrayList<>();
+		for (SelfPlayEngines<UCIEngine> e : engines) {
 			if (e != null)
 				enginesList.add(e);
 		}
@@ -132,7 +135,7 @@ public final class FENFileUtil {
 		try {
 			ArrayList<Future<Void>> futures = new ArrayList<>();
 			int workLoad = games/enginesList.size();
-			for (OptimizerEngines e : engines) {
+			for (SelfPlayEngines<UCIEngine> e : engines) {
 				futures.add(pool.submit(() -> {
 					Logger fenLogger = Logger.getAnonymousLogger();
 					fenLogger.setUseParentHandlers(false);
@@ -183,7 +186,7 @@ public final class FENFileUtil {
 	 * @param sourceFenFile The file path to the source FEN file.
 	 * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
 	 * @param numOfPositionsToFilter The first x full moves to filter from each game.
-	 * @throws IOException
+	 * @throws IOException If the source cannot be read from and the destination cannot be created or written to.
 	 */
 	public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile, int numOfPositionsToFilter)
 			throws IOException {
@@ -211,7 +214,7 @@ public final class FENFileUtil {
 	 * 
 	 * @param sourceFenFile The file path to the source FEN file.
 	 * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
-	 * @throws IOException
+	 * @throws IOException If the source cannot be read from and the destination cannot be created or written to.
 	 */
 	public static void filterDraws(String sourceFenFile, String destinationFenFile)
 			throws IOException {

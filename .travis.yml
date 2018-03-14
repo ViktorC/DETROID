@@ -16,7 +16,7 @@ notifications:
     email: false
 deploy:
     provider: pages
-    local_dir: /home/travis/build/ViktorC/DETROID/docs
+    local_dir: docs
     skip_cleanup: true
     github_token: $GITHUB_TOKEN
     on:

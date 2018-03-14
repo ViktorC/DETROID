@@ -152,6 +152,8 @@ public interface UCIEngine extends Closeable {
 	 * It looks for an option of the specified type and name among the options provided by the engine, and if it is found, it 
 	 * attempts to set it to the specified value.
 	 * 
+	 * @param <T> The value type of the option.
+	 * @param <U> The option type.
 	 * @param optionType The type of the option to look for.
 	 * @param optionName The name of the option.
 	 * @param value The value to which it should be set.

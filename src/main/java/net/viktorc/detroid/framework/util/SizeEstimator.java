@@ -40,7 +40,7 @@ public class SizeEstimator {
 	 * @param clazz The class.
 	 * @return A list of its non-static fields including those inherited.
 	 */
-	public ArrayList<Field> getNonStaticFields(Class<?> clazz) {
+	protected ArrayList<Field> getNonStaticFields(Class<?> clazz) {
 		ArrayList<Field> fields = new ArrayList<>();
 		// Get all non-static fields, including those of the super classes if there are any.
 		do {
@@ -176,9 +176,9 @@ public class SizeEstimator {
 		return sizeOf(o, visitedNodes);
 	}
 	/**
-	 * Statically estimates the size of the instance of a class. The estimate is only reliable if {@link #isInstanceSizeConstant(Class) isInstanceSizeConstant} 
-	 * returns true, i.e. all the non static fields of the class and its ancestors are primitives. The non-primitive non-static fields are assumed to be null 
-	 * references.
+	 * Statically estimates the size of an instance of the class. The estimate is only reliable if {@link #isInstanceSizeConstant(Class) isInstanceSizeConstant} 
+	 * returns true, i.e. all the non-static fields of the class and its ancestors are primitives. The non-primitive non-static fields are assumed to be null 
+	 * pointers.
 	 * 
 	 * @param clazz The class.
 	 * @return The static size of the class.

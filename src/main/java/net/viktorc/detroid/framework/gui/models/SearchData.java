@@ -32,6 +32,15 @@ public final class SearchData {
 	}
 	/**
 	 * Constructs the view model using the specified parameter values.
+	 * 
+	 * @param depth The search depth.
+	 * @param time The search time.
+	 * @param nodes The number of searched nodes.
+	 * @param moveNo The move index.
+	 * @param principalVar The principal variation.
+	 * @param score The score assigned to the position.
+	 * @param nps The average number of nodes searched per second.
+	 * @param hash The load factor of the hash tables.
 	 */
 	public SearchData(String depth, String time, String nodes, String moveNo, String principalVar, String score,
 			String nps, String hash) {
@@ -46,36 +55,48 @@ public final class SearchData {
 	}
 	/**
 	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
+	 * 
+	 * @return The search depth.
 	 */
 	public String getDepth() {
 		return depth;
 	}
 	/**
 	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
+	 * 
+	 * @return The search time.
 	 */
 	public String getTime() {
 		return time;
 	}
 	/**
 	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
+	 * 
+	 * @return The number of searched nodes.
 	 */
 	public String getNodes() {
 		return nodes;
 	}
 	/**
 	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
+	 * 
+	 * @return The move index.
 	 */
 	public String getMoveNo() {
 		return moveNo;
 	}
 	/**
 	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
+	 * 
+	 * @return The principal variation.
 	 */
 	public String getPrincipalVar() {
 		return principalVar;
 	}
 	/**
 	 * See the corresponding {@link net.viktorc.detroid.framework.uci.SearchInformation} method.
+	 * 
+	 * @return The score assigned to the position.
 	 */
 	public String getScore() {
 		return score;

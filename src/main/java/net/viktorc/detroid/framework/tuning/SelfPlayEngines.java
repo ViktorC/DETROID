@@ -1,44 +1,45 @@
 package net.viktorc.detroid.framework.tuning;
 
+import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 
 /**
- * A class for storing references to engines required to perform the
- * optimization.
+ * A class for storing references to engines required to perform self-play.
  * 
  * @author Viktor
  *
+ * @param <T> The type of the engines to pit against each other.
  */
-public final class OptimizerEngines {
+public final class SelfPlayEngines<T extends UCIEngine> {
 
-	private final TunableEngine engine;
-	private final TunableEngine opponentEngine;
+	private final T engine;
+	private final T opponentEngine;
 	private final ControllerEngine controller;
 
 	/**
-	 * Constructs an instance holding references to the three engines necessary for self-play based optimization.
+	 * Constructs an instance holding references to the three engines necessary for self-play.
 	 * 
-	 * @param tunableEngine The engine to be tuned.
+	 * @param engine The engine to be tuned.
 	 * @param opponentEngine The opponent engine.
 	 * @param controller The controller engine for the {@link net.viktorc.detroid.framework.tuning.Arena}.
 	 * @throws Exception If the engines cannot be initialised.
 	 */
-	public OptimizerEngines(TunableEngine tunableEngine, TunableEngine opponentEngine, ControllerEngine controller) 
+	public SelfPlayEngines(T engine, T opponentEngine, ControllerEngine controller) 
 			throws Exception {
-		if (tunableEngine == null || opponentEngine == null || controller == null)
+		if (engine == null || opponentEngine == null || controller == null)
 			throw new IllegalArgumentException("The parameters engine, opponentEngine, and controller cannot be null");
-		if (!tunableEngine.isInit())
-			tunableEngine.init();
-		this.engine = tunableEngine;
+		if (!engine.isInit())
+			engine.init();
+		this.engine = engine;
 		this.opponentEngine = opponentEngine;
 		this.controller = controller;
 	}
 	/**
-	 * Returns the engine to be tuned.
+	 * Returns the first engine.
 	 * 
-	 * @return The engine to be tuned.
+	 * @return The first engine.
 	 */
-	public TunableEngine getEngine() {
+	public T getEngine() {
 		return engine;
 	}
 	/**
@@ -46,7 +47,7 @@ public final class OptimizerEngines {
 	 * 
 	 * @return The opponent engine.
 	 */
-	public TunableEngine getOpponentEngine() {
+	public T getOpponentEngine() {
 		return opponentEngine;
 	}
 	/**

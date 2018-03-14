@@ -1,6 +1,7 @@
 package net.viktorc.detroid.framework.tuning;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -21,7 +22,7 @@ import net.viktorc.detroid.framework.validation.Elo;
  */
 public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	
-	private final OptimizerEngines[] engines;
+	private final List<SelfPlayEngines<TunableEngine>> engines;
 	private final Arena[] arenas;
 	private final Set<ParameterType> parameterTypes;
 	private final int games;
@@ -34,14 +35,14 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
-	 * each contain the engines needed for one optimization thread. For each non-null element
-	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
-	 * array of four non-null elements, the games in the fitness function will be distributed
-	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
-	 * threads to use is the maximum of the number of available logical cores divided by two 
-	 * and 1.
+	 * @param engines A list of {@link net.viktorc.detroid.framework.tuning.SelfPlayEngines} 
+	 * instances that each contain the engines needed for one optimization thread. For each 
+	 * non-null element in the list, a new thread will be utilized for the optimization. E.g. 
+	 * if engines is a list of four non-null elements, the games in the fitness function 
+	 * will be distributed and played parallel on four threads. The list's first element 
+	 * cannot be null or a {@link java.lang.NullPointerException} is thrown. The maximum 
+	 * number of threads to use is the maximum of the number of available logical cores 
+	 * divided by two and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -64,47 +65,50 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	 * @throws Exception If the engines cannot be initialized.
 	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			double validationFactor, double[] initialProbabilityVector, int populationSize, Logger logger,
-			Set<ParameterType> parameterTypes) throws Exception, IllegalArgumentException {
-		super(engines[0].getEngine().getParameters().toGrayCodeString(parameterTypes).length(),
+	public SelfPlayOptimizer(List<SelfPlayEngines<TunableEngine>> engines, int games, long timePerGame,
+			long timeIncPerMove, double validationFactor, double[] initialProbabilityVector, int populationSize,
+			Logger logger, Set<ParameterType> parameterTypes) throws Exception, IllegalArgumentException {
+		super(engines.get(0).getEngine().getParameters().toGrayCodeString(parameterTypes).length(),
 				populationSize, null, null, null, null, null, initialProbabilityVector, logger);
 		if (logger == null)
 			throw new IllegalArgumentException("The logger cannot be null.");
 		this.parameterTypes = parameterTypes;
 		logger.info("Tuning parameters of type: " + this.parameterTypes);
-		ArrayList<OptimizerEngines> enginesList = new ArrayList<>();
-		for (OptimizerEngines e : engines) {
-			if (e != null)
-				enginesList.add(e);
+		int engineCount = 0;
+		this.engines = new ArrayList<>();
+		for (SelfPlayEngines<TunableEngine> e : engines) {
+			if (e != null && engineCount++ < games)
+				this.engines.add(e);
 		}
-		this.engines = enginesList.toArray(new OptimizerEngines[Math.min(enginesList.size(), games)]);
-		arenas = new Arena[this.engines.length];
-		for (int i = 0; i < this.engines.length; i++)
-			arenas[i] = new Arena(this.engines[i].getController(), Logger.getAnonymousLogger());
+		arenas = new Arena[this.engines.size()];
+		for (int i = 0; i < this.engines.size(); i++)
+			arenas[i] = new Arena(this.engines.get(i).getController(), Logger.getAnonymousLogger());
 		this.games = games;
 		this.timePerGame = timePerGame;
 		this.timeIncPerMove = timeIncPerMove;
 		this.validationFactor = validationFactor;
 		pool = Executors.newFixedThreadPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors()/2),
-				this.engines.length));
+				this.engines.size()));
 		tempGeneration = -1;
 	}
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
-	 * each contain the engines needed for one optimization thread. For each non-null element
-	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
-	 * array of four non-null elements, the games in the fitness function will be distributed
-	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
-	 * threads to use is the maximum of the number of available logical cores divided by two 
-	 * and 1.
+	 * @param engines A list of {@link net.viktorc.detroid.framework.tuning.SelfPlayEngines} 
+	 * instances that each contain the engines needed for one optimization thread. For each 
+	 * non-null element in the list, a new thread will be utilized for the optimization. E.g. 
+	 * if engines is a list of four non-null elements, the games in the fitness function 
+	 * will be distributed and played parallel on four threads. The list's first element 
+	 * cannot be null or a {@link java.lang.NullPointerException} is thrown. The maximum 
+	 * number of threads to use is the maximum of the number of available logical cores 
+	 * divided by two and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
 	 * engine is incremented after each legal move.
+	 * @param validationFactor The factor of the original number of games to play in addition 
+	 * when assessing the fitness of a parameter set whose fitness surpassed the current highest 
+	 * fitness after having played the original number of games.
 	 * @param initialProbabilityVector The starting probability vector for the optimization.
 	 * It allows the algorithm to pick up where a previous, terminated optimization process
 	 * left off. If the array's length is smaller than the engine to be tuned's parameters' 
@@ -118,23 +122,23 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	 * @throws Exception If the engines cannot be initialized.
 	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			double validationFactor, double[] initialProbabilityVector, int populationSize, Logger logger)
-					throws Exception, IllegalArgumentException {
+	public SelfPlayOptimizer(List<SelfPlayEngines<TunableEngine>> engines, int games, long timePerGame,
+			long timeIncPerMove, double validationFactor, double[] initialProbabilityVector,
+			int populationSize, Logger logger) throws Exception, IllegalArgumentException {
 		this(engines, games, timePerGame, timeIncPerMove, validationFactor, initialProbabilityVector,
 				populationSize, logger, null);
 	}
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
-	 * each contain the engines needed for one optimization thread. For each non-null element
-	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
-	 * array of four non-null elements, the games in the fitness function will be distributed
-	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
-	 * threads to use is the maximum of the number of available logical cores divided by two 
-	 * and 1.
+	 * @param engines A list of {@link net.viktorc.detroid.framework.tuning.SelfPlayEngines} 
+	 * instances that each contain the engines needed for one optimization thread. For each 
+	 * non-null element in the list, a new thread will be utilized for the optimization. E.g. 
+	 * if engines is a list of four non-null elements, the games in the fitness function 
+	 * will be distributed and played parallel on four threads. The list's first element 
+	 * cannot be null or a {@link java.lang.NullPointerException} is thrown. The maximum 
+	 * number of threads to use is the maximum of the number of available logical cores 
+	 * divided by two and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -149,23 +153,23 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	 * @throws Exception If the engines cannot be initialized.
 	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			double validationFactor, int populationSize, Logger logger, Set<ParameterType> parameterTypes)
-					throws Exception, IllegalArgumentException {
+	public SelfPlayOptimizer(List<SelfPlayEngines<TunableEngine>> engines, int games, long timePerGame,
+			long timeIncPerMove, double validationFactor, int populationSize, Logger logger,
+			Set<ParameterType> parameterTypes) throws Exception, IllegalArgumentException {
 		this(engines, games, timePerGame, timeIncPerMove, validationFactor, null,
 				populationSize, logger, parameterTypes);
 	}
 	/**
 	 * Constructs a new instance according to the specified parameters.
 	 * 
-	 * @param engines An array of {@link net.viktorc.detroid.framework.tuning.OptimizerEngines} instances that
-	 * each contain the engines needed for one optimization thread. For each non-null element
-	 * in the array, a new thread will be utilized for the optimization. E.g. if engines is an
-	 * array of four non-null elements, the games in the fitness function will be distributed
-	 * and played parallel on four threads. The array's first element cannot be null or a 
-	 * {@link java.lang.NullPointerException} is thrown. The maximum number of 
-	 * threads to use is the maximum of the number of available logical cores divided by two 
-	 * and 1.
+	 * @param engines A list of {@link net.viktorc.detroid.framework.tuning.SelfPlayEngines} 
+	 * instances that each contain the engines needed for one optimization thread. For each 
+	 * non-null element in the list, a new thread will be utilized for the optimization. E.g. 
+	 * if engines is a list of four non-null elements, the games in the fitness function 
+	 * will be distributed and played parallel on four threads. The list's first element 
+	 * cannot be null or a {@link java.lang.NullPointerException} is thrown. The maximum 
+	 * number of threads to use is the maximum of the number of available logical cores 
+	 * divided by two and 1.
 	 * @param games The number of games to play to assess the fitness of the parameters.
 	 * @param timePerGame The time each engine will have per game in milliseconds.
 	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an
@@ -178,8 +182,9 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 	 * @throws Exception If the engines cannot be initialized.
 	 * @throws IllegalArgumentException If logger is null.
 	 */
-	public SelfPlayOptimizer(OptimizerEngines[] engines, int games, long timePerGame, long timeIncPerMove,
-			double validationFactor, int populationSize, Logger logger) throws Exception, IllegalArgumentException {
+	public SelfPlayOptimizer(List<SelfPlayEngines<TunableEngine>> engines, int games, long timePerGame,
+			long timeIncPerMove, double validationFactor, int populationSize, Logger logger)
+					throws Exception, IllegalArgumentException {
 		this(engines, games, timePerGame, timeIncPerMove, validationFactor, populationSize, logger, null);
 	}
 	@Override
@@ -193,8 +198,8 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 				double prob = probVec[j];
 				set += (prob >= 0.5 ? "1" : "0");
 			}
-			for (int i = 0; i < engines.length; i++) {
-				TunableEngine oppEngine = engines[i].getOpponentEngine();
+			for (int i = 0; i < engines.size(); i++) {
+				TunableEngine oppEngine = engines.get(i).getOpponentEngine();
 				if (!oppEngine.isInit()) {
 					try {
 						oppEngine.init();
@@ -209,19 +214,20 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 		int engine1Wins = 0;
 		int engine2Wins = 0;
 		int draws = 0;
-		ArrayList<Future<MatchResult>> futures = new ArrayList<>(engines.length);
-		for (int i = 0; i < engines.length; i++) {
+		ArrayList<Future<MatchResult>> futures = new ArrayList<>(engines.size());
+		for (int i = 0; i < engines.size(); i++) {
 			final int index = i;
 			futures.add(pool.submit(() -> {
-				TunableEngine tunEngine = engines[index].getEngine();
-				UCIEngine oppEngine = engines[index].getOpponentEngine();
+				TunableEngine tunEngine = engines.get(index).getEngine();
+				UCIEngine oppEngine = engines.get(index).getOpponentEngine();
 				if (!tunEngine.isInit())
 					tunEngine.init();
 				if (!oppEngine.isInit())
 					oppEngine.init();
 				tunEngine.getParameters().set(genotype, parameterTypes);
 				tunEngine.notifyParametersChanged();
-				return arenas[index].match(tunEngine, oppEngine, games/engines.length, timePerGame, timeIncPerMove);
+				return arenas[index].match(tunEngine, oppEngine, games/engines.size(), timePerGame,
+						timeIncPerMove);
 			}));
 		}
 		for (Future<MatchResult> f : futures) {
@@ -239,12 +245,13 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 		int encore = (int) (validationFactor*games);
 		if (fitness > getCurrentHighestFitness() && encore > 0) {
 			int addGamesPlayed = 0;
-			futures = new ArrayList<>(engines.length);
-			for (int i = 0; i < engines.length && addGamesPlayed < encore; i++) {
+			futures = new ArrayList<>(engines.size());
+			for (int i = 0; i < engines.size() && addGamesPlayed < encore; i++) {
 				int index = i;
-				int gamesToPlay = (int) Math.min(encore - addGamesPlayed, Math.ceil(((double) encore)/engines.length));
-				futures.add(pool.submit(() -> arenas[index].match(engines[index].getEngine(), engines[index].getOpponentEngine(),
-						gamesToPlay, timePerGame, timeIncPerMove)));
+				int gamesToPlay = (int) Math.min(encore - addGamesPlayed,
+						Math.ceil(((double) encore)/engines.size()));
+				futures.add(pool.submit(() -> arenas[index].match(engines.get(index).getEngine(),
+						engines.get(index).getOpponentEngine(), gamesToPlay, timePerGame, timeIncPerMove)));
 				addGamesPlayed += gamesToPlay;
 			}
 			for (Future<MatchResult> f : futures) {
@@ -267,7 +274,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 		pool.shutdown();
 		for (Arena a : arenas)
 			a.close();
-		for (OptimizerEngines e : engines) {
+		for (SelfPlayEngines<TunableEngine> e : engines) {
 			e.getEngine().close();
 			e.getOpponentEngine().close();
 			e.getController().close();

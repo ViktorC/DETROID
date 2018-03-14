@@ -15,6 +15,7 @@ public final class QuickSort {
 	/**
 	 * Sorts and returns the array. The elements have to implement the {@link java.lang.Comparable} interface.
 	 * 
+	 * @param <T> The type of the comparable elements.
 	 * @param array The array to be sorted.
 	 * @return The sorted array.
 	 */
