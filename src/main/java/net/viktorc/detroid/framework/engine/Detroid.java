@@ -914,9 +914,11 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	}
 	@Override
 	public void setControllerMode(boolean on) {
-		controllerMode = on;
-		if (init)
-			notifyParametersChanged();
+		synchronized (lock) {
+			controllerMode = on;
+			if (init)
+				setHashSize(on ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
+		}
 	}
 	@Override
 	public void drawByAgreement() {
@@ -979,12 +981,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	@Override
 	public void notifyParametersChanged() {
 		synchronized (lock) {
-			if (init) {
-				setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE :
-						options.get(hashSize) == hashSize.getDefaultValue() ? DEFAULT_HASH_SIZE :
-						(Integer) options.get(hashSize));
+			if (init)
 				eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
-			}
 		}
 	}
 	@Override
@@ -992,7 +990,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 		synchronized (lock) {
 			deterministicZeroDepthMode = on;
 			if (init)
-				notifyParametersChanged();
+				setHashSize(on ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
 		}
 	}
 	

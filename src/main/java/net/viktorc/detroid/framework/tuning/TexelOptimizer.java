@@ -70,6 +70,9 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * @param batchSize The number of positions to include in one mini-batch. The higher this number
 	 * is, the slower but more stable the convergence will be.
 	 * @param epochs The maximum number of iterations. If it is 0, the loop is endless.
+	 * @param h The step size to use for the numerical differentiation of the cost function. If it is null, 
+	 * it defaults to 1 (if the parameters are integers as they usually are in chess engines, a value of 
+	 * less than 1 or any non-integer value whatsoever would make no sense).
 	 * @param baseLearningRate The base step size for the gradient descent. If it is null, it 
 	 * defaults to 1.
 	 * @param fenFilePath The path to the file containing the FEN list of positions to evaluate.
@@ -82,17 +85,18 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * @throws IllegalArgumentException If the logger is null, or the sample size is not greater than 0, 
 	 * or the data set is too small.
 	 */
-	public TexelOptimizer(TunableEngine[] engines, int batchSize, int epochs, Double baseLearningRate, String fenFilePath,
-			Double k, Double testDataProportion, Logger logger) throws Exception, IllegalArgumentException {
+	public TexelOptimizer(TunableEngine[] engines, int batchSize, int epochs, Double h, Double baseLearningRate,
+			String fenFilePath, Double k, Double testDataProportion, Logger logger)
+					throws Exception, IllegalArgumentException {
 		super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
 				engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE),
-				1d, baseLearningRate == null ? DEF_BASE_LEARNING_RATE : baseLearningRate, null, null, null, null,
-				batchSize, epochs, logger);
+				h == null ? 1d : h, baseLearningRate == null ? DEF_BASE_LEARNING_RATE : baseLearningRate,
+				null, null, null, null, batchSize, epochs, logger);
 		if (logger == null)
 			throw new IllegalArgumentException("The logger cannot be null.");
 		if (baseLearningRate != null && baseLearningRate <= 0)
 			throw new IllegalArgumentException("The base learning rate has to be greater than 0.");
-		if (testDataProportion != null && testDataProportion >= 1 || testDataProportion <= 0)
+		if (testDataProportion != null && (testDataProportion >= 1 || testDataProportion <= 0))
 			throw new IllegalArgumentException("The test data proportion has to be greater than 0 and less than 1.");
 		this.fenFilePath = fenFilePath;
 		this.testDataProportion = testDataProportion == null ? DEF_TEST_DATA_PROPORTION : testDataProportion;
@@ -215,7 +219,8 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 						String fen = dataPair.getKey();
 						float result = dataPair.getValue();
 						e.setPosition(fen);
-						SearchResults res = e.search(null, null, null, null, null, null, null, 0, null, null, null, null);
+						SearchResults res = e.search(null, null, null, null, null, null, null, 0,
+								null, null, null, null);
 						double score = res.getScore().get();
 						// Check if it's white's turn.
 						if (!fen.contains("w"))
@@ -271,10 +276,13 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 			String line;
 			while ((line = reader.readLine()) != null) {
 				if (count >= fromInd && count < toInd) {
-					String[] parts = line.trim().split(";");
-					String fen = parts[0];
-					Float result = Float.parseFloat(parts[1]);
-					data.add(new SimpleEntry<String,Float>(fen, result));
+					line = line.trim();
+					if (!line.isEmpty()) {
+						String[] parts = line.trim().split(";");
+						String fen = parts[0];
+						Float result = Float.parseFloat(parts[1]);
+						data.add(new SimpleEntry<String,Float>(fen, result));
+					}
 				}
 				count++;
 			}

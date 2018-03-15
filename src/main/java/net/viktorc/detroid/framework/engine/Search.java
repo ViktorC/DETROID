@@ -244,16 +244,17 @@ class Search implements Runnable, Future<SearchResults> {
 		ScoreType scoreType;
 		selDepth = 0;
 		doStopSearch = false;
+		searchStats = new SearchStats();
 		slaveThreads = null;
 		alpha = Score.MIN.value;
 		beta = Score.MAX.value;
 		masterThread = new SearchThread(rootPosition, null);
-		// If maxNominalDepth equals 0, perform only quiescence search.
+		// Zero-depth mode.
 		if (maxNominalDepth == 0) {
-			score = masterThread.quiescence(0, alpha, beta);
-			return new SearchResults(null, null, (short) score, ScoreType.EXACT);
+			masterThread.setPly((short) 0);
+			masterThread.setBounds(alpha, beta);
+			return new SearchResults(null, null, (short) masterThread.call().intValue(), ScoreType.EXACT);
 		}
-		searchStats = new SearchStats();
 		rootMoves = areMovesRestricted ? allowedRootMoves : rootPosition.getMoves();
 		movesToNodes = new HashMap<>();
 		for (Move m : rootMoves)
@@ -601,7 +602,8 @@ class Search implements Runnable, Future<SearchResults> {
 				doStopSearch = true;
 			if (doStopSearch || doStopSearchThread)
 				throw new AbnormalSearchTerminationException();
-			nodes.incrementAndGet();
+			if (nodes != null)
+				nodes.incrementAndGet();
 			searchStats.quiescenceNodes.incrementAndGet();
 			// Fifty-move rule and repetition rule check.
 			if (position.fiftyMoveRuleClock >= 100 || position.hasRepeated(distFromRoot > 2 ? 1 : 2))
@@ -1364,8 +1366,11 @@ class Search implements Runnable, Future<SearchResults> {
 			infoUpdated = false;
 			try {
 				doStopSearchThread = false;
-				searchStats.mainNodes.incrementAndGet();
 				position = origPosition.deepCopy();
+				// If ply equals 0, perform quiescence search only.
+				if (ply == 0)
+					return quiescence(0, alpha, beta);
+				searchStats.mainNodes.incrementAndGet();
 				// Check for the 3-fold repetition rule.
 				if (position.hasRepeated(2))
 					return (int) Score.DRAW_CLAIMED.value;

@@ -82,12 +82,13 @@ public final class EngineFramework implements Runnable {
 	 * UCI mode: {@code -u} <br>
 	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | 
 	 * management | eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}]
-	 * [--initprobvector <quoted_comma_separated_decimals>] [--trybook <true | false> {false}] [--tryhash <integer>] 
+	 * [--initprobvector <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] 
 	 * [--trythreads <integer>] [--log <string> {log.txt}] [--concurrency <integer>] {1}]} <br>
-	 * Texel tuning: {@code -t texel -samplesize <integer> [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] 
-	 * [--log <string> {log.txt}] [--concurrency <integer> {1}]} <br>
+	 * Texel tuning: {@code -t texel -samplesize <integer> [--epochs <integer>] [--testdataprop <decimal> {0.2}] [--h <decimal> {1}] 
+	 * [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] [--log <string> {log.txt}] 
+	 * [--concurrency <integer> {1}]} <br>
 	 * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}] [--trybook 
-	 * <true | false> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}] 
+	 * <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}] 
 	 * [--concurrency <integer> {1}]} <br>
 	 * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>] 
 	 * [--destfile <string> {fens.txt}]} <br>
@@ -265,6 +266,7 @@ public final class EngineFramework implements Runnable {
 						}
 					} else if ("texel".equals(arg1)) {
 						Double k = null;
+						Double h = null;
 						Double learningRate = null;
 						Double testDataProp = null;
 						int sampleSize = -1;
@@ -284,6 +286,9 @@ public final class EngineFramework implements Runnable {
 									break;
 								case "--epochs":
 									epochs = Integer.parseInt(args[++i]);
+									break;
+								case "--h":
+									h = Double.parseDouble(args[++i]);
 									break;
 								case "--learningrate":
 									learningRate = Double.parseDouble(args[++i]);
@@ -318,7 +323,7 @@ public final class EngineFramework implements Runnable {
 							throw new IllegalArgumentException(e);
 						}
 						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, epochs,
-								learningRate, fensFilePath, k, testDataProp, logger)) {
+								h, learningRate, fensFilePath, k, testDataProp, logger)) {
 							optimizer.train();
 						} catch (Exception e) {
 							throw new RuntimeException(e);
@@ -528,7 +533,7 @@ public final class EngineFramework implements Runnable {
 		} else {
 			// GUI mode.
 			try (ControllerEngine controller = factory.newControllerEngineInstance();
-				UCIEngine searchEngine = factory.newEngineInstance()) {
+					UCIEngine searchEngine = factory.newEngineInstance()) {
 				GUI.setEngines(controller, searchEngine);
 				Application.launch(GUI.class);
 			}
