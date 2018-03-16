@@ -176,56 +176,58 @@ public abstract class ASGD<D,L> {
 		// Initialize the momentum decay rate sequence product.
 		double momentumPi = computeMomentumSchedule(1);
 		momDecayRateT = momentumPi;
-		for (int t = 1; epochs <= 0 || t <= epochs; t++) {
-			resetTrainingDataReader();
-			List<Entry<D,L>> sample;
-			int update = 0;
-			while (!(sample = getTrainingData(batchSize)).isEmpty()) {
-				double batchSizeBiasOffset = ((double) sample.size())/batchSize;
-				// Compute the gradient.
-				double[] gradient = computeGradient(sample);
-				for (int i = 0; i < features.length; i++) {
-					// Ensure that the magnitude of the gradient is proportional to the batch size.
-					g = gradient[i] * batchSizeBiasOffset;
-					/* Correct the gradient vector initialization bias by 1 - the product of the sequence of annealed momentum 
-					 * decay rates up until t. */
-					gPrime = g/(1 - momentumPi);
-					// Update the momentum vector, the accumulated first moment estimates of the gradients.
-					m = momentumDecayRate*momentumVector[i] + (1 - momentumDecayRate)*g;
-					momentumVector[i] = m;
-					// Compute the annealed momentum decay rate for the next epoch.
-					momDecayRateTplus1 = computeMomentumSchedule(t + 1);
-					momentumPi *= momDecayRateTplus1;
-					// Correct the momentum vector initialization bias by the updated momentum for t + 1.
-					mPrime = m/(1 - momentumPi);
-					n = normDecayRate*normVector[i] + (1 - normDecayRate)*Math.pow(g, 2);
-					normVector[i] = n;
-					// Correct the norm vector initialization bias by the norm decay rate to the power of t.
-					nPrime = n/(1 - Math.pow(normDecayRate, t));
-					// Compute the Nesterov-accelerated learning rate factor.
-					mBar = (1 - momDecayRateT)*gPrime + momDecayRateTplus1*mPrime;
-					momDecayRateT = momDecayRateTplus1;
-					d = learningRate*mBar/(Math.sqrt(nPrime) + epsilon);
-					delta[i] = d;
-					features[i] -= d;
-					// Constraints.
-					features[i] = Math.min(features[i], maxValues[i]);
-					features[i] = Math.max(features[i], minValues[i]);
-				}
-				// Log information about the current state.
-				if (logger != null) {
-					/* Display the greatest absolute deltas of the update to assisst with the tuning of the learning 
-					 * rate hyperparameter. */
-					ArrayList<Double> sortedDelta = new ArrayList<>(delta.length);
-					for (double v : delta)
-						sortedDelta.add(v);
-					sortedDelta.sort((a, b) -> Math.abs(a) > Math.abs(b) ? 1 : (Math.abs(a) == Math.abs(b) ? 0 : -1));
-					double[] greatestDelta = new double[Math.min(delta.length, 5)];
-					for (int j = 0; j < greatestDelta.length; j++)
-						greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
-					logger.info("Epoch: " + t + "; Update: " + (update++) + System.lineSeparator() + "Greatest deltas: " +
-							Arrays.toString(greatestDelta) + System.lineSeparator() + "Deltas: " + Arrays.toString(delta) +
-							System.lineSeparator() + "Features: " + Arrays.toString(features));
+		for (int t = 0; epochs <= 0 || t <= epochs; t++) {
+			if (t != 0) {
+				resetTrainingDataReader();
+				List<Entry<D,L>> sample;
+				int update = 0;
+				while (!(sample = getTrainingData(batchSize)).isEmpty()) {
+					double batchSizeBiasOffset = ((double) sample.size())/batchSize;
+					// Compute the gradient.
+					double[] gradient = computeGradient(sample);
+					for (int i = 0; i < features.length; i++) {
+						// Ensure that the magnitude of the gradient is proportional to the batch size.
+						g = gradient[i] * batchSizeBiasOffset;
+						/* Correct the gradient vector initialization bias by 1 - the product of the sequence of annealed momentum 
+						 * decay rates up until t. */
+						gPrime = g/(1 - momentumPi);
+						// Update the momentum vector, the accumulated first moment estimates of the gradients.
+						m = momentumDecayRate*momentumVector[i] + (1 - momentumDecayRate)*g;
+						momentumVector[i] = m;
+						// Compute the annealed momentum decay rate for the next epoch.
+						momDecayRateTplus1 = computeMomentumSchedule(t + 1);
+						momentumPi *= momDecayRateTplus1;
+						// Correct the momentum vector initialization bias by the updated momentum for t + 1.
+						mPrime = m/(1 - momentumPi);
+						n = normDecayRate*normVector[i] + (1 - normDecayRate)*Math.pow(g, 2);
+						normVector[i] = n;
+						// Correct the norm vector initialization bias by the norm decay rate to the power of t.
+						nPrime = n/(1 - Math.pow(normDecayRate, t));
+						// Compute the Nesterov-accelerated learning rate factor.
+						mBar = (1 - momDecayRateT)*gPrime + momDecayRateTplus1*mPrime;
+						momDecayRateT = momDecayRateTplus1;
+						d = learningRate*mBar/(Math.sqrt(nPrime) + epsilon);
+						delta[i] = d;
+						features[i] -= d;
+						// Constraints.
+						features[i] = Math.min(features[i], maxValues[i]);
+						features[i] = Math.max(features[i], minValues[i]);
+					}
+					// Log information about the current state.
+					if (logger != null) {
+						/* Display the greatest absolute deltas of the update to assisst with the tuning of the learning 
+						 * rate hyperparameter. */
+						ArrayList<Double> sortedDelta = new ArrayList<>(delta.length);
+						for (double v : delta)
+							sortedDelta.add(v);
+						sortedDelta.sort((a, b) -> Math.abs(a) > Math.abs(b) ? 1 : (Math.abs(a) == Math.abs(b) ? 0 : -1));
+						double[] greatestDelta = new double[Math.min(delta.length, 5)];
+						for (int j = 0; j < greatestDelta.length; j++)
+							greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
+						logger.info("Epoch: " + t + "; Update: " + (update++) + System.lineSeparator() + "Greatest deltas: " +
+								Arrays.toString(greatestDelta) + System.lineSeparator() + "Deltas: " + Arrays.toString(delta) +
+								System.lineSeparator() + "Features: " + Arrays.toString(features));
+					}
 				}
 			}
 			/* Calculate the cost over the test data set. This is just to test how well the parameters generalize; it is not 
