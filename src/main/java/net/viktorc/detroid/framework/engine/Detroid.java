@@ -1,7 +1,6 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -304,7 +303,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
 			try {
 				book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
-			} catch (IOException | URISyntaxException e) { }
+			} catch (Exception e) { }
 			egtb = GaviotaTableBaseJNI.getInstance();
 			egtb.loadProbingLibrary(DEFAULT_EGTB_LIB_PATH);
 			if (egtb.isProbingLibLoaded())

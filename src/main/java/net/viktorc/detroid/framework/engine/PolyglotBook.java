@@ -26,10 +26,9 @@ class PolyglotBook extends OpeningBook {
 	 * an IOException is thrown.
 	 * 
 	 * @param filePath
-	 * @throws IOException
-	 * @throws URISyntaxException 
+	 * @throws Exception
 	 */
-	PolyglotBook(String filePath) throws IOException, URISyntaxException {
+	PolyglotBook(String filePath) throws Exception {
 		super(filePath);
 		gen = ZobristKeyGenerator.getInstance();
 	}
@@ -43,7 +42,7 @@ class PolyglotBook extends OpeningBook {
 	 * @throws IOException
 	 * @throws URISyntaxException 
 	 */
-	PolyglotBook(String filePath, String secondaryBookFilePath) throws IOException, URISyntaxException {
+	PolyglotBook(String filePath, String secondaryBookFilePath) throws Exception {
 		this(filePath);
 		if (secondaryBookFilePath != null)
 			secondaryBook = new PolyglotBook(secondaryBookFilePath);

@@ -3,7 +3,6 @@ package net.viktorc.detroid.framework.engine;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,11 +26,11 @@ abstract class OpeningBook implements Closeable {
 	 * an IOException is thrown.
 	 * 
 	 * @param filePath
-	 * @throws IOException
-	 * @throws URISyntaxException 
+	 * @throws Exception
 	 */
-	protected OpeningBook(String filePath) throws IOException, URISyntaxException {
+	protected OpeningBook(String filePath) throws Exception {
 		File file = new File(filePath);
+		if (file.exists())
 		path = file.exists() ? file.toPath() : Paths.get(ClassLoader.getSystemClassLoader().getResource(filePath).toURI());
 		bookStream = Files.newByteChannel(path, StandardOpenOption.READ);
 	}
