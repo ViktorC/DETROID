@@ -1,6 +1,7 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -303,7 +304,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
 			try {
 				book = new PolyglotBook(DEFAULT_BOOK_FILE_PATH);
-			} catch (IOException e) { }
+			} catch (IOException | URISyntaxException e) { }
 			egtb = GaviotaTableBaseJNI.getInstance();
 			egtb.loadProbingLibrary(DEFAULT_EGTB_LIB_PATH);
 			if (egtb.isProbingLibLoaded())
@@ -446,7 +447,10 @@ public class Detroid implements ControllerEngine, TunableEngine {
 								((CompressionScheme) options.get(egtbCompScheme)));
 						if (egtb.isInit()) {
 							options.put(egtbFilesPath, value);
-							if (debugMode) debugInfo.set("EGTB files path successfully set to " + value);
+							if (debugMode) debugInfo.set("EGTB files path successfully set to " + value + "; available tablebases: " +
+									egtb.areTableBasesAvailable(1) + ", " + egtb.areTableBasesAvailable(2) + ", " +
+									egtb.areTableBasesAvailable(3) + ", " + egtb.areTableBasesAvailable(4) + ", " +
+									egtb.areTableBasesAvailable(5));
 							return true;
 						} else
 							egtb.init((String) options.get(egtbFilesPath), ((Integer) options

@@ -1,6 +1,8 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.io.Closeable;
+import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -26,7 +28,10 @@ abstract class EndGameTableBase implements Closeable {
 	 */
 	synchronized void loadProbingLibrary(String path) {
 		try {
-			System.load(Paths.get(path).toAbsolutePath().toString());
+			File file = new File(path);
+			Path libPath = file.exists() ? file.toPath() :
+					Paths.get(ClassLoader.getSystemClassLoader().getResource(path).toURI());
+			System.load(libPath.toAbsolutePath().toString());
 			probingLibLoaded = true;
 		} catch (Throwable e) {
 			probingLibLoaded = false;

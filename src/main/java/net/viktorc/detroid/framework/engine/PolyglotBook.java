@@ -1,6 +1,7 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Random;
@@ -26,8 +27,9 @@ class PolyglotBook extends OpeningBook {
 	 * 
 	 * @param filePath
 	 * @throws IOException
+	 * @throws URISyntaxException 
 	 */
-	PolyglotBook(String filePath) throws IOException {
+	PolyglotBook(String filePath) throws IOException, URISyntaxException {
 		super(filePath);
 		gen = ZobristKeyGenerator.getInstance();
 	}
@@ -39,8 +41,9 @@ class PolyglotBook extends OpeningBook {
 	 * @param filePath
 	 * @param secondaryBookFilePath
 	 * @throws IOException
+	 * @throws URISyntaxException 
 	 */
-	PolyglotBook(String filePath, String secondaryBookFilePath) throws IOException {
+	PolyglotBook(String filePath, String secondaryBookFilePath) throws IOException, URISyntaxException {
 		this(filePath);
 		if (secondaryBookFilePath != null)
 			secondaryBook = new PolyglotBook(secondaryBookFilePath);
