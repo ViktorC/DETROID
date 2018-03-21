@@ -278,7 +278,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 				if (count >= fromInd && count < toInd) {
 					line = line.trim();
 					if (!line.isEmpty()) {
-						String[] parts = line.trim().split(";");
+						String[] parts = line.split(";");
 						String fen = parts[0];
 						Float result = Float.parseFloat(parts[1]);
 						data.add(new SimpleEntry<String,Float>(fen, result));
@@ -301,7 +301,9 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	protected List<Entry<String,Float>> getTrainingData(int batchSize) {
 		int actualBatchSize = Math.min(testDataStartInd - readerHead, batchSize);
 		try {
-			return cacheData(readerHead, readerHead + actualBatchSize);
+			List<Entry<String,Float>> data = cacheData(readerHead, readerHead + actualBatchSize);
+			readerHead += actualBatchSize;
+			return data;
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 			throw new RuntimeException(e);
