@@ -20,42 +20,40 @@ public final class QuickSort {
 	 * @return The sorted array.
 	 */
 	public static <T extends Comparable<T>> T[] sort(T[] array) {
-		int left, right;
-		if (array.length != 0) {
-			left = 0;
-			right = array.length - 1;
-			quickSort(array, left, right);
-		}
+		if (array.length > 1)
+			quickSort(array, 0, array.length - 1);
 		return array;
 	}
 	/**
-	 * The quickSort algorithm.
+	 * The quicksort algorithm.
 	 * 
 	 * @param array The array to sort.
-	 * @param left The index of the left head.
-	 * @param right The index of the right head.
+	 * @param beg The index of the first element of the array partition.
+	 * @param end The index of the last element of the array partition.
 	 */
-	private static <T extends Comparable<T>> void quickSort(T[] array, int left, int right) {
-		int index, partLeft = left, partRight = right;
-		T temp, pivot = array[(left + right)/2];
-		while (partLeft <= partRight) {
-			while (array[partLeft].compareTo(pivot) > 0)
-				partLeft++;
-			while (array[partRight].compareTo(pivot) < 0)
-				partRight--;
-			if (partLeft <= partRight) {
-				temp = array[partLeft];
-				array[partLeft] = array[partRight];
-				array[partRight] = temp;
-				partLeft++;
-				partRight--;
-			}
+	private static <T extends Comparable<T>> void quickSort(T[] array, int beg, int end) {
+		T pivot = array[(beg + end)/2];
+		int j = end;
+		for (int i = beg;;) {
+			while (array[i].compareTo(pivot) > 0)
+				i++;
+			while (array[j].compareTo(pivot) < 0)
+				j--;
+			if (i < j) {
+				T temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
+				i++;
+				j--;
+				if (i >= j)
+					break;
+			} else
+				break;
 		}
-		index = partLeft;
-		if (left < index - 1)
-			quickSort(array, left, index - 1);
-		if (index < right)
-			quickSort(array, index, right);
+		if (beg < j)
+			quickSort(array, beg, j);
+		if (j + 1 < end)
+			quickSort(array, j + 1, end);
 	}
 	
 }
