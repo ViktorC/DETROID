@@ -145,24 +145,20 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 		absKey = key & Long.MAX_VALUE;
 		// Checking for an entry with the same key. If there is one, insertion can terminate regardless of its success.
 		entry1 = t1[(int) (absKey%t1.length)];
-		if (!entry1.isEmpty()) {
-			if (key == entry1.hashKey()) {
-				if (entry.compareTo(entry1) >= 0) {
-					entry1.assume(entry);
-					return true;
-				}
-				return false;
+		if (!entry1.isEmpty() && key == entry1.hashKey()) {
+			if (entry.compareTo(entry1) >= 0) {
+				entry1.assume(entry);
+				return true;
 			}
+			return false;
 		}
 		entry2 = t2[(int) (absKey%t2.length)];
-		if (!entry2.isEmpty()) {
-			if (key == entry2.hashKey()) {
-				if (entry.compareTo(entry2) >= 0) {
-					entry2.assume(entry);
-					return true;
-				}
-				return false;
+		if (!entry2.isEmpty() && key == entry2.hashKey()) {
+			if (entry.compareTo(entry2) >= 0) {
+				entry2.assume(entry);
+				return true;
 			}
+			return false;
 		}
 		// If there was no entry with the same key, but there was at least one empty slot, insert the entry into it.
 		if (entry1.isEmpty()) {

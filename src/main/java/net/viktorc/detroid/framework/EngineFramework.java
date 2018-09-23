@@ -105,13 +105,7 @@ public final class EngineFramework implements Runnable {
 		this.factory = factory;
 		this.args = Arrays.copyOf(args, args.length);
 	}
-	/**
-	 * Resolves the set of parameter types specified by the program argument.
-	 * 
-	 * @param arg The program argument specifying the types of parameters.
-	 * @return A set of {@link net.viktorc.detroid.framework.tuning.ParameterType}.
-	 */
-	private Set<ParameterType> resolveParamTypes(String arg) {
+	private static Set<ParameterType> resolveParamTypes(String arg) {
 		Set<ParameterType> paramTypes = null;
 		switch (arg) {
 			case "eval":
@@ -138,19 +132,7 @@ public final class EngineFramework implements Runnable {
 		}
 		return paramTypes;
 	}
-	/**
-	 * Attempts to set the corresponding UCI options of an engine to the provided values. If the options 
-	 * are not supported by the engine or the values are not accepted, the call of this method has no effect.
-	 * 
-	 * @param engine The {@link net.viktorc.detroid.framework.uci.UCIEngine} whose options are to be set.
-	 * @param tryUseBook Whether the engine's {@link net.viktorc.detroid.framework.uci.UCIEngine#OWN_BOOK_OPTION_NAME} 
-	 * option should be set to true, if it exists.
-	 * @param hash The value the engine's Hash {@link net.viktorc.detroid.framework.uci.UCIEngine#HASH_OPTION_NAME} 
-	 * should be set to, if it exists.
-	 * @param threads The value the engine's {@link net.viktorc.detroid.framework.uci.UCIEngine#THREADS_OPTION_NAME} 
-	 * option should be set to.
-	 */
-	private void trySetOptions(UCIEngine engine, Boolean tryUseBook, Integer hash, Integer threads) {
+	private static void trySetOptions(UCIEngine engine, Boolean tryUseBook, Integer hash, Integer threads) {
 		if (tryUseBook != null)
 			engine.setOwnBookOption(tryUseBook);
 		if (hash != null)
@@ -158,386 +140,447 @@ public final class EngineFramework implements Runnable {
 		if (threads != null)
 			engine.setThreadsOption(threads);
 	}
-	@Override
-	public synchronized void run() {
-		if (args != null && args.length > 0) {
-			int concurrency = DEF_CONCURRENCY;
-			String arg0 = args[0];
-			switch (arg0) {
-				// UCI mode.
-				case "-u": {
-					try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
-						uci.run();
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				} break;
-				// Tuning.
-				case "-t": {
-					String logFilePath = DEF_LOG_FILE_PATH;
-					String arg1 = args[1];
-					if ("selfplay".equals(arg1)) {
-						int popSize = -1;
-						int games = -1;
-						long tc = -1;
-						long tcInc = 0;
-						double validFactor = 0;
-						Set<ParameterType> paramTypes = null;
-						double[] initProbVec = null;
-						Boolean useBook = null;
-						Integer hash = null;
-						Integer threads = null;
-						for (int i = 2; i < args.length; i++) {
-							String arg = args[i];
-							switch (arg) {
-								case "-games":
-									games = Integer.parseInt(args[++i]);
-									break;
-								case "-population":
-									popSize = Integer.parseInt(args[++i]);
-									break;
-								case "-tc":
-									tc = Long.parseLong(args[++i]);
-									break;
-								case "--log":
-									logFilePath = args[++i];
-									break;
-								case "--concurrency":
-									concurrency = Integer.parseInt(args[++i]);
-									break;
-								case "--paramtype":
-									String type = args[++i];
-									paramTypes = resolveParamTypes(type);
-									break;
-								case "--inc":
-									tcInc = Long.parseLong(args[++i]);
-									break;
-								case "--validfactor":
-									validFactor = Double.parseDouble(args[++i]);
-									break;
-								case "--trybook":
-									useBook = Boolean.parseBoolean(args[++i]);
-									break;
-								case "--tryhash":
-									hash = Integer.parseInt(args[++i]);
-									break;
-								case "--trythreads":
-									threads = Integer.parseInt(args[++i]);
-									break;
-								case "--initprobvector":
-									String vec = args[++i];
-									String[] probs = vec.split(",");
-									initProbVec = new double[probs.length];
-									for (int j = 0; j < probs.length; j++)
-										initProbVec[j] = Double.parseDouble(probs[j].trim());
-									break;
-								default:
-									throw new IllegalArgumentException();
-							}
-						}
-						if (games == -1 || tc == -1 || popSize == -1)
-							throw new IllegalArgumentException();
-						List<SelfPlayEngines<TunableEngine>> engines = new ArrayList<>(concurrency);
-						for (int i = 0; i < concurrency; i++) {
-							try {
-								TunableEngine engine1 = factory.newTunableEngineInstance();
-								TunableEngine engine2 = factory.newTunableEngineInstance();
-								engine1.init();
-								engine2.init();
-								trySetOptions(engine1, useBook, hash, threads);
-								trySetOptions(engine2, useBook, hash, threads);
-								engines.add(new SelfPlayEngines<>(engine1, engine2,
-										factory.newControllerEngineInstance()));
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-						Logger logger = Logger.getAnonymousLogger();
-						try {
-							logger.addHandler(new FileHandler(logFilePath, true));
-						} catch (SecurityException | IOException e) {
-							throw new IllegalArgumentException(e);
-						}
-						try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc,
-								validFactor, initProbVec, popSize, logger, paramTypes)) {
-							optimizer.optimize();
-						} catch (Exception e) {
-							throw new IllegalArgumentException(e);
-						}
-					} else if ("texel".equals(arg1)) {
-						Double k = null;
-						Double h = null;
-						Double learningRate = null;
-						Double testDataProp = null;
-						int sampleSize = -1;
-						int epochs = 0;
-						String fensFilePath = DEF_FENS_FILE_PATH;
-						for (int i = 2; i < args.length; i++) {
-							String arg = args[i];
-							switch (arg) {
-								case "-samplesize":
-									sampleSize = Integer.parseInt(args[++i]);
-									break;
-								case "--log":
-									logFilePath = args[++i];
-									break;
-								case "--concurrency":
-									concurrency = Integer.parseInt(args[++i]);
-									break;
-								case "--epochs":
-									epochs = Integer.parseInt(args[++i]);
-									break;
-								case "--h":
-									h = Double.parseDouble(args[++i]);
-									break;
-								case "--learningrate":
-									learningRate = Double.parseDouble(args[++i]);
-									break;
-								case "--k":
-									k = Double.parseDouble(args[++i]);
-									break;
-								case "--testdataprop":
-									testDataProp = Double.parseDouble(args[++i]);
-									break;
-								case "--fensfile":
-									fensFilePath = args[++i];
-									break;
-								default:
-									throw new IllegalArgumentException();
-							}
-						}
-						if (sampleSize == -1)
-							throw new IllegalArgumentException();
-						TunableEngine[] engines = new TunableEngine[concurrency];
-						for (int i = 0; i < concurrency; i++)
-							engines[i] = factory.newTunableEngineInstance();
-						try {
-							engines[0].init();
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-						Logger logger = Logger.getAnonymousLogger();
-						try {
-							logger.addHandler(new FileHandler(logFilePath, true));
-						} catch (SecurityException | IOException e) {
-							throw new IllegalArgumentException(e);
-						}
-						try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, epochs,
-								h, learningRate, fensFilePath, k, testDataProp, logger)) {
-							optimizer.train();
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-					} else
-						throw new IllegalArgumentException();
-				} break;
-				// Generate FENs file.
-				case "-g": {
-					String destFile = DEF_FENS_FILE_PATH;
-					String arg1 = args[1];
-					if ("byselfplay".equals(arg1)) {
-						int games = -1;
-						long tc = -1;
-						long tcInc = 0;
-						Boolean useBook = null;
-						Integer hash = null;
-						Integer threads = null;
-						for (int i = 2; i < args.length; i++) {
-							String arg = args[i];
-							switch (arg) {
-								case "-games":
-									games = Integer.parseInt(args[++i]);
-									break;
-								case "-tc":
-									tc = Long.parseLong(args[++i]);
-									break;
-								case "--concurrency":
-									concurrency = Integer.parseInt(args[++i]);
-									break;
-								case "--inc":
-									tcInc = Long.parseLong(args[++i]);
-									break;
-								case "--trybook":
-									useBook = Boolean.parseBoolean(args[++i]);
-									break;
-								case "--tryhash":
-									hash = Integer.parseInt(args[++i]);
-									break;
-								case "--trythreads":
-									threads = Integer.parseInt(args[++i]);
-									break;
-								case "--destfile":
-									destFile = args[++i];
-									break;
-								default:
-									throw new IllegalArgumentException();
-							}
-						}
-						if (games == -1 || tc == -1)
-							throw new IllegalArgumentException();
-						List<SelfPlayEngines<UCIEngine>> engines = new ArrayList<>(concurrency);
-						for (int i = 0; i < concurrency; i++) {
-							try {
-								UCIEngine engine1 = factory.newEngineInstance();
-								UCIEngine engine2 = factory.newEngineInstance();
-								engine1.init();
-								engine2.init();
-								trySetOptions(engine1, useBook, hash, threads);
-								trySetOptions(engine2, useBook, hash, threads);
-								engines.add(new SelfPlayEngines<>(engine1, engine2,
-										factory.newControllerEngineInstance()));
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-						try {
-							FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						} finally {
-							for (SelfPlayEngines<UCIEngine> e : engines) {
-								e.getEngine().close();
-								e.getOpponentEngine().close();
-								e.getController().close();
-							}
-						}
-					} else if ("bypgnconversion".equals(arg1)) {
-						String sourceFile = null;
-						int maxNumOfGames = Integer.MAX_VALUE;
-						for (int i = 2; i < args.length; i++) {
-							String arg = args[i];
-							switch (arg) {
-								case "-sourcefile":
-									sourceFile = args[++i];
-									break;
-								case "--maxgames":
-									maxNumOfGames = Integer.parseInt(args[++i]);
-									break;
-								case "--destfile":
-									destFile = args[++i];
-									break;
-								default:
-									throw new IllegalArgumentException();
-							}
-						}
-						try (ControllerEngine engine = factory.newControllerEngineInstance()) {
-							FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-					} else
-						throw new IllegalArgumentException();
-				} break;
-				// Filter FENs file.
-				case "-f": {
-					String arg1 = args[1];
-					String sourceFile = null;
-					String destFile = DEF_FENS_FILE_PATH;
-					if ("draws".equals(arg1)) {
-						for (int i = 2; i < args.length; i++) {
-							String arg = args[i];
-							switch (arg) {
-								case "-sourcefile":
-									sourceFile = args[++i];
-									break;
-								case "--destfile":
-									destFile = args[++i];
-									break;
-								default:
-									throw new IllegalArgumentException();
-							}
-						}
-						if (sourceFile == null)
-							throw new IllegalArgumentException();
-						try {
-							FENFileUtil.filterDraws(sourceFile, destFile);
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-					} else if ("openings".equals(arg1)) {
-						int numOfPositionsToFilter = -1;
-						for (int i = 2; i < args.length; i++) {
-							String arg = args[i];
-							switch (arg) {
-								case "-firstxmoves":
-									numOfPositionsToFilter = Integer.parseInt(args[++i]);
-									break;
-								case "-sourcefile":
-									sourceFile = args[++i];
-									break;
-								case "--destfile":
-									destFile = args[++i];
-									break;
-								default:
-									throw new IllegalArgumentException();
-							}
-						}
-						if (sourceFile == null || numOfPositionsToFilter <= 0)
-							throw new IllegalArgumentException();
-						try {
-							FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-					} else
-						throw new IllegalArgumentException();
-				} break;
-				// Convert to parameters.
-				case "-c": {
-					String arg1 = args[1];
-					String destFile = DEF_CONVERTED_PARAMS_PATH;
-					TunableEngine engine = factory.newTunableEngineInstance();
-					try {
-						engine.init();
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-					EngineParameters params = engine.getParameters();
-					if (!"-value".equals(args[2]))
-						throw new IllegalArgumentException();
-					if ("probvector".equals(arg1)) {
-						String binaryString = "";
-						String vec = args[3];
-						Set<ParameterType> paramTypes = null;
-						String[] probs = vec.split(",");
-						for (int j = 0; j < probs.length; j++) {
-							double prob = Double.parseDouble(probs[j].trim());
-							binaryString += (prob >= 0.5 ? "1" : "0");
-						}
-						if (args.length > 4) {
-							if ("--paramtype".equals(args[4]))
-								paramTypes = resolveParamTypes(args[5]);
-							else
-								throw new IllegalArgumentException();
-						}
-						params.set(binaryString, paramTypes);
-					} else if ("features".equals(arg1)) {
-						String val = args[3];
-						String[] array = val.split(",");
-						double[] decimalArray = new double[array.length];
-						for (int j = 0; j < array.length; j++)
-							decimalArray[j] = Double.parseDouble(array[j].trim());
-						params.set(decimalArray, new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION)));
-					} else
-						throw new IllegalArgumentException();
-					List<String> argList = Arrays.asList(args);
-					int ind;
-					if ((ind = argList.indexOf("--paramsfile")) != -1)
-						destFile = argList.get(ind + 1);
-					params.writeToFile(destFile);
-					engine.close();
-				} break;
+	private void runInUCIMode() {
+		try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
+			uci.run();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInSelfPlayTuningMode(String logFilePath, int concurrency, int popSize,
+			int games, long tc, long tcInc, double validFactor, Set<ParameterType> paramTypes,
+			double[] initProbVec, Boolean useBook, Integer hash, Integer threads) {
+		List<SelfPlayEngines<TunableEngine>> engines = new ArrayList<>(concurrency);
+		for (int i = 0; i < concurrency; i++) {
+			try {
+				TunableEngine engine1 = factory.newTunableEngineInstance();
+				TunableEngine engine2 = factory.newTunableEngineInstance();
+				engine1.init();
+				engine2.init();
+				trySetOptions(engine1, useBook, hash, threads);
+				trySetOptions(engine2, useBook, hash, threads);
+				engines.add(new SelfPlayEngines<>(engine1, engine2,
+						factory.newControllerEngineInstance()));
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		Logger logger = Logger.getAnonymousLogger();
+		try {
+			logger.addHandler(new FileHandler(logFilePath, true));
+		} catch (SecurityException | IOException e) {
+			throw new IllegalArgumentException(e);
+		}
+		try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc,
+				validFactor, initProbVec, popSize, logger, paramTypes)) {
+			optimizer.optimize();
+		} catch (Exception e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
+	private void runInSelfPlayTuningMode(String[] args) {
+		String logFilePath = DEF_LOG_FILE_PATH;
+		int concurrency = DEF_CONCURRENCY;
+		int popSize = -1;
+		int games = -1;
+		long tc = -1;
+		long tcInc = 0;
+		double validFactor = 0;
+		Set<ParameterType> paramTypes = null;
+		double[] initProbVec = null;
+		Boolean useBook = null;
+		Integer hash = null;
+		Integer threads = null;
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			switch (arg) {
+				case "-games":
+					games = Integer.parseInt(args[++i]);
+					break;
+				case "-population":
+					popSize = Integer.parseInt(args[++i]);
+					break;
+				case "-tc":
+					tc = Long.parseLong(args[++i]);
+					break;
+				case "--log":
+					logFilePath = args[++i];
+					break;
+				case "--concurrency":
+					concurrency = Integer.parseInt(args[++i]);
+					break;
+				case "--paramtype":
+					String type = args[++i]; paramTypes = resolveParamTypes(type);
+					break;
+				case "--inc":
+					tcInc = Long.parseLong(args[++i]);
+					break;
+				case "--validfactor":
+					validFactor = Double.parseDouble(args[++i]);
+					break;
+				case "--trybook":
+					useBook = Boolean.parseBoolean(args[++i]);
+					break;
+				case "--tryhash":
+					hash = Integer.parseInt(args[++i]);
+					break;
+				case "--trythreads":
+					threads = Integer.parseInt(args[++i]);
+					break;
+				case "--initprobvector":
+					String vec = args[++i];
+					String[] probs = vec.split(",");
+					initProbVec = new double[probs.length];
+					for (int j = 0; j < probs.length; j++)
+						initProbVec[j] = Double.parseDouble(probs[j].trim());
+					break;
 				default:
 					throw new IllegalArgumentException();
 			}
-		} else {
-			// GUI mode.
-			try (ControllerEngine controller = factory.newControllerEngineInstance();
-					UCIEngine searchEngine = factory.newEngineInstance()) {
-				GUI.setEngines(controller, searchEngine);
-				Application.launch(GUI.class);
+		}
+		if (games == -1 || tc == -1 || popSize == -1)
+			throw new IllegalArgumentException();
+		runInSelfPlayTuningMode(logFilePath, concurrency, popSize, games, tc, tcInc, validFactor, paramTypes,
+				initProbVec, useBook, hash, threads);
+	}
+	private void runInTexelTuningMode(String logFilePath, String fensFilePath, int concurrency, int sampleSize,
+			int epochs, Double k, Double h, Double learningRate, Double testDataProp) {
+		TunableEngine[] engines = new TunableEngine[concurrency];
+		for (int i = 0; i < concurrency; i++)
+			engines[i] = factory.newTunableEngineInstance();
+		try {
+			engines[0].init();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		Logger logger = Logger.getAnonymousLogger();
+		try {
+			logger.addHandler(new FileHandler(logFilePath, true));
+		} catch (SecurityException | IOException e) {
+			throw new IllegalArgumentException(e);
+		}
+		try (TexelOptimizer optimizer = new TexelOptimizer(engines, sampleSize, epochs,
+				h, learningRate, fensFilePath, k, testDataProp, logger)) {
+			optimizer.train();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInTexelTuningMode(String[] args) {
+		String logFilePath = DEF_LOG_FILE_PATH;
+		String fensFilePath = DEF_FENS_FILE_PATH;
+		int concurrency = DEF_CONCURRENCY;
+		int sampleSize = -1;
+		int epochs = 0;
+		Double k = null;
+		Double h = null;
+		Double learningRate = null;
+		Double testDataProp = null;
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			switch (arg) {
+				case "-samplesize":
+					sampleSize = Integer.parseInt(args[++i]);
+					break;
+				case "--log":
+					logFilePath = args[++i];
+					break;
+				case "--concurrency":
+					concurrency = Integer.parseInt(args[++i]);
+					break;
+				case "--epochs":
+					epochs = Integer.parseInt(args[++i]);
+					break;
+				case "--h":
+					h = Double.parseDouble(args[++i]);
+					break;
+				case "--learningrate":
+					learningRate = Double.parseDouble(args[++i]);
+					break;
+				case "--k":
+					k = Double.parseDouble(args[++i]);
+					break;
+				case "--testdataprop":
+					testDataProp = Double.parseDouble(args[++i]);
+					break;
+				case "--fensfile":
+					fensFilePath = args[++i];
+					break;
+				default:
+					throw new IllegalArgumentException();
 			}
 		}
+		if (sampleSize == -1)
+			throw new IllegalArgumentException();
+		runInTexelTuningMode(logFilePath, fensFilePath, concurrency, sampleSize, epochs, k, h,
+				learningRate, testDataProp);
+	}
+	private void runInTuningMode(String[] args) {
+		String arg0 = args[0];
+		if ("selfplay".equals(arg0))
+			runInSelfPlayTuningMode(Arrays.copyOfRange(args,1, args.length));
+		else if ("texel".equals(arg0))
+			runInTexelTuningMode(Arrays.copyOfRange(args,1, args.length));
+		else
+			throw new IllegalArgumentException();
+	}
+	private void runInSelfPlayGenerationMode(String destFile, int concurrency, int games, long tc, long tcInc,
+			Boolean useBook, Integer hash, Integer threads) {
+		List<SelfPlayEngines<UCIEngine>> engines = new ArrayList<>(concurrency);
+		for (int i = 0; i < concurrency; i++) {
+			try {
+				UCIEngine engine1 = factory.newEngineInstance();
+				UCIEngine engine2 = factory.newEngineInstance();
+				engine1.init();
+				engine2.init();
+				trySetOptions(engine1, useBook, hash, threads);
+				trySetOptions(engine2, useBook, hash, threads);
+				engines.add(new SelfPlayEngines<>(engine1, engine2,
+						factory.newControllerEngineInstance()));
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		try {
+			FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			for (SelfPlayEngines<UCIEngine> e : engines) {
+				e.getEngine().close();
+				e.getOpponentEngine().close();
+				e.getController().close();
+			}
+		}
+	}
+	private void runInSelfPlayGenerationMode(String[] args) {
+		String destFile = DEF_FENS_FILE_PATH;
+		int concurrency = DEF_CONCURRENCY;
+		int games = -1;
+		long tc = -1;
+		long tcInc = 0;
+		Boolean useBook = null;
+		Integer hash = null;
+		Integer threads = null;
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			switch (arg) {
+				case "-games":
+					games = Integer.parseInt(args[++i]);
+					break;
+				case "-tc":
+					tc = Long.parseLong(args[++i]);
+					break;
+				case "--concurrency":
+					concurrency = Integer.parseInt(args[++i]);
+					break;
+				case "--inc":
+					tcInc = Long.parseLong(args[++i]);
+					break;
+				case "--trybook":
+					useBook = Boolean.parseBoolean(args[++i]);
+					break;
+				case "--tryhash":
+					hash = Integer.parseInt(args[++i]);
+					break;
+				case "--trythreads":
+					threads = Integer.parseInt(args[++i]);
+					break;
+				default:
+					throw new IllegalArgumentException();
+			}
+		}
+		if (games == -1 || tc == -1)
+			throw new IllegalArgumentException();
+		runInSelfPlayGenerationMode(destFile, concurrency, games, tc, tcInc, useBook, hash, threads);
+	}
+	private void runInPGNGenerationMode(String sourceFile, String destFile, int maxNumOfGames) {
+		try (ControllerEngine engine = factory.newControllerEngineInstance()) {
+			FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInPGNGenerationMode(String[] args) {
+		String destFile = DEF_FENS_FILE_PATH;
+		String sourceFile = null;
+		int maxNumOfGames = Integer.MAX_VALUE;
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			switch (arg) {
+				case "-sourcefile":
+					sourceFile = args[++i];
+					break;
+				case "--maxgames":
+					maxNumOfGames = Integer.parseInt(args[++i]);
+					break;
+				case "--destfile":
+					destFile = args[++i];
+					break;
+				default:
+					throw new IllegalArgumentException();
+			}
+		}
+		runInPGNGenerationMode(sourceFile, destFile, maxNumOfGames);
+	}
+	private void runInGenerationMode(String[] args) {
+		String arg0 = args[0];
+		if ("byselfplay".equals(arg0))
+			runInSelfPlayGenerationMode(Arrays.copyOfRange(args,1, args.length));
+		else if ("bypgnconversion".equals(arg0))
+			runInPGNGenerationMode(Arrays.copyOfRange(args,1, args.length));
+		else
+			throw new IllegalArgumentException();
+	}
+	private void runInDrawFiltrationMode(String sourceFile, String destFile) {
+		try {
+			FENFileUtil.filterDraws(sourceFile, destFile);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInDrawFiltrationMode(String[] args) {
+		String sourceFile = null;
+		String destFile = DEF_FENS_FILE_PATH;
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			switch (arg) {
+				case "-sourcefile": sourceFile = args[++i]; break;
+				case "--destfile": destFile = args[++i]; break;
+				default: throw new IllegalArgumentException();
+			}
+		}
+		if (sourceFile == null)
+			throw new IllegalArgumentException();
+		runInDrawFiltrationMode(sourceFile, destFile);
+	}
+	private void runInOpeningFiltrationMode(String sourceFile, String destFile, int numOfPositionsToFilter) {
+		try {
+			FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInOpeningFiltrationMode(String[] args) {
+		String sourceFile = null;
+		String destFile = DEF_FENS_FILE_PATH;
+		int numOfPositionsToFilter = -1;
+		for (int i = 0; i < args.length; i++) {
+			String arg = args[i];
+			switch (arg) {
+				case "-firstxmoves": numOfPositionsToFilter = Integer.parseInt(args[++i]); break;
+				case "-sourcefile": sourceFile = args[++i]; break;
+				case "--destfile": destFile = args[++i]; break;
+				default: throw new IllegalArgumentException();
+			}
+		}
+		if (sourceFile == null || numOfPositionsToFilter <= 0)
+			throw new IllegalArgumentException();
+		runInOpeningFiltrationMode(sourceFile, destFile, numOfPositionsToFilter);
+	}
+	private void runInFiltrationMode(String[] args) {
+		String arg0 = args[0];
+		if ("draws".equals(arg0))
+			runInDrawFiltrationMode(Arrays.copyOfRange(args,1, args.length));
+		else if ("openings".equals(arg0))
+			runInOpeningFiltrationMode(Arrays.copyOfRange(args,1, args.length));
+		else
+			throw new IllegalArgumentException();
+	}
+	private String buildBinaryString(String arg) {
+		String[] probs = arg.split(",");
+		String binaryString = "";
+		for (int j = 0; j < probs.length; j++) {
+			double prob = Double.parseDouble(probs[j].trim());
+			binaryString += (prob >= 0.5 ? "1" : "0");
+		}
+		return binaryString;
+	}
+	private double[] buildFeatureArray(String arg) {
+		String[] array = arg.split(",");
+		double[] decimalArray = new double[array.length];
+		for (int j = 0; j < array.length; j++)
+			decimalArray[j] = Double.parseDouble(array[j].trim());
+		return decimalArray;
+	}
+	private void runInBinaryStringConversionMode(String binaryString, Set<ParameterType> paramTypes,
+			String destFile) {
+		try (TunableEngine engine = factory.newTunableEngineInstance()) {
+			engine.init();
+			EngineParameters params = engine.getParameters();
+			params.set(binaryString, paramTypes);
+			params.writeToFile(destFile);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInFeatureArrayConversionMode(double[] features, String destFile) {
+		try (TunableEngine engine = factory.newTunableEngineInstance()) {
+			engine.init();
+			EngineParameters params = engine.getParameters();
+			params.set(features, new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION)));
+			params.writeToFile(destFile);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private void runInConversionMode(String[] args) {
+		String arg0 = args[0];
+		String destFile = DEF_CONVERTED_PARAMS_PATH;
+		if (!"-value".equals(args[1]))
+			throw new IllegalArgumentException();
+		String val = args[2];
+		if ("probvector".equals(arg0)) {
+			Set<ParameterType> paramTypes = null;
+			if (args.length > 3) {
+				if ("--paramtype".equals(args[3]))
+					paramTypes = resolveParamTypes(args[4]);
+				else
+					throw new IllegalArgumentException();
+			}
+			runInBinaryStringConversionMode(buildBinaryString(val), paramTypes, destFile);
+		} else if ("features".equals(arg0))
+			runInFeatureArrayConversionMode(buildFeatureArray(val), destFile);
+		else
+			throw new IllegalArgumentException();
+	}
+	private void runInGUIMode() {
+		try (ControllerEngine controller = factory.newControllerEngineInstance();
+			 UCIEngine searchEngine = factory.newEngineInstance()) {
+			GUI.setEngines(controller, searchEngine);
+			Application.launch(GUI.class);
+		}
+	}
+	@Override
+	public synchronized void run() {
+		if (args != null && args.length > 0) {
+			String arg0 = args[0];
+			switch (arg0) {
+				// UCI mode.
+				case "-u":
+					runInUCIMode();
+					break;
+				// Tuning.
+				case "-t":
+					runInTuningMode(Arrays.copyOfRange(args,1, args.length));
+					break;
+				// Generate FENs file.
+				case "-g":
+					runInGenerationMode(Arrays.copyOfRange(args,1, args.length));
+					break;
+				// Filter FENs file.
+				case "-f":
+					runInFiltrationMode(Arrays.copyOfRange(args,1, args.length));
+					break;
+				// Convert to parameters.
+				case "-c":
+					runInConversionMode(Arrays.copyOfRange(args,1, args.length));
+					break;
+				default:
+					throw new IllegalArgumentException();
+			}
+		} else // GUI mode.
+			runInGUIMode();
 	}
 	
 }

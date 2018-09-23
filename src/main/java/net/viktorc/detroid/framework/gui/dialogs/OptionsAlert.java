@@ -69,7 +69,6 @@ public class OptionsAlert extends Alert {
 			feedBack.setMinWidth(100);
 			String name = option.getName();
 			if (option instanceof CheckOption) {
-				
 				Label label = new Label(name + ":");
 				CheckBox field = new CheckBox();
 				field.selectedProperty().set((Boolean) value);

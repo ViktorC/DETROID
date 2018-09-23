@@ -174,7 +174,8 @@ public final class BitOperations {
 	 */
 	public static String toBinaryString(long n) {
 		String binString = Long.toBinaryString(n);
-		return ("0000000000000000000000000000000000000000000000000000000000000000" + binString).substring(binString.length());
+		return ("0000000000000000000000000000000000000000000000000000000000000000" + binString)
+				.substring(binString.length());
 	}
 	/**
 	 * Returns the binary literal of the input long as a string.

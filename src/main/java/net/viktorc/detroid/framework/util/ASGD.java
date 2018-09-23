@@ -187,7 +187,7 @@ public abstract class ASGD<D,L> {
 					double[] gradient = computeGradient(sample);
 					for (int i = 0; i < features.length; i++) {
 						// Ensure that the magnitude of the gradient is proportional to the batch size.
-						g = gradient[i] * batchSizeBiasOffset;
+						g = gradient[i]*batchSizeBiasOffset;
 						/* Correct the gradient vector initialization bias by 1 - the product of the sequence of annealed momentum 
 						 * decay rates up until t. */
 						gPrime = g/(1 - momentumPi);
