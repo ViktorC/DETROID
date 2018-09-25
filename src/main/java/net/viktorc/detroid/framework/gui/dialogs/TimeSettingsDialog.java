@@ -94,13 +94,11 @@ public class TimeSettingsDialog extends Dialog<TimeControl> {
 		setResultConverter(b -> {
 			if (b.getButtonData().isCancelButton())
 				return null;
-			else {
-				try {
-					return new TimeControl(parseFormattedTime(wTime.getText()), parseFormattedTime(bTime.getText()),
-							parseFormattedTime(wTimeInc.getText()), parseFormattedTime(bTimeInc.getText()));
-				} catch (Exception e) {
-					return null;
-				}
+			try {
+				return new TimeControl(parseFormattedTime(wTime.getText()), parseFormattedTime(bTime.getText()),
+						parseFormattedTime(wTimeInc.getText()), parseFormattedTime(bTimeInc.getText()));
+			} catch (Exception e) {
+				return null;
 			}
 		});
 	}

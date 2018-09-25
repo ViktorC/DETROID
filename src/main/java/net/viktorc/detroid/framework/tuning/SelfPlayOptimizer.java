@@ -187,6 +187,21 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 					throws Exception, IllegalArgumentException {
 		this(engines, games, timePerGame, timeIncPerMove, validationFactor, populationSize, logger, null);
 	}
+	private double assessResults(List<Future<MatchResult>> futures, int initEngine1Wins, int initEngine2Wins,
+			int initDraws) {
+		for (Future<MatchResult> f : futures) {
+			try {
+				MatchResult res = f.get();
+				initEngine1Wins += res.getEngine1Wins();
+				initEngine2Wins += res.getEngine2Wins();
+				initDraws += res.getDraws();
+			} catch (InterruptedException | ExecutionException e) {
+				Thread.currentThread().interrupt();
+				throw new RuntimeException(e);
+			}
+		}
+		return Elo.calculateDifference(initEngine1Wins, initEngine2Wins, initDraws);
+	}
 	@Override
 	protected double fitnessFunction(String genotype) {
 		int currGen = getCurrentGeneration();
@@ -230,18 +245,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 						timeIncPerMove);
 			}));
 		}
-		for (Future<MatchResult> f : futures) {
-			try {
-				MatchResult res = f.get();
-				engine1Wins += res.getEngine1Wins();
-				engine2Wins += res.getEngine2Wins();
-				draws += res.getDraws();
-			} catch (InterruptedException | ExecutionException e) {
-				Thread.currentThread().interrupt();
-				throw new RuntimeException(e);
-			}
-		}
-		double fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
+		double fitness = assessResults(futures, engine1Wins, engine2Wins, draws);
 		int encore = (int) (validationFactor*games);
 		if (fitness > getCurrentHighestFitness() && encore > 0) {
 			int addGamesPlayed = 0;
@@ -254,18 +258,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 						engines.get(index).getOpponentEngine(), gamesToPlay, timePerGame, timeIncPerMove)));
 				addGamesPlayed += gamesToPlay;
 			}
-			for (Future<MatchResult> f : futures) {
-				try {
-					MatchResult res = f.get();
-					engine1Wins += res.getEngine1Wins();
-					engine2Wins += res.getEngine2Wins();
-					draws += res.getDraws();
-				} catch (InterruptedException | ExecutionException e) {
-					Thread.currentThread().interrupt();
-					throw new RuntimeException(e);
-				}
-			}
-			fitness = Elo.calculateDifference(engine1Wins, engine2Wins, draws);
+			fitness = assessResults(futures, engine1Wins, engine2Wins, draws);
 		}
 		return fitness;
 	}

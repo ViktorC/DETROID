@@ -406,17 +406,17 @@ public final class MainController implements AutoCloseable, Observer {
 			searchEngine.getSearchInfo().addObserver(this);
 			long timeLeft = controllerEngine.isWhitesTurn() ? whiteTime.get() : blackTime.get();
 			long start = System.currentTimeMillis();
-			SearchResults res = searchEngine.search(null, null, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
-					timeControl.getBlackInc(), null, null, null, null, null, null);
+			SearchResults res = searchEngine.search(null, null, whiteTime.get(), blackTime.get(),
+					timeControl.getWhiteInc(), timeControl.getBlackInc(), null, null, null,
+					null, null, null);
 			timeLeft -= (System.currentTimeMillis() - start);
 			synchronized (updateLock) {
-				while (updates.values().contains(Boolean.FALSE)) {
-					try {
+				try {
+					while (updates.values().contains(Boolean.FALSE))
 						updateLock.wait();
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-						return;
-					}
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
 				}
 			}
 			updates.clear();
@@ -483,17 +483,17 @@ public final class MainController implements AutoCloseable, Observer {
 			}
 			searchEngine.getSearchInfo().addObserver(this);
 			long start = System.currentTimeMillis();
-			SearchResults res = searchEngine.search(null, true, whiteTime.get(), blackTime.get(), timeControl.getWhiteInc(),
-					timeControl.getBlackInc(), null, null, null, null, null, null);
+			SearchResults res = searchEngine.search(null, true, whiteTime.get(), blackTime.get(),
+					timeControl.getWhiteInc(), timeControl.getBlackInc(), null, null, null,
+					null, null, null);
 			long end = System.currentTimeMillis();
 			synchronized (updateLock) {
-				while (updates.values().contains(Boolean.FALSE)) {
-					try {
+				try {
+					while (updates.values().contains(Boolean.FALSE))
 						updateLock.wait();
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-						return;
-					}
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
 				}
 			}
 			updates.clear();
@@ -509,8 +509,9 @@ public final class MainController implements AutoCloseable, Observer {
 			if (res == null || !ponderHit)
 				return;
 			doTime = false;
-			timeSpent = end - start - (timeSpent - (controllerEngine.isWhitesTurn() ? blackTime.get() - timeControl.getBlackInc() :
-				whiteTime.get() - timeControl.getWhiteInc()));
+			timeSpent = end - start - (timeSpent - (controllerEngine.isWhitesTurn() ?
+					blackTime.get() - timeControl.getBlackInc() :
+					whiteTime.get() - timeControl.getWhiteInc()));
 			timeLeft -= timeSpent;
 			if (controllerEngine.isWhitesTurn())
 				whiteTime.set(timeLeft);
@@ -567,23 +568,20 @@ public final class MainController implements AutoCloseable, Observer {
 		setMoveHistory();
 		setBoard(controllerEngine.toFEN());
 		legalMoves = controllerEngine.getLegalMoves();
-		if (usersTurn && !isDemo) {
-			// Handle pondering.
-			if (doPonder && isPondering) {
-				if (move.equals(ponderMove)) {
-					ponderHit = true;
-					searchEngine.ponderHit();
-				} else {
-					isReset = true;
-					searchEngine.stop();
-					while (isPondering) {
-						try {
-							wait();
-						} catch (InterruptedException e) {
-							Thread.currentThread().interrupt();
-							return;
-						}
-					}
+		// Handle pondering.
+		if (usersTurn && !isDemo && doPonder && isPondering) {
+			if (move.equals(ponderMove)) {
+				ponderHit = true;
+				searchEngine.ponderHit();
+			} else {
+				isReset = true;
+				searchEngine.stop();
+				try {
+					while (isPondering)
+						wait();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
 				}
 			}
 		}
@@ -598,24 +596,21 @@ public final class MainController implements AutoCloseable, Observer {
 		if (controllerEngine.getGameState() != GameState.IN_PROGRESS) {
 			isReset = true;
 			searchEngine.stop();
-			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), false);
-			dialog.showAndWait();
+			(new GameOverAlert(stage, controllerEngine.getGameState(), false)).showAndWait();
 		} else if (whiteTime.get() <= 0) {
 			isReset = true;
 			searchEngine.stop();
 			whiteTime.set(0);
 			controllerEngine.whiteForfeit();
 			setTimeField(true);
-			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
-			dialog.showAndWait();
+			(new GameOverAlert(stage, controllerEngine.getGameState(), true)).showAndWait();
 		} else if (blackTime.get() <= 0) {
 			isReset = true;
 			searchEngine.stop();
 			blackTime.set(0);
 			controllerEngine.blackForfeit();
 			setTimeField(false);
-			Alert dialog = new GameOverAlert(stage, controllerEngine.getGameState(), true);
-			dialog.showAndWait();
+			(new GameOverAlert(stage, controllerEngine.getGameState(), true)).showAndWait();
 		} else {
 			doTime = true;
 			if (isDemo) {
@@ -627,10 +622,8 @@ public final class MainController implements AutoCloseable, Observer {
 			} else if (doPonder)
 				startPondering();
 		}
-		if (usersTurn && !isDemo) {
-			if (moveHistList != null && moveHistList.size() > 1)
-				unmakeMove.setDisable(false);
-		}
+		if (usersTurn && !isDemo && moveHistList != null && moveHistList.size() > 1)
+			unmakeMove.setDisable(false);
 	}
 	/**
 	 * Sets up the engines and the GUI based on the specified position.
