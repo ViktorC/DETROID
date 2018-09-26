@@ -16,6 +16,10 @@ import net.viktorc.detroid.framework.uci.Option.SpinOption;
 public interface UCIEngine extends Closeable {
 
 	/**
+	 * A special UCI position command for the start position.
+	 */
+	public static final String START_POSITION = "startpos";
+	/**
 	 * A standard check type UCI option that determines whether the engine should use its own book. It should be false by default.
 	 */
 	public static final String OWN_BOOK_OPTION_NAME = "OwnBook";
@@ -148,6 +152,15 @@ public interface UCIEngine extends Closeable {
 	 * Signals the engine that it should clean up and free the resources it has been using.
 	 */
 	void quit();
+
+	/**
+	 * Sets the current position of the engine to the starting position.
+	 *
+	 * @return Whether the position could be successfully set up.
+	 */
+	default boolean setPosition() {
+		return setPosition(START_POSITION);
+	}
 	/**
 	 * It looks for an option of the specified type and name among the options provided by the engine, and if it is found, it 
 	 * attempts to set it to the specified value.

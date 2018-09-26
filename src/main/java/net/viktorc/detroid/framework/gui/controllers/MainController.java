@@ -703,7 +703,7 @@ public final class MainController implements AutoCloseable, Observer {
 						}
 					}
 				}
-				setPosition("startpos", false);
+				setPosition(UCIEngine.START_POSITION, false);
 			}
 		});
 		// Paste FEN from Clipboard menu item handler: sets up the position according to the FEN string in the clipboard.
@@ -1153,7 +1153,7 @@ public final class MainController implements AutoCloseable, Observer {
 		searchStatView.setItems(searchStats);
 		// Set up the initial position.
 		isUserWhite = true;
-		setPosition("startpos", false);
+		setPosition(UCIEngine.START_POSITION, false);
 	}
 	@Override
 	public synchronized void update(Observable o, Object arg) {

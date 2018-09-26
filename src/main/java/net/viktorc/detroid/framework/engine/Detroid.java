@@ -546,7 +546,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	public boolean setPosition(String fen) {
 		synchronized (lock) {
 			try {
-				Position pos = fen.equals("startpos") ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
+				Position pos = fen.equals(START_POSITION) ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
 				// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
 				if (newGame) {
 					if (debugMode) debugInfo.set("New game set");

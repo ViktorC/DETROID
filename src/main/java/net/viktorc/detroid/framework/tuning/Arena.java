@@ -7,6 +7,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import net.viktorc.detroid.framework.uci.ScoreType;
@@ -83,10 +84,97 @@ class Arena implements AutoCloseable {
 	/**
 	 * Returns the Arena instance's id number.
 	 * 
-	 * @return
+	 * @return The arena's ID number.
 	 */
 	public long getId() {
 		return id;
+	}
+	private SearchResults searchPosition(UCIEngine engine, Timer timer, AtomicLong timeLeft, long oppTimeLeft,
+			long timeIncPerMove, boolean white) throws Exception {
+		TimerTask task = new TimerTask() {
+
+			@Override
+			public void run() {
+				engine.stop();
+			}
+		};
+		timer.schedule(task, timeLeft.get());
+		long start = System.nanoTime();
+		SearchResults res = engine.search(null, null, white ? timeLeft.get() : oppTimeLeft,
+				white ? oppTimeLeft : timeLeft.get(), timeIncPerMove, timeIncPerMove, null, null,
+				null, null, null, null);
+		task.cancel();
+		timeLeft.set(timeLeft.get() - (long) ((System.nanoTime() - start)/1e6));
+		if (timeLeft.get() <= 0 || !controller.play(res.getBestMove())) {
+			throw new GameOverException(timeLeft.get() <= 0 ?
+					"Engine1 lost on time." : "Engine1 returned an illegal move: " + res.getBestMove() + ".");
+		}
+		timeLeft.set(timeLeft.get() + timeIncPerMove);
+		return res;
+	}
+	private void logArenaHeader(String engine1Name, String engine2Name, int games, long timePerGame,
+			long timeIncPerMove) {
+		if (resultLogger != null) {
+			resultLogger.info("--------------------------------------MATCH STARTED" +
+					"--------------------------------------\n" + "Arena: " + id + "\n" +
+					"Engine1: " + engine1Name + " - Engine2: " + engine2Name + "\n" +
+					"Games: " + games + " TC: " + timePerGame + (timeIncPerMove != 0 ? " + " + timeIncPerMove : "") +
+					"\n\n");
+		}
+	}
+	private void assignEngineNames(boolean engine1White) {
+		if (resultLogger != null) {
+			controller.setPlayers(engine1White ? "Engine1" : "Engine2", engine1White ? "Engine2" : "Engine1");
+			controller.setEvent(EVENT);
+			controller.setSite("?");
+		}
+	}
+	private void logResults(GameState outcome, String reason, boolean engine1White, int engine1Wins, int engine2Wins,
+			int draws) {
+		if (resultLogger != null) {
+			String result;
+			String state;
+			switch (outcome) {
+				case WHITE_MATES:
+					result = (engine1White ? "Engine1" : "Engine2") + " WINS";
+					state = "Check mate";
+					break;
+				case BLACK_MATES:
+					result = (engine1White ? "Engine2" : "Engine1") + " WINS";
+					state = "Check mate";
+					break;
+				case UNSPECIFIED_WHITE_WIN:
+					result = (engine1White ? "Engine1" : "Engine2") + " WINS";
+					state = "Black lost";
+					break;
+				case UNSPECIFIED_BLACK_WIN:
+					result = (engine1White ? "Engine2" : "Engine1") + " WINS";
+					state = "White lost";
+					break;
+				case STALE_MATE:
+					result = "DRAW";
+					state = "Stale mate";
+					break;
+				case DRAW_BY_INSUFFICIENT_MATERIAL:
+					result = "DRAW";
+					state = "Insufficient material";
+					break;
+				case DRAW_BY_3_FOLD_REPETITION:
+					result = "DRAW";
+					state = "Three fold repetition";
+					break;
+				case DRAW_BY_50_MOVE_RULE:
+					result = "DRAW";
+					state = "Fifty move rule";
+					break;
+				default:
+					result = "";
+					state = "";
+					break;
+			}
+			resultLogger.info("Arena: " + id + "\n" + result + "\n" + state + " - " + reason + "\n" +
+					controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
+		}
 	}
 	/**
 	 * Pits the two engines against each other playing the specified number of games with the number of milliseconds per game
@@ -103,8 +191,8 @@ class Arena implements AutoCloseable {
 	 * @return The results of the match.
 	 * @throws Exception If either of the engines is not initialised and an attempt at initialisation fails.
 	 */
-	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame, long timeIncPerMove)
-			throws Exception {
+	public synchronized MatchResult match(UCIEngine engine1, UCIEngine engine2, int games, long timePerGame,
+			 long timeIncPerMove) throws Exception {
 		Timer timer = null;
 		int engine1Wins = 0;
 		int engine2Wins = 0;
@@ -117,16 +205,14 @@ class Arena implements AutoCloseable {
 			engine1.init();
 		if (!engine2.isInit())
 			engine2.init();
-		if (resultLogger != null) resultLogger.info("--------------------------------------MATCH STARTED--------------------------------------\n" +
-				"Arena: " + id + "\n" +
-				"Engine1: " + engine1.getName() + " - Engine2: " + engine2.getName() + "\n" +
-				"Games: " + games + " TC: " + timePerGame + (timeIncPerMove != 0 ? " + " + timeIncPerMove : "") + "\n\n");
+		logArenaHeader(engine1.getName(), engine2.getName(), games, timePerGame, timeIncPerMove);
 		boolean engine1White = rand.nextBoolean();
 		Games: for (int i = 0; i < games; i++, engine1White = !engine1White) {
-			if (fenLogger != null) fenLog = new ArrayList<>();
-			SearchResults res = null;
-			long engine1Time = timePerGame;
-			long engine2Time = timePerGame;
+			if (fenLogger != null)
+				fenLog = new ArrayList<>();
+			SearchResults res;
+			AtomicLong engine1Time = new AtomicLong(timePerGame);
+			AtomicLong engine2Time = new AtomicLong(timePerGame);
 			boolean engine1Turn = engine1White;
 			if (timer != null)
 				timer.cancel();
@@ -134,146 +220,62 @@ class Arena implements AutoCloseable {
 			engine1.newGame();
 			engine2.newGame();
 			controller.newGame();
-			engine1.setPosition("startpos");
-			engine2.setPosition("startpos");
-			controller.setPosition("startpos");
-			if (resultLogger != null) {
-				controller.setPlayers(engine1White ? "Engine1" : "Engine2", engine1White ? "Engine2" : "Engine1");
-				controller.setEvent(EVENT);
-				controller.setSite("?");
-			}
+			engine1.setPosition();
+			engine2.setPosition();
+			controller.setPosition();
+			assignEngineNames(engine1White);
 			while (controller.getGameState() == GameState.IN_PROGRESS) {
-				TimerTask task;
-				long start;
 				if (engine1Turn) {
 					try {
-						task = new TimerTask() {
-							
-							@Override
-							public void run() {
-								engine1.stop();
-							}
-						};
-						timer.schedule(task, engine1Time);
-						start = System.nanoTime();
-						res = engine1.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
-								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null);
-						task.cancel();
-						engine1Time -= (System.nanoTime() - start)/1e6;
-						if (engine1Time <= 0 || !controller.play(res.getBestMove())) {
-							engine2Wins++;
-							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: " + (engine1Time <= 0 ?
-									"Engine1 lost on time." : "Engine1 returned an illegal move: " + res.getBestMove() + ".") + "\n" +
-									controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
-							continue Games;
-						}
+						res = searchPosition(engine1, timer, engine1Time, engine2Time.get(), timeIncPerMove,
+								engine1White);
 					} catch (Exception e) {
 						timer.cancel();
 						engine2Wins++;
-						if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine2 WINS: Engine1 lost due to error.\n" +
-								controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
+						logResults(GameState.UNSPECIFIED_BLACK_WIN, e.getMessage(), engine1White, engine1Wins,
+								engine2Wins, draws);
 						continue Games;
 					}
-					engine1Time += timeIncPerMove;
-					if (fenLogger != null && res.getScoreType().isPresent() && res.getScoreType().get() != ScoreType.MATE)
-						fenLog.add(controller.toFEN());
 				} else {
 					try {
-						task = new TimerTask() {
-							
-							@Override
-							public void run() {
-								engine2.stop();
-							}
-						};
-						timer.schedule(task, engine2Time);
-						start = System.nanoTime();
-						res = engine2.search(null, null, engine1White ? engine1Time : engine2Time, engine1White ? engine2Time :
-								engine1Time, timeIncPerMove, timeIncPerMove, null, null, null, null, null, null);
-						task.cancel();
-						engine2Time -= (System.nanoTime() - start)/1e6;
-						if (engine2Time <= 0 || !controller.play(res.getBestMove())) {
-							engine1Wins++;
-							if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: " + (engine2Time <= 0 ?
-									"Engine2 lost on time." : "Engine2 returned an illegal move: " + res.getBestMove() + ".") + "\n" +
-									controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
-							continue Games;
-						}
+						res = searchPosition(engine2, timer, engine2Time, engine1Time.get(), timeIncPerMove,
+								!engine1White);
 					} catch (Exception e) {
 						timer.cancel();
 						engine1Wins++;
-						if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + "Engine1 WINS: Engine2 lost due to error.\n" +
-								"STANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
+						logResults(GameState.UNSPECIFIED_WHITE_WIN, e.getMessage(), engine1White, engine1Wins,
+								engine2Wins, draws);
 						continue Games;
 					}
-					engine2Time += timeIncPerMove;
-					if (fenLogger != null && res.getScoreType().isPresent() && res.getScoreType().get() != ScoreType.MATE)
-						fenLog.add(controller.toFEN());
 				}
+				if (fenLogger != null && res.getScoreType().isPresent() && res.getScoreType().get() != ScoreType.MATE)
+					fenLog.add(controller.toFEN());
 				engine1.play(res.getBestMove());
 				engine2.play(res.getBestMove());
 				engine1Turn = !engine1Turn;
 			}
 			GameState state = controller.getGameState();
-			if (state == GameState.WHITE_MATES) {
+			boolean whiteWin = false, blackWin = false;
+			if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN) {
 				if (engine1White)
 					engine1Wins++;
 				else
 					engine2Wins++;
-				if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + (engine1White ? "Engine1 WINS: " : "Engine2 WINS: ") +
-						"Check mate.\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
-				if (fenLogger != null) {
-					for (int j = 0; j < fenLog.size(); j++)
-						fenLog.set(j, fenLog.get(j) + ";1");
-					for (String s : fenLog)
-						fenLogger.info(s);
-				}
-			}
-			else if (state == GameState.BLACK_MATES) {
+				whiteWin = true;
+			} else if (state == GameState.BLACK_MATES || state == GameState.UNSPECIFIED_BLACK_WIN) {
 				if (engine1White)
 					engine2Wins++;
 				else
 					engine1Wins++;
-				if (resultLogger != null) resultLogger.info("Arena: " + id + "\n" + (engine1White ? "Engine2 WINS: " : "Engine1 WINS: ") +
-						"Check mate.\n" + controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - "  + engine2Wins + " - " + draws + "\n\n");
-				if (fenLogger != null) {
-					for (int j = 0; j < fenLog.size(); j++)
-						fenLog.set(j, fenLog.get(j) + ";0");
-					for (String s : fenLog)
-						fenLogger.info(s);
-				}
-			}
-			else {
+				blackWin = true;
+			} else
 				draws++;
-				if (resultLogger != null) {
-					String gameRes = "Arena: " + id + "\n" + "DRAW: ";
-					String pgnAndStandings = controller.toPGN() + "\n" + "STANDINGS: " + engine1Wins + " - " +
-							engine2Wins + " - " + draws + "\n\n";
-					String reason = "";
-					switch (state) {
-						case STALE_MATE:
-							reason = "Stale mate.\n";
-							break;
-						case DRAW_BY_INSUFFICIENT_MATERIAL:
-							reason = "Insufficient material.\n";
-							break;
-						case DRAW_BY_3_FOLD_REPETITION:
-							reason = "Three fold repetition.\n";
-							break;
-						case DRAW_BY_50_MOVE_RULE:
-							reason = "Fifty move rule.\n";
-							break;
-						default:
-							break;
-					}
-					resultLogger.info(gameRes + reason + pgnAndStandings);
-				}
-				if (fenLogger != null) {
-					for (int j = 0; j < fenLog.size(); j++)
-						fenLog.set(j, fenLog.get(j) + ";0.5");
-					for (String s : fenLog)
-						fenLogger.info(s);
-				}
+			logResults(state, "", engine1White, engine1Wins, engine2Wins, draws);
+			if (fenLogger != null) {
+				for (int j = 0; j < fenLog.size(); j++)
+					fenLog.set(j, fenLog.get(j) + ";" + (whiteWin ? "1" : (blackWin ? "0" : "0.5")));
+				for (String s : fenLog)
+					fenLogger.info(s);
 			}
 		}
 		if (timer != null)
@@ -284,6 +286,18 @@ class Arena implements AutoCloseable {
 	public void close() {
 		controller.close();
 		pool.shutdown();
+	}
+
+	/**
+	 * A simple exception for premature game termination due to illegal moves or time out.
+	 */
+	private static class GameOverException extends Exception {
+
+		private static final long serialVersionUID = 0L;
+
+		GameOverException(String message) {
+			super(message);
+		}
 	}
 
 }

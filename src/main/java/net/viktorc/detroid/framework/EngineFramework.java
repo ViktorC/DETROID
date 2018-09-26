@@ -143,8 +143,6 @@ public final class EngineFramework implements Runnable {
 	private void runInUCIMode() {
 		try (UCI uci = new UCI(factory.newEngineInstance(), System.in, System.out)) {
 			uci.run();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
 		}
 	}
 	private void runInSelfPlayTuningMode(String logFilePath, int concurrency, int popSize,
