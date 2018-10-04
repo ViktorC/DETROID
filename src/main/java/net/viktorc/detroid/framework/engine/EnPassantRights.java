@@ -10,7 +10,15 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
  */
 enum EnPassantRights {
 	
-	A, B, C, D, E, F, G, H, NONE;
+	A,
+	B,
+	C,
+	D,
+	E,
+	F,
+	G,
+	H,
+	NONE;
 	
 	/**
 	 * The difference between the EP right index and the square index of the destination of EP for white.
@@ -28,22 +36,30 @@ enum EnPassantRights {
 	 * The difference between the EP right index and the square index of the possible victim of EP for black.
 	 */
 	final static byte TO_B_VICT_SQR_IND = Square.A4.ind;
+
+	/**
+	 * Numeric representation of the the en passant rights.
+	 */
+	final byte ind;
 	
-	final byte ind;	// Numeric representation of the the en passant rights.
-	
-	private EnPassantRights() {
+	EnPassantRights() {
 		ind = (byte) ordinal();
 	}
 	/**
-	 * Returns a EnPassantRights type based on the argument numeral.
-	 * 
-	 * @param num
-	 * @return
+	 * @param ind The index of the en passant rights type.
+	 * @return The en passant rights enum instance.
 	 */
-	static EnPassantRights getByIndex(int num) {
-		switch (num) {
-			case 0: return A; case 1: return B; case 2: return C; case 3: return D; case 4: return E;
-			case 5: return F; case 6: return G; case 7: return H; case 8: return NONE;
+	static EnPassantRights getByIndex(int ind) {
+		switch (ind) {
+			case 0: return A;
+			case 1: return B;
+			case 2: return C;
+			case 3: return D;
+			case 4: return E;
+			case 5: return F;
+			case 6: return G;
+			case 7: return H;
+			case 8: return NONE;
 			default: throw new IllegalArgumentException();
 		}
 	}
@@ -54,8 +70,7 @@ enum EnPassantRights {
 	public String toString() {
 		if (this == NONE)
 			return "-";
-		else
-			return super.toString().toLowerCase();
+		return super.toString().toLowerCase();
 	}
 	
 }

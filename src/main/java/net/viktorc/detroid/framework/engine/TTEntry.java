@@ -3,8 +3,11 @@ package net.viktorc.detroid.framework.engine;
 import net.viktorc.detroid.framework.util.Cache.Entry;
 
 /**
- * A transposition table entry that stores information about searched positions identified by the key such as the depth of the search, the best move from this
- * position compressed into a short, the score belonging to it, the type of the score, and the age of the entry. It uses Hyatt's lock-less hashing.
+ * A transposition table entry that stores information about searched positions identified by the key such as the
+ * depth of the search, the best move from this position compressed into a short, the score belonging to it, the type
+ * of the score, and the age of the entry. It uses Hyatt's lock-less hashing.
+ *
+ * Lockless hashing: Nadam: <a href="http://www.craftychess.com/hyatt/hashing.html">http://www.craftychess.com/hyatt/hashing.html</a>
  * 
  * @author Viktor
  *
@@ -12,7 +15,7 @@ import net.viktorc.detroid.framework.util.Cache.Entry;
 class TTEntry implements Entry<TTEntry> {
 	
 	/**
-	 * The 64-bit position hash key.
+	 * The 64-bitboard position hash key.
 	 */
 	volatile long key;
 	/**

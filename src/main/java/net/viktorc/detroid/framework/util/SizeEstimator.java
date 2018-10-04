@@ -35,7 +35,8 @@ public class SizeEstimator {
 		return baseSize%8 == 0 ? baseSize : baseSize + 8 - baseSize%8;
 	}
 	/**
-	 * Returns an array list of all the non-static fields of a class including the non-static fields of all of its ancestors.
+	 * Returns an array list of all the non-static fields of a class including the non-static fields of all of its
+	 * ancestors.
 	 * 
 	 * @param clazz The class.
 	 * @return A list of its non-static fields including those inherited.
@@ -55,8 +56,8 @@ public class SizeEstimator {
 		return fields;
 	}
 	/**
-	 * Returns whether all instances of the specified class must have the same memory requirements. This can be only guaranteed if all the non static
-	 * fields of the class are primitives.
+	 * Returns whether all instances of the specified class must have the same memory requirements. This can be only
+	 * guaranteed if all the non static fields of the class are primitives.
 	 * 
 	 * @param clazz The class.
 	 * @return Whether the size of its instances is constant.
@@ -167,8 +168,9 @@ public class SizeEstimator {
 		return roundedSize(size);
 	}
 	/**
-	 * Estimates the size of an object including the sizes of all objects referenced in the object graph. It traverses an acyclic graph by not visiting nodes more
-	 * than once and thus ensuring that even if there are multiple references pointing to the same object, its size is added to the graph's total size only once.
+	 * Estimates the size of an object including the sizes of all objects referenced in the object graph. It traverses
+	 * an acyclic graph by not visiting nodes more than once and thus ensuring that even if there are multiple
+	 * references pointing to the same object, its size is added to the graph's total size only once.
 	 * 
 	 * @param o The object.
 	 * @return The size of the object.
@@ -178,9 +180,9 @@ public class SizeEstimator {
 		return sizeOf(o, visitedNodes);
 	}
 	/**
-	 * Statically estimates the size of an instance of the class. The estimate is only reliable if {@link #isInstanceSizeConstant(Class) isInstanceSizeConstant} 
-	 * returns true, i.e. all the non-static fields of the class and its ancestors are primitives. The non-primitive non-static fields are assumed to be null 
-	 * pointers.
+	 * Statically estimates the size of an instance of the class. The estimate is only reliable if
+	 * {@link #isInstanceSizeConstant(Class) isInstanceSizeConstant} returns true, i.e. all the non-static fields of
+	 * the class and its ancestors are primitives. The non-primitive non-static fields are assumed to be null pointers.
 	 * 
 	 * @param clazz The class.
 	 * @return The static size of the class.

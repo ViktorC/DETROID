@@ -245,7 +245,7 @@ final class Evaluator {
 	 * @param move
 	 * @return
 	 */
-	short SEE(Position pos, Move move) {
+	short SEE(Position0 pos, Move move) {
 		short victimVal, attackerVal, prevAttackerVal;
 		long attackers, bpAttack, rkAttack, occupied;
 		boolean whitesTurn;
@@ -336,7 +336,7 @@ final class Evaluator {
 	 * @param pos
 	 * @return
 	 */
-	static boolean isMaterialInsufficient(Position pos) {
+	static boolean isMaterialInsufficient(Position0 pos) {
 		int numOfWhiteKnights, numOfBlackKnights, numOfAllPieces;
 		int bishopColor;
 		byte[] bishopSqrArr;
@@ -379,7 +379,7 @@ final class Evaluator {
 	 * @param pos
 	 * @return
 	 */
-	int phaseScore(Position pos) {
+	int phaseScore(Position0 pos) {
 		int numOfQueens, numOfRooks, numOfBishops, numOfKnights;
 		numOfQueens = BitOperations.hammingWeight(pos.whiteQueens | pos.blackQueens);
 		numOfRooks = BitOperations.hammingWeight(pos.whiteRooks | pos.blackRooks);
@@ -440,12 +440,12 @@ final class Evaluator {
 		whiteAdvanceSpans = whitePawns << 8;
 		whiteAdvanceSpans |= whiteAdvanceSpans << 16;
 		whiteAdvanceSpans |= whiteAdvanceSpans << 32;
-		whiteAttackSpans = ((whiteAdvanceSpans >>> 1) & ~File.H.bits) | ((whiteAdvanceSpans << 1) & ~File.A.bits);
+		whiteAttackSpans = ((whiteAdvanceSpans >>> 1) & ~File.H.bitboard) | ((whiteAdvanceSpans << 1) & ~File.A.bitboard);
 		whiteFrontSpans = whiteAdvanceSpans | whiteAttackSpans;
 		blackAdvanceSpans = blackPawns >>> 8;
 		blackAdvanceSpans |= blackAdvanceSpans >>> 16;
 		blackAdvanceSpans |= blackAdvanceSpans >>> 32;
-		blackAttackSpans = ((blackAdvanceSpans >>> 1) & ~File.H.bits) | ((blackAdvanceSpans << 1) & ~File.A.bits);
+		blackAttackSpans = ((blackAdvanceSpans >>> 1) & ~File.H.bitboard) | ((blackAdvanceSpans << 1) & ~File.A.bitboard);
 		blackFrontSpans = blackAdvanceSpans | blackAttackSpans;
 		whitePassedPawns = whitePawns & ~blackFrontSpans;
 		blackPassedPawns = blackPawns & ~whiteFrontSpans;
@@ -507,7 +507,7 @@ final class Evaluator {
 	 * @param entry
 	 * @return
 	 */
-	int score(Position pos, byte hashGen, int alpha, int beta, ETEntry entry) {
+	int score(Position0 pos, byte hashGen, int alpha, int beta, ETEntry entry) {
 		final boolean isWhitesTurn = pos.whitesTurn;
 		boolean gotBaseScore, entryExact, allSameColor;
 		byte numOfWhiteQueens, numOfWhiteRooks, numOfWhiteBishops, numOfWhiteKnights, numOfWhitePawns;

@@ -1,8 +1,8 @@
 package net.viktorc.detroid.framework.util;
 
 /**
- * An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to implement the
- * {@link java.lang.Comparable} interface.
+ * An implementation of the quickSort algorithm to sort arrays of generic objects. The objects to be sorted have to
+ * implement the {@link java.lang.Comparable} interface.
  * 
  * @author Viktor
  *

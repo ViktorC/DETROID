@@ -33,9 +33,9 @@ class PolyglotBook extends OpeningBook {
 		gen = ZobristKeyGenerator.getInstance();
 	}
 	/**
-	 * It instantiates a PolyglotBook object on the opening book files specified by filePath and secondaryBookFilePath (as an alternative
-	 * book for when out of the main book); if the main opening book file cannot be accessed, an IOException is thrown, if the secondary
-	 * opening book file cannot be accessed, it is not set.
+	 * It instantiates a PolyglotBook object on the opening book files specified by filePath and secondaryBookFilePath
+	 * (as an alternative book for when out of the main book); if the main opening book file cannot be accessed, an
+	 * IOException is thrown, if the secondary opening book file cannot be accessed, it is not set.
 	 * 
 	 * @param filePath
 	 * @param secondaryBookFilePath
@@ -48,13 +48,13 @@ class PolyglotBook extends OpeningBook {
 			secondaryBook = new PolyglotBook(secondaryBookFilePath);
 	}
 	/**
-	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary search algorithm to search
-	 * through the entries.
+	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary
+	 * search algorithm to search through the entries.
 	 * 
 	 * @param p The position for which the entries are to be returned.
 	 * @return
 	 */
-	private ArrayList<Entry> getRelevantEntries(Position p) {
+	private ArrayList<Entry> getRelevantEntries(Position0 p) {
 		long low, mid, hi, temp = -1;
 		long readerPos, currKey, key = gen.generatePolyglotHashKey(p);
 		ArrayList<Entry> entries = new ArrayList<>();
@@ -70,8 +70,8 @@ class PolyglotBook extends OpeningBook {
 				bookStream.read(buff);
 				buff.clear();
 				currKey = buff.getLong();
-				/* If our reader head falls onto the right entry, run it in both directions until it encounters entries with a different hash code
-				 * to collect all the relevant moves for p. */
+				/* If our reader head falls onto the right entry, run it in both directions until it encounters entries
+				 * with a different hash code to collect all the relevant moves for p. */
 				if (currKey == key) {
 					readerPos = mid;
 					do {
@@ -98,8 +98,8 @@ class PolyglotBook extends OpeningBook {
 					}
 					return entries;
 				}
-				/* If not, we compare p's hash code to the hash code of the entry the reader head fell on. We have to consider that PolyGlot books
-				 * use unsigned 64 bit integers for hashing. */
+				/* If not, we compare p's hash code to the hash code of the entry the reader head fell on. We have to
+				 * consider that PolyGlot books use unsigned 64 bitboard integers for hashing. */
 				else {
 					if ((currKey + Long.MIN_VALUE) > (key + Long.MIN_VALUE))
 						hi = mid;
@@ -109,8 +109,8 @@ class PolyglotBook extends OpeningBook {
 				buff.clear();
 				temp = mid;
 			}
-			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK and its useDefaultBook is set
-			 * to true, we search the DEFAULT_BOOK, too. */
+			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK
+			 * and its useDefaultBook is set to true, we search the DEFAULT_BOOK, too. */
 			return secondaryBook != null ? ((PolyglotBook)secondaryBook).getRelevantEntries(p) : null;
 		}
 		// Some IO error has occured.
@@ -119,13 +119,14 @@ class PolyglotBook extends OpeningBook {
 		}
 	}
 	/**
-	 * Parses a short in which moves are encoded in PolyGlot books and creates a Pure Algebraic Coordinate Notation string from it.
+	 * Parses a short in which moves are encoded in PolyGlot books and creates a Pure Algebraic Coordinate Notation
+	 * string from it.
 	 * 
 	 * @param polyglotMove
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	private static String polyglotMoveToPACN(Position pos, short polyglotMove) throws IllegalArgumentException {
+	private static String polyglotMoveToPACN(Position0 pos, short polyglotMove) throws IllegalArgumentException {
 		String toFile, toRank, fromFile, fromRank, promPiece, pacn;
 		toFile = "" + (char)((polyglotMove & 7) + 'a');
 		toRank = "" + (int)(((polyglotMove >>> 3) & 7) + 1);
@@ -133,16 +134,16 @@ class PolyglotBook extends OpeningBook {
 		fromRank = "" + (int)(((polyglotMove >>> 9) & 7) + 1);
 		pacn = fromFile + fromRank + toFile + toRank;
 		if (pacn.equals("e1h1")) {
-			if (pos.whiteKing == Square.E1.bit)
+			if (pos.whiteKing == Square.E1.bitboard)
 				return "e1g1";
 		} else if (pacn.equals("e1a1")) {
-			if (pos.whiteKing == Square.E1.bit)
+			if (pos.whiteKing == Square.E1.bitboard)
 				return "e1c1";
 		} else if (pacn.equals("e8h8")) {
-			if (pos.blackKing == Square.E8.bit)
+			if (pos.blackKing == Square.E8.bitboard)
 				return "e8g8";
 		} else if (pacn.equals("e8a8")) {
-			if (pos.blackKing == Square.E8.bit)
+			if (pos.blackKing == Square.E8.bitboard)
 				return "e8c8";
 		}
 		switch (polyglotMove >>> 12) {
@@ -161,7 +162,7 @@ class PolyglotBook extends OpeningBook {
 		return pacn + promPiece;
 	}
 	@Override
-	Move getMove(Position p, SelectionModel selection) throws Exception {
+	Move getMove(Position0 p, SelectionModel selection) throws Exception {
 		short max;
 		double totalWeight, randomDouble, weightSum;
 		Entry e;

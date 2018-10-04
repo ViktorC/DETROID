@@ -177,17 +177,17 @@ class Arena implements AutoCloseable {
 		}
 	}
 	/**
-	 * Pits the two engines against each other playing the specified number of games with the number of milliseconds per game
-	 * allotted for each engine to make their moves. The engines play alternating their colours after each game so it is
-	 * recommended to specify an even number for the number of games to play.
+	 * Pits the two engines against each other playing the specified number of games with the number of milliseconds
+	 * per game allotted for each engine to make their moves. The engines play alternating their colours after each
+	 * game so it is recommended to specify an even number for the number of games to play.
 	 * 
 	 * @param engine1 Contender number one.
 	 * @param engine2 Contender number two.
 	 * @param games The number of games to play. Should be an even number.
-	 * @param timePerGame The number of milliseconds each engine will have to make all their moves during the course of each game.
-	 * If it is less than 500, it will default to 500.
-	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an engine is incremented after each legal
-	 * move.
+	 * @param timePerGame The number of milliseconds each engine will have to make all their moves during the course of
+	 * each game. If it is less than 500, it will default to 500.
+	 * @param timeIncPerMove The number of milliseconds with which the remaining time of an engine is incremented after
+	 * each legal move.
 	 * @return The results of the match.
 	 * @throws Exception If either of the engines is not initialised and an attempt at initialisation fails.
 	 */

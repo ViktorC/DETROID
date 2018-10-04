@@ -3,9 +3,10 @@ package net.viktorc.detroid.framework.engine;
 import net.viktorc.detroid.framework.engine.Bitboard.Square;
 
 /**
- * A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only incremented upon a cutoff
- * and a butterfly table that is incremented upon every searched move no matter what. Using these two tables' respective values for the same
- * move, a relative score can be retrieved based upon the frequency of success in the past on making that move.
+ * A thread-safe table-pair for relative history heuristic implementation. It contains a history table that is only
+ * incremented upon a cutoff and a butterfly table that is incremented upon every searched move no matter what. Using
+ * these two tables' respective values for the same move, a relative score can be retrieved based upon the frequency of
+ * success in the past on making that move.
  * 
  * @author Viktor
  *
@@ -33,8 +34,10 @@ class RelativeHistoryTable {
 	 * @param m The move that caused the cut-off.
 	 */
 	void recordSuccessfulMove(Move m) {
-		historyT[m.movedPiece][m.to]++;
-		butterflyT[m.movedPiece][m.to]++;
+		byte movedPiece = m.getMovedPiece();
+		byte to = m.getTo();
+		historyT[movedPiece][to]++;
+		butterflyT[movedPiece][to]++;
 	}
 	/**
 	 * If a move does not cause a cut-off, this method updates the relative history table accordingly.
@@ -42,19 +45,20 @@ class RelativeHistoryTable {
 	 * @param m The move that did not cause a cut-off.
 	 */
 	void recordUnsuccessfulMove(Move m) {
-		butterflyT[m.movedPiece][m.to]++;
+		butterflyT[m.getMovedPiece()][m.getTo()]++;
 	}
 	/**
 	 * Returns the relative history heuristic score for the move parameter.
 	 * 
 	 * @param m The move to be scored.
-	 * @return The relative history heuristic score for the move according to the cut-off to occurence ratio of the associated entries in the
-	 * from-to tables.
+	 * @return The relative history heuristic score for the move according to the cut-off to occurence ratio of the
+	 * associated entries in the from-to tables.
 	 */
 	short score(Move m) {
-		long bTscore;
-		bTscore = butterflyT[m.movedPiece][m.to];
-		return bTscore != 0 ? (short) (maxScore*historyT[m.movedPiece][m.to]/bTscore) : 0;
+		byte movedPiece = m.getMovedPiece();
+		byte to = m.getTo();
+		long bTscore = butterflyT[movedPiece][to];
+		return bTscore != 0 ? (short) (maxScore*historyT[movedPiece][to]/bTscore) : 0;
 	}
 	
 }

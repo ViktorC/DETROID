@@ -4,21 +4,26 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
 import net.viktorc.detroid.framework.util.BitOperations;
 
 /**
- * Some position state information--such as castling and en passant rights, fifty-move rule clock, a bitmap representing checkers,
- * and the moved and captured pieces--is stored in this class' instances so as to make reverting back to the previous position when
- * unmaking a move faster.
+ * A class for storing position state information.
  * 
  * @author Viktor
  *
  */
 class PositionStateRecord {
 
-	final byte whiteCastlingRights;
-	final byte blackCastlingRights;
-	final byte enPassantRights;
-	final byte fiftyMoveRuleClock;
-	final long checkers;
-	
+	private final byte whiteCastlingRights;
+	private final byte blackCastlingRights;
+	private final byte enPassantRights;
+	private final byte fiftyMoveRuleClock;
+	private final long checkers;
+
+	/**
+	 * @param whiteCastlingRights The castling rights of white.
+	 * @param blackCastlingRights The castling rights of black.
+	 * @param enPassantRights The en passant rights of the position.
+	 * @param fiftyMoveRuleClock The fifty-move counter state.
+	 * @param checkers A bitboard for all pieces checking the side to move's king.
+	 */
 	PositionStateRecord(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
 			byte fiftyMoveRuleClock, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
@@ -28,26 +33,51 @@ class PositionStateRecord {
 		this.checkers = checkers;
 	}
 	/**
-	 * Returns a human-readable String representation of the position information stored in the long.
-	 * 
-	 * @param positionInfo
-	 * @return
+	 * @return The castling rights of white.
 	 */
+	byte getWhiteCastlingRights() {
+		return whiteCastlingRights;
+	}
+	/**
+	 * @return The castling rights of black.
+	 */
+	byte getBlackCastlingRights() {
+		return blackCastlingRights;
+	}
+	/**
+	 * @return The en passant rights of the position.
+	 */
+	byte getEnPassantRights() {
+		return enPassantRights;
+	}
+	/**
+	 * @return The fifty-move counter state.
+	 */
+	byte getFiftyMoveRuleClock() {
+		return fiftyMoveRuleClock;
+	}
+	/**
+	 * @return A bitboard for all pieces checking the side to move's king.
+	 */
+	long getCheckers() {
+		return checkers;
+	}
 	@Override
 	public String toString() {
 		long checker;
 		String rep = "";
 		if ((checker = BitOperations.getLSBit(checkers)) != 0) {
-			rep += String.format("%-23s " + Square.getByIndex(BitOperations.indexOfBit(checker)).toString(), "Checker(s):");
+			rep += String.format("%-23s %s", "Checker(s):",
+					Square.getByIndex(BitOperations.indexOfBit(checker)).toString());
 			if ((checker = BitOperations.getLSBit(checkers^checker)) != 0)
 				rep += ", " + Square.getByIndex(BitOperations.indexOfBit(checker)).toString();
 		}
 		rep += String.format("%-23s ", "Castling rights:");
-		rep += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights), CastlingRights.getByIndex(blackCastlingRights));
-		rep += "\n";
+		rep += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights),
+				CastlingRights.getByIndex(blackCastlingRights)) + "\n";
 		rep += String.format("%-23s ", "En passant rights:");
 		rep += EnPassantRights.getByIndex(enPassantRights).toString() + "\n";
-		rep += String.format("%-23s " + fiftyMoveRuleClock + "\n", "Fifty-move rule clock:");
+		rep += String.format("%-23s %d", "Fifty-move rule clock:", fiftyMoveRuleClock);
 		return rep;
 	}
 	

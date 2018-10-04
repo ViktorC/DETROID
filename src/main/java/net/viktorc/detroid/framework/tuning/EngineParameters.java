@@ -28,20 +28,22 @@ import net.viktorc.detroid.framework.util.BitOperations;
 import net.viktorc.detroid.framework.util.GrayCode;
 
 /**
- * An abstract base class for engine parameter definitions that influence the performance of the chess engine and thus should be highly optimized. 
- * It provides methods for the retrieval of the values of the fields of its sub classes which are utilized in the methods provided for writing the 
- * contents of an instance to a file or reading, parsing, and setting the fields of an instance based on such a file. It is possible to retrieve 
- * the values as an array of doubles or as a binary string that represents the genotype of the instance with each field's value gray coded and 
- * concatenated into a binary string. An array or string like that can be then used to set the values of the fields of instances with the same 
- * procedure reversed. Only those fields of the subclasses are handled by the class that are annotated with the {@link net.viktorc.detroid.framework.tuning.Parameter} 
- * annotation. The annotation also has an optional attribute {@link net.viktorc.detroid.framework.tuning.Parameter#binaryLengthLimit() binaryLengthLimit} 
- * which marks the number of bits to consider when tuning the parameter. When applied to floating point values, it's effects are less intuitive as 
- * instead of ignoring bits of the number's binary representation, it just sets a maximum for the values it can take on which will be equal to what 
- * this maximum would be for integer numbers (2^[limit] - 1).
+ * An abstract base class for engine parameter definitions that influence the performance of the chess engine and thus
+ * should be highly optimized. It provides methods for the retrieval of the values of the fields of its sub classes
+ * which are utilized in the methods provided for writing the contents of an instance to a file or reading, parsing,
+ * and setting the fields of an instance based on such a file. It is possible to retrieve the values as an array of
+ * doubles or as a binary string that represents the genotype of the instance with each field's value gray coded and
+ * concatenated into a binary string. An array or string like that can be then used to set the values of the fields of
+ * instances with the same procedure reversed. Only those fields of the subclasses are handled by the class that are
+ * annotated with the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The annotation also has an
+ * optional attribute {@link net.viktorc.detroid.framework.tuning.Parameter#binaryLengthLimit() binaryLengthLimit}
+ * which marks the number of bits to consider when tuning the parameter. When applied to floating point values, its
+ * effects are less intuitive as instead of ignoring bits of the number's binary representation, it just sets a maximum
+ * for the values it can take on which will be equal to what this maximum would be for integer numbers (2^[limit] - 1).
  * 
- * WARNING: No negative values are supported, thus the most significant bit of each signed primitive (all except boolean and char) field will be ignored
- * when generating the binary string or setting the values of the fields based on a binary string and negative values will default to 0 when setting the
- * fields based on a double array.
+ * WARNING: No negative values are supported, thus the most significant bit of each signed primitive (all except
+ * boolean and char) field will be ignored when generating the binary string or setting the values of the fields based
+ * on a binary string and negative values will default to 0 when setting the fields based on a double array.
  * 
  * @author Viktor
  * 
@@ -56,9 +58,11 @@ public abstract class EngineParameters {
 	private final transient List<Field> engineManagementParamFields;
 	
 	/**
-	 * Constructs an instance and scans the fields of the (extending) class for ones annotated as {@link net.viktorc.detroid.framework.tuning.Parameter}.
+	 * Constructs an instance and scans the fields of the (extending) class for ones annotated as
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter}.
 	 * 
-	 * @throws ParameterException If a static or non-primitive field is annotated as {@link net.viktorc.detroid.framework.tuning.Parameter}.
+	 * @throws ParameterException If a static or non-primitive field is annotated as
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter}.
 	 */
 	protected EngineParameters() throws ParameterException {
 		allParamFields = new ArrayList<>();
@@ -81,9 +85,11 @@ public abstract class EngineParameters {
 			fieldType = f.getType();
 			param = f.getAnnotation(Parameter.class);
 			if (param != null) {
-				if (!fieldType.isPrimitive() || Modifier.isStatic(modifiers))
-					throw new ParameterException("Illegal field: " + f.getName() + "; Only non-static primitive, that is" +
-						"boolean, byte, short, int, long, float, double, and char fields are allowed to be annotated as Parameters.");
+				if (!fieldType.isPrimitive() || Modifier.isStatic(modifiers)) {
+					throw new ParameterException("Illegal field: " + f.getName() + "; Only non-static primitive, " +
+							"that is boolean, byte, short, int, long, float, double, and char fields are allowed " +
+							"to be annotated as Parameters.");
+				}
 				allParamFields.add(f);
 				if (param.type() == ParameterType.STATIC_EVALUATION)
 					staticEvalParamFields.add(f);
@@ -152,8 +158,8 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Writes the parameters to the specified file. If it does not exist, this method will attempt to create it. The method returns whether writing to 
-	 * the file was successful.
+	 * Writes the parameters to the specified file. If it does not exist, this method will attempt to create it. The
+	 * method returns whether writing to the file was successful.
 	 * 
 	 * @param filePath The path to the file.
 	 * @return Whether the parameters could be successfully written to the file.
@@ -184,7 +190,8 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Returns a reference to all parameter fields of the specified types. If types is null, all parameter fields are returned.
+	 * Returns a reference to all parameter fields of the specified types. If types is null, all parameter fields are
+	 * returned.
 	 * 
 	 * @param types A set of the types of the parameter fields to be returned.
 	 * @return All parameter fields of the specified types.
@@ -202,11 +209,12 @@ public abstract class EngineParameters {
 		return fields;
 	}
 	/**
-	 * Sets the values of the parameter fields of the instance. If a value in the array is negative, it will be taken for 0; if a value is greater than
-	 * what the respective field's type or the bit limit specified by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation's attribute would allow for, the field 
-	 * will be set to its maximum allowed value. If the array is longer than the number of parameter fields, the extra elements will be ignored; if it is 
-	 * shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value greater than or equal to 1 will default 
-	 * to true, everything else will default to false.
+	 * Sets the values of the parameter fields of the instance. If a value in the array is negative, it will be taken
+	 * for 0; if a value is greater than what the respective field's type or the bit limit specified by the
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation's attribute would allow for, the field will be
+	 * set to its maximum allowed value. If the array is longer than the number of parameter fields, the extra elements
+	 * will be ignored; if it is shorter, the fields indexed higher than the length of the array will not be set. For
+	 * boolean fields, a value greater than or equal to 1 will default to true, everything else will default to false.
 	 * 
 	 * @param values An array of values for the parameter fields of the instance in the order of declaration.
 	 * @return Whether the fields could be successfully set.
@@ -215,15 +223,17 @@ public abstract class EngineParameters {
 		return set(values, null);
 	}
 	/**
-	 * Sets the values of the parameter fields of the specified type. If a value in the array is negative, it will be taken for 0; if a value is greater 
-	 * than what the respective field's type or the bit limit specified by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation's attribute would allow for, the 
-	 * field will be set to its maximum allowed value. If the array is longer than the number of parameter fields of the specified type, the extra 
-	 * elements will be ignored; if it is shorter, the fields indexed higher than the length of the array will not be set. For boolean fields, a value 
-	 * greater than or equal to 1 will default to true, everything else will default to false.
+	 * Sets the values of the parameter fields of the specified type. If a value in the array is negative, it will be
+	 * taken for 0; if a value is greater than what the respective field's type or the bit limit specified by the
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation's attribute would allow for, the field will be
+	 * set to its maximum allowed value. If the array is longer than the number of parameter fields of the specified
+	 * type, the extra elements will be ignored; if it is shorter, the fields indexed higher than the length of the
+	 * array will not be set. For boolean fields, a value greater than or equal to 1 will default to true, everything
+	 * else will default to false.
 	 * 
 	 * @param values An array of values for the parameter fields of the specified type in the order of declaration.
-	 * @param types A set of the types of parameter fields whose values should be set based on the input array. If it is null, the values will be 
-	 * applied to the set of all parameter fields.
+	 * @param types A set of the types of parameter fields whose values should be set based on the input array. If it
+	 * is null, the values will be applied to the set of all parameter fields.
 	 * @return Whether the fields could be successfully set.
 	 */
 	public final boolean set(double[] values, Set<ParameterType> types) {
@@ -265,8 +275,9 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Sets the values of the parameter fields based on the binaryString in which each character represents a bit in the string of the individual gray 
-	 * code strings of the values of the parameter fields of the specified type in the order of declaration.
+	 * Sets the values of the parameter fields based on the binaryString in which each character represents a bit in
+	 * the string of the individual gray code strings of the values of the parameter fields of the specified type in
+	 * the order of declaration.
 	 * 
 	 * @param binaryString A binary string of gray code such as the output of {@link #toGrayCodeString() toGrayCodeString}.
 	 * @return Whether the binary string could be successfully applied to the fields.
@@ -275,12 +286,13 @@ public abstract class EngineParameters {
 		return set(binaryString, null);
 	}
 	/**
-	 * Sets the values of the parameter fields of the specified type based on the binaryString in which each character represents a bit in the string of 
-	 * the individual gray code strings of the values of the parameter fields of the specified type in the order of declaration.
+	 * Sets the values of the parameter fields of the specified type based on the binaryString in which each character
+	 * represents a bit in the string of the individual gray code strings of the values of the parameter fields of the
+	 * specified type in the order of declaration.
 	 * 
 	 * @param binaryString A binary string of gray code such as the output of {@link #toGrayCodeString() toGrayCodeString}.
-	 * @param types A set of the types of parameter fields whose values should be derived from the binary string and set. If it is null, the values 
-	 * derived will be applied to all parameter fields.
+	 * @param types A set of the types of parameter fields whose values should be derived from the binary string and
+	 * set. If it is null, the values derived will be applied to all parameter fields.
 	 * @return Whether the binary string could be successfully applied to the fields.
 	 */
 	public final boolean set(String binaryString, Set<ParameterType> types) {
@@ -293,22 +305,30 @@ public abstract class EngineParameters {
 				byte bitLimit = ann.binaryLengthLimit() >= 0 ? ann.binaryLengthLimit() : 63;
 				if (bitLimit == 0)
 					continue;
-				if (fieldType.equals(boolean.class))
+				if (fieldType.equals(boolean.class)) {
 					f.set(this, "1".equals(binaryString.substring(i, ++i)));
-				else if (fieldType.equals(byte.class)) 
-					f.set(this, (byte) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 7))), 2)));
-				else if (fieldType.equals(short.class))
-					f.set(this, (short) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 15))), 2)));
-				else if (fieldType.equals(int.class))
-					f.set(this, (int) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 31))), 2)));
-				else if (fieldType.equals(long.class))
-					f.set(this, GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 63))), 2)));
-				else if (fieldType.equals(float.class))
-					f.set(this, (float) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 31))), 2)));
-				else if (fieldType.equals(double.class))
-					f.set(this, GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 63))), 2)));
-				else if (fieldType.equals(char.class))
-					f.set(this, (char) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i, (i += Math.min(bitLimit, 16))), 2)));
+				} else if (fieldType.equals(byte.class)) {
+					f.set(this, (byte) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 7))), 2)));
+				} else if (fieldType.equals(short.class)) {
+					f.set(this, (short) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 15))), 2)));
+				} else if (fieldType.equals(int.class)) {
+					f.set(this, (int) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 31))), 2)));
+				} else if (fieldType.equals(long.class)) {
+					f.set(this, GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 63))), 2)));
+				} else if (fieldType.equals(float.class)) {
+					f.set(this, (float) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 31))), 2)));
+				} else if (fieldType.equals(double.class)) {
+					f.set(this, GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 63))), 2)));
+				} else if (fieldType.equals(char.class)) {
+					f.set(this, (char) GrayCode.decode(Long.parseUnsignedLong(binaryString.substring(i,
+							(i += Math.min(bitLimit, 16))), 2)));
+				}
 			}
 			return true;
 		} catch (IllegalAccessException e) {
@@ -316,8 +336,9 @@ public abstract class EngineParameters {
 		}
 	}
 	/**
-	 * Returns an array of doubles holding the values of all the fields declared as parameters by the {@link net.viktorc.detroid.framework.tuning.Parameter} 
-	 * annotation. Boolean values will be converted to either 1 or 0 depending on whether they are true or false.
+	 * Returns an array of doubles holding the values of all the fields declared as parameters by the
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. Boolean values will be converted to either 1
+	 * or 0 depending on whether they are true or false.
 	 * 
 	 * @return An array of doubles holding the values of all the parameter fields.
 	 */
@@ -325,12 +346,13 @@ public abstract class EngineParameters {
 		return values(null);
 	}
 	/**
-	 * Returns an array of doubles holding the values of all the fields declared as parameters of the specified type by the 
-	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. Boolean values will be converted to either 1 or 0 
+	 * Returns an array of doubles holding the values of all the fields declared as parameters of the specified type
+	 * by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. Boolean values will be converted to
+	 * either 1 or 0
 	 * depending on whether they are true or false.
 	 * 
-	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for all parameter fields 
-	 * will be returned.
+	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max
+	 * values for all parameter fields will be returned.
 	 * @return An array of doubles holding the values of all the parameter fields of the specified type.
 	 */
 	public final double[] values(Set<ParameterType> types) {
@@ -351,8 +373,8 @@ public abstract class EngineParameters {
 	}
 	/**
 	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters by the 
-	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The values are determined by the field type and 
-	 * the binaryLengthLimit attribute of the annotation.
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The values are determined by the field type
+	 * and the binaryLengthLimit attribute of the annotation.
 	 * 
 	 * @return An array of doubles holding the maximum allowed values for all parameters.
 	 */
@@ -360,12 +382,12 @@ public abstract class EngineParameters {
 		return maxValues(null);
 	}
 	/**
-	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters of the specified 
-	 * type by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The values are determined by the field type 
-	 * and the binaryLengthLimit attribute of the annotation.
+	 * Returns an array of doubles holding the maximum allowed values for all the fields declared as parameters of the
+	 * specified type by the {@link net.viktorc.detroid.framework.tuning.Parameter} annotation. The values are
+	 * determined by the field type and the binaryLengthLimit attribute of the annotation.
 	 * 
-	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max values for 
-	 * all parameter fields will be returned.
+	 * @param types A set of the types of parameter fields whose max values are to be returned. If it is null the max
+	 * values for all parameter fields will be returned.
 	 * @return An array of doubles holding the maximum allowed values for the parameters of the specified type.
 	 */
 	public final double[] maxValues(Set<ParameterType> types) {
@@ -375,7 +397,8 @@ public abstract class EngineParameters {
 		for (Field f : params) {
 			Class<?> fieldType = f.getType();
 			Parameter ann = f.getAnnotation(Parameter.class);
-			long max = ann.binaryLengthLimit() < 0 || ann.binaryLengthLimit() > 63 ? Long.MAX_VALUE : ((1L << ann.binaryLengthLimit()) - 1);
+			long max = ann.binaryLengthLimit() < 0 || ann.binaryLengthLimit() > 63 ? Long.MAX_VALUE :
+					((1L << ann.binaryLengthLimit()) - 1);
 			if (fieldType.equals(boolean.class))
 				arr[i++] = 1;
 			else if (fieldType.equals(byte.class))
@@ -396,9 +419,10 @@ public abstract class EngineParameters {
 		return arr;
 	}
 	/**
-	 * Returns a binary string of all the bits of all the fields annotated as a {@link net.viktorc.detroid.framework.tuning.Parameter} 
-	 * concatenated field by field. Floating point values will be cast to integer values (float to int, double to long) for their binary 
-	 * representation which may result in information loss.
+	 * Returns a binary string of all the bits of all the fields annotated as a
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} concatenated field by field. Floating point values will
+	 * be cast to integer values (float to int, double to long) for their binary representation which may result in
+	 * information loss.
 	 * 
 	 * @return A binary string of all the bits of all parameter fields concatenated field by field.
 	 */
@@ -406,12 +430,13 @@ public abstract class EngineParameters {
 		return toGrayCodeString(null);
 	}
 	/**
-	 * Returns a binary string of all the bits of the fields annotated as a {@link net.viktorc.detroid.framework.tuning.Parameter} of the specified 
-	 * type concatenated field by field. Floating point values will be cast to integer values (float to int, double to long) for their binary 
+	 * Returns a binary string of all the bits of the fields annotated as a
+	 * {@link net.viktorc.detroid.framework.tuning.Parameter} of the specified type concatenated field by field.
+	 * Floating point values will be cast to integer values (float to int, double to long) for their binary
 	 * representation which may result in information loss.
 	 * 
-	 * @param types A set of the types of parameters whose values are to be included in the string. If it is null, all parameters' values will be 
-	 * included.
+	 * @param types A set of the types of parameters whose values are to be included in the string. If it is null, all
+	 * parameters' values will be included.
 	 * @return A binary string of all the bits of the parameter fields of the specified type concatenated field by field.
 	 */
 	public final String toGrayCodeString(Set<ParameterType> types) {
@@ -424,22 +449,30 @@ public abstract class EngineParameters {
 				byte bitLimit = (byte) (ann.binaryLengthLimit() >= 0 ? 64 - ann.binaryLengthLimit() : 0);
 				if (bitLimit == 64)
 					continue;
-				if (fieldValue instanceof Boolean)
+				if (fieldValue instanceof Boolean) {
 					genome += f.getBoolean(this) ? "1" : "0";
-				else if (fieldValue instanceof Byte)
-					genome += BitOperations.toBinaryString(GrayCode.encode(f.getByte(this))).substring(Math.max(bitLimit, 57));
-				else if (fieldValue instanceof Short)
-					genome += BitOperations.toBinaryString(GrayCode.encode(f.getShort(this))).substring(Math.max(bitLimit, 49));
-				else if (fieldValue instanceof Integer)
-					genome += BitOperations.toBinaryString(GrayCode.encode(f.getInt(this))).substring(Math.max(bitLimit, 33));
-				else if (fieldValue instanceof Long)
-					genome += BitOperations.toBinaryString(GrayCode.encode(f.getLong(this))).substring(Math.max(bitLimit, 1));
-				else if (fieldValue instanceof Float)
-					genome += BitOperations.toBinaryString(GrayCode.encode((int) f.getFloat(this))).substring(Math.max(bitLimit, 33));
-				else if (fieldValue instanceof Double)
-					genome += BitOperations.toBinaryString(GrayCode.encode((long) f.getDouble(this))).substring(Math.max(bitLimit, 1));
-				else if (fieldValue instanceof Character)
-					genome += BitOperations.toBinaryString(GrayCode.encode(Character.getNumericValue(f.getChar(this)))).substring(Math.max(bitLimit, 48));
+				} else if (fieldValue instanceof Byte) {
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getByte(this)))
+							.substring(Math.max(bitLimit, 57));
+				} else if (fieldValue instanceof Short) {
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getShort(this)))
+							.substring(Math.max(bitLimit, 49));
+				} else if (fieldValue instanceof Integer) {
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getInt(this)))
+							.substring(Math.max(bitLimit, 33));
+				} else if (fieldValue instanceof Long) {
+					genome += BitOperations.toBinaryString(GrayCode.encode(f.getLong(this)))
+							.substring(Math.max(bitLimit, 1));
+				} else if (fieldValue instanceof Float) {
+					genome += BitOperations.toBinaryString(GrayCode.encode((int) f.getFloat(this)))
+							.substring(Math.max(bitLimit, 33));
+				} else if (fieldValue instanceof Double) {
+					genome += BitOperations.toBinaryString(GrayCode.encode((long) f.getDouble(this)))
+							.substring(Math.max(bitLimit, 1));
+				} else if (fieldValue instanceof Character) {
+					genome += BitOperations.toBinaryString(GrayCode.encode(Character.getNumericValue(f.getChar(this))))
+							.substring(Math.max(bitLimit, 48));
+				}
 			}
 			return genome;
 		}

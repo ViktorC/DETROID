@@ -3,7 +3,8 @@ package net.viktorc.detroid.framework.engine;
 import net.viktorc.detroid.framework.util.Cache.Entry;
 
 /**
- * An evaluation hash table entry that stores information about the static evaluation scores of leaf nodes. It uses Hyatt's lock-less hashing.
+ * An evaluation hash table entry that stores information about the static evaluation scores of leaf nodes. It uses
+ * Robert Hyatt's lock-less hashing.
  * 
  * @author Viktor
  *
@@ -11,7 +12,7 @@ import net.viktorc.detroid.framework.util.Cache.Entry;
 class ETEntry implements Entry<ETEntry> {
 	
 	/**
-	 * The 64-bit position hash key.
+	 * The 64 bit position hash key.
 	 */
 	volatile long key;
 	/**
@@ -28,8 +29,6 @@ class ETEntry implements Entry<ETEntry> {
 	volatile byte generation;
 
 	/**
-	 * Sets the state of the instance.
-	 * 
 	 * @param key
 	 * @param score
 	 * @param isExact

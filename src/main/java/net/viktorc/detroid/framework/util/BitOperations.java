@@ -2,8 +2,9 @@ package net.viktorc.detroid.framework.util;
 
 
 /**
- * A utility class for bitwise operations. Even though some of them are already implemented in the standard Java libraries, to have a clear idea 
- * about the costs and to understand the logic, they are re-implemented and provided here.
+ * A utility class for bitwise operations. Even though some of them are already implemented in the standard Java
+ * libraries, to have a clear idea about the costs and to understand the logic, they are re-implemented and provided
+ * here.
  * 
  * @author Viktor
  *
@@ -23,8 +24,8 @@ public final class BitOperations {
 	
 	private BitOperations() { }
 	/**
-	 * Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only one set bit and it is not
-	 * checked!
+	 * Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only
+	 * one set bit and it is not checked!
 	 * 
 	 * @param n The number with a single set bit.
 	 * @return The index of that bit.

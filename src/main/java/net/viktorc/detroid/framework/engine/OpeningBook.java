@@ -10,7 +10,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 /**
- * A base class for reading and selecting moves from a chess opening book. It should allow for using an alternative book once out of the main book.
+ * A base class for reading and selecting moves from a chess opening book. It should allow for using an alternative
+ * book once out of the main book.
  * 
  * @author Viktor
  *
@@ -57,20 +58,20 @@ abstract class OpeningBook implements Closeable {
 			secondaryBook.close();
 	}
 	/**
-	 * Picks and returns an opening move for the Position from all the relevant entries found in the PolyGlot book based on the specified
-	 * mathematical model for selection. If there have been no relevant entries found, it returns null.
+	 * Picks and returns an opening move for the Position0 from all the relevant entries found in the PolyGlot book
+	 * based on the specified mathematical model for selection. If there have been no relevant entries found, it
+	 * returns null.
 	 * 
 	 * @param p The position for which an opening move is sought.
-	 * @param selection An enumeration of type {@link #Book.SelectionModel SelectionModel} that specifies the mathematical model to be applied when
-	 * selecting the move.
+	 * @param selection The mathematical model to be applied when selecting the move.
 	 * @return An opening move.
 	 * @throws Exception If anything goes wrong.
 	 */
-	abstract Move getMove(Position p, SelectionModel selection) throws Exception;
+	abstract Move getMove(Position0 p, SelectionModel selection) throws Exception;
 	
 	/**
-	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening moves for a position.
-	 * RANDOM is actually pseudo-random.
+	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening
+	 * moves for a position.
 	 * 
 	 * @author Viktor
 	 *

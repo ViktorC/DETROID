@@ -101,9 +101,10 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		this.fenFilePath = fenFilePath;
 		this.testDataProportion = testDataProportion == null ? DEF_TEST_DATA_PROPORTION : testDataProportion;
 		dataSetSize = countDataSetSize();
-		if (dataSetSize < Math.ceil(1/this.testDataProportion))
-			throw new IllegalArgumentException("The complete data set has to contain at least " + Math.ceil(1/this.testDataProportion) +
-					" data rows.");
+		if (dataSetSize < Math.ceil(1/this.testDataProportion)) {
+			throw new IllegalArgumentException("The complete data set has to contain at least " +
+					Math.ceil(1 / this.testDataProportion) + " data rows.");
+		}
 		ArrayList<TunableEngine> enginesList = new ArrayList<>();
 		for (TunableEngine e : engines) {
 			if (e != null) {
@@ -259,8 +260,8 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		return count;
 	}
 	/**
-	 * Caches the data into a list of key-pair values where the key is FEN position and the value is the label denoting which side 
-	 * won the game in which the position occurred.
+	 * Caches the data into a list of key-pair values where the key is FEN position and the value is the label
+	 * denoting which side won the game in which the position occurred.
 	 * 
 	 * @param fromInd The line number from which on the lines will be loaded into the data set.
 	 * @param toInd The line number up to which (exclusive) the lines will be loaded into the data set.

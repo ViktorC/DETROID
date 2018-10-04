@@ -15,8 +15,8 @@ import net.viktorc.detroid.framework.validation.GameState;
  */
 class Game {
 	
-	private Position startPosition;
-	private Position position;
+	private Position0 startPosition;
+	private Position0 position;
 	private String event;
 	private String site;
 	private String date;
@@ -87,7 +87,7 @@ class Game {
 			out.round = "?".equals(round) ? -1 : Short.parseShort(round);
 			out.whitePlayerName = whiteName;
 			out.blackPlayerName = blackName;
-			out.position = fen == null ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
+			out.position = fen == null ? Position0.parse(Position0.START_POSITION_FEN) : Position0.parse(fen);
 			out.startPosition = out.position.deepCopy();
 			pgn = pgn.substring(pgn.lastIndexOf(']') + 1, pgn.length());
 			pgn = pgn.trim();
@@ -148,9 +148,9 @@ class Game {
 	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(Position position, String event, String site,
-			String whitePlayerName, String blackPlayerName, int round) throws NullPointerException, ChessParseException {
-		this.position = Position.parse(position.toString());
+	Game(Position0 position, String event, String site,
+         String whitePlayerName, String blackPlayerName, int round) throws NullPointerException, ChessParseException {
+		this.position = Position0.parse(position.toString());
 		startPosition = this.position.deepCopy();
 		this.event = event;
 		this.site = site;
@@ -173,7 +173,7 @@ class Game {
 	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(Position position, String event, String site, String whitePlayerName, String blackPlayerName)
+	Game(Position0 position, String event, String site, String whitePlayerName, String blackPlayerName)
 			throws NullPointerException, ChessParseException {
 		this(position, event, site, whitePlayerName, blackPlayerName, -1);
 	}
@@ -186,7 +186,7 @@ class Game {
 	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(Position position, String whitePlayerName, String blackPlayerName) throws NullPointerException, ChessParseException {
+	Game(Position0 position, String whitePlayerName, String blackPlayerName) throws NullPointerException, ChessParseException {
 		this(position, null, null, whitePlayerName, blackPlayerName, -1);
 	}
 	/**
@@ -196,7 +196,7 @@ class Game {
 	 * @throws NullPointerException
 	 * @throws ChessParseException 
 	 */
-	Game(Position position) throws NullPointerException, ChessParseException {
+	Game(Position0 position) throws NullPointerException, ChessParseException {
 		this(position, null, null, null, null, -1);
 	}
 	/**
@@ -205,7 +205,7 @@ class Game {
 	 */
 	Game() {
 		try {
-			position = Position.parse(Position.START_POSITION_FEN);
+			position = Position0.parse(Position0.START_POSITION_FEN);
 		} catch (ChessParseException e) { }
 		startPosition = position.deepCopy();
 		Calendar cal = Calendar.getInstance();
@@ -219,7 +219,7 @@ class Game {
 	 * 
 	 * @return
 	 */
-	Position getStartPos() {
+	Position0 getStartPos() {
 		return startPosition;
 	}
 	/**
@@ -227,7 +227,7 @@ class Game {
 	 * 
 	 * @return
 	 */
-	Position getPosition() {
+	Position0 getPosition() {
 		return position.deepCopy();
 	}
 	/**

@@ -20,8 +20,8 @@ enum MoveType {
 	// A numeric representation of the move type; to avoid the overhead of calling the ordinal function.
 	final byte ind;
 	
-	private MoveType() {
-		ind = (byte)ordinal();
+	MoveType() {
+		ind = (byte) ordinal();
 	}
 	
 }

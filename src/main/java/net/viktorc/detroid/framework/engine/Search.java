@@ -41,7 +41,7 @@ class Search implements Runnable, Future<SearchResults> {
 	 */
 	private static final short INITIAL_DEPTH = 1;
 	
-	private final Position rootPosition;
+	private final Position0 rootPosition;
 	private final DetroidParameters params;
 	private final Evaluator eval;
 	private final EndGameTableBase egtb;
@@ -91,9 +91,9 @@ class Search implements Runnable, Future<SearchResults> {
 	 * @param analysisMode Whether the search should run in analysis mode. In analysis mode, the endgame 
 	 * tablebases are not used and single move root positions are searched, too.
 	 */
-	Search(Position position, DetroidParameters params, Evaluator eval, EndGameTableBase egtb, DetroidSearchInformation info,
-			int numOfSearchThreads, Cache<TTEntry> tT, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth,
-			long maxNodes, Set<Move> moves) {
+	Search(Position0 position, DetroidParameters params, Evaluator eval, EndGameTableBase egtb, DetroidSearchInformation info,
+		   int numOfSearchThreads, Cache<TTEntry> tT, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth,
+		   long maxNodes, Set<Move> moves) {
 		this.params = params;
 		this.info = info;
 		this.eval = eval;
@@ -145,7 +145,7 @@ class Search implements Runnable, Future<SearchResults> {
 	 * @param ply
 	 * @return
 	 */
-	private List<Move> extractPv(Position position, int ply) {
+	private List<Move> extractPv(Position0 position, int ply) {
 		List<Move> pV = new ArrayList<>();
 		TTEntry e;
 		Move bestMove;
@@ -206,7 +206,7 @@ class Search implements Runnable, Future<SearchResults> {
 	 * @param beta
 	 * @param score
 	 */
-	private void updateInfo(Position position, Move currentMove, int moveNumber, short ply, int alpha, int beta, int score) {
+	private void updateInfo(Position0 position, Move currentMove, int moveNumber, short ply, int alpha, int beta, int score) {
 		// Determine score type and value in case it's a mate score.
 		Entry<Short,ScoreType> adjustedScore = adjustScore(score, alpha, beta);
 		long egtbHits = 0;
@@ -419,14 +419,14 @@ class Search implements Runnable, Future<SearchResults> {
 		 */
 		private static final int BUSY_SCORE = -2*Short.MAX_VALUE;
 		
-		private final Position origPosition; // The original position to search.
+		private final Position0 origPosition; // The original position to search.
 		private final SearchThread master;
 		private final boolean isMainSearchThread;
 		private final KillerTable kT;
 		private final RelativeHistoryTable hT;
 		private final TTEntry tTentry;
 		private final ETEntry eTentry;
-		private Position position; // The position instance to use for the search.
+		private Position0 position; // The position instance to use for the search.
 		private AtomicLong nodes;
 		private int alpha;
 		private int beta;
@@ -441,7 +441,7 @@ class Search implements Runnable, Future<SearchResults> {
 		 * @param position
 		 * @param master
 		 */
-		SearchThread(Position position, SearchThread master) {
+		SearchThread(Position0 position, SearchThread master) {
 			origPosition = position;
 			this.master = master;
 			this.isMainSearchThread = master == null;
@@ -504,7 +504,7 @@ class Search implements Runnable, Future<SearchResults> {
 		 * @param moves
 		 * @return
 		 */
-		private Move[] orderMaterialMovesSEE(Position pos, List<Move> moves) {
+		private Move[] orderMaterialMovesSEE(Position0 pos, List<Move> moves) {
 			Move[] arr = new Move[moves.size()];
 			int i = 0;
 			for (Move move : moves) {

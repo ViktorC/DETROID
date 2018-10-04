@@ -118,7 +118,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * or {@link net.viktorc.detroid.framework.engine.EndGameTableBase.WDL} instance depending on 
 	 * the <code>dtm</code> argument; else null.
 	 */
-	private Object probe(Position pos, boolean dtm, boolean soft) {
+	private Object probe(Position0 pos, boolean dtm, boolean soft) {
 		boolean lockAcquired = false;
 		int sideToMove = pos.whitesTurn ? 0 : 1;
 		int enPassant = pos.enPassantRights == EnPassantRights.NONE.ind ? NO_SQUARE :
@@ -174,8 +174,8 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 			} finally {
 				probeLock.unlock();
 			}
-		} else
-			return null;
+		}
+		return null;
 	}
 	/**
 	 * Initializes the Gaviota probing library using the specified parameters.
@@ -432,11 +432,11 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 		}
 	}
 	@Override
-	WDL probeWDL(Position pos, boolean soft) {
+	WDL probeWDL(Position0 pos, boolean soft) {
 		return (WDL) probe(pos, false, soft);
 	}
 	@Override
-	DTM probeDTM(Position pos, boolean soft) {
+	DTM probeDTM(Position0 pos, boolean soft) {
 		return (DTM) probe(pos, true, soft);
 	}
 	

@@ -5,25 +5,28 @@ import java.util.Iterator;
 import java.util.function.Predicate;
 
 /**
- * A generic, pre-allocated hash table for statistical or turn-based game AI applications with massive hash storage requirements where losslessness 
- * and dynamic heap allocation are inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and constant time insertion 
- * that, instead of pushing out and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, 
- * only does a specified number of iterations of the standard cuckoo insertion loop in case of a hash conflict. Entries of the hash table must 
- * implement the {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
+ * A generic, pre-allocated hash table for statistical or turn-based game AI applications with massive hash storage
+ * requirements where losslessness and dynamic heap allocation are inefficient. It utilizes a lossy version of cuckoo
+ * hashing with constant time look-up and constant time insertion that, instead of pushing out and relocating entries
+ * (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, only does a specified
+ * number of iterations of the standard cuckoo insertion loop in case of a hash conflict. Entries of the hash table
+ * must implement the {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
  * 
- * The storage scheme is based on asymmetric hashing with two hash tables with different sizes in decreasing order, thus it does not really have
- * two unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective table's
- * size]; it applies no randomization whatsoever either. Due to the uneven table sizes, look up is biased towards the first table. This data 
- * structure is not thread safe.
+ * The storage scheme is based on asymmetric hashing with two hash tables with different sizes in decreasing order,
+ * thus it does not really have two unique hash functions. All it ever does is take the absolute value of the hash
+ * keys of the entries and derive mod [respective table's size]; it applies no randomization whatsoever either. Due
+ * to the uneven table sizes, look up is biased towards the first table. This data structure is not thread safe.
  * 
  * @author Viktor
  *
- * @param <T> A hash table entry type that implements the {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
+ * @param <T> A hash table entry type that implements the {@link net.viktorc.detroid.framework.util.Cache.Entry}
+ * interface.
  */
 public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	
-	/* The lengths of the two arrays are not equal so as to avoid the need for unique hash functions for each; and for faster access
-	 * due to the order of the tables tried as the probability of getting a hit in bigger tables is higher. */
+	/* The lengths of the two arrays are not equal so as to avoid the need for unique hash functions for each; and for
+	 * faster access due to the order of the tables tried as the probability of getting a hit in bigger tables is
+	 * higher. */
 	private static final float T1_SHARE = 0.6f;
 	private static final float T2_SHARE = 0.4f;
 	private static final int MAX_CAPACITY = Integer.MAX_VALUE; // The maximum number of slots.
@@ -212,8 +215,8 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 		return null;
 	}
 	/**
-	 * Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if it is in the hash table;
-	 * returns false otherwise.
+	 * Removes the entry identified by the input parameter long integer 'key' from the hash table and returns true if
+	 * it is in the hash table; returns false otherwise.
 	 * 
 	 * @param key The 64 bit hash key.
 	 * @return Whether there was an entry mapped to the specified key.
@@ -331,7 +334,8 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	 * 
 	 * @author Viktor
 	 *
-	 * @param <T> A hash table entry type that implements the {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
+	 * @param <T> A hash table entry type that implements the
+	 * {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
 	 */
 	public static interface EntryFactory<T extends Cache.Entry<T>> {
 		

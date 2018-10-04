@@ -35,7 +35,7 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.GameState;
 
 /**
- * A UCI compatible, tunable chess engine that utilizes magic bit boards and most search heuristics and supports Polyglot 
+ * A UCI compatible, tunable chess engine that utilizes magic bitboard boards and most search heuristics and supports Polyglot
  * opening books.
  * 
  * @author Viktor
@@ -546,7 +546,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	public boolean setPosition(String fen) {
 		synchronized (lock) {
 			try {
-				Position pos = fen.equals(START_POSITION) ? Position.parse(Position.START_POSITION_FEN) : Position.parse(fen);
+				Position0 pos = fen.equals(START_POSITION) ? Position0.parse(Position0.START_POSITION_FEN) : Position0.parse(fen);
 				// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
 				if (newGame) {
 					if (debugMode) debugInfo.set("New game set");
@@ -558,7 +558,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				}
 				// Otherwise just clear the obsolete entries from the hash tables.
 				else {
-					if (debugMode) debugInfo.set("Position set within the same game");
+					if (debugMode) debugInfo.set("Position0 set within the same game");
 					gen++;
 					if (!bookMove)
 						movesOutOfBook++;
@@ -881,7 +881,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	}
 	@Override
 	public List<String> getLegalMoves() {
-		Position pos = game.getPosition();
+		Position0 pos = game.getPosition();
 		List<Move> moves = pos.getMoves();
 		List<String> moveStrings = new ArrayList<>(moves.size());
 		for (Move m : moves)
@@ -944,7 +944,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	@Override
 	public String convertPACNToSAN(String move) {
 		try {
-			Position pos = game.getPosition();
+			Position0 pos = game.getPosition();
 			return pos.toSAN(pos.parsePACN(move));
 		} catch (ChessParseException | NullPointerException e) {
 			if (debugMode) debugInfo.set("Error while converting PACN to SAN: " + e.getMessage());
@@ -954,7 +954,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	@Override
 	public String convertSANToPACN(String move) {
 		try {
-			Position pos = game.getPosition();
+			Position0 pos = game.getPosition();
 			return pos.parseSAN(move).toString();
 		} catch (ChessParseException | NullPointerException e) {
 			if (debugMode) debugInfo.set("Error while converting SAN to PACN: " + e.getMessage());

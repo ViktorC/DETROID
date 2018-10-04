@@ -8,61 +8,71 @@ package net.viktorc.detroid.framework.engine;
  */
 enum CastlingRights {
 	
-	NONE, SHORT, LONG, ALL;
+	NONE,
+	SHORT,
+	LONG,
+	ALL;
+
+	/**
+	 * Numeric representation of the the castling rights.
+	 */
+	final byte ind;
 	
-	final byte ind;	// Numeric representation of the the castling rights.
-	
-	private CastlingRights() {
+	CastlingRights() {
 		ind = (byte) ordinal();
 	}
 	/**
-	 * Returns a CastlingRights type based on the argument numeral.
-	 * 
-	 * @param ind
-	 * @return
+	 * @param ind The index of the castling rights type.
+	 * @return The castling rights enum instance.
 	 */
 	static CastlingRights getByIndex(int ind) {
 		switch (ind) {
-			case 0: return NONE; case 1: return SHORT; case 2: return LONG; case 3: return ALL;
+			case 0: return NONE;
+			case 1: return SHORT;
+			case 2: return LONG;
+			case 3: return ALL;
 			default: throw new IllegalArgumentException();
 		}
 	}
 	/**
-	 * Returns a string representation in FEN notation of two castling right enum types for white and black respectively.
+	 * Returns a string representation in FEN notation of two castling right enum types for white and black
+	 * respectively.
 	 * 
-	 * @param white
-	 * @param black
-	 * @return
+	 * @param white The castling rights for white.
+	 * @param black The castling rights for black.
+	 * @return The FEN castling notation.
 	 */
 	static String toFEN(CastlingRights white, CastlingRights black) {
 		if (white == null || black == null)
 			return null;
 		String out = "";
 		switch (white) {
-			case NONE:
-			break;
 			case SHORT:
 				out += "K";
-			break;
+				break;
 			case LONG:
 				out += "Q";
-			break;
+				break;
 			case ALL:
 				out += "KQ";
+				break;
+			case NONE:
+				break;
 		}
 		switch (black) {
-			case NONE:
-			break;
 			case SHORT:
 				out += "k";
-			break;
+				break;
 			case LONG:
 				out += "q";
-			break;
+				break;
 			case ALL:
 				out += "kq";
+				break;
+			case NONE:
+				break;
 		}
-		if (out.equals(""))
+		if (out.isEmpty())
 			return "-";
 		return out;
 	}

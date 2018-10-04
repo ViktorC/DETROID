@@ -19,11 +19,10 @@ class ChessParseException extends ParseException {
 		this("");
 	}
 	ChessParseException(String arg) {
-		super(arg, -1);
+		this(arg, -1);
 	}
 	ChessParseException(String arg0, int arg1) {
 		super(arg0, arg1);
-		// TODO Auto-generated constructor stub
 	}
 	ChessParseException(Exception e) {
 		this(e.getMessage());

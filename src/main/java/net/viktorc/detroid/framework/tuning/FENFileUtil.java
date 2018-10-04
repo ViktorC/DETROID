@@ -42,14 +42,16 @@ public final class FENFileUtil {
 	 * Generates a file of lines of FEN strings with the results of the games the positions occurred in 
 	 * appended to them. This file can then be used for the optimization of engine parameters.
 	 * 
-	 * @param engine A controller engine that will be responsible for parsing the PGNs and providing FENs for each position.
+	 * @param engine A controller engine that will be responsible for parsing the PGNs and providing FENs for each
+	 * position.
 	 * @param pgnFilePath The path to the file containing the games in PGN.
 	 * @param fenFilePath The output file path.
 	 * @param maxNumOfGames The maximum number of games that will be parsed and converted into lines of FEN.
-	 * @throws Exception If the input file does not exist or cannot be read, if the output file path is invalid, or if the engine is not 
-	 * initialized and cannot be initialized.
+	 * @throws Exception If the input file does not exist or cannot be read, if the output file path is invalid, or if
+	 * the engine is not initialized and cannot be initialized.
 	 */
-	public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath, int maxNumOfGames) throws Exception {
+	public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath,
+			int maxNumOfGames) throws Exception {
 		try (BufferedReader reader = new BufferedReader(new FileReader(pgnFilePath));
 				BufferedWriter writer = new BufferedWriter(new FileWriter(fenFilePath))) {
 			String line;
@@ -131,7 +133,8 @@ public final class FENFileUtil {
 		}
 		if (enginesList.size() == 0)
 			throw new IllegalArgumentException("The parameter engines has to contain at least 1 non-null element.");
-		ExecutorService pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(), enginesList.size()));
+		ExecutorService pool = Executors.newFixedThreadPool(Math.min(Runtime.getRuntime().availableProcessors(),
+				enginesList.size()));
 		try {
 			ArrayList<Future<Void>> futures = new ArrayList<>();
 			int workLoad = games/enginesList.size();
@@ -180,16 +183,16 @@ public final class FENFileUtil {
 		}
 	}
 	/**
-	 * Copies all the lines from the source FEN file to the destination file except for the ones representing positions no 
-	 * more than numOfPositionsToFilter full moves into the game.
+	 * Copies all the lines from the source FEN file to the destination file except for the ones representing positions
+	 * no more than numOfPositionsToFilter full moves into the game.
 	 * 
 	 * @param sourceFenFile The file path to the source FEN file.
 	 * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
 	 * @param numOfPositionsToFilter The first x full moves to filter from each game.
 	 * @throws IOException If the source cannot be read from and the destination cannot be created or written to.
 	 */
-	public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile, int numOfPositionsToFilter)
-			throws IOException {
+	public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile,
+			int numOfPositionsToFilter) throws IOException {
 		File destinationFile = new File(sourceFenFile);
 		if (!destinationFile.exists())
 			Files.createFile(destinationFile.toPath());
@@ -209,8 +212,8 @@ public final class FENFileUtil {
 		}
 	}
 	/**
-	 * Copies all the lines from the source FEN file to the destination file except for the ones representing positions from 
-	 * drawn games.
+	 * Copies all the lines from the source FEN file to the destination file except for the ones representing positions
+	 * from drawn games.
 	 * 
 	 * @param sourceFenFile The file path to the source FEN file.
 	 * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.

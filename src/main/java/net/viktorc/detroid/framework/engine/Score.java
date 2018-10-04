@@ -22,7 +22,7 @@ enum Score {
 	 */
 	final short value;
 	
-	private Score(int value) {
+	Score(int value) {
 		this.value = (short) value;
 	}
 	

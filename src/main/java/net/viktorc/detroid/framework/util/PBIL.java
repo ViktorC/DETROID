@@ -88,8 +88,9 @@ public abstract class PBIL {
 	 * null, no logging is performed.
 	 * @throws IllegalArgumentException If the length of the genotype length is not greater than 0.
 	 */
-	protected PBIL(int genotypeLength, Integer populationSize, Double mutationProbability, Double mutationShift, Double learningRate,
-			Double negLearningRateAddition, Integer generations, double[] initialProbabilityVector, Logger logger) throws IllegalArgumentException {
+	protected PBIL(int genotypeLength, Integer populationSize, Double mutationProbability, Double mutationShift,
+			Double learningRate, Double negLearningRateAddition, Integer generations, double[] initialProbabilityVector,
+			Logger logger) throws IllegalArgumentException {
 		if (genotypeLength <= 0)
 			throw new IllegalArgumentException("The genotype length has to be greater than 0.");
 		if (initialProbabilityVector == null) {
@@ -106,7 +107,8 @@ public abstract class PBIL {
 		this.mutationProbability = (mutationProbability == null ? MUTATION_PROBABILITY : mutationProbability);
 		this.mutationShift = (mutationShift == null ? MUTATION_SHIFT : mutationShift);
 		this.learningRate = (learningRate == null ? LEARNING_RATE : learningRate);
-		this.negLearningRateAddition = (negLearningRateAddition == null ? NEGATIVE_LEARNING_RATE : negLearningRateAddition);
+		this.negLearningRateAddition = (negLearningRateAddition == null ? NEGATIVE_LEARNING_RATE :
+				negLearningRateAddition);
 		this.generations = generations;
 		this.logger = logger;
 	}
@@ -211,8 +213,8 @@ public abstract class PBIL {
 				 * At the points where the fittest genotype's gene differs from the least fit genome's gene,
 				 * magnify the effect on the probability vector by the value of diffLearningRateAddition.
 				 */
-				double appliedLearningRate = (curLeastFitGenotype.charAt(j) == curFittestGenotype.charAt(j) ? learningRate : 
-						learningRate + negLearningRateAddition);
+				double appliedLearningRate = (curLeastFitGenotype.charAt(j) == curFittestGenotype.charAt(j) ?
+						learningRate : learningRate + negLearningRateAddition);
 				double newProbabilityVectorVal = probabilityVector[j]*(1d - appliedLearningRate) +
 						(curFittestGenotype.charAt(j) == '1' ? appliedLearningRate : 0d);
 				// Mutate the probability vector.
@@ -221,9 +223,10 @@ public abstract class PBIL {
 							(rand.nextBoolean() ? mutationShift : 0d);
 				probabilityVector[j] = newProbabilityVectorVal;
 			}
-			if (logger != null)
-				logger.info("Generation: " + currentGeneration + "; Entropy: " + getEntropy() + System.lineSeparator() + 
-						"Probability vector: " + Arrays.toString(probabilityVector));
+			if (logger != null) {
+				logger.info("Generation: " + currentGeneration + "; Entropy: " + getEntropy() +
+						System.lineSeparator() + "Probability vector: " + Arrays.toString(probabilityVector));
+			}
 			currentGeneration++;
 			// Exit if the evolution has reached the desired stage.
 			if (isOptimized(currentGeneration))

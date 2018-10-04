@@ -6,8 +6,8 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
 import net.viktorc.detroid.framework.util.BitOperations;
 
 /**
- * A class whose object encodes the most important pieces of information stored in a Position object into a long by XOR-operations.
- * Two Position objects with identical states will always have the same Zobrist keys within one runtime and two Position objects with
+ * A class whose object encodes the most important pieces of information stored in a Position0 object into a long by XOR-operations.
+ * Two Position0 objects with identical states will always have the same Zobrist keys within one runtime and two Position0 objects with
  * different values for the concerned instance fields will almost always have different Zobrist keys.
  * The relevant fields are:
  * 		1. side to move
@@ -16,7 +16,7 @@ import net.viktorc.detroid.framework.util.BitOperations;
  * 		4. black's castling rights
  * 		5. en passant rights
  * 
- * The class creates its own random values it then uses for XOR-ing on compile thus Position objects with identical states are 
+ * The class creates its own random values it then uses for XOR-ing on compile thus Position0 objects with identical states are
  * likely to have different keys for each runtime. This does not apply to Polyglot Zobrist keys.
  * 
  * @author Viktor
@@ -260,7 +260,7 @@ final class ZobristKeyGenerator {
 	 * @param p
 	 * @return
 	 */
-	long generateHashKey(Position p) {
+	long generateHashKey(Position0 p) {
 		byte[] offsetBoard = p.offsetBoard;
 		long key = 0;
 		if (!p.whitesTurn)
@@ -278,7 +278,7 @@ final class ZobristKeyGenerator {
 	 * @param p
 	 * @return
 	 */
-	long generatePawnKingHashKey(Position p) {
+	long generatePawnKingHashKey(Position0 p) {
 		long key = 0;
 		long whitePawns = p.whitePawns;
 		long blackPawns = p.blackPawns;
@@ -295,12 +295,12 @@ final class ZobristKeyGenerator {
 		return key;
 	}
 	/**
-	 * Returns the 64 bit hash key used for positions in PolyGlot opening books.
+	 * Returns the 64 bitboard hash key used for positions in PolyGlot opening books.
 	 * 
 	 * @param p
 	 * @return
 	 */
-	long generatePolyglotHashKey(Position p) {
+	long generatePolyglotHashKey(Position0 p) {
 		long key = 0L;
 		int piece, pieceNote;
 		byte[] offBoard = p.offsetBoard;
@@ -348,12 +348,12 @@ final class ZobristKeyGenerator {
 		return key;
 	}
 	/**
-	 * Returns an updated version of a Position object's hash key according to the changes made by the last move.
+	 * Returns an updated version of a Position0 object's hash key according to the changes made by the last move.
 	 * 
 	 * @param p
 	 * @return
 	 */
-	long getUpdatedHashKey(Position p) {
+	long getUpdatedHashKey(Position0 p) {
 		int enPassVictSqr;
 		long[] movedRow;
 		long key = p.key;
