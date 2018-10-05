@@ -6,7 +6,7 @@ package net.viktorc.detroid.framework.engine;
  * @author Viktor
  *
  */
-enum Score {
+public enum Score {
 	
 	NULL(Short.MIN_VALUE + 2),
 	MIN(Short.MIN_VALUE + 1),
@@ -17,13 +17,16 @@ enum Score {
 	INSUFFICIENT_MATERIAL (0),
 	DRAW_CLAIMED (0);
 	
-	/**
-	 * The score associated with the termination.
-	 */
-	final short value;
+	private final short value;
 	
 	Score(int value) {
 		this.value = (short) value;
 	}
-	
+	/**
+	 * @return The value associated with the score.
+	 */
+	public short getValue() {
+		return value;
+	}
+
 }

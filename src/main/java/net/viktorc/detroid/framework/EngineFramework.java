@@ -76,8 +76,8 @@ public final class EngineFramework implements Runnable {
 	 * 
 	 * If there are no program arguments, the application is started in GUI mode.
 	 * 
-	 * @param factory An instance of a class extending the {@link net.viktorc.detroid.framework.EngineFactory} interface. It provides the 
-	 * engine instances required for different features of the framework.
+	 * @param factory An instance of a class extending the {@link net.viktorc.detroid.framework.EngineFactory}
+	 * interface. It provides the engine instances required for different features of the framework.
 	 * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br>
 	 * UCI mode: {@code -u} <br>
 	 * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | 
@@ -369,6 +369,9 @@ public final class EngineFramework implements Runnable {
 				case "-tc":
 					tc = Long.parseLong(args[++i]);
 					break;
+				case "--destfile":
+					destFile = args[++i];
+					break;
 				case "--concurrency":
 					concurrency = Integer.parseInt(args[++i]);
 					break;
@@ -488,8 +491,8 @@ public final class EngineFramework implements Runnable {
 	private String buildBinaryString(String arg) {
 		String[] probs = arg.split(",");
 		String binaryString = "";
-		for (int j = 0; j < probs.length; j++) {
-			double prob = Double.parseDouble(probs[j].trim());
+		for (String probString : probs) {
+			double prob = Double.parseDouble(probString.trim());
 			binaryString += (prob >= 0.5 ? "1" : "0");
 		}
 		return binaryString;

@@ -16,8 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -33,7 +31,6 @@ import javafx.scene.chart.XYChart.Data;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Dialog;
-import javafx.scene.control.DialogEvent;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.TableView;
@@ -270,31 +267,27 @@ public final class MainController implements AutoCloseable, Observer {
 		chessPiece.minWidth(Double.MAX_VALUE);
 		chessPiece.minHeight(Double.MAX_VALUE);
 		// Set up the on mouse clicked event handler for pieces.
-		chessPiece.setOnMouseClicked(new EventHandler<Event>() {
-
-			@Override
-			public void handle(Event event) {
-				if (!usersTurn || isDemo || controllerEngine.getGameState() != GameState.IN_PROGRESS)
-					return;
-				if (!gameOn) {
-					gameOn = true;
-					doTime = true;
-					timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
-				}
-				List<Node> children = board.getChildren();
-				if (isLegal(sqr)) {
-					if (selectedNodeInd != null)
-						children.get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					selectedSource = sqr;
-					selectedNodeInd = nodeInd;
-					children.get(nodeInd).getStyleClass().add(SELECTED_SQR_STYLE_CLASS);
-				} else if (selectedSource != null && legalDestinations.contains(sqr)) {
-					String move = selectedSource + "" + sqr;
-					if (!controllerEngine.getLegalMoves().contains(move))
-						move += resolvePromotion().getFENNote();
+		chessPiece.setOnMouseClicked(event -> {
+			if (!usersTurn || isDemo || controllerEngine.getGameState() != GameState.IN_PROGRESS)
+				return;
+			if (!gameOn) {
+				gameOn = true;
+				doTime = true;
+				timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
+			}
+			List<Node> children = board.getChildren();
+			if (isLegal(sqr)) {
+				if (selectedNodeInd != null)
 					children.get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					makeMove(move);
-				}
+				selectedSource = sqr;
+				selectedNodeInd = nodeInd;
+				children.get(nodeInd).getStyleClass().add(SELECTED_SQR_STYLE_CLASS);
+			} else if (selectedSource != null && legalDestinations.contains(sqr)) {
+				String move = selectedSource + "" + sqr;
+				if (!controllerEngine.getLegalMoves().contains(move))
+					move += resolvePromotion().getFENNote();
+				children.get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+				makeMove(move);
 			}
 		});
 		board.add(chessPiece, column, row);
@@ -363,7 +356,7 @@ public final class MainController implements AutoCloseable, Observer {
 		boolean legal = false;
 		for (String m : legalMoves) {
 			if (m.startsWith(sqr)) {
-				if (legal == false)
+				if (!legal)
 					legalDestinations.clear();
 				legal = true;
 				legalDestinations.add(m.substring(2, 4));
@@ -378,7 +371,7 @@ public final class MainController implements AutoCloseable, Observer {
 	 */
 	private Piece resolvePromotion() {
 		Dialog<Piece> dialog = new PromotionDialog(stage, controllerEngine.isWhitesTurn());
-		return dialog.showAndWait().get();
+		return dialog.showAndWait().orElseThrow(RuntimeException::new);
 	}
 	/**
 	 * Displays an error alert with the details.
@@ -433,7 +426,7 @@ public final class MainController implements AutoCloseable, Observer {
 			Double adjustedScore;
 			if (res.getScore().isPresent()) {
 				double score = res.getScore().get();
-				ScoreType type = res.getScoreType().get();
+				ScoreType type = res.getScoreType().orElseThrow(RuntimeException::new);
 				if (controllerEngine.isWhitesTurn())
 					score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score/100;
 				else
@@ -522,7 +515,7 @@ public final class MainController implements AutoCloseable, Observer {
 			Double adjustedScore;
 			if (res.getScore().isPresent()) {
 				double score = res.getScore().get();
-				ScoreType type = res.getScoreType().get();
+				ScoreType type = res.getScoreType().orElseThrow(RuntimeException::new);
 				if (controllerEngine.isWhitesTurn())
 					score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score/100;
 				else
@@ -682,202 +675,158 @@ public final class MainController implements AutoCloseable, Observer {
 		else if (doPonder)
 			startPondering();
 	}
+	private void stopSearch() {
+		isReset = true;
+		searchEngine.stop();
+		if (isPondering) {
+			while (isPondering) {
+				synchronized (MainController.this) {
+					try {
+						MainController.this.wait();
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						return;
+					}
+				}
+			}
+		}
+	}
 	@FXML
 	public void initialize() {
 		// Reset menu item handler: resets the time controls and the game to the starting position.
-		reset.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				isReset = true;
-				searchEngine.stop();
-				if (isPondering) {
-					while (isPondering) {
-						synchronized (MainController.this) {
-							try {
-								MainController.this.wait();
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								return;
-							}
-						}
-					}
-				}
-				setPosition(UCIEngine.START_POSITION, false);
-			}
+		reset.setOnAction(event -> {
+			stopSearch();
+			setPosition(UCIEngine.START_POSITION, false);
 		});
 		// Paste FEN from Clipboard menu item handler: sets up the position according to the FEN string in the clipboard.
-		pasteFen.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				isReset = true;
-				searchEngine.stop();
-				if (isPondering) {
-					while (isPondering) {
-						synchronized (MainController.this) {
-							try {
-								MainController.this.wait();
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								return;
-							}
-						}
-					}
-				}
-				Clipboard clipboard = Clipboard.getSystemClipboard();
-				String fen = clipboard.getString();
-				try {
-					setPosition(fen, false);
-				} catch (Exception e) {
-					Alert dialog = new ErrorAlert(stage, "FEN parsing error.",
-							"The clipboard contents were not a valid FEN string.");
-					dialog.show();
-				}
+		pasteFen.setOnAction(event -> {
+			stopSearch();
+			Clipboard clipboard = Clipboard.getSystemClipboard();
+			String fen = clipboard.getString();
+			try {
+				setPosition(fen, false);
+			} catch (Exception e) {
+				Alert dialog = new ErrorAlert(stage, "FEN parsing error.",
+						"The clipboard contents were not a valid FEN string.");
+				dialog.show();
 			}
 		});
 		// Paste PGN from Clipboard menu item handler: sets up the position according to the PGN string in the clipboard.
-		pastePgn.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				isReset = true;
-				searchEngine.stop();
-				if (isPondering) {
-					while (isPondering) {
-						synchronized (MainController.this) {
-							try {
-								MainController.this.wait();
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								return;
-							}
-						}
-					}
-				}
-				Clipboard clipboard = Clipboard.getSystemClipboard();
-				String pgn = clipboard.getString();
-				try {
-					setPosition(pgn, true);
-				} catch (Exception e) {
-					Alert dialog = new ErrorAlert(stage, "PGN parsing error.",
-							"The clipboard contents were not a valid PGN string.");
-					dialog.show();
-				}
+		pastePgn.setOnAction(event -> {
+			stopSearch();
+			Clipboard clipboard = Clipboard.getSystemClipboard();
+			String pgn = clipboard.getString();
+			try {
+				setPosition(pgn, true);
+			} catch (Exception e) {
+				Alert dialog = new ErrorAlert(stage, "PGN parsing error.",
+						"The clipboard contents were not a valid PGN string.");
+				dialog.show();
 			}
 		});
 		// Copy FEN to Clipboard menu item handler: Copies the current position description in FEN to the clipboard.
-		copyFen.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				Clipboard clipboard = Clipboard.getSystemClipboard();
-				Map<DataFormat, Object> content = new HashMap<DataFormat, Object>();
-				content.put(DataFormat.PLAIN_TEXT, controllerEngine.toFEN());
-				clipboard.setContent(content);
-			}
+		copyFen.setOnAction(event -> {
+			Clipboard clipboard = Clipboard.getSystemClipboard();
+			Map<DataFormat, Object> content = new HashMap<>();
+			content.put(DataFormat.PLAIN_TEXT, controllerEngine.toFEN());
+			clipboard.setContent(content);
 		});
 		// Copy PGN to Clipboard menu item handler: Copies the current position description in PGN to the clipboard.
-		copyPgn.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				Clipboard clipboard = Clipboard.getSystemClipboard();
-				Map<DataFormat, Object> content = new HashMap<DataFormat, Object>();
-				content.put(DataFormat.PLAIN_TEXT, controllerEngine.toPGN());
-				clipboard.setContent(content);
-			}
+		copyPgn.setOnAction(event -> {
+			Clipboard clipboard = Clipboard.getSystemClipboard();
+			Map<DataFormat, Object> content = new HashMap<>();
+			content.put(DataFormat.PLAIN_TEXT, controllerEngine.toPGN());
+			clipboard.setContent(content);
 		});
 		// Unmake Move menu item handler: unmakes a whole move (only allowed if it is the user's turn).
-		unmakeMove.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				doTime = false;
-				controllerEngine.unplayLastMove();
-				controllerEngine.unplayLastMove();
-				if (isPondering) {
-					isReset = true;
-					searchEngine.stop();
-					while (isPondering) {
-						synchronized (MainController.this) {
-							try {
-								MainController.this.wait();
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								return;
-							}
-						}
-					}
-				}
-				searchEngine.newGame();
-				searchEngine.setPosition(controllerEngine.getStartPosition());
-				List<String> moveHistList = controllerEngine.getMoveHistory();
-				for (String m : moveHistList)
-					searchEngine.play(m);
-				if (whiteTimes.size() >= 2)
-					whiteTimes.poll();
-				whiteTime.set(whiteTimes.peek());
-				if (blackTimes.size() >= 2)
-					blackTimes.poll();
-				blackTime.set(blackTimes.peek());
-				legalMoves = controllerEngine.getLegalMoves();
-				if (selectedSource != null) {
-					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					selectedNodeInd = null;
-					selectedSource = null;
-				}
-				unmakeMove.setDisable(moveHistList.size() < 2);
-				if (!gameOn) {
-					gameOn = true;
-					timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
-				}
-				setBoard(controllerEngine.toFEN());
-				setMoveHistory();
-				setTimeField(true);
-				setTimeField(false);
-				searchStats.clear();
-				int numOfMoves = controllerEngine.getMoveHistory().size();
-				List<Data<String, Number>> pointsToRemove = new ArrayList<>();
-				for (Data<String, Number> point : dataPoints) {
-					int x = Integer.parseInt(point.getXValue());
-					if (x >= numOfMoves)
-						pointsToRemove.add(point);
-				}
-				dataPoints.removeAll(pointsToRemove);
-				graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
-				graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
-				doTime = true;
+		unmakeMove.setOnAction(event -> {
+			doTime = false;
+			controllerEngine.unplayLastMove();
+			controllerEngine.unplayLastMove();
+			if (isPondering)
+				stopSearch();
+			searchEngine.newGame();
+			searchEngine.setPosition(controllerEngine.getStartPosition());
+			List<String> moveHistList = controllerEngine.getMoveHistory();
+			for (String m : moveHistList)
+				searchEngine.play(m);
+			if (whiteTimes.size() >= 2)
+				whiteTimes.poll();
+			whiteTime.set(whiteTimes.peek());
+			if (blackTimes.size() >= 2)
+				blackTimes.poll();
+			blackTime.set(blackTimes.peek());
+			legalMoves = controllerEngine.getLegalMoves();
+			if (selectedSource != null) {
+				board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+				selectedNodeInd = null;
+				selectedSource = null;
 			}
+			unmakeMove.setDisable(moveHistList.size() < 2);
+			if (!gameOn) {
+				gameOn = true;
+				timer.schedule(task, TIMER_RESOLUTION, TIMER_RESOLUTION);
+			}
+			setBoard(controllerEngine.toFEN());
+			setMoveHistory();
+			setTimeField(true);
+			setTimeField(false);
+			searchStats.clear();
+			int numOfMoves = controllerEngine.getMoveHistory().size();
+			List<Data<String, Number>> pointsToRemove = new ArrayList<>();
+			for (Data<String, Number> point : dataPoints) {
+				int x = Integer.parseInt(point.getXValue());
+				if (x >= numOfMoves)
+					pointsToRemove.add(point);
+			}
+			dataPoints.removeAll(pointsToRemove);
+			graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+			graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
+			doTime = true;
 		});
 		// Play as White radio menu item handler: if it is selected the user plays as white, if not, as black.
-		side.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				doTime = false;
-				isReset = true;
-				searchEngine.stop();
-				if (isPondering) {
-					while (isPondering) {
-						synchronized (MainController.this) {
-							try {
-								MainController.this.wait();
-							} catch (InterruptedException e) {
-								Thread.currentThread().interrupt();
-								return;
-							}
-						}
-					}
+		side.setOnAction(event -> {
+			doTime = false;
+			stopSearch();
+			searchEngine.setPosition(controllerEngine.getStartPosition());
+			for (String m : controllerEngine.getMoveHistory())
+				searchEngine.play(m);
+			if (selectedSource != null) {
+				board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+				selectedNodeInd = null;
+				selectedSource = null;
+			}
+			if (controllerEngine.isWhitesTurn()) {
+				if (whiteTimes.size() > 0) {
+					whiteTime.set(whiteTimes.peek());
+					setTimeField(true);
 				}
-				searchEngine.setPosition(controllerEngine.getStartPosition());
-				for (String m : controllerEngine.getMoveHistory())
-					searchEngine.play(m);
-				if (selectedSource != null) {
-					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					selectedNodeInd = null;
-					selectedSource = null;
+			} else {
+				if (blackTimes.size() > 0) {
+					blackTime.set(blackTimes.peek());
+					setTimeField(false);
 				}
+			}
+			searchStats.clear();
+			isUserWhite = !isUserWhite; // FIME non-atomic op
+			usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
+			unmakeMove.setDisable(!usersTurn || isDemo || controllerEngine.getMoveHistory().size() < 2);
+			if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+				doTime = true;
+				if (!usersTurn || isDemo)
+					startSearch();
+			}
+		});
+		// Time Control Settings menu item handler: opens a dialog for setting the time control.
+		timeSettings.setOnAction(event -> {
+			doTime = false;
+			stopSearch();
+			if (selectedSource != null) {
+				board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+				selectedNodeInd = null;
+				selectedSource = null;
+			}
+			if (!usersTurn || isDemo) {
 				if (controllerEngine.isWhitesTurn()) {
 					if (whiteTimes.size() > 0) {
 						whiteTime.set(whiteTimes.peek());
@@ -889,31 +838,54 @@ public final class MainController implements AutoCloseable, Observer {
 						setTimeField(false);
 					}
 				}
-				searchStats.clear();
-				isUserWhite = !isUserWhite;
-				usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
-				unmakeMove.setDisable(!usersTurn || isDemo || controllerEngine.getMoveHistory().size() < 2);
-				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
-					doTime = true;
-					if (!usersTurn || isDemo)
-						startSearch();
-				}
+			}
+			searchStats.clear();
+			Dialog<TimeControl> timeSettingsDialog = new TimeSettingsDialog(stage, timeControl);
+			Optional<TimeControl> res = timeSettingsDialog.showAndWait();
+			res.ifPresent(tc -> timeControl = tc);
+			if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+				doTime = true;
+				if (!usersTurn || isDemo)
+					startSearch();
 			}
 		});
-		// Time Control Settings menu item handler: opens a dialog for setting the time control.
-		timeSettings.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				doTime = false;
-				isReset = true;
-				searchEngine.stop();
-				if (selectedSource != null) {
-					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					selectedNodeInd = null;
-					selectedSource = null;
+		// Demo radio menu item handler: if selected the engine keeps playing against itself.
+		demo.setOnAction(event -> {
+			isDemo = demo.selectedProperty().get();
+			if (isDemo) {
+				if (usersTurn && controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+					doTime = false;
+					stopSearch();
+					searchEngine.setPosition(controllerEngine.getStartPosition());
+					for (String m : controllerEngine.getMoveHistory())
+						searchEngine.play(m);
+					if (selectedSource != null) {
+						board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+						selectedNodeInd = null;
+						selectedSource = null;
+					}
+					if (controllerEngine.isWhitesTurn()) {
+						if (whiteTimes.size() > 0) {
+							whiteTime.set(whiteTimes.peek());
+							setTimeField(true);
+						}
+					} else {
+						if (blackTimes.size() > 0) {
+							blackTime.set(blackTimes.peek());
+							setTimeField(false);
+						}
+					}
+					searchStats.clear();
+					doTime = true;
+					startSearch();
 				}
-				if (!usersTurn || isDemo) {
+				ponder.setDisable(true);
+				side.setDisable(true);
+				unmakeMove.setDisable(true);
+			} else {
+				if (usersTurn) {
+					isReset = true;
+					searchEngine.stop();
 					if (controllerEngine.isWhitesTurn()) {
 						if (whiteTimes.size() > 0) {
 							whiteTime.set(whiteTimes.peek());
@@ -926,190 +898,83 @@ public final class MainController implements AutoCloseable, Observer {
 						}
 					}
 				}
-				searchStats.clear();
-				Dialog<TimeControl> timeSettingsDialog = new TimeSettingsDialog(stage, timeControl);
-				Optional<TimeControl> res = timeSettingsDialog.showAndWait();
-				if (res.isPresent())
-					timeControl = res.get();
-				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
-					doTime = true;
-					if (!usersTurn || isDemo)
-						startSearch();
-				}
-			}
-		});
-		// Demo radio menu item handler: if selected the engine keeps playing against itself.
-		demo.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				isDemo = demo.selectedProperty().get();
-				if (isDemo) {
-					if (usersTurn && controllerEngine.getGameState() == GameState.IN_PROGRESS) {
-						doTime = false;
-						isReset = true;
-						searchEngine.stop();
-						if (isPondering) {
-							while (isPondering) {
-								synchronized (MainController.this) {
-									try {
-										MainController.this.wait();
-									} catch (InterruptedException e) {
-										Thread.currentThread().interrupt();
-										return;
-									}
-								}
-							}
-						}
-						searchEngine.setPosition(controllerEngine.getStartPosition());
-						for (String m : controllerEngine.getMoveHistory())
-							searchEngine.play(m);
-						if (selectedSource != null) {
-							board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-							selectedNodeInd = null;
-							selectedSource = null;
-						}
-						if (controllerEngine.isWhitesTurn()) {
-							if (whiteTimes.size() > 0) {
-								whiteTime.set(whiteTimes.peek());
-								setTimeField(true);
-							}
-						} else {
-							if (blackTimes.size() > 0) {
-								blackTime.set(blackTimes.peek());
-								setTimeField(false);
-							}
-						}
-						searchStats.clear();
-						doTime = true;
-						startSearch();
-					}
-					ponder.setDisable(true);
-					side.setDisable(true);
-					unmakeMove.setDisable(true);
-				} else {
-					if (usersTurn) {
-						isReset = true;
-						searchEngine.stop();
-						if (controllerEngine.isWhitesTurn()) {
-							if (whiteTimes.size() > 0) {
-								whiteTime.set(whiteTimes.peek());
-								setTimeField(true);
-							}
-						} else {
-							if (blackTimes.size() > 0) {
-								blackTime.set(blackTimes.peek());
-								setTimeField(false);
-							}
-						}
-					}
-					ponder.setDisable(false);
-					side.setDisable(false);
-					unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
-				}
+				ponder.setDisable(false);
+				side.setDisable(false);
+				unmakeMove.setDisable(!usersTurn || controllerEngine.getMoveHistory().size() < 2);
 			}
 		});
 		// Ponder radio menu item handler: if selected the engine ponders while it is the user's turn.
-		ponder.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				synchronized (MainController.this) {
-					doPonder = ponder.selectedProperty().get();
-					if (usersTurn) {
-						if (doPonder)
-							startPondering();
-						else {
-							ponderMove = null;
-							isReset = true;
-							searchEngine.stop();
-						}
+		ponder.setOnAction(event -> {
+			synchronized (MainController.this) {
+				doPonder = ponder.selectedProperty().get();
+				if (usersTurn) {
+					if (doPonder)
+						startPondering();
+					else {
+						ponderMove = null;
+						isReset = true;
+						searchEngine.stop();
 					}
 				}
 			}
 		});
 		/* Options menu item handler: opens a dialog that presents the UCI options of the search engine in the form of 
 		 * interactive controls. */
-		options.setOnAction(new EventHandler<ActionEvent>() {
-			
-			@Override
-			public void handle(ActionEvent event) {
-				doTime = false;
-				isReset = true;
-				searchEngine.stop();
-				if (selectedSource != null) {
-					board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-					selectedNodeInd = null;
-					selectedSource = null;
-				}
-				if (!usersTurn || isDemo) {
-					if (controllerEngine.isWhitesTurn()) {
-						if (whiteTimes.size() > 0) {
-							whiteTime.set(whiteTimes.peek());
-							setTimeField(true);
-						}
-					} else {
-						if (blackTimes.size() > 0) {
-							blackTime.set(blackTimes.peek());
-							setTimeField(false);
-						}
+		options.setOnAction(event -> {
+			doTime = false;
+			searchEngine.stop();
+			if (selectedSource != null) {
+				board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+				selectedNodeInd = null;
+				selectedSource = null;
+			}
+			if (!usersTurn || isDemo) {
+				if (controllerEngine.isWhitesTurn()) {
+					if (whiteTimes.size() > 0) {
+						whiteTime.set(whiteTimes.peek());
+						setTimeField(true);
+					}
+				} else {
+					if (blackTimes.size() > 0) {
+						blackTime.set(blackTimes.peek());
+						setTimeField(false);
 					}
 				}
-				searchStats.clear();
-				Alert optionsDialog = new OptionsAlert(stage, searchEngine);
-				optionsDialog.showAndWait();
-				if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
-					doTime = true;
-					if (!usersTurn || isDemo)
-						startSearch();
-				}
+			}
+			searchStats.clear();
+			Alert optionsDialog = new OptionsAlert(stage, searchEngine);
+			optionsDialog.showAndWait();
+			if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
+				doTime = true;
+				if (!usersTurn || isDemo)
+					startSearch();
 			}
 		});
 		/* Debug Console menu item handler: opens a non-modal dialog that contains a text area to which the search engine's 
 		 * debug output is printed. */
-		debugConsole.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				Alert console = new ConsoleAlert(stage, searchEngine.getDebugInfo());
-				console.resultProperty().addListener((o, oldVal, newVal) -> {
-					searchEngine.setDebugMode(false);
-					debugConsole.setDisable(false);
-				});
-				console.setOnCloseRequest(new EventHandler<DialogEvent>() {
-					
-					@Override
-					public void handle(DialogEvent event) {
-						searchEngine.setDebugMode(false);
-						debugConsole.setDisable(false);
-					}
-				});
-				searchEngine.setDebugMode(true);
-				debugConsole.setDisable(true);
-				console.show();
-			}
+		debugConsole.setOnAction(event -> {
+			Alert console = new ConsoleAlert(stage, searchEngine.getDebugInfo());
+			console.resultProperty().addListener((o, oldVal, newVal) -> {
+				searchEngine.setDebugMode(false);
+				debugConsole.setDisable(false);
+			});
+			console.setOnCloseRequest(dialogEvent -> {
+				searchEngine.setDebugMode(false);
+				debugConsole.setDisable(false);
+			});
+			searchEngine.setDebugMode(true);
+			debugConsole.setDisable(true);
+			console.show();
 		});
 		// About menu item handler: opens a simple dialog displaying the name of the search engine and its author.
-		about.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				Alert info = new InfoAlert(stage, "About the chess search engine.", "Name: " + searchEngine.getName() +
-						System.lineSeparator() + "Author: " + searchEngine.getAuthor());
-				info.resultProperty().addListener((o, oldVal, newVal) -> {
-					about.setDisable(false);
-				});
-				info.setOnCloseRequest(new EventHandler<DialogEvent>() {
-					
-					@Override
-					public void handle(DialogEvent event) {
-						about.setDisable(false);
-					}
-				});
-				info.initModality(Modality.NONE);
-				about.setDisable(true);
-				info.show();
-			}
+		about.setOnAction(event -> {
+			Alert info = new InfoAlert(stage, "About the chess search engine.", "Name: " +
+					searchEngine.getName() + System.lineSeparator() + "Author: " + searchEngine.getAuthor());
+			info.resultProperty().addListener((o, oldVal, newVal) -> about.setDisable(false));
+			info.setOnCloseRequest(dialogEvent -> about.setDisable(false));
+			info.initModality(Modality.NONE);
+			about.setDisable(true);
+			info.show();
 		});
 		// Set up the board and the squares with event handlers.
 		for (int i = 0; i < 8; i++) {
@@ -1118,19 +983,15 @@ public final class MainController implements AutoCloseable, Observer {
 				String sqr = sqrIndToName((7 - i)*8 + j);
 				boolean white = i%2 == 0 ? j%2 == 0 : j%2 == 1;
 				n.getStyleClass().add(white ? WHITE_SQR_STYLE_CLASS : BLACK_SQR_STYLE_CLASS);
-				n.setOnMouseClicked(new EventHandler<Event>() {
-
-					@Override
-					public void handle(Event event) {
-						if (!usersTurn || isDemo || controllerEngine.getGameState() != GameState.IN_PROGRESS)
-							return;
-						if (selectedSource != null && legalDestinations.contains(sqr)) {
-							String move = selectedSource + "" + sqr;
-							if (!controllerEngine.getLegalMoves().contains(move))
-								move += resolvePromotion().getFENNote();
-							board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-							makeMove(move);
-						}
+				n.setOnMouseClicked(event -> {
+					if (!usersTurn || isDemo || controllerEngine.getGameState() != GameState.IN_PROGRESS)
+						return;
+					if (selectedSource != null && legalDestinations.contains(sqr)) {
+						String move = selectedSource + "" + sqr;
+						if (!controllerEngine.getLegalMoves().contains(move))
+							move += resolvePromotion().getFENNote();
+						board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+						makeMove(move);
 					}
 				});
 				board.add(n, j, i);
@@ -1139,13 +1000,7 @@ public final class MainController implements AutoCloseable, Observer {
 		/* Make sure the text in the move history text area is wrapped and that it scrolls to the bottom as new 
 		 * lines are added. */
 		moveHistory.setWrapText(true);
-		moveHistory.textProperty().addListener(new ChangeListener<String>() {
-
-			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-				moveHistory.setScrollTop(Double.MAX_VALUE);
-			}
-		});
+		moveHistory.textProperty().addListener((o, oldVal, newVal) -> moveHistory.setScrollTop(Double.MAX_VALUE));
 		// Set up the chart.
 		resetChart();
 		// Set up the search stats.
@@ -1192,7 +1047,7 @@ public final class MainController implements AutoCloseable, Observer {
 		});
 	}
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		searchEngine.stop();
 		timer.cancel();
 		executor.shutdown();

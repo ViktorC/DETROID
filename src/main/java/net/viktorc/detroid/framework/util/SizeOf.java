@@ -24,13 +24,16 @@ public enum SizeOf {
 	LONG(8),
 	DOUBLE(8);
 
-	/**
-	 * The number of bytes occupied in memory. 
-	 */
-	public final byte numOfBytes;
+	private final byte numOfBytes;
 
-	private SizeOf(int numOfBytes) {
+	SizeOf(int numOfBytes) {
 		this.numOfBytes = (byte)numOfBytes;
+	}
+	/**
+	 * @return The number of bytes occupied in memory.
+	 */
+	public byte getNumOfBytes() {
+		return numOfBytes;
 	}
 	/**
 	 * Determines the space the mark word in an object header takes up in memory depending on the JVM.

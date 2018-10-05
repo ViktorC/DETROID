@@ -4,7 +4,7 @@ import net.viktorc.detroid.framework.util.BitOperations;
 
 import java.util.ArrayDeque;
 
-class Position {
+public class Position {
 
 	private long whiteKing;
 	private long whiteQueens;
@@ -43,7 +43,7 @@ class Position {
 	 * @return The position instance.
 	 * @throws ChessParseException If the string is invalid.
 	 */
-	static Position parse(String fen) throws ChessParseException {
+	public static Position parse(String fen) throws ChessParseException {
 		Position pos = new Position();
 		String[] fenFields = fen.split(" ");
 		if (fenFields.length != 4 && fenFields.length != 6)
@@ -57,7 +57,7 @@ class Position {
 			throw new ChessParseException("The board position representation does not have eight ranks.");
 		pos.squares = new byte[64];
 		for (int i = 0; i < 64; i++)
-			pos.squares[i] = Piece.NULL.ind;
+			pos.squares[i] = (byte) Piece.NULL.ordinal();
 		for (int i = 7; i >= 0; i--) {
 			String rank = ranks[i];
 			int index = 0;
@@ -67,43 +67,55 @@ class Position {
 				if (pieceNum >= 0 && pieceNum <= 8)
 					index += pieceNum;
 				else {
-					pos.squares[index] = Piece.parse(piece).ind;
+					long bitboard = Bitboard.Square.values()[index].getBitboard();
 					switch (piece) {
 						case 'K':
-							pos.whiteKing = Bitboard.Square.getByIndex(index).bitboard;
+							pos.whiteKing = bitboard;
+							pos.squares[index] = (byte) Piece.W_KING.ordinal();
 							break;
 						case 'Q':
-							pos.whiteQueens	|= Bitboard.Square.getByIndex(index).bitboard;
+							pos.whiteQueens |= bitboard;
+							pos.squares[index] = (byte) Piece.W_QUEEN.ordinal();
 							break;
 						case 'R':
-							pos.whiteRooks |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.whiteRooks |= bitboard;
+							pos.squares[index] = (byte) Piece.W_ROOK.ordinal();
 							break;
 						case 'B':
-							pos.whiteBishops |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.whiteBishops |= bitboard;
+							pos.squares[index] = (byte) Piece.W_BISHOP.ordinal();
 							break;
 						case 'N':
-							pos.whiteKnights |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.whiteKnights |= bitboard;
+							pos.squares[index] = (byte) Piece.W_KNIGHT.ordinal();
 							break;
 						case 'P':
-							pos.whitePawns |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.whitePawns |= bitboard;
+							pos.squares[index] = (byte) Piece.W_PAWN.ordinal();
 							break;
 						case 'k':
-							pos.blackKing = Bitboard.Square.getByIndex(index).bitboard;
+							pos.blackKing = bitboard;
+							pos.squares[index] = (byte) Piece.B_KING.ordinal();
 							break;
 						case 'q':
-							pos.blackQueens |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.blackQueens |= bitboard;
+							pos.squares[index] = (byte) Piece.B_QUEEN.ordinal();
 							break;
 						case 'r':
-							pos.blackRooks |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.blackRooks |= bitboard;
+							pos.squares[index] = (byte) Piece.B_ROOK.ordinal();
 							break;
 						case 'b':
-							pos.blackBishops |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.blackBishops |= bitboard;
+							pos.squares[index] = (byte) Piece.B_BISHOP.ordinal();
 							break;
 						case 'n':
-							pos.blackKnights |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.blackKnights |= bitboard;
+							pos.squares[index] = (byte) Piece.B_KNIGHT.ordinal();
 							break;
 						case 'p':
-							pos.blackPawns |= Bitboard.Square.getByIndex(index).bitboard;
+							pos.blackPawns |= bitboard;
+							pos.squares[index] = (byte) Piece.B_PAWN.ordinal();
 					}
 					index++;
 				}
@@ -116,28 +128,32 @@ class Position {
 		pos.allEmpty = ~(pos.allWhiteOccupied | pos.allBlackOccupied);
 		pos.whitesTurn = turn.toLowerCase().compareTo("w") == 0;
 		if (castling.equals("-")) {
-			pos.whiteCastlingRights = CastlingRights.NONE.ind;
-			pos.blackCastlingRights = CastlingRights.NONE.ind;
+			pos.whiteCastlingRights = (byte) CastlingRights.NONE.ordinal();
+			pos.blackCastlingRights = (byte) CastlingRights.NONE.ordinal();
 		}
 		if (castling.length() < 1 || castling.length() > 4)
 			throw new ChessParseException("Invalid length");
-		if (castling.contains("K"))
-			pos.whiteCastlingRights = castling.contains("Q") ? CastlingRights.ALL.ind : CastlingRights.SHORT.ind;
-		else if (castling.contains("Q"))
-			pos.whiteCastlingRights = CastlingRights.LONG.ind;
-		else
-			pos.whiteCastlingRights = CastlingRights.NONE.ind;
-		if (castling.contains("k"))
-			pos.blackCastlingRights = castling.contains("q") ? CastlingRights.ALL.ind : CastlingRights.SHORT.ind;
-		else if (castling.contains("q"))
-			pos.blackCastlingRights = CastlingRights.LONG.ind;
-		else
-			pos.blackCastlingRights = CastlingRights.NONE.ind;
+		if (castling.contains("K")) {
+			pos.whiteCastlingRights = (byte) (castling.contains("Q") ? CastlingRights.ALL.ordinal() :
+					CastlingRights.SHORT.ordinal());
+		} else if (castling.contains("Q")) {
+			pos.whiteCastlingRights = (byte) CastlingRights.LONG.ordinal();
+		} else {
+			pos.whiteCastlingRights = (byte) CastlingRights.NONE.ordinal();
+		}
+		if (castling.contains("k")) {
+			pos.blackCastlingRights = (byte) (castling.contains("q") ? CastlingRights.ALL.ordinal() :
+					CastlingRights.SHORT.ordinal());
+		} else if (castling.contains("q")) {
+			pos.blackCastlingRights = (byte) CastlingRights.LONG.ordinal();
+		} else {
+			pos.blackCastlingRights = (byte) CastlingRights.NONE.ordinal();
+		}
 		if (enPassant.length() > 2)
-			throw new ChessParseException();
+			throw new ChessParseException("Illegal en passant field.");
 		if (enPassant.equals("-")) {
-			pos.enPassantRights = enPassant.equals("-") ? EnPassantRights.NONE.ind :
-					EnPassantRights.values()[enPassant.toLowerCase().charAt(0) - 'a'].ind;
+			pos.enPassantRights = (byte) (enPassant.equals("-") ? EnPassantRights.NONE.ordinal() :
+					EnPassantRights.values()[enPassant.toLowerCase().charAt(0) - 'a'].ordinal());
 		}
 		if (fenFields.length == 6) {
 			try {
@@ -181,7 +197,7 @@ class Position {
 	 *
 	 * @param pos The position to clone.
 	 */
-	Position(Position pos) {
+	public Position(Position pos) {
 		whiteKing = pos.whiteKing;
 		whiteQueens = pos.whiteQueens;
 		whiteRooks = pos.whiteRooks;
@@ -218,161 +234,161 @@ class Position {
 	/**
 	 * @return A bitboard for the white king.
 	 */
-	long getWhiteKing() {
+	public long getWhiteKing() {
 		return whiteKing;
 	}
 	/**
 	 * @return A bitboard for the white queens.
 	 */
-	long getWhiteQueens() {
+	public long getWhiteQueens() {
 		return whiteQueens;
 	}
 	/**
 	 * @return A bitboard for the white rooks.
 	 */
-	long getWhiteRooks() {
+	public long getWhiteRooks() {
 		return whiteRooks;
 	}
 	/**
 	 * @return A bitboard for the white bishops.
 	 */
-	long getWhiteBishops() {
+	public long getWhiteBishops() {
 		return whiteBishops;
 	}
 	/**
 	 * @return A bitboard for the white knights.
 	 */
-	long getWhiteKnights() {
+	public long getWhiteKnights() {
 		return whiteKnights;
 	}
 	/**
 	 * @return A bitboard for the white pawns.
 	 */
-	long getWhitePawns() {
+	public long getWhitePawns() {
 		return whitePawns;
 	}
 	/**
 	 * @return A bitboard for the black king.
 	 */
-	long getBlackKing() {
+	public long getBlackKing() {
 		return blackKing;
 	}
 	/**
 	 * @return A bitboard for the black queens.
 	 */
-	long getBlackQueens() {
+	public long getBlackQueens() {
 		return blackQueens;
 	}
 	/**
 	 * @return A bitboard for the black rooks.
 	 */
-	long getBlackRooks() {
+	public long getBlackRooks() {
 		return blackRooks;
 	}
 	/**
 	 * @return A bitboard for the black bishops.
 	 */
-	long getBlackBishops() {
+	public long getBlackBishops() {
 		return blackBishops;
 	}
 	/**
 	 * @return A bitboard for the black knights.
 	 */
-	long getBlackKnights() {
+	public long getBlackKnights() {
 		return blackKnights;
 	}
 	/**
 	 * @return A bitboard for the black pawns.
 	 */
-	long getBlackPawns() {
+	public long getBlackPawns() {
 		return blackPawns;
 	}
 	/**
 	 * @return A bitboard for all squares occupied by white pieces.
 	 */
-	long getAllWhiteOccupied() {
+	public long getAllWhiteOccupied() {
 		return allWhiteOccupied;
 	}
 	/**
 	 * @return A bitboard for all squares occupied by black pieces.
 	 */
-	long getAllBlackOccupied() {
+	public long getAllBlackOccupied() {
 		return allBlackOccupied;
 	}
 	/**
 	 * @return A bitboard for all empty squares.
 	 */
-	long getAllEmpty() {
+	public long getAllEmpty() {
 		return allEmpty;
 	}
 	/**
 	 * @return A bitboard for all pieces of the color to move checking the opponent's king.
 	 */
-	long getCheckers() {
+	public long getCheckers() {
 		return checkers;
 	}
 	/**
 	 * @return Whether the side to move is in check.
 	 */
-	boolean isInCheck() {
+	public boolean isInCheck() {
 		return inCheck;
 	}
 	/**
 	 * @return Whether it is white's turn to make a move.
 	 */
-	boolean isWhitesTurn() {
+	public boolean isWhitesTurn() {
 		return whitesTurn;
 	}
 	/**
 	 * @param sqrInd The index of the square.
 	 * @return The piece occupying the square denoted by the specified index.
 	 */
-	byte getPiece(int sqrInd) {
+	public byte getPiece(int sqrInd) {
 		return squares[sqrInd];
 	}
 	/**
 	 * @return The number of half moves made.
 	 */
-	int getHalfMoveIndex() {
+	public int getHalfMoveIndex() {
 		return halfMoveIndex;
 	}
 	/**
 	 * @return The number of half moves made since the last pawn move or capture.
 	 */
-	byte getFiftyMoveRuleClock() {
+	public byte getFiftyMoveRuleClock() {
 		return fiftyMoveRuleClock;
 	}
 	/**
 	 * @return The index denoting the file on which en passant is possible.
 	 */
-	byte getEnPassantRights() {
+	public byte getEnPassantRights() {
 		return enPassantRights;
 	}
 	/**
 	 * @return The castling type that denotes to what extent it would still be possible to castle for white regardless
 	 * of whether it is actually legally executable in the current position.
 	 */
-	byte getWhiteCastlingRights() {
+	public byte getWhiteCastlingRights() {
 		return whiteCastlingRights;
 	}
 	/**
 	 * @return The castling type that denotes to what extent it would still be possible to castle for black regardless
 	 * of whether it is actually legally executable in the current position.
 	 */
-	byte getBlackCastlingRights() {
+	public byte getBlackCastlingRights() {
 		return blackCastlingRights;
 	}
 	/**
 	 * @return A Zobrist key that is fairly close to a unique representation of the state of the instance in one 64
 	 * bit number.
 	 */
-	long getKey() {
+	public long getKey() {
 		return key;
 	}
 	/**
 	 * @return A queue of all the moves made so far.
 	 */
-	ArrayDeque<Move> getMoveHistory() {
+	public ArrayDeque<Move> getMoveHistory() {
 		return new ArrayDeque<>(moveHistory);
 	}
 	/**
@@ -380,7 +396,7 @@ class Position {
 	 * repetition check, it would be 2.
 	 * @return Whether the current position has already occurred before at least the specified number of times.
 	 */
-	boolean hasRepeated(int numberOfTimes) {
+	public boolean hasRepeated(int numberOfTimes) {
 		int repetitions = 0;
 		if (fiftyMoveRuleClock >= 4) {
 			for (int i = halfMoveIndex - 4; i >= halfMoveIndex - fiftyMoveRuleClock; i -= 2) {
@@ -396,40 +412,40 @@ class Position {
 	/**
 	 * @return A bitboard for all squares not occupied by white pieces.
 	 */
-	long getAllNonWhiteOccupied() {
+	public long getAllNonWhiteOccupied() {
 		return ~allWhiteOccupied;
 	}
 	/**
 	 * @return A bitboard for all squares not occupied by black pieces.
 	 */
-	long getAllNonBlackOccupied() {
+	public long getAllNonBlackOccupied() {
 		return ~allBlackOccupied;
 	}
 	/**
 	 * @return A bitboard for all occupied squares.
 	 */
-	long getAllOccupied() {
+	public long getAllOccupied() {
 		return ~allEmpty;
 	}
 	/**
 	 * @return The number of pieces on the board
 	 */
-	int getNumberOfPieces() {
+	public int getNumberOfPieces() {
 		return BitOperations.hammingWeight(~allEmpty);
 	}
 	/**
 	 * @return The last move made.
 	 */
-	Move getLastMove() {
+	public Move getLastMove() {
 		return moveHistory.peekFirst();
 	}
 	/**
 	 * @return The last position state.
 	 */
-	PositionStateRecord getUnmakeRegister() {
+	public PositionStateRecord getUnmakeRegister() {
 		return stateHistory.peekFirst();
 	}
-	void makeMove(Move move) {
+	public void makeMove(Move move) {
 
 	}
 	@Override
@@ -445,7 +461,7 @@ class Position {
 					if (emptyCount != 0)
 						fen += emptyCount;
 					emptyCount = 0;
-					fen += Piece.getByNumericNotation(piece).letter;
+					fen += Piece.values()[piece].getLetter();
 				}
 			}
 			if (emptyCount != 0)
@@ -454,11 +470,36 @@ class Position {
 				fen += "/";
 		}
 		fen += " " + (whitesTurn ? "w" : "b") + " ";
-		fen += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights),
-				CastlingRights.getByIndex(blackCastlingRights)) + " ";
-		fen += EnPassantRights.getByIndex(enPassantRights).toString();
-		if (enPassantRights != EnPassantRights.NONE.ind)
-			fen += (whitesTurn ? 6 : 3) + " ";
+		String castlingRights = "";
+		switch (CastlingRights.values()[whiteCastlingRights]) {
+			case SHORT:
+				castlingRights += "K";
+				break;
+			case LONG:
+				castlingRights += "Q";
+				break;
+			case ALL:
+				castlingRights += "KQ";
+				break;
+			case NONE:
+				break;
+		}
+		switch (CastlingRights.values()[blackCastlingRights]) {
+			case SHORT:
+				castlingRights += "k";
+				break;
+			case LONG:
+				castlingRights += "q";
+				break;
+			case ALL:
+				castlingRights += "kq";
+				break;
+			case NONE:
+				break;
+		}
+		fen += (castlingRights.isEmpty() ? "-" : castlingRights) + " ";
+		fen += (enPassantRights == EnPassantRights.NONE.ordinal() ? "-" :
+				(EnPassantRights.values()[enPassantRights].toString().toLowerCase() + (whitesTurn ? 6 : 3))) + " ";
 		fen += fiftyMoveRuleClock + " " + (1 + halfMoveIndex/2);
 		return fen;
 	}

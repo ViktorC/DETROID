@@ -16,7 +16,7 @@ import java.nio.file.StandardOpenOption;
  * @author Viktor
  *
  */
-abstract class OpeningBook implements Closeable {
+public abstract class OpeningBook implements Closeable {
 	
 	protected Path path;
 	protected SeekableByteChannel bookStream;
@@ -40,7 +40,7 @@ abstract class OpeningBook implements Closeable {
 	 * 
 	 * @return
 	 */
-	String getPrimaryFilePath() {
+	public String getPrimaryFilePath() {
 		return path.toString();
 	}
 	/**
@@ -48,7 +48,7 @@ abstract class OpeningBook implements Closeable {
 	 * 
 	 * @return
 	 */
-	String getSecondaryFilePath() {
+	public String getSecondaryFilePath() {
 		return secondaryBook == null ? null : secondaryBook.getPrimaryFilePath();
 	}
 	@Override
@@ -67,7 +67,7 @@ abstract class OpeningBook implements Closeable {
 	 * @return An opening move.
 	 * @throws Exception If anything goes wrong.
 	 */
-	abstract Move getMove(Position0 p, SelectionModel selection) throws Exception;
+	public abstract Move getMove(Position0 p, SelectionModel selection) throws Exception;
 	
 	/**
 	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening
@@ -76,7 +76,7 @@ abstract class OpeningBook implements Closeable {
 	 * @author Viktor
 	 *
 	 */
-	enum SelectionModel {
+	public enum SelectionModel {
 		
 		RANDOM,
 		STOCHASTIC,

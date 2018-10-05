@@ -9,7 +9,7 @@ import net.viktorc.detroid.framework.util.BitOperations;
  * @author Viktor
  *
  */
-class PositionStateRecord {
+public class PositionStateRecord {
 
 	private final byte whiteCastlingRights;
 	private final byte blackCastlingRights;
@@ -24,7 +24,7 @@ class PositionStateRecord {
 	 * @param fiftyMoveRuleClock The fifty-move counter state.
 	 * @param checkers A bitboard for all pieces checking the side to move's king.
 	 */
-	PositionStateRecord(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
+	public PositionStateRecord(byte whiteCastlingRights, byte blackCastlingRights, byte enPassantRights,
 			byte fiftyMoveRuleClock, long checkers) {
 		this.whiteCastlingRights = whiteCastlingRights;
 		this.blackCastlingRights = blackCastlingRights;
@@ -35,50 +35,32 @@ class PositionStateRecord {
 	/**
 	 * @return The castling rights of white.
 	 */
-	byte getWhiteCastlingRights() {
+	public byte getWhiteCastlingRights() {
 		return whiteCastlingRights;
 	}
 	/**
 	 * @return The castling rights of black.
 	 */
-	byte getBlackCastlingRights() {
+	public byte getBlackCastlingRights() {
 		return blackCastlingRights;
 	}
 	/**
 	 * @return The en passant rights of the position.
 	 */
-	byte getEnPassantRights() {
+	public byte getEnPassantRights() {
 		return enPassantRights;
 	}
 	/**
 	 * @return The fifty-move counter state.
 	 */
-	byte getFiftyMoveRuleClock() {
+	public byte getFiftyMoveRuleClock() {
 		return fiftyMoveRuleClock;
 	}
 	/**
 	 * @return A bitboard for all pieces checking the side to move's king.
 	 */
-	long getCheckers() {
+	public long getCheckers() {
 		return checkers;
-	}
-	@Override
-	public String toString() {
-		long checker;
-		String rep = "";
-		if ((checker = BitOperations.getLSBit(checkers)) != 0) {
-			rep += String.format("%-23s %s", "Checker(s):",
-					Square.getByIndex(BitOperations.indexOfBit(checker)).toString());
-			if ((checker = BitOperations.getLSBit(checkers^checker)) != 0)
-				rep += ", " + Square.getByIndex(BitOperations.indexOfBit(checker)).toString();
-		}
-		rep += String.format("%-23s ", "Castling rights:");
-		rep += CastlingRights.toFEN(CastlingRights.getByIndex(whiteCastlingRights),
-				CastlingRights.getByIndex(blackCastlingRights)) + "\n";
-		rep += String.format("%-23s ", "En passant rights:");
-		rep += EnPassantRights.getByIndex(enPassantRights).toString() + "\n";
-		rep += String.format("%-23s %d", "Fifty-move rule clock:", fiftyMoveRuleClock);
-		return rep;
 	}
 	
 }

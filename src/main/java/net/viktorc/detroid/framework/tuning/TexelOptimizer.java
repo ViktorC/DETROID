@@ -119,8 +119,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		logger.info("Tuning parameters of type: " + ParameterType.STATIC_EVALUATION);
 		if (k == null) {
 			this.k = computeOptimalK();
-			if (logger != null)
-				logger.info("Optimal K: " + this.k + System.lineSeparator());
+			logger.info("Optimal K: " + this.k + System.lineSeparator());
 		} else
 			this.k = k;
 		testDataStartInd = (int) (dataSetSize*(1 - this.testDataProportion));
@@ -183,7 +182,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * @param result The game's result. 1 for white win, 0 for black win, 0.5 for draw.
 	 * @param score The score the quiescence search returns.
 	 * @param k The scaling constant for the sigmoid function.
-	 * @return
+	 * @return The error.
 	 */
 	private double computeError(double result, double score, double k) {
 		double sigmoid = 1/(1 + Math.pow(10, k*score/400));
@@ -195,7 +194,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 	 * 
 	 * @param features The engine parameters.
 	 * @param k The scaling constant K for the sigmoid function.
-	 * @return
+	 * @return The average error.
 	 * @throws ExecutionException If an execution error happens in one of the threads.
 	 * @throws InterruptedException If the current thread is interrupted while waiting for the worker threads 
 	 * to finish.
@@ -282,7 +281,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 						String[] parts = line.split(";");
 						String fen = parts[0];
 						Float result = Float.parseFloat(parts[1]);
-						data.add(new SimpleEntry<String,Float>(fen, result));
+						data.add(new SimpleEntry<>(fen, result));
 					}
 				}
 				count++;
@@ -321,7 +320,7 @@ public final class TexelOptimizer extends ASGD<String,Float> implements AutoClos
 		}
 	}
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		pool.shutdown();
 		for (TunableEngine e : engines)
 			e.close();

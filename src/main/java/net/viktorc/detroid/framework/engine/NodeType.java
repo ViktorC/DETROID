@@ -6,16 +6,10 @@ package net.viktorc.detroid.framework.engine;
  * @author Viktor
  *
  */
-enum NodeType {
+public enum NodeType {
 	
 	EXACT,
 	FAIL_HIGH,
-	FAIL_LOW;
-	
-	final byte ind;
-	
-	private NodeType() {
-		this.ind = (byte) ordinal();
-	}
+	FAIL_LOW
 	
 }

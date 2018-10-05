@@ -91,7 +91,7 @@ public class OptionsAlert extends Alert {
         field.selectedProperty().set((Boolean) value);
         field.setOnAction((ActionEvent event) -> {
             String val = String.valueOf(field.selectedProperty().get());
-            if (engine.<Boolean>setOption((CheckOption) option, field.selectedProperty().get())) {
+            if (engine.setOption((CheckOption) option, field.selectedProperty().get())) {
                 feedBack.setText(name + " successfully set to " + val + ".");
                 feedBack.setTextFill(Paint.valueOf(SUCCESS_COLOR));
             } else {
@@ -153,7 +153,7 @@ public class OptionsAlert extends Alert {
 		field.setValue(value.toString());
 		field.setOnAction((ActionEvent event) -> {
 			String val = field.getValue();
-			if (engine.<String>setOption((ComboOption) option, val)) {
+			if (engine.setOption((ComboOption) option, val)) {
 				feedBack.setText(name + " successfully set to " + val + ".");
 				feedBack.setTextFill(Paint.valueOf(SUCCESS_COLOR));
 			} else {

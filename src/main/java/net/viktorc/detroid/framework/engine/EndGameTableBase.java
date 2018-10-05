@@ -12,12 +12,12 @@ import java.nio.file.Paths;
  * @author Viktor
  *
  */
-abstract class EndGameTableBase implements Closeable {
+public abstract class EndGameTableBase implements Closeable {
 
 	/**
 	 * The maximum number of pieces on the board for which there are endgame tablebases.
 	 */
-	static final int MAX_NUMBER_OF_PIECES = 6;
+	public static final int MAX_NUMBER_OF_PIECES = 6;
 	
 	private boolean probingLibLoaded;
 	
@@ -26,7 +26,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * 
 	 * @param path The path to the shared library containing the probing code.
 	 */
-	synchronized void loadProbingLibrary(String path) {
+	public synchronized void loadProbingLibrary(String path) {
 		try {
 			File file = new File(path);
 			Path libPath = file.exists() ? file.toPath() :
@@ -43,7 +43,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * 
 	 * @return Whether the last library loading attempt has been successful.
 	 */
-	synchronized boolean isProbingLibLoaded() {
+	public synchronized boolean isProbingLibLoaded() {
 		return probingLibLoaded;
 	}
 	/**
@@ -54,17 +54,17 @@ abstract class EndGameTableBase implements Closeable {
 	 * @param cacheSize The size of the probing cache in bytes.
 	 * @param args Optional arguments.
 	 */
-	abstract void init(String path, long cacheSize, Object... args);
+	public abstract void init(String path, long cacheSize, Object... args);
 	/**
 	 * Returns whether the probing code has been initialized.
 	 * 
 	 * @return Whether the probing code has been initialized.
 	 */
-	abstract boolean isInit();
+	public abstract boolean isInit();
 	/**
 	 * Flushes the probing cache.
 	 */
-	abstract void clearCache();
+	public abstract void clearCache();
 	/**
 	 * It returns whether there are at least some tablebase files loaded 
 	 * for positions with the given number of pieces on the board.
@@ -73,17 +73,17 @@ abstract class EndGameTableBase implements Closeable {
 	 * @return If there are tablebases loaded for the specified number 
 	 * of men on the board.
 	 */
-	abstract boolean areTableBasesAvailable(int piecesOnBoard);
+	public abstract boolean areTableBasesAvailable(int piecesOnBoard);
 	/**
 	 * Returns some basic usage stats about the endgame tablebase.
 	 * 
 	 * @return Endgame tablebase stats.
 	 */
-	abstract EGTBStats getStats();
+	public abstract EGTBStats getStats();
 	/**
 	 * Resets the endgame tablebase stats.
 	 */
-	abstract void resetStats();
+	public abstract void resetStats();
 	/**
 	 * It probes for the given position and if found, it returns whether it is 
 	 * a winning position, a losing position, or a draw; else it returns null.
@@ -92,7 +92,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * @param soft Whether only the cache should be probed.
 	 * @return  Whether it is a winning position, a losing position, or a draw.
 	 */
-	abstract WDL probeWDL(Position0 pos, boolean soft);
+	public abstract WDL probeWDL(Position0 pos, boolean soft);
 	/**
 	 * It probes for the given position and if found, it returns whether it is 
 	 * a win, loss, or draw; and in case it is a win or loss, it also returns 
@@ -103,7 +103,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * @return  Whether it is a win, loss, or draw; and potentially the distance 
 	 * to mate.
 	 */
-	abstract DTM probeDTM(Position0 pos, boolean soft);
+	public abstract DTM probeDTM(Position0 pos, boolean soft);
 	
 	/**
 	 * A simple enum for possible outcomes for positions in endgame tablebases.
@@ -111,9 +111,11 @@ abstract class EndGameTableBase implements Closeable {
 	 * @author Viktor
 	 *
 	 */
-	enum WDL {
+	public enum WDL {
 		
-		WIN, DRAW, LOSS;
+		WIN,
+		DRAW,
+		LOSS;
 		
 	}
 	
@@ -124,7 +126,7 @@ abstract class EndGameTableBase implements Closeable {
 	 * @author Viktor
 	 *
 	 */
-	static class DTM {
+	public static class DTM {
 		
 		private final WDL wdl;
 		private final int distance;
@@ -135,8 +137,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * @param wdl The outcome of the position.
 		 * @param distance The distance to mate.
 		 */
-		DTM(WDL wdl, int distance) {
-			super();
+		public DTM(WDL wdl, int distance) {
 			this.wdl = wdl;
 			this.distance = distance;
 		}
@@ -145,7 +146,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * 
 		 * @return The outcome.
 		 */
-		WDL getWdl() {
+		public WDL getWdl() {
 			return wdl;
 		}
 		/**
@@ -153,7 +154,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * 
 		 * @return The distance to mate.
 		 */
-		int getDistance() {
+		public int getDistance() {
 			return distance;
 		}
 		@Override
@@ -169,14 +170,14 @@ abstract class EndGameTableBase implements Closeable {
 	 * @author Viktor
 	 *
 	 */
-	static class EGTBStats {
+	public static class EGTBStats {
 
 		private final long totalHardProbes;
 		private final long totalSoftProbes;
 		private final long totalDriveHits;
 		private final long totalCacheHits;
-		
-		EGTBStats(long totalHardProbes, long totalSoftProbes, long totalDriveHits, long totalCacheHits) {
+
+		public EGTBStats(long totalHardProbes, long totalSoftProbes, long totalDriveHits, long totalCacheHits) {
 			this.totalHardProbes = totalHardProbes;
 			this.totalSoftProbes = totalSoftProbes;
 			this.totalDriveHits = totalDriveHits;
@@ -187,7 +188,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * 
 		 * @return The total number of probes that may go to the drive.
 		 */
-		long getTotalHardProbes() {
+		public long getTotalHardProbes() {
 			return totalHardProbes;
 		}
 		/**
@@ -195,7 +196,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * 
 		 * @return The total number of probes only into the cache.
 		 */
-		long getTotalSoftProbes() {
+		public long getTotalSoftProbes() {
 			return totalSoftProbes;
 		}
 		/**
@@ -203,7 +204,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * 
 		 * @return The number of drive hits.
 		 */
-		long getTotalDriveHits() {
+		public long getTotalDriveHits() {
 			return totalDriveHits;
 		}
 		/**
@@ -211,7 +212,7 @@ abstract class EndGameTableBase implements Closeable {
 		 * 
 		 * @return The number of memory hits.
 		 */
-		long getTotalCacheHits() {
+		public long getTotalCacheHits() {
 			return totalCacheHits;
 		}
 		

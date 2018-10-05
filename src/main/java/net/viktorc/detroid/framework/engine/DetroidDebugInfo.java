@@ -3,7 +3,8 @@ package net.viktorc.detroid.framework.engine;
 import net.viktorc.detroid.framework.uci.DebugInformation;
 
 /**
- * An subclass of the UCI abstract class {@link #uci.DebugInfo DebugInfo} for holding debug info data.
+ * An subclass of the UCI abstract class {@link net.viktorc.detroid.framework.uci.DebugInformation} for holding debug
+ * info data.
  * 
  * @author Viktor
  *

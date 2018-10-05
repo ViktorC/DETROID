@@ -11,7 +11,7 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
  * @author Viktor
  *
  */
-class RelativeHistoryTable {
+public class RelativeHistoryTable {
 
 	/**
 	 * The maximum score a move can have.
@@ -20,8 +20,11 @@ class RelativeHistoryTable {
 	
 	private final long[][] historyT;	// A [piece][destination square] table for the history heuristic.
 	private final long[][] butterflyT;	// A [piece][destination square] table for the butterfly heuristic.
-	
-	RelativeHistoryTable() {
+
+	/**
+	 * Default constructor.
+	 */
+	public RelativeHistoryTable() {
 		maxScore = Short.MAX_VALUE;
 		/* The numbering of the pieces starts from one, so each table has a redundant first row to save
 		 * the expenses of always subtracting one from the moved piece numeral both on read and write. */
@@ -33,7 +36,7 @@ class RelativeHistoryTable {
 	 * 
 	 * @param m The move that caused the cut-off.
 	 */
-	void recordSuccessfulMove(Move m) {
+	public void recordSuccessfulMove(Move m) {
 		byte movedPiece = m.getMovedPiece();
 		byte to = m.getTo();
 		historyT[movedPiece][to]++;
@@ -44,7 +47,7 @@ class RelativeHistoryTable {
 	 * 
 	 * @param m The move that did not cause a cut-off.
 	 */
-	void recordUnsuccessfulMove(Move m) {
+	public void recordUnsuccessfulMove(Move m) {
 		butterflyT[m.getMovedPiece()][m.getTo()]++;
 	}
 	/**
@@ -54,7 +57,7 @@ class RelativeHistoryTable {
 	 * @return The relative history heuristic score for the move according to the cut-off to occurence ratio of the
 	 * associated entries in the from-to tables.
 	 */
-	short score(Move m) {
+	public short score(Move m) {
 		byte movedPiece = m.getMovedPiece();
 		byte to = m.getTo();
 		long bTscore = butterflyT[movedPiece][to];

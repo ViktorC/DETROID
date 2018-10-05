@@ -29,7 +29,6 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	 * higher. */
 	private static final float T1_SHARE = 0.6f;
 	private static final float T2_SHARE = 0.4f;
-	private static final int MAX_CAPACITY = Integer.MAX_VALUE; // The maximum number of slots.
 	
 	private final int capacity;
 	private final int recursions;
@@ -48,9 +47,8 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 		long s1, s2, tL1, tL2;
 		if (factory == null)
 			throw new NullPointerException("The factory cannot be null.");
-		if (capacity <= 0 || capacity > MAX_CAPACITY)
-			throw new IllegalArgumentException("Illegal capacity. The capacity has to be greater " +
-					"than 0 and lesser than " + MAX_CAPACITY + ".");
+		if (capacity <= 0)
+			throw new IllegalArgumentException("Illegal capacity. The capacity has to be greater than 0.");
 		if (recursions < 0)
 			throw new IllegalArgumentException("Illegal number of recursions specified. The number of " +
 					"recursions have to be greater than 0.");
@@ -109,7 +107,6 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	 * @param entry The entry to relocate.
 	 * @param intoTable1 If it is to be relocated to table 1 or table 2.
 	 * @param depth The number of recursions left.
-	 * @param If no entry had to be discarded.
 	 */
 	private boolean relocate(T entry, boolean intoTable1, int depth) {
 		T otherEntry;
@@ -242,16 +239,13 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	 * @param condition The condition on which an entry should be removed.
 	 */
 	public void remove(Predicate<T> condition) throws NullPointerException {
-		T entry;
-		for (int i = 0; i < t1.length; i++) {
-			entry = t1[i];
+		for (T entry : t1) {
 			if (!entry.isEmpty() && condition.test(entry)) {
 				entry.empty();
 				size--;
 			}
 		}
-		for (int i = 0; i < t2.length; i++) {
-			entry = t2[i];
+		for (T entry : t2) {
 			if (!entry.isEmpty() && condition.test(entry)) {
 				entry.empty();
 				size--;
@@ -269,7 +263,7 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	@Override
 	public Iterator<T> iterator() {
 		ArrayList<T> list;
-		list = new ArrayList<T>();
+		list = new ArrayList<>();
 		for (T entry : t1) {
 			if (!entry.isEmpty())
 				list.add(entry);
@@ -295,7 +289,7 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	 *
 	 * @param <T> The type of the hash table entry that implements this interface.
 	 */
-	public static interface Entry<T extends Cache.Entry<T>> extends Comparable<T> {
+	public interface Entry<T extends Cache.Entry<T>> extends Comparable<T> {
 		
 		/**
 		 * Returns a long integer hash code.
@@ -337,7 +331,7 @@ public class Cache<T extends Cache.Entry<T>> implements Iterable<T> {
 	 * @param <T> A hash table entry type that implements the
 	 * {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
 	 */
-	public static interface EntryFactory<T extends Cache.Entry<T>> {
+	public interface EntryFactory<T extends Cache.Entry<T>> {
 		
 		/**
 		 * Constructs and returns a new entry instance.

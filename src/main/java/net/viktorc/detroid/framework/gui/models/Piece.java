@@ -25,7 +25,7 @@ public enum Piece {
 	private final char fenNote;
 	private final char code;
 	
-	private Piece(char fenNote, char code) {
+	Piece(char fenNote, char code) {
 		this.fenNote = fenNote;
 		this.code = code;
 	}

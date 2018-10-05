@@ -8,23 +8,23 @@ import java.text.ParseException;
  * @author Viktor
  *
  */
-class ChessParseException extends ParseException {
+public class ChessParseException extends ParseException {
 
 	/**
 	 * Generated serial version UID.
 	 */
 	private static final long serialVersionUID = -2375327691687152573L;
 
-	ChessParseException() {
-		this("");
+	/**
+	 * @param desc A description of the error.
+	 */
+	public ChessParseException(String desc) {
+		super(desc, -1);
 	}
-	ChessParseException(String arg) {
-		this(arg, -1);
-	}
-	ChessParseException(String arg0, int arg1) {
-		super(arg0, arg1);
-	}
-	ChessParseException(Exception e) {
+	/**
+	 * @param e The underlying exception.
+	 */
+	public ChessParseException(Exception e) {
 		this(e.getMessage());
 	}
 	

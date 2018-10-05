@@ -142,10 +142,7 @@ public final class FENFileUtil {
 				futures.add(pool.submit(() -> {
 					Logger fenLogger = Logger.getAnonymousLogger();
 					fenLogger.setUseParentHandlers(false);
-					FileHandler handler = null;
-					try {
-						handler = new FileHandler(fenFilePath, true);
-					} catch (SecurityException | IOException e1) { }
+					FileHandler handler = new FileHandler(fenFilePath, true);
 					handler.setFormatter(new Formatter() {
 						
 						@Override

@@ -78,21 +78,21 @@ public class SizeEstimator {
 	 */
 	private byte sizeOfPrimitiveField(Class<?> fieldType) {
 		if (fieldType.equals(boolean.class))
-			return SizeOf.BOOLEAN.numOfBytes;
+			return SizeOf.BOOLEAN.getNumOfBytes();
 		else if (fieldType.equals(byte.class))
-			return SizeOf.BYTE.numOfBytes;
+			return SizeOf.BYTE.getNumOfBytes();
 		else if (fieldType.equals(short.class))
-			return SizeOf.SHORT.numOfBytes;
+			return SizeOf.SHORT.getNumOfBytes();
 		else if (fieldType.equals(int.class))
-			return SizeOf.INT.numOfBytes;
+			return SizeOf.INT.getNumOfBytes();
 		else if (fieldType.equals(long.class))
-			return SizeOf.LONG.numOfBytes;
+			return SizeOf.LONG.getNumOfBytes();
 		else if (fieldType.equals(float.class))
-			return SizeOf.FLOAT.numOfBytes;
+			return SizeOf.FLOAT.getNumOfBytes();
 		else if (fieldType.equals(double.class))
-			return SizeOf.DOUBLE.numOfBytes;
+			return SizeOf.DOUBLE.getNumOfBytes();
 		else if (fieldType.equals(char.class))
-			return SizeOf.CHAR.numOfBytes;
+			return SizeOf.CHAR.getNumOfBytes();
 		else
 			throw new IllegalArgumentException();
 	}
@@ -110,38 +110,38 @@ public class SizeEstimator {
 		ArrayList<Field> fields;
 		Class<?> fieldType;
 		if (o == null)
-			return SizeOf.OBJECT_POINTER.numOfBytes;
+			return SizeOf.OBJECT_POINTER.getNumOfBytes();
 		// If the object has already been visited, only count the reference size to avoid loops.
 		if (visitedObjects.contains(o))
-			return SizeOf.OBJECT_POINTER.numOfBytes;
+			return SizeOf.OBJECT_POINTER.getNumOfBytes();
 		clazz = o.getClass();
 		// Only one instance exists on the heap per enum definition.
 		if (clazz.isEnum())
-			return SizeOf.OBJECT_POINTER.numOfBytes;
+			return SizeOf.OBJECT_POINTER.getNumOfBytes();
 		// Add current node to the visited objects.
 		visitedObjects.add(o);
 		if (clazz.isArray()) {
 			// Array header size.
-			size = SizeOf.MARK_WORD.numOfBytes + SizeOf.OBJECT_POINTER.numOfBytes;
-			size += SizeOf.INT.numOfBytes;
+			size = SizeOf.MARK_WORD.getNumOfBytes() + SizeOf.OBJECT_POINTER.getNumOfBytes();
+			size += SizeOf.INT.getNumOfBytes();
 			arrLength = Array.getLength(o);
 			if (arrLength > 0) {
 				if (o instanceof boolean[])
-					size += arrLength*SizeOf.BOOLEAN.numOfBytes;
+					size += arrLength*SizeOf.BOOLEAN.getNumOfBytes();
 				else if (o instanceof byte[])
-					size += arrLength*SizeOf.BYTE.numOfBytes;
+					size += arrLength*SizeOf.BYTE.getNumOfBytes();
 				else if (o instanceof short[])
-					size += arrLength*SizeOf.SHORT.numOfBytes;
+					size += arrLength*SizeOf.SHORT.getNumOfBytes();
 				else if (o instanceof int[])
-					size += arrLength*SizeOf.INT.numOfBytes;
+					size += arrLength*SizeOf.INT.getNumOfBytes();
 				else if (o instanceof long[])
-					size += arrLength*SizeOf.LONG.numOfBytes;
+					size += arrLength*SizeOf.LONG.getNumOfBytes();
 				else if (o instanceof float[])
-					size += arrLength*SizeOf.FLOAT.numOfBytes;
+					size += arrLength*SizeOf.FLOAT.getNumOfBytes();
 				else if (o instanceof double[])
-					size += arrLength*SizeOf.DOUBLE.numOfBytes;
+					size += arrLength*SizeOf.DOUBLE.getNumOfBytes();
 				else if (o instanceof char[])
-					size += arrLength*SizeOf.CHAR.numOfBytes;
+					size += arrLength*SizeOf.CHAR.getNumOfBytes();
 				else {
 					for (int i = 0; i < arrLength; i ++)
 						size += sizeOf(Array.get(o, i), visitedObjects);
@@ -149,7 +149,7 @@ public class SizeEstimator {
 			}
 		} else {
 			// OO header size.
-			size = SizeOf.MARK_WORD.numOfBytes + SizeOf.OBJECT_POINTER.numOfBytes;
+			size = SizeOf.MARK_WORD.getNumOfBytes() + SizeOf.OBJECT_POINTER.getNumOfBytes();
 			fields = getNonStaticFields(clazz);
 			for (Field f : fields) {
 				fieldType = f.getType();
@@ -176,7 +176,7 @@ public class SizeEstimator {
 	 * @return The size of the object.
 	 */
 	public long sizeOf(Object o) {
-		Set<Object> visitedNodes = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+		Set<Object> visitedNodes = Collections.newSetFromMap(new IdentityHashMap<>());
 		return sizeOf(o, visitedNodes);
 	}
 	/**
@@ -190,14 +190,14 @@ public class SizeEstimator {
 	public long sizeOf(Class<?> clazz) {
 		Class<?> fieldType;
 		// Object header.
-		long size = SizeOf.MARK_WORD.numOfBytes + SizeOf.OBJECT_POINTER.numOfBytes;
+		long size = SizeOf.MARK_WORD.getNumOfBytes() + SizeOf.OBJECT_POINTER.getNumOfBytes();
 		ArrayList<Field> fields = getNonStaticFields(clazz);
 		for (Field f : fields) {
 			fieldType = f.getType();
 			if (fieldType.isPrimitive())
 				size += sizeOfPrimitiveField(fieldType);
 			else // Assume to be a null reference.
-				size += SizeOf.OBJECT_POINTER.numOfBytes;
+				size += SizeOf.OBJECT_POINTER.getNumOfBytes();
 		}
 		// 8-byte-alignment.
 		return roundedSize(size);

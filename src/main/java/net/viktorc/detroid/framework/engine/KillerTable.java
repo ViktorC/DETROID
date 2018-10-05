@@ -1,13 +1,12 @@
 package net.viktorc.detroid.framework.engine;
 
-
 /**
  * A table implementation for the killer heuristic.
  * 
  * @author Viktor
  *
  */
-class KillerTable {
+public class KillerTable {
 	
 	private KTEntry[] t;
 	
@@ -16,7 +15,7 @@ class KillerTable {
 	 * 
 	 * @param size The length of the table. Should be the maximum allowed search depth.
 	 */
-	KillerTable(int size) {
+	public KillerTable(int size) {
 		t = new KTEntry[size];
 		for (int i = 0; i < t.length; i++)
 			t[i] = new KTEntry(0, 0);
@@ -28,7 +27,7 @@ class KillerTable {
 	 * @param m The move that caused the cut-off.
 	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
 	 */
-	void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
+	public void add(int ply, Move m) throws ArrayIndexOutOfBoundsException {
 		KTEntry e = t[ply];
 		int compM = m.toInt();
 		if (e.move1 != compM) {
@@ -43,7 +42,7 @@ class KillerTable {
 	 * @return The killer move entry from the table entry for the ply.
 	 * @throws ArrayIndexOutOfBoundsException Does not check whether the ply is within the table's bounds.
 	 */
-	KTEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
+	public KTEntry retrieve(int ply) throws ArrayIndexOutOfBoundsException {
 		return t[ply];
 	}
 	
@@ -53,29 +52,33 @@ class KillerTable {
 	 * @author Viktor
 	 *
 	 */
-	static class KTEntry {
+	public static class KTEntry {
 		
 		private int move1;
 		private int move2;
-		
-		KTEntry(int move1, int move2) {
+
+		/**
+		 * @param move1 A 4 byte integer representation of the first killer move.
+		 * @param move2 A 4 byte integer representation of the second killer move.
+		 */
+		public KTEntry(int move1, int move2) {
 			this.move1 = move1;
 			this.move2 = move2;
 		}
 		/**
-		 * Returns a 4 byte integer representation of the number 1 killer move.
+		 * Returns a 4 byte integer representation of the first killer move.
 		 * 
 		 * @return The first killer move.
 		 */
-		int getMove1() {
+		public int getMove1() {
 			return move1;
 		}
 		/**
-		 * Returns a 4 byte integer representation of the number 2 killer move.
+		 * Returns a 4 byte integer representation of the second killer move.
 		 * 
 		 * @return The second killer move.
 		 */
-		int getMove2() {
+		public int getMove2() {
 			return move2;
 		}
 		

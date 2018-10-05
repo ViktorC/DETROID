@@ -102,7 +102,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 	}
 	private void startSearch(String[] tokens) {
 		Set<String> searchMoves = null;
-		Boolean ponder = null, infinite = null;;
+		Boolean ponder = null, infinite = null;
 		Long whiteTime = null, blackTime = null, whiteIncrement = null, blackIncrement = null;
 		Integer movesToGo = null, depth = null, mateDistance = null;
 		Long nodes = null, searchTime = null;
@@ -263,7 +263,7 @@ public final class UCI implements Observer, Runnable, Closeable {
 				info += "upperbound ";
 				break;
 			}
-			info += stats.getScore() + " nps " + (int) 1000*stats.getNodes()/Math.max(1, stats.getTime()) + " ";
+			info += stats.getScore() + " nps " + (int) (1000*stats.getNodes()/Math.max(1, stats.getTime())) + " ";
 			info += "tbhits " + stats.getEndgameTablebaseHits();
 			if (stats.getCurrentLine() > 0)
 				info += " currline " + stats.getCurrentLine();

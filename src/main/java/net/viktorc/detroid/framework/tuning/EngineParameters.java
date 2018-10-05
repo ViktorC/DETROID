@@ -73,11 +73,10 @@ public abstract class EngineParameters {
 		Parameter param;
 		Class<?> fieldType;
 		Class<?> clazz = getClass();
-		Class<?> temp = clazz;
 		ArrayList<Field> allfields = new ArrayList<>();
-		while (temp != null) {
-			allfields.addAll(Arrays.asList(temp.getDeclaredFields()));
-			temp = temp.getSuperclass();
+		while (clazz != null) {
+			allfields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+			clazz = clazz.getSuperclass();
 		}
 		for (Field f : allfields) {
 			f.setAccessible(true);
@@ -486,7 +485,7 @@ public abstract class EngineParameters {
 			try {
 				subString += f.getName() + " = " + f.get(this).toString() + System.lineSeparator();
 			} catch (IllegalArgumentException | IllegalAccessException e) {
-				subString = "";
+				continue;
 			}
 			out += subString;
 		}

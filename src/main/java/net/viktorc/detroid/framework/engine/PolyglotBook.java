@@ -14,7 +14,7 @@ import net.viktorc.detroid.framework.engine.Bitboard.Square;
  * @author Viktor
  *
  */
-class PolyglotBook extends OpeningBook {
+public class PolyglotBook extends OpeningBook {
 	
 	// Polyglot entry size in bytes: U64 hash + U16 move + U16 weight + U32 learning
 	private static final byte ENTRY_SIZE = 8 + 2 + 2 + 4;
@@ -28,7 +28,7 @@ class PolyglotBook extends OpeningBook {
 	 * @param filePath
 	 * @throws Exception
 	 */
-	PolyglotBook(String filePath) throws Exception {
+	public PolyglotBook(String filePath) throws Exception {
 		super(filePath);
 		gen = ZobristKeyGenerator.getInstance();
 	}
@@ -42,7 +42,7 @@ class PolyglotBook extends OpeningBook {
 	 * @throws IOException
 	 * @throws URISyntaxException 
 	 */
-	PolyglotBook(String filePath, String secondaryBookFilePath) throws Exception {
+	public PolyglotBook(String filePath, String secondaryBookFilePath) throws Exception {
 		this(filePath);
 		if (secondaryBookFilePath != null)
 			secondaryBook = new PolyglotBook(secondaryBookFilePath);
@@ -134,16 +134,16 @@ class PolyglotBook extends OpeningBook {
 		fromRank = "" + (int)(((polyglotMove >>> 9) & 7) + 1);
 		pacn = fromFile + fromRank + toFile + toRank;
 		if (pacn.equals("e1h1")) {
-			if (pos.whiteKing == Square.E1.bitboard)
+			if (pos.whiteKing == Square.E1.getBitboard())
 				return "e1g1";
 		} else if (pacn.equals("e1a1")) {
-			if (pos.whiteKing == Square.E1.bitboard)
+			if (pos.whiteKing == Square.E1.getBitboard())
 				return "e1c1";
 		} else if (pacn.equals("e8h8")) {
-			if (pos.blackKing == Square.E8.bitboard)
+			if (pos.blackKing == Square.E8.getBitboard())
 				return "e8g8";
 		} else if (pacn.equals("e8a8")) {
-			if (pos.blackKing == Square.E8.bitboard)
+			if (pos.blackKing == Square.E8.getBitboard())
 				return "e8c8";
 		}
 		switch (polyglotMove >>> 12) {
@@ -162,7 +162,7 @@ class PolyglotBook extends OpeningBook {
 		return pacn + promPiece;
 	}
 	@Override
-	Move getMove(Position0 p, SelectionModel selection) throws Exception {
+	public Move getMove(Position0 p, SelectionModel selection) throws Exception {
 		short max;
 		double totalWeight, randomDouble, weightSum;
 		Entry e;

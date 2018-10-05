@@ -155,7 +155,7 @@ public abstract class PBIL {
 	 * @param currentGeneration The current generation count.
 	 * @return Whether the loop can be broken or not.
 	 */
-	private final boolean isOptimized(int currentGeneration) {
+	private boolean isOptimized(int currentGeneration) {
 		if (generations == null) {
 			for (double e : probabilityVector) {
 				double limit = Math.min(1d/populationSize, MAX_DIVERGENCE);
@@ -178,7 +178,7 @@ public abstract class PBIL {
 		String[] genotypes = new String[populationSize];
 		currentGeneration = 0;
 		// Evolution.
-		while (true) {
+		for (;;) {
 			// Generate the new population by generating the genotypes using the probability vector.
 			for (int i = 0; i < populationSize; i++) {
 				String genotype = "";
@@ -204,15 +204,11 @@ public abstract class PBIL {
 					curLeastFitGenotype = genome;
 				}
 			}
-			/*
-			 * Update the probability vector according to the fitness of the fittest and the least fit
-			 * individuals in the population sample and mutate it.
-			 */
+			/* Update the probability vector according to the fitness of the fittest and the least fit
+			 * individuals in the population sample and mutate it. */
 			for (int j = 0; j < genotypeLength; j++) {
-				/**
-				 * At the points where the fittest genotype's gene differs from the least fit genome's gene,
-				 * magnify the effect on the probability vector by the value of diffLearningRateAddition.
-				 */
+				/* At the points where the fittest genotype's gene differs from the least fit genome's gene,
+				 * magnify the effect on the probability vector by the value of diffLearningRateAddition. */
 				double appliedLearningRate = (curLeastFitGenotype.charAt(j) == curFittestGenotype.charAt(j) ?
 						learningRate : learningRate + negLearningRateAddition);
 				double newProbabilityVectorVal = probabilityVector[j]*(1d - appliedLearningRate) +

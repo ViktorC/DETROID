@@ -1,11 +1,7 @@
 package net.viktorc.detroid.framework.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -230,7 +226,7 @@ public abstract class ASGD<D,L> {
 						ArrayList<Double> sortedDelta = new ArrayList<>(delta.length);
 						for (double v : delta)
 							sortedDelta.add(v);
-						sortedDelta.sort((a, b) -> Math.abs(a) > Math.abs(b) ? 1 : (Math.abs(a) == Math.abs(b) ? 0 : -1));
+						sortedDelta.sort(Comparator.comparingDouble(Math::abs));
 						double[] greatestDelta = new double[Math.min(delta.length, 5)];
 						for (int j = 0; j < greatestDelta.length; j++)
 							greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
@@ -263,7 +259,7 @@ public abstract class ASGD<D,L> {
 	 * @param dataSample An iterable data set on which the cost function is to be calculated.
 	 * @return The gradient of the cost function.
 	 */
-	private final double[] computeGradient(List<Entry<D,L>> dataSample) {
+	private double[] computeGradient(List<Entry<D,L>> dataSample) {
 		double[] gradient = new double[features.length];
 		for (int i = 0; i < gradient.length; i++)
 			gradient[i] = computeCostFunctionDerivative(i, dataSample);
@@ -278,7 +274,7 @@ public abstract class ASGD<D,L> {
 	 * @param dataSample An iterable data set on which the cost function is to be calculated.
 	 * @return The derivative of the cost function with respect to the feature at index i in the feature set.
 	 */
-	private final double computeCostFunctionDerivative(int i, List<Entry<D,L>> dataSample) {
+	private double computeCostFunctionDerivative(int i, List<Entry<D,L>> dataSample) {
 		double cost1, cost2, denominator;
 		double feature = features[i];
 		if (indicesToIgnore.contains(i))

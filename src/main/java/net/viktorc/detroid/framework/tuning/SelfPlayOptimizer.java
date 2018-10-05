@@ -209,12 +209,10 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 			tempGeneration = currGen;
 			double[] probVec = getProbabilityVector();
 			String set = "";
-			for (int j = 0; j < probVec.length; j++) {
-				double prob = probVec[j];
+			for (double prob : probVec)
 				set += (prob >= 0.5 ? "1" : "0");
-			}
-			for (int i = 0; i < engines.size(); i++) {
-				TunableEngine oppEngine = engines.get(i).getOpponentEngine();
+			for (SelfPlayEngines<TunableEngine> tunableEngines : engines) {
+				TunableEngine oppEngine = tunableEngines.getOpponentEngine();
 				if (!oppEngine.isInit()) {
 					try {
 						oppEngine.init();
@@ -263,7 +261,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
 		return fitness;
 	}
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		pool.shutdown();
 		for (Arena a : arenas)
 			a.close();

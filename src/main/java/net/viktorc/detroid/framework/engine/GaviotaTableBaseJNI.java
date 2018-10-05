@@ -12,58 +12,58 @@ import net.viktorc.detroid.framework.util.BitOperations;
  * @author Viktor
  *
  */
-class GaviotaTableBaseJNI extends EndGameTableBase {
+public class GaviotaTableBaseJNI extends EndGameTableBase {
 	
 	// Probing results.
-	static final int DRAW = 0;
-	static final int WMATE = 1;
-	static final int BMATE = 2;
-	static final int FORBID = 3;
-	static final int UNKNOWN = 7;
+	public static final int DRAW = 0;
+	public static final int WMATE = 1;
+	public static final int BMATE = 2;
+	public static final int FORBID = 3;
+	public static final int UNKNOWN = 7;
 	
 	// Integer statistics indices.
-	static final int WDL_EASY_HITS = 0;
-	static final int WDL_HARD_PROB = 1;
-	static final int WDL_SOFT_PROB = 2;
-	static final int WDL_CACHE_SIZE = 3;
-	static final int DTM_EASY_HITS = 4;
-	static final int DTM_HARD_PROB = 5;
-	static final int DTM_SOFT_PROB = 6;
-	static final int DTM_CACHE_SIZE = 7;
-	static final int TOTAL_HITS = 8;
-	static final int MEMORY_HITS = 9;
-	static final int DRIVE_HITS = 10;
-	static final int DRIVE_MISSES = 11;
-	static final int BYTES_READ = 12;
-	static final int FILES_OPENED = 13;
+	public static final int WDL_EASY_HITS = 0;
+	public static final int WDL_HARD_PROB = 1;
+	public static final int WDL_SOFT_PROB = 2;
+	public static final int WDL_CACHE_SIZE = 3;
+	public static final int DTM_EASY_HITS = 4;
+	public static final int DTM_HARD_PROB = 5;
+	public static final int DTM_SOFT_PROB = 6;
+	public static final int DTM_CACHE_SIZE = 7;
+	public static final int TOTAL_HITS = 8;
+	public static final int MEMORY_HITS = 9;
+	public static final int DRIVE_HITS = 10;
+	public static final int DRIVE_MISSES = 11;
+	public static final int BYTES_READ = 12;
+	public static final int FILES_OPENED = 13;
 	
 	// Floating point statistics indices.
-	static final int WDL_OCCUPANCY = 0;
-	static final int DTM_OCCUPANCY = 1;
-	static final int MEMORY_EFFICIENCY = 2;
+	public static final int WDL_OCCUPANCY = 0;
+	public static final int DTM_OCCUPANCY = 1;
+	public static final int MEMORY_EFFICIENCY = 2;
 	
 	// Side to move.
-	static final int WHITE_TO_MOVE = 0;
-	static final int BLACK_TO_MOVE = 1;
+	public static final int WHITE_TO_MOVE = 0;
+	public static final int BLACK_TO_MOVE = 1;
 	
 	// Pieces.
-	static final char NO_PIECE = 0;
-	static final char PAWN = 1;
-	static final char KNIGHT = 2;
-	static final char BISHOP = 3;
-	static final char ROOK = 4;
-	static final char QUEEN = 5;
-	static final char KING = 6;
+	public static final char NO_PIECE = 0;
+	public static final char PAWN = 1;
+	public static final char KNIGHT = 2;
+	public static final char BISHOP = 3;
+	public static final char ROOK = 4;
+	public static final char QUEEN = 5;
+	public static final char KING = 6;
 	
 	// Square.
-	static final int NO_SQUARE = 64;
+	public static final int NO_SQUARE = 64;
 	
 	// Castling masks.
-	static final int NO_CASTLE = 0;
-	static final int WSHORT = 8;
-	static final int WLONG = 4;
-	static final int BSHORT = 2;
-	static final int BLONG = 1;
+	public static final int NO_CASTLE = 0;
+	public static final int WSHORT = 8;
+	public static final int WLONG = 4;
+	public static final int BSHORT = 2;
+	public static final int BLONG = 1;
 	
 	/* The fraction (of 128) of the cache that should be devoted to storing WDL information; 
 	 * The rest is to store DTM information. */
@@ -85,7 +85,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * 
 	 * @return The only <code>GaviotaTableBaseJNI</code> instance.
 	 */
-	static GaviotaTableBaseJNI getInstance() {
+	public static GaviotaTableBaseJNI getInstance() {
 		return INSTANCE;
 	}
 	/**
@@ -121,13 +121,13 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	private Object probe(Position0 pos, boolean dtm, boolean soft) {
 		boolean lockAcquired = false;
 		int sideToMove = pos.whitesTurn ? 0 : 1;
-		int enPassant = pos.enPassantRights == EnPassantRights.NONE.ind ? NO_SQUARE :
+		int enPassant = pos.enPassantRights == EnPassantRights.NONE.ordinal() ? NO_SQUARE :
 				pos.enPassantRights + (pos.whitesTurn ? EnPassantRights.TO_W_DEST_SQR_IND :
 				EnPassantRights.TO_B_DEST_SQR_IND);
-		int castling = (pos.blackCastlingRights%CastlingRights.ALL.ind == 0 ?
-				pos.blackCastlingRights : pos.blackCastlingRights^CastlingRights.ALL.ind) |
-				((pos.whiteCastlingRights%CastlingRights.ALL.ind == 0 ? pos.whiteCastlingRights :
-				pos.whiteCastlingRights^CastlingRights.ALL.ind) << 2);
+		int castling = (pos.blackCastlingRights%CastlingRights.ALL.ordinal() == 0 ?
+				pos.blackCastlingRights : pos.blackCastlingRights^CastlingRights.ALL.ordinal()) |
+				((pos.whiteCastlingRights%CastlingRights.ALL.ordinal() == 0 ? pos.whiteCastlingRights :
+				pos.whiteCastlingRights^CastlingRights.ALL.ordinal()) << 2);
 		byte[] wAllOccuppied = BitOperations.serialize(pos.allWhiteOccupied);
 		int[] wSquares = new int[wAllOccuppied.length + 1];
 		char[] wPieces = new char[wAllOccuppied.length + 1];
@@ -186,7 +186,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * @param paths The paths to the folders containing the tablebase files.
 	 * @return Optionally, information regarding the state of the library.
 	 */
-	native String init(boolean verbose, int compScheme, String paths);
+	public native String init(boolean verbose, int compScheme, String paths);
 	/**
 	 * Restarts the Gaviota probing library using the specified parameters.
 	 * 
@@ -196,20 +196,20 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * @param paths The paths to the folders containing the tablebase files.
 	 * @return Optionally, information regarding the state of the library.
 	 */
-	native String restart(boolean verbose, int compScheme, String paths);
+	public native String restart(boolean verbose, int compScheme, String paths);
 	/**
 	 * Returns an integer denoting for which numbers of pieces the library is 
 	 * initialized for.
 	 * 
 	 * @return An integer denoting the availability of tablebase files.
 	 */
-	native int availability();
+	public native int availability();
 	/**
 	 * Returns the amount of memory allocated for indices in bytes.
 	 * 
 	 * @return The number of bytes allocated for indices.
 	 */
-	native long indexMemory();
+	public native long indexMemory();
 	/**
 	 * Initializes the cache using the specified parameters.
 	 * 
@@ -218,7 +218,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * reserved for WDL information.
 	 * @return Whether the cache was successfully initialized.
 	 */
-	native boolean initCache(long size, int wdlFraction);
+	public native boolean initCache(long size, int wdlFraction);
 	/**
 	 * Restarts the cache using the specified parameters.
 	 * 
@@ -227,17 +227,17 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * reserved for WDL information.
 	 * @return Whether the cache was successfully resterted.
 	 */
-	native boolean restartCache(long size, int wdlFraction);
+	public native boolean restartCache(long size, int wdlFraction);
 	/**
 	 * Returns whether the cache is on.
 	 * 
 	 * @return Whether the cache is on.
 	 */
-	native boolean isCacheOn();
+	public native boolean isCacheOn();
 	/**
 	 * Closes the cache.
 	 */
-	native void closeCache();
+	public native void closeCache();
 	/**
 	 * Sets the values of the two array parameters according to the statistics of 
 	 * the probing library.
@@ -264,11 +264,11 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * <code>[1] - DTM_OCCUPANCY</code></br>
 	 * <code>[2] - MEMORY_EFFICIENCY</code>
 	 */
-	native void getStats(long[] intStats, double[] fpStats);
+	public native void getStats(long[] intStats, double[] fpStats);
 	/**
 	 * Resets the stored statistics of the probing library.
 	 */
-	native void resetStats();
+	public native void resetStats();
 	/**
 	 * Probes the cache for both WDL and DTM information for the given position. If the 
 	 * cache lookup fails, it proceeds to search the files.
@@ -298,7 +298,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * found. The first element of the array contains the WDL information while the second 
 	 * one contains the distance to mate.
 	 */
-	native int[] probe(int sideToMove, int enPassantSqr, int catlingRights,
+	public native int[] probe(int sideToMove, int enPassantSqr, int catlingRights,
 			int[] wSqrs, int[] bSqrs, char[] wPcs, char[] bPcs);
 	/**
 	 * Probes the cache for both WDL and DTM information for the given position. If the 
@@ -329,7 +329,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * first element of the array contains the WDL information while the second one 
 	 * contains the distance to mate.
 	 */
-	native int[] probeSoft(int sideToMove, int enPassantSqr, int catlingRights,
+	public native int[] probeSoft(int sideToMove, int enPassantSqr, int catlingRights,
 			int[] wSqrs, int[] bSqrs, char[] wPcs, char[] bPcs);
 	/**
 	 * Probes the cache for WDL information for the given position. If the cache lookup 
@@ -359,7 +359,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * @return An integer array containing WDL information as defined by the constants 
 	 * {@link #WMATE}, {@link #BMATE}, {@link #DRAW}, {@link #FORBID}, and {@link #UNKNOWN}.
 	 */
-	native int probeWDL(int sideToMove, int enPassantSqr, int catlingRights,
+	public native int probeWDL(int sideToMove, int enPassantSqr, int catlingRights,
 			int[] wSqrs, int[] bSqrs, char[] wPcs, char[] bPcs);
 	/**
 	 * Probes the cache for WDL information for the given position. If the cache lookup 
@@ -389,16 +389,16 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * @return An integer array containing WDL information as defined by the constants 
 	 * {@link #WMATE}, {@link #BMATE}, {@link #DRAW}, {@link #FORBID}, and {@link #UNKNOWN}.
 	 */
-	native int probeSoftWDL(int sideToMove, int enPassantSqr, int catlingRights,
+	public native int probeSoftWDL(int sideToMove, int enPassantSqr, int catlingRights,
 			int[] wSqrs, int[] bSqrs, char[] wPcs, char[] bPcs);
 	@Override
-	native boolean isInit();
+	public native boolean isInit();
 	@Override
-	native void clearCache();
+	public native void clearCache();
 	@Override
 	public native void close();
 	@Override
-	boolean areTableBasesAvailable(int piecesOnBoard) {
+	public boolean areTableBasesAvailable(int piecesOnBoard) {
 		if (piecesOnBoard >= 3 && piecesOnBoard <= MAX_NUMBER_OF_PIECES) {
 			long mask = 1L << (2*(piecesOnBoard - 3));
 			return (availability() & mask) != 0;
@@ -406,7 +406,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 		return false;
 	}
 	@Override
-	EGTBStats getStats() {
+	public EGTBStats getStats() {
 		long[] intStats = new long[14];
 		double[] fpStats = new double[3];
 		getStats(intStats, fpStats);
@@ -415,7 +415,7 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 				intStats[DRIVE_HITS], intStats[MEMORY_HITS]);
 	}
 	@Override
-	void init(String path, long cacheSize, Object... args) {
+	public void init(String path, long cacheSize, Object... args) {
 		CompressionScheme compScheme = (CompressionScheme) args[0];
 		String absPath = Arrays.stream(path.split(";")).collect(StringBuilder::new,
 				(s, p) -> s.append(";").append(p), (s1, s2) -> s1.append(s2)).toString();
@@ -432,11 +432,11 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 		}
 	}
 	@Override
-	WDL probeWDL(Position0 pos, boolean soft) {
+	public WDL probeWDL(Position0 pos, boolean soft) {
 		return (WDL) probe(pos, false, soft);
 	}
 	@Override
-	DTM probeDTM(Position0 pos, boolean soft) {
+	public DTM probeDTM(Position0 pos, boolean soft) {
 		return (DTM) probe(pos, true, soft);
 	}
 	
@@ -446,13 +446,13 @@ class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * @author Viktor
 	 *
 	 */
-	enum CompressionScheme {
+	public enum CompressionScheme {
 		
 		UNCOMPRESSED,
 		CP1,
 		CP2,
 		CP3,
-		CP4;
+		CP4
 		
 	}
 	

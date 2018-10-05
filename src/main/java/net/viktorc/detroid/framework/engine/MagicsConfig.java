@@ -13,7 +13,7 @@ import java.util.Properties;
  *
  * @author Viktor
  */
-class MagicsConfig {
+public class MagicsConfig {
 
 	private static final String PROPERTIES_FILE_PATH = "magics.properties";
 	private static final String ROOK_KEY_FORMAT = "R%d";
@@ -31,7 +31,7 @@ class MagicsConfig {
 	/**
 	 * @return The one and only instance.
 	 */
-	static MagicsConfig getInstance() {
+	public static MagicsConfig getInstance() {
 		return INSTANCE;
 	}
 	private Map.Entry<Long,Byte> getMagics(String key) {
@@ -48,7 +48,7 @@ class MagicsConfig {
 	 * @param sqrInd The square index.
 	 * @return A key-value pair containing the magic number and the magic shift for a rook on the specified square.
 	 */
-	Map.Entry<Long,Byte> getRookMagics(int sqrInd) {
+	public Map.Entry<Long,Byte> getRookMagics(int sqrInd) {
 		return getMagics(String.format(ROOK_KEY_FORMAT, sqrInd));
 	}
 	/**
@@ -56,14 +56,14 @@ class MagicsConfig {
 	 * @param magics A key-value pair containing the magic number and the magic shift for a rook on the specified
 	 * square.
 	 */
-	synchronized void setRookMagics(int sqrInd, Map.Entry<Long,Byte> magics) {
+	public synchronized void setRookMagics(int sqrInd, Map.Entry<Long,Byte> magics) {
 		setMagics(String.format(ROOK_KEY_FORMAT, sqrInd), magics);
 	}
 	/**
 	 * @param sqrInd The square index.
 	 * @return A key-value pair containing the magic number and the magic shift for a bishop on the specified square.
 	 */
-	Map.Entry<Long,Byte> getBishopMagics(int sqrInd) {
+	public Map.Entry<Long,Byte> getBishopMagics(int sqrInd) {
 		return getMagics(String.format(BISHOP_KEY_FORMAT, sqrInd));
 	}
 	/**
@@ -71,7 +71,7 @@ class MagicsConfig {
 	 * @param magics A key-value pair containing the magic number and the magic shift for a bishop on the specified
 	 * square.
 	 */
-	synchronized void setBishopMagics(int sqrInd, Map.Entry<Long,Byte> magics) {
+	public synchronized void setBishopMagics(int sqrInd, Map.Entry<Long,Byte> magics) {
 		setMagics(String.format(BISHOP_KEY_FORMAT, sqrInd), magics);
 	}
 	/**
@@ -79,7 +79,7 @@ class MagicsConfig {
 	 *
 	 * @throws IOException If the properties file cannot be read.
 	 */
-	synchronized void load() throws IOException {
+	public synchronized void load() throws IOException {
 		if (loaded)
 			return;
 		try (FileInputStream in = new FileInputStream(PROPERTIES_FILE_PATH)) {
@@ -92,7 +92,7 @@ class MagicsConfig {
 	 *
 	 * @throws IOException If the properties file cannot be read.
 	 */
-	synchronized void reload() throws IOException {
+	public synchronized void reload() throws IOException {
 		loaded = false;
 		load();
 	}
@@ -101,7 +101,7 @@ class MagicsConfig {
 	 *
 	 * @throws IOException If the properties file cannot be written to.
 	 */
-	synchronized void save() throws IOException {
+	public synchronized void save() throws IOException {
 		try (FileOutputStream out = new FileOutputStream(PROPERTIES_FILE_PATH)) {
 			props.store(out, DESCRIPTION);
 		}
