@@ -2,27 +2,17 @@ package net.viktorc.detroid.framework.engine;
 
 import java.util.Random;
 
-import net.viktorc.detroid.framework.engine.Bitboard.Square;
 import net.viktorc.detroid.framework.util.BitOperations;
 
 /**
- * A class whose object encodes the most important pieces of information stored in a Position0 object into a long by XOR-operations.
- * Two Position0 objects with identical states will always have the same Zobrist keys within one runtime and two Position0 objects with
- * different values for the concerned instance fields will almost always have different Zobrist keys.
- * The relevant fields are:
- * 		1. side to move
- * 		2. board position
- * 		3. white's castling rights
- * 		4. black's castling rights
- * 		5. en passant rights
- * 
- * The class creates its own random values it then uses for XOR-ing on compile thus Position0 objects with identical states are
- * likely to have different keys for each runtime. This does not apply to Polyglot Zobrist keys.
+ * A class for hashing chess positions. Two position objects with identical states will always have the same Zobrist
+ * keys within one runtime and two position objects with different states (as defined by the side to move, the board
+ * state, the castling rights, and the en passant rights) will almost always have different Zobrist keys.
  * 
  * @author Viktor
  *
  */
-final class ZobristKeyGenerator {
+public final class ZobristKeyGenerator {
 	
 	private static final long[] POLYGLOT_RANDOM_64 = {
 			0x9D39247E33776D41L, 0x2AF7398005AAA5C7L, 0x44DB015024623547L, 0x9C15F73E62A76AE2L,
@@ -222,10 +212,11 @@ final class ZobristKeyGenerator {
 			0xCF3145DE0ADD4289L, 0xD0E4427A5514FB72L, 0x77C621CC9FB3A483L, 0x67A34DAC4356550BL,
 			0xF8D626AAAF278509L
 	};
+	
 	private static final ZobristKeyGenerator INSTANCE = new ZobristKeyGenerator();
 	
 	private long turn;
-	private long[][] board = new long[Piece.values().length][Square.values().length];
+	private long[][] board = new long[Piece.values().length][Bitboard.Square.values().length];
 	private long[] whiteCastlingRights = new long[CastlingRights.values().length];
 	private long[] blackCastlingRights = new long[CastlingRights.values().length];
 	private long[] enPassantRights = new long[EnPassantRights.values().length];
@@ -251,95 +242,92 @@ final class ZobristKeyGenerator {
 	 * 
 	 * @return
 	 */
-	static ZobristKeyGenerator getInstance() {
+	public static ZobristKeyGenerator getInstance() {
 		return INSTANCE;
 	}
 	/**
 	 * Generates a main Zobrist hash key for the position based on the side to move, the board state, and the castling and en passant rights.
 	 * 
-	 * @param p
+	 * @param pos
 	 * @return
 	 */
-	long generateHashKey(Position0 p) {
-		byte[] offsetBoard = p.offsetBoard;
+	public long generateHashKey(Position pos) {
 		long key = 0;
-		if (!p.whitesTurn)
+		if (!pos.isWhitesTurn())
 			key ^= turn;
-		for (int i = 0; i < offsetBoard.length; i++)
-			key ^= board[offsetBoard[i]][i];
-		key ^= whiteCastlingRights[p.whiteCastlingRights];
-		key ^= blackCastlingRights[p.blackCastlingRights];
-		key ^= enPassantRights[p.enPassantRights];
+		for (int i = 0; i < board.length; i++)
+			key ^= board[pos.getPiece(i)][i];
+		key ^= whiteCastlingRights[pos.getWhiteCastlingRights()];
+		key ^= blackCastlingRights[pos.getBlackCastlingRights()];
+		key ^= enPassantRights[pos.getEnPassantRights()];
 		return key;
 	}
 	/**
 	 * Generates a Zobrist hash key for the pawn-king structure on the board.
 	 * 
-	 * @param p
+	 * @param pos
 	 * @return
 	 */
-	long generatePawnKingHashKey(Position0 p) {
+	public long generatePawnKingHashKey(Position pos) {
 		long key = 0;
-		long whitePawns = p.whitePawns;
-		long blackPawns = p.blackPawns;
+		long whitePawns = pos.getWhitePawns();
+		long blackPawns = pos.getBlackPawns();
 		while (whitePawns != 0) {
-			key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
+			key ^= board[Piece.W_PAWN.ordinal()][BitOperations.indexOfLSBit(whitePawns)];
 			whitePawns = BitOperations.resetLSBit(whitePawns);
 		}
 		while (blackPawns != 0) {
-			key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
+			key ^= board[Piece.B_PAWN.ordinal()][BitOperations.indexOfLSBit(blackPawns)];
 			blackPawns = BitOperations.resetLSBit(blackPawns);
 		}
-		key ^= board[Piece.W_KING.ind][BitOperations.indexOfBit(p.whiteKing)];
-		key ^= board[Piece.B_KING.ind][BitOperations.indexOfBit(p.blackKing)];
+		key ^= board[Piece.W_KING.ordinal()][BitOperations.indexOfBit(pos.getWhiteKing())];
+		key ^= board[Piece.B_KING.ordinal()][BitOperations.indexOfBit(pos.getBlackKing())];
 		return key;
 	}
 	/**
 	 * Returns the 64 bitboard hash key used for positions in PolyGlot opening books.
 	 * 
-	 * @param p
+	 * @param pos
 	 * @return
 	 */
-	long generatePolyglotHashKey(Position0 p) {
+	public long generatePolyglotHashKey(Position pos) {
 		long key = 0L;
-		int piece, pieceNote;
-		byte[] offBoard = p.offsetBoard;
-		int wCastlingRights = p.whiteCastlingRights;
-		int bCastlingRights = p.blackCastlingRights;
-		int enPassantRights = p.enPassantRights;
-		boolean whitesTurn = p.whitesTurn;
-		MoveSetBase mD;
-		for (int i = 0; i < offBoard.length; i++) {
-			piece = offBoard[i];
-			if (piece == Piece.NULL.ind) continue;
-			else if (piece == Piece.B_PAWN.ind) pieceNote = 0;
-			else if (piece == Piece.W_PAWN.ind) pieceNote = 1;
-			else if (piece == Piece.B_KNIGHT.ind) pieceNote = 2;
-			else if (piece == Piece.W_KNIGHT.ind) pieceNote = 3;
-			else if (piece == Piece.B_BISHOP.ind) pieceNote = 4;
-			else if (piece == Piece.W_BISHOP.ind) pieceNote = 5;
-			else if (piece == Piece.B_ROOK.ind) pieceNote = 6;
-			else if (piece == Piece.W_ROOK.ind) pieceNote = 7;
-			else if (piece == Piece.B_QUEEN.ind) pieceNote = 8;
-			else if (piece == Piece.W_QUEEN.ind) pieceNote = 9;
-			else if (piece == Piece.B_KING.ind) pieceNote = 10;
+		int wCastlingRights = pos.getWhiteCastlingRights();
+		int bCastlingRights = pos.getBlackCastlingRights();
+		int enPassantRights = pos.getEnPassantRights();
+		boolean whitesTurn = pos.isWhitesTurn();
+		for (int i = 0; i < board.length; i++) {
+			int pieceNote;
+			int piece = pos.getPiece(i);
+			if (piece == Piece.NULL.ordinal()) continue;
+			else if (piece == Piece.B_PAWN.ordinal()) pieceNote = 0;
+			else if (piece == Piece.W_PAWN.ordinal()) pieceNote = 1;
+			else if (piece == Piece.B_KNIGHT.ordinal()) pieceNote = 2;
+			else if (piece == Piece.W_KNIGHT.ordinal()) pieceNote = 3;
+			else if (piece == Piece.B_BISHOP.ordinal()) pieceNote = 4;
+			else if (piece == Piece.W_BISHOP.ordinal()) pieceNote = 5;
+			else if (piece == Piece.B_ROOK.ordinal()) pieceNote = 6;
+			else if (piece == Piece.W_ROOK.ordinal()) pieceNote = 7;
+			else if (piece == Piece.B_QUEEN.ordinal()) pieceNote = 8;
+			else if (piece == Piece.W_QUEEN.ordinal()) pieceNote = 9;
+			else if (piece == Piece.B_KING.ordinal()) pieceNote = 10;
 			else pieceNote = 11;
 			key ^= POLYGLOT_RANDOM_64[64*pieceNote + 8*(i/8) + i%8];
 		}
-		if (wCastlingRights == CastlingRights.ALL.ind) key ^= POLYGLOT_RANDOM_64[768]^POLYGLOT_RANDOM_64[769];
-		else if (wCastlingRights == CastlingRights.SHORT.ind)key ^= POLYGLOT_RANDOM_64[768];
-		else if (wCastlingRights == CastlingRights.LONG.ind) key ^= POLYGLOT_RANDOM_64[769];
-		if (bCastlingRights == CastlingRights.ALL.ind) key ^= POLYGLOT_RANDOM_64[770]^POLYGLOT_RANDOM_64[771];
-		else if (bCastlingRights == CastlingRights.SHORT.ind)key ^= POLYGLOT_RANDOM_64[770];
-		else if (bCastlingRights == CastlingRights.LONG.ind) key ^= POLYGLOT_RANDOM_64[771];
-		if (enPassantRights != EnPassantRights.NONE.ind) {
+		if (wCastlingRights == CastlingRights.ALL.ordinal()) key ^= POLYGLOT_RANDOM_64[768]^POLYGLOT_RANDOM_64[769];
+		else if (wCastlingRights == CastlingRights.SHORT.ordinal())key ^= POLYGLOT_RANDOM_64[768];
+		else if (wCastlingRights == CastlingRights.LONG.ordinal()) key ^= POLYGLOT_RANDOM_64[769];
+		if (bCastlingRights == CastlingRights.ALL.ordinal()) key ^= POLYGLOT_RANDOM_64[770]^POLYGLOT_RANDOM_64[771];
+		else if (bCastlingRights == CastlingRights.SHORT.ordinal())key ^= POLYGLOT_RANDOM_64[770];
+		else if (bCastlingRights == CastlingRights.LONG.ordinal()) key ^= POLYGLOT_RANDOM_64[771];
+		if (enPassantRights != EnPassantRights.NONE.ordinal()) {
 			if (whitesTurn) {
-				mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND);
-				if (mD.getBlackPawnCaptureSet(p.whitePawns) != 0)
+				MoveSetBase mD = MoveSetBase.values()[enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND];
+				if (mD.getBlackPawnCaptureSet(pos.getWhitePawns()) != 0)
 					key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
 			} else {
-				mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND);
-				if (mD.getWhitePawnCaptureSet(p.blackPawns) != 0)
+				MoveSetBase mD = MoveSetBase.values()[enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND];
+				if (mD.getWhitePawnCaptureSet(pos.getBlackPawns()) != 0)
 					key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
 			}
 		}
@@ -347,89 +335,122 @@ final class ZobristKeyGenerator {
 			key ^= POLYGLOT_RANDOM_64[780];
 		return key;
 	}
-	/**
-	 * Returns an updated version of a Position0 object's hash key according to the changes made by the last move.
-	 * 
-	 * @param p
-	 * @return
-	 */
-	long getUpdatedHashKey(Position0 p) {
-		int enPassVictSqr;
-		long[] movedRow;
-		long key = p.key;
-		Move move = p.getLastMove();
-		PositionStateRecord unmakeReg = p.getUnmakeRegister();
+	public long updateOffBoardHashKey(Position pos) {
+		long key = pos.getKey();
+		PositionStateRecord prevState = pos.getLastStateRecord();
 		key ^= turn;
-		key ^= whiteCastlingRights[unmakeReg.whiteCastlingRights];
-		key ^= blackCastlingRights[unmakeReg.blackCastlingRights];
-		key ^= enPassantRights[unmakeReg.enPassantRights];
-		key ^= whiteCastlingRights[p.whiteCastlingRights];
-		key ^= blackCastlingRights[p.blackCastlingRights];
-		key ^= enPassantRights[p.enPassantRights];
-		if (!move.equals(Move.NULL_MOVE)) {
-			movedRow = board[move.movedPiece];
-			if (move.type == MoveType.NORMAL.ind) {
-				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
-				key ^= movedRow[move.to];
-			} else if (move.type == MoveType.SHORT_CASTLING.ind) {
-				key ^= movedRow[move.from];
-				key ^= movedRow[move.to];
-				if (move.movedPiece == Piece.W_KING.ind) {
-					key ^= board[Piece.W_ROOK.ind][Square.H1.ind];
-					key ^= board[Piece.W_ROOK.ind][Square.F1.ind];
-				} else {
-					key ^= board[Piece.B_ROOK.ind][Square.H8.ind];
-					key ^= board[Piece.B_ROOK.ind][Square.F8.ind];
-				}
-			} else if (move.type == MoveType.LONG_CASTLING.ind) {
-				key ^= movedRow[move.from];
-				key ^= movedRow[move.to];
-				if (move.movedPiece == Piece.W_KING.ind) {
-					key ^= board[Piece.W_ROOK.ind][Square.A1.ind];
-					key ^= board[Piece.W_ROOK.ind][Square.D1.ind];
-				} else {
-					key ^= board[Piece.B_ROOK.ind][Square.A8.ind];
-					key ^= board[Piece.B_ROOK.ind][Square.D8.ind];
-				}
-			} else if (move.type == MoveType.EN_PASSANT.ind) {
-				key ^= movedRow[move.from];
-				key ^= movedRow[move.to];
-				if (move.movedPiece == Piece.W_PAWN.ind)
-					enPassVictSqr = move.to - 8;
-				else
-					enPassVictSqr = move.to + 8;
-				key ^= board[move.capturedPiece][enPassVictSqr];
-			} else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
-				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == Piece.W_PAWN.ind)
-					key ^= board[Piece.W_QUEEN.ind][move.to];
-				else
-					key ^= board[Piece.B_QUEEN.ind][move.to];
-			} else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
-				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == Piece.W_PAWN.ind)
-					key ^= board[Piece.W_ROOK.ind][move.to];
-				else
-					key ^= board[Piece.B_ROOK.ind][move.to];
-			} else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
-				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == Piece.W_PAWN.ind)
-					key ^= board[Piece.W_BISHOP.ind][move.to];
-				else
-					key ^= board[Piece.B_BISHOP.ind][move.to];
-			} else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
-				key ^= movedRow[move.from];
-				key ^= board[move.capturedPiece][move.to];
-				if (move.movedPiece == Piece.W_PAWN.ind)
-					key ^= board[Piece.W_KNIGHT.ind][move.to];
-				else
-					key ^= board[Piece.B_KNIGHT.ind][move.to];
-			}
-		}
+		key ^= whiteCastlingRights[prevState.getWhiteCastlingRights()];
+		key ^= blackCastlingRights[prevState.getBlackCastlingRights()];
+		key ^= enPassantRights[prevState.getEnPassantRights()];
+		key ^= whiteCastlingRights[pos.getWhiteCastlingRights()];
+		key ^= blackCastlingRights[pos.getBlackCastlingRights()];
+		key ^= enPassantRights[pos.getEnPassantRights()];
+		return key;
+	}
+	public long updateBoardHashKeyAfterNormalMove(long key, byte from, byte to, byte movedPiece,
+			byte capturedPiece) {
+		long[] movedRow = board[movedPiece];
+		key ^= movedRow[from];
+		key ^= board[capturedPiece][to];
+		key ^= movedRow[to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteShortCastlinglMove(long key) {
+		long[] kingRow = board[Piece.W_KING.ordinal()];
+		key ^= kingRow[Bitboard.Square.E1.ordinal()];
+		key ^= kingRow[Bitboard.Square.G1.ordinal()];
+		long[] rookRow = board[Piece.W_ROOK.ordinal()];
+		key ^= rookRow[Bitboard.Square.H1.ordinal()];
+		key ^= rookRow[Bitboard.Square.F1.ordinal()];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackShortCastlinglMove(long key) {
+		long[] kingRow = board[Piece.B_KING.ordinal()];
+		key ^= kingRow[Bitboard.Square.E8.ordinal()];
+		key ^= kingRow[Bitboard.Square.G8.ordinal()];
+		long[] rookRow = board[Piece.B_ROOK.ordinal()];
+		key ^= rookRow[Bitboard.Square.H8.ordinal()];
+		key ^= rookRow[Bitboard.Square.F8.ordinal()];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteLongCastlinglMove(long key) {
+		long[] kingRow = board[Piece.W_KING.ordinal()];
+		key ^= kingRow[Bitboard.Square.E1.ordinal()];
+		key ^= kingRow[Bitboard.Square.C1.ordinal()];
+		long[] rookRow = board[Piece.W_ROOK.ordinal()];
+		key ^= rookRow[Bitboard.Square.A1.ordinal()];
+		key ^= rookRow[Bitboard.Square.D1.ordinal()];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackLongCastlinglMove(long key) {
+		long[] kingRow = board[Piece.B_KING.ordinal()];
+		key ^= kingRow[Bitboard.Square.E8.ordinal()];
+		key ^= kingRow[Bitboard.Square.C8.ordinal()];
+		long[] rookRow = board[Piece.B_ROOK.ordinal()];
+		key ^= rookRow[Bitboard.Square.A8.ordinal()];
+		key ^= rookRow[Bitboard.Square.D8.ordinal()];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteEnPassantMove(long key, byte from, byte to) {
+		long[] whitePawnRow = board[Piece.W_PAWN.ordinal()];
+		key ^= whitePawnRow[from];
+		key ^= whitePawnRow[to];
+		key ^= board[Piece.B_PAWN.ordinal()][to - 8];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackEnPassantMove(long key, byte from, byte to) {
+		long[] blackPawnRow = board[Piece.B_PAWN.ordinal()];
+		key ^= blackPawnRow[from];
+		key ^= blackPawnRow[to];
+		key ^= board[Piece.W_PAWN.ordinal()][to + 8];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.W_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.W_QUEEN.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.B_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.B_QUEEN.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.W_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.W_ROOK.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.B_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.B_ROOK.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.W_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.W_BISHOP.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.B_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.B_BISHOP.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterWhiteKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.W_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.W_KNIGHT.ordinal()][to];
+		return key;
+	}
+	public long updateBoardHashKeyAfterBlackKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+		key ^= board[Piece.B_PAWN.ordinal()][from];
+		key ^= board[capturedPiece][to];
+		key ^= board[Piece.B_KNIGHT.ordinal()][to];
 		return key;
 	}
 	

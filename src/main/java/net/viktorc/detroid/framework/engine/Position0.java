@@ -2573,68 +2573,9 @@ class Position0 {
 		long collChangedBits;
 		if (whitesTurn) {
 			if (move.type == MoveType.NORMAL.ind) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				if (move.movedPiece == Piece.W_KING.ind)
-					whiteKing = fromBit;
-				else if (move.movedPiece == Piece.W_QUEEN.ind)
-					whiteQueens ^= changedBits;
-				else if (move.movedPiece == Piece.W_ROOK.ind)
-					whiteRooks ^= changedBits;
-				else if (move.movedPiece == Piece.W_BISHOP.ind)
-					whiteBishops ^= changedBits;
-				else if (move.movedPiece == Piece.W_KNIGHT.ind)
-					whiteKnights ^= changedBits;
-				else
-					whitePawns ^= changedBits;
-				allWhiteOccupied ^= changedBits;
-				allNonWhiteOccupied = ~allWhiteOccupied;
-				if (move.capturedPiece != Piece.NULL.ind) {
-					if (move.capturedPiece == Piece.B_QUEEN.ind)
-						blackQueens ^= toBit;
-					else if (move.capturedPiece == Piece.B_ROOK.ind)
-						blackRooks ^= toBit;
-					else if (move.capturedPiece == Piece.B_BISHOP.ind)
-						blackBishops ^= toBit;
-					else if (move.capturedPiece == Piece.B_KNIGHT.ind)
-						blackKnights ^= toBit;
-					else
-						blackPawns ^= toBit;
-					allBlackOccupied ^= toBit;
-					allNonBlackOccupied = ~allBlackOccupied;
-				}
 			} else if (move.type == MoveType.SHORT_CASTLING.ind) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = Piece.NULL.ind;
-				offsetBoard[Square.H1.ind] = Piece.W_ROOK.ind;
-				offsetBoard[Square.F1.ind] = Piece.NULL.ind;
-				whiteKing = fromBit;
-				collChangedBits = (1L << Square.H1.ind) | (1L << Square.F1.ind);
-				whiteRooks ^= collChangedBits;
-				allWhiteOccupied ^= (changedBits | collChangedBits);
-				allNonWhiteOccupied = ~allWhiteOccupied;
 			} else if (move.type == MoveType.LONG_CASTLING.ind) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = Piece.NULL.ind;
-				offsetBoard[Square.A1.ind] = Piece.W_ROOK.ind;
-				offsetBoard[Square.D1.ind] = Piece.NULL.ind;
-				whiteKing = fromBit;
-				collChangedBits = (1L << Square.A1.ind) | (1L << Square.D1.ind);
-				whiteRooks ^= collChangedBits;
-				allWhiteOccupied ^= (changedBits | collChangedBits);
-				allNonWhiteOccupied = ~allWhiteOccupied;
 			} else if (move.type == MoveType.EN_PASSANT.ind) {
-				enPassantVictimSquare = move.to - 8;
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = Piece.NULL.ind;
-				offsetBoard[enPassantVictimSquare] = move.capturedPiece;
-				whitePawns ^= changedBits;
-				allWhiteOccupied ^= changedBits;
-				allNonWhiteOccupied = ~allWhiteOccupied;
-				collChangedBits = 1L << enPassantVictimSquare;
-				blackPawns ^= collChangedBits;
-				allBlackOccupied ^= collChangedBits;
-				allNonBlackOccupied = ~allBlackOccupied;
 			} else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
 				offsetBoard[move.from] = move.movedPiece;
 				offsetBoard[move.to] = move.capturedPiece;
@@ -2722,36 +2663,6 @@ class Position0 {
 			}
 		} else {
 			if (move.type == MoveType.NORMAL.ind) {
-				offsetBoard[move.from] = move.movedPiece;
-				offsetBoard[move.to] = move.capturedPiece;
-				if (move.movedPiece == Piece.B_KING.ind)
-					blackKing = fromBit;
-				else if (move.movedPiece == Piece.B_QUEEN.ind)
-					blackQueens ^= changedBits;
-				else if (move.movedPiece == Piece.B_ROOK.ind)
-					blackRooks ^= changedBits;
-				else if (move.movedPiece == Piece.B_BISHOP.ind)
-					blackBishops ^= changedBits;
-				else if (move.movedPiece == Piece.B_KNIGHT.ind)
-					blackKnights ^= changedBits;
-				else
-					blackPawns ^= changedBits;
-				allBlackOccupied ^= changedBits;
-				allNonBlackOccupied = ~allBlackOccupied;
-				if (move.capturedPiece != Piece.NULL.ind) {
-					if (move.capturedPiece == Piece.W_QUEEN.ind)
-						whiteQueens ^= toBit;
-					else if (move.capturedPiece == Piece.W_ROOK.ind)
-						whiteRooks ^= toBit;
-					else if (move.capturedPiece == Piece.W_BISHOP.ind)
-						whiteBishops ^= toBit;
-					else if (move.capturedPiece == Piece.W_KNIGHT.ind)
-						whiteKnights ^= toBit;
-					else
-						whitePawns ^= toBit;
-					allWhiteOccupied ^= toBit;
-					allNonWhiteOccupied = ~allWhiteOccupied;
-				}
 			} else if (move.type == MoveType.SHORT_CASTLING.ind) {
 				offsetBoard[move.from] = move.movedPiece;
 				offsetBoard[move.to] = Piece.NULL.ind;
