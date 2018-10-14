@@ -92,7 +92,7 @@ public abstract class EndGameTableBase implements Closeable {
 	 * @param soft Whether only the cache should be probed.
 	 * @return  Whether it is a winning position, a losing position, or a draw.
 	 */
-	public abstract WDL probeWDL(Position0 pos, boolean soft);
+	public abstract WDL probeWDL(Position pos, boolean soft);
 	/**
 	 * It probes for the given position and if found, it returns whether it is 
 	 * a win, loss, or draw; and in case it is a win or loss, it also returns 
@@ -103,7 +103,7 @@ public abstract class EndGameTableBase implements Closeable {
 	 * @return  Whether it is a win, loss, or draw; and potentially the distance 
 	 * to mate.
 	 */
-	public abstract DTM probeDTM(Position0 pos, boolean soft);
+	public abstract DTM probeDTM(Position pos, boolean soft);
 	
 	/**
 	 * A simple enum for possible outcomes for positions in endgame tablebases.

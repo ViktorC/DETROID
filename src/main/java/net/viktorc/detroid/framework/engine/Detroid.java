@@ -133,11 +133,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	public Detroid() {
 		lock = new Object();
 	}
-	/**
-	 * Sets the hash tables according to the hash size limit defined in megabytes.
-	 * 
-	 * @param hashSize
-	 */
 	private void setHashSize(int hashSize) {
 		long sizeInBytes = hashSize*1024L*1024L;
 		int totalHashShares = params.tTshare + params.eTshare;
@@ -152,22 +147,12 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				"Transposition table capacity - " + tT.capacity() + "\n" +
 				"Evaluation table capacity - " + eT.capacity());
 	}
-	/**
-	 * Clears the transposition, pawn, evaluation, and history tables.
-	 */
 	private void clearHash() {
 		tT.clear();
 		eT.clear();
 		gen = 0;
 		if (debugMode) debugInfo.set("Hash tables cleared");
 	}
-	/**
-	 * A logistic function for determining the expected number of moves left based on the mate score calculated 
-	 * from the material on the board.
-	 * 
-	 * @param phaseScore The phase score calculated from the material on the board.
-	 * @return The expected number of moves.
-	 */
 	private int movesLeftBasedOnPhaseScore(int phaseScore) {
 		double L = params.maxMovesToGo - params.minMovesToGo;
 		double exp = Math.pow(Math.E, 3.5e-2d*((double) (phaseScore - (params.gamePhaseOpeningLower +
@@ -175,17 +160,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
 		double res = L/(1d + exp);
 		return (int) Math.round(res + params.minMovesToGo);
 	}
-	/**
-	 * Computes and returns the number of milliseconds the engine should spend on searching the current position.
-	 * 
-	 * @param whiteTime
-	 * @param blackTime
-	 * @param whiteIncrement
-	 * @param blackIncrement
-	 * @param movesToGo
-	 * @param phaseScore
-	 * @return
-	 */
 	private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement,
 			Long blackIncrement, Integer movesToGo, int phaseScore) {
 		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
@@ -205,36 +179,13 @@ public class Detroid implements ControllerEngine, TunableEngine {
 		// Extended thinking time for the first moves out of the book based on Hyatt's Using Time Wisely.
 		return Math.round(target*(2d - ((double) Math.min(movesOutOfBook, 10))/10));
 	}
-	/**
-	 * Determines whether the search time should be extended.
-	 * 
-	 * @return
-	 */
 	private boolean doExtendSearch() {
 		return searchInfo.getScoreType() == ScoreType.LOWER_BOUND || searchInfo.getScoreType() == ScoreType.UPPER_BOUND;
 	}
-	/**
-	 * Determines whether the search should be cancelled without waiting for the allotted time to pass.
-	 * 
-	 * @param searchTime
-	 * @param timeLeft
-	 * @return
-	 */
 	private boolean doTerminateSearchPrematurely(long searchTime, long timeLeft) {
 		return timeLeft < searchTime*params.minTimePortionNeededForExtraDepth64th/64 &&
 				!doExtendSearch();
 	}
-	/**
-	 * Manges the amount of time spent on searching the position unless it is fixed.
-	 * 
-	 * @param searchTime
-	 * @param whiteTime
-	 * @param blackTime
-	 * @param whiteIncrement
-	 * @param blackIncrement
-	 * @param movesToGo
-	 * @throws Exception
-	 */
 	private void manageSearchTime(Long searchTime, Long whiteTime, Long blackTime,
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo) throws Exception {
 		try {
@@ -245,7 +196,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			else {
 				// Calculate phase score.
 				int phaseScore = eval.phaseScore(game.getPosition());
-				long time = computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo, phaseScore);
+				long time = computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo,
+						phaseScore);
 				long timeLeft = time;
 				boolean doTerminate = false;
 				if (debugMode) debugInfo.set("Base search time - " + time);
@@ -254,7 +206,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 						long start = System.currentTimeMillis();
 						search.wait(timeLeft);
 						timeLeft -= (System.currentTimeMillis() - start);
-						doTerminate = doTerminate || (!search.isDone() && timeLeft > 0 && doTerminateSearchPrematurely(time, timeLeft));
+						doTerminate = doTerminate || (!search.isDone() && timeLeft > 0 &&
+								doTerminateSearchPrematurely(time, timeLeft));
 					}
 				}
 				if (debugMode) {
@@ -280,12 +233,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				search.cancel(true);
 		}
 	}
-	/**
-	 * Picks a move from the list of legal moves for the current position and returns a String representation of it in pure algebraic coordinate
-	 * notation.
-	 * 
-	 * @return
-	 */
 	private String getRandomMove() {
 		int i = 0;
 		List<Move> moves = game.getPosition().getMoves();
@@ -318,7 +265,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			game = new Game();
 			options = new LinkedHashMap<>();
 			parametersPath = new Option.StringOption("ParametersPath", DEFAULT_PARAMETERS_FILE_PATH);
-			numOfSearchThreads = new Option.SpinOption(THREADS_OPTION_NAME, DEFAULT_SEARCH_THREADS, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
+			numOfSearchThreads = new Option.SpinOption(THREADS_OPTION_NAME, DEFAULT_SEARCH_THREADS, MIN_SEARCH_THREADS,
+					MAX_SEARCH_THREADS);
 			hashSize = new Option.SpinOption(HASH_OPTION_NAME, DEFAULT_HASH_SIZE, MIN_HASH_SIZE, MAX_HASH_SIZE);
 			clearHash = new Option.ButtonOption("ClearHash");
 			ownBook = new Option.CheckOption(OWN_BOOK_OPTION_NAME, true);
@@ -327,8 +275,10 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			egtbLibPath = new Option.StringOption("GaviotaTbLibPath", DEFAULT_EGTB_LIB_PATH);
 			egtbFilesPath = new Option.StringOption("GaviotaTbPath", DEFAULT_EGTB_FOLDERS_PATH);
 			egtbCompScheme = new Option.ComboOption("GaviotaTbCompScheme", DEFAULT_EGTB_COMP_SCHEME.toString(),
-					new TreeSet<>(Arrays.stream(CompressionScheme.values()).map(c -> c.toString()).collect(Collectors.toList())));
-			egtbCacheSize = new Option.SpinOption("GaviotaTbCache", DEFAULT_EGTB_CACHE_SIZE, MIN_EGTB_CACHE_SIZE, MAX_EGTB_CACHE_SIZE);
+					new TreeSet<>(Arrays.stream(CompressionScheme.values()).map(Object::toString)
+							.collect(Collectors.toList())));
+			egtbCacheSize = new Option.SpinOption("GaviotaTbCache", DEFAULT_EGTB_CACHE_SIZE, MIN_EGTB_CACHE_SIZE,
+					MAX_EGTB_CACHE_SIZE);
 			egtbClearCache = new Option.ButtonOption("GaviotaTbClearCache");
 			ponder = new Option.CheckOption("Ponder", true);
 			uciOpponent = new Option.StringOption("UCI_Opponent", "?");
@@ -446,10 +396,12 @@ public class Detroid implements ControllerEngine, TunableEngine {
 								((CompressionScheme) options.get(egtbCompScheme)));
 						if (egtb.isInit()) {
 							options.put(egtbFilesPath, value);
-							if (debugMode) debugInfo.set("EGTB files path successfully set to " + value + "; available tablebases: " +
-									egtb.areTableBasesAvailable(1) + ", " + egtb.areTableBasesAvailable(2) + ", " +
-									egtb.areTableBasesAvailable(3) + ", " + egtb.areTableBasesAvailable(4) + ", " +
-									egtb.areTableBasesAvailable(5));
+							if (debugMode) {
+								debugInfo.set("EGTB files path successfully set to " + value +
+										"; available tablebases: " + egtb.areTableBasesAvailable(1) + ", " +
+										egtb.areTableBasesAvailable(2) + ", " + egtb.areTableBasesAvailable(3) + ", " +
+										egtb.areTableBasesAvailable(4) + ", " + egtb.areTableBasesAvailable(5));
+							}
 							return true;
 						} else
 							egtb.init((String) options.get(egtbFilesPath), ((Integer) options
@@ -546,8 +498,10 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	public boolean setPosition(String fen) {
 		synchronized (lock) {
 			try {
-				Position0 pos = fen.equals(START_POSITION) ? Position0.parse(Position0.START_POSITION_FEN) : Position0.parse(fen);
-				// If the start position of the game is different or the engine got the new game signal, reset the game and the hash tables.
+				Position0 pos = fen.equals(START_POSITION) ? Position0.parse(Position0.START_POSITION_FEN) :
+						Position0.parse(fen);
+				/* If the start position of the game is different or the engine got the new game signal, reset the game
+				 * and the hash tables. */
 				if (newGame) {
 					if (debugMode) debugInfo.set("New game set");
 					game = new Game(pos);
@@ -572,7 +526,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 							eT.remove(e -> e.generation < gen - params.eTentryLifeCycle);
 						}
 					}
-					game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
+					game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(),
+							game.getBlackPlayerName());
 				}
 				return true;
 			} catch (ChessParseException | NullPointerException e) {
@@ -594,8 +549,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	}
 	@Override
 	public SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
-			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes, Integer mateDistance,
-			Long searchTime, Boolean infinite) {
+			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes,
+			Integer mateDistance, Long searchTime, Boolean infinite) {
 		synchronized (lock) {
 			Set<Move> allowedMoves;
 			int numOfSearchThreads;
@@ -604,8 +559,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			boolean doPonder, doInfinite;
 			SearchResults results;
 			doPonder = false;
-			doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null && blackTime == null &&
-					depth == null && nodes == null && mateDistance == null && searchTime == null);
+			doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null &&
+					blackTime == null && depth == null && nodes == null && mateDistance == null && searchTime == null);
 			bookMove = false;
 			stop = ponderHit = false;
 			// Set the names of the players once it is known which colour we are playing.
@@ -649,7 +604,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 					return null;
 				} catch (CancellationException e2) { }
 				if (debugMode) debugInfo.set("Book search done");
-				// If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
+				/* If the book search has not been externally stopped, use the remaining time for a normal search if no
+				 * move was found. */
 				if (!stop && !bookMove) {
 					if (debugMode) debugInfo.set("No book move found. Out of book.");
 					outOfBook = true;

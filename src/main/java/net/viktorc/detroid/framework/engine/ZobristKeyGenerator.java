@@ -238,18 +238,17 @@ public final class ZobristKeyGenerator {
 			enPassantRights[i] = random.nextLong();
 	}
 	/**
-	 * Return a reference to the only single Zobrist instance.
-	 * 
-	 * @return
+	 * @return The one and only instance.
 	 */
 	public static ZobristKeyGenerator getInstance() {
 		return INSTANCE;
 	}
 	/**
-	 * Generates a main Zobrist hash key for the position based on the side to move, the board state, and the castling and en passant rights.
+	 * Generates a main Zobrist hash key for the position based on the side to move, the board state, and the castling
+	 * and en passant rights.
 	 * 
-	 * @param pos
-	 * @return
+	 * @param pos The position to hash.
+	 * @return The 64 bit Zobrist hash key.
 	 */
 	public long generateHashKey(Position pos) {
 		long key = 0;
@@ -265,8 +264,8 @@ public final class ZobristKeyGenerator {
 	/**
 	 * Generates a Zobrist hash key for the pawn-king structure on the board.
 	 * 
-	 * @param pos
-	 * @return
+	 * @param pos The position whose pawn-king structure is to be hashed.
+	 * @return The 64 bit pawn-king Zobrist hash key.
 	 */
 	public long generatePawnKingHashKey(Position pos) {
 		long key = 0;
@@ -285,10 +284,10 @@ public final class ZobristKeyGenerator {
 		return key;
 	}
 	/**
-	 * Returns the 64 bitboard hash key used for positions in PolyGlot opening books.
+	 * Generates a 64 bitboard hash key used for positions in PolyGlot opening books.
 	 * 
-	 * @param pos
-	 * @return
+	 * @param pos The position whose PolyGlot hash key is to be generated.
+	 * @return The PolyGlot hash key of the position.
 	 */
 	public long generatePolyglotHashKey(Position pos) {
 		long key = 0L;
@@ -335,19 +334,39 @@ public final class ZobristKeyGenerator {
 			key ^= POLYGLOT_RANDOM_64[780];
 		return key;
 	}
-	public long updateOffBoardHashKey(Position pos) {
-		long key = pos.getKey();
-		PositionStateRecord prevState = pos.getLastStateRecord();
+	/**
+	 * It updates a position's hash key with off-board state information such as the side to move, castling rights,
+	 * and en passant rights.
+	 *
+	 * @param key The key to be updated.
+	 * @param prevState The state record for the position's previous state.
+	 * @param whiteCastlingRights The current white castling rights.
+	 * @param blackCastlingRights The current black castling rights.
+	 * @param enPassantRights The current en passant rights.
+	 * @return The key including the off-board state information.
+	 */
+	public long getUpdatedOffBoardHashKey(long key, PositionStateRecord prevState, byte whiteCastlingRights,
+			byte blackCastlingRights, byte enPassantRights) {
 		key ^= turn;
-		key ^= whiteCastlingRights[prevState.getWhiteCastlingRights()];
-		key ^= blackCastlingRights[prevState.getBlackCastlingRights()];
-		key ^= enPassantRights[prevState.getEnPassantRights()];
-		key ^= whiteCastlingRights[pos.getWhiteCastlingRights()];
-		key ^= blackCastlingRights[pos.getBlackCastlingRights()];
-		key ^= enPassantRights[pos.getEnPassantRights()];
+		key ^= this.whiteCastlingRights[prevState.getWhiteCastlingRights()];
+		key ^= this.blackCastlingRights[prevState.getBlackCastlingRights()];
+		key ^= this.enPassantRights[prevState.getEnPassantRights()];
+		key ^= this.whiteCastlingRights[whiteCastlingRights];
+		key ^= this.blackCastlingRights[blackCastlingRights];
+		key ^= this.enPassantRights[enPassantRights];
 		return key;
 	}
-	public long updateBoardHashKeyAfterNormalMove(long key, byte from, byte to, byte movedPiece,
+	/**
+	 * It updates a position's hash key with board state information after a normal move.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param movedPiece The moved piece.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterNormalMove(long key, byte from, byte to, byte movedPiece,
 			byte capturedPiece) {
 		long[] movedRow = board[movedPiece];
 		key ^= movedRow[from];
@@ -355,7 +374,13 @@ public final class ZobristKeyGenerator {
 		key ^= movedRow[to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteShortCastlinglMove(long key) {
+	/**
+	 * It updates a position's hash key with board state information after a short castling by white.
+	 *
+	 * @param key The key to be updated.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteShortCastlinglMove(long key) {
 		long[] kingRow = board[Piece.W_KING.ordinal()];
 		key ^= kingRow[Bitboard.Square.E1.ordinal()];
 		key ^= kingRow[Bitboard.Square.G1.ordinal()];
@@ -364,7 +389,13 @@ public final class ZobristKeyGenerator {
 		key ^= rookRow[Bitboard.Square.F1.ordinal()];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackShortCastlinglMove(long key) {
+	/**
+	 * It updates a position's hash key with board state information after a short castling by black.
+	 *
+	 * @param key The key to be updated.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackShortCastlinglMove(long key) {
 		long[] kingRow = board[Piece.B_KING.ordinal()];
 		key ^= kingRow[Bitboard.Square.E8.ordinal()];
 		key ^= kingRow[Bitboard.Square.G8.ordinal()];
@@ -373,7 +404,13 @@ public final class ZobristKeyGenerator {
 		key ^= rookRow[Bitboard.Square.F8.ordinal()];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteLongCastlinglMove(long key) {
+	/**
+	 * It updates a position's hash key with board state information after a long castling by white.
+	 *
+	 * @param key The key to be updated.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteLongCastlinglMove(long key) {
 		long[] kingRow = board[Piece.W_KING.ordinal()];
 		key ^= kingRow[Bitboard.Square.E1.ordinal()];
 		key ^= kingRow[Bitboard.Square.C1.ordinal()];
@@ -382,7 +419,13 @@ public final class ZobristKeyGenerator {
 		key ^= rookRow[Bitboard.Square.D1.ordinal()];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackLongCastlinglMove(long key) {
+	/**
+	 * It updates a position's hash key with board state information after a long castling by black.
+	 *
+	 * @param key The key to be updated.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackLongCastlinglMove(long key) {
 		long[] kingRow = board[Piece.B_KING.ordinal()];
 		key ^= kingRow[Bitboard.Square.E8.ordinal()];
 		key ^= kingRow[Bitboard.Square.C8.ordinal()];
@@ -391,63 +434,151 @@ public final class ZobristKeyGenerator {
 		key ^= rookRow[Bitboard.Square.D8.ordinal()];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteEnPassantMove(long key, byte from, byte to) {
+	/**
+	 * It updates a position's hash key with board state information after an en passant by white.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteEnPassantMove(long key, byte from, byte to) {
 		long[] whitePawnRow = board[Piece.W_PAWN.ordinal()];
 		key ^= whitePawnRow[from];
 		key ^= whitePawnRow[to];
 		key ^= board[Piece.B_PAWN.ordinal()][to - 8];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackEnPassantMove(long key, byte from, byte to) {
+	/**
+	 * It updates a position's hash key with board state information after an en passant by black.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackEnPassantMove(long key, byte from, byte to) {
 		long[] blackPawnRow = board[Piece.B_PAWN.ordinal()];
 		key ^= blackPawnRow[from];
 		key ^= blackPawnRow[to];
 		key ^= board[Piece.W_PAWN.ordinal()][to + 8];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a queen promotion by white.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.W_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.W_QUEEN.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a queen promotion by black.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.B_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.B_QUEEN.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a rook promotion by white.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.W_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.W_ROOK.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a rook promotion by black.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.B_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.B_ROOK.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a bishop promotion by white.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.W_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.W_BISHOP.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a bishop promotion by black.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.B_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.B_BISHOP.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterWhiteKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a knight promotion by white.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterWhiteKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.W_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.W_KNIGHT.ordinal()][to];
 		return key;
 	}
-	public long updateBoardHashKeyAfterBlackKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
+	/**
+	 * It updates a position's hash key with board state information after a knight promotion by black.
+	 *
+	 * @param key The key to be updated.
+	 * @param from The origin square of the move.
+	 * @param to The destination square of the move.
+	 * @param capturedPiece The captured piece.
+	 * @return The updated key.
+	 */
+	public long getUpdatedBoardHashKeyAfterBlackKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
 		key ^= board[Piece.B_PAWN.ordinal()][from];
 		key ^= board[capturedPiece][to];
 		key ^= board[Piece.B_KNIGHT.ordinal()][to];

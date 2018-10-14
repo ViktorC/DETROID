@@ -4,11 +4,13 @@ import net.viktorc.detroid.framework.util.BitOperations;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A bitboard based chess position class that stores information about the side to move, en passant and castling
- * rights, the board position, all the moves made, and all the previous position states. It allows for the making and
- * taking back of chess moves.
+ * rights, the board position, all the moves made, and all the previous position states. It allows for the generation,
+ * making, and taking back of chess moves.
  *
  * @author Viktor
  *
@@ -29,7 +31,10 @@ public class Position {
 	private long blackPawns;
 	private long allWhiteOccupied;
 	private long allBlackOccupied;
+	private long allNonWhiteOccupied;
+	private long allNonBlackOccupied;
 	private long allEmpty;
+	private long allOccupied;
 	private long checkers;
 	private boolean inCheck;
 	private boolean whitesTurn;
@@ -134,8 +139,8 @@ public class Position {
 				pos.whiteKnights | pos.whitePawns;
 		pos.allBlackOccupied = pos.blackKing | pos.blackQueens | pos.blackRooks | pos.blackBishops |
 				pos.blackKnights | pos.blackPawns;
-		pos.allEmpty = ~(pos.allWhiteOccupied | pos.allBlackOccupied);
-		pos.whitesTurn = turn.toLowerCase().compareTo("w") == 0;
+		pos.updateAggregateBitboards();
+		pos.whitesTurn = turn.toLowerCase().compareTo("w") == Bitboard.EMPTY_BOARD;
 		if (castling.equals("-")) {
 			pos.whiteCastlingRights = (byte) CastlingRights.NONE.ordinal();
 			pos.blackCastlingRights = (byte) CastlingRights.NONE.ordinal();
@@ -182,7 +187,7 @@ public class Position {
 			}
 		}
 		pos.checkers = pos.getCheckers();
-		pos.inCheck = pos.checkers != 0;
+		pos.inCheck = pos.checkers != Bitboard.EMPTY_BOARD;
 		pos.key = ZobristKeyGenerator.getInstance().generateHashKey(pos);
 		if (pos.halfMoveIndex >= pos.keyHistory.length) {
 			int keyHistLength = pos.keyHistory.length;
@@ -320,6 +325,25 @@ public class Position {
 	public long getAllBlackOccupied() {
 		return allBlackOccupied;
 	}
+
+	/**
+	 * @return A bitboard for all squares not occupied by white pieces.
+	 */
+	public long getAllNonWhiteOccupied() {
+		return allNonWhiteOccupied;
+	}
+	/**
+	 * @return A bitboard for all squares not occupied by black pieces.
+	 */
+	public long getAllNonBlackOccupied() {
+		return allNonBlackOccupied;
+	}
+	/**
+	 * @return A bitboard for all occupied squares.
+	 */
+	public long getAllOccupied() {
+		return allOccupied;
+	}
 	/**
 	 * @return A bitboard for all empty squares.
 	 */
@@ -397,6 +421,30 @@ public class Position {
 		return new ArrayDeque<>(moveHistory);
 	}
 	/**
+	 * @return The last move made.
+	 */
+	public Move getLastMove() {
+		return moveHistory.peekFirst();
+	}
+	/**
+	 * @return A queue of all the state history records so far.
+	 */
+	public ArrayDeque<PositionStateRecord> getStateHistory() {
+		return new ArrayDeque<>(stateHistory);
+	}
+	/**
+	 * @return The last position state.
+	 */
+	public PositionStateRecord getLastState() {
+		return stateHistory.peekFirst();
+	}
+	/**
+	 * @return The number of pieces on the board
+	 */
+	public int getNumberOfPieces() {
+		return BitOperations.hammingWeight(allOccupied);
+	}
+	/**
 	 * @param numberOfTimes The hypothetical number of times the position has occurred before. E.g. for a three-fold
 	 * repetition check, it would be 2.
 	 * @return Whether the current position has already occurred before at least the specified number of times.
@@ -414,270 +462,125 @@ public class Position {
 		}
 		return repetitions >= numberOfTimes;
 	}
-	/**
-	 * @return A bitboard for all squares not occupied by white pieces.
-	 */
-	public long getAllNonWhiteOccupied() {
-		return ~allWhiteOccupied;
+	private boolean isCheckedByWhite(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		return ((whiteKnights & dB.getKnightMoveMask()) != Bitboard.EMPTY_BOARD ||
+				(whitePawns & dB.getPawnBlackCaptureMoveMask()) != Bitboard.EMPTY_BOARD ||
+				((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD ||
+				((whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD);
 	}
-	/**
-	 * @return A bitboard for all squares not occupied by black pieces.
-	 */
-	public long getAllNonBlackOccupied() {
-		return ~allBlackOccupied;
+	private boolean isCheckedByBlack(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		return ((whiteKnights & dB.getKnightMoveMask()) != Bitboard.EMPTY_BOARD ||
+				(whitePawns & dB.getPawnBlackCaptureMoveMask()) != Bitboard.EMPTY_BOARD ||
+				((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD ||
+				((whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD);
 	}
-	/**
-	 * @return A bitboard for all occupied squares.
-	 */
-	public long getAllOccupied() {
-		return ~allEmpty;
+	private long getWhiteCheckers(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		long attackers = whiteKnights & dB.getKnightMoveMask();
+		attackers |= whitePawns & dB.getPawnBlackCaptureMoveMask();
+		attackers |= (whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied);
+		attackers |= (whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied);
+		return attackers;
 	}
-	/**
-	 * @return The number of pieces on the board
-	 */
-	public int getNumberOfPieces() {
-		return BitOperations.hammingWeight(~allEmpty);
+	private long getBlackCheckers(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		long attackers = blackKnights & dB.getKnightMoveMask();
+		attackers |= blackPawns & dB.getPawnWhiteCaptureMoveMask();
+		attackers |= (blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied);
+		attackers |= (blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied);
+		return attackers;
 	}
-	/**
-	 * @return The last move made.
-	 */
-	public Move getLastMove() {
-		return moveHistory.peekFirst();
+	private boolean isAttackedByWhite(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		return ((whiteKnights & dB.getKnightMoveMask()) != Bitboard.EMPTY_BOARD ||
+				(whitePawns & dB.getPawnBlackCaptureMoveMask()) != Bitboard.EMPTY_BOARD ||
+				((whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD ||
+				((whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD ||
+				(whiteKing & dB.getKingMoveMask()) != Bitboard.EMPTY_BOARD ||
+				(squares[sqrInd] == Piece.B_PAWN.ordinal() && enPassantRights != EnPassantRights.NONE.ordinal() &&
+						sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights &&
+						(whitePawns & dB.getKingMoveMask() & Bitboard.Rank.R5.getBitboard()) != Bitboard.EMPTY_BOARD));
 	}
-	/**
-	 * @return The last position state.
-	 */
-	public PositionStateRecord getLastStateRecord() {
-		return stateHistory.peekFirst();
+	private boolean isAttackedByBlack(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		return ((blackKnights & dB.getKnightMoveMask()) != Bitboard.EMPTY_BOARD ||
+				(blackPawns & dB.getPawnWhiteCaptureMoveMask()) != Bitboard.EMPTY_BOARD ||
+				((blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD ||
+				((blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied)) !=
+						Bitboard.EMPTY_BOARD ||
+				(blackKing & dB.getKingMoveMask()) != Bitboard.EMPTY_BOARD ||
+				(squares[sqrInd] == Piece.W_PAWN.ordinal() && enPassantRights != EnPassantRights.NONE.ordinal() &&
+						sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights &&
+						(blackPawns & dB.getKingMoveMask() & Bitboard.Rank.R4.getBitboard()) != Bitboard.EMPTY_BOARD));
 	}
-	private void updateAllEmptyBitboard() {
-		allEmpty = ~(allWhiteOccupied | allBlackOccupied);
+	private long getWhiteAttackers(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		long attackers = whiteKing & dB.getKingMoveMask();
+		attackers |= whiteKnights & dB.getKnightMoveMask();
+		attackers |= whitePawns & dB.getPawnBlackCaptureMoveMask();
+		attackers |= (whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied);
+		attackers |= (whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied);
+		if (enPassantRights != EnPassantRights.NONE.ordinal()
+				&& sqrInd == EnPassantRights.TO_W_VICT_SQR_IND + enPassantRights)
+			attackers |= whitePawns & dB.getKingMoveMask() & Bitboard.Rank.R5.getBitboard();
+		return attackers;
 	}
-	private void captureWhitePieceOnBitboard(byte capturedPiece, long toBit) {
-		if (capturedPiece != Piece.NULL.ordinal()) {
-			allWhiteOccupied ^= toBit;
-			whiteQueens &= allWhiteOccupied;
-			whiteRooks &= allWhiteOccupied;
-			whiteBishops &= allWhiteOccupied;
-			whiteKnights &= allWhiteOccupied;
-			whitePawns &= allWhiteOccupied;
-		}
+	private long getBlackAttackers(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		long attackers = blackKing & dB.getKingMoveMask();
+		attackers |= blackKnights & dB.getKnightMoveMask();
+		attackers |= blackPawns & dB.getPawnWhiteCaptureMoveMask();
+		attackers |= (blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied);
+		attackers |= (blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied);
+		if (enPassantRights != EnPassantRights.NONE.ordinal()
+				&& sqrInd == EnPassantRights.TO_B_VICT_SQR_IND + enPassantRights)
+			attackers |= blackPawns & dB.getKingMoveMask() & Bitboard.Rank.R4.getBitboard();
+		return attackers;
 	}
-	private void captureBlackPieceOnBitboard(byte capturedPiece, long toBit) {
-		if (capturedPiece != Piece.NULL.ordinal()) {
-			allBlackOccupied ^= toBit;
-			blackQueens &= allBlackOccupied;
-			blackRooks &= allBlackOccupied;
-			blackBishops &= allBlackOccupied;
-			blackKnights &= allBlackOccupied;
-			blackPawns &= allBlackOccupied;
-		}
+	private long getWhitePushers(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		Bitboard.Rank rank = Bitboard.Rank.getBySquareIndex(sqrInd);
+		long blackPawnAdvance = dB.getBlackPawnAdvanceSet(Bitboard.FULL_BOARD);
+		long pushers = whiteKnights & dB.getKnightMoveMask();
+		pushers |= whitePawns & blackPawnAdvance;
+		if (rank == Bitboard.Rank.R4 && (allEmpty & blackPawnAdvance) != Bitboard.EMPTY_BOARD)
+			pushers |= whitePawns & (blackPawnAdvance >>> 8);
+		pushers |= (whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied);
+		pushers |= (whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied);
+		if (rank == Bitboard.Rank.R6 && enPassantRights == Bitboard.File.getBySquareIndex(sqrInd).ordinal())
+			pushers |=  whitePawns & dB.getPawnBlackCaptureMoveMask();
+		return pushers;
 	}
-	private void makeWhiteNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = movedPiece;
-		long toBit = 1L << to;
-		long changedBits = (1L << from) | toBit;
-		if (movedPiece == Piece.W_KING.ordinal())
-			whiteKing = toBit;
-		else if (movedPiece == Piece.W_QUEEN.ordinal())
-			whiteQueens ^= changedBits;
-		else if (movedPiece == Piece.W_ROOK.ordinal())
-			whiteRooks ^= changedBits;
-		else if (movedPiece == Piece.W_BISHOP.ordinal())
-			whiteBishops ^= changedBits;
-		else if (movedPiece == Piece.W_KNIGHT.ordinal())
-			whiteKnights ^= changedBits;
-		else
-			whitePawns ^= changedBits;
-		allWhiteOccupied ^= changedBits;
-		captureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+	private long getBlackPushers(int sqrInd) {
+		MoveSetBase dB = MoveSetBase.values()[sqrInd];
+		Bitboard.Rank rank = Bitboard.Rank.getBySquareIndex(sqrInd);
+		long whitePawnAdvance = dB.getWhitePawnAdvanceSet(Bitboard.FULL_BOARD);
+		long pushers = blackKnights & dB.getKnightMoveMask();
+		pushers |= blackPawns & whitePawnAdvance;
+		if (rank == Bitboard.Rank.R5 && (allEmpty & whitePawnAdvance) != Bitboard.EMPTY_BOARD)
+			pushers |= blackPawns & (whitePawnAdvance << 8);
+		pushers |= (blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied);
+		pushers |= (blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied);
+		if (rank == Bitboard.Rank.R3 && enPassantRights == Bitboard.File.getBySquareIndex(sqrInd).ordinal())
+			pushers |=  blackPawns & dB.getPawnWhiteCaptureMoveMask();
+		return pushers;
 	}
-	private void makeBlackNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = movedPiece;
-		long toBit = 1L << to;
-		long changedBits = (1L << from) | toBit;
-		if (movedPiece == Piece.B_KING.ordinal())
-			blackKing = toBit;
-		else if (movedPiece == Piece.B_QUEEN.ordinal())
-			blackQueens ^= changedBits;
-		else if (movedPiece == Piece.B_ROOK.ordinal())
-			blackRooks ^= changedBits;
-		else if (movedPiece == Piece.B_BISHOP.ordinal())
-			blackBishops ^= changedBits;
-		else if (movedPiece == Piece.B_KNIGHT.ordinal())
-			blackKnights ^= changedBits;
-		else
-			blackPawns ^= changedBits;
-		allBlackOccupied ^= changedBits;
-		captureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+	private void updateAggregateBitboards() {
+		allNonWhiteOccupied = ~allWhiteOccupied;
+		allNonBlackOccupied = ~allBlackOccupied;
+		allOccupied = allWhiteOccupied | allBlackOccupied;
+		allEmpty = ~allOccupied;
 	}
-	private void makeWhiteShortCastlingMoveOnBoard() {
-		squares[Bitboard.Square.H1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.F1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
-		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.G1.ordinal()] = (byte) Piece.W_KING.ordinal();
-		long toBit = Bitboard.Square.G1.getBitboard();
-		whiteKing = toBit;
-		long rookChangedBits = Bitboard.Square.H1.getBitboard() | Bitboard.Square.F1.getBitboard();
-		whiteRooks ^= rookChangedBits;
-		allWhiteOccupied ^= (Bitboard.Square.E1.getBitboard() | toBit | rookChangedBits);
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackShortCastlingMoveOnBoard() {
-		squares[Bitboard.Square.H8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.F8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
-		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.G8.ordinal()] = (byte) Piece.B_KING.ordinal();
-		long toBit = Bitboard.Square.G8.getBitboard();
-		blackKing = toBit;
-		long rookChangedBits = Bitboard.Square.H8.getBitboard() | Bitboard.Square.F8.getBitboard();
-		blackRooks ^= rookChangedBits;
-		allBlackOccupied ^= (Bitboard.Square.E8.getBitboard() | toBit | rookChangedBits);
-		updateAllEmptyBitboard();
-	}
-	private void makeWhiteLongCastlingMoveOnBoard() {
-		squares[Bitboard.Square.A1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.D1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
-		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.C1.ordinal()] = (byte) Piece.W_KING.ordinal();
-		long toBit = Bitboard.Square.C1.getBitboard();
-		whiteKing = toBit;
-		long rookChangedBits = Bitboard.Square.A1.getBitboard() | Bitboard.Square.D1.getBitboard();
-		whiteRooks ^= rookChangedBits;
-		allWhiteOccupied ^= (Bitboard.Square.E1.getBitboard() | toBit | rookChangedBits);
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackLongCastlingMoveOnBoard() {
-		squares[Bitboard.Square.A8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.D8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
-		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.C8.ordinal()] = (byte) Piece.B_KING.ordinal();
-		long toBit = Bitboard.Square.C8.getBitboard();
-		blackKing = toBit;
-		long rookChangedBits = Bitboard.Square.A8.getBitboard() | Bitboard.Square.D8.getBitboard();
-		blackRooks ^= rookChangedBits;
-		allBlackOccupied ^= (Bitboard.Square.E8.getBitboard() | toBit | rookChangedBits);
-		updateAllEmptyBitboard();
-	}
-	private void makeWhiteEnPassantMoveOnBoard(byte from, byte to) {
-		int enPassantVictimSqrInd = to - 8;
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.W_PAWN.ordinal();
-		squares[enPassantVictimSqrInd] = (byte) Piece.NULL.ordinal();
-		long changedBits = (1L << from) | (1L << to);
-		whitePawns ^= changedBits;
-		allWhiteOccupied ^= changedBits;
-		long victimBit = 1L << enPassantVictimSqrInd;
-		blackPawns ^= victimBit;
-		allBlackOccupied ^= victimBit;
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackEnPassantMoveOnBoard(byte from, byte to) {
-		int enPassantVictimSqrInd = to + 8;
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.B_PAWN.ordinal();
-		squares[enPassantVictimSqrInd] = (byte) Piece.NULL.ordinal();
-		long changedBits = (1L << from) | (1L << to);
-		blackPawns ^= changedBits;
-		allBlackOccupied ^= changedBits;
-		long victimBit = 1L << enPassantVictimSqrInd;
-		whitePawns ^= victimBit;
-		allWhiteOccupied ^= victimBit;
-		updateAllEmptyBitboard();
-	}
-	private void makeWhiteQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.W_QUEEN.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
-		whiteQueens ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		captureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.B_QUEEN.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
-		blackQueens ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		captureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeWhiteRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.W_ROOK.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
-		whiteRooks ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		captureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.B_ROOK.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
-		blackRooks ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		captureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeWhiteBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.W_BISHOP.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
-		whiteBishops ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		captureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.B_BISHOP.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
-		blackBishops ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		captureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeWhiteKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.W_KNIGHT.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
-		whiteKnights ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		captureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void makeBlackKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.NULL.ordinal();
-		squares[to] = (byte) Piece.B_KNIGHT.ordinal();
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
-		blackKnights ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		captureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
-	}
-	private void uncaptureWhitePieceOnBitboard(byte capturedPiece, long toBit) {
+	private void captureWhitePieceOnBitboards(byte capturedPiece, long toBit) {
 		if (capturedPiece != Piece.NULL.ordinal()) {
 			if (capturedPiece == Piece.W_QUEEN.ordinal())
 				whiteQueens ^= toBit;
@@ -692,7 +595,7 @@ public class Position {
 			allWhiteOccupied ^= toBit;
 		}
 	}
-	private void uncaptureBlackPieceOnBitboard(byte capturedPiece, long toBit) {
+	private void captureBlackPieceOnBitboards(byte capturedPiece, long toBit) {
 		if (capturedPiece != Piece.NULL.ordinal()) {
 			if (capturedPiece == Piece.B_QUEEN.ordinal())
 				blackQueens ^= toBit;
@@ -707,14 +610,10 @@ public class Position {
 			allBlackOccupied ^= toBit;
 		}
 	}
-	private void unmakeWhiteNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
-		squares[from] = movedPiece;
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
+	private void makeWhiteNormalMoveOnBitboards(long fromBit, long toBit, byte movedPiece, byte capturedPiece) {
 		long changedBits = fromBit | toBit;
 		if (movedPiece == Piece.W_KING.ordinal())
-			whiteKing = fromBit;
+			whiteKing ^= changedBits;
 		else if (movedPiece == Piece.W_QUEEN.ordinal())
 			whiteQueens ^= changedBits;
 		else if (movedPiece == Piece.W_ROOK.ordinal())
@@ -726,17 +625,13 @@ public class Position {
 		else
 			whitePawns ^= changedBits;
 		allWhiteOccupied ^= changedBits;
-		uncaptureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		captureBlackPieceOnBitboards(capturedPiece, toBit);
+		updateAggregateBitboards();
 	}
-	private void unmakeBlackNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
-		squares[from] = movedPiece;
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
+	private void makeBlackNormalMoveOnBitboards(long fromBit, long toBit, byte movedPiece, byte capturedPiece) {
 		long changedBits = fromBit | toBit;
 		if (movedPiece == Piece.B_KING.ordinal())
-			blackKing = fromBit;
+			blackKing ^= changedBits;
 		else if (movedPiece == Piece.B_QUEEN.ordinal())
 			blackQueens ^= changedBits;
 		else if (movedPiece == Piece.B_ROOK.ordinal())
@@ -748,202 +643,224 @@ public class Position {
 		else
 			blackPawns ^= changedBits;
 		allBlackOccupied ^= changedBits;
-		uncaptureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		captureWhitePieceOnBitboards(capturedPiece, toBit);
+		updateAggregateBitboards();
 	}
-	private void unmakeWhiteShortCastlingMoveOnBoard() {
-		squares[Bitboard.Square.F1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.H1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
-		squares[Bitboard.Square.G1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.W_KING.ordinal();
-		long fromBit = Bitboard.Square.E1.getBitboard();
-		whiteKing = fromBit;
+	private void makeWhiteShortCastlingMoveOnBitboards() {
+		long changedBits = Bitboard.Square.E1.getBitboard() | Bitboard.Square.G1.getBitboard();
+		whiteKing ^= changedBits;
 		long rookChangedBits = Bitboard.Square.H1.getBitboard() | Bitboard.Square.F1.getBitboard();
 		whiteRooks ^= rookChangedBits;
-		allWhiteOccupied ^= (Bitboard.Square.G1.getBitboard() | fromBit | rookChangedBits);
-		updateAllEmptyBitboard();
+		allWhiteOccupied ^= (changedBits | rookChangedBits);
+		updateAggregateBitboards();
 	}
-	private void unmakeBlackShortCastlingMoveOnBoard() {
-		squares[Bitboard.Square.F8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.H8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
-		squares[Bitboard.Square.G8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.B_KING.ordinal();
-		long fromBit = Bitboard.Square.E8.getBitboard();
-		blackKing = fromBit;
+	private void makeBlackShortCastlingMoveOnBitboards() {
+		long changedBits = Bitboard.Square.E8.getBitboard() | Bitboard.Square.G8.getBitboard();
+		blackKing ^= changedBits;
 		long rookChangedBits = Bitboard.Square.H8.getBitboard() | Bitboard.Square.F8.getBitboard();
 		blackRooks ^= rookChangedBits;
-		allBlackOccupied ^= (Bitboard.Square.G8.getBitboard() | fromBit | rookChangedBits);
-		updateAllEmptyBitboard();
+		allBlackOccupied ^= (changedBits | rookChangedBits);
+		updateAggregateBitboards();
 	}
-	private void unmakeWhiteLongCastlingMoveOnBoard() {
-		squares[Bitboard.Square.D1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.A1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
-		squares[Bitboard.Square.C1.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.W_KING.ordinal();
-		long fromBit = Bitboard.Square.E1.getBitboard();
-		whiteKing = fromBit;
+	private void makeWhiteLongCastlingMoveOnBitboards() {
+		long changedBits = Bitboard.Square.E1.getBitboard() | Bitboard.Square.C1.getBitboard();
+		whiteKing ^= changedBits;
 		long rookChangedBits = Bitboard.Square.A1.getBitboard() | Bitboard.Square.D1.getBitboard();
 		whiteRooks ^= rookChangedBits;
-		allWhiteOccupied ^= (Bitboard.Square.C1.getBitboard() | fromBit | rookChangedBits);
-		updateAllEmptyBitboard();
+		allWhiteOccupied ^= (changedBits | rookChangedBits);
+		updateAggregateBitboards();
 	}
-	private void unmakeBlackLongCastlingMoveOnBoard() {
-		squares[Bitboard.Square.D8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.A8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
-		squares[Bitboard.Square.C8.ordinal()] = (byte) Piece.NULL.ordinal();
-		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.B_KING.ordinal();
-		long fromBit = Bitboard.Square.E8.getBitboard();
-		blackKing = fromBit;
+	private void makeBlackLongCastlingMoveOnBitboards() {
+		long changedBits = Bitboard.Square.E8.getBitboard() | Bitboard.Square.C8.getBitboard();
+		blackKing ^= changedBits;
 		long rookChangedBits = Bitboard.Square.A8.getBitboard() | Bitboard.Square.D8.getBitboard();
 		blackRooks ^= rookChangedBits;
-		allBlackOccupied ^= (Bitboard.Square.C8.getBitboard() | fromBit | rookChangedBits);
-		updateAllEmptyBitboard();
+		allBlackOccupied ^= (changedBits | rookChangedBits);
+		updateAggregateBitboards();
 	}
-	private void unmakeWhiteEnPassantMoveOnBoard(byte from, byte to) {
-		int enPassantVictimSqrInd = to - 8;
-		squares[from] = (byte) Piece.W_PAWN.ordinal();
-		squares[to] = (byte) Piece.NULL.ordinal();
-		squares[enPassantVictimSqrInd] = (byte) Piece.B_PAWN.ordinal();
-		long changedBits = (1L << from) | (1L << to);
+	private void makeWhiteEnPassantMoveOnBitboards(long fromBit, long toBit) {
+		long changedBits = fromBit | toBit;
 		whitePawns ^= changedBits;
 		allWhiteOccupied ^= changedBits;
-		long victimBit = 1L << enPassantVictimSqrInd;
+		long victimBit = toBit >>> 8;
 		blackPawns ^= victimBit;
 		allBlackOccupied ^= victimBit;
-		updateAllEmptyBitboard();
+		updateAggregateBitboards();
 	}
-	private void unmakeBlackEnPassantMoveOnBoard(byte from, byte to) {
-		int enPassantVictimSqrInd = to + 8;
-		squares[from] = (byte) Piece.B_PAWN.ordinal();
-		squares[to] = (byte) Piece.NULL.ordinal();
-		squares[enPassantVictimSqrInd] = (byte) Piece.W_PAWN.ordinal();
-		long changedBits = (1L << from) | (1L << to);
+	private void makeBlackEnPassantMoveOnBitboards(long fromBit, long toBit) {
+		long changedBits = fromBit | toBit;
 		blackPawns ^= changedBits;
 		allBlackOccupied ^= changedBits;
-		long victimBit = 1L << enPassantVictimSqrInd;
+		long victimBit = toBit << 8;
 		whitePawns ^= victimBit;
 		allWhiteOccupied ^= victimBit;
-		updateAllEmptyBitboard();
+		updateAggregateBitboards();
 	}
-	private void unmakeWhiteQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.W_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
+	private void pushWhitePawnToPromotionOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		whitePawns ^= fromBit;
+		allWhiteOccupied ^= (fromBit | toBit);
+		captureBlackPieceOnBitboards(capturedPiece, toBit);
+		updateAggregateBitboards();
+	}
+	private void pushBlackPawnToPromotionOnBitboards(long fromBit, long toBit, byte capturedPiece) {
+		blackPawns ^= fromBit;
+		allBlackOccupied ^= (fromBit | toBit);
+		captureWhitePieceOnBitboards(capturedPiece, toBit);
+		updateAggregateBitboards();
+	}
+	private void makeWhiteQueenPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		whiteQueens ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		uncaptureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushWhitePawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeBlackQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.B_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
+	private void makeBlackQueenPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		blackQueens ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		uncaptureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushBlackPawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeWhiteRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.W_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
+	private void makeWhiteRookPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		whiteRooks ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		uncaptureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushWhitePawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeBlackRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.B_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
+	private void makeBlackRookPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		blackRooks ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		uncaptureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushBlackPawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeWhiteBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.W_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
+	private void makeWhiteBishopPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		whiteBishops ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		uncaptureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushWhitePawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeBlackBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.B_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
+	private void makeBlackBishopPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		blackBishops ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		uncaptureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushBlackPawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeWhiteKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.W_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		whitePawns ^= fromBit;
+	private void makeWhiteKnightPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		whiteKnights ^= toBit;
-		allWhiteOccupied ^= (fromBit | toBit);
-		uncaptureBlackPieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushWhitePawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
 	}
-	private void unmakeBlackKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
-		squares[from] = (byte) Piece.B_PAWN.ordinal();
-		squares[to] = capturedPiece;
-		long fromBit = 1L << from;
-		long toBit = 1L << to;
-		blackPawns ^= fromBit;
+	private void makeBlackKnightPromotionMoveOnBitboards(long fromBit, long toBit, byte capturedPiece) {
 		blackKnights ^= toBit;
-		allBlackOccupied ^= (fromBit | toBit);
-		uncaptureWhitePieceOnBitboard(capturedPiece, toBit);
-		updateAllEmptyBitboard();
+		pushBlackPawnToPromotionOnBitboards(fromBit, toBit, capturedPiece);
+	}
+	private void makeWhiteNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = movedPiece;
+		makeWhiteNormalMoveOnBitboards(1L << from, 1L << to, movedPiece, capturedPiece);
+	}
+	private void makeBlackNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = movedPiece;
+		makeBlackNormalMoveOnBitboards(1L << from, 1L << to, movedPiece, capturedPiece);
+	}
+	private void makeWhiteShortCastlingMoveOnBoard() {
+		squares[Bitboard.Square.H1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.F1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
+		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.G1.ordinal()] = (byte) Piece.W_KING.ordinal();
+		makeWhiteShortCastlingMoveOnBitboards();
+	}
+	private void makeBlackShortCastlingMoveOnBoard() {
+		squares[Bitboard.Square.H8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.F8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
+		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.G8.ordinal()] = (byte) Piece.B_KING.ordinal();
+		makeBlackShortCastlingMoveOnBitboards();
+	}
+	private void makeWhiteLongCastlingMoveOnBoard() {
+		squares[Bitboard.Square.A1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.D1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
+		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.C1.ordinal()] = (byte) Piece.W_KING.ordinal();
+		makeWhiteLongCastlingMoveOnBitboards();
+	}
+	private void makeBlackLongCastlingMoveOnBoard() {
+		squares[Bitboard.Square.A8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.D8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
+		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.C8.ordinal()] = (byte) Piece.B_KING.ordinal();
+		makeBlackLongCastlingMoveOnBitboards();
+	}
+	private void makeWhiteEnPassantMoveOnBoard(byte from, byte to) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.W_PAWN.ordinal();
+		squares[to - 8] = (byte) Piece.NULL.ordinal();
+		makeWhiteEnPassantMoveOnBitboards(1L << from, 1L << to);
+	}
+	private void makeBlackEnPassantMoveOnBoard(byte from, byte to) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.B_PAWN.ordinal();
+		squares[to + 8] = (byte) Piece.NULL.ordinal();
+		makeBlackEnPassantMoveOnBitboards(1L << from, 1L << to);
+	}
+	private void makeWhiteQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.W_QUEEN.ordinal();
+		makeWhiteQueenPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeBlackQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.B_QUEEN.ordinal();
+		makeBlackQueenPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeWhiteRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.W_ROOK.ordinal();
+		makeWhiteRookPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeBlackRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.B_ROOK.ordinal();
+		makeBlackRookPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeWhiteBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.W_BISHOP.ordinal();
+		makeWhiteBishopPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeBlackBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.B_BISHOP.ordinal();
+		makeBlackBishopPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeWhiteKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.W_KNIGHT.ordinal();
+		makeWhiteKnightPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void makeBlackKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.NULL.ordinal();
+		squares[to] = (byte) Piece.B_KNIGHT.ordinal();
+		makeBlackKnightPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
 	}
 	private void makeWhiteMoveAndUpdateKeyOnBoard(Move move) {
 		byte moveType = move.getType();
 		ZobristKeyGenerator gen = ZobristKeyGenerator.getInstance();
 		if (moveType == MoveType.NORMAL.ordinal()) {
 			makeWhiteNormalMoveOnBoard(move.getFrom(), move.getTo(), move.getMovedPiece(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterNormalMove(key, move.getFrom(), move.getTo(), move.getMovedPiece(),
+			key = gen.getUpdatedBoardHashKeyAfterNormalMove(key, move.getFrom(), move.getTo(), move.getMovedPiece(),
 					move.getCapturedPiece());
 		} else if (moveType == MoveType.SHORT_CASTLING.ordinal()) {
 			makeWhiteShortCastlingMoveOnBoard();
-			key = gen.updateBoardHashKeyAfterWhiteShortCastlinglMove(key);
+			key = gen.getUpdatedBoardHashKeyAfterWhiteShortCastlinglMove(key);
 		} else if (moveType == MoveType.LONG_CASTLING.ordinal()) {
 			makeWhiteLongCastlingMoveOnBoard();
-			key = gen.updateBoardHashKeyAfterWhiteLongCastlinglMove(key);
+			key = gen.getUpdatedBoardHashKeyAfterWhiteLongCastlinglMove(key);
 		} else if (moveType == MoveType.EN_PASSANT.ordinal()) {
 			makeWhiteEnPassantMoveOnBoard(move.getFrom(), move.getTo());
-			key = gen.updateBoardHashKeyAfterWhiteEnPassantMove(key, move.getFrom(), move.getTo());
+			key = gen.getUpdatedBoardHashKeyAfterWhiteEnPassantMove(key, move.getFrom(), move.getTo());
 		} else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
 			makeWhiteQueenPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterWhiteQueenPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterWhiteQueenPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		} else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal()) {
 			makeWhiteRookPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterWhiteRookPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterWhiteRookPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		} else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
 			makeWhiteBishopPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterWhiteBishopPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterWhiteBishopPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		} else {
 			makeWhiteKnightPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterWhiteKnightPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterWhiteKnightPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		}
 	}
@@ -952,72 +869,34 @@ public class Position {
 		ZobristKeyGenerator gen = ZobristKeyGenerator.getInstance();
 		if (moveType == MoveType.NORMAL.ordinal()) {
 			makeBlackNormalMoveOnBoard(move.getFrom(), move.getTo(), move.getMovedPiece(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterNormalMove(key, move.getFrom(), move.getTo(), move.getMovedPiece(),
+			key = gen.getUpdatedBoardHashKeyAfterNormalMove(key, move.getFrom(), move.getTo(), move.getMovedPiece(),
 					move.getCapturedPiece());
 		} else if (moveType == MoveType.SHORT_CASTLING.ordinal()) {
 			makeBlackShortCastlingMoveOnBoard();
-			key = gen.updateBoardHashKeyAfterBlackShortCastlinglMove(key);
+			key = gen.getUpdatedBoardHashKeyAfterBlackShortCastlinglMove(key);
 		} else if (moveType == MoveType.LONG_CASTLING.ordinal()) {
 			makeBlackLongCastlingMoveOnBoard();
-			key = gen.updateBoardHashKeyAfterBlackLongCastlinglMove(key);
+			key = gen.getUpdatedBoardHashKeyAfterBlackLongCastlinglMove(key);
 		} else if (moveType == MoveType.EN_PASSANT.ordinal()) {
 			makeBlackEnPassantMoveOnBoard(move.getFrom(), move.getTo());
-			key = gen.updateBoardHashKeyAfterBlackEnPassantMove(key, move.getFrom(), move.getTo());
+			key = gen.getUpdatedBoardHashKeyAfterBlackEnPassantMove(key, move.getFrom(), move.getTo());
 		} else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
 			makeBlackQueenPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterBlackQueenPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterBlackQueenPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		} else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal()) {
 			makeBlackRookPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterBlackRookPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterBlackRookPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		} else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
 			makeBlackBishopPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterBlackBishopPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterBlackBishopPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		} else {
 			makeBlackKnightPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-			key = gen.updateBoardHashKeyAfterBlackKnightPromotionMove(key, move.getFrom(), move.getTo(),
+			key = gen.getUpdatedBoardHashKeyAfterBlackKnightPromotionMove(key, move.getFrom(), move.getTo(),
 					move.getCapturedPiece());
 		}
-	}
-	private void unmakeWhiteMoveOnBoard(Move move) {
-		byte moveType = move.getType();
-		if (moveType == MoveType.NORMAL.ordinal())
-			unmakeWhiteNormalMoveOnBoard(move.getFrom(), move.getTo(), move.getMovedPiece(), move.getCapturedPiece());
-		else if (moveType == MoveType.SHORT_CASTLING.ordinal())
-			unmakeWhiteShortCastlingMoveOnBoard();
-		else if (moveType == MoveType.LONG_CASTLING.ordinal())
-			unmakeWhiteLongCastlingMoveOnBoard();
-		else if (moveType == MoveType.EN_PASSANT.ordinal())
-			unmakeWhiteEnPassantMoveOnBoard(move.getFrom(), move.getTo());
-		else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal())
-			unmakeWhiteQueenPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-		else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal())
-			unmakeWhiteRookPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-		else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal())
-			unmakeWhiteBishopPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-		else
-			unmakeWhiteKnightPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-	}
-	private void unmakeBlackMoveOnBoard(Move move) {
-		byte moveType = move.getType();
-		if (moveType == MoveType.NORMAL.ordinal())
-			unmakeBlackNormalMoveOnBoard(move.getFrom(), move.getTo(), move.getMovedPiece(), move.getCapturedPiece());
-		else if (moveType == MoveType.SHORT_CASTLING.ordinal())
-			unmakeBlackShortCastlingMoveOnBoard();
-		else if (moveType == MoveType.LONG_CASTLING.ordinal())
-			unmakeBlackLongCastlingMoveOnBoard();
-		else if (moveType == MoveType.EN_PASSANT.ordinal())
-			unmakeBlackEnPassantMoveOnBoard(move.getFrom(), move.getTo());
-		else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal())
-			unmakeBlackQueenPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-		else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal())
-			unmakeBlackRookPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-		else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal())
-			unmakeBlackBishopPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
-		else
-			unmakeBlackKnightPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
 	}
 	private void updateWhiteCastlingRights() {
 		if (whiteCastlingRights == CastlingRights.NONE.ordinal())
@@ -1067,26 +946,6 @@ public class Position {
 				blackCastlingRights = (byte) CastlingRights.NONE.ordinal();
 		}
 	}
-	private long updateWhiteKingCheckers() {
-		long allNonWhiteOccupied = ~allWhiteOccupied;
-		long allOccupied = ~allEmpty;
-		MoveSetBase dB = MoveSetBase.values()[BitOperations.indexOfBit(whiteKing)];
-		long attackers = blackKnights & dB.getKnightMoveMask();
-		attackers |= blackPawns & dB.getPawnWhiteCaptureMoveMask();
-		attackers |= (blackQueens | blackRooks) & dB.getRookMoveSet(allNonWhiteOccupied, allOccupied);
-		attackers |= (blackQueens | blackBishops) & dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied);
-		return attackers;
-	}
-	private long updateBlackKingCheckers() {
-		long allNonBlackOccupied = ~allBlackOccupied;
-		long allOccupied = ~allEmpty;
-		MoveSetBase dB = MoveSetBase.values()[BitOperations.indexOfBit(blackKing)];
-		long attackers = whiteKnights & dB.getKnightMoveMask();
-		attackers |= whitePawns & dB.getPawnBlackCaptureMoveMask();
-		attackers |= (whiteQueens | whiteRooks) & dB.getRookMoveSet(allNonBlackOccupied, allOccupied);
-		attackers |= (whiteQueens | whiteBishops) & dB.getBishopMoveSet(allNonBlackOccupied, allOccupied);
-		return attackers;
-	}
 	private void ensureKeyHistoryCapacity() {
 		if (keyHistory.length - halfMoveIndex <= 3)
 			keyHistory = Arrays.copyOf(keyHistory, keyHistory.length + (keyHistory.length >> 1));
@@ -1102,7 +961,7 @@ public class Position {
 				fiftyMoveRuleClock, checkers));
 		if (whitesTurn) {
 			makeWhiteMoveAndUpdateKeyOnBoard(move);
-			checkers = updateBlackKingCheckers();
+			checkers = getWhiteCheckers(BitOperations.indexOfBit(blackKing));
 			updateBlackCastlingRights();
 			enPassantRights = (move.getMovedPiece() == Piece.W_PAWN.ordinal() &&
 					move.getTo() - move.getFrom() == 16) ? (byte) (move.getTo()%8) : 8;
@@ -1110,7 +969,7 @@ public class Position {
 					move.getMovedPiece() == Piece.W_PAWN.ordinal()) ? 0 : (byte) (fiftyMoveRuleClock + 1);
 		} else {
 			makeBlackMoveAndUpdateKeyOnBoard(move);
-			checkers = updateWhiteKingCheckers();
+			checkers = getBlackCheckers(BitOperations.indexOfBit(whiteKing));
 			updateWhiteCastlingRights();
 			enPassantRights = (move.getMovedPiece() == Piece.B_PAWN.ordinal() &&
 					move.getFrom() - move.getTo() == 16) ? (byte) (move.getTo()%8) : 8;
@@ -1118,10 +977,11 @@ public class Position {
 					move.getMovedPiece() == Piece.B_PAWN.ordinal()) ? 0 : (byte) (fiftyMoveRuleClock + 1);
 		}
 		whitesTurn = !whitesTurn;
-		inCheck = checkers != 0;
+		inCheck = checkers != Bitboard.EMPTY_BOARD;
 		halfMoveIndex++;
 		ensureKeyHistoryCapacity();
-		key = ZobristKeyGenerator.getInstance().updateOffBoardHashKey(this);
+		key = ZobristKeyGenerator.getInstance().getUpdatedOffBoardHashKey(key, getLastState(),
+				whiteCastlingRights, blackCastlingRights, enPassantRights);
 		keyHistory[halfMoveIndex] = key;
 	}
 	/**
@@ -1141,8 +1001,137 @@ public class Position {
 		enPassantRights = (byte) EnPassantRights.NONE.ordinal();
 		halfMoveIndex++;
 		ensureKeyHistoryCapacity();
-		key = ZobristKeyGenerator.getInstance().updateOffBoardHashKey(this);
+        key = ZobristKeyGenerator.getInstance().getUpdatedOffBoardHashKey(key, getLastState(),
+				whiteCastlingRights, blackCastlingRights, enPassantRights);
 		keyHistory[halfMoveIndex] = key;
+	}
+	private void unmakeWhiteNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
+		squares[from] = movedPiece;
+		squares[to] = capturedPiece;
+		makeWhiteNormalMoveOnBitboards(1L << from, 1L << to, movedPiece, capturedPiece);
+	}
+	private void unmakeBlackNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
+		squares[from] = movedPiece;
+		squares[to] = capturedPiece;
+		makeBlackNormalMoveOnBitboards(1L << from, 1L << to, movedPiece, capturedPiece);
+	}
+	private void unmakeWhiteShortCastlingMoveOnBoard() {
+		squares[Bitboard.Square.F1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.H1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
+		squares[Bitboard.Square.G1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.W_KING.ordinal();
+		makeWhiteShortCastlingMoveOnBitboards();
+	}
+	private void unmakeBlackShortCastlingMoveOnBoard() {
+		squares[Bitboard.Square.F8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.H8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
+		squares[Bitboard.Square.G8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.B_KING.ordinal();
+		makeBlackShortCastlingMoveOnBitboards();
+	}
+	private void unmakeWhiteLongCastlingMoveOnBoard() {
+		squares[Bitboard.Square.D1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.A1.ordinal()] = (byte) Piece.W_ROOK.ordinal();
+		squares[Bitboard.Square.C1.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.E1.ordinal()] = (byte) Piece.W_KING.ordinal();
+		makeWhiteLongCastlingMoveOnBitboards();
+	}
+	private void unmakeBlackLongCastlingMoveOnBoard() {
+		squares[Bitboard.Square.D8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.A8.ordinal()] = (byte) Piece.B_ROOK.ordinal();
+		squares[Bitboard.Square.C8.ordinal()] = (byte) Piece.NULL.ordinal();
+		squares[Bitboard.Square.E8.ordinal()] = (byte) Piece.B_KING.ordinal();
+		makeBlackLongCastlingMoveOnBitboards();
+	}
+	private void unmakeWhiteEnPassantMoveOnBoard(byte from, byte to) {
+		squares[from] = (byte) Piece.W_PAWN.ordinal();
+		squares[to] = (byte) Piece.NULL.ordinal();
+		squares[to - 8] = (byte) Piece.B_PAWN.ordinal();
+		makeWhiteEnPassantMoveOnBitboards(1L << from, 1L << to);
+	}
+	private void unmakeBlackEnPassantMoveOnBoard(byte from, byte to) {
+		squares[from] = (byte) Piece.B_PAWN.ordinal();
+		squares[to] = (byte) Piece.NULL.ordinal();
+		squares[to + 8] = (byte) Piece.W_PAWN.ordinal();
+		makeBlackEnPassantMoveOnBitboards(1L << from, 1L << to);
+	}
+	private void unmakeWhiteQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.W_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeWhiteQueenPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeBlackQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.B_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeBlackQueenPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeWhiteRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.W_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeWhiteRookPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeBlackRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.B_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeBlackRookPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeWhiteBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.W_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeWhiteBishopPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeBlackBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.B_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeBlackBishopPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeWhiteKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.W_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeWhiteKnightPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeBlackKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
+		squares[from] = (byte) Piece.B_PAWN.ordinal();
+		squares[to] = capturedPiece;
+		makeBlackKnightPromotionMoveOnBitboards(1L << from, 1L << to, capturedPiece);
+	}
+	private void unmakeWhiteMoveOnBoard(Move move) {
+		byte moveType = move.getType();
+		if (moveType == MoveType.NORMAL.ordinal())
+			unmakeWhiteNormalMoveOnBoard(move.getFrom(), move.getTo(), move.getMovedPiece(), move.getCapturedPiece());
+		else if (moveType == MoveType.SHORT_CASTLING.ordinal())
+			unmakeWhiteShortCastlingMoveOnBoard();
+		else if (moveType == MoveType.LONG_CASTLING.ordinal())
+			unmakeWhiteLongCastlingMoveOnBoard();
+		else if (moveType == MoveType.EN_PASSANT.ordinal())
+			unmakeWhiteEnPassantMoveOnBoard(move.getFrom(), move.getTo());
+		else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal())
+			unmakeWhiteQueenPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+		else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal())
+			unmakeWhiteRookPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+		else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal())
+			unmakeWhiteBishopPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+		else
+			unmakeWhiteKnightPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+	}
+	private void unmakeBlackMoveOnBoard(Move move) {
+		byte moveType = move.getType();
+		if (moveType == MoveType.NORMAL.ordinal())
+			unmakeBlackNormalMoveOnBoard(move.getFrom(), move.getTo(), move.getMovedPiece(), move.getCapturedPiece());
+		else if (moveType == MoveType.SHORT_CASTLING.ordinal())
+			unmakeBlackShortCastlingMoveOnBoard();
+		else if (moveType == MoveType.LONG_CASTLING.ordinal())
+			unmakeBlackLongCastlingMoveOnBoard();
+		else if (moveType == MoveType.EN_PASSANT.ordinal())
+			unmakeBlackEnPassantMoveOnBoard(move.getFrom(), move.getTo());
+		else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal())
+			unmakeBlackQueenPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+		else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal())
+			unmakeBlackRookPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+		else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal())
+			unmakeBlackBishopPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
+		else
+			unmakeBlackKnightPromotionMoveOnBoard(move.getFrom(), move.getTo(), move.getCapturedPiece());
 	}
 	/**
 	 * Takes back the last move made and returns it. If no move has been made yet, it returns null.
@@ -1165,10 +1154,641 @@ public class Position {
 		enPassantRights = prevState.getEnPassantRights();
 		fiftyMoveRuleClock = prevState.getFiftyMoveRuleClock();
 		checkers = prevState.getCheckers();
-		inCheck = checkers != 0;
+		inCheck = checkers != Bitboard.EMPTY_BOARD;
 		keyHistory[halfMoveIndex] = 0;
 		key = keyHistory[--halfMoveIndex];
 		return move;
+	}
+	private boolean givesWhiteCheck(Move move) {
+		byte moveType = move.getType();
+		boolean givesCheck;
+		if (moveType == MoveType.NORMAL.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+		} else if (moveType == MoveType.SHORT_CASTLING.ordinal()) {
+			makeBlackShortCastlingMoveOnBitboards();
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackShortCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.LONG_CASTLING.ordinal()) {
+			makeBlackLongCastlingMoveOnBitboards();
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackLongCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.EN_PASSANT.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackEnPassantMoveOnBitboards(fromBit, toBit);
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackEnPassantMoveOnBitboards(fromBit, toBit);
+		} else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeBlackKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		}
+		return givesCheck;
+	}
+	private boolean givesBlackCheck(Move move) {
+		byte moveType = move.getType();
+		boolean givesCheck;
+		if (moveType == MoveType.NORMAL.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+		} else if (moveType == MoveType.SHORT_CASTLING.ordinal()) {
+			makeWhiteShortCastlingMoveOnBitboards();
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteShortCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.LONG_CASTLING.ordinal()) {
+			makeWhiteLongCastlingMoveOnBitboards();
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteLongCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.EN_PASSANT.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteEnPassantMoveOnBitboards(fromBit, toBit);
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteEnPassantMoveOnBitboards(fromBit, toBit);
+		} else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			givesCheck = isCheckedByWhite(BitOperations.indexOfBit(blackKing));
+			makeWhiteKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		}
+		return givesCheck;
+	}
+	/**
+	 * Checks whether the specified move puts the opponent in check. The move is assumed to be legal.
+	 *
+	 * @param move The move to check.
+	 * @return Whether the move checks the opponent.
+	 */
+	public boolean givesCheck(Move move) {
+		return whitesTurn ? givesBlackCheck(move) : givesWhiteCheck(move);
+	}
+	private boolean leavesWhiteChecked(Move move) {
+		byte moveType = move.getType();
+		boolean leavesChecked;
+		if (moveType == MoveType.NORMAL.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+		} else if (moveType == MoveType.SHORT_CASTLING.ordinal()) {
+			makeWhiteShortCastlingMoveOnBitboards();
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteShortCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.LONG_CASTLING.ordinal()) {
+			makeWhiteLongCastlingMoveOnBitboards();
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteLongCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.EN_PASSANT.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteEnPassantMoveOnBitboards(fromBit, toBit);
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteEnPassantMoveOnBitboards(fromBit, toBit);
+		} else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeWhiteKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByBlack(BitOperations.indexOfBit(whiteKing));
+			makeWhiteKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		}
+		return leavesChecked;
+	}
+	private boolean leavesBlackChecked(Move move) {
+		byte moveType = move.getType();
+		boolean leavesChecked;
+		if (moveType == MoveType.NORMAL.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackNormalMoveOnBitboards(fromBit, toBit, move.getMovedPiece(), move.getCapturedPiece());
+		} else if (moveType == MoveType.SHORT_CASTLING.ordinal()) {
+			makeBlackShortCastlingMoveOnBitboards();
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackShortCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.LONG_CASTLING.ordinal()) {
+			makeBlackLongCastlingMoveOnBitboards();
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackLongCastlingMoveOnBitboards();
+		} else if (moveType == MoveType.EN_PASSANT.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackEnPassantMoveOnBitboards(fromBit, toBit);
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackEnPassantMoveOnBitboards(fromBit, toBit);
+		} else if (moveType == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackQueenPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_ROOK.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackRookPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else if (moveType == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackBishopPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		} else {
+			long fromBit = 1L << move.getFrom();
+			long toBit = 1L << move.getTo();
+			makeBlackKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+			leavesChecked = isAttackedByWhite(BitOperations.indexOfBit(blackKing));
+			makeBlackKnightPromotionMoveOnBitboards(fromBit, toBit, move.getCapturedPiece());
+		}
+		return leavesChecked;
+	}
+	private boolean isLegalForWhite(Move move) {
+		long moveSet;
+		byte movedPiece = move.getMovedPiece();
+		if (squares[move.getFrom()] != movedPiece)
+			return false;
+		long toBit = 1L << move.getTo();
+		if (movedPiece == Piece.W_PAWN.ordinal()) {
+			moveSet = Bitboard.EMPTY_BOARD;
+			if (move.getType() == MoveType.EN_PASSANT.ordinal() && enPassantRights != EnPassantRights.NONE.ordinal() &&
+					move.getTo() == EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights)
+				moveSet |= toBit;
+			else if (squares[move.getTo()] != move.getCapturedPiece())
+				return false;
+			moveSet |= MoveSetBase.values()[move.getFrom()].getWhitePawnMoveSet(allBlackOccupied, allEmpty);
+		} else {
+			if (squares[move.getTo()] != move.getCapturedPiece())
+				return false;
+			MoveSetBase dB = MoveSetBase.values()[move.getFrom()];
+			if (movedPiece == Piece.W_KING.ordinal()) {
+				if (move.getType() == MoveType.SHORT_CASTLING.ordinal()) {
+					return !inCheck && (whiteCastlingRights == CastlingRights.SHORT.ordinal() ||
+							whiteCastlingRights == CastlingRights.ALL.ordinal()) &&
+							((Bitboard.Square.F1.getBitboard() | Bitboard.Square.G1.getBitboard()) &
+									allOccupied) == Bitboard.EMPTY_BOARD &&
+							squares[Bitboard.Square.H1.ordinal()] == Piece.W_ROOK.ordinal() &&
+							!isAttackedByBlack(Bitboard.Square.F1.ordinal()) &&
+							!isAttackedByBlack(Bitboard.Square.G1.ordinal());
+				} else if (move.getType() == MoveType.LONG_CASTLING.ordinal()) {
+					return !inCheck && (whiteCastlingRights == CastlingRights.LONG.ordinal() ||
+							whiteCastlingRights == CastlingRights.ALL.ordinal()) &&
+							((Bitboard.Square.B1.getBitboard() | Bitboard.Square.C1.getBitboard() |
+									Bitboard.Square.D1.getBitboard()) & allOccupied) == Bitboard.EMPTY_BOARD &&
+							squares[Bitboard.Square.A1.ordinal()] == Piece.W_ROOK.ordinal() &&
+							!isAttackedByBlack(Bitboard.Square.C1.ordinal()) &&
+							!isAttackedByBlack(Bitboard.Square.D1.ordinal());
+				} else
+					moveSet = dB.getKingMoveSet(allNonWhiteOccupied);
+			} else if (movedPiece == Piece.W_QUEEN.ordinal())
+				moveSet = dB.getQueenMoveSet(allNonWhiteOccupied, allOccupied);
+			else if (movedPiece == Piece.W_ROOK.ordinal())
+				moveSet = dB.getRookMoveSet(allNonWhiteOccupied, allOccupied);
+			else if (movedPiece == Piece.W_BISHOP.ordinal())
+				moveSet = dB.getBishopMoveSet(allNonWhiteOccupied, allOccupied);
+			else if (movedPiece == Piece.W_KNIGHT.ordinal())
+				moveSet = dB.getKnightMoveSet(allNonWhiteOccupied);
+			else
+				return false;
+		}
+		return (moveSet & toBit) != Bitboard.EMPTY_BOARD && !leavesWhiteChecked(move);
+	}
+	private boolean isLegalForBlack(Move move) {
+		long moveSet;
+		byte movedPiece = move.getMovedPiece();
+		if (squares[move.getFrom()] != movedPiece)
+			return false;
+		long toBit = 1L << move.getTo();
+		if (movedPiece == Piece.B_PAWN.ordinal()) {
+			moveSet = Bitboard.EMPTY_BOARD;
+			if (move.getType() == MoveType.EN_PASSANT.ordinal() && enPassantRights != EnPassantRights.NONE.ordinal() &&
+					move.getTo() == EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights)
+				moveSet |= toBit;
+			else if (squares[move.getTo()] != move.getCapturedPiece())
+				return false;
+			moveSet |= MoveSetBase.values()[move.getFrom()].getBlackPawnMoveSet(allWhiteOccupied, allEmpty);
+		} else {
+			if (squares[move.getTo()] != move.getCapturedPiece())
+				return false;
+			MoveSetBase dB = MoveSetBase.values()[move.getFrom()];
+			if (movedPiece == Piece.B_KING.ordinal()) {
+				if (move.getType() == MoveType.SHORT_CASTLING.ordinal()) {
+					return !inCheck && (blackCastlingRights == CastlingRights.SHORT.ordinal() ||
+							blackCastlingRights == CastlingRights.ALL.ordinal()) &&
+							((Bitboard.Square.F8.getBitboard() | Bitboard.Square.G8.getBitboard()) &
+									allOccupied) == Bitboard.EMPTY_BOARD &&
+							squares[Bitboard.Square.H8.ordinal()] == Piece.B_ROOK.ordinal() &&
+							!isAttackedByWhite(Bitboard.Square.F8.ordinal()) &&
+							!isAttackedByWhite(Bitboard.Square.G8.ordinal());
+				} else if (move.getType() == MoveType.LONG_CASTLING.ordinal()) {
+					return !inCheck && (blackCastlingRights == CastlingRights.LONG.ordinal() ||
+							blackCastlingRights == CastlingRights.ALL.ordinal()) &&
+							((Bitboard.Square.B8.getBitboard() | Bitboard.Square.C8.getBitboard() |
+									Bitboard.Square.D8.getBitboard()) & allOccupied) == Bitboard.EMPTY_BOARD &&
+							squares[Bitboard.Square.A8.ordinal()] == Piece.B_ROOK.ordinal() &&
+							!isAttackedByWhite(Bitboard.Square.C8.ordinal()) &&
+							!isAttackedByWhite(Bitboard.Square.D8.ordinal());
+				} else
+					moveSet = dB.getKingMoveSet(allNonBlackOccupied);
+			} else if (movedPiece == Piece.B_QUEEN.ordinal())
+				moveSet = dB.getQueenMoveSet(allNonBlackOccupied, allOccupied);
+			else if (movedPiece == Piece.B_ROOK.ordinal())
+				moveSet = dB.getRookMoveSet(allNonBlackOccupied, allOccupied);
+			else if (movedPiece == Piece.B_BISHOP.ordinal())
+				moveSet = dB.getBishopMoveSet(allNonBlackOccupied, allOccupied);
+			else if (movedPiece == Piece.B_KNIGHT.ordinal())
+				moveSet = dB.getKnightMoveSet(allNonBlackOccupied);
+			else
+				return false;
+		}
+		return (moveSet & toBit) != Bitboard.EMPTY_BOARD && !leavesBlackChecked(move);
+	}
+	/**
+	 * Determines whether the move is legal in the current position.
+	 *
+	 * @param move The move to perform legality check on.
+	 * @return Whether the move is legal or not.
+	 */
+	public boolean isLegal(Move move) {
+		return whitesTurn ? isLegalForWhite(move) : isLegalForBlack(move);
+	}
+	private void addWhiteKingNormalMoves(byte from, long targets, List<Move> moves) {
+		long moveSet = MoveSetBase.values()[from].getKingMoveSet(targets);
+		while (moveSet != Bitboard.EMPTY_BOARD) {
+			byte to = BitOperations.indexOfLSBit(moveSet);
+			if (!isAttackedByBlack(to)) {
+				moves.add(new Move(from, to, (byte) Piece.W_KING.ordinal(), squares[to],
+						(byte) MoveType.NORMAL.ordinal()));
+			}
+			moveSet = BitOperations.resetLSBit(moveSet);
+		}
+	}
+	private void addBlackKingNormalMoves(byte from, long targets, List<Move> moves) {
+		long moveSet = MoveSetBase.values()[from].getKingMoveSet(targets);
+		while (moveSet != Bitboard.EMPTY_BOARD) {
+			byte to = BitOperations.indexOfLSBit(moveSet);
+			if (!isAttackedByWhite(to)) {
+				moves.add(new Move(from, to, (byte) Piece.B_KING.ordinal(), squares[to],
+						(byte) MoveType.NORMAL.ordinal()));
+			}
+			moveSet = BitOperations.resetLSBit(moveSet);
+		}
+	}
+	private void addWhiteKingCastlingMoves(byte from, List<Move> moves) {
+		if ((whiteCastlingRights == CastlingRights.LONG.ordinal() ||
+				whiteCastlingRights == CastlingRights.ALL.ordinal()) &&
+				((Bitboard.Square.B1.getBitboard() | Bitboard.Square.C1.getBitboard() |
+						Bitboard.Square.D1.getBitboard()) & allOccupied) == Bitboard.EMPTY_BOARD &&
+				!isAttackedByBlack(Bitboard.Square.D1.ordinal()) &&
+				!isAttackedByBlack(Bitboard.Square.C1.ordinal())) {
+			moves.add(new Move(from, (byte) Bitboard.Square.C1.ordinal(), (byte) Piece.W_KING.ordinal(),
+					(byte) Piece.NULL.ordinal(), (byte) MoveType.LONG_CASTLING.ordinal()));
+		}
+		if ((whiteCastlingRights == CastlingRights.SHORT.ordinal() ||
+				whiteCastlingRights == CastlingRights.ALL.ordinal()) &&
+				((Bitboard.Square.F1.getBitboard() | Bitboard.Square.G1.getBitboard()) &
+						allOccupied) == Bitboard.EMPTY_BOARD &&
+				!isAttackedByBlack(Bitboard.Square.F1.ordinal()) &&
+				!isAttackedByBlack(Bitboard.Square.G1.ordinal())) {
+			moves.add(new Move(from, (byte) Bitboard.Square.G1.ordinal(), (byte) Piece.W_KING.ordinal(),
+					(byte) Piece.NULL.ordinal(), (byte) MoveType.SHORT_CASTLING.ordinal()));
+		}
+	}
+	private void addBlackKingCastlingMoves(byte from, List<Move> moves) {
+		if ((blackCastlingRights == CastlingRights.LONG.ordinal() ||
+				blackCastlingRights == CastlingRights.ALL.ordinal()) &&
+				((Bitboard.Square.B8.getBitboard() | Bitboard.Square.C8.getBitboard() |
+						Bitboard.Square.D8.getBitboard()) & allOccupied) == Bitboard.EMPTY_BOARD &&
+				!isAttackedByWhite(Bitboard.Square.D8.ordinal()) &&
+				!isAttackedByWhite(Bitboard.Square.C8.ordinal())) {
+			moves.add(new Move(from, (byte) Bitboard.Square.C8.ordinal(), (byte) Piece.B_KING.ordinal(),
+					(byte) Piece.NULL.ordinal(), (byte) MoveType.LONG_CASTLING.ordinal()));
+		}
+		if ((blackCastlingRights == CastlingRights.SHORT.ordinal() ||
+				blackCastlingRights == CastlingRights.ALL.ordinal()) &&
+				((Bitboard.Square.F8.getBitboard() | Bitboard.Square.G8.getBitboard()) &
+						allOccupied) == Bitboard.EMPTY_BOARD &&
+				!isAttackedByWhite(Bitboard.Square.F8.ordinal()) &&
+				!isAttackedByWhite(Bitboard.Square.G8.ordinal())) {
+			moves.add(new Move(from, (byte) Bitboard.Square.G8.ordinal(), (byte) Piece.B_KING.ordinal(),
+					(byte) Piece.NULL.ordinal(), (byte) MoveType.SHORT_CASTLING.ordinal()));
+		}
+	}
+	private void addNormalMoves(byte from, byte movedPiece, long moveSet, List<Move> moves) {
+		while (moveSet != Bitboard.EMPTY_BOARD) {
+			byte to = BitOperations.indexOfLSBit(moveSet);
+			moves.add(new Move(from, to, movedPiece, squares[to], (byte) MoveType.NORMAL.ordinal()));
+			moveSet = BitOperations.resetLSBit(moveSet);
+		}
+	}
+	private void addQueenMoves(byte pieceType, long pieces, long targets, List<Move> moves) {
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			addNormalMoves(from, pieceType,
+					MoveSetBase.values()[from].getQueenMoveSet(targets, allOccupied), moves);
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addRookMoves(byte pieceType, long pieces, long targets, List<Move> moves) {
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			addNormalMoves(from, pieceType, MoveSetBase.values()[from].getRookMoveSet(targets, allOccupied), moves);
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addBishopMoves(byte pieceType, long pieces, long targets, List<Move> moves) {
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			addNormalMoves(from, pieceType, MoveSetBase.values()[from].getBishopMoveSet(targets, allOccupied), moves);
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addKnightMoves(byte pieceType, long pieces, long targets, List<Move> moves) {
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			addNormalMoves(from, pieceType, MoveSetBase.values()[from].getKnightMoveSet(targets), moves);
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addWhitePawnNormalMoves(long movablePieces, long oppTargets, long emptyTargets, List<Move> moves) {
+		long pieces = whitePawns & movablePieces & ~Bitboard.Rank.R7.getBitboard();
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			addNormalMoves(from, (byte) Piece.W_PAWN.ordinal(),
+					MoveSetBase.values()[from].getWhitePawnMoveSet(oppTargets, emptyTargets), moves);
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addBlackPawnNormalMoves(long movablePieces, long oppTargets, long emptyTargets, List<Move> moves) {
+		long pieces = blackPawns & movablePieces & ~Bitboard.Rank.R2.getBitboard();
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			addNormalMoves(from, (byte) Piece.B_PAWN.ordinal(),
+					MoveSetBase.values()[from].getBlackPawnMoveSet(oppTargets, emptyTargets), moves);
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addWhitePawnEnPassantMoves(long movablePieces, byte whiteKingInd, List<Move> moves) {
+		if (enPassantRights != EnPassantRights.NONE.ordinal()) {
+			byte to = (byte) (EnPassantRights.TO_W_DEST_SQR_IND + enPassantRights);
+			long pieces = MoveSetBase.values()[to].getBlackPawnCaptureSet(whitePawns) & movablePieces;
+			if (pieces == Bitboard.EMPTY_BOARD)
+				return;
+			MoveSetBase kingDb = MoveSetBase.values()[whiteKingInd];
+			do {
+				byte from = BitOperations.indexOfLSBit(pieces);
+				// Make sure that the en passant does not leave the king exposed to check.
+				long changedWhiteBits = ((1L << from) | (1L << to));
+				long allNonWhiteOccupiedTemp = allNonWhiteOccupied^changedWhiteBits;
+				long allOccupiedTemp = allOccupied^(changedWhiteBits | (1L << (to - 8)));
+				if (((blackQueens | blackRooks) & kingDb.getRookMoveSet(allNonWhiteOccupiedTemp,
+						allOccupiedTemp)) == Bitboard.EMPTY_BOARD && ((blackQueens | blackBishops) &
+						kingDb.getBishopMoveSet(allNonWhiteOccupiedTemp, allOccupiedTemp)) == Bitboard.EMPTY_BOARD) {
+					moves.add(new Move(from, to, (byte) Piece.W_PAWN.ordinal(), (byte) Piece.B_PAWN.ordinal(),
+							(byte) MoveType.EN_PASSANT.ordinal()));
+				}
+				pieces = BitOperations.resetLSBit(pieces);
+			} while (pieces != Bitboard.EMPTY_BOARD);
+		}
+	}
+	private void addBlackPawnEnPassantMoves(long movablePieces, byte blackKingInd, List<Move> moves) {
+		if (enPassantRights != EnPassantRights.NONE.ordinal()) {
+			byte to = (byte) (EnPassantRights.TO_B_DEST_SQR_IND + enPassantRights);
+			long pieces = MoveSetBase.values()[to].getWhitePawnCaptureSet(blackPawns) & movablePieces;
+			if (pieces == Bitboard.EMPTY_BOARD)
+				return;
+			MoveSetBase kingDb = MoveSetBase.values()[blackKingInd];
+			do {
+				byte from = BitOperations.indexOfLSBit(pieces);
+				long changedBlackBits = ((1L << from) | (1L << to));
+				long allNonBlackOccupiedTemp = allNonWhiteOccupied^changedBlackBits;
+				long allOccupiedTemp = allOccupied^(changedBlackBits | (1L << (to + 8)));
+				if (((whiteQueens | whiteRooks) & kingDb.getRookMoveSet(allNonBlackOccupiedTemp,
+						allOccupiedTemp)) == Bitboard.EMPTY_BOARD && ((whiteQueens | whiteBishops) &
+						kingDb.getBishopMoveSet(allNonBlackOccupiedTemp, allOccupiedTemp)) == Bitboard.EMPTY_BOARD) {
+					moves.add(new Move(from, to, (byte) Piece.B_PAWN.ordinal(), (byte) Piece.W_PAWN.ordinal(),
+							(byte) MoveType.EN_PASSANT.ordinal()));
+				}
+				pieces = BitOperations.resetLSBit(pieces);
+			} while (pieces != Bitboard.EMPTY_BOARD);
+		}
+	}
+	private void addPromotionMoves(byte from, byte to, byte movedPiece, byte capturedPiece, List<Move> moves) {
+		moves.add(new Move(from, to, movedPiece, capturedPiece, (byte) MoveType.PROMOTION_TO_QUEEN.ordinal()));
+		moves.add(new Move(from, to, movedPiece, capturedPiece, (byte) MoveType.PROMOTION_TO_ROOK.ordinal()));
+		moves.add(new Move(from, to, movedPiece, capturedPiece, (byte) MoveType.PROMOTION_TO_BISHOP.ordinal()));
+		moves.add(new Move(from, to, movedPiece, capturedPiece, (byte) MoveType.PROMOTION_TO_KNIGHT.ordinal()));
+	}
+	private void addWhitePawnPromotionMoves(long movablePieces, List<Move> moves) {
+		long pieces = whitePawns & movablePieces & Bitboard.Rank.R7.getBitboard();
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			long moveSet = MoveSetBase.values()[from].getWhitePawnMoveSet(allBlackOccupied, allEmpty);
+			while (moveSet != Bitboard.EMPTY_BOARD) {
+				byte to = BitOperations.indexOfLSBit(moveSet);
+				addPromotionMoves(from, to, (byte) Piece.W_PAWN.ordinal(), squares[to], moves);
+				moveSet = BitOperations.resetLSBit(moveSet);
+			}
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	private void addBlackPawnPromotionMoves(long movablePieces, List<Move> moves) {
+		long pieces = blackPawns & movablePieces & Bitboard.Rank.R2.getBitboard();
+		while (pieces != Bitboard.EMPTY_BOARD) {
+			byte from = BitOperations.indexOfLSBit(pieces);
+			long moveSet = MoveSetBase.values()[from].getBlackPawnMoveSet(allWhiteOccupied, allEmpty);
+			while (moveSet != Bitboard.EMPTY_BOARD) {
+				byte to = BitOperations.indexOfLSBit(moveSet);
+				addPromotionMoves(from, to, (byte) Piece.B_PAWN.ordinal(), squares[to], moves);
+				moveSet = BitOperations.resetLSBit(moveSet);
+			}
+			pieces = BitOperations.resetLSBit(pieces);
+		}
+	}
+	/**
+	 *
+	 *
+	 * @return
+	 */
+	public List<Move> getTacticalMoves() {
+		List<Move> moves = new LinkedList<>();
+		if (whitesTurn) {
+			byte kingInd = BitOperations.indexOfBit(whiteKing);
+			long movablePieces = Bitboard.EMPTY_BOARD;
+			addWhitePawnPromotionMoves(movablePieces, moves);
+			addWhitePawnEnPassantMoves(movablePieces, kingInd, moves);
+			addWhitePawnNormalMoves(movablePieces, allBlackOccupied, Bitboard.EMPTY_BOARD, moves);
+			addKnightMoves((byte) Piece.W_KNIGHT.ordinal(), whiteKnights & movablePieces,
+					allBlackOccupied, moves);
+			addBishopMoves((byte) Piece.W_BISHOP.ordinal(), whiteBishops & movablePieces,
+					allBlackOccupied, moves);
+			addRookMoves((byte) Piece.W_ROOK.ordinal(), whiteRooks & movablePieces,
+					allBlackOccupied, moves);
+			addQueenMoves((byte) Piece.W_QUEEN.ordinal(), whiteQueens & movablePieces,
+					allBlackOccupied, moves);
+			addWhiteKingNormalMoves(kingInd, allBlackOccupied, moves);
+		} else {
+			byte kingInd = BitOperations.indexOfBit(blackKing);
+			long movablePieces = Bitboard.EMPTY_BOARD;
+			addBlackPawnPromotionMoves(movablePieces, moves);
+			addBlackPawnEnPassantMoves(movablePieces, kingInd, moves);
+			addBlackPawnNormalMoves(movablePieces, allWhiteOccupied, Bitboard.EMPTY_BOARD, moves);
+			addKnightMoves((byte) Piece.B_KNIGHT.ordinal(), blackKnights & movablePieces,
+					allWhiteOccupied, moves);
+			addBishopMoves((byte) Piece.B_BISHOP.ordinal(), blackBishops & movablePieces,
+					allWhiteOccupied, moves);
+			addRookMoves((byte) Piece.B_ROOK.ordinal(), blackRooks & movablePieces,
+					allWhiteOccupied, moves);
+			addQueenMoves((byte) Piece.B_QUEEN.ordinal(), blackQueens & movablePieces,
+					allWhiteOccupied, moves);
+			addBlackKingNormalMoves(kingInd, allWhiteOccupied, moves);
+		}
+		return moves;
+	}
+	/**
+	 *
+	 *
+	 * @return
+	 */
+	public List<Move> getQuietMoves() {
+		List<Move> moves = new LinkedList<>();
+		if (whitesTurn) {
+			byte kingInd = BitOperations.indexOfBit(whiteKing);
+			long movablePieces = Bitboard.EMPTY_BOARD;
+			addWhitePawnNormalMoves(movablePieces, Bitboard.EMPTY_BOARD, allEmpty, moves);
+			addKnightMoves((byte) Piece.W_KNIGHT.ordinal(), whiteKnights & movablePieces,
+					allEmpty, moves);
+			addBishopMoves((byte) Piece.W_BISHOP.ordinal(), whiteBishops & movablePieces,
+					allEmpty, moves);
+			addRookMoves((byte) Piece.W_ROOK.ordinal(), whiteRooks & movablePieces,
+					allEmpty, moves);
+			addQueenMoves((byte) Piece.W_QUEEN.ordinal(), whiteQueens & movablePieces,
+					allEmpty, moves);
+			addWhiteKingCastlingMoves(kingInd, moves);
+			addWhiteKingNormalMoves(kingInd, allEmpty, moves);
+		} else {
+			byte kingInd = BitOperations.indexOfBit(blackKing);
+			long movablePieces = Bitboard.EMPTY_BOARD;
+			addBlackPawnNormalMoves(movablePieces, Bitboard.EMPTY_BOARD, allEmpty, moves);
+			addKnightMoves((byte) Piece.B_KNIGHT.ordinal(), blackKnights & movablePieces,
+					allEmpty, moves);
+			addBishopMoves((byte) Piece.B_BISHOP.ordinal(), blackBishops & movablePieces,
+					allEmpty, moves);
+			addRookMoves((byte) Piece.B_ROOK.ordinal(), blackRooks & movablePieces,
+					allEmpty, moves);
+			addQueenMoves((byte) Piece.B_QUEEN.ordinal(), blackQueens & movablePieces,
+					allEmpty, moves);
+			addBlackKingCastlingMoves(kingInd, moves);
+			addBlackKingNormalMoves(kingInd, allEmpty, moves);
+		}
+		return  moves;
+	}
+	/**
+	 *
+	 *
+	 * @return
+	 */
+	public List<Move> getMoves() {
+		List<Move> moves = new LinkedList<>();
+		if (whitesTurn) {
+			byte kingInd = BitOperations.indexOfBit(whiteKing);
+			long movablePieces = Bitboard.EMPTY_BOARD;
+			addWhitePawnPromotionMoves(movablePieces, moves);
+			addWhitePawnEnPassantMoves(movablePieces, kingInd, moves);
+			addWhitePawnNormalMoves(movablePieces, allBlackOccupied, allEmpty, moves);
+			addKnightMoves((byte) Piece.W_KNIGHT.ordinal(), whiteKnights & movablePieces,
+					allNonWhiteOccupied, moves);
+			addBishopMoves((byte) Piece.W_BISHOP.ordinal(), whiteBishops & movablePieces,
+					allNonWhiteOccupied, moves);
+			addRookMoves((byte) Piece.W_ROOK.ordinal(), whiteRooks & movablePieces,
+					allNonWhiteOccupied, moves);
+			addQueenMoves((byte) Piece.W_QUEEN.ordinal(), whiteQueens & movablePieces,
+					allNonWhiteOccupied, moves);
+			addWhiteKingCastlingMoves(kingInd, moves);
+			addWhiteKingNormalMoves(kingInd, allNonWhiteOccupied, moves);
+		} else {
+			byte kingInd = BitOperations.indexOfBit(blackKing);
+			long movablePieces = Bitboard.EMPTY_BOARD;
+			addBlackPawnPromotionMoves(movablePieces, moves);
+			addBlackPawnEnPassantMoves(movablePieces, kingInd, moves);
+			addBlackPawnNormalMoves(movablePieces, allWhiteOccupied, allEmpty, moves);
+			addKnightMoves((byte) Piece.B_KNIGHT.ordinal(), blackKnights & movablePieces,
+					allNonBlackOccupied, moves);
+			addBishopMoves((byte) Piece.B_BISHOP.ordinal(), blackBishops & movablePieces,
+					allNonBlackOccupied, moves);
+			addRookMoves((byte) Piece.B_ROOK.ordinal(), blackRooks & movablePieces,
+					allNonBlackOccupied, moves);
+			addQueenMoves((byte) Piece.B_QUEEN.ordinal(), blackQueens & movablePieces,
+					allNonBlackOccupied, moves);
+			addBlackKingCastlingMoves(kingInd, moves);
+			addBlackKingNormalMoves(kingInd, allNonBlackOccupied, moves);
+		}
+		return moves;
 	}
 	@Override
 	public String toString() {

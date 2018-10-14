@@ -8,7 +8,8 @@ import java.util.Date;
 import net.viktorc.detroid.framework.validation.GameState;
 
 /**
- * A data structure for keeping track of the course of a chess game. It can also parse games in PGN and output its state in PGN.
+ * A data structure for holding information about and keeping track of the course of a chess game. It can also parse
+ * games in PGN and output their state in PGN.
  * 
  * @author Viktor
  *
@@ -26,11 +27,11 @@ class Game {
 	private GameState state;
 
 	/**
-	 * Parses a game in PGN notation and returns a Game instance.
+	 * Parses a game in PGN notation and returns a game instance.
 	 * 
-	 * @param pgn
-	 * @return
-	 * @throws ChessParseException
+	 * @param pgn The PGN string.
+	 * @return The game instance.
+	 * @throws ChessParseException If the PGN string cannot be parsed.
 	 */
 	static Game parse(String pgn) throws ChessParseException {
 		char tagChar;
@@ -54,32 +55,32 @@ class Game {
 					switch (tagType.toUpperCase()) {
 						case "EVENT":
 							event = tagValue;
-						break;
+							break;
 						case "SITE":
 							site = tagValue;
-						break;
+							break;
 						case "DATE":
 							date = tagValue;
-						break;
+							break;
 						case "ROUND":
 							round = tagValue;
-						break;
+							break;
 						case "WHITE":
 							whiteName = tagValue;
-						break;
+							break;
 						case "BLACK":
 							blackName = tagValue;
-						break;
+							break;
 						case "RESULT":
 							result = tagValue;
-						break;
+							break;
 						case "FEN":
 							fen = tagValue;
 					}
 				}
 			}
 			if (event == null || site == null || date == null || round == null ||
-				whiteName == null || blackName == null || result == null)
+					whiteName == null || blackName == null || result == null)
 				throw new ChessParseException("Missing tag(s).");
 			out.event = event;
 			out.site = site;
@@ -109,7 +110,7 @@ class Game {
 				pgn = pgn.replaceAll("\\*", "");
 				break;
 			default:
-				throw new ChessParseException();
+				throw new ChessParseException("Invalid result.");
 			}
 			moveDescParts = pgn.split("[\\s]+");
 			for (String s : moveDescParts) {
@@ -176,18 +177,6 @@ class Game {
 	Game(Position0 position, String event, String site, String whitePlayerName, String blackPlayerName)
 			throws NullPointerException, ChessParseException {
 		this(position, event, site, whitePlayerName, blackPlayerName, -1);
-	}
-	/**
-	 * Returns a game instance with the site and event values being null and round set to 1.
-	 * 
-	 * @param position
-	 * @param whitePlayerName
-	 * @param blackPlayerName
-	 * @throws NullPointerException
-	 * @throws ChessParseException 
-	 */
-	Game(Position0 position, String whitePlayerName, String blackPlayerName) throws NullPointerException, ChessParseException {
-		this(position, null, null, whitePlayerName, blackPlayerName, -1);
 	}
 	/**
 	 * Returns a game instance with the site, event, whitePlayerName, and blackPlayerName values being null and round set to 1.
@@ -277,14 +266,6 @@ class Game {
 	 */
 	String getBlackPlayerName() {
 		return blackPlayerName;
-	}
-	/**
-	 * Returns the side to move according to {@link #Side Side}.
-	 * 
-	 * @return
-	 */
-	Side getSideToMove() {
-		return position.whitesTurn ? Side.WHITE : Side.BLACK;
 	}
 	/**
 	 * Returns the game of the state according to {@link #uibase.GameState GameState}.
@@ -387,8 +368,7 @@ class Game {
 	}
 	/**
 	 * Returns a string representation of the position's move list in SAN with six full moves per line.
-	 * 
-	 * @param p
+	 *
 	 * @return
 	 */
 	private String moveListToSAN() {
@@ -435,19 +415,6 @@ class Game {
 		pgn += "[FEN \"" + startPosition.toString() + "\"]\n";
 		pgn += moveListToSAN();
 		return pgn;
-	}
-	
-	/**
-	 * A simple enum for the two sides/colors in a chess game.
-	 * 
-	 * @author Viktor
-	 *
-	 */
-	enum Side {
-		
-		WHITE,
-		BLACK;
-		
 	}
 	
 }

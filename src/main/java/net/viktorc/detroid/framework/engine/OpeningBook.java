@@ -62,12 +62,12 @@ public abstract class OpeningBook implements Closeable {
 	 * based on the specified mathematical model for selection. If there have been no relevant entries found, it
 	 * returns null.
 	 * 
-	 * @param p The position for which an opening move is sought.
+	 * @param pos The position for which an opening move is sought.
 	 * @param selection The mathematical model to be applied when selecting the move.
 	 * @return An opening move.
 	 * @throws Exception If anything goes wrong.
 	 */
-	public abstract Move getMove(Position0 p, SelectionModel selection) throws Exception;
+	public abstract Move getMove(Position pos, SelectionModel selection) throws Exception;
 	
 	/**
 	 * An enumeration type for mathematical models used in the process of selecting one from all the available opening

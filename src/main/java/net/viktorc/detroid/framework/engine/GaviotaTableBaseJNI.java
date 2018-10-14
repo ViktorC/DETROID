@@ -118,40 +118,40 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * or {@link net.viktorc.detroid.framework.engine.EndGameTableBase.WDL} instance depending on 
 	 * the <code>dtm</code> argument; else null.
 	 */
-	private Object probe(Position0 pos, boolean dtm, boolean soft) {
-		boolean lockAcquired = false;
-		int sideToMove = pos.whitesTurn ? 0 : 1;
-		int enPassant = pos.enPassantRights == EnPassantRights.NONE.ordinal() ? NO_SQUARE :
-				pos.enPassantRights + (pos.whitesTurn ? EnPassantRights.TO_W_DEST_SQR_IND :
+	private Object probe(Position pos, boolean dtm, boolean soft) {
+		int sideToMove = pos.isWhitesTurn() ? 0 : 1;
+		int enPassant = pos.getEnPassantRights() == EnPassantRights.NONE.ordinal() ? NO_SQUARE :
+				pos.getEnPassantRights() + (pos.isWhitesTurn() ? EnPassantRights.TO_W_DEST_SQR_IND :
 				EnPassantRights.TO_B_DEST_SQR_IND);
-		int castling = (pos.blackCastlingRights%CastlingRights.ALL.ordinal() == 0 ?
-				pos.blackCastlingRights : pos.blackCastlingRights^CastlingRights.ALL.ordinal()) |
-				((pos.whiteCastlingRights%CastlingRights.ALL.ordinal() == 0 ? pos.whiteCastlingRights :
-				pos.whiteCastlingRights^CastlingRights.ALL.ordinal()) << 2);
-		byte[] wAllOccuppied = BitOperations.serialize(pos.allWhiteOccupied);
+		int castling = (pos.getBlackCastlingRights()%CastlingRights.ALL.ordinal() == 0 ?
+				pos.getBlackCastlingRights() : pos.getBlackCastlingRights()^CastlingRights.ALL.ordinal()) |
+				((pos.getWhiteCastlingRights()%CastlingRights.ALL.ordinal() == 0 ? pos.getWhiteCastlingRights() :
+				pos.getWhiteCastlingRights()^CastlingRights.ALL.ordinal()) << 2);
+		byte[] wAllOccuppied = BitOperations.serialize(pos.getAllWhiteOccupied());
 		int[] wSquares = new int[wAllOccuppied.length + 1];
 		char[] wPieces = new char[wAllOccuppied.length + 1];
 		int i = 0;
 		for (; i < wAllOccuppied.length; i++) {
 			int square = wAllOccuppied[i];
 			wSquares[i] = square;
-			byte piece = pos.offsetBoard[square];
-			wPieces[i] = (char) (Piece.W_PAWN.ind - ((piece - 1)%Piece.W_PAWN.ind));
+			byte piece = pos.getPiece(square);
+			wPieces[i] = (char) (Piece.W_PAWN.ordinal() - ((piece - 1)%Piece.W_PAWN.ordinal()));
 		}
 		wSquares[i] = NO_SQUARE;
 		wPieces[i] = NO_PIECE;
-		byte[] bAllOccupied = BitOperations.serialize(pos.allBlackOccupied);
+		byte[] bAllOccupied = BitOperations.serialize(pos.getAllBlackOccupied());
 		int[] bSquares = new int[bAllOccupied.length + 1];
 		char[] bPieces = new char[bAllOccupied.length + 1];
 		i = 0;
 		for (; i < bAllOccupied.length; i++) {
 			int square = bAllOccupied[i];
 			bSquares[i] = square;
-			byte piece = pos.offsetBoard[square];
-			bPieces[i] = (char) (Piece.W_PAWN.ind - ((piece - 1)%Piece.W_PAWN.ind));
+			byte piece = pos.getPiece(square);
+			bPieces[i] = (char) (Piece.W_PAWN.ordinal() - ((piece - 1)%Piece.W_PAWN.ordinal()));
 		}
 		bSquares[i] = NO_SQUARE;
 		bPieces[i] = NO_PIECE;
+		boolean lockAcquired;
 		if (soft)
 			lockAcquired = probeLock.tryLock();
 		else {
@@ -166,11 +166,11 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
 							bSquares, wPieces, bPieces);
 					if (res == null)
 						return null;
-					return new DTM(resIntToWDL(res[0], pos.whitesTurn), res[1]);
+					return new DTM(resIntToWDL(res[0], pos.isWhitesTurn()), res[1]);
 				} else
 					return resIntToWDL(soft ? probeSoftWDL(sideToMove, enPassant, castling, wSquares,
 							bSquares, wPieces, bPieces) : probeWDL(sideToMove, enPassant, castling,
-							wSquares, bSquares, wPieces, bPieces), pos.whitesTurn);
+							wSquares, bSquares, wPieces, bPieces), pos.isWhitesTurn());
 			} finally {
 				probeLock.unlock();
 			}
@@ -432,11 +432,11 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
 		}
 	}
 	@Override
-	public WDL probeWDL(Position0 pos, boolean soft) {
+	public WDL probeWDL(Position pos, boolean soft) {
 		return (WDL) probe(pos, false, soft);
 	}
 	@Override
-	public DTM probeDTM(Position0 pos, boolean soft) {
+	public DTM probeDTM(Position pos, boolean soft) {
 		return (DTM) probe(pos, true, soft);
 	}
 	

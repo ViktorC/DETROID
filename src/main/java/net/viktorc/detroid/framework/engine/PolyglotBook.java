@@ -51,12 +51,12 @@ public class PolyglotBook extends OpeningBook {
 	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary
 	 * search algorithm to search through the entries.
 	 * 
-	 * @param p The position for which the entries are to be returned.
+	 * @param pos The position for which the entries are to be returned.
 	 * @return
 	 */
-	private ArrayList<Entry> getRelevantEntries(Position0 p) {
+	private ArrayList<Entry> getRelevantEntries(Position pos) {
 		long low, mid, hi, temp = -1;
-		long readerPos, currKey, key = gen.generatePolyglotHashKey(p);
+		long readerPos, currKey, key = gen.generatePolyglotHashKey(pos);
 		ArrayList<Entry> entries = new ArrayList<>();
 		ByteBuffer buff = ByteBuffer.allocateDirect(ENTRY_SIZE);
 		try {
@@ -111,7 +111,7 @@ public class PolyglotBook extends OpeningBook {
 			}
 			/* No matching entries have been found; we are out of book. If this method is called on ALTERNATIVE_BOOK
 			 * and its useDefaultBook is set to true, we search the DEFAULT_BOOK, too. */
-			return secondaryBook != null ? ((PolyglotBook)secondaryBook).getRelevantEntries(p) : null;
+			return secondaryBook != null ? ((PolyglotBook)secondaryBook).getRelevantEntries(pos) : null;
 		}
 		// Some IO error has occured.
 		catch (IOException e) {
@@ -126,26 +126,26 @@ public class PolyglotBook extends OpeningBook {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	private static String polyglotMoveToPACN(Position0 pos, short polyglotMove) throws IllegalArgumentException {
-		String toFile, toRank, fromFile, fromRank, promPiece, pacn;
-		toFile = "" + (char)((polyglotMove & 7) + 'a');
-		toRank = "" + (int)(((polyglotMove >>> 3) & 7) + 1);
-		fromFile = "" + (char)(((polyglotMove >>> 6) & 7) + 'a');
-		fromRank = "" + (int)(((polyglotMove >>> 9) & 7) + 1);
-		pacn = fromFile + fromRank + toFile + toRank;
+	private static String polyglotMoveToPACN(Position pos, short polyglotMove) throws IllegalArgumentException {
+		String toFile = "" + (char) ((polyglotMove & 7) + 'a');
+		String toRank = "" + (((polyglotMove >>> 3) & 7) + 1);
+		String fromFile = "" + (char) (((polyglotMove >>> 6) & 7) + 'a');
+		String fromRank = "" + (((polyglotMove >>> 9) & 7) + 1);
+		String pacn = fromFile + fromRank + toFile + toRank;
 		if (pacn.equals("e1h1")) {
-			if (pos.whiteKing == Square.E1.getBitboard())
+			if (pos.getWhiteKing() == Square.E1.getBitboard())
 				return "e1g1";
 		} else if (pacn.equals("e1a1")) {
-			if (pos.whiteKing == Square.E1.getBitboard())
+			if (pos.getWhiteKing() == Square.E1.getBitboard())
 				return "e1c1";
 		} else if (pacn.equals("e8h8")) {
-			if (pos.blackKing == Square.E8.getBitboard())
+			if (pos.getBlackKing() == Square.E8.getBitboard())
 				return "e8g8";
 		} else if (pacn.equals("e8a8")) {
-			if (pos.blackKing == Square.E8.getBitboard())
+			if (pos.getBlackKing() == Square.E8.getBitboard())
 				return "e8c8";
 		}
+		String promPiece;
 		switch (polyglotMove >>> 12) {
 			case 0: promPiece = "";
 			break;
@@ -162,11 +162,11 @@ public class PolyglotBook extends OpeningBook {
 		return pacn + promPiece;
 	}
 	@Override
-	public Move getMove(Position0 p, SelectionModel selection) throws Exception {
+	public Move getMove(Position pos, SelectionModel selection) throws Exception {
 		short max;
 		double totalWeight, randomDouble, weightSum;
 		Entry e;
-		ArrayList<Entry> relEntries = getRelevantEntries(p);
+		ArrayList<Entry> relEntries = getRelevantEntries(pos);
 		if (relEntries == null)
 			return null;
 		switch (selection) {
@@ -206,7 +206,7 @@ public class PolyglotBook extends OpeningBook {
 			break;
 			default: return null;
 		}
-		return e == null ? null : p.parsePACN(polyglotMoveToPACN(p, e.move));
+		return e == null ? null : pos.parsePACN(polyglotMoveToPACN(pos, e.move));
 	}
 	
 	/**

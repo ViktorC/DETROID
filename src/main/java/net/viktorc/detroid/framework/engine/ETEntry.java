@@ -9,32 +9,50 @@ import net.viktorc.detroid.framework.util.Cache.Entry;
  * @author Viktor
  *
  */
-class ETEntry implements Entry<ETEntry> {
-	
-	/**
-	 * The 64 bit position hash key.
-	 */
-	volatile long key;
-	/**
-	 * The evaluation score.
-	 */
-	volatile short score;
-	/**
-	 * Whether the score stored is exact.
-	 */
-	volatile boolean isExact;
-	/**
-	 * The age of the entry.
-	 */
-	volatile byte generation;
+public class ETEntry implements Entry<ETEntry> {
+
+	private volatile long key;
+	private volatile short score;
+	private volatile boolean isExact;
+	private volatile byte generation;
 
 	/**
-	 * @param key
-	 * @param score
-	 * @param isExact
-	 * @param generation
+	 * @return The 64 bit position hash key.
 	 */
-	void set(long key, short score, boolean isExact, byte generation) {
+	public long getKey() {
+		return key;
+	}
+	/**
+	 * @return The evaluation score.
+	 */
+	public short getScore() {
+		return score;
+	}
+	/**
+	 * @return Whether the score stored is exact.
+	 */
+	public boolean isExact() {
+		return isExact;
+	}
+	/**
+	 * @return The age of the entry.
+	 */
+	public byte getGeneration() {
+		return generation;
+	}
+	/**
+	 * @param generation The age of the entry.
+	 */
+	public void setGeneration(byte generation) {
+		this.generation = generation;
+	}
+	/**
+	 * @param key The 64 bit position hash key.
+	 * @param score The evaluation score.
+	 * @param isExact Whether the score stored is exact.
+	 * @param generation The age of the entry.
+	 */
+	public void set(long key, short score, boolean isExact, byte generation) {
 		this.key = key;
 		this.score = score;
 		this.isExact = isExact;
@@ -43,7 +61,7 @@ class ETEntry implements Entry<ETEntry> {
 	/**
 	 * XORs the data fields into the key.
 	 */
-	void setupKey() {
+	public void setupKey() {
 		key ^= score^(isExact ? 1 : 0);
 	}
 	@Override

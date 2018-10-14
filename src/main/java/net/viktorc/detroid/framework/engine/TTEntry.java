@@ -7,52 +7,84 @@ import net.viktorc.detroid.framework.util.Cache.Entry;
  * depth of the search, the best move from this position compressed into a short, the score belonging to it, the type
  * of the score, and the age of the entry. It uses Hyatt's lock-less hashing.
  *
- * Lockless hashing: Nadam: <a href="http://www.craftychess.com/hyatt/hashing.html">http://www.craftychess.com/hyatt/hashing.html</a>
+ * Lockless hashing: <a href="http://www.craftychess.com/hyatt/hashing.html">http://www.craftychess.com/hyatt/hashing.html</a>
  * 
  * @author Viktor
  *
  */
 class TTEntry implements Entry<TTEntry> {
 	
+	private volatile long key;
+	private volatile short depth;
+	private volatile byte type;
+	private volatile short score;
+	private volatile int bestMove;
+	private volatile byte generation;
+	private volatile boolean busy;
+
 	/**
-	 * The 64-bitboard position hash key.
+	 * @return The 64 bit position hash key.
 	 */
-	volatile long key;
+	public long getKey() {
+		return key;
+	}
 	/**
-	 * How deep the position has been searched.
+	 * @return How deep the position has been searched.
 	 */
-	volatile short depth;
+	public short getDepth() {
+		return depth;
+	}
 	/**
-	 * The type of the returned score.
+	 * @return The type of the returned score.
 	 */
-	volatile byte type;
+	public byte getType() {
+		return type;
+	}
 	/**
-	 * The returned score.
+	 * @return The returned score.
 	 */
-	volatile short score;
+	public short getScore() {
+		return score;
+	}
 	/**
-	 * The best move compressed into an int.
+	 * @return The best move compressed into an int.
 	 */
-	volatile int bestMove;
+	public int getBestMove() {
+		return bestMove;
+	}
 	/**
-	 * The age of the entry.
+	 * @return The age of the entry.
 	 */
-	volatile byte generation;
+	public byte getGeneration() {
+		return generation;
+	}
 	/**
-	 * Whether the entry is in a 'busy' state.
+	 * @param generation The age of the entry.
 	 */
-	volatile boolean busy;
-	
+	public void setGeneration(byte generation) {
+		this.generation = generation;
+	}
 	/**
-	 * Sets the state of the instance.
-	 * 
-	 * @param key
-	 * @param depth
-	 * @param type
-	 * @param score
-	 * @param bestMove
-	 * @param generation
-	 * @param busy
+	 * @return Whether the entry is in a 'busy' state.
+	 */
+	public boolean isBusy() {
+		return busy;
+	}
+
+	/**
+	 * @param busy Whether the entry is in a 'busy' state.
+	 */
+	public void setBusy(boolean busy) {
+		this.busy = busy;
+	}
+	/**
+	 * @param key The 64 bit position hash key.
+	 * @param depth How deep the position has been searched.
+	 * @param type The type of the returned score.
+	 * @param score The returned score.
+	 * @param bestMove The best move compressed into an int.
+	 * @param generation The age of the entry.
+	 * @param busy Whether the entry is in a 'busy' state.
 	 */
 	void set(long key, short depth, byte type, short score, int bestMove, byte generation, boolean busy) {
 		this.key = key;
@@ -66,7 +98,7 @@ class TTEntry implements Entry<TTEntry> {
 	/**
 	 * XORs the data fields into the key.
 	 */
-	void setupKey() {
+	public void setupKey() {
 		key ^= depth^type^score^bestMove;
 	}
 	@Override
@@ -103,22 +135,29 @@ class TTEntry implements Entry<TTEntry> {
 			return -1;
 		if (type == e.type) {
 			if (depth == e.depth) {
-				// To increase the chances of the score being greater than any beta and thus produce more frequent ready-to-return hash hits...
-				if (type == NodeType.FAIL_HIGH.ind)
+				/* To increase the chances of the score being greater than any beta and thus produce more frequent
+				 * ready-to-return hash hits... */
+				if (type == NodeType.FAIL_HIGH.ordinal())
 					return score - e.score;
 				// To increase the chances of the score being lower than any alpha.
-				else if (type == NodeType.FAIL_LOW.ind)
+				else if (type == NodeType.FAIL_LOW.ordinal())
 					return e.score - score;
-				else // Both exact, same depth.
+				// Both exact, same depth.
+				else
 					return 0;
-			} else // Let the search depth determine how valuable the entries are
+			}
+			// Let the search depth determine how valuable the entries are.
+			else
 				return depth - e.depth;
 		} else {
-			if (type == NodeType.EXACT.ind) // If this entry is exact and the other is not, this one is better.
+			// If this entry is exact and the other is not, this one is better.
+			if (type == NodeType.EXACT.ordinal())
 				return 1;
-			else if (e.type != NodeType.EXACT.ind) // If neither of them are exact, let depth determine which one is better.
+			// If neither of them are exact, let depth determine which one is better.
+			else if (e.type != NodeType.EXACT.ordinal())
 				return depth - e.depth;
-			else // If this entry is not exact while the other one is, do not replace.
+			// If this entry is not exact while the other one is, do not replace.
+			else
 				return -1;
 		}
 	}
