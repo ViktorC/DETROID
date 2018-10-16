@@ -47,15 +47,12 @@ public class Bitboard {
 	private static final long[][] LINE_SEGMENTS;
 	
 	static {
-		Rays originRays, targetRays;
-		long line;
 		LINE_SEGMENTS = new long[64][64];
 		for (int origin = 0; origin < 64; origin++) {
-			originRays = Rays.values()[origin];
+			Rays originRays = Rays.values()[origin];
 			for (int target = 0; target < 64; target++) {
-				targetRays = Rays.values()[target];
-				line = 0;
-				line |= (originRays.rankPos & targetRays.rankNeg);
+				Rays targetRays = Rays.values()[target];
+				long line = (originRays.rankPos & targetRays.rankNeg);
 				line |= (originRays.rankNeg & targetRays.rankPos);
 				line |= (originRays.diagonalPos & targetRays.diagonalNeg);
 				line |= (originRays.diagonalNeg & targetRays.diagonalPos);
