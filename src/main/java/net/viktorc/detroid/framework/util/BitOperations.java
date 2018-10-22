@@ -24,6 +24,15 @@ public final class BitOperations {
 	
 	private BitOperations() { }
 	/**
+	 * Returns a long integer with only the bit at the specified index set.
+	 *
+	 * @param i The index of the bit.
+	 * @return A long integer with a single set bit.
+	 */
+	public static long toBit(int i) {
+		return 1L << i;
+	}
+	/**
 	 * Returns the index of the single bit set in the input variable. It is assumed that the input parameter has only
 	 * one set bit and it is not checked!
 	 * 

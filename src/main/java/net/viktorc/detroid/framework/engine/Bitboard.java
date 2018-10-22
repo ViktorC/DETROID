@@ -512,7 +512,7 @@ public class Bitboard {
 		private final long bitboard;
 
 		Square() {
-			bitboard = indToBitboard(ordinal());
+			bitboard = BitOperations.toBit(ordinal());
 		}
 		/**
 		 * @return The bitboard representing the square.
@@ -527,24 +527,6 @@ public class Bitboard {
 		public String toString() {
 			int ind = ordinal();
 		    return ("" + (char) ('a' + ind%8) + "" + (ind/8 + 1)).toUpperCase();
-		}
-		/**
-		 * Returns the bitboard corresponding to the provided square index.
-		 *
-		 * @param ind The index of the square.
-		 * @return The bitboard of the square.
-		 */
-		public static long indToBitboard(int ind) {
-			return 1L << ind;
-		}
-		/**
-		 * Returns the square index corresponding to the 
-		 *
-		 * @param bitboard A bitboard with a single set bit.
-		 * @return The index of the square.
-		 */
-		public static long bitboardToInd(long bitboard) {
-			return BitOperations.indexOfLSBit(bitboard);
 		}
 		
 	}

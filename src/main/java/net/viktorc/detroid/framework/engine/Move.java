@@ -111,40 +111,38 @@ public class Move implements Comparable<Move> {
 		this.value = value;
 	}
 	/**
-	 * Returns a move as a 32 bitboard integer with information on the state of the object stored in designated
-	 * bitboard, except for the score. Useful in memory sensitive applications like the transposition table as it
-	 * identifies a 30 byte Move object in merely 4 bytes.
+	 * Encodes the state of the instance (except the score) into a 4 byte integer.
 	 *
-	 * @return
+	 * @return An integer representation of the move.
 	 */
 	public int toInt() {
 		return (from | (to << SHIFT_TO) | (movedPiece << SHIFT_MOVED) |
 			   (capturedPiece << SHIFT_CAPTURED) | (type << SHIFT_TYPE));
 	}
 	/**
-	 * Returns whether the move is a material move or not.
+	 * Returns whether the move is a tactical move or not.
 	 *
-	 * @return
+	 * @return Whether the move is tactical.
 	 */
-	public boolean isMaterial() {
-		return capturedPiece != Piece.NULL.ind || type >= MoveType.PROMOTION_TO_QUEEN.ordinal();
+	public boolean isTactical() {
+		return capturedPiece != Piece.NULL.ordinal() || type >= MoveType.PROMOTION_TO_QUEEN.ordinal();
 	}
 	/**
 	 * Returns whether this move is equal to the input parameter move. The assigned theoretical value is disregarded as
 	 * it is highly context dependent.
 	 * 
-	 * @param m
-	 * @return
+	 * @param m The move to compare to.
+	 * @return Whether they are equal.
 	 */
 	public boolean equals(Move m) {
 		return m != null && from == m.from && to == m.to && movedPiece == m.movedPiece &&
 				capturedPiece == m.capturedPiece && type == m.type;
 	}
 	/**
-	 * Returns whether this move is equal to the input parameter 'compressed' move.
+	 * Returns whether this move is equal to the move that is encoded into the integer parameter.
 	 * 
-	 * @param m
-	 * @return
+	 * @param m The move to compare to encoded as an integer.
+	 * @return Whether they are equal.
 	 */
 	public boolean equals(int m) {
 		return (from == (m & MASK_FROM) && to == ((m >>> SHIFT_TO) & MASK_FROM) &&

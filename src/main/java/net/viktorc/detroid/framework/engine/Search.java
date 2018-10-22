@@ -34,14 +34,14 @@ import net.viktorc.detroid.framework.util.QuickSort;
  * @author Viktor
  *
  */
-class Search implements Runnable, Future<SearchResults> {
+public class Search implements Runnable, Future<SearchResults> {
 	
 	/**
 	 * The depth to which the position is to be searched at the first iteration of the iterative deepening framework.
 	 */
 	private static final short INITIAL_DEPTH = 1;
 	
-	private final Position0 rootPosition;
+	private final Position rootPosition;
 	private final DetroidParameters params;
 	private final Evaluator eval;
 	private final EndGameTableBase egtb;
@@ -919,7 +919,7 @@ class Search implements Runnable, Future<SearchResults> {
 				}
 				// Check if a recapture extension could possibly be applied.
 				lastMove = position.getLastMove();
-				lastMoveIsTactical = lastMove != null && lastMove.isMaterial();
+				lastMoveIsTactical = lastMove != null && lastMove.isTactical();
 				// If there is a hash move, search that first.
 				if (isThereHashMove) {
 					// Recapture extension (includes capturing newly promoted pieces).
@@ -942,7 +942,7 @@ class Search implements Runnable, Future<SearchResults> {
 							alpha = score;
 							if (score >= beta) {
 								searchStats.hashMoveCutoffs.incrementAndGet();
-								if (!hashMove.isMaterial()) {
+								if (!hashMove.isTactical()) {
 									// Add to killer moves.
 									kT.add(distFromRoot, hashMove);
 									// Record success in the relative history table.
@@ -952,7 +952,7 @@ class Search implements Runnable, Future<SearchResults> {
 							}
 						}
 					}
-					if (!hashMove.isMaterial())
+					if (!hashMove.isTactical())
 						// Record failure in the relative history table.
 						hT.recordUnsuccessfulMove(hashMove);
 				}
@@ -1268,7 +1268,7 @@ class Search implements Runnable, Future<SearchResults> {
 				// If moves searched by other threads were rescheduled, search them now.
 				if (deferredMoves != null) {
 					for (Move deferredMove : deferredMoves) {
-						isMaterial = deferredMove.isMaterial();
+						isMaterial = deferredMove.isTactical();
 						if (isMaterial) {
 							isKiller = false;
 							// Recapture extension.
@@ -1430,7 +1430,7 @@ class Search implements Runnable, Future<SearchResults> {
 					moves.remove(hashMove);
 					moves.add(0, hashMove);
 				}
-				lastMoveIsMaterial = lastMove != null && lastMove.isMaterial();
+				lastMoveIsMaterial = lastMove != null && lastMove.isTactical();
 				searched = new boolean[moves.size()];
 				searchedMoves = 0;
 				RootSearch: for (int i = 0; i < 2; i++) {

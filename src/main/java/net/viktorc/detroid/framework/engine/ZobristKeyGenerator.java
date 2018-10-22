@@ -12,7 +12,7 @@ import net.viktorc.detroid.framework.util.BitOperations;
  * @author Viktor
  *
  */
-public final class ZobristKeyGenerator {
+public class ZobristKeyGenerator {
 	
 	private static final long[] POLYGLOT_RANDOM_64 = {
 			0x9D39247E33776D41L, 0x2AF7398005AAA5C7L, 0x44DB015024623547L, 0x9C15F73E62A76AE2L,

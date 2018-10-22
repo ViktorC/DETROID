@@ -243,6 +243,26 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			arr[i++] = m.toString();
 		return arr[(int) (Math.random()*arr.length)];
 	}
+	private long perft(Position pos, int depth) {
+//		if (depth == 0)
+//			return 1;
+		long leafNodes = 0;
+		List<Move> tacticalMoves = pos.getTacticalMoves();
+		List<Move> quietMoves = pos.getQuietMoves();
+		if (depth == 1)
+			return tacticalMoves.size() + quietMoves.size();
+		for (Move m : tacticalMoves) {
+			pos.makeMove(m);
+			leafNodes += perft(pos, depth - 1);
+			pos.unmakeMove();
+		}
+		for (Move m : quietMoves) {
+			pos.makeMove(m);
+			leafNodes += perft(pos, depth - 1);
+			pos.unmakeMove();
+		}
+		return leafNodes;
+	}
 	@Override
 	public void init() throws Exception {
 		synchronized (lock) {
@@ -931,7 +951,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	}
 	@Override
 	public long perft(int depth) {
-		return game.getPosition().perft(depth);
+		return perft(game.getPosition(), depth);
 	}
 	@Override
 	public EngineParameters getParameters() {

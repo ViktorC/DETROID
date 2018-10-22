@@ -196,20 +196,20 @@ public enum MoveSetBase {
 	 * @return A white pawn's pseudo-legal quiet move set.
 	 */
 	public long getWhitePawnAdvanceSet(long allEmpty) {
-		if (ordinal() > 15)
-			return pawnWhiteAdvanceMoveMask & allEmpty;
 		long adv = pawnWhiteAdvanceMoveMask & allEmpty;
-		return adv | ((adv << 8) & allEmpty);
+		if (ordinal() < 16)
+			adv |= Bitboard.computeWhitePawnAdvanceSets(adv, allEmpty);
+		return adv;
 	}
 	/**
 	 * @param allEmpty All empty squares.
 	 * @return A black pawn's pseudo-legal quiet move set.
 	 */
 	public long getBlackPawnAdvanceSet(long allEmpty) {
-		if (ordinal() < 48)
-			return pawnBlackAdvanceMoveMask & allEmpty;
 		long adv = pawnBlackAdvanceMoveMask & allEmpty;
-		return adv | ((adv >>> 8) & allEmpty);
+		if (ordinal() > 47)
+			adv |= Bitboard.computeBlackPawnAdvanceSets(adv, allEmpty);
+		return adv;
 	}
 	/**
 	 * @param allBlackOccupied All squares occupied by black pieces.
@@ -217,11 +217,7 @@ public enum MoveSetBase {
 	 * @return A white pawn's pseudo-legal complete move set.
 	 */
 	public long getWhitePawnMoveSet(long allBlackOccupied, long allEmpty) {
-		long advSet, captSet = pawnWhiteCaptureMoveMask & allBlackOccupied;
-		advSet = pawnWhiteAdvanceMoveMask & allEmpty;
-		if (ordinal() < 16)
-			advSet |= ((advSet << 8) & allEmpty);
-		return advSet | captSet;
+		return getWhitePawnAdvanceSet(allEmpty) | getWhitePawnCaptureSet(allBlackOccupied);
 	}
 	/**
 	 * @param allWhiteOccupied All squares occupied by white pieces.
@@ -229,11 +225,7 @@ public enum MoveSetBase {
 	 * @return A black pawn's pseudo-legal complete move set.
 	 */
 	public long getBlackPawnMoveSet(long allWhiteOccupied, long allEmpty) {
-		long advSet, captSet = pawnBlackCaptureMoveMask & allWhiteOccupied;
-		advSet = pawnBlackAdvanceMoveMask & allEmpty;
-		if (ordinal() > 47)
-			advSet |= ((advSet >>> 8) & allEmpty);
-		return advSet | captSet;
+		return getBlackPawnAdvanceSet(allEmpty) | getBlackPawnCaptureSet(allWhiteOccupied);
 	}
 	
 }
