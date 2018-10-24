@@ -1,8 +1,5 @@
 package net.viktorc.detroid.framework.engine;
 
-import net.viktorc.detroid.framework.engine.Bitboard.Square;
-import net.viktorc.detroid.framework.util.BitOperations;
-
 /**
  * A class for storing position state information.
  * 

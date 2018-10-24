@@ -565,14 +565,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes,
 			Integer mateDistance, Long searchTime, Boolean infinite) {
 		synchronized (lock) {
-			Set<Move> allowedMoves;
-			int numOfSearchThreads;
-			long bookSearchStart;
-			boolean analysisMode;
-			boolean doPonder, doInfinite;
-			SearchResults results;
-			doPonder = false;
-			doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null &&
+            boolean doPonder = false;
+            boolean doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null &&
 					blackTime == null && depth == null && nodes == null && mateDistance == null && searchTime == null);
 			bookMove = false;
 			stop = ponderHit = false;
@@ -590,14 +584,14 @@ public class Detroid implements ControllerEngine, TunableEngine {
 						"Black - " + game.getBlackPlayerName());
 				newGame = false;
 			}
-			results = null;
-			analysisMode = (Boolean) options.get(uciAnalysis);
+            SearchResults results = null;
+            boolean analysisMode = (Boolean) options.get(uciAnalysis);
 			// Search the book if possible.
 			if (book != null && !deterministicZeroDepthMode && !analysisMode && !outOfBook &&
 					searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
 					mateDistance == null && searchTime == null && (infinite == null || !infinite) &&
 					(Boolean) options.get(ownBook)) {
-				bookSearchStart = System.currentTimeMillis();
+				long bookSearchStart = System.currentTimeMillis();
 				search = executor.submit(() -> {
 					Move bookMove;
 					try {
@@ -639,6 +633,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 					} else
 						doPonder = true;
 				}
+                Set<Move> allowedMoves;
 				// Set root move restrictions if there are any.
 				if (searchMoves != null && !searchMoves.isEmpty()) {
 					allowedMoves = new HashSet<>();
@@ -656,9 +651,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				Search: {
 					if (egtb.isProbingLibLoaded() && egtb.isInit())
 						egtb.resetStats();
-					numOfSearchThreads = deterministicZeroDepthMode ? 1 : (int) options.get(this.numOfSearchThreads);
+					int nThreads = deterministicZeroDepthMode ? 1 : (int) options.get(numOfSearchThreads);
 					Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo,
-							numOfSearchThreads, tT, gen, analysisMode, doPonder || doInfinite, depth == null ?
+							nThreads, tT, gen, analysisMode, doPonder || doInfinite, depth == null ?
 							(mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ?
 							Long.MAX_VALUE : nodes, allowedMoves);
 					search = gameTreeSearch;

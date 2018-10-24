@@ -43,27 +43,9 @@ class DetroidSearchInformation extends SearchInformation {
 	// A lock ensuring integrity among the accessed field values.
 	private final ReadWriteLock lock;
 	
-	/**
-	 * Constructs a default instance.
-	 */
 	DetroidSearchInformation() {
 		lock = new ReentrantReadWriteLock(true);
 	}
-	/**
-	 * Sets the search results according to the specified parameters.
-	 * 
-	 * @param pvLine
-	 * @param currentMove
-	 * @param currentMoveNumber
-	 * @param nominalDepth
-	 * @param selectiveDepth
-	 * @param score
-	 * @param scoreType
-	 * @param nodes
-	 * @param time
-	 * @param egtbHits
-	 * @param stats
-	 */
 	void set(List<Move> pvLine, Move currentMove, int currentMoveNumber,
 			short nominalDepth, short selectiveDepth, short score, ScoreType scoreType,
 			long nodes, long time, long egtbHits, String stats) {
@@ -86,27 +68,12 @@ class DetroidSearchInformation extends SearchInformation {
 			lock.writeLock().unlock();
 		}
 	}
-	/**
-	 * Returns a read lock for the instance.
-	 * 
-	 * @return
-	 */
 	Lock getLock() {
 		return lock.readLock();
 	}
-	/**
-	 * Returns the principal variation of the search as a list of moves.
-	 * 
-	 * @return
-	 */
 	List<Move> getPvMoveList() {
 		return pvLine;
 	}
-	/**
-	 * Returns a one-line String representation of the principal variation result.
-	 * 
-	 * @return
-	 */
 	String getPvString() {
 		lock.readLock().lock();
 		try {
@@ -119,11 +86,6 @@ class DetroidSearchInformation extends SearchInformation {
 			lock.readLock().unlock();
 		}
 	}
-	/**
-	 * Returns a String of some search statistics such as greatest nominal depth, score, search speed, etc.
-	 * 
-	 * @return
-	 */
 	String getStatString() {
 		lock.readLock().lock();
 		try {

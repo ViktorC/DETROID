@@ -13,11 +13,6 @@ class DetroidDebugInfo extends DebugInformation {
 
 	private String info;
 	
-	/**
-	 * Sets the content of the instance and notifies all observers.
-	 * 
-	 * @param info
-	 */
 	void set(String info) {
 		this.info = info;
 		setChanged();

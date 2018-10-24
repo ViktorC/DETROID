@@ -11,7 +11,7 @@ import net.viktorc.detroid.framework.tuning.ParameterType;
  * @author Viktor
  *
  */
-final class DetroidParameters extends EngineParameters {
+class DetroidParameters extends EngineParameters {
 
 	// Piece values.
 	@Parameter (binaryLengthLimit = 0)
