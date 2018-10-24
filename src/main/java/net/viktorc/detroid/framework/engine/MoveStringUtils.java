@@ -296,7 +296,7 @@ public class MoveStringUtils {
                 capturedPiece = (byte) Piece.NULL.ordinal();
                 type = (byte) MoveType.NORMAL.ordinal();
                 from = -1;
-                restriction = Bitboard.File.values()[chars[0] - 'a'].getBitboard();
+                restriction = Bitboard.File.values()[chars[1] - 'a'].getBitboard();
             } else if (san.matches("^[KQRBN][1-8][a-h][1-8][+#]?[/?!]{0,2}$")) {
                 to = (byte) ((chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
                 movedPiece = (byte) (Arrays.stream(Piece.values())
@@ -314,7 +314,7 @@ public class MoveStringUtils {
                 capturedPiece = (byte) Piece.NULL.ordinal();
                 type = (byte) MoveType.NORMAL.ordinal();
                 from = -1;
-                restriction = Bitboard.File.values()[chars[0] - 'a'].getBitboard() &
+                restriction = Bitboard.File.values()[chars[1] - 'a'].getBitboard() &
                         Bitboard.Rank.values()[chars[2] - '1'].getBitboard();
             } else if (san.matches("^[KQRBN]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
                 to = (byte) ((int) (chars[2] - 'a') + 8*(Integer.parseInt(Character.toString(chars[3])) - 1));
