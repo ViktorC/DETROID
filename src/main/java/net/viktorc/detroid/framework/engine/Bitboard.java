@@ -564,6 +564,7 @@ public class Bitboard {
 		 * Returns the file of the chess board on which the input parameter square lies.
 		 * 
 		 * @param sqrInd The index of the square.
+		 * @return The file on which the square the index points to is.
 		 */
 		public static File getBySquareIndex(int sqrInd) {
 			return values()[sqrInd & 7];
@@ -604,6 +605,7 @@ public class Bitboard {
 		 * Returns the rank of the chess board on which the input parameter square lies.
 		 *
 		 * @param sqrInd The index of the square.
+		 * @return The rank on which the square the index points to is.
 		 */
 		public static Rank getBySquareIndex(int sqrInd) {
 			return values()[sqrInd >>> 3];
@@ -654,6 +656,7 @@ public class Bitboard {
 		 * Returns the diagonal of the chess board on which the input parameter square lies.
 		 *
 		 * @param sqrInd The index of a square.
+		 * @return The diagonal on which the square the index points to is.
 		 */
 		public static Diagonal getBySquareIndex(int sqrInd) {
 			return values()[(sqrInd & 7) + (sqrInd >>> 3)];
@@ -703,6 +706,7 @@ public class Bitboard {
 		 * Returns the anti-diagonal of the chess board on which the input parameter square lies.
 		 *
 		 * @param sqrInd The index of a square.
+		 * @return The anti-diagonal on which the square the index points to is.
 		 */
 		public static AntiDiagonal getBySquareIndex(int sqrInd) {
 			return values()[(sqrInd & 7) + (7 - (sqrInd >>> 3))];

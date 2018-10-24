@@ -243,25 +243,25 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
 	 * the probing library.
 	 * 
 	 * @param intStats A long array of length 14. The elements of the array after 
-	 * the execution of the method contain the following statistics:</br>
-	 * <code>[0] - WDL_EASY_HITS</code></br>
-	 * <code>[1] - WDL_HARD_PROB</code></br>
-	 * <code>[2] - WDL_SOFT_PROB</code></br>
-	 * <code>[3] - WDL_CACHE_SIZE</code></br>
-	 * <code>[4] - DTM_EASY_HITS</code></br>
-	 * <code>[5] - DTM_HARD_PROB</code></br>
-	 * <code>[6] - DTM_SOFT_PROB</code></br>
-	 * <code>[7] - DTM_CACHE_SIZE</code></br>
-	 * <code>[8] - TOTAL_HITS</code></br>
-	 * <code>[9] - MEMORY_HITS</code></br>
-	 * <code>[10] - DRIVE_HITS</code></br>
-	 * <code>[11] - DRIVE_MISSES</code></br>
-	 * <code>[12] - BYTES_READ</code></br>
+	 * the execution of the method contain the following statistics:<br>
+	 * <code>[0] - WDL_EASY_HITS</code><br>
+	 * <code>[1] - WDL_HARD_PROB</code><br>
+	 * <code>[2] - WDL_SOFT_PROB</code><br>
+	 * <code>[3] - WDL_CACHE_SIZE</code><br>
+	 * <code>[4] - DTM_EASY_HITS</code><br>
+	 * <code>[5] - DTM_HARD_PROB</code><br>
+	 * <code>[6] - DTM_SOFT_PROB</code><br>
+	 * <code>[7] - DTM_CACHE_SIZE</code><br>
+	 * <code>[8] - TOTAL_HITS</code><br>
+	 * <code>[9] - MEMORY_HITS</code><br>
+	 * <code>[10] - DRIVE_HITS</code><br>
+	 * <code>[11] - DRIVE_MISSES</code><br>
+	 * <code>[12] - BYTES_READ</code><br>
 	 * <code>[13] - FILES_OPENED</code>
 	 * @param fpStats A double array of length 3. The elements of the array after 
-	 * the execution of the method contain the following statistics:</br>
-	 * <code>[0] - WDL_OCCUPANCY</code></br>
-	 * <code>[1] - DTM_OCCUPANCY</code></br>
+	 * the execution of the method contain the following statistics:<br>
+	 * <code>[0] - WDL_OCCUPANCY</code><br>
+	 * <code>[1] - DTM_OCCUPANCY</code><br>
 	 * <code>[2] - MEMORY_EFFICIENCY</code>
 	 */
 	public native void getStats(long[] intStats, double[] fpStats);

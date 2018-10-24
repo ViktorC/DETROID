@@ -58,6 +58,7 @@ public class Move implements Comparable<Move> {
 	 * Parses a move encoded in a 32 bitboard integer.
 	 *
 	 * @param move The encoded move.
+	 * @return The decoded move.
 	 */
 	public static Move toMove(int move) {
 		byte from, to, movedPiece, capturedPiece, type;
