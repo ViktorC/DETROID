@@ -25,8 +25,8 @@ public class PolyglotBook extends OpeningBook {
 	 * It instantiates a Book object on the opening book file specified by filePath; if the file cannot be accessed,
 	 * an IOException is thrown.
 	 * 
-	 * @param filePath
-	 * @throws Exception
+	 * @param filePath The path to the book.
+	 * @throws Exception If the book cannot be accessed.
 	 */
 	public PolyglotBook(String filePath) throws Exception {
 		super(filePath);
@@ -37,23 +37,16 @@ public class PolyglotBook extends OpeningBook {
 	 * (as an alternative book for when out of the main book); if the main opening book file cannot be accessed, an
 	 * IOException is thrown, if the secondary opening book file cannot be accessed, it is not set.
 	 * 
-	 * @param filePath
-	 * @param secondaryBookFilePath
-	 * @throws IOException
-	 * @throws URISyntaxException 
+	 * @param filePath The file path to the primary book.
+	 * @param secondaryBookFilePath The file path to the secondary book.
+	 * @throws IOException If the books cannot be read.
+	 * @throws URISyntaxException If the file paths are illegal.
 	 */
 	public PolyglotBook(String filePath, String secondaryBookFilePath) throws Exception {
 		this(filePath);
 		if (secondaryBookFilePath != null)
 			secondaryBook = new PolyglotBook(secondaryBookFilePath);
 	}
-	/**
-	 * Returns a list of all the entries stored in the book whose Book instance it is called on. It uses a binary
-	 * search algorithm to search through the entries.
-	 * 
-	 * @param pos The position for which the entries are to be returned.
-	 * @return
-	 */
 	private ArrayList<Entry> getRelevantEntries(Position pos) {
 		long low, mid, hi, temp = -1;
 		long readerPos, currKey, key = gen.generatePolyglotHashKey(pos);
@@ -118,14 +111,6 @@ public class PolyglotBook extends OpeningBook {
 			return null;
 		}
 	}
-	/**
-	 * Parses a short in which moves are encoded in PolyGlot books and creates a Pure Algebraic Coordinate Notation
-	 * string from it.
-	 * 
-	 * @param polyglotMove
-	 * @return
-	 * @throws IllegalArgumentException
-	 */
 	private static String polyglotMoveToPACN(Position pos, short polyglotMove) throws IllegalArgumentException {
 		String toFile = "" + (char) ((polyglotMove & 7) + 'a');
 		String toRank = "" + (((polyglotMove >>> 3) & 7) + 1);
@@ -206,7 +191,7 @@ public class PolyglotBook extends OpeningBook {
 			break;
 			default: return null;
 		}
-		return e == null ? null : pos.parsePACN(polyglotMoveToPACN(pos, e.move));
+		return e == null ? null : MoveStringUtils.parsePACN(pos, polyglotMoveToPACN(pos, e.move));
 	}
 	
 	/**

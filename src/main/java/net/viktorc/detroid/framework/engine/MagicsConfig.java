@@ -1,7 +1,7 @@
 package net.viktorc.detroid.framework.engine;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.List;
@@ -15,10 +15,10 @@ import java.util.Properties;
  */
 public class MagicsConfig {
 
-	private static final String PROPERTIES_FILE_PATH = "magics.properties";
+	private static final String PROPERTIES_FILE = "/magics.properties";
 	private static final String ROOK_KEY_FORMAT = "R%d";
 	private static final String BISHOP_KEY_FORMAT = "B%d";
-	private static final String VALUE_SEPARATOR = "-";
+	private static final String VALUE_SEPARATOR = ":";
 	private static final String DESCRIPTION = "Magic numbers and magic shift values.";
 	private static final MagicsConfig INSTANCE = new MagicsConfig();
 
@@ -82,7 +82,7 @@ public class MagicsConfig {
 	public synchronized void load() throws IOException {
 		if (loaded)
 			return;
-		try (FileInputStream in = new FileInputStream(PROPERTIES_FILE_PATH)) {
+		try (InputStream in = getClass().getResourceAsStream(PROPERTIES_FILE)) {
 			props.load(in);
 		}
 		loaded = true;
@@ -102,13 +102,16 @@ public class MagicsConfig {
 	 * @throws IOException If the properties file cannot be written to.
 	 */
 	public synchronized void save() throws IOException {
-		try (FileOutputStream out = new FileOutputStream(PROPERTIES_FILE_PATH)) {
+		String filePath = getClass().getResource(PROPERTIES_FILE).getPath();
+		System.out.println(filePath);
+		try (FileOutputStream out = new FileOutputStream(filePath)) {
 			props.store(out, DESCRIPTION);
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
 		MagicsConfig config = MagicsConfig.getInstance();
+		config.load();
 		List<Map.Entry<Long,Byte>> rookMagics = Bitboard.generateAllMagics(true);
 		List<Map.Entry<Long,Byte>> bishopMagics = Bitboard.generateAllMagics(false);
 		for (int i = 0; i < 64; i++) {
@@ -116,6 +119,7 @@ public class MagicsConfig {
 			config.setBishopMagics(i, bishopMagics.get(i));
 		}
 		config.save();
+		config.load();
 	}
 
 }

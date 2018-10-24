@@ -27,10 +27,10 @@ public enum MoveSetBase {
 
 	private final long kingMoveMask;
 	private final long knightMoveMask;
-	private final long pawnWhiteAdvanceMoveMask;
-	private final long pawnBlackAdvanceMoveMask;
-	private final long pawnWhiteCaptureMoveMask;
-	private final long pawnBlackCaptureMoveMask;
+	private final long whitePawnAdvanceMoveMask;
+	private final long blackPawnAdvanceMoveMask;
+	private final long whitePawnCaptureMoveMask;
+	private final long blackPawnCaptureMoveMask;
 	private final long rookOccupancyMask;
 	private final long bishopOccupancyMask;
 	private final byte rookMagicShift;
@@ -45,10 +45,10 @@ public enum MoveSetBase {
 		long bit = Square.values()[sqrInd].getBitboard();
 		kingMoveMask = Bitboard.computeKingMoveSets(bit, Bitboard.FULL_BOARD);
 		knightMoveMask = Bitboard.computeKnightMoveSets(bit, Bitboard.FULL_BOARD);
-		pawnWhiteAdvanceMoveMask = Bitboard.computeWhitePawnAdvanceSets(bit, Bitboard.FULL_BOARD);
-		pawnBlackAdvanceMoveMask = Bitboard.computeBlackPawnAdvanceSets(bit, Bitboard.FULL_BOARD);
-		pawnWhiteCaptureMoveMask = Bitboard.computeWhitePawnCaptureSets(bit, Bitboard.FULL_BOARD);
-		pawnBlackCaptureMoveMask = Bitboard.computeBlackPawnCaptureSets(bit, Bitboard.FULL_BOARD);
+		whitePawnAdvanceMoveMask = Bitboard.computeWhitePawnAdvanceSets(bit, Bitboard.FULL_BOARD);
+		blackPawnAdvanceMoveMask = Bitboard.computeBlackPawnAdvanceSets(bit, Bitboard.FULL_BOARD);
+		whitePawnCaptureMoveMask = Bitboard.computeWhitePawnCaptureSets(bit, Bitboard.FULL_BOARD);
+		blackPawnCaptureMoveMask = Bitboard.computeBlackPawnCaptureSets(bit, Bitboard.FULL_BOARD);
 		rookOccupancyMask = Bitboard.computeRookOccupancyMasks(bit);
 		bishopOccupancyMask = Bitboard.computeBishopOccupancyMasks(bit);
 		MagicsConfig magicsConfig = MagicsConfig.getInstance();
@@ -114,26 +114,26 @@ public enum MoveSetBase {
 	/**
 	 * @return A simple white pawn advance mask from the square indexed by this enum instance.
 	 */
-	public long getPawnWhiteAdvanceMoveMask() {
-		return pawnWhiteAdvanceMoveMask;
+	public long getWhitePawnAdvanceMoveMask() {
+		return whitePawnAdvanceMoveMask;
 	}
 	/**
 	 * @return A simple black pawn advance mask from the square indexed by this enum instance.
 	 */
-	public long getPawnBlackAdvanceMoveMask() {
-		return pawnBlackAdvanceMoveMask;
+	public long getBlackPawnAdvanceMoveMask() {
+		return blackPawnAdvanceMoveMask;
 	}
 	/**
 	 * @return A simple white pawn capture mask from the square indexed by this enum instance.
 	 */
-	public long getPawnWhiteCaptureMoveMask() {
-		return pawnWhiteCaptureMoveMask;
+	public long getWhitePawnCaptureMoveMask() {
+		return whitePawnCaptureMoveMask;
 	}
 	/**
 	 * @return A simple black pawn capture mask from the square indexed by this enum instance.
 	 */
-	public long getPawnBlackCaptureMoveMask() {
-		return pawnBlackCaptureMoveMask;
+	public long getBlackPawnCaptureMoveMask() {
+		return blackPawnCaptureMoveMask;
 	}
 	/**
 	 * @param allNonSameColorOccupied All squares not occupied by pieces of the same color as the king.
@@ -148,8 +148,8 @@ public enum MoveSetBase {
 	 * @return A queen's pseudo-legal move set given the occupancies fed to the method.
 	 */
 	public long getQueenMoveSet(long allNonSameColorOccupied, long allOccupied) {
-		return (rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
-				bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) &
+		return (rookMoveSets[(int) (((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] |
+				bishopMoveSets[(int) (((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)]) &
 				allNonSameColorOccupied;
 	}
 	/**
@@ -158,7 +158,7 @@ public enum MoveSetBase {
 	 * @return A rook's pseudo-legal move set given the occupancies fed to the method.
 	 */
 	public long getRookMoveSet(long allNonSameColorOccupied, long allOccupied) {
-		return rookMoveSets[(int)(((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] &
+		return rookMoveSets[(int) (((rookOccupancyMask & allOccupied)*rookMagicNumber) >>> rookMagicShift)] &
 				allNonSameColorOccupied;
 	}
 	/**
@@ -167,7 +167,7 @@ public enum MoveSetBase {
 	 * @return A bishop's pseudo-legal move set given the occupancies fed to the method.
 	 */
 	public long getBishopMoveSet(long allNonSameColorOccupied, long allOccupied) {
-		return bishopMoveSets[(int)(((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] &
+		return bishopMoveSets[(int) (((bishopOccupancyMask & allOccupied)*bishopMagicNumber) >>> bishopMagicShift)] &
 				allNonSameColorOccupied;
 	}
 	/**
@@ -182,21 +182,21 @@ public enum MoveSetBase {
 	 * @return A white pawn's pseudo-legal attack set.
 	 */
 	public long getWhitePawnCaptureSet(long allBlackOccupied) {
-		return pawnWhiteCaptureMoveMask & allBlackOccupied;
+		return whitePawnCaptureMoveMask & allBlackOccupied;
 	}
 	/**
 	 * @param allWhiteOccupied All squares occupied by white pieces.
 	 * @return A black pawn's pseudo-legal attack set.
 	 */
 	public long getBlackPawnCaptureSet(long allWhiteOccupied) {
-		return pawnBlackCaptureMoveMask & allWhiteOccupied;
+		return blackPawnCaptureMoveMask & allWhiteOccupied;
 	}
 	/**
 	 * @param allEmpty All empty squares.
 	 * @return A white pawn's pseudo-legal quiet move set.
 	 */
 	public long getWhitePawnAdvanceSet(long allEmpty) {
-		long adv = pawnWhiteAdvanceMoveMask & allEmpty;
+		long adv = whitePawnAdvanceMoveMask & allEmpty;
 		if (ordinal() < 16)
 			adv |= Bitboard.computeWhitePawnAdvanceSets(adv, allEmpty);
 		return adv;
@@ -206,7 +206,7 @@ public enum MoveSetBase {
 	 * @return A black pawn's pseudo-legal quiet move set.
 	 */
 	public long getBlackPawnAdvanceSet(long allEmpty) {
-		long adv = pawnBlackAdvanceMoveMask & allEmpty;
+		long adv = blackPawnAdvanceMoveMask & allEmpty;
 		if (ordinal() > 47)
 			adv |= Bitboard.computeBlackPawnAdvanceSets(adv, allEmpty);
 		return adv;

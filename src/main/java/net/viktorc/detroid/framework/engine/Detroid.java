@@ -1,7 +1,6 @@
 package net.viktorc.detroid.framework.engine;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import net.viktorc.detroid.framework.engine.OpeningBook.SelectionModel;
-import net.viktorc.detroid.framework.engine.Game.Side;
 import net.viktorc.detroid.framework.engine.GaviotaTableBaseJNI.CompressionScheme;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
 import net.viktorc.detroid.framework.tuning.TunableEngine;
@@ -35,8 +33,8 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.GameState;
 
 /**
- * A UCI compatible, tunable chess engine that utilizes magic bitboard boards and most search heuristics and supports Polyglot
- * opening books.
+ * A UCI compatible, tunable chess engine that utilizes magic bitboards and most search heuristics and supports
+ * Polyglot opening books and Gaviota endgame tablebases.
  * 
  * @author Viktor
  *
@@ -164,8 +162,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			Long blackIncrement, Integer movesToGo, int phaseScore) {
 		whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
 		blackIncrement = blackIncrement == null ? 0 : blackIncrement;
-		if ((game.getSideToMove() == Side.WHITE && (whiteTime == null || whiteTime <= 0) ||
-				(game.getSideToMove() == Side.BLACK && (blackTime == null || blackTime <= 0))))
+		if ((game.isWhitesTurn() && (whiteTime == null || whiteTime <= 0) ||
+				(!game.isWhitesTurn() && (blackTime == null || blackTime <= 0))))
 			return 0;
 		if (movesToGo == null) {
 			movesToGo = movesLeftBasedOnPhaseScore(phaseScore);
@@ -173,7 +171,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 					"Phase score - " + phaseScore + "/256\n" +
 					"Expected number of moves left until end - " + movesToGo);
 		}
-		long target = game.getSideToMove() == Side.WHITE ?
+		long target = game.isWhitesTurn() ?
 				Math.max(1, (whiteTime + Math.max(0, movesToGo)*whiteIncrement)/Math.max(1, movesToGo)) :
 				Math.max(1, (blackTime + Math.max(0, movesToGo)*blackIncrement)/Math.max(1, movesToGo));
 		// Extended thinking time for the first moves out of the book based on Hyatt's Using Time Wisely.
@@ -219,8 +217,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				if (!doTerminate && !search.isDone() && doExtendSearch()) {
 					try {
 						if (debugMode) debugInfo.set("Search extended.");
-						search.get(computeSearchTime(game.getSideToMove() == Side.WHITE ? whiteTime - time :
-								whiteTime, game.getSideToMove() == Side.WHITE ? blackTime : blackTime - time,
+						search.get(computeSearchTime(game.isWhitesTurn() ? whiteTime - time :
+								whiteTime, game.isWhitesTurn() ? blackTime : blackTime - time,
 								whiteIncrement, blackIncrement, movesToGo, phaseScore), TimeUnit.MILLISECONDS);
 					} catch (TimeoutException e) {
 						if (debugMode) debugInfo.set("Extra time up");
@@ -247,16 +245,11 @@ public class Detroid implements ControllerEngine, TunableEngine {
 //		if (depth == 0)
 //			return 1;
 		long leafNodes = 0;
-		List<Move> tacticalMoves = pos.getTacticalMoves();
-		List<Move> quietMoves = pos.getQuietMoves();
-		if (depth == 1)
-			return tacticalMoves.size() + quietMoves.size();
-		for (Move m : tacticalMoves) {
-			pos.makeMove(m);
-			leafNodes += perft(pos, depth - 1);
-			pos.unmakeMove();
+		List<Move> moves = pos.getMoves();
+		if (depth == 1) {
+			return moves.size();
 		}
-		for (Move m : quietMoves) {
+		for (Move m : moves) {
 			pos.makeMove(m);
 			leafNodes += perft(pos, depth - 1);
 			pos.unmakeMove();
@@ -518,8 +511,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	public boolean setPosition(String fen) {
 		synchronized (lock) {
 			try {
-				Position0 pos = fen.equals(START_POSITION) ? Position0.parse(Position0.START_POSITION_FEN) :
-						Position0.parse(fen);
+				Position pos = fen.equals(START_POSITION) ? Position.parse(Position.START_POSITION_FEN) :
+						Position.parse(fen);
 				/* If the start position of the game is different or the engine got the new game signal, reset the game
 				 * and the hash tables. */
 				if (newGame) {
@@ -542,8 +535,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 							eT.clear();
 							gen = 0;
 						} else {
-							tT.remove(e -> e.generation < gen - params.tTentryLifeCycle);
-							eT.remove(e -> e.generation < gen - params.eTentryLifeCycle);
+							tT.remove(e -> e.getGeneration() < gen - params.tTentryLifeCycle);
+							eT.remove(e -> e.getGeneration() < gen - params.eTentryLifeCycle);
 						}
 					}
 					game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(),
@@ -585,7 +578,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 			stop = ponderHit = false;
 			// Set the names of the players once it is known which colour we are playing.
 			if (newGame) {
-				if (game.getSideToMove() == Side.WHITE) {
+				if (game.isWhitesTurn()) {
 					game.setWhitePlayerName(NAME);
 					game.setBlackPlayerName((String) options.get(uciOpponent));
 				} else {
@@ -629,9 +622,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				if (!stop && !bookMove) {
 					if (debugMode) debugInfo.set("No book move found. Out of book.");
 					outOfBook = true;
-					search(searchMoves, ponder, game.getSideToMove() == Side.WHITE ? (whiteTime != null ?
+					search(searchMoves, ponder, game.isWhitesTurn() ? (whiteTime != null ?
 							whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
-							game.getSideToMove() == Side.WHITE ? blackTime : (blackTime != null ?
+							game.isWhitesTurn() ? blackTime : (blackTime != null ?
 							blackTime - (System.currentTimeMillis() - bookSearchStart) : null), whiteIncrement,
 							blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
 				}
@@ -650,8 +643,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
 				if (searchMoves != null && !searchMoves.isEmpty()) {
 					allowedMoves = new HashSet<>();
 					try {
+						Position pos = game.getPosition();
 						for (String s : searchMoves)
-							allowedMoves.add(game.getPosition().parsePACN(s));
+							allowedMoves.add(MoveStringUtils.parsePACN(pos, s));
 					} catch (ChessParseException | NullPointerException e) {
 						if (debugMode) debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
 						return null;
@@ -835,7 +829,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	}
 	@Override
 	public boolean isWhitesTurn() {
-		return game.getSideToMove() == Side.WHITE;
+		return game.isWhitesTurn();
 	}
 	@Override
 	public String getStartPosition() {
@@ -849,20 +843,14 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	}
 	@Override
 	public List<String> getMoveHistory() {
-		List<String> moves = new ArrayList<>();
-		for (Move m : game.getPosition().moveList)
-			moves.add(m.toString());
+		List<String> moves = game.getPosition().getMoveHistory().stream()
+				.map(Object::toString).collect(Collectors.toList());
 		Collections.reverse(moves);
 		return moves;
 	}
 	@Override
 	public List<String> getLegalMoves() {
-		Position0 pos = game.getPosition();
-		List<Move> moves = pos.getMoves();
-		List<String> moveStrings = new ArrayList<>(moves.size());
-		for (Move m : moves)
-			moveStrings.add(m.toString());
-		return moveStrings;
+		return game.getPosition().getMoves().stream().map(Object::toString).collect(Collectors.toList());
 	}
 	@Override
 	public boolean setGame(String pgn) {
@@ -920,8 +908,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	@Override
 	public String convertPACNToSAN(String move) {
 		try {
-			Position0 pos = game.getPosition();
-			return pos.toSAN(pos.parsePACN(move));
+			Position pos = game.getPosition();
+			return MoveStringUtils.toSAN(pos, MoveStringUtils.parsePACN(pos, move));
 		} catch (ChessParseException | NullPointerException e) {
 			if (debugMode) debugInfo.set("Error while converting PACN to SAN: " + e.getMessage());
 			throw new IllegalArgumentException("The parameter move cannot be converted to SAN.", e);
@@ -930,8 +918,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 	@Override
 	public String convertSANToPACN(String move) {
 		try {
-			Position0 pos = game.getPosition();
-			return pos.parseSAN(move).toString();
+			return MoveStringUtils.parseSAN(game.getPosition(), move).toString();
 		} catch (ChessParseException | NullPointerException e) {
 			if (debugMode) debugInfo.set("Error while converting SAN to PACN: " + e.getMessage());
 			throw new IllegalArgumentException("The parameter move cannot be converted to PACN.", e);

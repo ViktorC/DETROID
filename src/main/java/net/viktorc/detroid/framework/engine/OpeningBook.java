@@ -26,8 +26,8 @@ public abstract class OpeningBook implements Closeable {
 	 * It instantiates a Book object on the opening book file specified by filePath; if the file cannot be accessed,
 	 * an IOException is thrown.
 	 * 
-	 * @param filePath
-	 * @throws Exception
+	 * @param filePath The path to the book.
+	 * @throws Exception If the book cannot be accessed.
 	 */
 	protected OpeningBook(String filePath) throws Exception {
 		File file = new File(filePath);
@@ -38,7 +38,7 @@ public abstract class OpeningBook implements Closeable {
 	/**
 	 * Returns the path to the main book file this object has been instantiated on.
 	 * 
-	 * @return
+	 * @return The file path to the primary book.
 	 */
 	public String getPrimaryFilePath() {
 		return path.toString();
@@ -46,7 +46,7 @@ public abstract class OpeningBook implements Closeable {
 	/**
 	 * Returns the path to the secondary book file.
 	 * 
-	 * @return
+	 * @return The file path to the secondary book file.
 	 */
 	public String getSecondaryFilePath() {
 		return secondaryBook == null ? null : secondaryBook.getPrimaryFilePath();
