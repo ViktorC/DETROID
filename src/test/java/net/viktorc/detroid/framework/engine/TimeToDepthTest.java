@@ -49,6 +49,7 @@ public final class TimeToDepthTest {
 				((double) time)/records.size()/1000000, ((double) nodes)*1000000/time);
 		return time;
 	}
+
 	@Test
 	public void test() throws Exception {
 		TTDSuite suite = new TTDSuite(TTD_PATH);
