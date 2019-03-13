@@ -13,7 +13,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import net.viktorc.detroid.framework.engine.Detroid;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.PerftRecord;
 import net.viktorc.detroid.framework.validation.PerftSuite;
@@ -41,10 +40,12 @@ public final class PerfTest {
 			data.add(new Object[] { r });
 		return data;
 	}
+
 	@Test
 	public void perft() throws Exception {
 		Assert.assertTrue(PerftSuite.perft(CONTROLLER, record));
 	}
+
 	@AfterClass
 	public static void cleanUp() {
 		CONTROLLER.close();

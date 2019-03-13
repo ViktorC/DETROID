@@ -13,7 +13,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import net.viktorc.detroid.framework.engine.Detroid;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.EPDRecord;
@@ -45,10 +44,12 @@ public final class WinAtChessTest {
 			data.add(new Object[] { r });
 		return data;
 	}
+
 	@Test
 	public void search() throws Exception {
 		Assume.assumeTrue(EPDSuite.searchTest(ENGINE, CONTROLLER, record, TIME_PER_POSITION));
 	}
+
 	@AfterClass
 	public static void cleanUp() {
 		CONTROLLER.close();
