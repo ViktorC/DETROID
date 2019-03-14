@@ -395,6 +395,48 @@ public final class MainController implements AutoCloseable, Observer {
   }
 
   /**
+   * Updates the interface with the results of the search and makes the move.
+   *
+   * @param res The search results.
+   * @param timeLeft The time left on the clock of the player that is up.
+   */
+  private void setSearchResults(SearchResults res, long timeLeft) {
+    if (controllerEngine.isWhitesTurn()) {
+      whiteTime.set(timeLeft);
+    } else {
+      blackTime.set(timeLeft);
+    }
+    String bestMove = res.getBestMove();
+    ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
+    Double adjustedScore;
+    if (res.getScore().isPresent()) {
+      double score = res.getScore().get();
+      ScoreType type = res.getScoreType().orElseThrow(RuntimeException::new);
+      if (controllerEngine.isWhitesTurn()) {
+        score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score / 100;
+      } else {
+        score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score / 100;
+      }
+      adjustedScore = Math.min(MAX_ABS_Y, Math.max(-MAX_ABS_Y, score));
+    } else {
+      adjustedScore = null;
+    }
+    boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
+    Platform.runLater(() -> {
+      if (isLegal) {
+        if (adjustedScore != null) {
+          dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
+          graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
+          graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
+        }
+        makeMove(bestMove);
+      } else {
+        handleIllegalMove(bestMove);
+      }
+    });
+  }
+
+  /**
    * Prompts the search engine to start searching the current position.
    */
   private synchronized void startSearch() {
@@ -430,39 +472,7 @@ public final class MainController implements AutoCloseable, Observer {
       if (isReset) {
         return;
       }
-      if (controllerEngine.isWhitesTurn()) {
-        whiteTime.set(timeLeft);
-      } else {
-        blackTime.set(timeLeft);
-      }
-      String bestMove = res.getBestMove();
-      ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
-      Double adjustedScore;
-      if (res.getScore().isPresent()) {
-        double score = res.getScore().get();
-        ScoreType type = res.getScoreType().orElseThrow(RuntimeException::new);
-        if (controllerEngine.isWhitesTurn()) {
-          score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score / 100;
-        } else {
-          score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score / 100;
-        }
-        adjustedScore = Math.min(MAX_ABS_Y, Math.max(-MAX_ABS_Y, score));
-      } else {
-        adjustedScore = null;
-      }
-      boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
-      Platform.runLater(() -> {
-        if (isLegal) {
-          if (adjustedScore != null) {
-            dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
-            graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
-            graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
-          }
-          makeMove(bestMove);
-        } else {
-          handleIllegalMove(bestMove);
-        }
-      });
+      setSearchResults(res, timeLeft);
     });
   }
 
@@ -527,39 +537,7 @@ public final class MainController implements AutoCloseable, Observer {
           blackTime.get() - timeControl.getBlackInc() :
           whiteTime.get() - timeControl.getWhiteInc()));
       timeLeft -= timeSpent;
-      if (controllerEngine.isWhitesTurn()) {
-        whiteTime.set(timeLeft);
-      } else {
-        blackTime.set(timeLeft);
-      }
-      String bestMove = res.getBestMove();
-      ponderMove = res.getSuggestedPonderMove().isPresent() ? res.getSuggestedPonderMove().get() : null;
-      Double adjustedScore;
-      if (res.getScore().isPresent()) {
-        double score = res.getScore().get();
-        ScoreType type = res.getScoreType().orElseThrow(RuntimeException::new);
-        if (controllerEngine.isWhitesTurn()) {
-          score = type == ScoreType.MATE ? score > 0 ? MAX_ABS_Y : -MAX_ABS_Y : score / 100;
-        } else {
-          score = type == ScoreType.MATE ? score > 0 ? -MAX_ABS_Y : MAX_ABS_Y : -score / 100;
-        }
-        adjustedScore = Math.min(MAX_ABS_Y, Math.max(-MAX_ABS_Y, score));
-      } else {
-        adjustedScore = null;
-      }
-      boolean isLegal = controllerEngine.getLegalMoves().contains(bestMove);
-      Platform.runLater(() -> {
-        if (isLegal) {
-          if (adjustedScore != null) {
-            dataPoints.add(new Data<>(String.valueOf(controllerEngine.getMoveHistory().size()), adjustedScore));
-            graph.setCreateSymbols(dataPoints.size() < CHART_SYMBOL_LIMIT);
-            graph.setVerticalGridLinesVisible(dataPoints.size() < GRID_LINE_LIMIT);
-          }
-          makeMove(bestMove);
-        } else {
-          handleIllegalMove(bestMove);
-        }
-      });
+      setSearchResults(res, timeLeft);
     });
   }
 
@@ -712,6 +690,9 @@ public final class MainController implements AutoCloseable, Observer {
     }
   }
 
+  /**
+   * Stops the current search.
+   */
   private void stopSearch() {
     isReset = true;
     searchEngine.stop();
@@ -727,6 +708,42 @@ public final class MainController implements AutoCloseable, Observer {
         }
       }
     }
+  }
+
+  /**
+   * It stops the current search and the timer.
+   *
+   * @param resetEnginePosition Whether the engine's internal position should be reset.
+   * @param resetTimer Whether the timer of the side to move should be reset to where it was before the turn started.
+   */
+  private void pauseGame(boolean resetEnginePosition, boolean resetTimer) {
+    doTime = false;
+    stopSearch();
+    if (resetEnginePosition) {
+      searchEngine.setPosition(controllerEngine.getStartPosition());
+      for (String m : controllerEngine.getMoveHistory()) {
+        searchEngine.play(m);
+      }
+    }
+    if (selectedSource != null) {
+      board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
+      selectedNodeInd = null;
+      selectedSource = null;
+    }
+    if (resetTimer) {
+      if (controllerEngine.isWhitesTurn()) {
+        if (whiteTimes.size() > 0) {
+          whiteTime.set(whiteTimes.peek());
+          setTimeField(true);
+        }
+      } else {
+        if (blackTimes.size() > 0) {
+          blackTime.set(blackTimes.peek());
+          setTimeField(false);
+        }
+      }
+    }
+    searchStats.clear();
   }
 
   @FXML
@@ -829,30 +846,8 @@ public final class MainController implements AutoCloseable, Observer {
     });
     // Play as White radio menu item handler: if it is selected the user plays as white, if not, as black.
     side.setOnAction(event -> {
-      doTime = false;
-      stopSearch();
-      searchEngine.setPosition(controllerEngine.getStartPosition());
-      for (String m : controllerEngine.getMoveHistory()) {
-        searchEngine.play(m);
-      }
-      if (selectedSource != null) {
-        board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-        selectedNodeInd = null;
-        selectedSource = null;
-      }
-      if (controllerEngine.isWhitesTurn()) {
-        if (whiteTimes.size() > 0) {
-          whiteTime.set(whiteTimes.peek());
-          setTimeField(true);
-        }
-      } else {
-        if (blackTimes.size() > 0) {
-          blackTime.set(blackTimes.peek());
-          setTimeField(false);
-        }
-      }
-      searchStats.clear();
-      isUserWhite = !isUserWhite; // FIME non-atomic op
+      pauseGame(true, true);
+      isUserWhite = !isUserWhite; // FIXME non-atomic op
       usersTurn = controllerEngine.isWhitesTurn() == isUserWhite;
       unmakeMove.setDisable(!usersTurn || isDemo || controllerEngine.getMoveHistory().size() < 2);
       if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {
@@ -864,27 +859,7 @@ public final class MainController implements AutoCloseable, Observer {
     });
     // Time Control Settings menu item handler: opens a dialog for setting the time control.
     timeSettings.setOnAction(event -> {
-      doTime = false;
-      stopSearch();
-      if (selectedSource != null) {
-        board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-        selectedNodeInd = null;
-        selectedSource = null;
-      }
-      if (!usersTurn || isDemo) {
-        if (controllerEngine.isWhitesTurn()) {
-          if (whiteTimes.size() > 0) {
-            whiteTime.set(whiteTimes.peek());
-            setTimeField(true);
-          }
-        } else {
-          if (blackTimes.size() > 0) {
-            blackTime.set(blackTimes.peek());
-            setTimeField(false);
-          }
-        }
-      }
-      searchStats.clear();
+      pauseGame(false, !usersTurn || isDemo);
       Dialog<TimeControl> timeSettingsDialog = new TimeSettingsDialog(stage, timeControl);
       Optional<TimeControl> res = timeSettingsDialog.showAndWait();
       res.ifPresent(tc -> timeControl = tc);
@@ -900,29 +875,7 @@ public final class MainController implements AutoCloseable, Observer {
       isDemo = demo.selectedProperty().get();
       if (isDemo) {
         if (usersTurn && controllerEngine.getGameState() == GameState.IN_PROGRESS) {
-          doTime = false;
-          stopSearch();
-          searchEngine.setPosition(controllerEngine.getStartPosition());
-          for (String m : controllerEngine.getMoveHistory()) {
-            searchEngine.play(m);
-          }
-          if (selectedSource != null) {
-            board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-            selectedNodeInd = null;
-            selectedSource = null;
-          }
-          if (controllerEngine.isWhitesTurn()) {
-            if (whiteTimes.size() > 0) {
-              whiteTime.set(whiteTimes.peek());
-              setTimeField(true);
-            }
-          } else {
-            if (blackTimes.size() > 0) {
-              blackTime.set(blackTimes.peek());
-              setTimeField(false);
-            }
-          }
-          searchStats.clear();
+          pauseGame(true, true);
           doTime = true;
           startSearch();
         }
@@ -968,27 +921,7 @@ public final class MainController implements AutoCloseable, Observer {
     /* Options menu item handler: opens a dialog that presents the UCI options of the search engine in the form of
      * interactive controls. */
     options.setOnAction(event -> {
-      doTime = false;
-      searchEngine.stop();
-      if (selectedSource != null) {
-        board.getChildren().get(selectedNodeInd).getStyleClass().remove(SELECTED_SQR_STYLE_CLASS);
-        selectedNodeInd = null;
-        selectedSource = null;
-      }
-      if (!usersTurn || isDemo) {
-        if (controllerEngine.isWhitesTurn()) {
-          if (whiteTimes.size() > 0) {
-            whiteTime.set(whiteTimes.peek());
-            setTimeField(true);
-          }
-        } else {
-          if (blackTimes.size() > 0) {
-            blackTime.set(blackTimes.peek());
-            setTimeField(false);
-          }
-        }
-      }
-      searchStats.clear();
+      pauseGame(false, !usersTurn || isDemo);
       Alert optionsDialog = new OptionsAlert(stage, searchEngine);
       optionsDialog.showAndWait();
       if (controllerEngine.getGameState() == GameState.IN_PROGRESS) {

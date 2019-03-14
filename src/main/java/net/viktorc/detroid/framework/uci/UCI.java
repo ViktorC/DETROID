@@ -271,10 +271,10 @@ public final class UCI implements Observer, Runnable, Closeable {
       if (stats.getPvNumber() > 0) {
         info += "multipv " + stats.getPvNumber() + " ";
       }
-      String[] pV = stats.getPv();
-      if (pV != null && pV.length > 0) {
+      String[] pv = stats.getPv();
+      if (pv != null && pv.length > 0) {
         info += "pv ";
-        for (String s : pV) {
+        for (String s : pv) {
           info += s + " ";
         }
       }

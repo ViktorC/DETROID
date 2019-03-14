@@ -107,8 +107,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
   private EndGameTableBase egtb;
   private Game game;
   private Evaluator eval;
-  private Cache<TTEntry> tT;
-  private Cache<ETEntry> eT;
+  private Cache<TTEntry> transTable;
+  private Cache<ETEntry> evalTable;
   private ExecutorService executor;
   private Future<SearchResults> search;
   private volatile int movesOutOfBook;
@@ -132,24 +132,24 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   private void setHashSize(int hashSize) {
     long sizeInBytes = hashSize * 1024L * 1024L;
-    int totalHashShares = params.tTshare + params.eTshare;
+    int totalHashShares = params.transTableShare + params.evalTableShare;
     SizeEstimator estimator = SizeEstimator.getInstance();
-    tT = new Cache<>(TTEntry::new,
-        (int) (sizeInBytes * params.tTshare / totalHashShares / estimator.sizeOf(TTEntry.class)));
-    eT = new Cache<>(ETEntry::new,
-        (int) (sizeInBytes * params.eTshare / totalHashShares / estimator.sizeOf(ETEntry.class)));
+    transTable = new Cache<>(TTEntry::new,
+        (int) (sizeInBytes * params.transTableShare / totalHashShares / estimator.sizeOf(TTEntry.class)));
+    evalTable = new Cache<>(ETEntry::new,
+        (int) (sizeInBytes * params.evalTableShare / totalHashShares / estimator.sizeOf(ETEntry.class)));
     // Prompt for garbage collection.
     System.gc();
     if (debugMode) {
       debugInfo.set("Hash capacity data\n" +
-          "Transposition table capacity - " + tT.capacity() + "\n" +
-          "Evaluation table capacity - " + eT.capacity());
+          "Transposition table capacity - " + transTable.capacity() + "\n" +
+          "Evaluation table capacity - " + evalTable.capacity());
     }
   }
 
   private void clearHash() {
-    tT.clear();
-    eT.clear();
+    transTable.clear();
+    evalTable.clear();
     gen = 0;
     if (debugMode) {
       debugInfo.set("Hash tables cleared");
@@ -254,6 +254,23 @@ public class Detroid implements ControllerEngine, TunableEngine {
     }
   }
 
+  private void waitForSearch() throws Exception {
+    try {
+      search.get();
+    } catch (InterruptedException e) {
+      if (debugMode) {
+        debugInfo.set(e.getMessage());
+      }
+      Thread.currentThread().interrupt();
+      throw e;
+    } catch (ExecutionException e) {
+      if (debugMode) {
+        debugInfo.set(e.getMessage());
+      }
+      throw e;
+    }
+  }
+
   private String getRandomMove() {
     int i = 0;
     List<Move> moves = game.getPosition().getMoves();
@@ -341,7 +358,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
       options.put(uciAnalysis, uciAnalysis.getDefaultValue().get());
       searchInfo = new DetroidSearchInformation();
       setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
-      eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+      eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
       executor = Executors.newSingleThreadExecutor();
       init = true;
 
@@ -377,7 +394,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
           if (MIN_HASH_SIZE <= val && MAX_HASH_SIZE >= val) {
             if (val != (Integer) options.get(hashSize)) {
               setHashSize(val);
-              eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+              eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
               options.put(hashSize, value);
             }
             if (debugMode) {
@@ -632,12 +649,12 @@ public class Detroid implements ControllerEngine, TunableEngine {
           }
           if (!controllerMode && !deterministicZeroDepthMode) {
             if (gen == 127) {
-              tT.clear();
-              eT.clear();
+              transTable.clear();
+              evalTable.clear();
               gen = 0;
             } else {
-              tT.remove(e -> e.getGeneration() < gen - params.tTentryLifeCycle);
-              eT.remove(e -> e.getGeneration() < gen - params.eTentryLifeCycle);
+              transTable.remove(e -> e.getGeneration() < gen - params.transTableEntryLifeCycle);
+              evalTable.remove(e -> e.getGeneration() < gen - params.evalTableEntryLifeCycle);
             }
           }
           game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(),
@@ -783,7 +800,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
           }
           int nThreads = deterministicZeroDepthMode ? 1 : (int) options.get(numOfSearchThreads);
           Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo,
-              nThreads, tT, gen, analysisMode, doPonder || doInfinite, depth == null ?
+              nThreads, transTable, gen, analysisMode, doPonder || doInfinite, depth == null ?
               (mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ?
               Long.MAX_VALUE : nodes, allowedMoves);
           search = gameTreeSearch;
@@ -820,17 +837,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
             // If it did not, return the best move found.
             else {
               try {
-                search.get();
-              } catch (InterruptedException e) {
-                if (debugMode) {
-                  debugInfo.set(e.getMessage());
-                }
-                Thread.currentThread().interrupt();
-                return null;
-              } catch (ExecutionException e) {
-                if (debugMode) {
-                  debugInfo.set(e.getMessage());
-                }
+                waitForSearch();
+              } catch (Exception e) {
                 return null;
               }
               break Search;
@@ -842,17 +850,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
               debugInfo.set("In infinite mode");
             }
             try {
-              search.get();
-            } catch (InterruptedException e) {
-              if (debugMode) {
-                debugInfo.set(e.getMessage());
-              }
-              Thread.currentThread().interrupt();
-              return null;
-            } catch (ExecutionException e) {
-              if (debugMode) {
-                debugInfo.set(e.getMessage());
-              }
+              waitForSearch();
+            } catch (Exception e) {
               return null;
             }
             break Search;
@@ -863,17 +862,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
               debugInfo.set("In fixed mode");
             }
             try {
-              search.get();
-            } catch (InterruptedException e) {
-              if (debugMode) {
-                debugInfo.set(e.getMessage());
-              }
-              Thread.currentThread().interrupt();
-              return null;
-            } catch (ExecutionException e) {
-              if (debugMode) {
-                debugInfo.set(e.getMessage());
-              }
+              waitForSearch();
+            } catch (Exception e) {
               return null;
             }
             break Search;
@@ -951,17 +941,17 @@ public class Detroid implements ControllerEngine, TunableEngine {
     long transLoad, transCapacity;
     long evalLoad, evalCapacity;
     long totalLoad, totalCapacity;
-    transLoad = tT.size();
-    evalLoad = eT.size();
+    transLoad = transTable.size();
+    evalLoad = evalTable.size();
     totalLoad = transLoad + evalLoad;
-    transCapacity = tT.capacity();
-    evalCapacity = eT.capacity();
+    transCapacity = transTable.capacity();
+    evalCapacity = evalTable.capacity();
     totalCapacity = transCapacity + evalCapacity;
     if (debugMode) {
       debugInfo.set(String.format("TT load factor - %.2f%nET load factor - %.2f",
           ((float) transLoad) / transCapacity, ((float) evalLoad) / evalCapacity));
-      debugInfo.set(String.format("Total hash size in MB - %.2f", (float) ((double) tT.memorySize() +
-          eT.memorySize()) / (1L << 20)));
+      debugInfo.set(String.format("Total hash size in MB - %.2f", (float) ((double) transTable.memorySize() +
+          evalTable.memorySize()) / (1L << 20)));
     }
     /* Due to the non-thread-safe nature of the hash tables, incorrect size values may be returned; ensure
      * the load does not exceed 1000. */
@@ -1005,8 +995,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
     }
     executor.shutdown();
     searchInfo.deleteObservers();
-    tT = null;
-    eT = null;
+    transTable = null;
+    evalTable = null;
     init = false;
   }
 
@@ -1160,7 +1150,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
   public void notifyParametersChanged() {
     synchronized (lock) {
       if (init) {
-        eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : eT);
+        eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
       }
     }
   }

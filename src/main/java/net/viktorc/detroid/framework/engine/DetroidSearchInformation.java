@@ -115,11 +115,11 @@ class DetroidSearchInformation extends SearchInformation {
     if (pvLine == null) {
       return null;
     }
-    ArrayList<String> pV = new ArrayList<>(pvLine.size());
+    ArrayList<String> pv = new ArrayList<>(pvLine.size());
     for (Move m : pvLine) {
-      pV.add(m.toString());
+      pv.add(m.toString());
     }
-    return pV.toArray(new String[pV.size()]);
+    return pv.toArray(new String[pv.size()]);
   }
 
   @Override

@@ -64,10 +64,10 @@
 <maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
 <maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
 <nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
-<tTshare>8</tTshare>
-<eTshare>2</eTshare>
-<tTentryLifeCycle>1</tTentryLifeCycle>
-<eTentryLifeCycle>2</eTentryLifeCycle>
+<transTableShare>8</transTableShare>
+<evalTableShare>2</evalTableShare>
+<transTableEntryLifeCycle>1</transTableEntryLifeCycle>
+<evalTableEntryLifeCycle>2</evalTableEntryLifeCycle>
 <minTimePortionNeededForExtraDepth64th>42</minTimePortionNeededForExtraDepth64th>
 <minMovesToGo>20</minMovesToGo>
 <maxMovesToGo>35</maxMovesToGo>

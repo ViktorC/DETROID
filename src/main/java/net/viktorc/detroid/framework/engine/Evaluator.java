@@ -83,7 +83,7 @@ public class Evaluator {
 
   private final DetroidParameters params;
   // Evaluation score hash table.
-  private final Cache<ETEntry> eT;
+  private final Cache<ETEntry> evalTable;
   // The sum of the respective weights of pieces for assessing the game phase.
   private final int totalPhaseWeights;
 
@@ -99,7 +99,7 @@ public class Evaluator {
   public Evaluator(DetroidParameters params, Cache<ETEntry> evalTable) {
     this.params = params;
     totalPhaseWeights = 4 * (params.knightPhaseWeight + params.bishopPhaseWeight + params.rookPhaseWeight) + 2 * params.queenPhaseWeight;
-    eT = evalTable;
+    this.evalTable = evalTable;
     initPieceSquareArrays();
   }
 
@@ -229,7 +229,7 @@ public class Evaluator {
     } else if (pieceInd == Piece.W_ROOK.ordinal()) {
       return params.rookValue;
     } else if (pieceInd == Piece.W_BISHOP.ordinal()) {
-      return params.bishopValue;
+      return params.bishopvalue;
     } else if (pieceInd == Piece.W_KNIGHT.ordinal()) {
       return params.knightValue;
     } else if (pieceInd == Piece.W_PAWN.ordinal()) {
@@ -241,7 +241,7 @@ public class Evaluator {
     } else if (pieceInd == Piece.B_ROOK.ordinal()) {
       return params.rookValue;
     } else if (pieceInd == Piece.B_BISHOP.ordinal()) {
-      return params.bishopValue;
+      return params.bishopvalue;
     } else if (pieceInd == Piece.B_KNIGHT.ordinal()) {
       return params.knightValue;
     } else if (pieceInd == Piece.B_PAWN.ordinal()) {
@@ -295,8 +295,8 @@ public class Evaluator {
         gains[i] += params.rookValue - params.pawnValue;
         attackerVal = params.rookValue;
       } else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
-        gains[i] += params.bishopValue - params.pawnValue;
-        attackerVal = params.bishopValue;
+        gains[i] += params.bishopvalue - params.pawnValue;
+        attackerVal = params.bishopvalue;
       } else { // PROMOTION_TO_KNIGHT
         gains[i] += params.knightValue - params.pawnValue;
         attackerVal = params.knightValue;
@@ -320,7 +320,7 @@ public class Evaluator {
           attackerVal = params.knightValue;
         } else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getWhiteBishops()) !=
             Bitboard.EMPTY_BOARD) {
-          attackerVal = params.bishopValue;
+          attackerVal = params.bishopvalue;
         } else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.getWhiteRooks()) !=
             Bitboard.EMPTY_BOARD) {
           attackerVal = params.rookValue;
@@ -338,7 +338,7 @@ public class Evaluator {
           attackerVal = params.knightValue;
         } else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getBlackBishops()) !=
             Bitboard.EMPTY_BOARD) {
-          attackerVal = params.bishopValue;
+          attackerVal = params.bishopvalue;
         } else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.getBlackRooks()) !=
             Bitboard.EMPTY_BOARD) {
           attackerVal = params.rookValue;
@@ -497,8 +497,8 @@ public class Evaluator {
    */
   int score(Position pos, byte hashGen, ETEntry entry) {
     // Probe evaluation hash table.
-    if (eT != null) {
-      ETEntry eE = eT.get(pos.getKey());
+    if (evalTable != null) {
+      ETEntry eE = evalTable.get(pos.getKey());
       if (eE != null && eE.hashKey() == pos.getKey()) {
         eE.setGeneration(hashGen);
         return eE.getScore();
@@ -543,7 +543,7 @@ public class Evaluator {
     // Base material score.
     score += params.queenValue * (numOfWhiteQueens - numOfBlackQueens);
     score += params.rookValue * (numOfWhiteRooks - numOfBlackRooks);
-    score += params.bishopValue * (numOfWhiteBishops - numOfBlackBishops);
+    score += params.bishopvalue * (numOfWhiteBishops - numOfBlackBishops);
     score += params.knightValue * (numOfWhiteKnights - numOfBlackKnights);
     short openingScore = (byte) ((numOfWhitePawns - numOfBlackPawns) * params.pawnValue);
     short endgameScore = (byte) ((numOfWhitePawns - numOfBlackPawns) * params.pawnEndgameValue);
@@ -585,10 +585,10 @@ public class Evaluator {
     }
     // Tempo advantage.
     score += params.tempoAdvantage;
-    if (eT != null) {
+    if (evalTable != null) {
       entry.set(pos.getKey(), score, hashGen);
       entry.setupKey();
-      eT.put(entry);
+      evalTable.put(entry);
     }
     return score;
   }

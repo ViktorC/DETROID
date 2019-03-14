@@ -47,7 +47,7 @@ public class Search implements Runnable, Future<SearchResults> {
   private final boolean useEgtb;
   private final Set<Integer> availableEgtbs;
   private final DetroidSearchInformation info;
-  private final Cache<TTEntry> tT;
+  private final Cache<TTEntry> transTable;
   private final byte hashEntryGen;
   private final int numOfHelperThreads;
   private final boolean analysisMode;
@@ -79,7 +79,7 @@ public class Search implements Runnable, Future<SearchResults> {
    * @param egtb The endgame tablebase object to use.
    * @param info The object to update with search information.
    * @param numOfSearchThreads The number of search threads to use.
-   * @param tT The transposition table to use.
+   * @param transTable The transposition table to use.
    * @param hashEntryGen The current hash entry generation.
    * @param analysisMode Whether the search is to be run in analysis mode (e.g. no EGTB moves and even single response root positions are
    * searched).
@@ -89,7 +89,7 @@ public class Search implements Runnable, Future<SearchResults> {
    * @param moves The only moves from the root pos that should be searched. If it is <code>null</code>, all moves are to be searched.
    */
   public Search(Position pos, DetroidParameters params, Evaluator eval, EndGameTableBase egtb, DetroidSearchInformation info,
-      int numOfSearchThreads, Cache<TTEntry> tT, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth, long maxNodes,
+      int numOfSearchThreads, Cache<TTEntry> transTable, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth, long maxNodes,
       Set<Move> moves) {
     this.params = params;
     this.info = info;
@@ -124,7 +124,7 @@ public class Search implements Runnable, Future<SearchResults> {
     maxExpectedSearchDepth = 2 * 2 * this.maxNominalDepth;
     lCheckMateLimit = Score.LOSING_CHECK_MATE.getValue() + maxExpectedSearchDepth;
     wCheckMateLimit = -lCheckMateLimit;
-    this.tT = tT;
+    this.transTable = transTable;
     this.hashEntryGen = hashEntryGen;
     this.numOfHelperThreads = this.maxNominalDepth > 1 ? numOfSearchThreads - 1 : 0;
     rootLock = new Object();
@@ -135,19 +135,19 @@ public class Search implements Runnable, Future<SearchResults> {
   }
 
   private List<Move> extractPv(Position position, int ply) {
-    List<Move> pV = new ArrayList<>();
+    List<Move> pv = new ArrayList<>();
     TTEntry e;
     int i = 0;
-    while ((e = tT.get(position.getKey())) != null && e.getBestMove() != 0 && i < ply) {
+    while ((e = transTable.get(position.getKey())) != null && e.getBestMove() != 0 && i < ply) {
       Move bestMove = Move.toMove(e.getBestMove());
       position.makeMove(bestMove);
-      pV.add(bestMove);
+      pv.add(bestMove);
       i++;
     }
     for (int k = 0; k < i; k++) {
       position.unmakeMove();
     }
-    return pV;
+    return pv;
   }
 
   private Entry<Short, ScoreType> adjustScore(int score, int alpha, int beta) {
@@ -304,15 +304,15 @@ public class Search implements Runnable, Future<SearchResults> {
     }
     Move bestMove = null;
     Move ponderMove = null;
-    TTEntry entry = tT.get(rootPos.getKey());
+    TTEntry entry = transTable.get(rootPos.getKey());
     if (entry != null) {
       score = entry.getScore();
     }
-    List<Move> pV = extractPv(rootPos, 2);
-    if (pV != null && !pV.isEmpty()) {
-      bestMove = pV.get(0);
-      if (pV.size() > 1) {
-        ponderMove = pV.get(1);
+    List<Move> pv = extractPv(rootPos, 2);
+    if (pv != null && !pv.isEmpty()) {
+      bestMove = pv.get(0);
+      if (pv.size() > 1) {
+        ponderMove = pv.get(1);
       }
     }
     Entry<Short, ScoreType> adjustedScore = adjustScore(score, alpha, beta);
@@ -405,10 +405,10 @@ public class Search implements Runnable, Future<SearchResults> {
     private final Position origPos; // The original pos to search.
     private final SearchThread master;
     private final boolean isMainSearchThread;
-    private final KillerTable kT;
-    private final RelativeHistoryTable hT;
-    private final TTEntry tTentry;
-    private final ETEntry eTentry;
+    private final KillerTable killerTable;
+    private final RelativeHistoryTable historyTable;
+    private final TTEntry transTableEntry;
+    private final ETEntry evalTableEntry;
     private Position pos; // The pos instance to use for the search.
     private AtomicLong nodes;
     private int alpha;
@@ -429,14 +429,14 @@ public class Search implements Runnable, Future<SearchResults> {
       this.master = master;
       this.isMainSearchThread = master == null;
       if (maxNominalDepth > 0) {
-        kT = new KillerTable(maxNominalDepth * 2);
-        hT = new RelativeHistoryTable();
+        killerTable = new KillerTable(maxNominalDepth * 2);
+        historyTable = new RelativeHistoryTable();
       } else {
-        kT = null;
-        hT = null;
+        killerTable = null;
+        historyTable = null;
       }
-      tTentry = new TTEntry();
-      eTentry = new ETEntry();
+      transTableEntry = new TTEntry();
+      evalTableEntry = new ETEntry();
     }
 
     /**
@@ -521,7 +521,7 @@ public class Search implements Runnable, Future<SearchResults> {
       Move[] arr = new Move[moves.size()];
       int i = 0;
       for (Move move : moves) {
-        move.setValue(hT.score(move));
+        move.setValue(historyTable.score(move));
         arr[i++] = move;
       }
       return QuickSort.sort(arr);
@@ -562,9 +562,9 @@ public class Search implements Runnable, Future<SearchResults> {
       }
       // Add new entry to the transposition table.
       // First try the primary table.
-      tTentry.set(key, depth, type, (short) score, bestMoveInt, hashEntryGen, false);
-      tTentry.setupKey();
-      return tT.put(tTentry);
+      transTableEntry.set(key, depth, type, (short) score, bestMoveInt, hashEntryGen, false);
+      transTableEntry.setupKey();
+      return transTable.put(transTableEntry);
     }
 
     /**
@@ -596,7 +596,7 @@ public class Search implements Runnable, Future<SearchResults> {
         return Score.DRAW_CLAIMED.getValue();
       }
       // Evaluate the pos statically.
-      int bestScore = pos.isInCheck() ? mateValue : eval.score(pos, hashEntryGen, eTentry);
+      int bestScore = pos.isInCheck() ? mateValue : eval.score(pos, hashEntryGen, evalTableEntry);
       // Fail soft.
       if (bestScore > alpha) {
         alpha = bestScore;
@@ -636,6 +636,44 @@ public class Search implements Runnable, Future<SearchResults> {
     }
 
     /**
+     * Performs a PV search on the specified move.
+     *
+     * @param move The move to search.
+     * @param searchDepth The current search depth.
+     * @param distFromRoot The current distance from the root node.
+     * @param searchedMoves The number of searched moves.
+     * @param nodeBlocked Whether the current node is blocked.
+     * @return The search score of the move.
+     */
+    private int pvSearchMove(Move move, int searchDepth, int distFromRoot, int searchedMoves, boolean nodeBlocked) {
+      int score;
+      pos.makeMove(move);
+      try {
+        // PVS.
+        if (searchedMoves == 0) {
+          score = -pvSearch(searchDepth, distFromRoot + 1, -beta, -alpha, true, false);
+        } else {
+          score = -pvSearch(searchDepth, distFromRoot + 1, -alpha - 1, -alpha, true, true);
+          /* If the null-window search fails, the research is not exclusive to allow other threads to search the
+           * line as it is likely to be the best move. */
+          if (score != -BUSY_SCORE && score > alpha && score < beta) {
+            score = -pvSearch(searchDepth, distFromRoot + 1, -beta, -alpha, true, false);
+          }
+        }
+      } catch (AbnormalSearchTerminationException e) {
+        if (nodeBlocked) {
+          TTEntry hashEntry = transTable.get(pos.getKey());
+          if (hashEntry != null) {
+            hashEntry.setBusy(false);
+          }
+        }
+        throw e;
+      }
+      pos.unmakeMove();
+      return score;
+    }
+
+    /**
      * A principal variation search algorithm utilizing a transposition table. It returns only the score for the searched position, but the
      * principal variation can be extracted from the transposition table after a search has been run.
      *
@@ -648,7 +686,7 @@ public class Search implements Runnable, Future<SearchResults> {
      * @return The score of the searched position.
      * @throws AbnormalSearchTerminationException If the search is cancelled or the maximum allowed number of nodes have been searched.
      */
-    private int pVsearch(int depth, int distFromRoot, int alpha, int beta, boolean nullMoveAllowed, boolean exclusive)
+    private int pvSearch(int depth, int distFromRoot, int alpha, int beta, boolean nullMoveAllowed, boolean exclusive)
         throws AbnormalSearchTerminationException {
       // Do not allow negative depths for the full effect of check extensions.
       depth = Math.max(depth, 0);
@@ -729,7 +767,7 @@ public class Search implements Runnable, Future<SearchResults> {
         boolean doQuiescence = depth / params.fullPly <= 0;
         /* Check the hash move and return its score for the pos if it is exact or set alpha or beta according
          * to its score if it is not. */
-        hashEntry = tT.get(posKey);
+        hashEntry = transTable.get(posKey);
         if (hashEntry != null) {
           int hashDepth = hashEntry.getDepth();
           int hashType = hashEntry.getType();
@@ -830,12 +868,12 @@ public class Search implements Runnable, Future<SearchResults> {
                 razMargin = 0;
             }
             if (evalScore == Score.NULL.getValue()) {
-              evalScore = eval.score(pos, hashEntryGen, eTentry);
+              evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
             }
             if (evalScore - razMargin >= beta) {
               searchStats.reverseRazorCutoffs.incrementAndGet();
               // Reset the busy flag.
-              if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+              if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
                 hashEntry.setBusy(false);
               }
               return evalScore - razMargin;
@@ -844,7 +882,7 @@ public class Search implements Runnable, Future<SearchResults> {
           // Try null move pruning if the conditions are met.
           if (nullMoveAllowed && depth / ply >= params.nullMoveReductionMinDepthLeft) {
             if (evalScore == Score.NULL.getValue()) {
-              evalScore = eval.score(pos, hashEntryGen, eTentry);
+              evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
             }
             if (evalScore > alpha) {
               searchStats.nullMoveReductions.incrementAndGet();
@@ -856,11 +894,11 @@ public class Search implements Runnable, Future<SearchResults> {
                * allow the compiler to make as many optimizations as possible. */
               try {
                 // Do not allow consecutive null moves.
-                score = -pVsearch(depth - (params.fullPly + nullMoveReduction), distFromRoot + 1,
+                score = -pvSearch(depth - (params.fullPly + nullMoveReduction), distFromRoot + 1,
                     -beta, -beta + 1, false, false);
               } catch (AbnormalSearchTerminationException e) {
                 // If an exception is thrown, make sure that the busy flag is set to false in the TT.
-                if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+                if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
                   hashEntry.setBusy(false);
                 }
                 throw e;
@@ -868,7 +906,7 @@ public class Search implements Runnable, Future<SearchResults> {
               pos.unmakeMove();
               if (score >= beta) {
                 searchStats.nullMoveCutoffs.incrementAndGet();
-                if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+                if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
                   hashEntry.setBusy(false);
                 }
                 return score;
@@ -880,15 +918,15 @@ public class Search implements Runnable, Future<SearchResults> {
         if (params.doIid && pvNode && !isThereHashMove && depth / params.fullPly >= params.iidMinDepthLeft) {
           searchStats.iids.incrementAndGet();
           try {
-            pVsearch(depth * params.iidRelDepth64th / 64, distFromRoot, alpha, beta, true, false);
+            pvSearch(depth * params.iidRelDepth64th / 64, distFromRoot, alpha, beta, true, false);
           } catch (AbnormalSearchTerminationException e) {
             // Reset the busy flag.
-            if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+            if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
               hashEntry.setBusy(false);
             }
             throw e;
           }
-          hashEntry = tT.get(pos.getKey());
+          hashEntry = transTable.get(pos.getKey());
           int hashMoveInt;
           if (hashEntry != null && (hashMoveInt = hashEntry.getBestMove()) != 0 &&
               hashEntry.hashKey() == posKey) {
@@ -903,7 +941,7 @@ public class Search implements Runnable, Future<SearchResults> {
           tacticalMoves = pos.getTacticalMoves();
           // If there were no material moves, check killer moves...
           if (tacticalMoves.size() == 0) {
-            killerEntry = kT.retrieve(distFromRoot);
+            killerEntry = killerTable.retrieve(distFromRoot);
             if (killerEntry.getMove1() != 0 &&
                 pos.isLegal(killerMove1 = Move.toMove(killerEntry.getMove1()))) {
               isThereKM1 = true;
@@ -928,7 +966,7 @@ public class Search implements Runnable, Future<SearchResults> {
         // Check for the fifty-move rule; return a draw score if it applies.
         if (pos.getFiftyMoveRuleClock() >= 100) {
           // Reset the busy flag.
-          if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+          if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
             hashEntry.setBusy(false);
           }
           return Score.DRAW_CLAIMED.getValue();
@@ -943,10 +981,10 @@ public class Search implements Runnable, Future<SearchResults> {
               hashMove.getTo() == lastMove.getTo() ? params.recapExtension : 0;
           pos.makeMove(hashMove);
           try {
-            score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1,
+            score = -pvSearch(Math.min(depthLimit, depth + extension) - params.fullPly, distFromRoot + 1,
                 -beta, -alpha, true, false);
           } catch (AbnormalSearchTerminationException e) {
-            if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+            if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
               hashEntry.setBusy(false);
             }
             throw e;
@@ -962,9 +1000,9 @@ public class Search implements Runnable, Future<SearchResults> {
                 searchStats.hashMoveCutoffs.incrementAndGet();
                 if (!hashMove.isTactical()) {
                   // Add to killer moves.
-                  kT.add(distFromRoot, hashMove);
+                  killerTable.add(distFromRoot, hashMove);
                   // Record success in the relative history table.
-                  hT.recordSuccessfulMove(hashMove);
+                  historyTable.recordSuccessfulMove(hashMove);
                 }
                 break Search;
               }
@@ -973,7 +1011,7 @@ public class Search implements Runnable, Future<SearchResults> {
           if (!hashMove.isTactical())
           // Record failure in the relative history table.
           {
-            hT.recordUnsuccessfulMove(hashMove);
+            historyTable.recordUnsuccessfulMove(hashMove);
           }
         }
         // Generate the material moves if they are not generated yet.
@@ -1004,26 +1042,7 @@ public class Search implements Runnable, Future<SearchResults> {
           int extension = lastMoveIsTactical && move.getCapturedPiece() != Piece.NULL.ordinal() &&
               move.getTo() == lastMove.getTo() ? params.recapExtension : 0;
           int searchDepth = Math.min(depthLimit, depth + extension) - params.fullPly;
-          pos.makeMove(move);
-          try {
-            // PVS.
-            if (searchedMoves == 0) {
-              score = -pVsearch(searchDepth, distFromRoot + 1, -beta, -alpha, true, false);
-            } else {
-              score = -pVsearch(searchDepth, distFromRoot + 1, -alpha - 1, -alpha, true, true);
-              /* If the null-window search fails, the research is not exclusive to allow other threads search the
-               * line as it is likely to be the best move. */
-              if (score != -BUSY_SCORE && score > alpha && score < beta) {
-                score = -pVsearch(searchDepth, distFromRoot + 1, -beta, -alpha, true, false);
-              }
-            }
-          } catch (AbnormalSearchTerminationException e) {
-            if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
-              hashEntry.setBusy(false);
-            }
-            throw e;
-          }
-          pos.unmakeMove();
+          score = pvSearchMove(move, searchDepth, distFromRoot, searchedMoves, nodeBlocked);
           // If the pos is currently searched by another thread, add it to the list of moves to search later.
           if (score == -BUSY_SCORE) {
             if (deferredMoves == null) {
@@ -1046,7 +1065,7 @@ public class Search implements Runnable, Future<SearchResults> {
           }
         }
         // If there are no more winning or equal captures, check and search the killer moves.
-        killerEntry = killerEntry == null ? kT.retrieve(distFromRoot) : killerEntry;
+        killerEntry = killerEntry == null ? killerTable.retrieve(distFromRoot) : killerEntry;
         if (killerEntry != null) {
           for (int i = 0; i < 2; i++) {
             int killerMoveInt;
@@ -1086,20 +1105,20 @@ public class Search implements Runnable, Future<SearchResults> {
             try {
               // Full window PVS.
               if (searchedMoves == 0) {
-                score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
+                score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
                     true, false);
               }
               // Null-window PVS.
               else {
-                score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1,
+                score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1,
                     -alpha, true, true);
                 if (score != -BUSY_SCORE && score > alpha && score < beta) {
-                  score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
+                  score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
                       true, false);
                 }
               }
             } catch (AbnormalSearchTerminationException e) {
-              if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+              if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
                 hashEntry.setBusy(false);
               }
               throw e;
@@ -1121,16 +1140,16 @@ public class Search implements Runnable, Future<SearchResults> {
                     searchStats.killerCutoffs.incrementAndGet();
                     if (i == 1) // Make it killer move no. 1.
                     {
-                      kT.add(distFromRoot, killerMove);
+                      killerTable.add(distFromRoot, killerMove);
                     }
                     // Record success in the relative history table.
-                    hT.recordSuccessfulMove(killerMove);
+                    historyTable.recordSuccessfulMove(killerMove);
                     break Search;
                   }
                 }
               }
               // Record failure in the relative history table.
-              hT.recordUnsuccessfulMove(killerMove);
+              historyTable.recordUnsuccessfulMove(killerMove);
             }
           }
         }
@@ -1145,28 +1164,7 @@ public class Search implements Runnable, Future<SearchResults> {
             int extension = lastMoveIsTactical && move.getCapturedPiece() != Piece.NULL.ordinal() &&
                 move.getTo() == lastMove.getTo() ? params.recapExtension : 0;
             int searchDepth = Math.min(depthLimit, depth + extension) - params.fullPly;
-            pos.makeMove(move);
-            try {
-              // Left-most move.
-              if (searchedMoves == 0) {
-                score = -pVsearch(searchDepth, distFromRoot + 1, -beta, -alpha, true, false);
-              }
-              // Null-window PVS.
-              else {
-                score = -pVsearch(searchDepth, distFromRoot + 1, -alpha - 1, -alpha,
-                    true, true);
-                if (score != -BUSY_SCORE && score > alpha && score < beta) {
-                  score = -pVsearch(searchDepth, distFromRoot + 1, -beta, -alpha,
-                      true, false);
-                }
-              }
-            } catch (AbnormalSearchTerminationException e) {
-              if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
-                hashEntry.setBusy(false);
-              }
-              throw e;
-            }
-            pos.unmakeMove();
+            score = pvSearchMove(move, searchDepth, distFromRoot, searchedMoves, nodeBlocked);
             if (score == -BUSY_SCORE) {
               if (deferredMoves == null) {
                 deferredMoves = new ArrayList<>();
@@ -1251,12 +1249,12 @@ public class Search implements Runnable, Future<SearchResults> {
           // Futility pruning.
           if (prunable && depth / params.fullPly <= 5 && !pos.givesCheck(move)) {
             if (evalScore == Score.NULL.getValue()) {
-              evalScore = eval.score(pos, hashEntryGen, eTentry);
+              evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
             }
             if (evalScore <= alpha - futMargin) {
               searchStats.futilityPrunes.incrementAndGet();
               // Record failure in the relative history table.
-              hT.recordUnsuccessfulMove(move);
+              historyTable.recordUnsuccessfulMove(move);
               continue;
             }
           }
@@ -1264,35 +1262,35 @@ public class Search implements Runnable, Future<SearchResults> {
           try {
             // Left-most move.
             if (searchedMoves == 0) {
-              score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
+              score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
                   true, false);
             }
             // Try late move reduction.
             else if (!dangerous && !pos.isInCheck() && searchedMoves > params.minMovesSearchedForLmr &&
                 depth / params.fullPly >= params.lateMoveReductionMinDepthLeft) {
-              score = -pVsearch(depth - (params.fullPly + lateMoveReduction), distFromRoot + 1, -alpha - 1, -alpha,
+              score = -pvSearch(depth - (params.fullPly + lateMoveReduction), distFromRoot + 1, -alpha - 1, -alpha,
                   true, true);
               if (score != -BUSY_SCORE) {
                 searchStats.lateMoveReductions.incrementAndGet();
                 // If it does not fail low, research with full window.
                 if (score > alpha) {
-                  score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
+                  score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
                       true, false);
                 } else {
                   searchStats.successfulLateMoveReductions.incrementAndGet();
                 }
               }
             } else { // Null-window PVS.
-              score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha,
+              score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -alpha - 1, -alpha,
                   true, true);
               if (score != -BUSY_SCORE && score > alpha && score < beta) // Full-window research.
               {
-                score = -pVsearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
+                score = -pvSearch(depth - params.fullPly, distFromRoot + 1, -beta, -alpha,
                     true, false);
               }
             }
           } catch (AbnormalSearchTerminationException e) {
-            if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+            if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
               hashEntry.setBusy(false);
             }
             throw e;
@@ -1314,15 +1312,15 @@ public class Search implements Runnable, Future<SearchResults> {
                 if (score >= beta) {
                   searchStats.quietCutoffs.incrementAndGet();
                   // Add to killer moves.
-                  kT.add(distFromRoot, move);
+                  killerTable.add(distFromRoot, move);
                   // Record success in the relative history table.
-                  hT.recordSuccessfulMove(move);
+                  historyTable.recordSuccessfulMove(move);
                   break Search;
                 }
               }
             }
             // Record failure in the relative history table.
-            hT.recordUnsuccessfulMove(move);
+            historyTable.recordUnsuccessfulMove(move);
           }
         }
         // If moves searched by other threads were rescheduled, search them now.
@@ -1357,26 +1355,26 @@ public class Search implements Runnable, Future<SearchResults> {
               if (!isMaterial && !killer && !dangerous && !pos.isInCheck() &&
                   searchedMoves > params.minMovesSearchedForLmr &&
                   depth / params.fullPly >= params.lateMoveReductionMinDepthLeft) {
-                score = -pVsearch(searchDepth - lateMoveReduction, distFromRoot + 1, -alpha - 1, -alpha,
+                score = -pvSearch(searchDepth - lateMoveReduction, distFromRoot + 1, -alpha - 1, -alpha,
                     true, false);
                 searchStats.lateMoveReductions.incrementAndGet();
                 // If it does not fail low, research with full window.
                 if (score > alpha) {
-                  score = -pVsearch(searchDepth, distFromRoot + 1, -beta, -alpha,
+                  score = -pvSearch(searchDepth, distFromRoot + 1, -beta, -alpha,
                       true, false);
                 } else {
                   searchStats.successfulLateMoveReductions.incrementAndGet();
                 }
               } else { // PVS.
-                score = -pVsearch(searchDepth, distFromRoot + 1, -alpha - 1, -alpha,
+                score = -pvSearch(searchDepth, distFromRoot + 1, -alpha - 1, -alpha,
                     true, false);
                 if (score > alpha && score < beta) {
-                  score = -pVsearch(searchDepth, distFromRoot + 1, -beta, -alpha,
+                  score = -pvSearch(searchDepth, distFromRoot + 1, -beta, -alpha,
                       true, false);
                 }
               }
             } catch (AbnormalSearchTerminationException e) {
-              if (nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+              if (nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
                 hashEntry.setBusy(false);
               }
               throw e;
@@ -1395,9 +1393,9 @@ public class Search implements Runnable, Future<SearchResults> {
                     (killer ? searchStats.killerCutoffs : searchStats.quietCutoffs)
                         .incrementAndGet();
                     // Add to killer moves.
-                    kT.add(distFromRoot, deferredMove);
+                    killerTable.add(distFromRoot, deferredMove);
                     // Record success in the relative history table.
-                    hT.recordSuccessfulMove(deferredMove);
+                    historyTable.recordSuccessfulMove(deferredMove);
                   } else {
                     (deferredMove.getValue() >= 0 ? searchStats.winningTacticalCutoffs :
                         searchStats.losingTacticalCutoffs).incrementAndGet();
@@ -1408,7 +1406,7 @@ public class Search implements Runnable, Future<SearchResults> {
             }
             if (!isMaterial) // Record failure in the relative history table.
             {
-              hT.recordUnsuccessfulMove(deferredMove);
+              historyTable.recordUnsuccessfulMove(deferredMove);
             }
           }
         }
@@ -1417,7 +1415,7 @@ public class Search implements Runnable, Future<SearchResults> {
       if (!insertIntoTt(posKey, origAlpha, beta, bestMove, bestScore, (short) distFromRoot,
           (short) (depth / params.fullPly)) &&
           // If it is not good enough, make sure to reset the busy flag if it was set.
-          nodeBlocked && (hashEntry = tT.get(posKey)) != null) {
+          nodeBlocked && (hashEntry = transTable.get(posKey)) != null) {
         hashEntry.setBusy(false);
       }
       // Return the unadjusted best score.
@@ -1473,7 +1471,7 @@ public class Search implements Runnable, Future<SearchResults> {
         depth = lastMove != null && isPawnPush(lastMove) ?
             Math.min(depthLimit, depth + params.pawnPushExtension) : depth;
         // Hash look-up.
-        TTEntry entry = tT.get(pos.getKey());
+        TTEntry entry = transTable.get(pos.getKey());
         if (entry != null) {
           int hashDepth = entry.getDepth();
           int hashType = entry.getType();
@@ -1530,15 +1528,15 @@ public class Search implements Runnable, Future<SearchResults> {
             int score;
             // Full window search for the first move...
             if (i == 0 && moveInd == 0) {
-              score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -beta, -alpha,
+              score = -pvSearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -beta, -alpha,
                   true, false);
             }
             // PVS for the rest.
             else {
-              score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -alpha - 1, -alpha,
+              score = -pvSearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -alpha - 1, -alpha,
                   true, i == 0);
               if (score != -BUSY_SCORE && score > alpha && score < beta) {
-                score = -pVsearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -beta, -alpha,
+                score = -pvSearch(Math.min(depthLimit, depth + extension) - params.fullPly, 1, -beta, -alpha,
                     true, false);
               }
             }

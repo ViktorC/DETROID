@@ -20,7 +20,7 @@ class DetroidParameters extends EngineParameters {
   @Parameter(binaryLengthLimit = 10)
   short rookValue;
   @Parameter(binaryLengthLimit = 9)
-  short bishopValue;
+  short bishopvalue;
   @Parameter(binaryLengthLimit = 9)
   short knightValue;
   @Parameter(binaryLengthLimit = 7)
@@ -152,15 +152,15 @@ class DetroidParameters extends EngineParameters {
 
   // The shares of the different hash tables of the total hash size.
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-  byte tTshare;
+  byte transTableShare;
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
-  byte eTshare;
+  byte evalTableShare;
 
   // The number of turns for which the different hash table's entries are retained by default.
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-  byte tTentryLifeCycle;
+  byte transTableEntryLifeCycle;
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-  byte eTentryLifeCycle;
+  byte evalTableEntryLifeCycle;
 
   // The values considered when calculating search time extensions.
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
