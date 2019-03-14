@@ -36,9 +36,9 @@ public final class WinAtChessTest {
   public static Collection<Object[]> provideData() throws IOException {
     EPDSuite suite = new EPDSuite(SUITE_NAME, WAC_FILE_PATH);
     Collection<Object[]> data = new ArrayList<>();
-		for (EPDRecord r : suite.getRecords()) {
-			data.add(new Object[]{r});
-		}
+    for (EPDRecord r : suite.getRecords()) {
+      data.add(new Object[]{r});
+    }
     return data;
   }
 

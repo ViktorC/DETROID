@@ -37,9 +37,9 @@ public final class TimeToDepthTest {
       totalDepth += Math.max(1, record.getDepth() + additionalDepth);
       Entry<Long, Long> res = TTDSuite.searchTest(engine, record, additionalDepth);
       time += res.getKey();
-			if (res.getValue() != null) {
-				nodes += res.getValue();
-			}
+      if (res.getValue() != null) {
+        nodes += res.getValue();
+      }
     }
     System.out.printf("%nThreads: %d; average depth: %.2f; total time: %.2f ms; average time: %.2f; " +
             "average speed: %.2f kNPS%n%n", threads, ((double) totalDepth) / records.size(), ((double) time) / 1000000,

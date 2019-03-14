@@ -49,9 +49,9 @@ public class Evaluator {
     combVals.sort(Comparator.comparingInt(Entry<Short, Integer>::getValue));
     lastVal = assignedVal = 0;
     for (Entry<Short, Integer> entry : combVals) {
-			if (entry.getValue() > lastVal) {
-				assignedVal++;
-			}
+      if (entry.getValue() > lastVal) {
+        assignedVal++;
+      }
       lastVal = entry.getValue();
       victim = entry.getKey() & 127;
       attacker = entry.getKey() >>> 7;
@@ -110,24 +110,24 @@ public class Evaluator {
    * @return Whether there is sufficient material on board to mate.
    */
   public static boolean isMaterialInsufficient(Position pos) {
-		if (pos.getWhitePawns() != Bitboard.EMPTY_BOARD || pos.getBlackPawns() != Bitboard.EMPTY_BOARD ||
-				pos.getWhiteRooks() != Bitboard.EMPTY_BOARD || pos.getBlackRooks() != Bitboard.EMPTY_BOARD ||
-				pos.getWhiteQueens() != Bitboard.EMPTY_BOARD || pos.getBlackQueens() != Bitboard.EMPTY_BOARD) {
-			return false;
-		}
+    if (pos.getWhitePawns() != Bitboard.EMPTY_BOARD || pos.getBlackPawns() != Bitboard.EMPTY_BOARD ||
+        pos.getWhiteRooks() != Bitboard.EMPTY_BOARD || pos.getBlackRooks() != Bitboard.EMPTY_BOARD ||
+        pos.getWhiteQueens() != Bitboard.EMPTY_BOARD || pos.getBlackQueens() != Bitboard.EMPTY_BOARD) {
+      return false;
+    }
     int numOfWhiteKnights = BitOperations.hammingWeight(pos.getWhiteKnights());
     int numOfBlackKnights = BitOperations.hammingWeight(pos.getBlackKnights());
     int numOfAllPieces = BitOperations.hammingWeight(pos.getAllOccupied());
-		if (numOfAllPieces == 2 || numOfAllPieces == 3) {
-			return true;
-		}
+    if (numOfAllPieces == 2 || numOfAllPieces == 3) {
+      return true;
+    }
     if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
       byte[] bishopSqrArr = BitOperations.serialize(pos.getWhiteBishops() | pos.getBlackBishops());
       int bishopColor = Diagonal.getBySquareIndex(bishopSqrArr[0]).ordinal() % 2;
       for (int i = 1; i < bishopSqrArr.length; i++) {
-				if (Diagonal.getBySquareIndex(bishopSqrArr[i]).ordinal() % 2 != bishopColor) {
-					return false;
-				}
+        if (Diagonal.getBySquareIndex(bishopSqrArr[i]).ordinal() % 2 != bishopColor) {
+          return false;
+        }
       }
       return true;
     }
@@ -222,35 +222,35 @@ public class Evaluator {
    * @return The value of the piece type.
    */
   public short materialValueByPieceInd(int pieceInd) {
-		if (pieceInd == Piece.W_KING.ordinal()) {
-			return params.kingValue;
-		} else if (pieceInd == Piece.W_QUEEN.ordinal()) {
-			return params.queenValue;
-		} else if (pieceInd == Piece.W_ROOK.ordinal()) {
-			return params.rookValue;
-		} else if (pieceInd == Piece.W_BISHOP.ordinal()) {
-			return params.bishopValue;
-		} else if (pieceInd == Piece.W_KNIGHT.ordinal()) {
-			return params.knightValue;
-		} else if (pieceInd == Piece.W_PAWN.ordinal()) {
-			return params.pawnValue;
-		} else if (pieceInd == Piece.B_KING.ordinal()) {
-			return params.kingValue;
-		} else if (pieceInd == Piece.B_QUEEN.ordinal()) {
-			return params.queenValue;
-		} else if (pieceInd == Piece.B_ROOK.ordinal()) {
-			return params.rookValue;
-		} else if (pieceInd == Piece.B_BISHOP.ordinal()) {
-			return params.bishopValue;
-		} else if (pieceInd == Piece.B_KNIGHT.ordinal()) {
-			return params.knightValue;
-		} else if (pieceInd == Piece.B_PAWN.ordinal()) {
-			return params.pawnValue;
-		} else if (pieceInd == Piece.NULL.ordinal()) {
-		  return 0;
+    if (pieceInd == Piece.W_KING.ordinal()) {
+      return params.kingValue;
+    } else if (pieceInd == Piece.W_QUEEN.ordinal()) {
+      return params.queenValue;
+    } else if (pieceInd == Piece.W_ROOK.ordinal()) {
+      return params.rookValue;
+    } else if (pieceInd == Piece.W_BISHOP.ordinal()) {
+      return params.bishopValue;
+    } else if (pieceInd == Piece.W_KNIGHT.ordinal()) {
+      return params.knightValue;
+    } else if (pieceInd == Piece.W_PAWN.ordinal()) {
+      return params.pawnValue;
+    } else if (pieceInd == Piece.B_KING.ordinal()) {
+      return params.kingValue;
+    } else if (pieceInd == Piece.B_QUEEN.ordinal()) {
+      return params.queenValue;
+    } else if (pieceInd == Piece.B_ROOK.ordinal()) {
+      return params.rookValue;
+    } else if (pieceInd == Piece.B_BISHOP.ordinal()) {
+      return params.bishopValue;
+    } else if (pieceInd == Piece.B_KNIGHT.ordinal()) {
+      return params.knightValue;
+    } else if (pieceInd == Piece.B_PAWN.ordinal()) {
+      return params.pawnValue;
+    } else if (pieceInd == Piece.NULL.ordinal()) {
+      return 0;
     } else {
-			throw new IllegalArgumentException();
-		}
+      throw new IllegalArgumentException();
+    }
   }
 
   /**
@@ -279,31 +279,31 @@ public class Evaluator {
   public short SEE(Position pos, Move move) {
     short victimVal = materialValueByPieceInd(move.getCapturedPiece());
     // If the captor was a king, return the captured piece's value as capturing the king would be illegal.
-		if (move.getMovedPiece() == Piece.W_KING.ordinal() || move.getMovedPiece() == Piece.B_KING.ordinal()) {
-			return victimVal;
-		}
+    if (move.getMovedPiece() == Piece.W_KING.ordinal() || move.getMovedPiece() == Piece.B_KING.ordinal()) {
+      return victimVal;
+    }
     int i = 0;
     short[] gains = new short[32];
     gains[i] = victimVal;
     short attackerVal;
     // In case the move is a promotion.
-		if (move.getType() >= MoveType.PROMOTION_TO_QUEEN.ordinal()) {
-			if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
-				gains[i] += params.queenValue - params.pawnValue;
-				attackerVal = params.queenValue;
-			} else if (move.getType() == MoveType.PROMOTION_TO_ROOK.ordinal()) {
-				gains[i] += params.rookValue - params.pawnValue;
-				attackerVal = params.rookValue;
-			} else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
-				gains[i] += params.bishopValue - params.pawnValue;
-				attackerVal = params.bishopValue;
-			} else { // PROMOTION_TO_KNIGHT
-				gains[i] += params.knightValue - params.pawnValue;
-				attackerVal = params.knightValue;
-			}
-		} else {
-			attackerVal = materialValueByPieceInd(move.getMovedPiece());
-		}
+    if (move.getType() >= MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+      if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+        gains[i] += params.queenValue - params.pawnValue;
+        attackerVal = params.queenValue;
+      } else if (move.getType() == MoveType.PROMOTION_TO_ROOK.ordinal()) {
+        gains[i] += params.rookValue - params.pawnValue;
+        attackerVal = params.rookValue;
+      } else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
+        gains[i] += params.bishopValue - params.pawnValue;
+        attackerVal = params.bishopValue;
+      } else { // PROMOTION_TO_KNIGHT
+        gains[i] += params.knightValue - params.pawnValue;
+        attackerVal = params.knightValue;
+      }
+    } else {
+      attackerVal = materialValueByPieceInd(move.getMovedPiece());
+    }
     long occupied = pos.getAllOccupied() ^ BitOperations.toBit(move.getFrom());
     boolean whitesTurn = pos.isWhitesTurn();
     MoveSetBase dB = MoveSetBase.values()[move.getTo()];
@@ -314,56 +314,56 @@ public class Evaluator {
       whitesTurn = !whitesTurn;
       long attackers, bpAttack, rkAttack;
       if (whitesTurn) {
-				if ((attackers = dB.getBlackPawnCaptureSet(pos.getWhitePawns()) & occupied) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.pawnValue;
-				} else if ((attackers = dB.getKnightMoveSet(pos.getWhiteKnights()) & occupied) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.knightValue;
-				} else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getWhiteBishops()) !=
-						Bitboard.EMPTY_BOARD) {
-					attackerVal = params.bishopValue;
-				} else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.getWhiteRooks()) !=
-						Bitboard.EMPTY_BOARD) {
-					attackerVal = params.rookValue;
-				} else if ((attackers = (bpAttack | rkAttack) & pos.getWhiteQueens()) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.queenValue;
-				} else if ((attackers = dB.getKingMoveSet(pos.getWhiteKing())) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.kingValue;
-				} else {
-					break;
-				}
+        if ((attackers = dB.getBlackPawnCaptureSet(pos.getWhitePawns()) & occupied) != Bitboard.EMPTY_BOARD) {
+          attackerVal = params.pawnValue;
+        } else if ((attackers = dB.getKnightMoveSet(pos.getWhiteKnights()) & occupied) != Bitboard.EMPTY_BOARD) {
+          attackerVal = params.knightValue;
+        } else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getWhiteBishops()) !=
+            Bitboard.EMPTY_BOARD) {
+          attackerVal = params.bishopValue;
+        } else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.getWhiteRooks()) !=
+            Bitboard.EMPTY_BOARD) {
+          attackerVal = params.rookValue;
+        } else if ((attackers = (bpAttack | rkAttack) & pos.getWhiteQueens()) != Bitboard.EMPTY_BOARD) {
+          attackerVal = params.queenValue;
+        } else if ((attackers = dB.getKingMoveSet(pos.getWhiteKing())) != Bitboard.EMPTY_BOARD) {
+          attackerVal = params.kingValue;
+        } else {
+          break;
+        }
       } else {
         if ((attackers = dB.getWhitePawnCaptureSet(pos.getBlackPawns()) & occupied) != Bitboard.EMPTY_BOARD) {
           attackerVal = params.pawnValue;
         } else if ((attackers = dB.getKnightMoveSet(pos.getBlackKnights()) & occupied) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.knightValue;
-				} else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getBlackBishops()) !=
-						Bitboard.EMPTY_BOARD) {
-					attackerVal = params.bishopValue;
-				} else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.getBlackRooks()) !=
-						Bitboard.EMPTY_BOARD) {
-					attackerVal = params.rookValue;
-				} else if ((attackers = (bpAttack | rkAttack) & pos.getBlackQueens()) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.queenValue;
-				} else if ((attackers = dB.getKingMoveSet(pos.getBlackKing())) != Bitboard.EMPTY_BOARD) {
-					attackerVal = params.kingValue;
-				} else {
-					break;
-				}
+          attackerVal = params.knightValue;
+        } else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getBlackBishops()) !=
+            Bitboard.EMPTY_BOARD) {
+          attackerVal = params.bishopValue;
+        } else if ((attackers = (rkAttack = dB.getRookMoveSet(occupied, occupied)) & pos.getBlackRooks()) !=
+            Bitboard.EMPTY_BOARD) {
+          attackerVal = params.rookValue;
+        } else if ((attackers = (bpAttack | rkAttack) & pos.getBlackQueens()) != Bitboard.EMPTY_BOARD) {
+          attackerVal = params.queenValue;
+        } else if ((attackers = dB.getKingMoveSet(pos.getBlackKing())) != Bitboard.EMPTY_BOARD) {
+          attackerVal = params.kingValue;
+        } else {
+          break;
+        }
       }
       // If the previous attacker was a king and the side to move can attack it, the exchange is over.
-			if (prevAttackerVal == params.kingValue) {
-				break;
-			}
+      if (prevAttackerVal == params.kingValue) {
+        break;
+      }
       // Prune if engaging in further captures would result in material loss.
-			if (Math.max(gains[i], -gains[i - 1]) < 0) {
-				break;
-			}
+      if (Math.max(gains[i], -gains[i - 1]) < 0) {
+        break;
+      }
       // Simulate move.
       occupied ^= BitOperations.getLSBit(attackers);
     } while (true);
-		while (--i > 0) {
-			gains[i - 1] = (short) Math.min(-gains[i], gains[i - 1]);
-		}
+    while (--i > 0) {
+      gains[i - 1] = (short) Math.min(-gains[i], gains[i - 1]);
+    }
     return gains[0];
   }
 
@@ -518,9 +518,9 @@ public class Evaluator {
     if (pos.getWhitePawns() == 0 && pos.getBlackPawns() == 0 && numOfWhiteRooks == 0 && numOfBlackRooks == 0 &&
         numOfWhiteQueens == 0 && numOfBlackQueens == 0) {
       byte numOfAllPieces = BitOperations.hammingWeight(pos.getAllOccupied());
-			if (numOfAllPieces == 2 || numOfAllPieces == 3) {
-				return Score.INSUFFICIENT_MATERIAL.getValue();
-			}
+      if (numOfAllPieces == 2 || numOfAllPieces == 3) {
+        return Score.INSUFFICIENT_MATERIAL.getValue();
+      }
       if (numOfAllPieces >= 4 && numOfWhiteKnights == 0 && numOfBlackKnights == 0) {
         boolean allSameColor = true;
         long bishopSet = pos.getWhiteBishops() | pos.getBlackBishops();
@@ -533,9 +533,9 @@ public class Evaluator {
           }
           bishopSet = BitOperations.resetLSBit(bishopSet);
         }
-				if (allSameColor) {
-					return Score.INSUFFICIENT_MATERIAL.getValue();
-				}
+        if (allSameColor) {
+          return Score.INSUFFICIENT_MATERIAL.getValue();
+        }
       }
     }
     byte numOfWhitePawns = BitOperations.hammingWeight(pos.getWhitePawns());
@@ -550,9 +550,9 @@ public class Evaluator {
     // Piece-square scores.
     for (int i = 0; i < 64; i++) {
       byte piece = (byte) (pos.getPiece(i) - 1);
-			if (piece < Piece.NULL.ordinal()) {
-				continue;
-			}
+      if (piece < Piece.NULL.ordinal()) {
+        continue;
+      }
       openingScore += pstOpening[piece][i];
       endgameScore += pstEndgame[piece][i];
     }
@@ -561,16 +561,16 @@ public class Evaluator {
         numOfWhiteBishops + numOfBlackBishops, numOfWhiteKnights + numOfBlackKnights);
     score += (short) taperedEvalScore(openingScore, endgameScore, phase);
     // Bishop pair advantage.
-		if (numOfWhiteBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
-				pos.getWhiteBishops())).ordinal() % 2 != Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
-				BitOperations.resetLSBit(pos.getWhiteBishops()))).ordinal() % 2) {
-			score += params.bishopPairAdvantage;
-		}
-		if (numOfBlackBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
-				pos.getBlackBishops())).ordinal() % 2 != Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
-				BitOperations.resetLSBit(pos.getBlackBishops()))).ordinal() % 2) {
-			score -= params.bishopPairAdvantage;
-		}
+    if (numOfWhiteBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
+        pos.getWhiteBishops())).ordinal() % 2 != Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
+        BitOperations.resetLSBit(pos.getWhiteBishops()))).ordinal() % 2) {
+      score += params.bishopPairAdvantage;
+    }
+    if (numOfBlackBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
+        pos.getBlackBishops())).ordinal() % 2 != Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
+        BitOperations.resetLSBit(pos.getBlackBishops()))).ordinal() % 2) {
+      score -= params.bishopPairAdvantage;
+    }
     // Pawn structure.
     score += pawnKingStructureScore(pos.getWhiteKing(), pos.getBlackKing(), pos.getWhitePawns(), pos.getBlackPawns());
     // Stopped pawns.
@@ -580,9 +580,9 @@ public class Evaluator {
             BitOperations.hammingWeight(Bitboard.computeWhitePawnAdvanceSets(pos.getWhitePawns(),
                 Bitboard.FULL_BOARD) & (pos.getAllBlackOccupied() ^ pos.getBlackPawns())));
     // Adjust score to side to move.
-		if (!pos.isWhitesTurn()) {
-			score *= -1;
-		}
+    if (!pos.isWhitesTurn()) {
+      score *= -1;
+    }
     // Tempo advantage.
     score += params.tempoAdvantage;
     if (eT != null) {

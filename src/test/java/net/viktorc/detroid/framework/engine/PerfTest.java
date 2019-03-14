@@ -32,9 +32,9 @@ public final class PerfTest {
   public static Collection<Object[]> provideData() throws IOException {
     PerftSuite suite = new PerftSuite(PERFT_FILE_PATH);
     Collection<Object[]> data = new ArrayList<>();
-		for (PerftRecord r : suite.getRecords()) {
-			data.add(new Object[]{r});
-		}
+    for (PerftRecord r : suite.getRecords()) {
+      data.add(new Object[]{r});
+    }
     return data;
   }
 

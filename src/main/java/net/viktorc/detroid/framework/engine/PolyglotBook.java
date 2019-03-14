@@ -43,9 +43,9 @@ public class PolyglotBook extends OpeningBook {
    */
   public PolyglotBook(String filePath, String secondaryBookFilePath) throws Exception {
     this(filePath);
-		if (secondaryBookFilePath != null) {
-			secondaryBook = new PolyglotBook(secondaryBookFilePath);
-		}
+    if (secondaryBookFilePath != null) {
+      secondaryBook = new PolyglotBook(secondaryBookFilePath);
+    }
   }
 
   private ArrayList<Entry> getRelevantEntries(Position pos) {
@@ -58,9 +58,9 @@ public class PolyglotBook extends OpeningBook {
       low = 0;
       hi = bookStream.size();
       while ((mid = (((hi + low) / 2) / ENTRY_SIZE) * ENTRY_SIZE) != temp) {
-				if (Thread.currentThread().isInterrupted()) {
-					return entries;
-				}
+        if (Thread.currentThread().isInterrupted()) {
+          return entries;
+        }
         bookStream.position(mid);
         bookStream.read(buff);
         buff.clear();
@@ -75,9 +75,9 @@ public class PolyglotBook extends OpeningBook {
             buff.clear();
             bookStream.read(buff);
             buff.clear();
-						if (Thread.currentThread().isInterrupted()) {
-							return entries;
-						}
+            if (Thread.currentThread().isInterrupted()) {
+              return entries;
+            }
           }
           while (buff.getLong() == key && readerPos >= 0);
           readerPos = mid + ENTRY_SIZE;
@@ -85,26 +85,26 @@ public class PolyglotBook extends OpeningBook {
           buff.clear();
           while (bookStream.read(buff) != -1) {
             buff.clear();
-						if (buff.getLong() != key) {
-							break;
-						}
+            if (buff.getLong() != key) {
+              break;
+            }
             entries.add(new Entry(buff.getShort(), buff.getShort()));
             bookStream.position((readerPos += ENTRY_SIZE));
             buff.clear();
-						if (Thread.currentThread().isInterrupted()) {
-							return entries;
-						}
+            if (Thread.currentThread().isInterrupted()) {
+              return entries;
+            }
           }
           return entries;
         }
         /* If not, we compare p's hash code to the hash code of the entry the reader head fell on. We have to
          * consider that PolyGlot books use unsigned 64 bitboard integers for hashing. */
         else {
-					if ((currKey + Long.MIN_VALUE) > (key + Long.MIN_VALUE)) {
-						hi = mid;
-					} else {
-						low = mid;
-					}
+          if ((currKey + Long.MIN_VALUE) > (key + Long.MIN_VALUE)) {
+            hi = mid;
+          } else {
+            low = mid;
+          }
         }
         buff.clear();
         temp = mid;
@@ -126,21 +126,21 @@ public class PolyglotBook extends OpeningBook {
     String fromRank = "" + (((polyglotMove >>> 9) & 7) + 1);
     String pacn = fromFile + fromRank + toFile + toRank;
     if (pacn.equals("e1h1")) {
-			if (pos.getWhiteKing() == Square.E1.getBitboard()) {
-				return "e1g1";
-			}
+      if (pos.getWhiteKing() == Square.E1.getBitboard()) {
+        return "e1g1";
+      }
     } else if (pacn.equals("e1a1")) {
-			if (pos.getWhiteKing() == Square.E1.getBitboard()) {
-				return "e1c1";
-			}
+      if (pos.getWhiteKing() == Square.E1.getBitboard()) {
+        return "e1c1";
+      }
     } else if (pacn.equals("e8h8")) {
-			if (pos.getBlackKing() == Square.E8.getBitboard()) {
-				return "e8g8";
-			}
+      if (pos.getBlackKing() == Square.E8.getBitboard()) {
+        return "e8g8";
+      }
     } else if (pacn.equals("e8a8")) {
-			if (pos.getBlackKing() == Square.E8.getBitboard()) {
-				return "e8c8";
-			}
+      if (pos.getBlackKing() == Square.E8.getBitboard()) {
+        return "e8c8";
+      }
     }
     String promPiece;
     switch (polyglotMove >>> 12) {
@@ -171,9 +171,9 @@ public class PolyglotBook extends OpeningBook {
     double totalWeight, randomDouble, weightSum;
     Entry e;
     ArrayList<Entry> relEntries = getRelevantEntries(pos);
-		if (relEntries == null) {
-			return null;
-		}
+    if (relEntries == null) {
+      return null;
+    }
     switch (selection) {
       case RANDOM: {
         Random rand = new Random(System.currentTimeMillis());
@@ -182,9 +182,9 @@ public class PolyglotBook extends OpeningBook {
       break;
       case STOCHASTIC: {
         totalWeight = 0;
-				for (Entry ent : relEntries) {
-					totalWeight += ent.weight;
-				}
+        for (Entry ent : relEntries) {
+          totalWeight += ent.weight;
+        }
         Random rand = new Random(System.currentTimeMillis());
         randomDouble = rand.nextDouble();
         weightSum = 0;

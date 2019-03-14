@@ -76,7 +76,8 @@ public final class EngineFramework implements Runnable {
    * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br> UCI mode: {@code -u} <br> Self
    * play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | management |
    * eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}] [--initprobvector
-   * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string> {log.txt}]
+   * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
+   * {log.txt}]
    * [--concurrency <integer>] {1}]} <br> Texel tuning: {@code -t texel -samplesize <integer> [--epochs <integer>] [--testdataprop <decimal>
    * {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] [--log <string> {log.txt}]
    * [--concurrency <integer> {1}]} <br> FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc
