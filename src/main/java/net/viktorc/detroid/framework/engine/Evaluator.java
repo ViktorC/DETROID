@@ -579,6 +579,21 @@ public class Evaluator {
             Bitboard.FULL_BOARD) & (pos.getAllWhiteOccupied() ^ pos.getWhitePawns())) -
             BitOperations.hammingWeight(Bitboard.computeWhitePawnAdvanceSets(pos.getWhitePawns(),
                 Bitboard.FULL_BOARD) & (pos.getAllBlackOccupied() ^ pos.getBlackPawns())));
+    // King-queen tropism.
+    int blackKingInd = BitOperations.indexOfBit(pos.getBlackKing());
+    long whiteQueens = pos.getWhiteQueens();
+    while (whiteQueens != Bitboard.EMPTY_BOARD) {
+      byte whiteQueenInd = BitOperations.indexOfLSBit(whiteQueens);
+      score -= params.queenKingTropismWeight * CHEBYSHEV_DISTANCE[blackKingInd][whiteQueenInd];
+      whiteQueens = BitOperations.resetLSBit(whiteQueens);
+    }
+    int whiteKingInd = BitOperations.indexOfBit(pos.getWhiteKing());
+    long blackQueens = pos.getBlackQueens();
+    while (blackQueens != Bitboard.EMPTY_BOARD) {
+      byte blackQueenInd = BitOperations.indexOfLSBit(blackQueens);
+      score += params.queenKingTropismWeight * CHEBYSHEV_DISTANCE[whiteKingInd][blackQueenInd];
+      blackQueens = BitOperations.resetLSBit(blackQueens);
+    }
     // Adjust score to side to move.
     if (!pos.isWhitesTurn()) {
       score *= -1;

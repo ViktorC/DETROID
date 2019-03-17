@@ -2474,7 +2474,7 @@ public class Position {
 
   @Override
   public String toString() {
-    String fen = "";
+    StringBuilder fenBuffer = new StringBuilder();
     for (int i = 7; i >= 0; i--) {
       int emptyCount = 0;
       for (int j = 0; j < 8; j++) {
@@ -2483,20 +2483,20 @@ public class Position {
           emptyCount++;
         } else {
           if (emptyCount != 0) {
-            fen += emptyCount;
+            fenBuffer.append(Integer.toString(emptyCount));
           }
           emptyCount = 0;
-          fen += Piece.values()[piece].getLetter();
+          fenBuffer.append(Piece.values()[piece].getLetter());
         }
       }
       if (emptyCount != 0) {
-        fen += emptyCount;
+        fenBuffer.append(Integer.toString(emptyCount));
       }
       if (i != 0) {
-        fen += "/";
+        fenBuffer.append("/");
       }
     }
-    fen += " " + (whitesTurn ? "w" : "b") + " ";
+    fenBuffer.append(" ").append(whitesTurn ? "w" : "b").append(" ");
     String castlingRights = "";
     switch (CastlingRights.values()[whiteCastlingRights]) {
       case SHORT:
@@ -2524,11 +2524,11 @@ public class Position {
       case NONE:
         break;
     }
-    fen += (castlingRights.isEmpty() ? "-" : castlingRights) + " ";
-    fen += (enPassantRights == EnPassantRights.NONE.ordinal() ? "-" :
-        (EnPassantRights.values()[enPassantRights].toString().toLowerCase() + (whitesTurn ? 6 : 3))) + " ";
-    fen += fiftyMoveRuleClock + " " + (1 + halfMoveIndex / 2);
-    return fen;
+    fenBuffer.append(castlingRights.isEmpty() ? "-" : castlingRights).append(" ");
+    fenBuffer.append(enPassantRights == EnPassantRights.NONE.ordinal() ? "-" :
+        (EnPassantRights.values()[enPassantRights].toString().toLowerCase() + (whitesTurn ? 6 : 3))).append(" ");
+    fenBuffer.append(Byte.toString(fiftyMoveRuleClock)).append(" ").append(Integer.toString(1 + halfMoveIndex / 2));
+    return fenBuffer.toString();
   }
 
 }

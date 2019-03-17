@@ -3,6 +3,7 @@ package net.viktorc.detroid.framework;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -79,14 +80,14 @@ public final class EngineFramework implements Runnable {
    * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
    * {log.txt}]
    * [--concurrency <integer>] {1}]} <br> Texel tuning: {@code -t texel -samplesize <integer> [--epochs <integer>] [--testdataprop <decimal>
-   * {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] [--log <string> {log.txt}]
+   * {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens_unfiltered.txt}] [--log <string> {log.txt}]
    * [--concurrency <integer> {1}]} <br> FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc
    * <integer> {0}] [--trybook
-   * <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
+   * <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens_unfiltered.txt}]
    * [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames
-   * <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile
-   * <string> {fens.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer>
-   * [--destfile <string> {fens.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector -value
+   * <integer>] [--destfile <string> {fens_unfiltered.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile
+   * <string> {fens_unfiltered.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer>
+   * [--destfile <string> {fens_unfiltered.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector -value
    * <quoted_comma_separated_decimals> [--paramtype <eval | control | management | eval+control | control+management | all> {all}]
    * [--paramsfile <string> {params.xml}]} <br> Feature value array conversion to parameters file: {@code -c features -value
    * <quoted_comma_separated_decimals> [--paramsfile <string> {params.xml}]}
@@ -100,21 +101,19 @@ public final class EngineFramework implements Runnable {
     Set<ParameterType> paramTypes = null;
     switch (arg) {
       case "eval":
-        paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
+        paramTypes = new HashSet<>(Collections.singletonList(ParameterType.STATIC_EVALUATION));
         break;
       case "control":
-        paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL));
+        paramTypes = new HashSet<>(Collections.singletonList(ParameterType.SEARCH_CONTROL));
         break;
       case "management":
-        paramTypes = new HashSet<>(Arrays.asList(ParameterType.ENGINE_MANAGEMENT));
+        paramTypes = new HashSet<>(Collections.singletonList(ParameterType.ENGINE_MANAGEMENT));
         break;
       case "eval+control":
-        paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION,
-            ParameterType.SEARCH_CONTROL));
+        paramTypes = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION, ParameterType.SEARCH_CONTROL));
         break;
       case "control+management":
-        paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL,
-            ParameterType.ENGINE_MANAGEMENT));
+        paramTypes = new HashSet<>(Arrays.asList(ParameterType.SEARCH_CONTROL, ParameterType.ENGINE_MANAGEMENT));
         break;
       case "all":
         break;
@@ -525,12 +524,12 @@ public final class EngineFramework implements Runnable {
 
   private String buildBinaryString(String arg) {
     String[] probs = arg.split(",");
-    String binaryString = "";
+    StringBuilder binaryStringBuffer = new StringBuilder();
     for (String probString : probs) {
       double prob = Double.parseDouble(probString.trim());
-      binaryString += (prob >= 0.5 ? "1" : "0");
+      binaryStringBuffer.append(prob >= 0.5 ? "1" : "0");
     }
-    return binaryString;
+    return binaryStringBuffer.toString();
   }
 
   private double[] buildFeatureArray(String arg) {
@@ -558,7 +557,7 @@ public final class EngineFramework implements Runnable {
     try (TunableEngine engine = factory.newTunableEngineInstance()) {
       engine.init();
       EngineParameters params = engine.getParameters();
-      params.set(features, new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION)));
+      params.set(features, new HashSet<>(Collections.singletonList(ParameterType.STATIC_EVALUATION)));
       params.writeToFile(destFile);
     } catch (Exception e) {
       throw new RuntimeException(e);

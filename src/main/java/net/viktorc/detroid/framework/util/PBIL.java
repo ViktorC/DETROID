@@ -180,11 +180,11 @@ public abstract class PBIL {
     do {
       // Generate the new population by generating the genotypes using the probability vector.
       for (int i = 0; i < populationSize; i++) {
-        String genotype = "";
+        StringBuilder genotypeBuffer = new StringBuilder();
         for (int k = 0; k < genotypeLength; k++) {
-          genotype += (rand.nextDouble() < probabilityVector[k] ? "1" : "0");
+          genotypeBuffer.append(rand.nextDouble() < probabilityVector[k] ? "1" : "0");
         }
-        genotypes[i] = genotype;
+        genotypes[i] = genotypeBuffer.toString();
       }
       currentHighestFitness = -Double.MAX_VALUE;
       double curLowestFitness = Double.MAX_VALUE;

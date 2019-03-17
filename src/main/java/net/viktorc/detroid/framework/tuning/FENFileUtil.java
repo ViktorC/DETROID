@@ -54,7 +54,7 @@ public final class FENFileUtil {
     try (BufferedReader reader = new BufferedReader(new FileReader(pgnFilePath));
         BufferedWriter writer = new BufferedWriter(new FileWriter(fenFilePath))) {
       String line;
-      String pgn = "";
+      StringBuffer pgnBuffer = new StringBuffer();
       int gameCount = 0;
       if (!engine.isInit()) {
         engine.init();
@@ -65,15 +65,15 @@ public final class FENFileUtil {
           continue;
         }
         boolean doProcess = false;
-        if (line.matches(FIRST_PGN_LINE_PATTERN) && !pgn.isEmpty()) {
+        if (line.matches(FIRST_PGN_LINE_PATTERN) && pgnBuffer.length() > 0) {
           doProcess = true;
         } else if (!reader.ready()) {
-          pgn += line + "\n";
+          pgnBuffer.append(line).append("\n");
           doProcess = true;
         }
         if (doProcess) {
           gameCount++;
-          pgn = pgn.trim();
+          String pgn = pgnBuffer.toString().trim();
           engine.setGame(pgn);
           String result;
           GameState state = engine.getGameState();
@@ -87,15 +87,15 @@ public final class FENFileUtil {
             }
             do {
               String fen = engine.toFEN();
-              writer.write(fen + ";" + result + System.lineSeparator());
+              writer.write(fen + ";" + result + "\n");
             } while (engine.unplayLastMove() != null);
           }
-          pgn = "";
+          pgnBuffer = new StringBuffer();
         }
         if (gameCount >= maxNumOfGames) {
           break;
         }
-        pgn += line + "\n";
+        pgnBuffer.append(line).append("\n");
       }
     }
   }
@@ -196,6 +196,9 @@ public final class FENFileUtil {
    */
   public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile,
       int numOfPositionsToFilter) throws IOException {
+    if (sourceFenFile.equals(destinationFenFile)) {
+      throw new IllegalArgumentException();
+    }
     File destinationFile = new File(sourceFenFile);
     if (!destinationFile.exists()) {
       Files.createFile(destinationFile.toPath());
@@ -226,6 +229,9 @@ public final class FENFileUtil {
    */
   public static void filterDraws(String sourceFenFile, String destinationFenFile)
       throws IOException {
+    if (sourceFenFile.equals(destinationFenFile)) {
+      throw new IllegalArgumentException();
+    }
     File destinationFile = new File(sourceFenFile);
     if (!destinationFile.exists()) {
       Files.createFile(destinationFile.toPath());

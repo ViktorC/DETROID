@@ -8,6 +8,7 @@ import java.lang.reflect.Array;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -42,7 +43,7 @@ public final class TexelOptimizer extends ASGD<String, Float> implements AutoClo
   /**
    * The only parameter type the optimizer is concerned with.
    */
-  private static final Set<ParameterType> TYPE = new HashSet<>(Arrays.asList(ParameterType.STATIC_EVALUATION));
+  private static final Set<ParameterType> TYPE = new HashSet<>(Collections.singletonList(ParameterType.STATIC_EVALUATION));
 
   private final TunableEngine[] engines;
   private final double k;

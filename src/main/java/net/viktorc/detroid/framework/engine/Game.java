@@ -46,10 +46,11 @@ public class Game {
     try {
       for (int i = 0; i < pgn.length(); i++) {
         if (pgn.charAt(i) == '[') {
-          tagContent = "";
+          StringBuilder tagContentBuffer = new StringBuilder();
           while (++i < pgn.length() && (tagChar = pgn.charAt(i)) != ']') {
-            tagContent += tagChar;
+            tagContentBuffer.append(tagChar);
           }
+          tagContent = tagContentBuffer.toString();
           tagType = tagContent.substring(0, tagContent.indexOf(' '));
           tagValue = tagContent.substring(tagContent.indexOf('"') + 1, tagContent.lastIndexOf('"'));
           switch (tagType.toUpperCase()) {
@@ -368,7 +369,7 @@ public class Game {
   }
 
   private String moveListToSAN() {
-    String moveListSAN = "";
+    StringBuilder moveListSANBuffer = new StringBuilder();
     boolean printRound = true;
     int roundNum = 0;
     Position posCopy = new Position(position);
@@ -379,16 +380,16 @@ public class Game {
     }
     for (Move move : moves) {
       if (roundNum % 6 == 0 && printRound) {
-        moveListSAN += "\n";
+        moveListSANBuffer.append("\n");
       }
       if (printRound) {
-        moveListSAN += ++roundNum + ". ";
+        moveListSANBuffer.append(Integer.toString(++roundNum)).append(". ");
       }
       printRound = !printRound;
-      moveListSAN += MoveStringUtils.toSAN(posCopy, move) + " ";
+      moveListSANBuffer.append(MoveStringUtils.toSAN(posCopy, move)).append(" ");
       posCopy.makeMove(move);
     }
-    return moveListSAN;
+    return moveListSANBuffer.toString();
   }
 
   @Override
