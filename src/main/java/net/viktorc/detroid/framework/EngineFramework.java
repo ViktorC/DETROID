@@ -80,14 +80,14 @@ public final class EngineFramework implements Runnable {
    * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
    * {log.txt}]
    * [--concurrency <integer>] {1}]} <br> Texel tuning: {@code -t texel -samplesize <integer> [--epochs <integer>] [--testdataprop <decimal>
-   * {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens_unfiltered.txt}] [--log <string> {log.txt}]
+   * {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--k <decimal>] [--fensfile <string> {fens.txt}] [--log <string> {log.txt}]
    * [--concurrency <integer> {1}]} <br> FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc
    * <integer> {0}] [--trybook
-   * <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens_unfiltered.txt}]
+   * <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
    * [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames
-   * <integer>] [--destfile <string> {fens_unfiltered.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile
-   * <string> {fens_unfiltered.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer>
-   * [--destfile <string> {fens_unfiltered.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector -value
+   * <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile
+   * <string> {fens.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer>
+   * [--destfile <string> {fens.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector -value
    * <quoted_comma_separated_decimals> [--paramtype <eval | control | management | eval+control | control+management | all> {all}]
    * [--paramsfile <string> {params.xml}]} <br> Feature value array conversion to parameters file: {@code -c features -value
    * <quoted_comma_separated_decimals> [--paramsfile <string> {params.xml}]}
