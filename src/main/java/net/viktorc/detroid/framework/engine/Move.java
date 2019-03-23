@@ -136,7 +136,7 @@ public class Move implements Comparable<Move> {
    * @return Whether the move is tactical.
    */
   public boolean isTactical() {
-    return capturedPiece != Piece.NULL.ordinal() || type >= MoveType.PROMOTION_TO_QUEEN.ordinal();
+    return capturedPiece != Piece.NULL.ind || type >= MoveType.PROMOTION_TO_QUEEN.ind;
   }
 
   /**

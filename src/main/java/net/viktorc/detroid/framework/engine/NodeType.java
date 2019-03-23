@@ -9,6 +9,12 @@ public enum NodeType {
 
   EXACT,
   FAIL_HIGH,
-  FAIL_LOW
+  FAIL_LOW;
+
+  public final byte ind;
+
+  NodeType() {
+    ind = (byte) ordinal();
+  }
 
 }

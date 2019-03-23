@@ -474,8 +474,8 @@ public class Search implements Runnable, Future<SearchResults> {
      * @return Whether a move is a pawn push. A pawn push is a pawn move to the last or the one before the last rank.
      */
     private boolean isPawnPush(Move move) {
-      return (move.getMovedPiece() == Piece.W_PAWN.ordinal() && move.getTo() >= 48) ||
-          (move.getMovedPiece() == Piece.B_PAWN.ordinal() && move.getTo() < 16);
+      return (move.getMovedPiece() == Piece.W_PAWN.ind && move.getTo() >= 48) ||
+          (move.getMovedPiece() == Piece.B_PAWN.ind && move.getTo() < 16);
     }
 
     /**
@@ -554,11 +554,11 @@ public class Search implements Runnable, Future<SearchResults> {
       // Determine node type.
       byte type;
       if (bestScore <= alpha) {
-        type = (byte) NodeType.FAIL_LOW.ordinal();
+        type = (byte) NodeType.FAIL_LOW.ind;
       } else if (bestScore >= beta) {
-        type = (byte) NodeType.FAIL_HIGH.ordinal();
+        type = (byte) NodeType.FAIL_HIGH.ind;
       } else {
-        type = (byte) NodeType.EXACT.ordinal();
+        type = (byte) NodeType.EXACT.ind;
       }
       // Add new entry to the transposition table.
       // First try the primary table.
@@ -807,7 +807,7 @@ public class Search implements Runnable, Future<SearchResults> {
                * score. If it is a PV node and the score is exact, make sure that either the score is
                * outside the bounds or the search is about to drop into quiescence search to avoid a PV
                * cut. */
-              if ((hashType == NodeType.EXACT.ordinal() &&
+              if ((hashType == NodeType.EXACT.ind &&
                   (!pvNode || doQuiescence || hashScore <= alpha || hashScore >= beta)) ||
                   /* To make sure that a score that might not have been the exact score for the
                    * subtree below the node regardless of the alpha-beta boundaries is not treated
@@ -822,8 +822,8 @@ public class Search implements Runnable, Future<SearchResults> {
                    * score could take on out of (alpha, beta), the score has to be lower than or
                    * equal to alpha if it is a higher boundary, i.e. fail low score, and it has to be
                    * greater than or equal to beta if it is a lower boundary i.e. fail high score. */
-                  (hashType == NodeType.FAIL_HIGH.ordinal() && score >= beta) ||
-                  (hashType == NodeType.FAIL_LOW.ordinal() && score <= alpha)) {
+                  (hashType == NodeType.FAIL_HIGH.ind && score >= beta) ||
+                  (hashType == NodeType.FAIL_LOW.ind && score <= alpha)) {
                 searchStats.hashScoreHits.incrementAndGet();
                 return score;
               }
@@ -976,7 +976,7 @@ public class Search implements Runnable, Future<SearchResults> {
         // If there is a hash move, search that first.
         if (isThereHashMove) {
           // Recapture extension (includes capturing newly promoted pieces).
-          int extension = lastMoveIsTactical && hashMove.getCapturedPiece() != Piece.NULL.ordinal() &&
+          int extension = lastMoveIsTactical && hashMove.getCapturedPiece() != Piece.NULL.ind &&
               hashMove.getTo() == lastMove.getTo() ? params.recapExtension : 0;
           score = pvSearchMove(hashMove, depthLimit, depth, extension, distFromRoot, searchedMoves, nodeBlocked);
           searchedMoves++;
@@ -1027,7 +1027,7 @@ public class Search implements Runnable, Future<SearchResults> {
             continue;
           }
           // Recapture extension (includes capturing newly promoted pieces).
-          int extension = lastMoveIsTactical && move.getCapturedPiece() != Piece.NULL.ordinal() &&
+          int extension = lastMoveIsTactical && move.getCapturedPiece() != Piece.NULL.ind &&
               move.getTo() == lastMove.getTo() ? params.recapExtension : 0;
           score = pvSearchMove(move, depthLimit, depth, extension, distFromRoot, searchedMoves, nodeBlocked);
           // If the pos is currently searched by another thread, add it to the list of moves to search later.
@@ -1126,7 +1126,7 @@ public class Search implements Runnable, Future<SearchResults> {
           for (Move move : losingCapturesArr) {
             // No need to check if it is the hash move as that was done before it was added to the losing captures.
             // Recapture extension.
-            int extension = lastMoveIsTactical && move.getCapturedPiece() != Piece.NULL.ordinal() &&
+            int extension = lastMoveIsTactical && move.getCapturedPiece() != Piece.NULL.ind &&
                 move.getTo() == lastMove.getTo() ? params.recapExtension : 0;
             score = pvSearchMove(move, depthLimit, depth, extension, distFromRoot, searchedMoves, nodeBlocked);
             if (score == -BUSY_SCORE) {
@@ -1295,7 +1295,7 @@ public class Search implements Runnable, Future<SearchResults> {
               killer = false;
               // Recapture extension.
               int extension = isMaterial && lastMoveIsTactical &&
-                  deferredMove.getCapturedPiece() != Piece.NULL.ordinal() &&
+                  deferredMove.getCapturedPiece() != Piece.NULL.ind &&
                   deferredMove.getTo() == lastMove.getTo() ? params.recapExtension : 0;
               searchDepth = Math.min(depthLimit, depth + extension) - params.fullPly;
             } else {
@@ -1444,9 +1444,9 @@ public class Search implements Runnable, Future<SearchResults> {
                * to alpha, or it is that of a cut node and is greater than or equal to beta, return the
                * score. Only take an exact score if is outside the bounds to avoid the truncation of the
                * PV line. */
-              if ((hashType == NodeType.EXACT.ordinal() && (hashScore <= alpha || hashScore >= beta)) ||
-                  (hashType == NodeType.FAIL_HIGH.ordinal() && hashScore >= beta) ||
-                  (hashType == NodeType.FAIL_LOW.ordinal() && hashScore <= alpha)) {
+              if ((hashType == NodeType.EXACT.ind && (hashScore <= alpha || hashScore >= beta)) ||
+                  (hashType == NodeType.FAIL_HIGH.ind && hashScore >= beta) ||
+                  (hashType == NodeType.FAIL_LOW.ind && hashScore <= alpha)) {
                 if (hashDepth > selDepth) {
                   selDepth = hashDepth;
                 }
@@ -1478,7 +1478,7 @@ public class Search implements Runnable, Future<SearchResults> {
             Move move = moves.get(moveInd);
             nodes = movesToNodes.get(move);
             // Recapture extension.
-            int extension = lastMoveIsMaterial && move.getCapturedPiece() != Piece.NULL.ordinal() &&
+            int extension = lastMoveIsMaterial && move.getCapturedPiece() != Piece.NULL.ind &&
                 move.getTo() == lastMove.getTo() ? params.recapExtension : 0;
             int score = pvSearchMove(move, depthLimit, depth, extension, 0, searchedMoves, false);
             if (score == -BUSY_SCORE) {

@@ -21,17 +21,12 @@ public enum Piece {
   B_KNIGHT('n'),
   B_PAWN('p');
 
-  private final char letter;
+  public final byte ind;
+  public final char letter;
 
   Piece(char fen) {
-    this.letter = fen;
-  }
-
-  /**
-   * @return A character denoting the piece-type in chess notation.
-   */
-  public char getLetter() {
-    return letter;
+    ind = (byte) ordinal();
+    letter = fen;
   }
 
 }

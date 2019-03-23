@@ -119,13 +119,13 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
    */
   private Object probe(Position pos, boolean dtm, boolean soft) {
     int sideToMove = pos.isWhitesTurn() ? 0 : 1;
-    int enPassant = pos.getEnPassantRights() == EnPassantRights.NONE.ordinal() ? NO_SQUARE :
+    int enPassant = pos.getEnPassantRights() == EnPassantRights.NONE.ind ? NO_SQUARE :
         pos.getEnPassantRights() + (pos.isWhitesTurn() ? EnPassantRights.TO_W_DEST_SQR_IND :
             EnPassantRights.TO_B_DEST_SQR_IND);
-    int castling = (pos.getBlackCastlingRights() % CastlingRights.ALL.ordinal() == 0 ?
-        pos.getBlackCastlingRights() : pos.getBlackCastlingRights() ^ CastlingRights.ALL.ordinal()) |
-        ((pos.getWhiteCastlingRights() % CastlingRights.ALL.ordinal() == 0 ? pos.getWhiteCastlingRights() :
-            pos.getWhiteCastlingRights() ^ CastlingRights.ALL.ordinal()) << 2);
+    int castling = (pos.getBlackCastlingRights() % CastlingRights.ALL.ind == 0 ?
+        pos.getBlackCastlingRights() : pos.getBlackCastlingRights() ^ CastlingRights.ALL.ind) |
+        ((pos.getWhiteCastlingRights() % CastlingRights.ALL.ind == 0 ? pos.getWhiteCastlingRights() :
+            pos.getWhiteCastlingRights() ^ CastlingRights.ALL.ind) << 2);
     byte[] wAllOccuppied = BitOperations.serialize(pos.getAllWhiteOccupied());
     int[] wSquares = new int[wAllOccuppied.length + 1];
     char[] wPieces = new char[wAllOccuppied.length + 1];
@@ -134,7 +134,7 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
       int square = wAllOccuppied[i];
       wSquares[i] = square;
       byte piece = pos.getPiece(square);
-      wPieces[i] = (char) (Piece.W_PAWN.ordinal() - ((piece - 1) % Piece.W_PAWN.ordinal()));
+      wPieces[i] = (char) (Piece.W_PAWN.ind - ((piece - 1) % Piece.W_PAWN.ind));
     }
     wSquares[i] = NO_SQUARE;
     wPieces[i] = NO_PIECE;
@@ -146,7 +146,7 @@ public class GaviotaTableBaseJNI extends EndGameTableBase {
       int square = bAllOccupied[i];
       bSquares[i] = square;
       byte piece = pos.getPiece(square);
-      bPieces[i] = (char) (Piece.W_PAWN.ordinal() - ((piece - 1) % Piece.W_PAWN.ordinal()));
+      bPieces[i] = (char) (Piece.W_PAWN.ind - ((piece - 1) % Piece.W_PAWN.ind));
     }
     bSquares[i] = NO_SQUARE;
     bPieces[i] = NO_PIECE;

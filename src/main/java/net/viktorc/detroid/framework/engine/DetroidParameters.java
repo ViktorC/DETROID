@@ -23,7 +23,7 @@ class DetroidParameters extends EngineParameters {
   short bishopvalue;
   @Parameter(binaryLengthLimit = 9)
   short knightValue;
-  @Parameter(binaryLengthLimit = 7)
+  @Parameter(binaryLengthLimit = 8)
   short pawnEndgameValue;
   @Parameter(binaryLengthLimit = 0)
   short pawnValue;

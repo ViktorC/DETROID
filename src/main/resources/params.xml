@@ -1,682 +1,682 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <parameters>
-<kingValue>20000</kingValue>
-<queenValue>803</queenValue>
-<rookValue>349</rookValue>
-<bishopValue>285</bishopValue>
-<knightValue>214</knightValue>
-<pawnEndgameValue>120</pawnEndgameValue>
-<pawnValue>100</pawnValue>
-<kingPhaseWeight>0</kingPhaseWeight>
-<queenPhaseWeight>4</queenPhaseWeight>
-<rookPhaseWeight>2</rookPhaseWeight>
-<bishopPhaseWeight>1</bishopPhaseWeight>
-<knightPhaseWeight>1</knightPhaseWeight>
-<pawnPhaseWeight>0</pawnPhaseWeight>
-<blockedPawnWeight1>25</blockedPawnWeight1>
-<blockedPawnWeight2>36</blockedPawnWeight2>
-<blockedPawnWeight3>55</blockedPawnWeight3>
-<kingFriendlyNormalPawnTropismWeight>12</kingFriendlyNormalPawnTropismWeight>
-<kingOpponentNormalPawnTropismWeight>13</kingOpponentNormalPawnTropismWeight>
-<kingFriendlyOpenBackwardPawnTropismWeight>0</kingFriendlyOpenBackwardPawnTropismWeight>
-<kingOpponentOpenBackwardPawnTropismWeight>21</kingOpponentOpenBackwardPawnTropismWeight>
-<kingFriendlyPassedPawnTropismWeight>10</kingFriendlyPassedPawnTropismWeight>
-<kingOpponentPassedPawnTropismWeight>6</kingOpponentPassedPawnTropismWeight>
-<passedPawnWeight>21</passedPawnWeight>
-<openBackwardPawnWeight>11</openBackwardPawnWeight>
-<stoppedPawnWeight>23</stoppedPawnWeight>
-<queenKingTropismWeight>21</queenKingTropismWeight>
-<bishopPairAdvantage>27</bishopPairAdvantage>
-<tempoAdvantage>27</tempoAdvantage>
-<gamePhaseOpeningLower>0</gamePhaseOpeningLower>
-<gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
-<gamePhaseEndgameLower>176</gamePhaseEndgameLower>
-<gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
-<nullMoveReduction>2</nullMoveReduction>
-<nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
-<extraNullMoveReduction>1</extraNullMoveReduction>
-<extraNullMoveReductionDepthLimit>8</extraNullMoveReductionDepthLimit>
-<lateMoveReduction>1</lateMoveReduction>
-<lateMoveReductionMinDepthLeft>2</lateMoveReductionMinDepthLeft>
-<extraLateMoveReduction>1</extraLateMoveReduction>
-<extraLateMoveReductionDepthLimit>6</extraLateMoveReductionDepthLimit>
-<minMovesSearchedForLmr>4</minMovesSearchedForLmr>
-<doRazor>true</doRazor>
-<revFutitilityMargin1>236</revFutitilityMargin1>
-<revFutitilityMargin2>683</revFutitilityMargin2>
-<revFutitilityMargin3>1688</revFutitilityMargin3>
-<futilityMargin1>47</futilityMargin1>
-<futilityMargin2>121</futilityMargin2>
-<futilityMargin3>218</futilityMargin3>
-<futilityMargin4>353</futilityMargin4>
-<futilityMargin5>712</futilityMargin5>
-<deltaPruningMargin>646</deltaPruningMargin>
-<aspirationDelta>50</aspirationDelta>
-<maxNominalSearchDepth>64</maxNominalSearchDepth>
-<fullPly>8</fullPly>
-<checkExtension>9</checkExtension>
-<recapExtension>7</recapExtension>
-<singleReplyExtension>13</singleReplyExtension>
-<pawnPushExtension>6</pawnPushExtension>
-<doIid>true</doIid>
-<iidMinDepthLeft>6</iidMinDepthLeft>
-<iidRelDepth64th>24</iidRelDepth64th>
-<maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
-<maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
-<nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
-<transTableShare>8</transTableShare>
-<evalTableShare>2</evalTableShare>
-<transTableEntryLifeCycle>1</transTableEntryLifeCycle>
-<evalTableEntryLifeCycle>2</evalTableEntryLifeCycle>
-<minTimePortionNeededForExtraDepth64th>42</minTimePortionNeededForExtraDepth64th>
-<minMovesToGo>20</minMovesToGo>
-<maxMovesToGo>35</maxMovesToGo>
-<pstPawnOpening8>127</pstPawnOpening8>
-<pstPawnOpening9>127</pstPawnOpening9>
-<pstPawnOpening10>127</pstPawnOpening10>
-<pstPawnOpening11>127</pstPawnOpening11>
-<pstPawnOpening12>0</pstPawnOpening12>
-<pstPawnOpening13>0</pstPawnOpening13>
-<pstPawnOpening14>123</pstPawnOpening14>
-<pstPawnOpening15>127</pstPawnOpening15>
-<pstPawnOpening16>127</pstPawnOpening16>
-<pstPawnOpening17>87</pstPawnOpening17>
-<pstPawnOpening18>70</pstPawnOpening18>
-<pstPawnOpening19>120</pstPawnOpening19>
-<pstPawnOpening20>0</pstPawnOpening20>
-<pstPawnOpening21>24</pstPawnOpening21>
-<pstPawnOpening22>1</pstPawnOpening22>
-<pstPawnOpening23>50</pstPawnOpening23>
-<pstPawnOpening24>34</pstPawnOpening24>
-<pstPawnOpening25>12</pstPawnOpening25>
-<pstPawnOpening26>47</pstPawnOpening26>
-<pstPawnOpening27>22</pstPawnOpening27>
-<pstPawnOpening28>39</pstPawnOpening28>
-<pstPawnOpening29>45</pstPawnOpening29>
-<pstPawnOpening30>1</pstPawnOpening30>
-<pstPawnOpening31>10</pstPawnOpening31>
-<pstPawnOpening32>13</pstPawnOpening32>
-<pstPawnOpening33>0</pstPawnOpening33>
-<pstPawnOpening34>30</pstPawnOpening34>
-<pstPawnOpening35>50</pstPawnOpening35>
-<pstPawnOpening36>47</pstPawnOpening36>
-<pstPawnOpening37>0</pstPawnOpening37>
-<pstPawnOpening38>9</pstPawnOpening38>
-<pstPawnOpening39>10</pstPawnOpening39>
-<pstPawnOpening40>0</pstPawnOpening40>
-<pstPawnOpening41>25</pstPawnOpening41>
-<pstPawnOpening42>29</pstPawnOpening42>
-<pstPawnOpening43>56</pstPawnOpening43>
-<pstPawnOpening44>50</pstPawnOpening44>
-<pstPawnOpening45>9</pstPawnOpening45>
-<pstPawnOpening46>19</pstPawnOpening46>
-<pstPawnOpening47>0</pstPawnOpening47>
-<pstPawnOpening48>19</pstPawnOpening48>
-<pstPawnOpening49>88</pstPawnOpening49>
-<pstPawnOpening50>59</pstPawnOpening50>
-<pstPawnOpening51>0</pstPawnOpening51>
-<pstPawnOpening52>0</pstPawnOpening52>
-<pstPawnOpening53>21</pstPawnOpening53>
-<pstPawnOpening54>7</pstPawnOpening54>
-<pstPawnOpening55>0</pstPawnOpening55>
-<pstPawnEndgame8>127</pstPawnEndgame8>
-<pstPawnEndgame9>127</pstPawnEndgame9>
-<pstPawnEndgame10>127</pstPawnEndgame10>
-<pstPawnEndgame11>127</pstPawnEndgame11>
-<pstPawnEndgame12>126</pstPawnEndgame12>
-<pstPawnEndgame13>127</pstPawnEndgame13>
-<pstPawnEndgame14>126</pstPawnEndgame14>
-<pstPawnEndgame15>127</pstPawnEndgame15>
-<pstPawnEndgame16>127</pstPawnEndgame16>
-<pstPawnEndgame17>127</pstPawnEndgame17>
-<pstPawnEndgame18>127</pstPawnEndgame18>
-<pstPawnEndgame19>127</pstPawnEndgame19>
-<pstPawnEndgame20>127</pstPawnEndgame20>
-<pstPawnEndgame21>122</pstPawnEndgame21>
-<pstPawnEndgame22>127</pstPawnEndgame22>
-<pstPawnEndgame23>127</pstPawnEndgame23>
-<pstPawnEndgame24>90</pstPawnEndgame24>
-<pstPawnEndgame25>101</pstPawnEndgame25>
-<pstPawnEndgame26>103</pstPawnEndgame26>
-<pstPawnEndgame27>82</pstPawnEndgame27>
-<pstPawnEndgame28>53</pstPawnEndgame28>
-<pstPawnEndgame29>73</pstPawnEndgame29>
-<pstPawnEndgame30>76</pstPawnEndgame30>
-<pstPawnEndgame31>75</pstPawnEndgame31>
-<pstPawnEndgame32>53</pstPawnEndgame32>
-<pstPawnEndgame33>86</pstPawnEndgame33>
-<pstPawnEndgame34>31</pstPawnEndgame34>
-<pstPawnEndgame35>9</pstPawnEndgame35>
-<pstPawnEndgame36>31</pstPawnEndgame36>
-<pstPawnEndgame37>58</pstPawnEndgame37>
-<pstPawnEndgame38>59</pstPawnEndgame38>
-<pstPawnEndgame39>36</pstPawnEndgame39>
-<pstPawnEndgame40>37</pstPawnEndgame40>
-<pstPawnEndgame41>46</pstPawnEndgame41>
-<pstPawnEndgame42>39</pstPawnEndgame42>
-<pstPawnEndgame43>41</pstPawnEndgame43>
-<pstPawnEndgame44>0</pstPawnEndgame44>
-<pstPawnEndgame45>40</pstPawnEndgame45>
-<pstPawnEndgame46>55</pstPawnEndgame46>
-<pstPawnEndgame47>14</pstPawnEndgame47>
-<pstPawnEndgame48>44</pstPawnEndgame48>
-<pstPawnEndgame49>74</pstPawnEndgame49>
-<pstPawnEndgame50>49</pstPawnEndgame50>
-<pstPawnEndgame51>0</pstPawnEndgame51>
-<pstPawnEndgame52>64</pstPawnEndgame52>
-<pstPawnEndgame53>65</pstPawnEndgame53>
-<pstPawnEndgame54>40</pstPawnEndgame54>
-<pstPawnEndgame55>35</pstPawnEndgame55>
-<pstKnightOpening0>126</pstKnightOpening0>
-<pstKnightOpening1>8</pstKnightOpening1>
-<pstKnightOpening2>0</pstKnightOpening2>
-<pstKnightOpening3>0</pstKnightOpening3>
-<pstKnightOpening8>0</pstKnightOpening8>
-<pstKnightOpening9>44</pstKnightOpening9>
-<pstKnightOpening10>81</pstKnightOpening10>
-<pstKnightOpening11>0</pstKnightOpening11>
-<pstKnightOpening16>0</pstKnightOpening16>
-<pstKnightOpening17>46</pstKnightOpening17>
-<pstKnightOpening18>26</pstKnightOpening18>
-<pstKnightOpening19>58</pstKnightOpening19>
-<pstKnightOpening24>87</pstKnightOpening24>
-<pstKnightOpening25>58</pstKnightOpening25>
-<pstKnightOpening26>121</pstKnightOpening26>
-<pstKnightOpening27>124</pstKnightOpening27>
-<pstKnightOpening32>39</pstKnightOpening32>
-<pstKnightOpening33>77</pstKnightOpening33>
-<pstKnightOpening34>81</pstKnightOpening34>
-<pstKnightOpening35>31</pstKnightOpening35>
-<pstKnightOpening40>39</pstKnightOpening40>
-<pstKnightOpening41>16</pstKnightOpening41>
-<pstKnightOpening42>86</pstKnightOpening42>
-<pstKnightOpening43>127</pstKnightOpening43>
-<pstKnightOpening48>14</pstKnightOpening48>
-<pstKnightOpening49>51</pstKnightOpening49>
-<pstKnightOpening50>126</pstKnightOpening50>
-<pstKnightOpening51>76</pstKnightOpening51>
-<pstKnightOpening56>61</pstKnightOpening56>
-<pstKnightOpening57>61</pstKnightOpening57>
-<pstKnightOpening58>0</pstKnightOpening58>
-<pstKnightOpening59>102</pstKnightOpening59>
-<pstKnightEndgame0>83</pstKnightEndgame0>
-<pstKnightEndgame1>77</pstKnightEndgame1>
-<pstKnightEndgame2>22</pstKnightEndgame2>
-<pstKnightEndgame3>88</pstKnightEndgame3>
-<pstKnightEndgame8>66</pstKnightEndgame8>
-<pstKnightEndgame9>85</pstKnightEndgame9>
-<pstKnightEndgame10>93</pstKnightEndgame10>
-<pstKnightEndgame11>85</pstKnightEndgame11>
-<pstKnightEndgame16>112</pstKnightEndgame16>
-<pstKnightEndgame17>93</pstKnightEndgame17>
-<pstKnightEndgame18>127</pstKnightEndgame18>
-<pstKnightEndgame19>112</pstKnightEndgame19>
-<pstKnightEndgame24>59</pstKnightEndgame24>
-<pstKnightEndgame25>111</pstKnightEndgame25>
-<pstKnightEndgame26>113</pstKnightEndgame26>
-<pstKnightEndgame27>111</pstKnightEndgame27>
-<pstKnightEndgame32>57</pstKnightEndgame32>
-<pstKnightEndgame33>96</pstKnightEndgame33>
-<pstKnightEndgame34>102</pstKnightEndgame34>
-<pstKnightEndgame35>115</pstKnightEndgame35>
-<pstKnightEndgame40>1</pstKnightEndgame40>
-<pstKnightEndgame41>100</pstKnightEndgame41>
-<pstKnightEndgame42>97</pstKnightEndgame42>
-<pstKnightEndgame43>79</pstKnightEndgame43>
-<pstKnightEndgame48>46</pstKnightEndgame48>
-<pstKnightEndgame49>71</pstKnightEndgame49>
-<pstKnightEndgame50>61</pstKnightEndgame50>
-<pstKnightEndgame51>36</pstKnightEndgame51>
-<pstKnightEndgame56>99</pstKnightEndgame56>
-<pstKnightEndgame57>0</pstKnightEndgame57>
-<pstKnightEndgame58>0</pstKnightEndgame58>
-<pstKnightEndgame59>9</pstKnightEndgame59>
-<pstBishopOpening0>41</pstBishopOpening0>
-<pstBishopOpening1>41</pstBishopOpening1>
-<pstBishopOpening2>34</pstBishopOpening2>
-<pstBishopOpening3>46</pstBishopOpening3>
-<pstBishopOpening8>46</pstBishopOpening8>
-<pstBishopOpening9>3</pstBishopOpening9>
-<pstBishopOpening10>20</pstBishopOpening10>
-<pstBishopOpening11>24</pstBishopOpening11>
-<pstBishopOpening16>17</pstBishopOpening16>
-<pstBishopOpening17>30</pstBishopOpening17>
-<pstBishopOpening18>49</pstBishopOpening18>
-<pstBishopOpening19>41</pstBishopOpening19>
-<pstBishopOpening24>33</pstBishopOpening24>
-<pstBishopOpening25>28</pstBishopOpening25>
-<pstBishopOpening26>64</pstBishopOpening26>
-<pstBishopOpening27>57</pstBishopOpening27>
-<pstBishopOpening32>0</pstBishopOpening32>
-<pstBishopOpening33>46</pstBishopOpening33>
-<pstBishopOpening34>45</pstBishopOpening34>
-<pstBishopOpening35>55</pstBishopOpening35>
-<pstBishopOpening40>38</pstBishopOpening40>
-<pstBishopOpening41>90</pstBishopOpening41>
-<pstBishopOpening42>39</pstBishopOpening42>
-<pstBishopOpening43>45</pstBishopOpening43>
-<pstBishopOpening48>3</pstBishopOpening48>
-<pstBishopOpening49>22</pstBishopOpening49>
-<pstBishopOpening50>47</pstBishopOpening50>
-<pstBishopOpening51>40</pstBishopOpening51>
-<pstBishopOpening56>0</pstBishopOpening56>
-<pstBishopOpening57>16</pstBishopOpening57>
-<pstBishopOpening58>0</pstBishopOpening58>
-<pstBishopOpening59>6</pstBishopOpening59>
-<pstBishopEnding0>41</pstBishopEnding0>
-<pstBishopEnding1>41</pstBishopEnding1>
-<pstBishopEnding2>34</pstBishopEnding2>
-<pstBishopEnding3>46</pstBishopEnding3>
-<pstBishopEnding8>46</pstBishopEnding8>
-<pstBishopEnding9>3</pstBishopEnding9>
-<pstBishopEnding10>20</pstBishopEnding10>
-<pstBishopEnding11>24</pstBishopEnding11>
-<pstBishopEnding16>17</pstBishopEnding16>
-<pstBishopEnding17>30</pstBishopEnding17>
-<pstBishopEnding18>49</pstBishopEnding18>
-<pstBishopEnding19>41</pstBishopEnding19>
-<pstBishopEnding24>33</pstBishopEnding24>
-<pstBishopEnding25>28</pstBishopEnding25>
-<pstBishopEnding26>64</pstBishopEnding26>
-<pstBishopEnding27>57</pstBishopEnding27>
-<pstBishopEnding32>0</pstBishopEnding32>
-<pstBishopEnding33>46</pstBishopEnding33>
-<pstBishopEnding34>45</pstBishopEnding34>
-<pstBishopEnding35>55</pstBishopEnding35>
-<pstBishopEnding40>38</pstBishopEnding40>
-<pstBishopEnding41>90</pstBishopEnding41>
-<pstBishopEnding42>39</pstBishopEnding42>
-<pstBishopEnding43>45</pstBishopEnding43>
-<pstBishopEnding48>3</pstBishopEnding48>
-<pstBishopEnding49>22</pstBishopEnding49>
-<pstBishopEnding50>47</pstBishopEnding50>
-<pstBishopEnding51>40</pstBishopEnding51>
-<pstBishopEnding56>0</pstBishopEnding56>
-<pstBishopEnding57>16</pstBishopEnding57>
-<pstBishopEnding58>0</pstBishopEnding58>
-<pstBishopEnding59>6</pstBishopEnding59>
-<pstRookOpening0>32</pstRookOpening0>
-<pstRookOpening1>0</pstRookOpening1>
-<pstRookOpening2>0</pstRookOpening2>
-<pstRookOpening3>0</pstRookOpening3>
-<pstRookOpening4>0</pstRookOpening4>
-<pstRookOpening5>0</pstRookOpening5>
-<pstRookOpening6>18</pstRookOpening6>
-<pstRookOpening7>116</pstRookOpening7>
-<pstRookOpening8>96</pstRookOpening8>
-<pstRookOpening9>51</pstRookOpening9>
-<pstRookOpening10>127</pstRookOpening10>
-<pstRookOpening11>126</pstRookOpening11>
-<pstRookOpening12>127</pstRookOpening12>
-<pstRookOpening13>127</pstRookOpening13>
-<pstRookOpening14>69</pstRookOpening14>
-<pstRookOpening15>78</pstRookOpening15>
-<pstRookOpening16>38</pstRookOpening16>
-<pstRookOpening17>19</pstRookOpening17>
-<pstRookOpening18>46</pstRookOpening18>
-<pstRookOpening19>84</pstRookOpening19>
-<pstRookOpening20>89</pstRookOpening20>
-<pstRookOpening21>71</pstRookOpening21>
-<pstRookOpening22>87</pstRookOpening22>
-<pstRookOpening23>98</pstRookOpening23>
-<pstRookOpening24>0</pstRookOpening24>
-<pstRookOpening25>0</pstRookOpening25>
-<pstRookOpening26>48</pstRookOpening26>
-<pstRookOpening27>26</pstRookOpening27>
-<pstRookOpening28>79</pstRookOpening28>
-<pstRookOpening29>123</pstRookOpening29>
-<pstRookOpening30>99</pstRookOpening30>
-<pstRookOpening31>4</pstRookOpening31>
-<pstRookOpening32>21</pstRookOpening32>
-<pstRookOpening33>41</pstRookOpening33>
-<pstRookOpening34>0</pstRookOpening34>
-<pstRookOpening35>77</pstRookOpening35>
-<pstRookOpening36>80</pstRookOpening36>
-<pstRookOpening37>35</pstRookOpening37>
-<pstRookOpening38>76</pstRookOpening38>
-<pstRookOpening39>96</pstRookOpening39>
-<pstRookOpening40>81</pstRookOpening40>
-<pstRookOpening41>0</pstRookOpening41>
-<pstRookOpening42>0</pstRookOpening42>
-<pstRookOpening43>0</pstRookOpening43>
-<pstRookOpening44>32</pstRookOpening44>
-<pstRookOpening45>34</pstRookOpening45>
-<pstRookOpening46>28</pstRookOpening46>
-<pstRookOpening47>50</pstRookOpening47>
-<pstRookOpening48>4</pstRookOpening48>
-<pstRookOpening49>0</pstRookOpening49>
-<pstRookOpening50>0</pstRookOpening50>
-<pstRookOpening51>94</pstRookOpening51>
-<pstRookOpening52>0</pstRookOpening52>
-<pstRookOpening53>73</pstRookOpening53>
-<pstRookOpening54>0</pstRookOpening54>
-<pstRookOpening55>127</pstRookOpening55>
-<pstRookOpening56>0</pstRookOpening56>
-<pstRookOpening57>1</pstRookOpening57>
-<pstRookOpening58>35</pstRookOpening58>
-<pstRookOpening59>59</pstRookOpening59>
-<pstRookOpening60>68</pstRookOpening60>
-<pstRookOpening61>71</pstRookOpening61>
-<pstRookOpening62>0</pstRookOpening62>
-<pstRookOpening63>0</pstRookOpening63>
-<pstRookEndgame0>127</pstRookEndgame0>
-<pstRookEndgame1>127</pstRookEndgame1>
-<pstRookEndgame2>120</pstRookEndgame2>
-<pstRookEndgame3>83</pstRookEndgame3>
-<pstRookEndgame4>76</pstRookEndgame4>
-<pstRookEndgame5>106</pstRookEndgame5>
-<pstRookEndgame6>122</pstRookEndgame6>
-<pstRookEndgame7>118</pstRookEndgame7>
-<pstRookEndgame8>111</pstRookEndgame8>
-<pstRookEndgame9>127</pstRookEndgame9>
-<pstRookEndgame10>105</pstRookEndgame10>
-<pstRookEndgame11>101</pstRookEndgame11>
-<pstRookEndgame12>92</pstRookEndgame12>
-<pstRookEndgame13>76</pstRookEndgame13>
-<pstRookEndgame14>95</pstRookEndgame14>
-<pstRookEndgame15>104</pstRookEndgame15>
-<pstRookEndgame16>124</pstRookEndgame16>
-<pstRookEndgame17>123</pstRookEndgame17>
-<pstRookEndgame18>125</pstRookEndgame18>
-<pstRookEndgame19>110</pstRookEndgame19>
-<pstRookEndgame20>102</pstRookEndgame20>
-<pstRookEndgame21>104</pstRookEndgame21>
-<pstRookEndgame22>102</pstRookEndgame22>
-<pstRookEndgame23>91</pstRookEndgame23>
-<pstRookEndgame24>112</pstRookEndgame24>
-<pstRookEndgame25>119</pstRookEndgame25>
-<pstRookEndgame26>105</pstRookEndgame26>
-<pstRookEndgame27>116</pstRookEndgame27>
-<pstRookEndgame28>97</pstRookEndgame28>
-<pstRookEndgame29>71</pstRookEndgame29>
-<pstRookEndgame30>88</pstRookEndgame30>
-<pstRookEndgame31>125</pstRookEndgame31>
-<pstRookEndgame32>102</pstRookEndgame32>
-<pstRookEndgame33>85</pstRookEndgame33>
-<pstRookEndgame34>109</pstRookEndgame34>
-<pstRookEndgame35>70</pstRookEndgame35>
-<pstRookEndgame36>54</pstRookEndgame36>
-<pstRookEndgame37>107</pstRookEndgame37>
-<pstRookEndgame38>56</pstRookEndgame38>
-<pstRookEndgame39>37</pstRookEndgame39>
-<pstRookEndgame40>51</pstRookEndgame40>
-<pstRookEndgame41>96</pstRookEndgame41>
-<pstRookEndgame42>74</pstRookEndgame42>
-<pstRookEndgame43>77</pstRookEndgame43>
-<pstRookEndgame44>52</pstRookEndgame44>
-<pstRookEndgame45>65</pstRookEndgame45>
-<pstRookEndgame46>27</pstRookEndgame46>
-<pstRookEndgame47>66</pstRookEndgame47>
-<pstRookEndgame48>83</pstRookEndgame48>
-<pstRookEndgame49>47</pstRookEndgame49>
-<pstRookEndgame50>65</pstRookEndgame50>
-<pstRookEndgame51>11</pstRookEndgame51>
-<pstRookEndgame52>69</pstRookEndgame52>
-<pstRookEndgame53>12</pstRookEndgame53>
-<pstRookEndgame54>21</pstRookEndgame54>
-<pstRookEndgame55>11</pstRookEndgame55>
-<pstRookEndgame56>17</pstRookEndgame56>
-<pstRookEndgame57>70</pstRookEndgame57>
-<pstRookEndgame58>88</pstRookEndgame58>
-<pstRookEndgame59>75</pstRookEndgame59>
-<pstRookEndgame60>70</pstRookEndgame60>
-<pstRookEndgame61>26</pstRookEndgame61>
-<pstRookEndgame62>55</pstRookEndgame62>
-<pstRookEndgame63>35</pstRookEndgame63>
-<pstQueenOpening0>0</pstQueenOpening0>
-<pstQueenOpening1>113</pstQueenOpening1>
-<pstQueenOpening2>127</pstQueenOpening2>
-<pstQueenOpening3>94</pstQueenOpening3>
-<pstQueenOpening4>127</pstQueenOpening4>
-<pstQueenOpening5>127</pstQueenOpening5>
-<pstQueenOpening6>127</pstQueenOpening6>
-<pstQueenOpening7>127</pstQueenOpening7>
-<pstQueenOpening8>70</pstQueenOpening8>
-<pstQueenOpening9>97</pstQueenOpening9>
-<pstQueenOpening10>117</pstQueenOpening10>
-<pstQueenOpening11>50</pstQueenOpening11>
-<pstQueenOpening12>59</pstQueenOpening12>
-<pstQueenOpening13>62</pstQueenOpening13>
-<pstQueenOpening14>106</pstQueenOpening14>
-<pstQueenOpening15>99</pstQueenOpening15>
-<pstQueenOpening16>127</pstQueenOpening16>
-<pstQueenOpening17>114</pstQueenOpening17>
-<pstQueenOpening18>75</pstQueenOpening18>
-<pstQueenOpening19>92</pstQueenOpening19>
-<pstQueenOpening20>119</pstQueenOpening20>
-<pstQueenOpening21>104</pstQueenOpening21>
-<pstQueenOpening22>98</pstQueenOpening22>
-<pstQueenOpening23>82</pstQueenOpening23>
-<pstQueenOpening24>104</pstQueenOpening24>
-<pstQueenOpening25>92</pstQueenOpening25>
-<pstQueenOpening26>101</pstQueenOpening26>
-<pstQueenOpening27>92</pstQueenOpening27>
-<pstQueenOpening28>106</pstQueenOpening28>
-<pstQueenOpening29>106</pstQueenOpening29>
-<pstQueenOpening30>94</pstQueenOpening30>
-<pstQueenOpening31>39</pstQueenOpening31>
-<pstQueenOpening32>119</pstQueenOpening32>
-<pstQueenOpening33>126</pstQueenOpening33>
-<pstQueenOpening34>111</pstQueenOpening34>
-<pstQueenOpening35>105</pstQueenOpening35>
-<pstQueenOpening36>91</pstQueenOpening36>
-<pstQueenOpening37>127</pstQueenOpening37>
-<pstQueenOpening38>48</pstQueenOpening38>
-<pstQueenOpening39>38</pstQueenOpening39>
-<pstQueenOpening40>96</pstQueenOpening40>
-<pstQueenOpening41>85</pstQueenOpening41>
-<pstQueenOpening42>103</pstQueenOpening42>
-<pstQueenOpening43>118</pstQueenOpening43>
-<pstQueenOpening44>110</pstQueenOpening44>
-<pstQueenOpening45>104</pstQueenOpening45>
-<pstQueenOpening46>59</pstQueenOpening46>
-<pstQueenOpening47>67</pstQueenOpening47>
-<pstQueenOpening48>127</pstQueenOpening48>
-<pstQueenOpening49>103</pstQueenOpening49>
-<pstQueenOpening50>127</pstQueenOpening50>
-<pstQueenOpening51>117</pstQueenOpening51>
-<pstQueenOpening52>117</pstQueenOpening52>
-<pstQueenOpening53>106</pstQueenOpening53>
-<pstQueenOpening54>56</pstQueenOpening54>
-<pstQueenOpening55>115</pstQueenOpening55>
-<pstQueenOpening56>76</pstQueenOpening56>
-<pstQueenOpening57>115</pstQueenOpening57>
-<pstQueenOpening58>82</pstQueenOpening58>
-<pstQueenOpening59>119</pstQueenOpening59>
-<pstQueenOpening60>92</pstQueenOpening60>
-<pstQueenOpening61>127</pstQueenOpening61>
-<pstQueenOpening62>0</pstQueenOpening62>
-<pstQueenOpening63>78</pstQueenOpening63>
-<pstQueenEnding0>0</pstQueenEnding0>
-<pstQueenEnding1>113</pstQueenEnding1>
-<pstQueenEnding2>127</pstQueenEnding2>
-<pstQueenEnding3>94</pstQueenEnding3>
-<pstQueenEnding4>127</pstQueenEnding4>
-<pstQueenEnding5>127</pstQueenEnding5>
-<pstQueenEnding6>127</pstQueenEnding6>
-<pstQueenEnding7>127</pstQueenEnding7>
-<pstQueenEnding8>70</pstQueenEnding8>
-<pstQueenEnding9>97</pstQueenEnding9>
-<pstQueenEnding10>117</pstQueenEnding10>
-<pstQueenEnding11>50</pstQueenEnding11>
-<pstQueenEnding12>59</pstQueenEnding12>
-<pstQueenEnding13>62</pstQueenEnding13>
-<pstQueenEnding14>106</pstQueenEnding14>
-<pstQueenEnding15>99</pstQueenEnding15>
-<pstQueenEnding16>127</pstQueenEnding16>
-<pstQueenEnding17>114</pstQueenEnding17>
-<pstQueenEnding18>75</pstQueenEnding18>
-<pstQueenEnding19>92</pstQueenEnding19>
-<pstQueenEnding20>119</pstQueenEnding20>
-<pstQueenEnding21>104</pstQueenEnding21>
-<pstQueenEnding22>98</pstQueenEnding22>
-<pstQueenEnding23>82</pstQueenEnding23>
-<pstQueenEnding24>104</pstQueenEnding24>
-<pstQueenEnding25>92</pstQueenEnding25>
-<pstQueenEnding26>101</pstQueenEnding26>
-<pstQueenEnding27>92</pstQueenEnding27>
-<pstQueenEnding28>106</pstQueenEnding28>
-<pstQueenEnding29>106</pstQueenEnding29>
-<pstQueenEnding30>94</pstQueenEnding30>
-<pstQueenEnding31>39</pstQueenEnding31>
-<pstQueenEnding32>119</pstQueenEnding32>
-<pstQueenEnding33>126</pstQueenEnding33>
-<pstQueenEnding34>111</pstQueenEnding34>
-<pstQueenEnding35>105</pstQueenEnding35>
-<pstQueenEnding36>91</pstQueenEnding36>
-<pstQueenEnding37>127</pstQueenEnding37>
-<pstQueenEnding38>48</pstQueenEnding38>
-<pstQueenEnding39>38</pstQueenEnding39>
-<pstQueenEnding40>96</pstQueenEnding40>
-<pstQueenEnding41>85</pstQueenEnding41>
-<pstQueenEnding42>103</pstQueenEnding42>
-<pstQueenEnding43>118</pstQueenEnding43>
-<pstQueenEnding44>110</pstQueenEnding44>
-<pstQueenEnding45>104</pstQueenEnding45>
-<pstQueenEnding46>59</pstQueenEnding46>
-<pstQueenEnding47>67</pstQueenEnding47>
-<pstQueenEnding48>127</pstQueenEnding48>
-<pstQueenEnding49>103</pstQueenEnding49>
-<pstQueenEnding50>127</pstQueenEnding50>
-<pstQueenEnding51>117</pstQueenEnding51>
-<pstQueenEnding52>117</pstQueenEnding52>
-<pstQueenEnding53>106</pstQueenEnding53>
-<pstQueenEnding54>56</pstQueenEnding54>
-<pstQueenEnding55>115</pstQueenEnding55>
-<pstQueenEnding56>76</pstQueenEnding56>
-<pstQueenEnding57>115</pstQueenEnding57>
-<pstQueenEnding58>82</pstQueenEnding58>
-<pstQueenEnding59>119</pstQueenEnding59>
-<pstQueenEnding60>92</pstQueenEnding60>
-<pstQueenEnding61>127</pstQueenEnding61>
-<pstQueenEnding62>0</pstQueenEnding62>
-<pstQueenEnding63>78</pstQueenEnding63>
-<pstKingOpening0>41</pstKingOpening0>
-<pstKingOpening1>96</pstKingOpening1>
-<pstKingOpening2>19</pstKingOpening2>
-<pstKingOpening3>84</pstKingOpening3>
-<pstKingOpening4>0</pstKingOpening4>
-<pstKingOpening5>122</pstKingOpening5>
-<pstKingOpening6>127</pstKingOpening6>
-<pstKingOpening7>29</pstKingOpening7>
-<pstKingOpening8>0</pstKingOpening8>
-<pstKingOpening9>56</pstKingOpening9>
-<pstKingOpening10>84</pstKingOpening10>
-<pstKingOpening11>64</pstKingOpening11>
-<pstKingOpening12>18</pstKingOpening12>
-<pstKingOpening13>31</pstKingOpening13>
-<pstKingOpening14>76</pstKingOpening14>
-<pstKingOpening15>33</pstKingOpening15>
-<pstKingOpening16>10</pstKingOpening16>
-<pstKingOpening17>0</pstKingOpening17>
-<pstKingOpening18>91</pstKingOpening18>
-<pstKingOpening19>0</pstKingOpening19>
-<pstKingOpening20>1</pstKingOpening20>
-<pstKingOpening21>0</pstKingOpening21>
-<pstKingOpening22>20</pstKingOpening22>
-<pstKingOpening23>0</pstKingOpening23>
-<pstKingOpening24>0</pstKingOpening24>
-<pstKingOpening25>16</pstKingOpening25>
-<pstKingOpening26>0</pstKingOpening26>
-<pstKingOpening27>20</pstKingOpening27>
-<pstKingOpening28>0</pstKingOpening28>
-<pstKingOpening29>0</pstKingOpening29>
-<pstKingOpening30>0</pstKingOpening30>
-<pstKingOpening31>0</pstKingOpening31>
-<pstKingOpening32>0</pstKingOpening32>
-<pstKingOpening33>0</pstKingOpening33>
-<pstKingOpening34>0</pstKingOpening34>
-<pstKingOpening35>0</pstKingOpening35>
-<pstKingOpening36>0</pstKingOpening36>
-<pstKingOpening37>0</pstKingOpening37>
-<pstKingOpening38>0</pstKingOpening38>
-<pstKingOpening39>0</pstKingOpening39>
-<pstKingOpening40>0</pstKingOpening40>
-<pstKingOpening41>0</pstKingOpening41>
-<pstKingOpening42>0</pstKingOpening42>
-<pstKingOpening43>0</pstKingOpening43>
-<pstKingOpening44>0</pstKingOpening44>
-<pstKingOpening45>0</pstKingOpening45>
-<pstKingOpening46>18</pstKingOpening46>
-<pstKingOpening47>14</pstKingOpening47>
-<pstKingOpening48>51</pstKingOpening48>
-<pstKingOpening49>17</pstKingOpening49>
-<pstKingOpening50>0</pstKingOpening50>
-<pstKingOpening51>0</pstKingOpening51>
-<pstKingOpening52>30</pstKingOpening52>
-<pstKingOpening53>38</pstKingOpening53>
-<pstKingOpening54>79</pstKingOpening54>
-<pstKingOpening55>77</pstKingOpening55>
-<pstKingOpening56>81</pstKingOpening56>
-<pstKingOpening57>47</pstKingOpening57>
-<pstKingOpening58>20</pstKingOpening58>
-<pstKingOpening59>0</pstKingOpening59>
-<pstKingOpening60>0</pstKingOpening60>
-<pstKingOpening61>29</pstKingOpening61>
-<pstKingOpening62>127</pstKingOpening62>
-<pstKingOpening63>127</pstKingOpening63>
-<pstKingEndgame0>127</pstKingEndgame0>
-<pstKingEndgame1>123</pstKingEndgame1>
-<pstKingEndgame2>108</pstKingEndgame2>
-<pstKingEndgame3>97</pstKingEndgame3>
-<pstKingEndgame4>0</pstKingEndgame4>
-<pstKingEndgame5>0</pstKingEndgame5>
-<pstKingEndgame6>74</pstKingEndgame6>
-<pstKingEndgame7>75</pstKingEndgame7>
-<pstKingEndgame8>76</pstKingEndgame8>
-<pstKingEndgame9>126</pstKingEndgame9>
-<pstKingEndgame10>95</pstKingEndgame10>
-<pstKingEndgame11>87</pstKingEndgame11>
-<pstKingEndgame12>104</pstKingEndgame12>
-<pstKingEndgame13>104</pstKingEndgame13>
-<pstKingEndgame14>89</pstKingEndgame14>
-<pstKingEndgame15>62</pstKingEndgame15>
-<pstKingEndgame16>83</pstKingEndgame16>
-<pstKingEndgame17>110</pstKingEndgame17>
-<pstKingEndgame18>104</pstKingEndgame18>
-<pstKingEndgame19>110</pstKingEndgame19>
-<pstKingEndgame20>125</pstKingEndgame20>
-<pstKingEndgame21>111</pstKingEndgame21>
-<pstKingEndgame22>65</pstKingEndgame22>
-<pstKingEndgame23>73</pstKingEndgame23>
-<pstKingEndgame24>52</pstKingEndgame24>
-<pstKingEndgame25>102</pstKingEndgame25>
-<pstKingEndgame26>99</pstKingEndgame26>
-<pstKingEndgame27>108</pstKingEndgame27>
-<pstKingEndgame28>107</pstKingEndgame28>
-<pstKingEndgame29>102</pstKingEndgame29>
-<pstKingEndgame30>97</pstKingEndgame30>
-<pstKingEndgame31>53</pstKingEndgame31>
-<pstKingEndgame32>46</pstKingEndgame32>
-<pstKingEndgame33>63</pstKingEndgame33>
-<pstKingEndgame34>85</pstKingEndgame34>
-<pstKingEndgame35>82</pstKingEndgame35>
-<pstKingEndgame36>87</pstKingEndgame36>
-<pstKingEndgame37>70</pstKingEndgame37>
-<pstKingEndgame38>58</pstKingEndgame38>
-<pstKingEndgame39>36</pstKingEndgame39>
-<pstKingEndgame40>51</pstKingEndgame40>
-<pstKingEndgame41>71</pstKingEndgame41>
-<pstKingEndgame42>53</pstKingEndgame42>
-<pstKingEndgame43>84</pstKingEndgame43>
-<pstKingEndgame44>80</pstKingEndgame44>
-<pstKingEndgame45>72</pstKingEndgame45>
-<pstKingEndgame46>56</pstKingEndgame46>
-<pstKingEndgame47>43</pstKingEndgame47>
-<pstKingEndgame48>40</pstKingEndgame48>
-<pstKingEndgame49>88</pstKingEndgame49>
-<pstKingEndgame50>74</pstKingEndgame50>
-<pstKingEndgame51>65</pstKingEndgame51>
-<pstKingEndgame52>52</pstKingEndgame52>
-<pstKingEndgame53>68</pstKingEndgame53>
-<pstKingEndgame54>65</pstKingEndgame54>
-<pstKingEndgame55>38</pstKingEndgame55>
-<pstKingEndgame56>8</pstKingEndgame56>
-<pstKingEndgame57>66</pstKingEndgame57>
-<pstKingEndgame58>92</pstKingEndgame58>
-<pstKingEndgame59>4</pstKingEndgame59>
-<pstKingEndgame60>61</pstKingEndgame60>
-<pstKingEndgame61>59</pstKingEndgame61>
-<pstKingEndgame62>76</pstKingEndgame62>
-<pstKingEndgame63>52</pstKingEndgame63>
+  <kingValue>20000</kingValue>
+  <queenValue>753</queenValue>
+  <rookValue>321</rookValue>
+  <bishopvalue>142</bishopvalue>
+  <knightValue>138</knightValue>
+  <pawnEndgameValue>125</pawnEndgameValue>
+  <pawnValue>100</pawnValue>
+  <kingPhaseWeight>0</kingPhaseWeight>
+  <queenPhaseWeight>4</queenPhaseWeight>
+  <rookPhaseWeight>2</rookPhaseWeight>
+  <bishopPhaseWeight>1</bishopPhaseWeight>
+  <knightPhaseWeight>1</knightPhaseWeight>
+  <pawnPhaseWeight>0</pawnPhaseWeight>
+  <blockedPawnWeight1>55</blockedPawnWeight1>
+  <blockedPawnWeight2>8</blockedPawnWeight2>
+  <blockedPawnWeight3>16</blockedPawnWeight3>
+  <kingFriendlyNormalPawnTropismWeight>15</kingFriendlyNormalPawnTropismWeight>
+  <kingOpponentNormalPawnTropismWeight>22</kingOpponentNormalPawnTropismWeight>
+  <kingFriendlyOpenBackwardPawnTropismWeight>0</kingFriendlyOpenBackwardPawnTropismWeight>
+  <kingOpponentOpenBackwardPawnTropismWeight>21</kingOpponentOpenBackwardPawnTropismWeight>
+  <kingFriendlyPassedPawnTropismWeight>2</kingFriendlyPassedPawnTropismWeight>
+  <kingOpponentPassedPawnTropismWeight>0</kingOpponentPassedPawnTropismWeight>
+  <passedPawnWeight>67</passedPawnWeight>
+  <openBackwardPawnWeight>51</openBackwardPawnWeight>
+  <stoppedPawnWeight>36</stoppedPawnWeight>
+  <queenKingTropismWeight>49</queenKingTropismWeight>
+  <bishopPairAdvantage>48</bishopPairAdvantage>
+  <tempoAdvantage>91</tempoAdvantage>
+  <gamePhaseOpeningLower>0</gamePhaseOpeningLower>
+  <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
+  <gamePhaseEndgameLower>176</gamePhaseEndgameLower>
+  <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
+  <nullMoveReduction>2</nullMoveReduction>
+  <nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
+  <extraNullMoveReduction>1</extraNullMoveReduction>
+  <extraNullMoveReductionDepthLimit>8</extraNullMoveReductionDepthLimit>
+  <lateMoveReduction>1</lateMoveReduction>
+  <lateMoveReductionMinDepthLeft>2</lateMoveReductionMinDepthLeft>
+  <extraLateMoveReduction>1</extraLateMoveReduction>
+  <extraLateMoveReductionDepthLimit>6</extraLateMoveReductionDepthLimit>
+  <minMovesSearchedForLmr>4</minMovesSearchedForLmr>
+  <doRazor>true</doRazor>
+  <revFutitilityMargin1>236</revFutitilityMargin1>
+  <revFutitilityMargin2>683</revFutitilityMargin2>
+  <revFutitilityMargin3>1688</revFutitilityMargin3>
+  <futilityMargin1>47</futilityMargin1>
+  <futilityMargin2>121</futilityMargin2>
+  <futilityMargin3>218</futilityMargin3>
+  <futilityMargin4>353</futilityMargin4>
+  <futilityMargin5>712</futilityMargin5>
+  <deltaPruningMargin>646</deltaPruningMargin>
+  <aspirationDelta>50</aspirationDelta>
+  <maxNominalSearchDepth>64</maxNominalSearchDepth>
+  <fullPly>8</fullPly>
+  <checkExtension>9</checkExtension>
+  <recapExtension>7</recapExtension>
+  <singleReplyExtension>13</singleReplyExtension>
+  <pawnPushExtension>6</pawnPushExtension>
+  <doIid>true</doIid>
+  <iidMinDepthLeft>6</iidMinDepthLeft>
+  <iidRelDepth64th>24</iidRelDepth64th>
+  <maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
+  <maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
+  <nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
+  <transTableShare>8</transTableShare>
+  <evalTableShare>2</evalTableShare>
+  <transTableEntryLifeCycle>1</transTableEntryLifeCycle>
+  <evalTableEntryLifeCycle>2</evalTableEntryLifeCycle>
+  <minTimePortionNeededForExtraDepth64th>42</minTimePortionNeededForExtraDepth64th>
+  <minMovesToGo>20</minMovesToGo>
+  <maxMovesToGo>35</maxMovesToGo>
+  <pstPawnOpening8>127</pstPawnOpening8>
+  <pstPawnOpening9>127</pstPawnOpening9>
+  <pstPawnOpening10>127</pstPawnOpening10>
+  <pstPawnOpening11>127</pstPawnOpening11>
+  <pstPawnOpening12>75</pstPawnOpening12>
+  <pstPawnOpening13>52</pstPawnOpening13>
+  <pstPawnOpening14>127</pstPawnOpening14>
+  <pstPawnOpening15>126</pstPawnOpening15>
+  <pstPawnOpening16>127</pstPawnOpening16>
+  <pstPawnOpening17>127</pstPawnOpening17>
+  <pstPawnOpening18>127</pstPawnOpening18>
+  <pstPawnOpening19>127</pstPawnOpening19>
+  <pstPawnOpening20>73</pstPawnOpening20>
+  <pstPawnOpening21>99</pstPawnOpening21>
+  <pstPawnOpening22>77</pstPawnOpening22>
+  <pstPawnOpening23>108</pstPawnOpening23>
+  <pstPawnOpening24>65</pstPawnOpening24>
+  <pstPawnOpening25>44</pstPawnOpening25>
+  <pstPawnOpening26>59</pstPawnOpening26>
+  <pstPawnOpening27>66</pstPawnOpening27>
+  <pstPawnOpening28>89</pstPawnOpening28>
+  <pstPawnOpening29>93</pstPawnOpening29>
+  <pstPawnOpening30>37</pstPawnOpening30>
+  <pstPawnOpening31>66</pstPawnOpening31>
+  <pstPawnOpening32>28</pstPawnOpening32>
+  <pstPawnOpening33>33</pstPawnOpening33>
+  <pstPawnOpening34>66</pstPawnOpening34>
+  <pstPawnOpening35>73</pstPawnOpening35>
+  <pstPawnOpening36>72</pstPawnOpening36>
+  <pstPawnOpening37>40</pstPawnOpening37>
+  <pstPawnOpening38>36</pstPawnOpening38>
+  <pstPawnOpening39>33</pstPawnOpening39>
+  <pstPawnOpening40>0</pstPawnOpening40>
+  <pstPawnOpening41>17</pstPawnOpening41>
+  <pstPawnOpening42>10</pstPawnOpening42>
+  <pstPawnOpening43>2</pstPawnOpening43>
+  <pstPawnOpening44>25</pstPawnOpening44>
+  <pstPawnOpening45>0</pstPawnOpening45>
+  <pstPawnOpening46>10</pstPawnOpening46>
+  <pstPawnOpening47>0</pstPawnOpening47>
+  <pstPawnOpening48>13</pstPawnOpening48>
+  <pstPawnOpening49>36</pstPawnOpening49>
+  <pstPawnOpening50>31</pstPawnOpening50>
+  <pstPawnOpening51>0</pstPawnOpening51>
+  <pstPawnOpening52>22</pstPawnOpening52>
+  <pstPawnOpening53>37</pstPawnOpening53>
+  <pstPawnOpening54>34</pstPawnOpening54>
+  <pstPawnOpening55>0</pstPawnOpening55>
+  <pstPawnEndgame8>127</pstPawnEndgame8>
+  <pstPawnEndgame9>127</pstPawnEndgame9>
+  <pstPawnEndgame10>127</pstPawnEndgame10>
+  <pstPawnEndgame11>127</pstPawnEndgame11>
+  <pstPawnEndgame12>127</pstPawnEndgame12>
+  <pstPawnEndgame13>127</pstPawnEndgame13>
+  <pstPawnEndgame14>127</pstPawnEndgame14>
+  <pstPawnEndgame15>127</pstPawnEndgame15>
+  <pstPawnEndgame16>127</pstPawnEndgame16>
+  <pstPawnEndgame17>127</pstPawnEndgame17>
+  <pstPawnEndgame18>127</pstPawnEndgame18>
+  <pstPawnEndgame19>127</pstPawnEndgame19>
+  <pstPawnEndgame20>127</pstPawnEndgame20>
+  <pstPawnEndgame21>127</pstPawnEndgame21>
+  <pstPawnEndgame22>127</pstPawnEndgame22>
+  <pstPawnEndgame23>127</pstPawnEndgame23>
+  <pstPawnEndgame24>126</pstPawnEndgame24>
+  <pstPawnEndgame25>126</pstPawnEndgame25>
+  <pstPawnEndgame26>117</pstPawnEndgame26>
+  <pstPawnEndgame27>111</pstPawnEndgame27>
+  <pstPawnEndgame28>91</pstPawnEndgame28>
+  <pstPawnEndgame29>112</pstPawnEndgame29>
+  <pstPawnEndgame30>127</pstPawnEndgame30>
+  <pstPawnEndgame31>118</pstPawnEndgame31>
+  <pstPawnEndgame32>75</pstPawnEndgame32>
+  <pstPawnEndgame33>113</pstPawnEndgame33>
+  <pstPawnEndgame34>53</pstPawnEndgame34>
+  <pstPawnEndgame35>33</pstPawnEndgame35>
+  <pstPawnEndgame36>53</pstPawnEndgame36>
+  <pstPawnEndgame37>100</pstPawnEndgame37>
+  <pstPawnEndgame38>83</pstPawnEndgame38>
+  <pstPawnEndgame39>53</pstPawnEndgame39>
+  <pstPawnEndgame40>23</pstPawnEndgame40>
+  <pstPawnEndgame41>56</pstPawnEndgame41>
+  <pstPawnEndgame42>34</pstPawnEndgame42>
+  <pstPawnEndgame43>27</pstPawnEndgame43>
+  <pstPawnEndgame44>46</pstPawnEndgame44>
+  <pstPawnEndgame45>61</pstPawnEndgame45>
+  <pstPawnEndgame46>66</pstPawnEndgame46>
+  <pstPawnEndgame47>14</pstPawnEndgame47>
+  <pstPawnEndgame48>75</pstPawnEndgame48>
+  <pstPawnEndgame49>105</pstPawnEndgame49>
+  <pstPawnEndgame50>67</pstPawnEndgame50>
+  <pstPawnEndgame51>25</pstPawnEndgame51>
+  <pstPawnEndgame52>114</pstPawnEndgame52>
+  <pstPawnEndgame53>119</pstPawnEndgame53>
+  <pstPawnEndgame54>96</pstPawnEndgame54>
+  <pstPawnEndgame55>58</pstPawnEndgame55>
+  <pstKnightOpening0>89</pstKnightOpening0>
+  <pstKnightOpening1>13</pstKnightOpening1>
+  <pstKnightOpening2>22</pstKnightOpening2>
+  <pstKnightOpening3>46</pstKnightOpening3>
+  <pstKnightOpening8>33</pstKnightOpening8>
+  <pstKnightOpening9>80</pstKnightOpening9>
+  <pstKnightOpening10>126</pstKnightOpening10>
+  <pstKnightOpening11>67</pstKnightOpening11>
+  <pstKnightOpening16>27</pstKnightOpening16>
+  <pstKnightOpening17>82</pstKnightOpening17>
+  <pstKnightOpening18>86</pstKnightOpening18>
+  <pstKnightOpening19>127</pstKnightOpening19>
+  <pstKnightOpening24>67</pstKnightOpening24>
+  <pstKnightOpening25>72</pstKnightOpening25>
+  <pstKnightOpening26>127</pstKnightOpening26>
+  <pstKnightOpening27>102</pstKnightOpening27>
+  <pstKnightOpening32>26</pstKnightOpening32>
+  <pstKnightOpening33>60</pstKnightOpening33>
+  <pstKnightOpening34>78</pstKnightOpening34>
+  <pstKnightOpening35>43</pstKnightOpening35>
+  <pstKnightOpening40>0</pstKnightOpening40>
+  <pstKnightOpening41>6</pstKnightOpening41>
+  <pstKnightOpening42>61</pstKnightOpening42>
+  <pstKnightOpening43>82</pstKnightOpening43>
+  <pstKnightOpening48>0</pstKnightOpening48>
+  <pstKnightOpening49>0</pstKnightOpening49>
+  <pstKnightOpening50>41</pstKnightOpening50>
+  <pstKnightOpening51>7</pstKnightOpening51>
+  <pstKnightOpening56>0</pstKnightOpening56>
+  <pstKnightOpening57>0</pstKnightOpening57>
+  <pstKnightOpening58>0</pstKnightOpening58>
+  <pstKnightOpening59>17</pstKnightOpening59>
+  <pstKnightEndgame0>76</pstKnightEndgame0>
+  <pstKnightEndgame1>81</pstKnightEndgame1>
+  <pstKnightEndgame2>55</pstKnightEndgame2>
+  <pstKnightEndgame3>125</pstKnightEndgame3>
+  <pstKnightEndgame8>79</pstKnightEndgame8>
+  <pstKnightEndgame9>98</pstKnightEndgame9>
+  <pstKnightEndgame10>122</pstKnightEndgame10>
+  <pstKnightEndgame11>125</pstKnightEndgame11>
+  <pstKnightEndgame16>126</pstKnightEndgame16>
+  <pstKnightEndgame17>125</pstKnightEndgame17>
+  <pstKnightEndgame18>127</pstKnightEndgame18>
+  <pstKnightEndgame19>127</pstKnightEndgame19>
+  <pstKnightEndgame24>62</pstKnightEndgame24>
+  <pstKnightEndgame25>126</pstKnightEndgame25>
+  <pstKnightEndgame26>127</pstKnightEndgame26>
+  <pstKnightEndgame27>127</pstKnightEndgame27>
+  <pstKnightEndgame32>20</pstKnightEndgame32>
+  <pstKnightEndgame33>78</pstKnightEndgame33>
+  <pstKnightEndgame34>120</pstKnightEndgame34>
+  <pstKnightEndgame35>127</pstKnightEndgame35>
+  <pstKnightEndgame40>0</pstKnightEndgame40>
+  <pstKnightEndgame41>34</pstKnightEndgame41>
+  <pstKnightEndgame42>29</pstKnightEndgame42>
+  <pstKnightEndgame43>34</pstKnightEndgame43>
+  <pstKnightEndgame48>0</pstKnightEndgame48>
+  <pstKnightEndgame49>0</pstKnightEndgame49>
+  <pstKnightEndgame50>0</pstKnightEndgame50>
+  <pstKnightEndgame51>0</pstKnightEndgame51>
+  <pstKnightEndgame56>29</pstKnightEndgame56>
+  <pstKnightEndgame57>0</pstKnightEndgame57>
+  <pstKnightEndgame58>0</pstKnightEndgame58>
+  <pstKnightEndgame59>0</pstKnightEndgame59>
+  <pstBishopOpening0>61</pstBishopOpening0>
+  <pstBishopOpening1>89</pstBishopOpening1>
+  <pstBishopOpening2>70</pstBishopOpening2>
+  <pstBishopOpening3>66</pstBishopOpening3>
+  <pstBishopOpening8>71</pstBishopOpening8>
+  <pstBishopOpening9>56</pstBishopOpening9>
+  <pstBishopOpening10>89</pstBishopOpening10>
+  <pstBishopOpening11>89</pstBishopOpening11>
+  <pstBishopOpening16>61</pstBishopOpening16>
+  <pstBishopOpening17>89</pstBishopOpening17>
+  <pstBishopOpening18>35</pstBishopOpening18>
+  <pstBishopOpening19>98</pstBishopOpening19>
+  <pstBishopOpening24>55</pstBishopOpening24>
+  <pstBishopOpening25>89</pstBishopOpening25>
+  <pstBishopOpening26>104</pstBishopOpening26>
+  <pstBishopOpening27>80</pstBishopOpening27>
+  <pstBishopOpening32>66</pstBishopOpening32>
+  <pstBishopOpening33>60</pstBishopOpening33>
+  <pstBishopOpening34>99</pstBishopOpening34>
+  <pstBishopOpening35>72</pstBishopOpening35>
+  <pstBishopOpening40>97</pstBishopOpening40>
+  <pstBishopOpening41>102</pstBishopOpening41>
+  <pstBishopOpening42>87</pstBishopOpening42>
+  <pstBishopOpening43>112</pstBishopOpening43>
+  <pstBishopOpening48>50</pstBishopOpening48>
+  <pstBishopOpening49>75</pstBishopOpening49>
+  <pstBishopOpening50>96</pstBishopOpening50>
+  <pstBishopOpening51>43</pstBishopOpening51>
+  <pstBishopOpening56>4</pstBishopOpening56>
+  <pstBishopOpening57>47</pstBishopOpening57>
+  <pstBishopOpening58>19</pstBishopOpening58>
+  <pstBishopOpening59>0</pstBishopOpening59>
+  <pstBishopEnding0>72</pstBishopEnding0>
+  <pstBishopEnding1>90</pstBishopEnding1>
+  <pstBishopEnding2>98</pstBishopEnding2>
+  <pstBishopEnding3>100</pstBishopEnding3>
+  <pstBishopEnding8>103</pstBishopEnding8>
+  <pstBishopEnding9>68</pstBishopEnding9>
+  <pstBishopEnding10>90</pstBishopEnding10>
+  <pstBishopEnding11>97</pstBishopEnding11>
+  <pstBishopEnding16>89</pstBishopEnding16>
+  <pstBishopEnding17>93</pstBishopEnding17>
+  <pstBishopEnding18>127</pstBishopEnding18>
+  <pstBishopEnding19>116</pstBishopEnding19>
+  <pstBishopEnding24>84</pstBishopEnding24>
+  <pstBishopEnding25>101</pstBishopEnding25>
+  <pstBishopEnding26>127</pstBishopEnding26>
+  <pstBishopEnding27>127</pstBishopEnding27>
+  <pstBishopEnding32>57</pstBishopEnding32>
+  <pstBishopEnding33>97</pstBishopEnding33>
+  <pstBishopEnding34>119</pstBishopEnding34>
+  <pstBishopEnding35>125</pstBishopEnding35>
+  <pstBishopEnding40>92</pstBishopEnding40>
+  <pstBishopEnding41>125</pstBishopEnding41>
+  <pstBishopEnding42>105</pstBishopEnding42>
+  <pstBishopEnding43>117</pstBishopEnding43>
+  <pstBishopEnding48>24</pstBishopEnding48>
+  <pstBishopEnding49>84</pstBishopEnding49>
+  <pstBishopEnding50>81</pstBishopEnding50>
+  <pstBishopEnding51>86</pstBishopEnding51>
+  <pstBishopEnding56>0</pstBishopEnding56>
+  <pstBishopEnding57>6</pstBishopEnding57>
+  <pstBishopEnding58>9</pstBishopEnding58>
+  <pstBishopEnding59>0</pstBishopEnding59>
+  <pstRookOpening0>16</pstRookOpening0>
+  <pstRookOpening1>3</pstRookOpening1>
+  <pstRookOpening2>0</pstRookOpening2>
+  <pstRookOpening3>0</pstRookOpening3>
+  <pstRookOpening4>0</pstRookOpening4>
+  <pstRookOpening5>37</pstRookOpening5>
+  <pstRookOpening6>23</pstRookOpening6>
+  <pstRookOpening7>116</pstRookOpening7>
+  <pstRookOpening8>127</pstRookOpening8>
+  <pstRookOpening9>111</pstRookOpening9>
+  <pstRookOpening10>127</pstRookOpening10>
+  <pstRookOpening11>127</pstRookOpening11>
+  <pstRookOpening12>127</pstRookOpening12>
+  <pstRookOpening13>127</pstRookOpening13>
+  <pstRookOpening14>127</pstRookOpening14>
+  <pstRookOpening15>126</pstRookOpening15>
+  <pstRookOpening16>78</pstRookOpening16>
+  <pstRookOpening17>77</pstRookOpening17>
+  <pstRookOpening18>113</pstRookOpening18>
+  <pstRookOpening19>127</pstRookOpening19>
+  <pstRookOpening20>127</pstRookOpening20>
+  <pstRookOpening21>127</pstRookOpening21>
+  <pstRookOpening22>127</pstRookOpening22>
+  <pstRookOpening23>127</pstRookOpening23>
+  <pstRookOpening24>38</pstRookOpening24>
+  <pstRookOpening25>43</pstRookOpening25>
+  <pstRookOpening26>91</pstRookOpening26>
+  <pstRookOpening27>89</pstRookOpening27>
+  <pstRookOpening28>127</pstRookOpening28>
+  <pstRookOpening29>126</pstRookOpening29>
+  <pstRookOpening30>124</pstRookOpening30>
+  <pstRookOpening31>57</pstRookOpening31>
+  <pstRookOpening32>6</pstRookOpening32>
+  <pstRookOpening33>42</pstRookOpening33>
+  <pstRookOpening34>34</pstRookOpening34>
+  <pstRookOpening35>96</pstRookOpening35>
+  <pstRookOpening36>64</pstRookOpening36>
+  <pstRookOpening37>36</pstRookOpening37>
+  <pstRookOpening38>95</pstRookOpening38>
+  <pstRookOpening39>96</pstRookOpening39>
+  <pstRookOpening40>52</pstRookOpening40>
+  <pstRookOpening41>0</pstRookOpening41>
+  <pstRookOpening42>9</pstRookOpening42>
+  <pstRookOpening43>0</pstRookOpening43>
+  <pstRookOpening44>24</pstRookOpening44>
+  <pstRookOpening45>16</pstRookOpening45>
+  <pstRookOpening46>51</pstRookOpening46>
+  <pstRookOpening47>44</pstRookOpening47>
+  <pstRookOpening48>0</pstRookOpening48>
+  <pstRookOpening49>0</pstRookOpening49>
+  <pstRookOpening50>0</pstRookOpening50>
+  <pstRookOpening51>40</pstRookOpening51>
+  <pstRookOpening52>0</pstRookOpening52>
+  <pstRookOpening53>15</pstRookOpening53>
+  <pstRookOpening54>10</pstRookOpening54>
+  <pstRookOpening55>70</pstRookOpening55>
+  <pstRookOpening56>0</pstRookOpening56>
+  <pstRookOpening57>6</pstRookOpening57>
+  <pstRookOpening58>56</pstRookOpening58>
+  <pstRookOpening59>69</pstRookOpening59>
+  <pstRookOpening60>51</pstRookOpening60>
+  <pstRookOpening61>31</pstRookOpening61>
+  <pstRookOpening62>26</pstRookOpening62>
+  <pstRookOpening63>12</pstRookOpening63>
+  <pstRookEndgame0>123</pstRookEndgame0>
+  <pstRookEndgame1>127</pstRookEndgame1>
+  <pstRookEndgame2>120</pstRookEndgame2>
+  <pstRookEndgame3>101</pstRookEndgame3>
+  <pstRookEndgame4>107</pstRookEndgame4>
+  <pstRookEndgame5>127</pstRookEndgame5>
+  <pstRookEndgame6>108</pstRookEndgame6>
+  <pstRookEndgame7>111</pstRookEndgame7>
+  <pstRookEndgame8>127</pstRookEndgame8>
+  <pstRookEndgame9>127</pstRookEndgame9>
+  <pstRookEndgame10>127</pstRookEndgame10>
+  <pstRookEndgame11>127</pstRookEndgame11>
+  <pstRookEndgame12>127</pstRookEndgame12>
+  <pstRookEndgame13>127</pstRookEndgame13>
+  <pstRookEndgame14>127</pstRookEndgame14>
+  <pstRookEndgame15>126</pstRookEndgame15>
+  <pstRookEndgame16>127</pstRookEndgame16>
+  <pstRookEndgame17>127</pstRookEndgame17>
+  <pstRookEndgame18>127</pstRookEndgame18>
+  <pstRookEndgame19>127</pstRookEndgame19>
+  <pstRookEndgame20>127</pstRookEndgame20>
+  <pstRookEndgame21>127</pstRookEndgame21>
+  <pstRookEndgame22>127</pstRookEndgame22>
+  <pstRookEndgame23>126</pstRookEndgame23>
+  <pstRookEndgame24>126</pstRookEndgame24>
+  <pstRookEndgame25>127</pstRookEndgame25>
+  <pstRookEndgame26>127</pstRookEndgame26>
+  <pstRookEndgame27>127</pstRookEndgame27>
+  <pstRookEndgame28>127</pstRookEndgame28>
+  <pstRookEndgame29>127</pstRookEndgame29>
+  <pstRookEndgame30>123</pstRookEndgame30>
+  <pstRookEndgame31>127</pstRookEndgame31>
+  <pstRookEndgame32>87</pstRookEndgame32>
+  <pstRookEndgame33>87</pstRookEndgame33>
+  <pstRookEndgame34>126</pstRookEndgame34>
+  <pstRookEndgame35>92</pstRookEndgame35>
+  <pstRookEndgame36>75</pstRookEndgame36>
+  <pstRookEndgame37>126</pstRookEndgame37>
+  <pstRookEndgame38>64</pstRookEndgame38>
+  <pstRookEndgame39>42</pstRookEndgame39>
+  <pstRookEndgame40>2</pstRookEndgame40>
+  <pstRookEndgame41>65</pstRookEndgame41>
+  <pstRookEndgame42>43</pstRookEndgame42>
+  <pstRookEndgame43>40</pstRookEndgame43>
+  <pstRookEndgame44>33</pstRookEndgame44>
+  <pstRookEndgame45>23</pstRookEndgame45>
+  <pstRookEndgame46>27</pstRookEndgame46>
+  <pstRookEndgame47>43</pstRookEndgame47>
+  <pstRookEndgame48>15</pstRookEndgame48>
+  <pstRookEndgame49>0</pstRookEndgame49>
+  <pstRookEndgame50>10</pstRookEndgame50>
+  <pstRookEndgame51>0</pstRookEndgame51>
+  <pstRookEndgame52>4</pstRookEndgame52>
+  <pstRookEndgame53>0</pstRookEndgame53>
+  <pstRookEndgame54>0</pstRookEndgame54>
+  <pstRookEndgame55>0</pstRookEndgame55>
+  <pstRookEndgame56>0</pstRookEndgame56>
+  <pstRookEndgame57>12</pstRookEndgame57>
+  <pstRookEndgame58>80</pstRookEndgame58>
+  <pstRookEndgame59>58</pstRookEndgame59>
+  <pstRookEndgame60>26</pstRookEndgame60>
+  <pstRookEndgame61>12</pstRookEndgame61>
+  <pstRookEndgame62>40</pstRookEndgame62>
+  <pstRookEndgame63>10</pstRookEndgame63>
+  <pstQueenOpening0>51</pstQueenOpening0>
+  <pstQueenOpening1>127</pstQueenOpening1>
+  <pstQueenOpening2>111</pstQueenOpening2>
+  <pstQueenOpening3>33</pstQueenOpening3>
+  <pstQueenOpening4>106</pstQueenOpening4>
+  <pstQueenOpening5>127</pstQueenOpening5>
+  <pstQueenOpening6>126</pstQueenOpening6>
+  <pstQueenOpening7>127</pstQueenOpening7>
+  <pstQueenOpening8>76</pstQueenOpening8>
+  <pstQueenOpening9>92</pstQueenOpening9>
+  <pstQueenOpening10>117</pstQueenOpening10>
+  <pstQueenOpening11>67</pstQueenOpening11>
+  <pstQueenOpening12>83</pstQueenOpening12>
+  <pstQueenOpening13>101</pstQueenOpening13>
+  <pstQueenOpening14>126</pstQueenOpening14>
+  <pstQueenOpening15>127</pstQueenOpening15>
+  <pstQueenOpening16>97</pstQueenOpening16>
+  <pstQueenOpening17>99</pstQueenOpening17>
+  <pstQueenOpening18>84</pstQueenOpening18>
+  <pstQueenOpening19>111</pstQueenOpening19>
+  <pstQueenOpening20>116</pstQueenOpening20>
+  <pstQueenOpening21>126</pstQueenOpening21>
+  <pstQueenOpening22>127</pstQueenOpening22>
+  <pstQueenOpening23>83</pstQueenOpening23>
+  <pstQueenOpening24>94</pstQueenOpening24>
+  <pstQueenOpening25>72</pstQueenOpening25>
+  <pstQueenOpening26>84</pstQueenOpening26>
+  <pstQueenOpening27>66</pstQueenOpening27>
+  <pstQueenOpening28>100</pstQueenOpening28>
+  <pstQueenOpening29>111</pstQueenOpening29>
+  <pstQueenOpening30>74</pstQueenOpening30>
+  <pstQueenOpening31>67</pstQueenOpening31>
+  <pstQueenOpening32>77</pstQueenOpening32>
+  <pstQueenOpening33>89</pstQueenOpening33>
+  <pstQueenOpening34>68</pstQueenOpening34>
+  <pstQueenOpening35>98</pstQueenOpening35>
+  <pstQueenOpening36>76</pstQueenOpening36>
+  <pstQueenOpening37>90</pstQueenOpening37>
+  <pstQueenOpening38>77</pstQueenOpening38>
+  <pstQueenOpening39>56</pstQueenOpening39>
+  <pstQueenOpening40>116</pstQueenOpening40>
+  <pstQueenOpening41>83</pstQueenOpening41>
+  <pstQueenOpening42>102</pstQueenOpening42>
+  <pstQueenOpening43>70</pstQueenOpening43>
+  <pstQueenOpening44>72</pstQueenOpening44>
+  <pstQueenOpening45>106</pstQueenOpening45>
+  <pstQueenOpening46>92</pstQueenOpening46>
+  <pstQueenOpening47>86</pstQueenOpening47>
+  <pstQueenOpening48>102</pstQueenOpening48>
+  <pstQueenOpening49>115</pstQueenOpening49>
+  <pstQueenOpening50>123</pstQueenOpening50>
+  <pstQueenOpening51>124</pstQueenOpening51>
+  <pstQueenOpening52>91</pstQueenOpening52>
+  <pstQueenOpening53>98</pstQueenOpening53>
+  <pstQueenOpening54>37</pstQueenOpening54>
+  <pstQueenOpening55>115</pstQueenOpening55>
+  <pstQueenOpening56>103</pstQueenOpening56>
+  <pstQueenOpening57>95</pstQueenOpening57>
+  <pstQueenOpening58>55</pstQueenOpening58>
+  <pstQueenOpening59>126</pstQueenOpening59>
+  <pstQueenOpening60>77</pstQueenOpening60>
+  <pstQueenOpening61>60</pstQueenOpening61>
+  <pstQueenOpening62>1</pstQueenOpening62>
+  <pstQueenOpening63>89</pstQueenOpening63>
+  <pstQueenEnding0>69</pstQueenEnding0>
+  <pstQueenEnding1>127</pstQueenEnding1>
+  <pstQueenEnding2>116</pstQueenEnding2>
+  <pstQueenEnding3>102</pstQueenEnding3>
+  <pstQueenEnding4>121</pstQueenEnding4>
+  <pstQueenEnding5>126</pstQueenEnding5>
+  <pstQueenEnding6>127</pstQueenEnding6>
+  <pstQueenEnding7>127</pstQueenEnding7>
+  <pstQueenEnding8>94</pstQueenEnding8>
+  <pstQueenEnding9>127</pstQueenEnding9>
+  <pstQueenEnding10>127</pstQueenEnding10>
+  <pstQueenEnding11>86</pstQueenEnding11>
+  <pstQueenEnding12>100</pstQueenEnding12>
+  <pstQueenEnding13>115</pstQueenEnding13>
+  <pstQueenEnding14>127</pstQueenEnding14>
+  <pstQueenEnding15>126</pstQueenEnding15>
+  <pstQueenEnding16>106</pstQueenEnding16>
+  <pstQueenEnding17>120</pstQueenEnding17>
+  <pstQueenEnding18>107</pstQueenEnding18>
+  <pstQueenEnding19>126</pstQueenEnding19>
+  <pstQueenEnding20>121</pstQueenEnding20>
+  <pstQueenEnding21>127</pstQueenEnding21>
+  <pstQueenEnding22>127</pstQueenEnding22>
+  <pstQueenEnding23>99</pstQueenEnding23>
+  <pstQueenEnding24>97</pstQueenEnding24>
+  <pstQueenEnding25>96</pstQueenEnding25>
+  <pstQueenEnding26>106</pstQueenEnding26>
+  <pstQueenEnding27>122</pstQueenEnding27>
+  <pstQueenEnding28>126</pstQueenEnding28>
+  <pstQueenEnding29>125</pstQueenEnding29>
+  <pstQueenEnding30>91</pstQueenEnding30>
+  <pstQueenEnding31>78</pstQueenEnding31>
+  <pstQueenEnding32>106</pstQueenEnding32>
+  <pstQueenEnding33>95</pstQueenEnding33>
+  <pstQueenEnding34>92</pstQueenEnding34>
+  <pstQueenEnding35>123</pstQueenEnding35>
+  <pstQueenEnding36>103</pstQueenEnding36>
+  <pstQueenEnding37>109</pstQueenEnding37>
+  <pstQueenEnding38>64</pstQueenEnding38>
+  <pstQueenEnding39>64</pstQueenEnding39>
+  <pstQueenEnding40>114</pstQueenEnding40>
+  <pstQueenEnding41>101</pstQueenEnding41>
+  <pstQueenEnding42>117</pstQueenEnding42>
+  <pstQueenEnding43>59</pstQueenEnding43>
+  <pstQueenEnding44>76</pstQueenEnding44>
+  <pstQueenEnding45>95</pstQueenEnding45>
+  <pstQueenEnding46>77</pstQueenEnding46>
+  <pstQueenEnding47>65</pstQueenEnding47>
+  <pstQueenEnding48>92</pstQueenEnding48>
+  <pstQueenEnding49>93</pstQueenEnding49>
+  <pstQueenEnding50>107</pstQueenEnding50>
+  <pstQueenEnding51>72</pstQueenEnding51>
+  <pstQueenEnding52>67</pstQueenEnding52>
+  <pstQueenEnding53>76</pstQueenEnding53>
+  <pstQueenEnding54>22</pstQueenEnding54>
+  <pstQueenEnding55>85</pstQueenEnding55>
+  <pstQueenEnding56>92</pstQueenEnding56>
+  <pstQueenEnding57>77</pstQueenEnding57>
+  <pstQueenEnding58>60</pstQueenEnding58>
+  <pstQueenEnding59>99</pstQueenEnding59>
+  <pstQueenEnding60>50</pstQueenEnding60>
+  <pstQueenEnding61>58</pstQueenEnding61>
+  <pstQueenEnding62>0</pstQueenEnding62>
+  <pstQueenEnding63>81</pstQueenEnding63>
+  <pstKingOpening0>34</pstKingOpening0>
+  <pstKingOpening1>109</pstKingOpening1>
+  <pstKingOpening2>48</pstKingOpening2>
+  <pstKingOpening3>95</pstKingOpening3>
+  <pstKingOpening4>35</pstKingOpening4>
+  <pstKingOpening5>126</pstKingOpening5>
+  <pstKingOpening6>127</pstKingOpening6>
+  <pstKingOpening7>23</pstKingOpening7>
+  <pstKingOpening8>26</pstKingOpening8>
+  <pstKingOpening9>93</pstKingOpening9>
+  <pstKingOpening10>127</pstKingOpening10>
+  <pstKingOpening11>94</pstKingOpening11>
+  <pstKingOpening12>61</pstKingOpening12>
+  <pstKingOpening13>87</pstKingOpening13>
+  <pstKingOpening14>108</pstKingOpening14>
+  <pstKingOpening15>51</pstKingOpening15>
+  <pstKingOpening16>30</pstKingOpening16>
+  <pstKingOpening17>62</pstKingOpening17>
+  <pstKingOpening18>127</pstKingOpening18>
+  <pstKingOpening19>59</pstKingOpening19>
+  <pstKingOpening20>53</pstKingOpening20>
+  <pstKingOpening21>52</pstKingOpening21>
+  <pstKingOpening22>85</pstKingOpening22>
+  <pstKingOpening23>18</pstKingOpening23>
+  <pstKingOpening24>21</pstKingOpening24>
+  <pstKingOpening25>48</pstKingOpening25>
+  <pstKingOpening26>48</pstKingOpening26>
+  <pstKingOpening27>74</pstKingOpening27>
+  <pstKingOpening28>57</pstKingOpening28>
+  <pstKingOpening29>49</pstKingOpening29>
+  <pstKingOpening30>22</pstKingOpening30>
+  <pstKingOpening31>0</pstKingOpening31>
+  <pstKingOpening32>0</pstKingOpening32>
+  <pstKingOpening33>25</pstKingOpening33>
+  <pstKingOpening34>17</pstKingOpening34>
+  <pstKingOpening35>31</pstKingOpening35>
+  <pstKingOpening36>8</pstKingOpening36>
+  <pstKingOpening37>10</pstKingOpening37>
+  <pstKingOpening38>0</pstKingOpening38>
+  <pstKingOpening39>0</pstKingOpening39>
+  <pstKingOpening40>0</pstKingOpening40>
+  <pstKingOpening41>1</pstKingOpening41>
+  <pstKingOpening42>3</pstKingOpening42>
+  <pstKingOpening43>0</pstKingOpening43>
+  <pstKingOpening44>0</pstKingOpening44>
+  <pstKingOpening45>0</pstKingOpening45>
+  <pstKingOpening46>13</pstKingOpening46>
+  <pstKingOpening47>0</pstKingOpening47>
+  <pstKingOpening48>68</pstKingOpening48>
+  <pstKingOpening49>4</pstKingOpening49>
+  <pstKingOpening50>2</pstKingOpening50>
+  <pstKingOpening51>0</pstKingOpening51>
+  <pstKingOpening52>0</pstKingOpening52>
+  <pstKingOpening53>21</pstKingOpening53>
+  <pstKingOpening54>82</pstKingOpening54>
+  <pstKingOpening55>87</pstKingOpening55>
+  <pstKingOpening56>63</pstKingOpening56>
+  <pstKingOpening57>95</pstKingOpening57>
+  <pstKingOpening58>56</pstKingOpening58>
+  <pstKingOpening59>0</pstKingOpening59>
+  <pstKingOpening60>15</pstKingOpening60>
+  <pstKingOpening61>0</pstKingOpening61>
+  <pstKingOpening62>116</pstKingOpening62>
+  <pstKingOpening63>99</pstKingOpening63>
+  <pstKingEndgame0>126</pstKingEndgame0>
+  <pstKingEndgame1>126</pstKingEndgame1>
+  <pstKingEndgame2>127</pstKingEndgame2>
+  <pstKingEndgame3>127</pstKingEndgame3>
+  <pstKingEndgame4>55</pstKingEndgame4>
+  <pstKingEndgame5>39</pstKingEndgame5>
+  <pstKingEndgame6>106</pstKingEndgame6>
+  <pstKingEndgame7>58</pstKingEndgame7>
+  <pstKingEndgame8>117</pstKingEndgame8>
+  <pstKingEndgame9>127</pstKingEndgame9>
+  <pstKingEndgame10>127</pstKingEndgame10>
+  <pstKingEndgame11>127</pstKingEndgame11>
+  <pstKingEndgame12>127</pstKingEndgame12>
+  <pstKingEndgame13>127</pstKingEndgame13>
+  <pstKingEndgame14>127</pstKingEndgame14>
+  <pstKingEndgame15>80</pstKingEndgame15>
+  <pstKingEndgame16>127</pstKingEndgame16>
+  <pstKingEndgame17>127</pstKingEndgame17>
+  <pstKingEndgame18>127</pstKingEndgame18>
+  <pstKingEndgame19>127</pstKingEndgame19>
+  <pstKingEndgame20>127</pstKingEndgame20>
+  <pstKingEndgame21>127</pstKingEndgame21>
+  <pstKingEndgame22>127</pstKingEndgame22>
+  <pstKingEndgame23>117</pstKingEndgame23>
+  <pstKingEndgame24>94</pstKingEndgame24>
+  <pstKingEndgame25>127</pstKingEndgame25>
+  <pstKingEndgame26>127</pstKingEndgame26>
+  <pstKingEndgame27>127</pstKingEndgame27>
+  <pstKingEndgame28>127</pstKingEndgame28>
+  <pstKingEndgame29>127</pstKingEndgame29>
+  <pstKingEndgame30>127</pstKingEndgame30>
+  <pstKingEndgame31>78</pstKingEndgame31>
+  <pstKingEndgame32>53</pstKingEndgame32>
+  <pstKingEndgame33>113</pstKingEndgame33>
+  <pstKingEndgame34>127</pstKingEndgame34>
+  <pstKingEndgame35>127</pstKingEndgame35>
+  <pstKingEndgame36>119</pstKingEndgame36>
+  <pstKingEndgame37>109</pstKingEndgame37>
+  <pstKingEndgame38>81</pstKingEndgame38>
+  <pstKingEndgame39>29</pstKingEndgame39>
+  <pstKingEndgame40>13</pstKingEndgame40>
+  <pstKingEndgame41>46</pstKingEndgame41>
+  <pstKingEndgame42>74</pstKingEndgame42>
+  <pstKingEndgame43>62</pstKingEndgame43>
+  <pstKingEndgame44>61</pstKingEndgame44>
+  <pstKingEndgame45>43</pstKingEndgame45>
+  <pstKingEndgame46>40</pstKingEndgame46>
+  <pstKingEndgame47>0</pstKingEndgame47>
+  <pstKingEndgame48>18</pstKingEndgame48>
+  <pstKingEndgame49>66</pstKingEndgame49>
+  <pstKingEndgame50>40</pstKingEndgame50>
+  <pstKingEndgame51>40</pstKingEndgame51>
+  <pstKingEndgame52>16</pstKingEndgame52>
+  <pstKingEndgame53>45</pstKingEndgame53>
+  <pstKingEndgame54>44</pstKingEndgame54>
+  <pstKingEndgame55>16</pstKingEndgame55>
+  <pstKingEndgame56>0</pstKingEndgame56>
+  <pstKingEndgame57>82</pstKingEndgame57>
+  <pstKingEndgame58>90</pstKingEndgame58>
+  <pstKingEndgame59>0</pstKingEndgame59>
+  <pstKingEndgame60>5</pstKingEndgame60>
+  <pstKingEndgame61>0</pstKingEndgame61>
+  <pstKingEndgame62>100</pstKingEndgame62>
+  <pstKingEndgame63>0</pstKingEndgame63>
 </parameters>

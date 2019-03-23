@@ -10,6 +10,11 @@ public enum CastlingRights {
   NONE,
   SHORT,
   LONG,
-  ALL
+  ALL;
 
+  public final byte ind;
+
+  CastlingRights() {
+    ind = (byte) ordinal();
+  }
 }

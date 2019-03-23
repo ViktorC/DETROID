@@ -152,11 +152,11 @@ class TTEntry implements Entry<TTEntry> {
       if (depth == e.depth) {
         /* To increase the chances of the score being greater than any beta and thus produce more frequent
          * ready-to-return hash hits... */
-        if (type == NodeType.FAIL_HIGH.ordinal()) {
+        if (type == NodeType.FAIL_HIGH.ind) {
           return score - e.score;
         }
         // To increase the chances of the score being lower than any alpha.
-        else if (type == NodeType.FAIL_LOW.ordinal()) {
+        else if (type == NodeType.FAIL_LOW.ind) {
           return e.score - score;
         }
         // Both exact, same depth.
@@ -170,11 +170,11 @@ class TTEntry implements Entry<TTEntry> {
       }
     } else {
       // If this entry is exact and the other is not, this one is better.
-      if (type == NodeType.EXACT.ordinal()) {
+      if (type == NodeType.EXACT.ind) {
         return 1;
       }
       // If neither of them are exact, let depth determine which one is better.
-      else if (e.type != NodeType.EXACT.ordinal()) {
+      else if (e.type != NodeType.EXACT.ind) {
         return depth - e.depth;
       }
       // If this entry is not exact while the other one is, do not replace.

@@ -35,16 +35,16 @@ public class MoveStringUtils {
     if (input.length() == 5) {
       switch (input.charAt(4)) {
         case 'q':
-          type = (byte) MoveType.PROMOTION_TO_QUEEN.ordinal();
+          type = (byte) MoveType.PROMOTION_TO_QUEEN.ind;
           break;
         case 'r':
-          type = (byte) MoveType.PROMOTION_TO_ROOK.ordinal();
+          type = (byte) MoveType.PROMOTION_TO_ROOK.ind;
           break;
         case 'b':
-          type = (byte) MoveType.PROMOTION_TO_BISHOP.ordinal();
+          type = (byte) MoveType.PROMOTION_TO_BISHOP.ind;
           break;
         case 'n':
-          type = (byte) MoveType.PROMOTION_TO_KNIGHT.ordinal();
+          type = (byte) MoveType.PROMOTION_TO_KNIGHT.ind;
           break;
         default:
           throw new ChessParseException("The input does not pass the formal requirements of a PACN String. " +
@@ -52,37 +52,37 @@ public class MoveStringUtils {
       }
       capturedPiece = pos.getPiece(to);
     } else {
-      if (movedPiece == Piece.W_PAWN.ordinal()) {
-        if (pos.getEnPassantRights() != EnPassantRights.NONE.ordinal() &&
+      if (movedPiece == Piece.W_PAWN.ind) {
+        if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
             to == pos.getEnPassantRights() + EnPassantRights.TO_W_DEST_SQR_IND) {
-          type = (byte) MoveType.EN_PASSANT.ordinal();
-          capturedPiece = (byte) Piece.B_PAWN.ordinal();
+          type = (byte) MoveType.EN_PASSANT.ind;
+          capturedPiece = (byte) Piece.B_PAWN.ind;
         } else {
-          type = (byte) MoveType.NORMAL.ordinal();
+          type = (byte) MoveType.NORMAL.ind;
           capturedPiece = pos.getPiece(to);
         }
-      } else if (movedPiece == Piece.B_PAWN.ordinal()) {
-        if (pos.getEnPassantRights() != EnPassantRights.NONE.ordinal() &&
+      } else if (movedPiece == Piece.B_PAWN.ind) {
+        if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
             to == pos.getEnPassantRights() + EnPassantRights.TO_B_DEST_SQR_IND) {
-          type = (byte) MoveType.EN_PASSANT.ordinal();
-          capturedPiece = (byte) Piece.W_PAWN.ordinal();
+          type = (byte) MoveType.EN_PASSANT.ind;
+          capturedPiece = (byte) Piece.W_PAWN.ind;
         } else {
-          type = (byte) MoveType.NORMAL.ordinal();
+          type = (byte) MoveType.NORMAL.ind;
           capturedPiece = pos.getPiece(to);
         }
       } else {
-        if ((movedPiece == Piece.W_KING.ordinal() && from == Bitboard.Square.E1.ordinal() &&
-            to == Bitboard.Square.G1.ordinal()) || (movedPiece == Piece.B_KING.ordinal() &&
-            from == Bitboard.Square.E8.ordinal() && to == Bitboard.Square.G8.ordinal())) {
-          type = (byte) MoveType.SHORT_CASTLING.ordinal();
-          capturedPiece = (byte) Piece.NULL.ordinal();
-        } else if ((movedPiece == Piece.W_KING.ordinal() && from == Bitboard.Square.E1.ordinal() &&
-            to == Bitboard.Square.C1.ordinal()) || (movedPiece == Piece.B_KING.ordinal() &&
-            from == Bitboard.Square.E8.ordinal() && to == Bitboard.Square.C8.ordinal())) {
-          type = (byte) MoveType.LONG_CASTLING.ordinal();
-          capturedPiece = (byte) Piece.NULL.ordinal();
+        if ((movedPiece == Piece.W_KING.ind && from == Bitboard.Square.E1.ind &&
+            to == Bitboard.Square.G1.ind) || (movedPiece == Piece.B_KING.ind &&
+            from == Bitboard.Square.E8.ind && to == Bitboard.Square.G8.ind)) {
+          type = (byte) MoveType.SHORT_CASTLING.ind;
+          capturedPiece = (byte) Piece.NULL.ind;
+        } else if ((movedPiece == Piece.W_KING.ind && from == Bitboard.Square.E1.ind &&
+            to == Bitboard.Square.C1.ind) || (movedPiece == Piece.B_KING.ind &&
+            from == Bitboard.Square.E8.ind && to == Bitboard.Square.C8.ind)) {
+          type = (byte) MoveType.LONG_CASTLING.ind;
+          capturedPiece = (byte) Piece.NULL.ind;
         } else {
-          type = (byte) MoveType.NORMAL.ordinal();
+          type = (byte) MoveType.NORMAL.ind;
           capturedPiece = pos.getPiece(to);
         }
       }
@@ -114,275 +114,275 @@ public class MoveStringUtils {
       chars = san.toCharArray();
       if (san.matches("^O-O[+#]?[/?!]{0,2}$")) {
         if (pos.isWhitesTurn()) {
-          to = (byte) Bitboard.Square.G1.ordinal();
-          from = (byte) Bitboard.Square.E1.ordinal();
-          movedPiece = (byte) Piece.W_KING.ordinal();
+          to = (byte) Bitboard.Square.G1.ind;
+          from = (byte) Bitboard.Square.E1.ind;
+          movedPiece = (byte) Piece.W_KING.ind;
         } else {
-          to = (byte) Bitboard.Square.G8.ordinal();
-          from = (byte) Bitboard.Square.E8.ordinal();
-          movedPiece = (byte) Piece.B_KING.ordinal();
+          to = (byte) Bitboard.Square.G8.ind;
+          from = (byte) Bitboard.Square.E8.ind;
+          movedPiece = (byte) Piece.B_KING.ind;
         }
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.SHORT_CASTLING.ordinal();
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.SHORT_CASTLING.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^O-O-O[+#]?[/?!]{0,2}$")) {
         if (pos.isWhitesTurn()) {
-          to = (byte) Bitboard.Square.C1.ordinal();
-          from = (byte) Bitboard.Square.E1.ordinal();
-          movedPiece = (byte) Piece.W_KING.ordinal();
+          to = (byte) Bitboard.Square.C1.ind;
+          from = (byte) Bitboard.Square.E1.ind;
+          movedPiece = (byte) Piece.W_KING.ind;
         } else {
-          to = (byte) Bitboard.Square.C8.ordinal();
-          from = (byte) Bitboard.Square.E8.ordinal();
-          movedPiece = (byte) Piece.B_KING.ordinal();
+          to = (byte) Bitboard.Square.C8.ind;
+          from = (byte) Bitboard.Square.E8.ind;
+          movedPiece = (byte) Piece.B_KING.ind;
         }
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.LONG_CASTLING.ordinal();
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.LONG_CASTLING.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[0] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[1])) - 1));
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           pawnAdvancer = (1L << (to - 8)) & pos.getWhitePawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16);
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           pawnAdvancer = (1L << (to + 8)) & pos.getBlackPawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16);
         }
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.NORMAL.ordinal();
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.NORMAL.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h][1-8]=[QRBN][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[0] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[1])) - 1));
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           pawnAdvancer = (1L << (to - 8)) & pos.getWhitePawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16);
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           pawnAdvancer = (1L << (to + 8)) & pos.getBlackPawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16);
         }
-        capturedPiece = (byte) Piece.NULL.ordinal();
+        capturedPiece = (byte) Piece.NULL.ind;
         type = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[3]).findAny().get().ordinal() + 2);
+            .filter(p -> p.letter == chars[3]).findAny().get().ind + 2);
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
-        dB = MoveSetBase.values()[to];
+        dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces));
-          if (pos.getEnPassantRights() != EnPassantRights.NONE.ordinal() &&
+          if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_W_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.B_PAWN.ordinal();
-            type = (byte) MoveType.EN_PASSANT.ordinal();
+            capturedPiece = (byte) Piece.B_PAWN.ind;
+            type = (byte) MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ordinal();
+            type = (byte) MoveType.NORMAL.ind;
           }
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces));
-          if (pos.getEnPassantRights() != EnPassantRights.NONE.ordinal() &&
+          if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_B_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.W_PAWN.ordinal();
-            type = (byte) MoveType.EN_PASSANT.ordinal();
+            capturedPiece = (byte) Piece.W_PAWN.ind;
+            type = (byte) MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ordinal();
+            type = (byte) MoveType.NORMAL.ind;
           }
         }
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^x[a-h][1-8]=[QRBN][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
-        dB = MoveSetBase.values()[to];
+        dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces));
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces));
         }
         capturedPiece = pos.getPiece(to);
         type = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[4]).findAny().get().ordinal() + 2);
+            .filter(p -> p.letter == chars[4]).findAny().get().ind + 2);
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^x[a-h][1-8]e.p.[+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
-        dB = MoveSetBase.values()[to];
+        dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces));
-          capturedPiece = (byte) Piece.B_PAWN.ordinal();
+          capturedPiece = (byte) Piece.B_PAWN.ind;
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces));
-          capturedPiece = (byte) Piece.W_PAWN.ordinal();
+          capturedPiece = (byte) Piece.W_PAWN.ind;
         }
-        type = (byte) MoveType.EN_PASSANT.ordinal();
+        type = (byte) MoveType.EN_PASSANT.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
-        dB = MoveSetBase.values()[to];
+        dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces)
-              & Bitboard.File.values()[chars[0] - 'a'].getBitboard());
-          if (pos.getEnPassantRights() != EnPassantRights.NONE.ordinal() &&
+              & Bitboard.File.values()[chars[0] - 'a'].bitboard);
+          if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_W_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.B_PAWN.ordinal();
-            type = (byte) MoveType.EN_PASSANT.ordinal();
+            capturedPiece = (byte) Piece.B_PAWN.ind;
+            type = (byte) MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ordinal();
+            type = (byte) MoveType.NORMAL.ind;
           }
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces)
-              & Bitboard.File.values()[chars[0] - 'a'].getBitboard());
-          if (pos.getEnPassantRights() != EnPassantRights.NONE.ordinal() &&
+              & Bitboard.File.values()[chars[0] - 'a'].bitboard);
+          if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_B_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.W_PAWN.ordinal();
-            type = (byte) MoveType.EN_PASSANT.ordinal();
+            capturedPiece = (byte) Piece.W_PAWN.ind;
+            type = (byte) MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ordinal();
+            type = (byte) MoveType.NORMAL.ind;
           }
         }
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h]x[a-h][1-8]=[QRBN][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
-        dB = MoveSetBase.values()[to];
+        dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces)
-              & Bitboard.File.values()[chars[0] - 'a'].getBitboard());
+              & Bitboard.File.values()[chars[0] - 'a'].bitboard);
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces)
-              & Bitboard.File.values()[chars[0] - 'a'].getBitboard());
+              & Bitboard.File.values()[chars[0] - 'a'].bitboard);
         }
         capturedPiece = pos.getPiece(to);
         type = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[5]).findAny().get().ordinal() + 2);
+            .filter(p -> p.letter == chars[5]).findAny().get().ind + 2);
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h]x[a-h][1-8]e.p.[+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
-        dB = MoveSetBase.values()[to];
+        dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ordinal();
+          movedPiece = (byte) Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces)
-              & Bitboard.File.values()[chars[0] - 'a'].getBitboard());
-          capturedPiece = (byte) Piece.B_PAWN.ordinal();
+              & Bitboard.File.values()[chars[0] - 'a'].bitboard);
+          capturedPiece = (byte) Piece.B_PAWN.ind;
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ordinal();
+          movedPiece = (byte) Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces)
-              & Bitboard.File.values()[chars[0] - 'a'].getBitboard());
-          capturedPiece = (byte) Piece.W_PAWN.ordinal();
+              & Bitboard.File.values()[chars[0] - 'a'].bitboard);
+          capturedPiece = (byte) Piece.W_PAWN.ind;
         }
-        type = (byte) MoveType.EN_PASSANT.ordinal();
+        type = (byte) MoveType.EN_PASSANT.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[KQRBN][a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.NORMAL.ordinal();
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[KQRBN][a-h][a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.NORMAL.ordinal();
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
-        restriction = Bitboard.File.values()[chars[1] - 'a'].getBitboard();
+        restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard;
       } else if (san.matches("^[KQRBN][1-8][a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.NORMAL.ordinal();
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
-        restriction = Bitboard.Rank.values()[chars[1] - '1'].getBitboard();
+        restriction = Bitboard.Rank.values()[chars[1] - '1'].bitboard;
       } else if (san.matches("^[KQRBN][a-h][1-8][a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[3] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[4])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
-        capturedPiece = (byte) Piece.NULL.ordinal();
-        type = (byte) MoveType.NORMAL.ordinal();
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
+        capturedPiece = (byte) Piece.NULL.ind;
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
-        restriction = Bitboard.File.values()[chars[1] - 'a'].getBitboard() &
-            Bitboard.Rank.values()[chars[2] - '1'].getBitboard();
+        restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard &
+            Bitboard.Rank.values()[chars[2] - '1'].bitboard;
       } else if (san.matches("^[KQRBN]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((int) (chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ordinal();
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[KQRBN][a-h]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[3] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[4])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ordinal();
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
-        restriction = Bitboard.File.values()[chars[1] - 'a'].getBitboard();
+        restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard;
       } else if (san.matches("^[KQRBN][1-8]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[3] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[4])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ordinal();
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
-        restriction = Bitboard.Rank.values()[chars[1] - '1'].getBitboard();
+        restriction = Bitboard.Rank.values()[chars[1] - '1'].bitboard;
       } else if (san.matches("^[KQRBN][a-h][1-8]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[4] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[5])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
-            .filter(p -> p.getLetter() == chars[0]).findAny().get().ordinal() +
-            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ordinal()));
+            .filter(p -> p.letter == chars[0]).findAny().get().ind +
+            (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ordinal();
+        type = (byte) MoveType.NORMAL.ind;
         from = -1;
-        restriction = Bitboard.File.values()[chars[1] - 'a'].getBitboard() & Bitboard.Rank.values()[chars[2] - '1'].getBitboard();
+        restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard & Bitboard.Rank.values()[chars[2] - '1'].bitboard;
       } else {
         throw new ChessParseException("The move String violates the SAN standard.");
       }
       if (from == -1) {
-        dB = MoveSetBase.values()[to];
-        if (movedPiece == Piece.W_KING.ordinal()) {
+        dB = MoveSetBase.getByIndex(to);
+        if (movedPiece == Piece.W_KING.ind) {
           from = BitOperations.indexOfBit(dB.getKingMoveSet(pos.getWhiteKing()));
-        } else if (movedPiece == Piece.W_QUEEN.ordinal()) {
+        } else if (movedPiece == Piece.W_QUEEN.ind) {
           from = BitOperations.indexOfBit(dB.getQueenMoveSet(pos.getWhiteQueens() & movablePieces & restriction,
               pos.getAllOccupied()));
-        } else if (movedPiece == Piece.W_ROOK.ordinal()) {
+        } else if (movedPiece == Piece.W_ROOK.ind) {
           from = BitOperations.indexOfBit(dB.getRookMoveSet(pos.getWhiteRooks() & movablePieces & restriction,
               pos.getAllOccupied()));
-        } else if (movedPiece == Piece.W_BISHOP.ordinal()) {
+        } else if (movedPiece == Piece.W_BISHOP.ind) {
           from = BitOperations.indexOfBit(dB.getBishopMoveSet(pos.getWhiteBishops() & movablePieces & restriction,
               pos.getAllOccupied()));
-        } else if (movedPiece == Piece.W_KNIGHT.ordinal()) {
+        } else if (movedPiece == Piece.W_KNIGHT.ind) {
           from = BitOperations.indexOfBit(dB.getKnightMoveSet(pos.getWhiteKnights() & movablePieces & restriction));
-        } else if (movedPiece == Piece.B_KING.ordinal()) {
+        } else if (movedPiece == Piece.B_KING.ind) {
           from = BitOperations.indexOfBit(dB.getKingMoveSet(pos.getBlackKing()));
-        } else if (movedPiece == Piece.B_QUEEN.ordinal()) {
+        } else if (movedPiece == Piece.B_QUEEN.ind) {
           from = BitOperations.indexOfBit(dB.getQueenMoveSet(pos.getBlackQueens() & movablePieces & restriction,
               pos.getAllOccupied()));
-        } else if (movedPiece == Piece.B_ROOK.ordinal()) {
+        } else if (movedPiece == Piece.B_ROOK.ind) {
           from = BitOperations.indexOfBit(dB.getRookMoveSet(pos.getBlackRooks() & movablePieces & restriction,
               pos.getAllOccupied()));
-        } else if (movedPiece == Piece.B_BISHOP.ordinal()) {
+        } else if (movedPiece == Piece.B_BISHOP.ind) {
           from = BitOperations.indexOfBit(dB.getBishopMoveSet(pos.getBlackBishops() & movablePieces & restriction,
               pos.getAllOccupied()));
         } else {
@@ -406,9 +406,9 @@ public class MoveStringUtils {
     if (move == null) {
       return null;
     }
-    if (move.getType() == MoveType.SHORT_CASTLING.ordinal()) {
+    if (move.getType() == MoveType.SHORT_CASTLING.ind) {
       return "O-O";
-    } else if (move.getType() == MoveType.LONG_CASTLING.ordinal()) {
+    } else if (move.getType() == MoveType.LONG_CASTLING.ind) {
       return "O-O-O";
     }
     String destRank = Integer.toString(move.getTo() / 8 + 1);
@@ -418,10 +418,10 @@ public class MoveStringUtils {
     if (piece == Piece.W_PAWN || piece == Piece.B_PAWN) {
       movedPiece = "";
     } else {
-      movedPiece = Character.toString(piece.getLetter()).toUpperCase();
+      movedPiece = Character.toString(piece.letter).toUpperCase();
     }
-    String capture = move.getCapturedPiece() == Piece.NULL.ordinal() ? "" : "x";
-    MoveSetBase dB = MoveSetBase.values()[move.getTo()];
+    String capture = move.getCapturedPiece() == Piece.NULL.ind ? "" : "x";
+    MoveSetBase dB = MoveSetBase.getByIndex(move.getTo());
     long movablePieces = 0;
     for (Move m : pos.getMoves()) {
       movablePieces |= BitOperations.toBit(m.getFrom());
@@ -450,7 +450,7 @@ public class MoveStringUtils {
         origin = null;
         break;
       case W_PAWN:
-        if (move.getCapturedPiece() != Piece.NULL.ordinal()) {
+        if (move.getCapturedPiece() != Piece.NULL.ind) {
           possOriginSqrs = dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces);
           if (BitOperations.hammingWeight(possOriginSqrs) == 1) {
             origin = "";
@@ -483,7 +483,7 @@ public class MoveStringUtils {
         origin = null;
         break;
       case B_PAWN:
-        if (move.getCapturedPiece() != Piece.NULL.ordinal()) {
+        if (move.getCapturedPiece() != Piece.NULL.ind) {
           possOriginSqrs = dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces);
           if (BitOperations.hammingWeight(possOriginSqrs) == 1) {
             origin = "";
@@ -501,10 +501,10 @@ public class MoveStringUtils {
     if (origin == null) {
       if (BitOperations.hammingWeight(possOriginSqrs) == 1) {
         origin = "";
-      } else if (BitOperations.hammingWeight(Bitboard.File.getBySquareIndex(move.getFrom()).getBitboard() &
+      } else if (BitOperations.hammingWeight(Bitboard.File.getBySquareIndex(move.getFrom()).bitboard &
           possOriginSqrs) == 1) {
         origin = Character.toString((char) (move.getFrom() % 8 + 'a'));
-      } else if (BitOperations.hammingWeight(Bitboard.Rank.getBySquareIndex(move.getFrom()).getBitboard() &
+      } else if (BitOperations.hammingWeight(Bitboard.Rank.getBySquareIndex(move.getFrom()).bitboard &
           possOriginSqrs) == 1) {
         origin = Integer.toString(move.getFrom() / 8 + 1);
       } else {
@@ -512,15 +512,15 @@ public class MoveStringUtils {
       }
     }
     String spMoveSuffix;
-    if (move.getType() == MoveType.EN_PASSANT.ordinal()) {
+    if (move.getType() == MoveType.EN_PASSANT.ind) {
       spMoveSuffix = "e.p.";
-    } else if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ordinal()) {
+    } else if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ind) {
       spMoveSuffix = "=Q";
-    } else if (move.getType() == MoveType.PROMOTION_TO_ROOK.ordinal()) {
+    } else if (move.getType() == MoveType.PROMOTION_TO_ROOK.ind) {
       spMoveSuffix = "=R";
-    } else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ordinal()) {
+    } else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ind) {
       spMoveSuffix = "=B";
-    } else if (move.getType() == MoveType.PROMOTION_TO_KNIGHT.ordinal()) {
+    } else if (move.getType() == MoveType.PROMOTION_TO_KNIGHT.ind) {
       spMoveSuffix = "=N";
     } else {
       spMoveSuffix = "";

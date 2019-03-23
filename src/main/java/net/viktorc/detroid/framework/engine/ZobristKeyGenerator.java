@@ -279,15 +279,15 @@ public class ZobristKeyGenerator {
     long whitePawns = pos.getWhitePawns();
     long blackPawns = pos.getBlackPawns();
     while (whitePawns != 0) {
-      key ^= board[Piece.W_PAWN.ordinal()][BitOperations.indexOfLSBit(whitePawns)];
+      key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
       whitePawns = BitOperations.resetLSBit(whitePawns);
     }
     while (blackPawns != 0) {
-      key ^= board[Piece.B_PAWN.ordinal()][BitOperations.indexOfLSBit(blackPawns)];
+      key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
       blackPawns = BitOperations.resetLSBit(blackPawns);
     }
-    key ^= board[Piece.W_KING.ordinal()][BitOperations.indexOfBit(pos.getWhiteKing())];
-    key ^= board[Piece.B_KING.ordinal()][BitOperations.indexOfBit(pos.getBlackKing())];
+    key ^= board[Piece.W_KING.ind][BitOperations.indexOfBit(pos.getWhiteKing())];
+    key ^= board[Piece.B_KING.ind][BitOperations.indexOfBit(pos.getBlackKing())];
     return key;
   }
 
@@ -306,57 +306,57 @@ public class ZobristKeyGenerator {
     for (int i = 0; i < board.length; i++) {
       int pieceNote;
       int piece = pos.getPiece(i);
-      if (piece == Piece.NULL.ordinal()) {
+      if (piece == Piece.NULL.ind) {
         continue;
-      } else if (piece == Piece.B_PAWN.ordinal()) {
+      } else if (piece == Piece.B_PAWN.ind) {
         pieceNote = 0;
-      } else if (piece == Piece.W_PAWN.ordinal()) {
+      } else if (piece == Piece.W_PAWN.ind) {
         pieceNote = 1;
-      } else if (piece == Piece.B_KNIGHT.ordinal()) {
+      } else if (piece == Piece.B_KNIGHT.ind) {
         pieceNote = 2;
-      } else if (piece == Piece.W_KNIGHT.ordinal()) {
+      } else if (piece == Piece.W_KNIGHT.ind) {
         pieceNote = 3;
-      } else if (piece == Piece.B_BISHOP.ordinal()) {
+      } else if (piece == Piece.B_BISHOP.ind) {
         pieceNote = 4;
-      } else if (piece == Piece.W_BISHOP.ordinal()) {
+      } else if (piece == Piece.W_BISHOP.ind) {
         pieceNote = 5;
-      } else if (piece == Piece.B_ROOK.ordinal()) {
+      } else if (piece == Piece.B_ROOK.ind) {
         pieceNote = 6;
-      } else if (piece == Piece.W_ROOK.ordinal()) {
+      } else if (piece == Piece.W_ROOK.ind) {
         pieceNote = 7;
-      } else if (piece == Piece.B_QUEEN.ordinal()) {
+      } else if (piece == Piece.B_QUEEN.ind) {
         pieceNote = 8;
-      } else if (piece == Piece.W_QUEEN.ordinal()) {
+      } else if (piece == Piece.W_QUEEN.ind) {
         pieceNote = 9;
-      } else if (piece == Piece.B_KING.ordinal()) {
+      } else if (piece == Piece.B_KING.ind) {
         pieceNote = 10;
       } else {
         pieceNote = 11;
       }
       key ^= POLYGLOT_RANDOM_64[64 * pieceNote + 8 * (i / 8) + i % 8];
     }
-    if (wCastlingRights == CastlingRights.ALL.ordinal()) {
+    if (wCastlingRights == CastlingRights.ALL.ind) {
       key ^= POLYGLOT_RANDOM_64[768] ^ POLYGLOT_RANDOM_64[769];
-    } else if (wCastlingRights == CastlingRights.SHORT.ordinal()) {
+    } else if (wCastlingRights == CastlingRights.SHORT.ind) {
       key ^= POLYGLOT_RANDOM_64[768];
-    } else if (wCastlingRights == CastlingRights.LONG.ordinal()) {
+    } else if (wCastlingRights == CastlingRights.LONG.ind) {
       key ^= POLYGLOT_RANDOM_64[769];
     }
-    if (bCastlingRights == CastlingRights.ALL.ordinal()) {
+    if (bCastlingRights == CastlingRights.ALL.ind) {
       key ^= POLYGLOT_RANDOM_64[770] ^ POLYGLOT_RANDOM_64[771];
-    } else if (bCastlingRights == CastlingRights.SHORT.ordinal()) {
+    } else if (bCastlingRights == CastlingRights.SHORT.ind) {
       key ^= POLYGLOT_RANDOM_64[770];
-    } else if (bCastlingRights == CastlingRights.LONG.ordinal()) {
+    } else if (bCastlingRights == CastlingRights.LONG.ind) {
       key ^= POLYGLOT_RANDOM_64[771];
     }
-    if (enPassantRights != EnPassantRights.NONE.ordinal()) {
+    if (enPassantRights != EnPassantRights.NONE.ind) {
       if (whitesTurn) {
-        MoveSetBase mD = MoveSetBase.values()[enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND];
+        MoveSetBase mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND);
         if (mD.getBlackPawnCaptureSet(pos.getWhitePawns()) != 0) {
           key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
         }
       } else {
-        MoveSetBase mD = MoveSetBase.values()[enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND];
+        MoveSetBase mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND);
         if (mD.getWhitePawnCaptureSet(pos.getBlackPawns()) != 0) {
           key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
         }
@@ -416,12 +416,12 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteShortCastlinglMove(long key) {
-    long[] kingRow = board[Piece.W_KING.ordinal()];
-    key ^= kingRow[Bitboard.Square.E1.ordinal()];
-    key ^= kingRow[Bitboard.Square.G1.ordinal()];
-    long[] rookRow = board[Piece.W_ROOK.ordinal()];
-    key ^= rookRow[Bitboard.Square.H1.ordinal()];
-    key ^= rookRow[Bitboard.Square.F1.ordinal()];
+    long[] kingRow = board[Piece.W_KING.ind];
+    key ^= kingRow[Bitboard.Square.E1.ind];
+    key ^= kingRow[Bitboard.Square.G1.ind];
+    long[] rookRow = board[Piece.W_ROOK.ind];
+    key ^= rookRow[Bitboard.Square.H1.ind];
+    key ^= rookRow[Bitboard.Square.F1.ind];
     return key;
   }
 
@@ -432,12 +432,12 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackShortCastlinglMove(long key) {
-    long[] kingRow = board[Piece.B_KING.ordinal()];
-    key ^= kingRow[Bitboard.Square.E8.ordinal()];
-    key ^= kingRow[Bitboard.Square.G8.ordinal()];
-    long[] rookRow = board[Piece.B_ROOK.ordinal()];
-    key ^= rookRow[Bitboard.Square.H8.ordinal()];
-    key ^= rookRow[Bitboard.Square.F8.ordinal()];
+    long[] kingRow = board[Piece.B_KING.ind];
+    key ^= kingRow[Bitboard.Square.E8.ind];
+    key ^= kingRow[Bitboard.Square.G8.ind];
+    long[] rookRow = board[Piece.B_ROOK.ind];
+    key ^= rookRow[Bitboard.Square.H8.ind];
+    key ^= rookRow[Bitboard.Square.F8.ind];
     return key;
   }
 
@@ -448,12 +448,12 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteLongCastlinglMove(long key) {
-    long[] kingRow = board[Piece.W_KING.ordinal()];
-    key ^= kingRow[Bitboard.Square.E1.ordinal()];
-    key ^= kingRow[Bitboard.Square.C1.ordinal()];
-    long[] rookRow = board[Piece.W_ROOK.ordinal()];
-    key ^= rookRow[Bitboard.Square.A1.ordinal()];
-    key ^= rookRow[Bitboard.Square.D1.ordinal()];
+    long[] kingRow = board[Piece.W_KING.ind];
+    key ^= kingRow[Bitboard.Square.E1.ind];
+    key ^= kingRow[Bitboard.Square.C1.ind];
+    long[] rookRow = board[Piece.W_ROOK.ind];
+    key ^= rookRow[Bitboard.Square.A1.ind];
+    key ^= rookRow[Bitboard.Square.D1.ind];
     return key;
   }
 
@@ -464,12 +464,12 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackLongCastlinglMove(long key) {
-    long[] kingRow = board[Piece.B_KING.ordinal()];
-    key ^= kingRow[Bitboard.Square.E8.ordinal()];
-    key ^= kingRow[Bitboard.Square.C8.ordinal()];
-    long[] rookRow = board[Piece.B_ROOK.ordinal()];
-    key ^= rookRow[Bitboard.Square.A8.ordinal()];
-    key ^= rookRow[Bitboard.Square.D8.ordinal()];
+    long[] kingRow = board[Piece.B_KING.ind];
+    key ^= kingRow[Bitboard.Square.E8.ind];
+    key ^= kingRow[Bitboard.Square.C8.ind];
+    long[] rookRow = board[Piece.B_ROOK.ind];
+    key ^= rookRow[Bitboard.Square.A8.ind];
+    key ^= rookRow[Bitboard.Square.D8.ind];
     return key;
   }
 
@@ -482,10 +482,10 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteEnPassantMove(long key, byte from, byte to) {
-    long[] whitePawnRow = board[Piece.W_PAWN.ordinal()];
+    long[] whitePawnRow = board[Piece.W_PAWN.ind];
     key ^= whitePawnRow[from];
     key ^= whitePawnRow[to];
-    key ^= board[Piece.B_PAWN.ordinal()][to - 8];
+    key ^= board[Piece.B_PAWN.ind][to - 8];
     return key;
   }
 
@@ -498,10 +498,10 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackEnPassantMove(long key, byte from, byte to) {
-    long[] blackPawnRow = board[Piece.B_PAWN.ordinal()];
+    long[] blackPawnRow = board[Piece.B_PAWN.ind];
     key ^= blackPawnRow[from];
     key ^= blackPawnRow[to];
-    key ^= board[Piece.W_PAWN.ordinal()][to + 8];
+    key ^= board[Piece.W_PAWN.ind][to + 8];
     return key;
   }
 
@@ -515,9 +515,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.W_PAWN.ordinal()][from];
+    key ^= board[Piece.W_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.W_QUEEN.ordinal()][to];
+    key ^= board[Piece.W_QUEEN.ind][to];
     return key;
   }
 
@@ -531,9 +531,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackQueenPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.B_PAWN.ordinal()][from];
+    key ^= board[Piece.B_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.B_QUEEN.ordinal()][to];
+    key ^= board[Piece.B_QUEEN.ind][to];
     return key;
   }
 
@@ -547,9 +547,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.W_PAWN.ordinal()][from];
+    key ^= board[Piece.W_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.W_ROOK.ordinal()][to];
+    key ^= board[Piece.W_ROOK.ind][to];
     return key;
   }
 
@@ -563,9 +563,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackRookPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.B_PAWN.ordinal()][from];
+    key ^= board[Piece.B_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.B_ROOK.ordinal()][to];
+    key ^= board[Piece.B_ROOK.ind][to];
     return key;
   }
 
@@ -579,9 +579,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.W_PAWN.ordinal()][from];
+    key ^= board[Piece.W_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.W_BISHOP.ordinal()][to];
+    key ^= board[Piece.W_BISHOP.ind][to];
     return key;
   }
 
@@ -595,9 +595,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackBishopPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.B_PAWN.ordinal()][from];
+    key ^= board[Piece.B_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.B_BISHOP.ordinal()][to];
+    key ^= board[Piece.B_BISHOP.ind][to];
     return key;
   }
 
@@ -611,9 +611,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterWhiteKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.W_PAWN.ordinal()][from];
+    key ^= board[Piece.W_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.W_KNIGHT.ordinal()][to];
+    key ^= board[Piece.W_KNIGHT.ind][to];
     return key;
   }
 
@@ -627,9 +627,9 @@ public class ZobristKeyGenerator {
    * @return The updated key.
    */
   public long getUpdatedBoardHashKeyAfterBlackKnightPromotionMove(long key, byte from, byte to, byte capturedPiece) {
-    key ^= board[Piece.B_PAWN.ordinal()][from];
+    key ^= board[Piece.B_PAWN.ind][from];
     key ^= board[capturedPiece][to];
-    key ^= board[Piece.B_KNIGHT.ordinal()][to];
+    key ^= board[Piece.B_KNIGHT.ind][to];
     return key;
   }
 

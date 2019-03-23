@@ -22,18 +22,24 @@ public enum EnPassantRights {
   /**
    * The difference between the EP right index and the square index of the destination of EP for white.
    */
-  public final static byte TO_W_DEST_SQR_IND = (byte) Square.A6.ordinal();
+  public final static byte TO_W_DEST_SQR_IND = (byte) Square.A6.ind;
   /**
    * The difference between the EP right index and the square index of the possible victim of EP for white.
    */
-  public final static byte TO_W_VICT_SQR_IND = (byte) Square.A5.ordinal();
+  public final static byte TO_W_VICT_SQR_IND = (byte) Square.A5.ind;
   /**
    * The difference between the EP right index and the square index of the destination of EP for black.
    */
-  public final static byte TO_B_DEST_SQR_IND = (byte) Square.A3.ordinal();
+  public final static byte TO_B_DEST_SQR_IND = (byte) Square.A3.ind;
   /**
    * The difference between the EP right index and the square index of the possible victim of EP for black.
    */
-  public final static byte TO_B_VICT_SQR_IND = (byte) Square.A4.ordinal();
+  public final static byte TO_B_VICT_SQR_IND = (byte) Square.A4.ind;
+
+  public final byte ind;
+
+  EnPassantRights() {
+    ind = (byte) ordinal();
+  }
 
 }

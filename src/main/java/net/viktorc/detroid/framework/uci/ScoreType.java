@@ -22,6 +22,12 @@ public enum ScoreType {
   /**
    * Check mate score.
    */
-  MATE
+  MATE;
+
+  public final byte ind;
+
+  ScoreType() {
+    ind = (byte) ordinal();
+  }
 
 }

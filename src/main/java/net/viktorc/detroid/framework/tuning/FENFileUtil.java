@@ -19,6 +19,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.viktorc.detroid.framework.uci.ScoreType;
+import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.GameState;
@@ -49,8 +51,7 @@ public final class FENFileUtil {
    * @throws Exception If the input file does not exist or cannot be read, if the output file path is invalid, or if the engine is not
    * initialized and cannot be initialized.
    */
-  public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath,
-      int maxNumOfGames) throws Exception {
+  public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath, int maxNumOfGames) throws Exception {
     try (BufferedReader reader = new BufferedReader(new FileReader(pgnFilePath));
         BufferedWriter writer = new BufferedWriter(new FileWriter(fenFilePath))) {
       String line;
@@ -120,14 +121,8 @@ public final class FENFileUtil {
    * @throws ExecutionException If an execution exception occurs in one of the threads.
    * @throws InterruptedException If the current thread is interrupted while waiting for the worker threads to finish.
    */
-  public static void generateFENFile(List<SelfPlayEngines<UCIEngine>> engines, int games, long timePerGame,
-      long timeIncPerMove, String fenFilePath)
-      throws IOException, NullPointerException, IllegalArgumentException,
-      InterruptedException, ExecutionException {
-    File destinationFile = new File(fenFilePath);
-    if (!destinationFile.exists()) {
-      Files.createFile(destinationFile.toPath());
-    }
+  public static void generateFENFile(List<SelfPlayEngines<UCIEngine>> engines, int games, long timePerGame, long timeIncPerMove,
+      String fenFilePath) throws IOException, NullPointerException, IllegalArgumentException, InterruptedException, ExecutionException {
     ArrayList<SelfPlayEngines<UCIEngine>> enginesList = new ArrayList<>();
     for (SelfPlayEngines<UCIEngine> e : engines) {
       if (e != null) {
@@ -194,14 +189,10 @@ public final class FENFileUtil {
    * @param numOfPositionsToFilter The first x full moves to filter from each game.
    * @throws IOException If the source cannot be read from and the destination cannot be created or written to.
    */
-  public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile,
-      int numOfPositionsToFilter) throws IOException {
+  public static void filterOpeningPositions(String sourceFenFile, String destinationFenFile, int numOfPositionsToFilter)
+      throws IOException {
     if (sourceFenFile.equals(destinationFenFile)) {
       throw new IllegalArgumentException();
-    }
-    File destinationFile = new File(sourceFenFile);
-    if (!destinationFile.exists()) {
-      Files.createFile(destinationFile.toPath());
     }
     Pattern halfMovePattern = Pattern.compile("[0-9]+;");
     try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
@@ -221,20 +212,50 @@ public final class FENFileUtil {
   }
 
   /**
+   * Copies all the lines from the source FEN file to the destination file except for the obvious mates based on a 0-depth quiescence
+   * search.
+   *
+   * @param sourceFenFile The file path to the source FEN file.
+   * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
+   * @param engine The engine to use for obvious mate detection.
+   * @throws Exception If the source and destination paths are the same, there is an I/O issue or the engine cannot be initialized.
+   */
+  public static void filterObviousMates(String sourceFenFile, String destinationFenFile, TunableEngine engine)
+      throws Exception {
+    if (sourceFenFile.equals(destinationFenFile)) {
+      throw new IllegalArgumentException();
+    }
+    if (!engine.isInit()) {
+      engine.init();
+    }
+    engine.setDeterministicZeroDepthMode(true);
+    try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        String fen = line.split(";")[0];
+        engine.setPosition(fen);
+        SearchResults res = engine.search(null, null, null, null, null, null, null, 0, null, null, null, null);
+        if (res.getScoreType().isPresent()) {
+          ScoreType scoreType = res.getScoreType().get();
+          if (scoreType != ScoreType.MATE) {
+            writer.write(line + System.lineSeparator());
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Copies all the lines from the source FEN file to the destination file except for the ones representing positions from drawn games.
    *
    * @param sourceFenFile The file path to the source FEN file.
    * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
    * @throws IOException If the source cannot be read from and the destination cannot be created or written to.
    */
-  public static void filterDraws(String sourceFenFile, String destinationFenFile)
-      throws IOException {
+  public static void filterDraws(String sourceFenFile, String destinationFenFile) throws IOException {
     if (sourceFenFile.equals(destinationFenFile)) {
       throw new IllegalArgumentException();
-    }
-    File destinationFile = new File(sourceFenFile);
-    if (!destinationFile.exists()) {
-      Files.createFile(destinationFile.toPath());
     }
     try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
         BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {

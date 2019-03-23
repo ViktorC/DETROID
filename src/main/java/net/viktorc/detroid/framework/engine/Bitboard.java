@@ -502,16 +502,16 @@ public class Bitboard {
    * @return The string representation of the
    */
   public static String bitboardToString(long bitboard) {
-    String out = "";
+    StringBuilder stringBuffer = new StringBuilder();
     String board = BitOperations.toBinaryString(bitboard);
     for (int i = 0; i < 64; i += 8) {
       for (int j = i + 7; j >= i; j--) {
-        out += board.charAt(j);
+        stringBuffer.append(board.charAt(j));
       }
-      out += "\n";
+      stringBuffer.append("\n");
     }
-    out += "\n";
-    return out;
+    stringBuffer.append("\n");
+    return stringBuffer.toString();
   }
 
   /**
@@ -531,17 +531,12 @@ public class Bitboard {
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8;
 
-    private final long bitboard;
+    public final byte ind;
+    public final long bitboard;
 
     Square() {
+      ind = (byte) ordinal();
       bitboard = BitOperations.toBit(ordinal());
-    }
-
-    /**
-     * @return The bitboard representing the square.
-     */
-    public long getBitboard() {
-      return bitboard;
     }
 
     /**
@@ -572,17 +567,12 @@ public class Bitboard {
     G,
     H;
 
-    private final long bitboard;
+    public final byte ind;
+    public final long bitboard;
 
     File() {
+      ind = (byte) ordinal();
       bitboard = 0x0101010101010101L << ordinal();
-    }
-
-    /**
-     * @return The bitboard representing the file.
-     */
-    public long getBitboard() {
-      return bitboard;
     }
 
     /**
@@ -614,17 +604,12 @@ public class Bitboard {
     R7,
     R8;
 
-    private final long bitboard;
+    public final byte ind;
+    public final long bitboard;
 
     Rank() {
+      ind = (byte) ordinal();
       bitboard = 0x00000000000000FFL << (8 * ordinal());
-    }
-
-    /**
-     * @return The bitboard representing the rank.
-     */
-    public long getBitboard() {
-      return bitboard;
     }
 
     /**
@@ -663,20 +648,15 @@ public class Bitboard {
     DG14,
     DG15;
 
-    private final long bitboard;
+    public final byte ind;
+    public final long bitboard;
 
     Diagonal() {
+      ind = (byte) ordinal();
       long base = 0x0102040810204080L;
       int shift = 7 - ordinal();
       bitboard = shift > 0 ? base >>> 8 * shift : base << 8 * -shift;
 
-    }
-
-    /**
-     * @return The bitboard representing the diagonal.
-     */
-    public long getBitboard() {
-      return bitboard;
     }
 
     /**
@@ -715,19 +695,14 @@ public class Bitboard {
     ADG14,
     ADG15;
 
-    private final long bitboard;
+    public final byte ind;
+    public final long bitboard;
 
     AntiDiagonal() {
+      ind = (byte) ordinal();
       long base = 0x8040201008040201L;
       int shift = 7 - ordinal();
       bitboard = shift > 0 ? base << 8 * shift : base >>> 8 * -shift;
-    }
-
-    /**
-     * @return The bitboard representing the anti-diagonal.
-     */
-    public long getBitboard() {
-      return bitboard;
     }
 
     /**
@@ -758,22 +733,23 @@ public class Bitboard {
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8;
 
-    private final long rankPos;
-    private final long rankNeg;
-    private final long filePos;
-    private final long fileNeg;
-    private final long diagonalPos;
-    private final long diagonalNeg;
-    private final long antiDiagonalPos;
-    private final long antiDiagonalNeg;
+    public final byte ind;
+    public final long rankPos;
+    public final long rankNeg;
+    public final long filePos;
+    public final long fileNeg;
+    public final long diagonalPos;
+    public final long diagonalNeg;
+    public final long antiDiagonalPos;
+    public final long antiDiagonalNeg;
 
     Rays() {
-      int sqrInd = this.ordinal();
-      long sqrBit = Square.values()[sqrInd].bitboard;
-      Rank rank = Rank.getBySquareIndex(sqrInd);
-      File file = File.getBySquareIndex(sqrInd);
-      Diagonal diagonal = Diagonal.getBySquareIndex(sqrInd);
-      AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(sqrInd);
+      ind = (byte) ordinal();
+      long sqrBit = Square.values()[ind].bitboard;
+      Rank rank = Rank.getBySquareIndex(ind);
+      File file = File.getBySquareIndex(ind);
+      Diagonal diagonal = Diagonal.getBySquareIndex(ind);
+      AntiDiagonal antiDiagonal = AntiDiagonal.getBySquareIndex(ind);
       rankPos = rank.bitboard & -(sqrBit << 1);
       rankNeg = rank.bitboard & (sqrBit - 1);
       filePos = file.bitboard & -(sqrBit << 1);
@@ -782,62 +758,6 @@ public class Bitboard {
       diagonalNeg = diagonal.bitboard & (sqrBit - 1);
       antiDiagonalPos = antiDiagonal.bitboard & -(sqrBit << 1);
       antiDiagonalNeg = antiDiagonal.bitboard & (sqrBit - 1);
-    }
-
-    /**
-     * @return The bitboard representing a ray along the rank towards its high end.
-     */
-    public long getRankPos() {
-      return rankPos;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the rank towards its low end.
-     */
-    public long getRankNeg() {
-      return rankNeg;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the file towards its high end.
-     */
-    public long getFilePos() {
-      return filePos;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the file towards its low end.
-     */
-    public long getFileNeg() {
-      return fileNeg;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the diagonal towards its high end.
-     */
-    public long getDiagonalPos() {
-      return diagonalPos;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the diagonal towards its low end.
-     */
-    public long getDiagonalNeg() {
-      return diagonalNeg;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the anti-diagonal towards its high end.
-     */
-    public long getAntiDiagonalPos() {
-      return antiDiagonalPos;
-    }
-
-    /**
-     * @return The bitboard representing a ray along the anti-diagonal towards its low end.
-     */
-    public long getAntiDiagonalNeg() {
-      return antiDiagonalNeg;
     }
 
   }

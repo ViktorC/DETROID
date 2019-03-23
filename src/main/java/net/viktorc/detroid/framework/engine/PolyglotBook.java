@@ -126,19 +126,19 @@ public class PolyglotBook extends OpeningBook {
     String fromRank = "" + (((polyglotMove >>> 9) & 7) + 1);
     String pacn = fromFile + fromRank + toFile + toRank;
     if (pacn.equals("e1h1")) {
-      if (pos.getWhiteKing() == Square.E1.getBitboard()) {
+      if (pos.getWhiteKing() == Square.E1.bitboard) {
         return "e1g1";
       }
     } else if (pacn.equals("e1a1")) {
-      if (pos.getWhiteKing() == Square.E1.getBitboard()) {
+      if (pos.getWhiteKing() == Square.E1.bitboard) {
         return "e1c1";
       }
     } else if (pacn.equals("e8h8")) {
-      if (pos.getBlackKing() == Square.E8.getBitboard()) {
+      if (pos.getBlackKing() == Square.E8.bitboard) {
         return "e8g8";
       }
     } else if (pacn.equals("e8a8")) {
-      if (pos.getBlackKing() == Square.E8.getBitboard()) {
+      if (pos.getBlackKing() == Square.E8.bitboard) {
         return "e8c8";
       }
     }
