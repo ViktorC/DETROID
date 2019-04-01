@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import javafx.application.Application;
@@ -86,6 +87,7 @@ public final class EngineFramework implements Runnable {
    * <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
    * [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames
    * <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile
+   * <string> {fens.txt}]} <br> Removing obvious mates from a FEN-file: {@code -f mates -sourcefile <string> [--destfile
    * <string> {fens.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string> -firstxmoves <integer>
    * [--destfile <string> {fens.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector -value
    * <quoted_comma_separated_decimals> [--paramtype <eval | control | management | eval+control | control+management | all> {all}]
@@ -455,7 +457,15 @@ public final class EngineFramework implements Runnable {
     }
   }
 
-  private void runInDrawFiltrationMode(String[] args) {
+  private void runInMateFiltrationMode(String sourceFile, String destFile) {
+    try (TunableEngine tunableEngine = factory.newTunableEngineInstance()) {
+      FENFileUtil.filterObviousMates(sourceFile, destFile, tunableEngine);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void runInNoParamFiltrationMode(String[] args, BiConsumer<String,String> filtrationFunction) {
     String sourceFile = null;
     String destFile = DEF_FENS_FILE_PATH;
     for (int i = 0; i < args.length; i++) {
@@ -474,7 +484,15 @@ public final class EngineFramework implements Runnable {
     if (sourceFile == null) {
       throw new IllegalArgumentException();
     }
-    runInDrawFiltrationMode(sourceFile, destFile);
+    filtrationFunction.accept(sourceFile, destFile);
+  }
+
+  private void runInDrawFiltrationMode(String[] args) {
+    runInNoParamFiltrationMode(args, this::runInDrawFiltrationMode);
+  }
+
+  private void runInMateFiltrationMode(String[] args) {
+    runInNoParamFiltrationMode(args, this::runInMateFiltrationMode);
   }
 
   private void runInOpeningFiltrationMode(String sourceFile, String destFile, int numOfPositionsToFilter) {
@@ -515,9 +533,11 @@ public final class EngineFramework implements Runnable {
     String arg0 = args[0];
     if ("draws".equals(arg0)) {
       runInDrawFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
+    } else if ("mates".equals(arg0)) {
+      runInMateFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
     } else if ("openings".equals(arg0)) {
       runInOpeningFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else {
+    }else {
       throw new IllegalArgumentException();
     }
   }
@@ -624,8 +644,8 @@ public final class EngineFramework implements Runnable {
         default:
           throw new IllegalArgumentException();
       }
-    } else // GUI mode.
-    {
+    } else {
+      // GUI mode.
       runInGUIMode();
     }
   }

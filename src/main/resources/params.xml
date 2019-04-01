@@ -5,33 +5,33 @@
   <rookValue>321</rookValue>
   <bishopvalue>142</bishopvalue>
   <knightValue>138</knightValue>
-  <pawnEndgameValue>125</pawnEndgameValue>
   <pawnValue>100</pawnValue>
-  <kingPhaseWeight>0</kingPhaseWeight>
-  <queenPhaseWeight>4</queenPhaseWeight>
-  <rookPhaseWeight>2</rookPhaseWeight>
-  <bishopPhaseWeight>1</bishopPhaseWeight>
-  <knightPhaseWeight>1</knightPhaseWeight>
-  <pawnPhaseWeight>0</pawnPhaseWeight>
+  <pawnEndgameBonus>25</pawnEndgameBonus>
   <blockedPawnWeight1>55</blockedPawnWeight1>
   <blockedPawnWeight2>8</blockedPawnWeight2>
   <blockedPawnWeight3>16</blockedPawnWeight3>
-  <kingFriendlyNormalPawnTropismWeight>15</kingFriendlyNormalPawnTropismWeight>
-  <kingOpponentNormalPawnTropismWeight>22</kingOpponentNormalPawnTropismWeight>
-  <kingFriendlyOpenBackwardPawnTropismWeight>0</kingFriendlyOpenBackwardPawnTropismWeight>
-  <kingOpponentOpenBackwardPawnTropismWeight>21</kingOpponentOpenBackwardPawnTropismWeight>
-  <kingFriendlyPassedPawnTropismWeight>2</kingFriendlyPassedPawnTropismWeight>
-  <kingOpponentPassedPawnTropismWeight>0</kingOpponentPassedPawnTropismWeight>
   <passedPawnWeight>67</passedPawnWeight>
-  <openBackwardPawnWeight>51</openBackwardPawnWeight>
+  <isolatedPawnWeight>40</isolatedPawnWeight>
+  <backwardPawnWeight>20</backwardPawnWeight>
   <stoppedPawnWeight>36</stoppedPawnWeight>
-  <queenKingTropismWeight>49</queenKingTropismWeight>
   <bishopPairAdvantage>48</bishopPairAdvantage>
+  <pinnedQueenWeight>125</pinnedQueenWeight>
+  <pinnedRookWeight>0</pinnedRookWeight>
+  <pinnedBishopWeight>37</pinnedBishopWeight>
+  <pinnedKnightWeight>58</pinnedKnightWeight>
+  <pinnedPawnWeight>4</pinnedPawnWeight>
+  <queenMobilityWeight>1</queenMobilityWeight>
+  <rookMobilityWeight>4</rookMobilityWeight>
+  <bishopMobilityWeight>1</bishopMobilityWeight>
+  <knightMobilityWeight>0</knightMobilityWeight>
+  <friendlyNormalPawnTropismWeight>15</friendlyNormalPawnTropismWeight>
+  <friendlyWeakPawnTropismWeight>0</friendlyWeakPawnTropismWeight>
+  <friendlyPassedPawnTropismWeight>2</friendlyPassedPawnTropismWeight>
+  <opponentNormalPawnTropismWeight>22</opponentNormalPawnTropismWeight>
+  <opponentWeakPawnTropismWeight>21</opponentWeakPawnTropismWeight>
+  <opponentPassedPawnTropismWeight>0</opponentPassedPawnTropismWeight>
+  <opponentQueenTropismWeight>49</opponentQueenTropismWeight>
   <tempoAdvantage>91</tempoAdvantage>
-  <gamePhaseOpeningLower>0</gamePhaseOpeningLower>
-  <gamePhaseOpeningUpper>22</gamePhaseOpeningUpper>
-  <gamePhaseEndgameLower>176</gamePhaseEndgameLower>
-  <gamePhaseEndgameUpper>256</gamePhaseEndgameUpper>
   <nullMoveReduction>2</nullMoveReduction>
   <nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
   <extraNullMoveReduction>1</extraNullMoveReduction>

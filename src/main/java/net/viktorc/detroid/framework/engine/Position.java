@@ -2011,34 +2011,6 @@ public class Position {
     addBlackKingNormalMoves(kingInd, allWhiteOccupied, moves);
   }
 
-  private static long getPositivePinnedPiece(long ray, long sliders, long allSameColorOccupied) {
-    long pinnedPiece = BitOperations.getLSBit(ray) & allSameColorOccupied;
-    return (pinnedPiece != Bitboard.EMPTY_BOARD &&
-        (BitOperations.getLSBit(ray ^ pinnedPiece) & sliders) != Bitboard.EMPTY_BOARD) ?
-        pinnedPiece : Bitboard.EMPTY_BOARD;
-  }
-
-  private static long getNegativePinnedPiece(long ray, long sliders, long allSameColorOccupied) {
-    long pinnedPiece = BitOperations.getMSBit(ray) & allSameColorOccupied;
-    return (pinnedPiece != Bitboard.EMPTY_BOARD &&
-        (BitOperations.getMSBit(ray ^ pinnedPiece) & sliders) != Bitboard.EMPTY_BOARD) ?
-        pinnedPiece : Bitboard.EMPTY_BOARD;
-  }
-
-  private static long getPinnedPieces(byte kingInd, long straightSliders, long diagonalSliders, long allOccupied,
-      long allSameColorOccupied) {
-    Bitboard.Rays rays = Bitboard.Rays.values()[kingInd];
-    long pinnedPieces = getPositivePinnedPiece(rays.rankPos & allOccupied, straightSliders, allSameColorOccupied);
-    pinnedPieces |= getPositivePinnedPiece(rays.filePos & allOccupied, straightSliders, allSameColorOccupied);
-    pinnedPieces |= getPositivePinnedPiece(rays.diagonalPos & allOccupied, diagonalSliders, allSameColorOccupied);
-    pinnedPieces |= getPositivePinnedPiece(rays.antiDiagonalPos & allOccupied, diagonalSliders, allSameColorOccupied);
-    pinnedPieces |= getNegativePinnedPiece(rays.rankNeg & allOccupied, straightSliders, allSameColorOccupied);
-    pinnedPieces |= getNegativePinnedPiece(rays.fileNeg & allOccupied, straightSliders, allSameColorOccupied);
-    pinnedPieces |= getNegativePinnedPiece(rays.diagonalNeg & allOccupied, diagonalSliders, allSameColorOccupied);
-    pinnedPieces |= getNegativePinnedPiece(rays.antiDiagonalNeg & allOccupied, diagonalSliders, allSameColorOccupied);
-    return pinnedPieces;
-  }
-
   private void addNormalMovesToDestination(byte to, byte capturedPiece, long pieces, List<Move> moves) {
     while (pieces != Bitboard.EMPTY_BOARD) {
       byte from = BitOperations.indexOfLSBit(pieces);
@@ -2076,7 +2048,7 @@ public class Position {
         whiteKing, allNonWhiteOccupied);
     if (checkersTemp == Bitboard.EMPTY_BOARD) {
       long checkLine = Bitboard.getLineSegment(checker1Ind, kingInd);
-      long movablePieces = ~getPinnedPieces(kingInd, blackQueens | blackRooks, blackQueens | blackBishops,
+      long movablePieces = ~Bitboard.getPinnedPieces(kingInd, blackQueens | blackRooks, blackQueens | blackBishops,
           allOccupied, allWhiteOccupied);
       long attackers = getWhiteCheckers(checker1Ind);
       /* The intersection of the last rank and the check line can only be non-empty if the checker truly is a
@@ -2111,7 +2083,7 @@ public class Position {
         blackKing, allNonBlackOccupied);
     if (checkersTemp == Bitboard.EMPTY_BOARD) {
       long checkLine = Bitboard.getLineSegment(checker1Ind, kingInd);
-      long movablePieces = ~getPinnedPieces(kingInd, whiteQueens | whiteRooks, whiteQueens | whiteBishops,
+      long movablePieces = ~Bitboard.getPinnedPieces(kingInd, whiteQueens | whiteRooks, whiteQueens | whiteBishops,
           allOccupied, allBlackOccupied);
       long attackers = getBlackCheckers(checker1Ind);
       long lastRankCheckLine = (Bitboard.Rank.R1.bitboard & checkLine);
@@ -2379,7 +2351,7 @@ public class Position {
       if (((straightSliders | diagonalSliders) & checker1) != Bitboard.EMPTY_BOARD) {
         long checkLine1 = Bitboard.getLineSegment(checker1Ind, kingInd);
         if (checkLine1 != Bitboard.EMPTY_BOARD) {
-          long movablePieces = ~getPinnedPieces(kingInd, straightSliders, diagonalSliders, allOccupied,
+          long movablePieces = ~Bitboard.getPinnedPieces(kingInd, straightSliders, diagonalSliders, allOccupied,
               allWhiteOccupied) & ~(whitePawns & Bitboard.Rank.R7.bitboard);
           long checkLinesTemp = checkLine1;
           while (checkLinesTemp != Bitboard.EMPTY_BOARD) {
@@ -2412,7 +2384,7 @@ public class Position {
       if (((straightSliders | diagonalSliders) & checker1) != Bitboard.EMPTY_BOARD) {
         long checkLine1 = Bitboard.getLineSegment(checker1Ind, kingInd);
         if (checkLine1 != Bitboard.EMPTY_BOARD) {
-          long movablePieces = ~getPinnedPieces(kingInd, straightSliders, diagonalSliders, allOccupied,
+          long movablePieces = ~Bitboard.getPinnedPieces(kingInd, straightSliders, diagonalSliders, allOccupied,
               allBlackOccupied) & ~(blackPawns & Bitboard.Rank.R2.bitboard);
           long checkLinesTemp = checkLine1;
           while (checkLinesTemp != Bitboard.EMPTY_BOARD) {

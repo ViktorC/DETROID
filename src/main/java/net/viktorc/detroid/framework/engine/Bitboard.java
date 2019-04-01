@@ -75,12 +75,38 @@ public class Bitboard {
   }
 
   /**
+   * It propagates north all set bits of the bitboard all the way.
+   *
+   * @param generator Piece squares.
+   * @return The filled bitboard.
+   */
+  public static long fillNorth(long generator) {
+    generator |= generator << 8;
+    generator |= generator << 16;
+    generator |= generator << 32;
+    return generator;
+  }
+
+  /**
+   * It propagates south all set bits of the bitboard all the way.
+   *
+   * @param generator Piece squares.
+   * @return The filled bitboard.
+   */
+  public static long fillSouth(long generator) {
+    generator |= generator >>> 8;
+    generator |= generator >>> 16;
+    generator |= generator >>> 32;
+    return generator;
+  }
+
+  /**
    * A parallel prefix occluded fill algorithm that returns the move (non-attack) sets in direction north of multiple sliding pieces at the
    * same time. The generator is usually the set of pieces to be shifted, and the propagator is the set of empty squares.
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillNorth(long generator, long propagator) {
     generator |= (generator << 8) & propagator;
@@ -97,7 +123,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillSouth(long generator, long propagator) {
     generator |= (generator >>> 8) & propagator;
@@ -115,7 +141,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillWest(long generator, long propagator) {
     propagator &= 0x7F7F7F7F7F7F7F7FL;
@@ -134,7 +160,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillEast(long generator, long propagator) {
     propagator &= 0xFEFEFEFEFEFEFEFEL;
@@ -153,7 +179,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillNorthWest(long generator, long propagator) {
     propagator &= 0x7F7F7F7F7F7F7F7FL;
@@ -172,7 +198,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillNorthEast(long generator, long propagator) {
     propagator &= 0xFEFEFEFEFEFEFEFEL;
@@ -191,7 +217,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillSouthWest(long generator, long propagator) {
     propagator &= 0x7F7F7F7F7F7F7F7FL;
@@ -210,7 +236,7 @@ public class Bitboard {
    *
    * @param generator Piece squares.
    * @param propagator All empty squares.
-   * @return The filled
+   * @return The filled bitboard.
    */
   public static long fillSouthEast(long generator, long propagator) {
     propagator &= 0xFEFEFEFEFEFEFEFEL;
@@ -400,6 +426,76 @@ public class Bitboard {
       moveSetVariations[i] = computeRookMoveSets(rooks, FULL_BOARD, ~occupancyVariations[i]);
     }
     return moveSetVariations;
+  }
+
+  private static long getPositivePinnedPiece(long ray, long sliders, long allSameColorOccupied) {
+    long pinnedPiece = BitOperations.getLSBit(ray) & allSameColorOccupied;
+    return (pinnedPiece != EMPTY_BOARD && (BitOperations.getLSBit(ray ^ pinnedPiece) & sliders) != EMPTY_BOARD) ?
+        pinnedPiece : EMPTY_BOARD;
+  }
+
+  private static long getNegativePinnedPiece(long ray, long sliders, long allSameColorOccupied) {
+    long pinnedPiece = BitOperations.getMSBit(ray) & allSameColorOccupied;
+    return (pinnedPiece != EMPTY_BOARD && (BitOperations.getMSBit(ray ^ pinnedPiece) & sliders) != EMPTY_BOARD) ?
+        pinnedPiece : EMPTY_BOARD;
+  }
+
+  /**
+   * Returns a bitboard of all pinned pieces.
+   *
+   * @param kingInd The index of the king.
+   * @param straightSliders A bitboard of all the queens and rooks of the opponent.
+   * @param diagonalSliders A bitboard of all the queens and bishops of the opponent.
+   * @param allOccupied A bitboard of all occupied squares.
+   * @param allSameColorOccupied A bitboard of all squares occupied by friendly pieces.
+   * @return A bitboard of all friendly pinned pieces.
+   */
+  public static long getPinnedPieces(byte kingInd, long straightSliders, long diagonalSliders, long allOccupied,
+      long allSameColorOccupied) {
+    Bitboard.Rays rays = Bitboard.Rays.values()[kingInd];
+    long pinnedPieces = getPositivePinnedPiece(rays.rankPos & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getPositivePinnedPiece(rays.filePos & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getPositivePinnedPiece(rays.diagonalPos & allOccupied, diagonalSliders, allSameColorOccupied);
+    pinnedPieces |= getPositivePinnedPiece(rays.antiDiagonalPos & allOccupied, diagonalSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinnedPiece(rays.rankNeg & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinnedPiece(rays.fileNeg & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinnedPiece(rays.diagonalNeg & allOccupied, diagonalSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinnedPiece(rays.antiDiagonalNeg & allOccupied, diagonalSliders, allSameColorOccupied);
+    return pinnedPieces;
+  }
+
+  private static long getPositivePinningPiece(long ray, long sliders, long allSameColorOccupied) {
+    long pinnedPiece = BitOperations.getLSBit(ray) & allSameColorOccupied;
+    return pinnedPiece != Bitboard.EMPTY_BOARD ? BitOperations.getLSBit(ray ^ pinnedPiece) & sliders : Bitboard.EMPTY_BOARD;
+  }
+
+  private static long getNegativePinningPiece(long ray, long sliders, long allSameColorOccupied) {
+    long pinnedPiece = BitOperations.getMSBit(ray) & allSameColorOccupied;
+    return pinnedPiece != Bitboard.EMPTY_BOARD ? BitOperations.getMSBit(ray ^ pinnedPiece) & sliders : Bitboard.EMPTY_BOARD;
+  }
+
+  /**
+   * Returns a bitboard of all pinning pieces.
+   *
+   * @param kingInd The index of the king.
+   * @param straightSliders A bitboard of all the queens and rooks of the opponent.
+   * @param diagonalSliders A bitboard of all the queens and bishops of the opponent.
+   * @param allOccupied A bitboard of all occupied squares.
+   * @param allSameColorOccupied A bitboard of all squares occupied by friendly pieces.
+   * @return A bitboard of all opponent pieces pinning friendly pieces.
+   */
+  public static long getPinningPieces(byte kingInd, long straightSliders, long diagonalSliders, long allOccupied,
+      long allSameColorOccupied) {
+    Bitboard.Rays rays = Bitboard.Rays.values()[kingInd];
+    long pinnedPieces = getPositivePinningPiece(rays.rankPos & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getPositivePinningPiece(rays.filePos & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getPositivePinningPiece(rays.diagonalPos & allOccupied, diagonalSliders, allSameColorOccupied);
+    pinnedPieces |= getPositivePinningPiece(rays.antiDiagonalPos & allOccupied, diagonalSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinningPiece(rays.rankNeg & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinningPiece(rays.fileNeg & allOccupied, straightSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinningPiece(rays.diagonalNeg & allOccupied, diagonalSliders, allSameColorOccupied);
+    pinnedPieces |= getNegativePinningPiece(rays.antiDiagonalNeg & allOccupied, diagonalSliders, allSameColorOccupied);
+    return pinnedPieces;
   }
 
   /**

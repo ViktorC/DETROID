@@ -16,17 +16,10 @@ public enum Score {
   INSUFFICIENT_MATERIAL(0),
   DRAW_CLAIMED(0);
 
-  private final short value;
+  public final short value;
 
   Score(int value) {
     this.value = (short) value;
-  }
-
-  /**
-   * @return The value associated with the score.
-   */
-  public short getValue() {
-    return value;
   }
 
 }

@@ -13,36 +13,22 @@ import net.viktorc.detroid.framework.tuning.ParameterType;
 class DetroidParameters extends EngineParameters {
 
   // Piece values.
-  @Parameter(binaryLengthLimit = 0)
+  @Parameter
   short kingValue;
-  @Parameter(binaryLengthLimit = 11)
+  @Parameter
   short queenValue;
-  @Parameter(binaryLengthLimit = 10)
+  @Parameter
   short rookValue;
-  @Parameter(binaryLengthLimit = 9)
-  short bishopvalue;
-  @Parameter(binaryLengthLimit = 9)
+  @Parameter
+  short bishopValue;
+  @Parameter
   short knightValue;
-  @Parameter(binaryLengthLimit = 8)
-  short pawnEndgameValue;
   @Parameter(binaryLengthLimit = 0)
   short pawnValue;
 
-  // Piece phase weights
-  @Parameter(binaryLengthLimit = 0)
-  byte kingPhaseWeight;
-  @Parameter(binaryLengthLimit = 0)
-  byte queenPhaseWeight;
-  @Parameter(binaryLengthLimit = 0)
-  byte rookPhaseWeight;
-  @Parameter(binaryLengthLimit = 0)
-  byte bishopPhaseWeight;
-  @Parameter(binaryLengthLimit = 0)
-  byte knightPhaseWeight;
-  @Parameter(binaryLengthLimit = 0)
-  byte pawnPhaseWeight;
-
   // Evaluation weights.
+  @Parameter
+  byte pawnEndgameBonus;
   @Parameter
   byte blockedPawnWeight1;
   @Parameter
@@ -50,39 +36,49 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte blockedPawnWeight3;
   @Parameter
-  byte kingFriendlyNormalPawnTropismWeight;
-  @Parameter
-  byte kingOpponentNormalPawnTropismWeight;
-  @Parameter
-  byte kingFriendlyOpenBackwardPawnTropismWeight;
-  @Parameter
-  byte kingOpponentOpenBackwardPawnTropismWeight;
-  @Parameter
-  byte kingFriendlyPassedPawnTropismWeight;
-  @Parameter
-  byte kingOpponentPassedPawnTropismWeight;
-  @Parameter
   byte passedPawnWeight;
   @Parameter
-  byte openBackwardPawnWeight;
+  byte isolatedPawnWeight;
+  @Parameter
+  byte backwardPawnWeight;
   @Parameter
   byte stoppedPawnWeight;
   @Parameter
-  byte queenKingTropismWeight;
-  @Parameter
   byte bishopPairAdvantage;
   @Parameter
+  byte pinnedQueenWeight;
+  @Parameter
+  byte pinnedRookWeight;
+  @Parameter
+  byte pinnedBishopWeight;
+  @Parameter
+  byte pinnedKnightWeight;
+  @Parameter
+  byte pinnedPawnWeight;
+  @Parameter
+  byte queenMobilityWeight;
+  @Parameter
+  byte rookMobilityWeight;
+  @Parameter
+  byte bishopMobilityWeight;
+  @Parameter
+  byte knightMobilityWeight;
+  @Parameter
+  byte friendlyNormalPawnTropismWeight;
+  @Parameter
+  byte friendlyWeakPawnTropismWeight;
+  @Parameter
+  byte friendlyPassedPawnTropismWeight;
+  @Parameter
+  byte opponentNormalPawnTropismWeight;
+  @Parameter
+  byte opponentWeakPawnTropismWeight;
+  @Parameter
+  byte opponentPassedPawnTropismWeight;
+  @Parameter
+  byte opponentQueenTropismWeight;
+  @Parameter
   byte tempoAdvantage;
-
-  // Game phase intervals.
-  @Parameter(binaryLengthLimit = 0)
-  short gamePhaseOpeningLower;
-  @Parameter(binaryLengthLimit = 0)
-  short gamePhaseOpeningUpper;
-  @Parameter(binaryLengthLimit = 0)
-  short gamePhaseEndgameLower;
-  @Parameter(binaryLengthLimit = 0)
-  short gamePhaseEndgameUpper;
 
   // Search parameters.
   @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)

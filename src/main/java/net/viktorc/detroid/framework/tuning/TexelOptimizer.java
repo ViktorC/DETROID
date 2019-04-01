@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.viktorc.detroid.framework.uci.SearchResults;
-import net.viktorc.detroid.framework.util.ASGD;
+import net.viktorc.detroid.framework.util.NadamSGD;
 
 /**
  * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent algorithm with a possibly parallel cost
@@ -30,7 +29,7 @@ import net.viktorc.detroid.framework.util.ASGD;
  *
  * @author Viktor
  */
-public final class TexelOptimizer extends ASGD<String, Float> implements AutoCloseable {
+public final class TexelOptimizer extends NadamSGD<String, Float> implements AutoCloseable {
 
   /**
    * The fraction of the complete data set used as a test data set.

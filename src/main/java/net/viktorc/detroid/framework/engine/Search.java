@@ -122,7 +122,7 @@ public class Search implements Runnable, Future<SearchResults> {
     /* In case all the extensions are activated during the search and the quiscence search probes 2 fold beyond
      * the main search depth. */
     maxExpectedSearchDepth = 2 * 2 * this.maxNominalDepth;
-    lCheckMateLimit = Score.LOSING_CHECK_MATE.getValue() + maxExpectedSearchDepth;
+    lCheckMateLimit = Score.LOSING_CHECK_MATE.value + maxExpectedSearchDepth;
     wCheckMateLimit = -lCheckMateLimit;
     this.transTable = transTable;
     this.hashEntryGen = hashEntryGen;
@@ -150,32 +150,34 @@ public class Search implements Runnable, Future<SearchResults> {
     return pv;
   }
 
-  private Entry<Short, ScoreType> adjustScore(int score, int alpha, int beta) {
+  private Entry<Short, ScoreType> adjustExactScore(int score) {
     int resultScore;
     ScoreType scoreType;
-    if (score == Score.NULL.getValue()) {
+    if (score <= lCheckMateLimit) {
+      resultScore = (int) Math.floor(((double) (Score.LOSING_CHECK_MATE.value - score)) / 2);
+      scoreType = ScoreType.MATE;
+    } else if (score >= wCheckMateLimit) {
+      resultScore = (int) Math.ceil(((double) (Score.WINNING_CHECK_MATE.value - score)) / 2);
+      scoreType = ScoreType.MATE;
+    } else {
+      resultScore = score;
+      scoreType = ScoreType.EXACT;
+    }
+    return new SimpleImmutableEntry<>((short) resultScore, scoreType);
+  }
+
+  private Entry<Short, ScoreType> adjustScore(int score, int alpha, int beta) {
+    if (score == Score.NULL.value) {
       return null;
     }
     // Determine score type and value in case it's a mate score.
-    else if (score >= beta) {
-      scoreType = ScoreType.LOWER_BOUND;
-      resultScore = score;
-    } else if (score <= alpha) {
-      scoreType = ScoreType.UPPER_BOUND;
-      resultScore = score;
-    } else {
-      if (score <= lCheckMateLimit) {
-        resultScore = (int) Math.floor(((double) (Score.LOSING_CHECK_MATE.getValue() - score)) / 2);
-        scoreType = ScoreType.MATE;
-      } else if (score >= wCheckMateLimit) {
-        resultScore = (int) Math.ceil(((double) (Score.WINNING_CHECK_MATE.getValue() - score)) / 2);
-        scoreType = ScoreType.MATE;
-      } else {
-        resultScore = score;
-        scoreType = ScoreType.EXACT;
-      }
+    if (score >= beta) {
+      return new SimpleImmutableEntry<>((short) score, ScoreType.LOWER_BOUND);
     }
-    return new SimpleImmutableEntry<>((short) resultScore, scoreType);
+    if (score <= alpha) {
+      return new SimpleImmutableEntry<>((short) score, ScoreType.UPPER_BOUND);
+    }
+    return adjustExactScore(score);
   }
 
   private void updateInfo(Position position, Move currentMove, int moveNumber, short ply, int alpha, int beta, int score) {
@@ -208,15 +210,15 @@ public class Search implements Runnable, Future<SearchResults> {
     doStopSearch = false;
     searchStats = new SearchStats();
     List<SearchThread> slaveThreads = null;
-    int alpha = Score.MIN.getValue();
-    int beta = Score.MAX.getValue();
+    int alpha = Score.MIN.value;
+    int beta = Score.MAX.value;
     SearchThread masterThread = new SearchThread(rootPos, null);
     // Zero-depth mode.
     if (maxNominalDepth == 0) {
       masterThread.setPly((short) 0);
       masterThread.setBounds(alpha, beta);
-      return new SearchResults(null, null, (short) masterThread.call().intValue(),
-          ScoreType.EXACT);
+      Entry<Short, ScoreType> res = adjustExactScore(masterThread.call());
+      return new SearchResults(null, null, res.getKey(), res.getValue());
     }
     rootMoves = areMovesRestricted ? allowedRootMoves : rootPos.getMoves();
     movesToNodes = new HashMap<>();
@@ -272,33 +274,33 @@ public class Search implements Runnable, Future<SearchResults> {
       synchronized (this) {
         notifyAll();
       }
-      if (doStopSearch || ply == maxNominalDepth || score == Score.NULL.getValue()) {
+      if (doStopSearch || ply == maxNominalDepth || score == Score.NULL.value) {
         break;
       }
       // Aspiration windows with gradual widening.
       if (score <= alpha) {
         if (score <= lCheckMateLimit) {
-          alpha = Score.MIN.getValue();
+          alpha = Score.MIN.value;
           failLow = 2;
         } else {
-          alpha = failLow <= 1 ? Math.max(score - params.aspirationDelta, Score.MIN.getValue()) :
-              Score.MIN.getValue();
+          alpha = failLow <= 1 ? Math.max(score - params.aspirationDelta, Score.MIN.value) :
+              Score.MIN.value;
           failLow++;
         }
         ply--;
       } else if (score >= beta) {
         if (score >= wCheckMateLimit) {
-          beta = Score.MAX.getValue();
+          beta = Score.MAX.value;
           failHigh = 2;
         } else {
-          beta = failHigh <= 1 ? Math.min(score + params.aspirationDelta, Score.MAX.getValue()) :
-              Score.MAX.getValue();
+          beta = failHigh <= 1 ? Math.min(score + params.aspirationDelta, Score.MAX.value) :
+              Score.MAX.value;
           failHigh++;
         }
         ply--;
       } else {
-        alpha = Math.max(score - params.aspirationDelta, Score.MIN.getValue());
-        beta = Math.min(score + params.aspirationDelta, Score.MAX.getValue());
+        alpha = Math.max(score - params.aspirationDelta, Score.MIN.value);
+        beta = Math.min(score + params.aspirationDelta, Score.MAX.value);
         failHigh = failLow = 0;
       }
     }
@@ -554,11 +556,11 @@ public class Search implements Runnable, Future<SearchResults> {
       // Determine node type.
       byte type;
       if (bestScore <= alpha) {
-        type = (byte) NodeType.FAIL_LOW.ind;
+        type = NodeType.FAIL_LOW.ind;
       } else if (bestScore >= beta) {
-        type = (byte) NodeType.FAIL_HIGH.ind;
+        type = NodeType.FAIL_HIGH.ind;
       } else {
-        type = (byte) NodeType.EXACT.ind;
+        type = NodeType.EXACT.ind;
       }
       // Add new entry to the transposition table.
       // First try the primary table.
@@ -579,7 +581,7 @@ public class Search implements Runnable, Future<SearchResults> {
      * @throws AbnormalSearchTerminationException If the search is cancelled or the maximum allowed number of nodes have been searched.
      */
     private int quiescence(int distFromRoot, int alpha, int beta) throws AbnormalSearchTerminationException {
-      int mateValue = Score.LOSING_CHECK_MATE.getValue() + distFromRoot;
+      int mateValue = Score.LOSING_CHECK_MATE.value + distFromRoot;
       if (!ponder && getTotalNodes() >= maxNodes) {
         doStopSearch = true;
       }
@@ -592,7 +594,7 @@ public class Search implements Runnable, Future<SearchResults> {
       searchStats.quiescenceNodes.incrementAndGet();
       // Fifty-move rule and repetition rule check.
       if (pos.getFiftyMoveRuleClock() >= 100 || pos.hasRepeated(distFromRoot > 2 ? 1 : 2)) {
-        return Score.DRAW_CLAIMED.getValue();
+        return Score.DRAW_CLAIMED.value;
       }
       // Evaluate the pos statically.
       int bestScore = pos.isInCheck() ? mateValue : eval.score(pos, hashEntryGen, evalTableEntry);
@@ -705,7 +707,7 @@ public class Search implements Runnable, Future<SearchResults> {
         throws AbnormalSearchTerminationException {
       // Do not allow negative depths for the full effect of check extensions.
       depth = Math.max(depth, 0);
-      final int mateScore = Score.LOSING_CHECK_MATE.getValue() + distFromRoot;
+      final int mateScore = Score.LOSING_CHECK_MATE.value + distFromRoot;
       final int origAlpha = alpha;
       final int depthLimit = distFromRoot >= maxNominalDepth ? depth : depth + params.fullPly;
       final boolean pvNode = beta > origAlpha + 1;
@@ -739,7 +741,7 @@ public class Search implements Runnable, Future<SearchResults> {
         int score;
         // Check for the repetition rule; return a draw score if it applies.
         if (pos.hasRepeated(distFromRoot > 2 ? 1 : 2)) {
-          return Score.DRAW_CLAIMED.getValue();
+          return Score.DRAW_CLAIMED.value;
         }
         // Mate distance pruning.
         if (-mateScore < beta && alpha >= -mateScore) {
@@ -759,7 +761,7 @@ public class Search implements Runnable, Future<SearchResults> {
               // Return the appropriate score.
               switch (dtm.getWdl()) {
                 case DRAW:
-                  return Score.STALE_MATE.getValue();
+                  return Score.STALE_MATE.value;
                 case LOSS:
                   return mateScore + dtm.getDistance();
                 case WIN:
@@ -793,7 +795,7 @@ public class Search implements Runnable, Future<SearchResults> {
             searchStats.hashHits.incrementAndGet();
             /* If the hashed entry's depth is greater than or equal to the current search depth, check if
              * the stored score is usable. */
-            if (hashDepth >= depth / params.fullPly && hashScore != Score.NULL.getValue()) {
+            if (hashDepth >= depth / params.fullPly && hashScore != Score.NULL.value) {
               // Mate score adjustment to root distance.
               if (hashScore <= lCheckMateLimit) {
                 score = hashScore + distFromRoot;
@@ -857,7 +859,7 @@ public class Search implements Runnable, Future<SearchResults> {
           bestMove = null;
           break Search;
         }
-        score = Score.NULL.getValue();
+        score = Score.NULL.value;
         int evalScore = score;
         // Assess if the pos is 'safe'...
         boolean dangerous = pos.isInCheck() || pawnPushed;
@@ -880,7 +882,7 @@ public class Search implements Runnable, Future<SearchResults> {
               default:
                 razMargin = 0;
             }
-            if (evalScore == Score.NULL.getValue()) {
+            if (evalScore == Score.NULL.value) {
               evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
             }
             if (evalScore - razMargin >= beta) {
@@ -891,7 +893,7 @@ public class Search implements Runnable, Future<SearchResults> {
           }
           // Try null move pruning if the conditions are met.
           if (nullMoveAllowed && depth / ply >= params.nullMoveReductionMinDepthLeft) {
-            if (evalScore == Score.NULL.getValue()) {
+            if (evalScore == Score.NULL.value) {
               evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
             }
             if (evalScore > alpha) {
@@ -955,7 +957,7 @@ public class Search implements Runnable, Future<SearchResults> {
             if (!isThereKM1 && !isThereKM2) {
               quietMoves = pos.getQuietMoves();
               if (quietMoves.size() == 0) {
-                score = pos.isInCheck() ? mateScore : Score.STALE_MATE.getValue();
+                score = pos.isInCheck() ? mateScore : Score.STALE_MATE.value;
                 if (score > bestScore) {
                   bestMove = null;
                   bestScore = score;
@@ -968,7 +970,7 @@ public class Search implements Runnable, Future<SearchResults> {
         // Check for the fifty-move rule; return a draw score if it applies.
         if (pos.getFiftyMoveRuleClock() >= 100) {
           resetBusyFlag(nodeBlocked);
-          return Score.DRAW_CLAIMED.getValue();
+          return Score.DRAW_CLAIMED.value;
         }
         // Check if a recapture extension could possibly be applied.
         lastMove = pos.getLastMove();
@@ -1212,7 +1214,7 @@ public class Search implements Runnable, Future<SearchResults> {
           }
           // Futility pruning.
           if (prunable && depth / params.fullPly <= 5 && !pos.givesCheck(move)) {
-            if (evalScore == Score.NULL.getValue()) {
+            if (evalScore == Score.NULL.value) {
               evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
             }
             if (evalScore <= alpha - futMargin) {
@@ -1386,7 +1388,7 @@ public class Search implements Runnable, Future<SearchResults> {
       final int origAlpha = alpha;
       int alpha = this.alpha;
       int beta = this.beta;
-      int bestScore = Score.MIN.getValue();
+      int bestScore = Score.MIN.value;
       Move bestMove = null;
       Move hashMove = null;
       boolean infoUpdated = false;
@@ -1400,21 +1402,21 @@ public class Search implements Runnable, Future<SearchResults> {
         searchStats.mainNodes.incrementAndGet();
         // Check for the 3-fold repetition rule.
         if (pos.hasRepeated(2)) {
-          return (int) Score.DRAW_CLAIMED.getValue();
+          return (int) Score.DRAW_CLAIMED.value;
         }
         // Generate moves.
         List<Move> moves = new ArrayList<>(rootMoves);
         // Mate check.
         if (moves.isEmpty()) {
-          return (int) (pos.isInCheck() ? Score.LOSING_CHECK_MATE.getValue() : Score.STALE_MATE.getValue());
+          return (int) (pos.isInCheck() ? Score.LOSING_CHECK_MATE.value : Score.STALE_MATE.value);
         }
         // Check for the 50 move rule.
         if (pos.getFiftyMoveRuleClock() >= 100) {
-          return (int) Score.DRAW_CLAIMED.getValue();
+          return (int) Score.DRAW_CLAIMED.value;
         }
         // In non-analysis mode, terminate prematurely if there is only one legal response at the root.
         if (!analysisMode && !ponder && moves.size() == 1) {
-          bestScore = Score.NULL.getValue();
+          bestScore = Score.NULL.value;
           synchronized (rootLock) {
             insertIntoTt(pos.getKey(), origAlpha, beta, moves.get(0), bestScore, (short) 0,
                 (short) (depth / params.fullPly));
@@ -1439,7 +1441,7 @@ public class Search implements Runnable, Future<SearchResults> {
             searchStats.hashHits.incrementAndGet();
             /* If the hashed entry's depth is greater than or equal to the current search depth, check if
              * the stored score is usable. */
-            if (hashDepth >= depth / params.fullPly && hashScore != Score.NULL.getValue()) {
+            if (hashDepth >= depth / params.fullPly && hashScore != Score.NULL.value) {
               /* If the score was exact, or it was the score of an all node and is smaller than or equal
                * to alpha, or it is that of a cut node and is greater than or equal to beta, return the
                * score. Only take an exact score if is outside the bounds to avoid the truncation of the
