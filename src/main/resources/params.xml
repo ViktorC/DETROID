@@ -3,7 +3,7 @@
   <kingValue>20000</kingValue>
   <queenValue>753</queenValue>
   <rookValue>321</rookValue>
-  <bishopvalue>142</bishopvalue>
+  <bishopValue>142</bishopValue>
   <knightValue>138</knightValue>
   <pawnValue>100</pawnValue>
   <pawnEndgameBonus>25</pawnEndgameBonus>

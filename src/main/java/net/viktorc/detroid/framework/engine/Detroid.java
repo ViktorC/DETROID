@@ -360,7 +360,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
       eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
       executor = Executors.newSingleThreadExecutor();
       init = true;
-
     }
   }
 
