@@ -35,16 +35,16 @@ public class MoveStringUtils {
     if (input.length() == 5) {
       switch (input.charAt(4)) {
         case 'q':
-          type = (byte) MoveType.PROMOTION_TO_QUEEN.ind;
+          type = MoveType.PROMOTION_TO_QUEEN.ind;
           break;
         case 'r':
-          type = (byte) MoveType.PROMOTION_TO_ROOK.ind;
+          type = MoveType.PROMOTION_TO_ROOK.ind;
           break;
         case 'b':
-          type = (byte) MoveType.PROMOTION_TO_BISHOP.ind;
+          type = MoveType.PROMOTION_TO_BISHOP.ind;
           break;
         case 'n':
-          type = (byte) MoveType.PROMOTION_TO_KNIGHT.ind;
+          type = MoveType.PROMOTION_TO_KNIGHT.ind;
           break;
         default:
           throw new ChessParseException("The input does not pass the formal requirements of a PACN String. " +
@@ -55,34 +55,34 @@ public class MoveStringUtils {
       if (movedPiece == Piece.W_PAWN.ind) {
         if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
             to == pos.getEnPassantRights() + EnPassantRights.TO_W_DEST_SQR_IND) {
-          type = (byte) MoveType.EN_PASSANT.ind;
-          capturedPiece = (byte) Piece.B_PAWN.ind;
+          type = MoveType.EN_PASSANT.ind;
+          capturedPiece = Piece.B_PAWN.ind;
         } else {
-          type = (byte) MoveType.NORMAL.ind;
+          type = MoveType.NORMAL.ind;
           capturedPiece = pos.getPiece(to);
         }
       } else if (movedPiece == Piece.B_PAWN.ind) {
         if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
             to == pos.getEnPassantRights() + EnPassantRights.TO_B_DEST_SQR_IND) {
-          type = (byte) MoveType.EN_PASSANT.ind;
-          capturedPiece = (byte) Piece.W_PAWN.ind;
+          type = MoveType.EN_PASSANT.ind;
+          capturedPiece = Piece.W_PAWN.ind;
         } else {
-          type = (byte) MoveType.NORMAL.ind;
+          type = MoveType.NORMAL.ind;
           capturedPiece = pos.getPiece(to);
         }
       } else {
         if ((movedPiece == Piece.W_KING.ind && from == Bitboard.Square.E1.ind &&
             to == Bitboard.Square.G1.ind) || (movedPiece == Piece.B_KING.ind &&
             from == Bitboard.Square.E8.ind && to == Bitboard.Square.G8.ind)) {
-          type = (byte) MoveType.SHORT_CASTLING.ind;
-          capturedPiece = (byte) Piece.NULL.ind;
+          type = MoveType.SHORT_CASTLING.ind;
+          capturedPiece = Piece.NULL.ind;
         } else if ((movedPiece == Piece.W_KING.ind && from == Bitboard.Square.E1.ind &&
             to == Bitboard.Square.C1.ind) || (movedPiece == Piece.B_KING.ind &&
             from == Bitboard.Square.E8.ind && to == Bitboard.Square.C8.ind)) {
-          type = (byte) MoveType.LONG_CASTLING.ind;
-          capturedPiece = (byte) Piece.NULL.ind;
+          type = MoveType.LONG_CASTLING.ind;
+          capturedPiece = Piece.NULL.ind;
         } else {
-          type = (byte) MoveType.NORMAL.ind;
+          type = MoveType.NORMAL.ind;
           capturedPiece = pos.getPiece(to);
         }
       }
@@ -114,56 +114,56 @@ public class MoveStringUtils {
       chars = san.toCharArray();
       if (san.matches("^O-O[+#]?[/?!]{0,2}$")) {
         if (pos.isWhitesTurn()) {
-          to = (byte) Bitboard.Square.G1.ind;
-          from = (byte) Bitboard.Square.E1.ind;
-          movedPiece = (byte) Piece.W_KING.ind;
+          to = Bitboard.Square.G1.ind;
+          from = Bitboard.Square.E1.ind;
+          movedPiece = Piece.W_KING.ind;
         } else {
-          to = (byte) Bitboard.Square.G8.ind;
-          from = (byte) Bitboard.Square.E8.ind;
-          movedPiece = (byte) Piece.B_KING.ind;
+          to = Bitboard.Square.G8.ind;
+          from = Bitboard.Square.E8.ind;
+          movedPiece = Piece.B_KING.ind;
         }
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.SHORT_CASTLING.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.SHORT_CASTLING.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^O-O-O[+#]?[/?!]{0,2}$")) {
         if (pos.isWhitesTurn()) {
-          to = (byte) Bitboard.Square.C1.ind;
-          from = (byte) Bitboard.Square.E1.ind;
-          movedPiece = (byte) Piece.W_KING.ind;
+          to = Bitboard.Square.C1.ind;
+          from = Bitboard.Square.E1.ind;
+          movedPiece = Piece.W_KING.ind;
         } else {
-          to = (byte) Bitboard.Square.C8.ind;
-          from = (byte) Bitboard.Square.E8.ind;
-          movedPiece = (byte) Piece.B_KING.ind;
+          to = Bitboard.Square.C8.ind;
+          from = Bitboard.Square.E8.ind;
+          movedPiece = Piece.B_KING.ind;
         }
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.LONG_CASTLING.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.LONG_CASTLING.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[0] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[1])) - 1));
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           pawnAdvancer = (1L << (to - 8)) & pos.getWhitePawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16);
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           pawnAdvancer = (1L << (to + 8)) & pos.getBlackPawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16);
         }
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.NORMAL.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.NORMAL.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h][1-8]=[QRBN][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[0] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[1])) - 1));
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           pawnAdvancer = (1L << (to - 8)) & pos.getWhitePawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to - 16);
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           pawnAdvancer = (1L << (to + 8)) & pos.getBlackPawns() & movablePieces;
           from = (byte) ((pawnAdvancer != 0) ? BitOperations.indexOfBit(pawnAdvancer) : to + 16);
         }
-        capturedPiece = (byte) Piece.NULL.ind;
+        capturedPiece = Piece.NULL.ind;
         type = (byte) (Arrays.stream(Piece.values())
             .filter(p -> p.letter == chars[3]).findAny().get().ind + 2);
         restriction = Bitboard.FULL_BOARD;
@@ -171,26 +171,26 @@ public class MoveStringUtils {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
         dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces));
           if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_W_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.B_PAWN.ind;
-            type = (byte) MoveType.EN_PASSANT.ind;
+            capturedPiece = Piece.B_PAWN.ind;
+            type = MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ind;
+            type = MoveType.NORMAL.ind;
           }
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces));
           if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_B_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.W_PAWN.ind;
-            type = (byte) MoveType.EN_PASSANT.ind;
+            capturedPiece = Piece.W_PAWN.ind;
+            type = MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ind;
+            type = MoveType.NORMAL.ind;
           }
         }
         restriction = Bitboard.FULL_BOARD;
@@ -198,10 +198,10 @@ public class MoveStringUtils {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
         dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces));
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces));
         }
         capturedPiece = pos.getPiece(to);
@@ -212,42 +212,42 @@ public class MoveStringUtils {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
         dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces));
-          capturedPiece = (byte) Piece.B_PAWN.ind;
+          capturedPiece = Piece.B_PAWN.ind;
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces));
-          capturedPiece = (byte) Piece.W_PAWN.ind;
+          capturedPiece = Piece.W_PAWN.ind;
         }
-        type = (byte) MoveType.EN_PASSANT.ind;
+        type = MoveType.EN_PASSANT.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[a-h]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
         dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces)
               & Bitboard.File.values()[chars[0] - 'a'].bitboard);
           if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_W_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.B_PAWN.ind;
-            type = (byte) MoveType.EN_PASSANT.ind;
+            capturedPiece = Piece.B_PAWN.ind;
+            type = MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ind;
+            type = MoveType.NORMAL.ind;
           }
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces)
               & Bitboard.File.values()[chars[0] - 'a'].bitboard);
           if (pos.getEnPassantRights() != EnPassantRights.NONE.ind &&
               to == pos.getEnPassantRights() + EnPassantRights.TO_B_DEST_SQR_IND) {
-            capturedPiece = (byte) Piece.W_PAWN.ind;
-            type = (byte) MoveType.EN_PASSANT.ind;
+            capturedPiece = Piece.W_PAWN.ind;
+            type = MoveType.EN_PASSANT.ind;
           } else {
             capturedPiece = pos.getPiece(to);
-            type = (byte) MoveType.NORMAL.ind;
+            type = MoveType.NORMAL.ind;
           }
         }
         restriction = Bitboard.FULL_BOARD;
@@ -255,11 +255,11 @@ public class MoveStringUtils {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
         dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces)
               & Bitboard.File.values()[chars[0] - 'a'].bitboard);
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces)
               & Bitboard.File.values()[chars[0] - 'a'].bitboard);
         }
@@ -271,25 +271,25 @@ public class MoveStringUtils {
         to = (byte) ((chars[2] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[3])) - 1));
         dB = MoveSetBase.getByIndex(to);
         if (pos.isWhitesTurn()) {
-          movedPiece = (byte) Piece.W_PAWN.ind;
+          movedPiece = Piece.W_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces)
               & Bitboard.File.values()[chars[0] - 'a'].bitboard);
-          capturedPiece = (byte) Piece.B_PAWN.ind;
+          capturedPiece = Piece.B_PAWN.ind;
         } else {
-          movedPiece = (byte) Piece.B_PAWN.ind;
+          movedPiece = Piece.B_PAWN.ind;
           from = BitOperations.indexOfBit(dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces)
               & Bitboard.File.values()[chars[0] - 'a'].bitboard);
-          capturedPiece = (byte) Piece.W_PAWN.ind;
+          capturedPiece = Piece.W_PAWN.ind;
         }
-        type = (byte) MoveType.EN_PASSANT.ind;
+        type = MoveType.EN_PASSANT.ind;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[KQRBN][a-h][1-8][+#]?[/?!]{0,2}$")) {
         to = (byte) ((chars[1] - 'a') + 8 * (Integer.parseInt(Character.toString(chars[2])) - 1));
         movedPiece = (byte) (Arrays.stream(Piece.values())
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.NORMAL.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[KQRBN][a-h][a-h][1-8][+#]?[/?!]{0,2}$")) {
@@ -297,8 +297,8 @@ public class MoveStringUtils {
         movedPiece = (byte) (Arrays.stream(Piece.values())
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.NORMAL.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard;
       } else if (san.matches("^[KQRBN][1-8][a-h][1-8][+#]?[/?!]{0,2}$")) {
@@ -306,8 +306,8 @@ public class MoveStringUtils {
         movedPiece = (byte) (Arrays.stream(Piece.values())
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.NORMAL.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.Rank.values()[chars[1] - '1'].bitboard;
       } else if (san.matches("^[KQRBN][a-h][1-8][a-h][1-8][+#]?[/?!]{0,2}$")) {
@@ -315,8 +315,8 @@ public class MoveStringUtils {
         movedPiece = (byte) (Arrays.stream(Piece.values())
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
-        capturedPiece = (byte) Piece.NULL.ind;
-        type = (byte) MoveType.NORMAL.ind;
+        capturedPiece = Piece.NULL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard &
             Bitboard.Rank.values()[chars[2] - '1'].bitboard;
@@ -326,7 +326,7 @@ public class MoveStringUtils {
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.FULL_BOARD;
       } else if (san.matches("^[KQRBN][a-h]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
@@ -335,7 +335,7 @@ public class MoveStringUtils {
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard;
       } else if (san.matches("^[KQRBN][1-8]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
@@ -344,7 +344,7 @@ public class MoveStringUtils {
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.Rank.values()[chars[1] - '1'].bitboard;
       } else if (san.matches("^[KQRBN][a-h][1-8]x[a-h][1-8][+#]?[/?!]{0,2}$")) {
@@ -353,7 +353,7 @@ public class MoveStringUtils {
             .filter(p -> p.letter == chars[0]).findAny().get().ind +
             (pos.isWhitesTurn() ? 0 : Piece.W_PAWN.ind));
         capturedPiece = pos.getPiece(to);
-        type = (byte) MoveType.NORMAL.ind;
+        type = MoveType.NORMAL.ind;
         from = -1;
         restriction = Bitboard.File.values()[chars[1] - 'a'].bitboard & Bitboard.Rank.values()[chars[2] - '1'].bitboard;
       } else {
