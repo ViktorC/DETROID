@@ -36,8 +36,8 @@ public class RelativeHistoryTable {
    * @param m The move that caused the cut-off.
    */
   public void recordSuccessfulMove(Move m) {
-    byte movedPiece = m.getMovedPiece();
-    byte to = m.getTo();
+    byte movedPiece = m.movedPiece;
+    byte to = m.to;
     historyT[movedPiece][to]++;
     butterflyT[movedPiece][to]++;
   }
@@ -48,7 +48,7 @@ public class RelativeHistoryTable {
    * @param m The move that did not cause a cut-off.
    */
   public void recordUnsuccessfulMove(Move m) {
-    butterflyT[m.getMovedPiece()][m.getTo()]++;
+    butterflyT[m.movedPiece][m.to]++;
   }
 
   /**
@@ -59,8 +59,8 @@ public class RelativeHistoryTable {
    * from-to tables.
    */
   public short score(Move m) {
-    byte movedPiece = m.getMovedPiece();
-    byte to = m.getTo();
+    byte movedPiece = m.movedPiece;
+    byte to = m.to;
     long bTscore = butterflyT[movedPiece][to];
     return bTscore != 0 ? (short) (maxScore * historyT[movedPiece][to] / bTscore) : 0;
   }

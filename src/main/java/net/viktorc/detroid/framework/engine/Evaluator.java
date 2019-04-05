@@ -92,8 +92,8 @@ public class Evaluator {
   // Evaluation score hash table.
   private final Cache<ETEntry> evalTable;
 
-  private byte[][] pstOpening;
-  private byte[][] pstEndgame;
+  private byte[][] pstMg;
+  private byte[][] pstEg;
 
   /**
    * Initializes a chess position evaluator.
@@ -139,84 +139,67 @@ public class Evaluator {
   }
 
   private void initPieceSquareArrays() {
-    byte[] pstPawnOpening = params.getPstPawnOpening();
-    byte[] pstPawnEndgame = params.getPstPawnEndgame();
-    byte[] pstKnightOpening = params.getPstKnightOpening();
-    byte[] pstKnightEndgame = params.getPstKnightEndgame();
-    byte[] pstBishopOpening = params.getPstBishopOpening();
-    byte[] pstBishopEnding = params.getPstBishopEnding();
-    byte[] pstRookOpening = params.getPstRookOpening();
-    byte[] pstRookEndgame = params.getPstRookEndgame();
-    byte[] pstQueenOpening = params.getPstQueenOpening();
-    byte[] pstQueenEnding = params.getPstQueenEnding();
-    byte[] pstKingOpening = params.getPstKingOpening();
-    byte[] pstKingEndgame = params.getPstKingEndgame();
-    byte[] pstWPawnOpening = new byte[64];
-    byte[] pstWPawnEndgame = new byte[64];
-    byte[] pstWKnightOpening = new byte[64];
-    byte[] pstWKnightEndgame = new byte[64];
-    byte[] pstWBishopOpening = new byte[64];
-    byte[] pstWBishopEnding = new byte[64];
-    byte[] pstWRookOpening = new byte[64];
-    byte[] pstWRookEndgame = new byte[64];
-    byte[] pstWQueenOpening = new byte[64];
-    byte[] pstWQueenEnding = new byte[64];
-    byte[] pstWKingOpening = new byte[64];
-    byte[] pstWKingEndgame = new byte[64];
-    byte[] pstBPawnOpening = new byte[64];
-    byte[] pstBPawnEndgame = new byte[64];
-    byte[] pstBKnightOpening = new byte[64];
-    byte[] pstBKnightEndgame = new byte[64];
-    byte[] pstBBishopOpening = new byte[64];
-    byte[] pstBBishopEnding = new byte[64];
-    byte[] pstBRookOpening = new byte[64];
-    byte[] pstBRookEndgame = new byte[64];
-    byte[] pstBQueenOpening = new byte[64];
-    byte[] pstBQueenEnding = new byte[64];
-    byte[] pstBKingOpening = new byte[64];
-    byte[] pstBKingEndgame = new byte[64];
+    byte[] pstPawnMg = params.getPstPawnMg();
+    byte[] pstPawnEg = params.getPstPawnEg();
+    byte[] pstKnight = params.getPstKnight();
+    byte[] pstBishop = params.getPstBishop();
+    byte[] pstRookMg = params.getPstRookMg();
+    byte[] pstRookEg = params.getPstRookEg();
+    byte[] pstQueen = params.getPstQueen();
+    byte[] pstKingMg = params.getPstKingMg();
+    byte[] pstKingEg = params.getPstKingEg();
+    byte[] pstWPawnMg = new byte[64];
+    byte[] pstWPawnEg = new byte[64];
+    byte[] pstWKnight = new byte[64];
+    byte[] pstWBishop = new byte[64];
+    byte[] pstWRookMg = new byte[64];
+    byte[] pstWRookEg = new byte[64];
+    byte[] pstWQueen = new byte[64];
+    byte[] pstWKingMg = new byte[64];
+    byte[] pstWKingEg = new byte[64];
+    byte[] pstBPawnMg = new byte[64];
+    byte[] pstBPawnEg = new byte[64];
+    byte[] pstBKnight = new byte[64];
+    byte[] pstBBishop = new byte[64];
+    byte[] pstBRookMg = new byte[64];
+    byte[] pstBRookEg = new byte[64];
+    byte[] pstBQueen = new byte[64];
+    byte[] pstBKingMg = new byte[64];
+    byte[] pstBKingEg = new byte[64];
     /* Due to the reversed order of the rows in the definition of the white piece-square tables, they are just
      * right for black with negated values. */
     for (int i = 0; i < 64; i++) {
-      pstBPawnOpening[i] = (byte) -pstPawnOpening[i];
-      pstBPawnEndgame[i] = (byte) -pstPawnEndgame[i];
-      pstBKnightOpening[i] = (byte) -pstKnightOpening[i];
-      pstBKnightEndgame[i] = (byte) -pstKnightEndgame[i];
-      pstBBishopOpening[i] = (byte) -pstBishopOpening[i];
-      pstBBishopEnding[i] = (byte) -pstBishopEnding[i];
-      pstBRookOpening[i] = (byte) -pstRookOpening[i];
-      pstBRookEndgame[i] = (byte) -pstRookEndgame[i];
-      pstBQueenOpening[i] = (byte) -pstQueenOpening[i];
-      pstBQueenEnding[i] = (byte) -pstQueenEnding[i];
-      pstBKingOpening[i] = (byte) -pstKingOpening[i];
-      pstBKingEndgame[i] = (byte) -pstKingEndgame[i];
+      pstBPawnMg[i] = (byte) -pstPawnMg[i];
+      pstBPawnEg[i] = (byte) -pstPawnEg[i];
+      pstBKnight[i] = (byte) -pstKnight[i];
+      pstBBishop[i] = (byte) -pstBishop[i];
+      pstBRookMg[i] = (byte) -pstRookMg[i];
+      pstBRookEg[i] = (byte) -pstRookEg[i];
+      pstBQueen[i] = (byte) -pstQueen[i];
+      pstBKingMg[i] = (byte) -pstKingMg[i];
+      pstBKingEg[i] = (byte) -pstKingEg[i];
     }
     // To get the right values for the white piece-square tables, vertically mirror and negate the ones for black.
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
         int c1 = i * 8 + j;
         int c2 = ((7 - i) * 8) + j;
-        pstWPawnOpening[c1] = (byte) -pstBPawnOpening[c2];
-        pstWPawnEndgame[c1] = (byte) -pstBPawnEndgame[c2];
-        pstWKnightOpening[c1] = (byte) -pstBKnightOpening[c2];
-        pstWKnightEndgame[c1] = (byte) -pstBKnightEndgame[c2];
-        pstWBishopOpening[c1] = (byte) -pstBBishopOpening[c2];
-        pstWBishopEnding[c1] = (byte) -pstBBishopEnding[c2];
-        pstWRookOpening[c1] = (byte) -pstBRookOpening[c2];
-        pstWRookEndgame[c1] = (byte) -pstBRookEndgame[c2];
-        pstWQueenOpening[c1] = (byte) -pstBQueenOpening[c2];
-        pstWQueenEnding[c1] = (byte) -pstBQueenEnding[c2];
-        pstWKingOpening[c1] = (byte) -pstBKingOpening[c2];
-        pstWKingEndgame[c1] = (byte) -pstBKingEndgame[c2];
+        pstWPawnMg[c1] = (byte) -pstBPawnMg[c2];
+        pstWPawnEg[c1] = (byte) -pstBPawnEg[c2];
+        pstWKnight[c1] = (byte) -pstBKnight[c2];
+        pstWBishop[c1] = (byte) -pstBBishop[c2];
+        pstWRookMg[c1] = (byte) -pstBRookMg[c2];
+        pstWRookEg[c1] = (byte) -pstBRookEg[c2];
+        pstWQueen[c1] = (byte) -pstBQueen[c2];
+        pstWKingMg[c1] = (byte) -pstBKingMg[c2];
+        pstWKingEg[c1] = (byte) -pstBKingEg[c2];
       }
     }
     // Set the opening and endgame arrays of piece square tables.
-    pstOpening = new byte[][]{pstWKingOpening, pstWQueenOpening, pstWRookOpening, pstWBishopOpening,
-        pstWKnightOpening, pstWPawnOpening, pstBKingOpening, pstBQueenOpening, pstBRookOpening,
-        pstBBishopOpening, pstBKnightOpening, pstBPawnOpening};
-    pstEndgame = new byte[][]{pstWKingEndgame, pstWQueenEnding, pstWRookEndgame, pstWBishopEnding,
-        pstWKnightEndgame, pstWPawnEndgame, pstBKingEndgame, pstBQueenEnding, pstBRookEndgame,
-        pstBBishopEnding, pstBKnightEndgame, pstBPawnEndgame};
+    pstMg = new byte[][]{pstWKingMg, pstWQueen, pstWRookMg, pstWBishop, pstWKnight, pstWPawnMg,
+        pstBKingMg, pstBQueen, pstBRookMg, pstBBishop, pstBKnight, pstBPawnMg};
+    pstEg = new byte[][]{pstWKingEg, pstWQueen, pstWRookEg, pstWBishop, pstWKnight, pstWPawnEg,
+        pstBKingEg, pstBQueen, pstBRookEg, pstBBishop, pstBKnight, pstBPawnEg};
   }
 
   /**
@@ -265,11 +248,11 @@ public class Evaluator {
    */
   public short MVVLVA(Move move) {
     short score = 0;
-    if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ind) {
+    if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
       byte queenValue = MVV_LVA_PIECE_VALUES[Piece.W_QUEEN.ind];
       score += queenValue * queenValue;
     }
-    score += MVV_LVA[move.getMovedPiece()][move.getCapturedPiece()];
+    score += MVV_LVA[move.movedPiece][move.capturedPiece];
     return score;
   }
 
@@ -281,9 +264,9 @@ public class Evaluator {
    * @return The SEE score of the move.
    */
   public short SEE(Position pos, Move move) {
-    short victimVal = materialValueByPieceInd(move.getCapturedPiece());
+    short victimVal = materialValueByPieceInd(move.capturedPiece);
     // If the captor was a king, return the captured piece's value as capturing the king would be illegal.
-    if (move.getMovedPiece() == Piece.W_KING.ind || move.getMovedPiece() == Piece.B_KING.ind) {
+    if (move.movedPiece == Piece.W_KING.ind || move.movedPiece == Piece.B_KING.ind) {
       return victimVal;
     }
     int i = 0;
@@ -291,14 +274,14 @@ public class Evaluator {
     gains[i] = victimVal;
     short attackerVal;
     // In case the move is a promotion.
-    if (move.getType() >= MoveType.PROMOTION_TO_QUEEN.ind) {
-      if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ind) {
+    if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
+      if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
         gains[i] += params.queenValue - params.pawnValue;
         attackerVal = params.queenValue;
-      } else if (move.getType() == MoveType.PROMOTION_TO_ROOK.ind) {
+      } else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
         gains[i] += params.rookValue - params.pawnValue;
         attackerVal = params.rookValue;
-      } else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ind) {
+      } else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
         gains[i] += params.bishopValue - params.pawnValue;
         attackerVal = params.bishopValue;
       } else { // PROMOTION_TO_KNIGHT
@@ -306,11 +289,11 @@ public class Evaluator {
         attackerVal = params.knightValue;
       }
     } else {
-      attackerVal = materialValueByPieceInd(move.getMovedPiece());
+      attackerVal = materialValueByPieceInd(move.movedPiece);
     }
-    long occupied = pos.getAllOccupied() ^ BitOperations.toBit(move.getFrom());
+    long occupied = pos.getAllOccupied() ^ BitOperations.toBit(move.from);
     boolean whitesTurn = pos.isWhitesTurn();
-    MoveSetBase dB = MoveSetBase.getByIndex(move.getTo());
+    MoveSetBase dB = MoveSetBase.getByIndex(move.to);
     // Assume the following order of value: 1. queen, 2. rook, 3. bishop, 4. knight.
     do {
       i++;
@@ -398,8 +381,6 @@ public class Evaluator {
 
   private short pawnKingStructureScore(long whiteKing, long blackKing, long whitePawns, long blackPawns) {
     int score = 0;
-    byte numOfWhitePawns = BitOperations.hammingWeight(whitePawns);
-    byte numOfBlackPawns = BitOperations.hammingWeight(blackPawns);
     // Pawn attacks.
     long whitePawnAttacks = Bitboard.computeWhitePawnCaptureSets(whitePawns, Bitboard.FULL_BOARD);
     long blackPawnAttacks = Bitboard.computeBlackPawnCaptureSets(blackPawns, Bitboard.FULL_BOARD);
@@ -438,29 +419,26 @@ public class Evaluator {
     long whiteWeakPawns = whiteIsolatedPawns | whiteBackwardPawns;
     long blackWeakPawns = blackIsolatedPawns | blackBackwardPawns;
     // King-pawn tropism.
+    int numOfWhitePawns = 0;
+    int numOfBlackPawns = 0;
     byte whiteKingInd = BitOperations.indexOfBit(whiteKing);
     byte blackKingInd = BitOperations.indexOfBit(blackKing);
-    long whitePawnSet = whitePawns;
     int whiteKingWhitePawnTropism = 0;
     int blackKingWhitePawnTropism = 0;
+    long whitePawnSet = whitePawns;
     while (whitePawnSet != Bitboard.EMPTY_BOARD) {
+      numOfWhitePawns++;
       long pawn = BitOperations.getLSBit(whitePawnSet);
       byte pawnInd = BitOperations.indexOfBit(pawn);
       if ((whitePassedPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingWhitePawnTropism += params.friendlyPassedPawnTropismWeight *
-            MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingWhitePawnTropism += params.opponentPassedPawnTropismWeight *
-            MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+        whiteKingWhitePawnTropism += params.friendlyPassedPawnTropismWeight * MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
+        blackKingWhitePawnTropism += params.opponentPassedPawnTropismWeight * MANHATTAN_DISTANCE[blackKingInd][pawnInd];
       } else if ((whiteWeakPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingWhitePawnTropism += params.friendlyWeakPawnTropismWeight *
-            MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingWhitePawnTropism += params.opponentWeakPawnTropismWeight *
-            MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+        whiteKingWhitePawnTropism += params.friendlyWeakPawnTropismWeight * MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
+        blackKingWhitePawnTropism += params.opponentWeakPawnTropismWeight * MANHATTAN_DISTANCE[blackKingInd][pawnInd];
       } else {
-        whiteKingWhitePawnTropism += params.friendlyNormalPawnTropismWeight *
-            MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingWhitePawnTropism += params.opponentNormalPawnTropismWeight *
-            MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+        whiteKingWhitePawnTropism += params.friendlyNormalPawnTropismWeight * MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
+        blackKingWhitePawnTropism += params.opponentNormalPawnTropismWeight * MANHATTAN_DISTANCE[blackKingInd][pawnInd];
       }
       whitePawnSet = BitOperations.resetLSBit(whitePawnSet);
     }
@@ -468,23 +446,18 @@ public class Evaluator {
     int whiteKingBlackPawnTropism = 0;
     int blackKingBlackPawnTropism = 0;
     while (blackPawnSet != Bitboard.EMPTY_BOARD) {
+      numOfBlackPawns++;
       long pawn = BitOperations.getLSBit(blackPawnSet);
       byte pawnInd = BitOperations.indexOfBit(pawn);
       if ((blackPassedPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingBlackPawnTropism += params.opponentPassedPawnTropismWeight *
-            MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingBlackPawnTropism += params.friendlyPassedPawnTropismWeight *
-            MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+        whiteKingBlackPawnTropism += params.opponentPassedPawnTropismWeight * MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
+        blackKingBlackPawnTropism += params.friendlyPassedPawnTropismWeight * MANHATTAN_DISTANCE[blackKingInd][pawnInd];
       } else if ((blackWeakPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingBlackPawnTropism += params.opponentWeakPawnTropismWeight *
-            MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingBlackPawnTropism += params.friendlyWeakPawnTropismWeight *
-            MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+        whiteKingBlackPawnTropism += params.opponentWeakPawnTropismWeight * MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
+        blackKingBlackPawnTropism += params.friendlyWeakPawnTropismWeight * MANHATTAN_DISTANCE[blackKingInd][pawnInd];
       } else {
-        whiteKingBlackPawnTropism += params.opponentNormalPawnTropismWeight *
-            MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingBlackPawnTropism += params.friendlyNormalPawnTropismWeight *
-            MANHATTAN_DISTANCE[blackKingInd][pawnInd];
+        whiteKingBlackPawnTropism += params.opponentNormalPawnTropismWeight * MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
+        blackKingBlackPawnTropism += params.friendlyNormalPawnTropismWeight * MANHATTAN_DISTANCE[blackKingInd][pawnInd];
       }
       blackPawnSet = BitOperations.resetLSBit(blackPawnSet);
     }
@@ -527,7 +500,7 @@ public class Evaluator {
    * @param entry The pre-constructed evaluation table entry.
    * @return The score of the position.
    */
-  int score(Position pos, byte hashGen, ETEntry entry) {
+  public int score(Position pos, byte hashGen, ETEntry entry) {
     // Probe evaluation hash table.
     if (evalTable != null) {
       ETEntry eE = evalTable.get(pos.getKey());
@@ -578,21 +551,21 @@ public class Evaluator {
     score += params.bishopValue * (numOfWhiteBishops - numOfBlackBishops);
     score += params.knightValue * (numOfWhiteKnights - numOfBlackKnights);
     score += params.pawnValue * (numOfWhitePawns - numOfBlackPawns);
-    short openingScore = 0;
-    short endgameScore = (byte) ((numOfWhitePawns - numOfBlackPawns) * params.pawnEndgameBonus);
+    short midgameScore = 0;
+    short endgameScore = 0;
     // Piece-square scores.
     for (int i = 0; i < 64; i++) {
       byte piece = (byte) (pos.getPiece(i) - 1);
       if (piece < Piece.NULL.ind) {
         continue;
       }
-      openingScore += pstOpening[piece][i];
-      endgameScore += pstEndgame[piece][i];
+      midgameScore += pstMg[piece][i];
+      endgameScore += pstEg[piece][i];
     }
     // Phase score for tapered evaluation.
     int phaseScore = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks,
         numOfWhiteBishops + numOfBlackBishops, numOfWhiteKnights + numOfBlackKnights);
-    score += (short) taperedEvalScore(openingScore, endgameScore, phaseScore);
+    score += (short) taperedEvalScore(midgameScore, endgameScore, phaseScore);
     // Bishop pair advantage.
     if (numOfWhiteBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
         pos.getWhiteBishops())).ind % 2 != Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
@@ -757,7 +730,6 @@ public class Evaluator {
     // Asymmetric evaluation terms for possible captures and promotions for unquiet positions.
     // Find the most valuable immediate capture.
     int mostValuableExchange;
-    int pawnValue = params.pawnValue + taperedEvalScore(0, params.pawnEndgameBonus, phaseScore);
     if (pos.isWhitesTurn()) {
       mostValuableExchange = Math.max(0, getValueOfMostValuableRookCapture(whiteRookAttacks, pos.getBlackQueens()) - params.rookValue);
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whiteBishopAttacks,
@@ -765,7 +737,7 @@ public class Evaluator {
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whiteKnightAttacks,
           pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights()) - params.knightValue);
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whitePawnCaptures,
-          pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights()) - pawnValue);
+          pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights()) - params.pawnValue);
     } else {
       // Adjust score to side to move.
       score *= -1;
@@ -775,7 +747,7 @@ public class Evaluator {
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackKnightAttacks,
           pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights()) - params.knightValue);
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackPawnCaptures,
-          pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights()) - pawnValue);
+          pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights()) - params.pawnValue);
     }
     score += mostValuableExchange;
     // Tempo advantage.

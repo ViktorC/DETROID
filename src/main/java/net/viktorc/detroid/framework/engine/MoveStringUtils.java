@@ -109,7 +109,7 @@ public class MoveStringUtils {
     try {
       movablePieces = 0;
       for (Move m : pos.getMoves()) {
-        movablePieces |= BitOperations.toBit(m.getFrom());
+        movablePieces |= BitOperations.toBit(m.from);
       }
       chars = san.toCharArray();
       if (san.matches("^O-O[+#]?[/?!]{0,2}$")) {
@@ -406,25 +406,25 @@ public class MoveStringUtils {
     if (move == null) {
       return null;
     }
-    if (move.getType() == MoveType.SHORT_CASTLING.ind) {
+    if (move.type == MoveType.SHORT_CASTLING.ind) {
       return "O-O";
-    } else if (move.getType() == MoveType.LONG_CASTLING.ind) {
+    } else if (move.type == MoveType.LONG_CASTLING.ind) {
       return "O-O-O";
     }
-    String destRank = Integer.toString(move.getTo() / 8 + 1);
-    String destFile = Character.toString((char) (move.getTo() % 8 + 'a'));
-    Piece piece = Piece.values()[move.getMovedPiece()];
+    String destRank = Integer.toString(move.to / 8 + 1);
+    String destFile = Character.toString((char) (move.to % 8 + 'a'));
+    Piece piece = Piece.values()[move.movedPiece];
     String movedPiece;
     if (piece == Piece.W_PAWN || piece == Piece.B_PAWN) {
       movedPiece = "";
     } else {
       movedPiece = Character.toString(piece.letter).toUpperCase();
     }
-    String capture = move.getCapturedPiece() == Piece.NULL.ind ? "" : "x";
-    MoveSetBase dB = MoveSetBase.getByIndex(move.getTo());
+    String capture = move.capturedPiece == Piece.NULL.ind ? "" : "x";
+    MoveSetBase dB = MoveSetBase.getByIndex(move.to);
     long movablePieces = 0;
     for (Move m : pos.getMoves()) {
-      movablePieces |= BitOperations.toBit(m.getFrom());
+      movablePieces |= BitOperations.toBit(m.from);
     }
     long possOriginSqrs;
     String origin;
@@ -450,12 +450,12 @@ public class MoveStringUtils {
         origin = null;
         break;
       case W_PAWN:
-        if (move.getCapturedPiece() != Piece.NULL.ind) {
+        if (move.capturedPiece != Piece.NULL.ind) {
           possOriginSqrs = dB.getBlackPawnCaptureSet(pos.getWhitePawns() & movablePieces);
           if (BitOperations.hammingWeight(possOriginSqrs) == 1) {
             origin = "";
           } else {
-            origin = Character.toString((char) (move.getFrom() % 8 + 'a'));
+            origin = Character.toString((char) (move.from % 8 + 'a'));
           }
         } else {
           possOriginSqrs = 0;
@@ -483,12 +483,12 @@ public class MoveStringUtils {
         origin = null;
         break;
       case B_PAWN:
-        if (move.getCapturedPiece() != Piece.NULL.ind) {
+        if (move.capturedPiece != Piece.NULL.ind) {
           possOriginSqrs = dB.getWhitePawnCaptureSet(pos.getBlackPawns() & movablePieces);
           if (BitOperations.hammingWeight(possOriginSqrs) == 1) {
             origin = "";
           } else {
-            origin = Character.toString((char) (move.getFrom() % 8 + 'a'));
+            origin = Character.toString((char) (move.from % 8 + 'a'));
           }
         } else {
           possOriginSqrs = 0;
@@ -501,26 +501,26 @@ public class MoveStringUtils {
     if (origin == null) {
       if (BitOperations.hammingWeight(possOriginSqrs) == 1) {
         origin = "";
-      } else if (BitOperations.hammingWeight(Bitboard.File.getBySquareIndex(move.getFrom()).bitboard &
+      } else if (BitOperations.hammingWeight(Bitboard.File.getBySquareIndex(move.from).bitboard &
           possOriginSqrs) == 1) {
-        origin = Character.toString((char) (move.getFrom() % 8 + 'a'));
-      } else if (BitOperations.hammingWeight(Bitboard.Rank.getBySquareIndex(move.getFrom()).bitboard &
+        origin = Character.toString((char) (move.from % 8 + 'a'));
+      } else if (BitOperations.hammingWeight(Bitboard.Rank.getBySquareIndex(move.from).bitboard &
           possOriginSqrs) == 1) {
-        origin = Integer.toString(move.getFrom() / 8 + 1);
+        origin = Integer.toString(move.from / 8 + 1);
       } else {
-        origin = Character.toString((char) (move.getFrom() % 8 + 'a')) + Integer.toString(move.getFrom() / 8 + 1);
+        origin = Character.toString((char) (move.from % 8 + 'a')) + Integer.toString(move.from / 8 + 1);
       }
     }
     String spMoveSuffix;
-    if (move.getType() == MoveType.EN_PASSANT.ind) {
+    if (move.type == MoveType.EN_PASSANT.ind) {
       spMoveSuffix = "e.p.";
-    } else if (move.getType() == MoveType.PROMOTION_TO_QUEEN.ind) {
+    } else if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
       spMoveSuffix = "=Q";
-    } else if (move.getType() == MoveType.PROMOTION_TO_ROOK.ind) {
+    } else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
       spMoveSuffix = "=R";
-    } else if (move.getType() == MoveType.PROMOTION_TO_BISHOP.ind) {
+    } else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
       spMoveSuffix = "=B";
-    } else if (move.getType() == MoveType.PROMOTION_TO_KNIGHT.ind) {
+    } else if (move.type == MoveType.PROMOTION_TO_KNIGHT.ind) {
       spMoveSuffix = "=N";
     } else {
       spMoveSuffix = "";

@@ -22,11 +22,11 @@ public class Move implements Comparable<Move> {
   private static final byte MASK_MOVED = 15;
   private static final byte MASK_CAPTURED = 15;
 
-  private final byte from;
-  private final byte to;
-  private final byte movedPiece;
-  private final byte capturedPiece;
-  private final byte type;
+  public final byte from;
+  public final byte to;
+  public final byte movedPiece;
+  public final byte capturedPiece;
+  public final byte type;
   private short value;
 
   /**
@@ -69,41 +69,6 @@ public class Move implements Comparable<Move> {
     capturedPiece = (byte) ((move >>> SHIFT_CAPTURED) & MASK_CAPTURED);
     type = (byte) (move >>> SHIFT_TYPE);
     return new Move(from, to, movedPiece, capturedPiece, type);
-  }
-
-  /**
-   * @return The index of the origin square.
-   */
-  public byte getFrom() {
-    return from;
-  }
-
-  /**
-   * @return The index of the destination square.
-   */
-  public byte getTo() {
-    return to;
-  }
-
-  /**
-   * @return The numeric notation of the type of the moved piece.
-   */
-  public byte getMovedPiece() {
-    return movedPiece;
-  }
-
-  /**
-   * @return The numeric notation of the type of the captured piece.
-   */
-  public byte getCapturedPiece() {
-    return capturedPiece;
-  }
-
-  /**
-   * @return The type of the move.
-   */
-  public byte getType() {
-    return type;
   }
 
   /**
