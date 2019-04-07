@@ -39,15 +39,15 @@ import net.viktorc.detroid.framework.validation.GameState;
  */
 public class Detroid implements ControllerEngine, TunableEngine {
 
-  static final float VERSION_NUMBER = 1.0f;
-  static final String NAME = "DETROID " + VERSION_NUMBER;
-  static final String AUTHOR = "Viktor Csomor";
+  private static final float VERSION_NUMBER = 1.0f;
+  private static final String NAME = "DETROID " + VERSION_NUMBER;
+  private static final String AUTHOR = "Viktor Csomor";
   // Search, evaluation, and time control parameters.
-  static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
+  private static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
   // The default path to the Polyglot opening book (compiled using SCID 4.62, PGN-Extract 17-21 and Polyglot 1.4w).
-  static final String DEFAULT_BOOK_FILE_PATH = "book.bin";
+  private static final String DEFAULT_BOOK_FILE_PATH = "book.bin";
   // The default path to the Gaviota probing library.
-  static final String DEFAULT_EGTB_LIB_PATH;
+  private static final String DEFAULT_EGTB_LIB_PATH;
 
   // Determine the default path to the Gaviota EGTB probing library based on the OS.
   static {
@@ -59,27 +59,27 @@ public class Detroid implements ControllerEngine, TunableEngine {
   }
 
   // The default path to the 3 and 4 men Gaviota endgame tablebases.
-  static final String DEFAULT_EGTB_FOLDERS_PATH = "gtb/3;gtb/4";
+  private static final String DEFAULT_EGTB_FOLDERS_PATH = "gtb/3;gtb/4";
   // The default compression scheme of the Gaviotat endgame tablebase files.
-  static final CompressionScheme DEFAULT_EGTB_COMP_SCHEME = CompressionScheme.CP4;
+  private static final CompressionScheme DEFAULT_EGTB_COMP_SCHEME = CompressionScheme.CP4;
   // The minimum allowed number of search threads to use.
-  static final int MIN_SEARCH_THREADS = 1;
+  private static final int MIN_SEARCH_THREADS = 1;
   // The maximum allowed number of search threads to use.
-  static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
+  private static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
   // The default number of search threads to use.
-  static final int DEFAULT_SEARCH_THREADS = Math.max(MIN_SEARCH_THREADS, MAX_SEARCH_THREADS / 2);
+  private static final int DEFAULT_SEARCH_THREADS = Math.max(MIN_SEARCH_THREADS, MAX_SEARCH_THREADS / 2);
   // The minimum allowed hash size in MB.
-  static final int MIN_HASH_SIZE = 1;
+  private static final int MIN_HASH_SIZE = 1;
   // The maximum allowed hash size in MB.
-  static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory() / (2L << 20));
+  private static final int MAX_HASH_SIZE = (int) (Runtime.getRuntime().maxMemory() / (2L << 20));
   // The default hash size in MB.
-  static final int DEFAULT_HASH_SIZE = Math.min(DEFAULT_SEARCH_THREADS * 32, MAX_HASH_SIZE);
+  private static final int DEFAULT_HASH_SIZE = Math.min(DEFAULT_SEARCH_THREADS * 32, MAX_HASH_SIZE);
   // The minimum allowed endgame tablebase cache size in MB.
-  static final int MIN_EGTB_CACHE_SIZE = 0;
+  private static final int MIN_EGTB_CACHE_SIZE = 0;
   // The maximum allowed endgame tablebase cache size in MB.
-  static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
+  private static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
   // The default endgame tablebase cache size in MB.
-  static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS * 16, MAX_EGTB_CACHE_SIZE);
+  private static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS * 16, MAX_EGTB_CACHE_SIZE);
 
   private final Object lock;
 
@@ -132,12 +132,12 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   private void setHashSize(int hashSize) {
     long sizeInBytes = hashSize * 1024L * 1024L;
-    int totalHashShares = params.transTableShare + params.evalTableShare;
     SizeEstimator estimator = SizeEstimator.getInstance();
+    double transTableShare = ((double) params.transTableShare16th) / 16;
     transTable = new Cache<>(TTEntry::new,
-        (int) (sizeInBytes * params.transTableShare / totalHashShares / estimator.sizeOf(TTEntry.class)));
+        (int) (sizeInBytes * transTableShare / estimator.sizeOf(TTEntry.class)));
     evalTable = new Cache<>(ETEntry::new,
-        (int) (sizeInBytes * params.evalTableShare / totalHashShares / estimator.sizeOf(ETEntry.class)));
+        (int) (sizeInBytes * (1d - transTableShare) / estimator.sizeOf(ETEntry.class)));
     // Prompt for garbage collection.
     System.gc();
     if (debugMode) {
@@ -191,8 +191,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
   }
 
   private boolean doTerminateSearchPrematurely(long searchTime, long timeLeft) {
-    return timeLeft < searchTime * params.minTimePortionNeededForExtraDepth64th / 64 &&
-        !doExtendSearch();
+    return timeLeft < searchTime * params.minTimePortionNeededForExtraDepth16th / 16 && !doExtendSearch();
   }
 
   private void manageSearchTime(Long searchTime, Long whiteTime, Long blackTime,

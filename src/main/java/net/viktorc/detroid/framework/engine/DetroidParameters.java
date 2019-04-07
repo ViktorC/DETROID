@@ -12,9 +12,84 @@ import net.viktorc.detroid.framework.tuning.ParameterType;
  */
 class DetroidParameters extends EngineParameters {
 
-  // Piece values.
-  @Parameter
-  short kingValue;
+  // Engine management parameters.
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
+  byte transTableShare16th; // The share of the transposition table of the total hash size.
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+  byte transTableEntryLifeCycle; // The number of turns for which the different hash table's entries are retained by default.
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
+  byte evalTableEntryLifeCycle;
+
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
+  byte minTimePortionNeededForExtraDepth16th;
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 5)
+  byte minMovesToGo;
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
+  byte maxMovesToGo;
+
+  // Search parameters.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
+  byte nullMoveReduction; // Null move pruning reduction.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
+  byte nullMoveReductionMinDepthLeft; // Min. depth for null move reductions.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
+  byte extraNullMoveReduction; // Additional, depth dependent null move pruning reduction.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte extraNullMoveReductionDepthLimit; // The depth limit at which the extra null move reduction is applied.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
+  byte lateMoveReduction; // Late move reduction.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 3)
+  byte lateMoveReductionMinDepthLeft; // Min. depth for late move reduction.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
+  byte extraLateMoveReduction; // Additional, depth dependent late move pruning reduction.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte extraLateMoveReductionDepthLimit; // The depth limit at which the extra late move reduction is applied.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte minMovesSearchedForLmr; // Min. number of searched moves for late move reductions.
+  @Parameter(type = ParameterType.SEARCH_CONTROL)
+  boolean doRazor; // Whether razoring should be enabled.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
+  short revFutilityMargin1; // Reverse futility pruning margin for pre-frontier nodes.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+  short revFutilityMargin2; // Reverse futility pruning margin for pre-pre-frontier nodes.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
+  short revFutilityMargin3; // Extended reverse futility pruning margin for pre-pre-pre-frontier nodes.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
+  short futilityMargin1; // Futility margin.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
+  short futilityMargin2; // Extended futility margin.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
+  short futilityMargin3; // Deep futility margin.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+  short futilityMargin4; // Deep+ futility margin.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
+  short futilityMargin5; // Deep++ futility margin.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
+  short deltaPruningMargin; // The margin for delta-pruning in the quiescence search.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 8)
+  short aspirationDelta; // The aspiration delta within iterative deepening.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte checkExtension; // Fractional check extension.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte recapExtension; // Fractional recapture extension.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte singleReplyExtension; // Fractional single reply extension.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte pawnPushExtension; // Pawn push extension.
+  @Parameter(type = ParameterType.SEARCH_CONTROL)
+  boolean doIid; // Whether IID should be applied.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte iidMinDepthLeft; // The minimum depth at which IID is activated.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
+  byte iidRelDepth16th; // The portion of the total depth to which the position will be searched with IID.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+  byte maxDistFromRootForEgtbProbe; // The maximum allowed depth for any EGTB probe.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+  byte maxDistFromRootForHardEgtbProbe; // The maximum allowed depth for a hard EGTB file probe.
+  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
+  byte nodeBusinessCheckMinDepthLeft; // The minimum depth left for rescheduling the search of nodes currently searched by other threads.
+
+  // Evaluation parameters.
   @Parameter
   short queenValue;
   @Parameter
@@ -23,10 +98,6 @@ class DetroidParameters extends EngineParameters {
   short bishopValue;
   @Parameter
   short knightValue;
-  @Parameter(binaryLengthLimit = 0)
-  short pawnValue;
-
-  // Evaluation weights.
   @Parameter
   byte blockedPawnWeight1;
   @Parameter
@@ -78,93 +149,6 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte tempoAdvantage;
 
-  // Search parameters.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
-  byte nullMoveReduction; // Null move pruning reduction.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
-  byte nullMoveReductionMinDepthLeft; // Min. depth for null move reductions.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte extraNullMoveReduction; // Additional, depth dependent null move pruning reduction.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte extraNullMoveReductionDepthLimit; // The depth limit at which the extra null move reduction is applied.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 2)
-  byte lateMoveReduction; // Late move reduction.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 3)
-  byte lateMoveReductionMinDepthLeft; // Min. depth for late move reduction.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte extraLateMoveReduction; // Additional, depth dependent late move pruning reduction.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte extraLateMoveReductionDepthLimit; // The depth limit at which the extra late move reduction is applied.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte minMovesSearchedForLmr; // Min. number of searched moves for late move reductions.
-  @Parameter(type = ParameterType.SEARCH_CONTROL)
-  boolean doRazor; // Whether razoring should be enabled.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
-  short revFutitilityMargin1; // Reverse futility pruning margin for pre-frontier nodes.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
-  short revFutitilityMargin2; // Reverse futility pruning margin for pre-pre-frontier nodes.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
-  short revFutitilityMargin3; // Extended reverse futility pruning margin for pre-pre-pre-frontier nodes.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
-  short futilityMargin1; // Futility margin.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
-  short futilityMargin2; // Extended futility margin.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 9)
-  short futilityMargin3; // Deep futility margin.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
-  short futilityMargin4; // Deep+ futility margin.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 11)
-  short futilityMargin5; // Deep++ futility margin.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 10)
-  short deltaPruningMargin; // The margin for delta-pruning in the quiescence search.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 8)
-  short aspirationDelta; // The aspiration delta within iterative deepening.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte maxNominalSearchDepth; // The maximum nominal search depth.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte fullPly; // For fractional ply extensions.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte checkExtension; // Fractional check extension.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte recapExtension; // Fractional recapture extension.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte singleReplyExtension; // Fractional single reply extension.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 4)
-  byte pawnPushExtension; // Pawn push extension.
-  @Parameter(type = ParameterType.SEARCH_CONTROL)
-  boolean doIid; // Whether IID should be applied.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte iidMinDepthLeft; // The minimum depth at which IID is activated.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte iidRelDepth64th; // The portion of the total depth to which the position will be searched with IID.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte maxDistFromRootForEgtbProbe; // The maximum allowed depth for any EGTB probe.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte maxDistFromRootForHardEgtbProbe; // The maximum allowed depth for a hard EGTB file probe.
-  @Parameter(type = ParameterType.SEARCH_CONTROL, binaryLengthLimit = 0)
-  byte nodeBusinessCheckMinDepthLeft; // The minimum depth left for rescheduling the search of nodes currently searched by other threads.
-
-  // The shares of the different hash tables of the total hash size.
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-  byte transTableShare;
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
-  byte evalTableShare;
-
-  // The number of turns for which the different hash table's entries are retained by default.
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-  byte transTableEntryLifeCycle;
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
-  byte evalTableEntryLifeCycle;
-
-  // The values considered when calculating search time extensions.
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
-  byte minTimePortionNeededForExtraDepth64th;
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 5)
-  byte minMovesToGo;
-  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
-  byte maxMovesToGo;
-
-  // Piece-square tables for openings and end games.
   @Parameter
   byte pstPawnMg8;
   @Parameter
