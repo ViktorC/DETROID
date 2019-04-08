@@ -34,11 +34,15 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   /**
    * The fraction of the complete data set used as a test data set.
    */
-  private static final double DEF_TEST_DATA_PROPORTION = 0.2d;
+  private static final double DEF_TEST_DATA_PROPORTION = .2;
   /**
    * The base step size for the gradient descent.
    */
-  private static final double DEF_BASE_LEARNING_RATE = 1;
+  private static final double DEF_BASE_LEARNING_RATE = 1d;
+  /**
+   * The learning rate annealing rate for the gradient descent.
+   */
+  private static final double DEF_ANNEALING_RATE = .95;
   /**
    * The only parameter type the optimizer is concerned with.
    */
@@ -69,6 +73,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * parameters are integers as they usually are in chess engines, a value of less than 1 or any non-integer value whatsoever would make no
    * sense).
    * @param baseLearningRate The base step size for the gradient descent. If it is null, it defaults to 1.
+   * @param learningAnnealingRate The factor by which the learning rate is multiplied after every epoch. If it is null, it defaults to 0.95.
    * @param fenFilePath The path to the file containing the FEN list of positions to evaluate. If it doesn't exist an {@link
    * java.io.IOException} is thrown.
    * @param k A scaling constant for the sigmoid function used calculate the average error.
@@ -76,15 +81,15 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * than 1. If it is null, it defaults to {@link #DEF_TEST_DATA_PROPORTION}.
    * @param logger A logger to log the status of the optimization. It cannot be null.
    * @throws Exception If the engines cannot be initialised.
-   * @throws IllegalArgumentException If the logger is null, or the sample size is not greater than 0, or the data set is too small.
+   * @throws IllegalArgumentException If the logger is null, or the batch size is not greater than 0, or the data set is too small.
    */
-  public TexelOptimizer(TunableEngine[] engines, int batchSize, int epochs, Double h, Double baseLearningRate,
+  public TexelOptimizer(TunableEngine[] engines, int batchSize, int epochs, Double h, Double baseLearningRate, Double learningAnnealingRate,
       String fenFilePath, Double k, Double testDataProportion, Logger logger)
       throws Exception, IllegalArgumentException {
     super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
-        engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE),
+        engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE), batchSize, epochs,
         h == null ? 1d : h, baseLearningRate == null ? DEF_BASE_LEARNING_RATE : baseLearningRate,
-        null, null, null, null, batchSize, epochs, logger);
+        learningAnnealingRate == null ? DEF_ANNEALING_RATE : learningAnnealingRate, null, null, null, logger);
     if (logger == null) {
       throw new IllegalArgumentException("The logger cannot be null.");
     }
@@ -135,12 +140,12 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     final double minResolution = 0.005;
     double k = 0;
     List<Entry<String, Float>> trainingData = cacheData(0, (int) (dataSetSize * (1 - this.testDataProportion)));
-    double avgErr = computeAverageError(features, k, trainingData);
+    double avgErr = computeAverageError(parameters, k, trainingData);
     if (logger != null) {
       logger.info("K: " + k + "; Avg. error: " + avgErr);
     }
-    double kPlusErr = computeAverageError(features, k + minResolution, trainingData);
-    double kMinusErr = computeAverageError(features, k - minResolution, trainingData);
+    double kPlusErr = computeAverageError(parameters, k + minResolution, trainingData);
+    double kMinusErr = computeAverageError(parameters, k - minResolution, trainingData);
     double minAvgErr = Math.min(kPlusErr, kMinusErr);
     if (avgErr < minAvgErr) {
       return k;
@@ -162,7 +167,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     double lastK = k;
     while (true) {
       k += increase ? resolution : -resolution;
-      double currAvgErr = computeAverageError(features, k, trainingData);
+      double currAvgErr = computeAverageError(parameters, k, trainingData);
       if (logger != null) {
         logger.info("K: " + k + "; Avg. error: " + currAvgErr);
       }
@@ -197,13 +202,13 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   /**
    * Computes the average evaluation error based on the FEN file in relation to the result of the games the positions occurred in.
    *
-   * @param features The engine parameters.
+   * @param parameters The engine parameters.
    * @param k The scaling constant K for the sigmoid function.
    * @return The average error.
    * @throws ExecutionException If an execution error happens in one of the threads.
    * @throws InterruptedException If the current thread is interrupted while waiting for the worker threads to finish.
    */
-  private double computeAverageError(double[] features, final double k, List<Entry<String, Float>> dataSample)
+  private double computeAverageError(double[] parameters, final double k, List<Entry<String, Float>> dataSample)
       throws InterruptedException, ExecutionException {
     double totalError = 0;
     ArrayList<Future<Double>> futures = new ArrayList<>();
@@ -212,7 +217,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     for (int i = 0; i < engines.length && startInd < dataSample.size(); i++) {
       final int finalStartInd = startInd;
       final TunableEngine e = engines[i];
-      e.getParameters().set(features, TYPE);
+      e.getParameters().set(parameters, TYPE);
       e.notifyParametersChanged();
       futures.add(pool.submit(() -> {
         try {
@@ -324,9 +329,9 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   @Override
-  protected double costFunction(double[] features, List<Entry<String, Float>> dataSample) {
+  protected double costFunction(double[] parameters, List<Entry<String, Float>> dataSample) {
     try {
-      return computeAverageError(features, k, dataSample);
+      return computeAverageError(parameters, k, dataSample);
     } catch (InterruptedException | ExecutionException e) {
       logger.log(Level.SEVERE, e.getMessage(), e);
       Thread.currentThread().interrupt();
