@@ -80,18 +80,18 @@ public final class EngineFramework implements Runnable {
    * eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}] [--initprobvector
    * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
    * {log.txt}] [--concurrency <integer>] {1}]} <br> Texel tuning: {@code -t texel -batchsize <integer> [--epochs <integer>]
-   * [--testdataprop <decimal> {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.95}] [--k <decimal>]
-   * [--fensfile <string> {fens.txt}] [--log <string> {log.txt}] [--concurrency <integer> {1}]} <br> FEN-file generation by self-play:
-   * {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}] [--trybook <bool> {false}] [--tryhash <integer>]
-   * [--trythreads <integer>] [--destfile <string> {fens.txt}] [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion:
-   * {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a
-   * FEN-file: {@code -f draws -sourcefile <string> [--destfile <string> {fens.txt}]} <br> Removing obvious mates from a FEN-file:
-   * {@code -f mates -sourcefile <string> [--destfile <string> {fens.txt}]} <br> Removing openings from a FEN-file:
-   * {@code -f openings -sourcefile <string> -firstxmoves <integer> [--destfile <string> {fens.txt}]} <br> Probability vector conversion to
-   * parameters file: {@code -c probvector -value <quoted_comma_separated_decimals>
-   * [--paramtype <eval | control | management | eval+control | control+management | all> {all}] [--paramsfile <string> {params.xml}]} <br>
-   * Parameter value array conversion to parameters file: {@code -c parameters -value <quoted_comma_separated_decimals>
-   * [--paramsfile <string> {params.xml}]}
+   * [--testdataprop <decimal> {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.95}]
+   * [--costbatchsize <integer>] [--k <decimal>] [--fensfile <string> {fens.txt}] [--log <string> {log.txt}] [--concurrency <integer> {1}]}
+   * <br> FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}]
+   * [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
+   * [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string>
+   * [--maxgames <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string>
+   * [--destfile <string> {fens.txt}]} <br> Removing obvious mates from a FEN-file: {@code -f mates -sourcefile <string>
+   * [--destfile <string> {fens.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string>
+   * -firstxmoves <integer> [--destfile <string> {fens.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector
+   * -value <quoted_comma_separated_decimals> [--paramtype <eval | control | management | eval+control | control+management | all> {all}]
+   * [--paramsfile <string> {params.xml}]} <br> Parameter value array conversion to parameters file: {@code -c parameters
+   * -value <quoted_comma_separated_decimals> [--paramsfile <string> {params.xml}]}
    */
   public EngineFramework(EngineFactory factory, String[] args) {
     this.factory = factory;
@@ -243,8 +243,8 @@ public final class EngineFramework implements Runnable {
         initProbVec, useBook, hash, threads);
   }
 
-  private void runInTexelTuningMode(String logFilePath, String fensFilePath, int concurrency, int batchSize,
-      int epochs, Double k, Double h, Double learningRate, Double annealingRate, Double testDataProp) {
+  private void runInTexelTuningMode(String logFilePath, String fensFilePath, int concurrency, long trainingBatchSize,
+      int epochs, Long costCalcBatchSize, Double k, Double h, Double learningRate, Double annealingRate, Double testDataProp) {
     TunableEngine[] engines = new TunableEngine[concurrency];
     for (int i = 0; i < concurrency; i++) {
       engines[i] = factory.newTunableEngineInstance();
@@ -260,9 +260,9 @@ public final class EngineFramework implements Runnable {
     } catch (SecurityException | IOException e) {
       throw new IllegalArgumentException(e);
     }
-    try (TexelOptimizer optimizer = new TexelOptimizer(engines, batchSize, epochs,
-        h, learningRate, annealingRate, fensFilePath, k, testDataProp, logger)) {
-      optimizer.train();
+    try (TexelOptimizer optimizer = new TexelOptimizer(engines, trainingBatchSize, epochs, h, learningRate, annealingRate, fensFilePath,
+        costCalcBatchSize, k, testDataProp, logger)) {
+      optimizer.optimize();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -272,8 +272,9 @@ public final class EngineFramework implements Runnable {
     String logFilePath = DEF_LOG_FILE_PATH;
     String fensFilePath = DEF_FENS_FILE_PATH;
     int concurrency = DEF_CONCURRENCY;
-    int batchSize = -1;
+    long batchSize = -1;
     int epochs = 0;
+    Long costCalcBatchSize = null;
     Double k = null;
     Double h = null;
     Double learningRate = null;
@@ -283,7 +284,7 @@ public final class EngineFramework implements Runnable {
       String arg = args[i];
       switch (arg) {
         case "-batchsize":
-          batchSize = Integer.parseInt(args[++i]);
+          batchSize = Long.parseLong(args[++i]);
           break;
         case "--log":
           logFilePath = args[++i];
@@ -303,6 +304,9 @@ public final class EngineFramework implements Runnable {
         case "--annealingrate":
           annealingRate = Double.parseDouble(args[++i]);
           break;
+        case "--costbatchsize":
+          costCalcBatchSize = Long.parseLong(args[++i]);
+          break;
         case "--k":
           k = Double.parseDouble(args[++i]);
           break;
@@ -319,7 +323,7 @@ public final class EngineFramework implements Runnable {
     if (batchSize == -1) {
       throw new IllegalArgumentException();
     }
-    runInTexelTuningMode(logFilePath, fensFilePath, concurrency, batchSize, epochs, k, h,
+    runInTexelTuningMode(logFilePath, fensFilePath, concurrency, batchSize, epochs, costCalcBatchSize, k, h,
         learningRate, annealingRate, testDataProp);
   }
 

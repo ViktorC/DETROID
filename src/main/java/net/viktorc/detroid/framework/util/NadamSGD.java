@@ -7,23 +7,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 /**
  * An adaptive stochastic gradient descent implementation for supervised learning. It is based on the Nadam (Nesterov-accelerated adaptive
  * moment estimation) algorithm. It can be employed as a stochastic, mini-batch, or standard batch gradient descent algorithm. There are
- * four abstract methods to implement for its subclasses, {@link #costFunction(double[], List)} which is ideally a differentiable, smooth,
+ * five abstract methods to implement for its subclasses, {@link #costFunction(double[], List)} which is ideally a differentiable, smooth,
  * convex function whose (global) minimum is to be found (if the function is not convex, the algorithm might converge to a local minimum),
- * {@link #getTrainingData(int)} which fetches batches the training data, {@link #resetTrainingDataReader()} which resets the data reader to
- * the beginning of the training data, and {@link #getTestData()} which returns the test data.
+ * {@link #getTrainingData(long)} which fetches batches the training data, {@link #resetTrainingDataReader()} which resets the data reader to
+ * the beginning of the training data, and {@link #getTestData(long)} and {@link #resetTestDataReader()} which do the same for the test data.
  *
  * Nadam: <a href="http://cs229.stanford.edu/proj2015/054_report.pdf">http://cs229.stanford.edu/proj2015/054_report.pdf</a>
  *
- * @param <D> The type of the data entries.
+ * @param <E> The type of the data entries.
  * @param <L> The type of the labels for the data entries.
  * @author Viktor
  */
-public abstract class NadamSGD<D, L> {
+public abstract class NadamSGD<E, L> {
 
   /**
    * The default constant employed in the numerical differentiation formulas used to derive the derivatives of the cost function.
@@ -61,7 +62,8 @@ public abstract class NadamSGD<D, L> {
   protected final double firstMomentDecayRate;
   protected final double secondMomentDecayRate;
   protected final double epsilon;
-  protected final int batchSize;
+  protected final long trainingBatchSize;
+  protected final long costCalculationBatchSize;
   protected final int epochs;
 
   protected final Logger logger;
@@ -82,7 +84,10 @@ public abstract class NadamSGD<D, L> {
    * match the length of the parameters array. If it is null, an array of elements of the greatest positive double value will be used. Each
    * element has to be greater by at least the absolute value of h times two than the corresponding element in the minValues array, else the
    * corresponding parameter will be ignored.
-   * @param batchSize The number of samples in the mini-batches used for training.
+   * @param trainingBatchSize The number of samples in the mini-batches used for training.
+   * @param costCalculationBatchSize The number of samples in the batches used for calculating the total training and test costs. Using
+   * batches allows for the calculation of costs over data sets that do not fit into memory. However, using small batches may incur a
+   * significant IO overhead if the data source is in a file system.
    * @param epochs The maximum number of iterations. If it is 0, the loop is endless.
    * @param h A constant employed in the numerical differentiation formula used to derive the derivative of the cost function. If the the
    * function is smooth, usually the smaller it is, the more accurate the approximation of the derivatives will be. It should never be 0
@@ -105,14 +110,17 @@ public abstract class NadamSGD<D, L> {
    * @throws IllegalArgumentException If parameters is null or its length is 0. If the decay rate is greater than 1 or smaller than 0. If an
    * element in minValues is greater than the respective element in maxValues.
    */
-  protected NadamSGD(double[] parameters, double[] minValues, double[] maxValues, int batchSize, int epochs, Double h,
-      Double baseLearningRate, Double learningAnnealingRate, Double firstMomentDecayRate, Double secondMomentDecayRate,
-      Double epsilon, Logger logger) throws IllegalArgumentException {
+  protected NadamSGD(double[] parameters, double[] minValues, double[] maxValues, long trainingBatchSize, long costCalculationBatchSize,
+      int epochs, Double h, Double baseLearningRate, Double learningAnnealingRate, Double firstMomentDecayRate,
+      Double secondMomentDecayRate, Double epsilon, Logger logger) throws IllegalArgumentException {
     if (parameters == null || parameters.length == 0) {
       throw new IllegalArgumentException("The parameters array cannot be null and its length has to be greater than 0.");
     }
-    if (batchSize <= 0) {
-      throw new IllegalArgumentException("The batch size has to be greater than 0.");
+    if (trainingBatchSize <= 0) {
+      throw new IllegalArgumentException("The training batch size has to be greater than 0.");
+    }
+    if (costCalculationBatchSize <= 0) {
+      throw new IllegalArgumentException("The cost calculation batch size has to be greater than 0.");
     }
     indicesToIgnore = new HashSet<>();
     if (minValues != null && maxValues != null) {
@@ -147,7 +155,8 @@ public abstract class NadamSGD<D, L> {
         this.maxValues[i] = maxValues[i];
       }
     }
-    this.batchSize = batchSize;
+    this.trainingBatchSize = trainingBatchSize;
+    this.costCalculationBatchSize = costCalculationBatchSize;
     this.epochs = epochs;
     this.h = (h == null ? H : h);
     this.learningRate = (baseLearningRate == null ? LEARNING_RATE : baseLearningRate);
@@ -173,7 +182,7 @@ public abstract class NadamSGD<D, L> {
    *
    * @return The optimal parameter set.
    */
-  public synchronized double[] train() {
+  public synchronized double[] optimize() {
     // Rolling average of the gradient (first moment).
     double[] firstMomentVector = new double[parameters.length];
     // Rolling uncentered variance of the gradient (second moment).
@@ -186,9 +195,9 @@ public abstract class NadamSGD<D, L> {
       if (t != 0) {
         resetTrainingDataReader();
         int iterations = 0;
-        List<Entry<D, L>> batch;
-        while (!(batch = getTrainingData(batchSize)).isEmpty()) {
-          double batchSizeBiasOffset = ((double) batch.size()) / batchSize;
+        List<Entry<E, L>> batch;
+        while (!(batch = getTrainingData(trainingBatchSize)).isEmpty()) {
+          double batchSizeBiasOffset = 1d / (double) batch.size();
           // Compute the gradient.
           double[] gradient = computeGradient(batch);
           // Compute the initialization bias correction factors (serves as annealing as well).
@@ -239,7 +248,7 @@ public abstract class NadamSGD<D, L> {
        * it is not used for learning! */
       resetTrainingDataReader();
       if (logger != null) {
-        logger.info("Epoch: " + t + "; Cost: " + costFunction(parameters, getTestData()));
+        logger.info("Epoch: " + t + "; Training cost: " + computeAverageTrainingCost() + "; Test cost: " + computeAverageTestCost());
       }
     }
     return parameters;
@@ -251,7 +260,7 @@ public abstract class NadamSGD<D, L> {
    * @param dataSample An iterable data set on which the cost function is to be calculated.
    * @return The gradient of the cost function.
    */
-  private double[] computeGradient(List<Entry<D, L>> dataSample) {
+  private double[] computeGradient(List<Entry<E, L>> dataSample) {
     double[] gradient = new double[parameters.length];
     for (int i = 0; i < gradient.length; i++) {
       gradient[i] = computeCostFunctionDerivative(i, dataSample);
@@ -268,7 +277,7 @@ public abstract class NadamSGD<D, L> {
    * @param dataSample An iterable data set on which the cost function is to be calculated.
    * @return The derivative of the cost function with respect to the parameter at index i in the parameter set.
    */
-  private double computeCostFunctionDerivative(int i, List<Entry<D, L>> dataSample) {
+  private double computeCostFunctionDerivative(int i, List<Entry<E, L>> dataSample) {
     double cost1, cost2, denominator;
     double parameter = parameters[i];
     if (indicesToIgnore.contains(i)) {
@@ -296,10 +305,54 @@ public abstract class NadamSGD<D, L> {
   }
 
   /**
+   * It computes the total average cost over the entire data set supplied by the data provider.
+   *
+   * @param dataProvider The batch data provider function.
+   * @return The average cost.
+   */
+  private double computeAverageCost(Function<Long, List<Entry<E, L>>> dataProvider) {
+    double totalCost = 0;
+    long samples = 0;
+    List<Entry<E, L>> batch;
+    while (!(batch = dataProvider.apply(costCalculationBatchSize)).isEmpty()) {
+      double loss = costFunction(parameters, batch);
+      totalCost += loss;
+      samples += batch.size();
+    }
+    return totalCost / samples;
+  }
+
+  /**
+   * Computes the average cost over the entire training data set.
+   *
+   * @return The average training cost.
+   */
+  private double computeAverageTrainingCost() {
+    resetTrainingDataReader();
+    return computeAverageCost(this::getTrainingData);
+  }
+
+  /**
+   * Computes the average cost over the entire test data set.
+   *
+   * @return The average test cost.
+   */
+  private double computeAverageTestCost() {
+    resetTestDataReader();
+    return computeAverageCost(this::getTestData);
+  }
+
+  /**
    * Resets the training data reader enanbling the resampling of already sampled data points. E.g. if the data provider reads the data from
-   * a  file line by line, the invocation of this method should set the file stream back to the first line.
+   * a file line by line, the invocation of this method should set the file stream back to the first line.
    */
   protected abstract void resetTrainingDataReader();
+
+  /**
+   * Resets the test data reader enanbling the resampling of already sampled data points. E.g. if the data provider reads the data from
+   * a file line by line, the invocation of this method should set the file stream back to the first line.
+   */
+  protected abstract void resetTestDataReader();
 
   /**
    * Extracts a sample from the training data set and loads it into a list of key-value pairs where the key is the data and the value is the
@@ -307,26 +360,29 @@ public abstract class NadamSGD<D, L> {
    * is no more training data left, an empty list should be returned. The list should never be null.
    *
    * @param batchSize The maximum number of entries the returned list is to have. It is never less than 1.
-   * @return A list holding the observation-label pairs.
+   * @return A list holding the training observation-label pairs.
    */
-  protected abstract List<Entry<D, L>> getTrainingData(int batchSize);
+  protected abstract List<Entry<E, L>> getTrainingData(long batchSize);
 
   /**
-   * Returns the entire test data set as a list of key-value pairs where the key is the data and the value is the ground truth label. The
-   * list should contain at least one data set. The test data should never be included in the training data samples.
+   * Extracts a sample from the test data set and loads it into a list of key-value pairs where the key is the data and the value is the
+   * ground truth. It should never extract the same data point twice until the {@link #resetTestDataReader()} method is called. If there
+   * is no more test data left, an empty list should be returned. The list should never be null.
    *
-   * @return A list holding the validation data mapped to the correct labels.
+   * @param batchSize The maximum number of entries the returned list is to have. It is never less than 1.
+   * @return A list holding the test observation-label pairs.
    */
-  protected abstract List<Entry<D, L>> getTestData();
+  protected abstract List<Entry<E, L>> getTestData(long batchSize);
 
   /**
    * Calculates the costs associated with the given parameter set for the specified data sample. The better the system performs, the lower
-   * the costs should be. Ideally, the cost function is differentiable, smooth, and convex, but these are not requirements.
+   * the costs should be. Ideally, the cost function is differentiable, smooth, and convex, but these are not requirements. The cost should
+   * also not be averaged, the optimizer ensures that the costs are independent of the batch size.
    *
    * @param parameters An array of parameters.
    * @param dataSample A list of the training data mapped to the correct labels on which the cost function is to be calculated.
    * @return The cost associated with the given parameters.
    */
-  protected abstract double costFunction(double[] parameters, List<Entry<D, L>> dataSample);
+  protected abstract double costFunction(double[] parameters, List<Entry<E, L>> dataSample);
 
 }
