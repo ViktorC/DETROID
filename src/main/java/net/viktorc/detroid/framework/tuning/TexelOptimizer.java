@@ -210,7 +210,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * @param sigmoid The sigmoid of the score of the quiescence search returns.
    * @return The cross entropy loss.
    */
-  private static double computeLoss(double label, double sigmoid) {
+  private static double binaryCrossEntropyLoss(double label, double sigmoid) {
     return -(label * Math.log(sigmoid) + (1d - label) * Math.log(1d - sigmoid));
   }
 
@@ -284,7 +284,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
           double result = batch.get(i).getValue();
           double score = scores.get(i);
           double sigmoid = sigmoid(score);
-          cost += computeLoss(result, sigmoid);
+          cost += binaryCrossEntropyLoss(result, sigmoid);
           firstDerivative += score * (sigmoid - result);
           secondDerivative += score * score * sigmoid * (1 - sigmoid);
         }
@@ -293,6 +293,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
         if (logger != null) {
           logger.log(Level.SEVERE, e, e::getMessage);
         }
+        Thread.currentThread().interrupt();
       }
     }
     cost /= samples;
@@ -365,7 +366,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       for (int i = 0; i < dataSample.size(); i++) {
         double result = dataSample.get(i).getValue();
         double score = scores.get(i);
-        totalCost += computeLoss(result, sigmoid(score));
+        totalCost += binaryCrossEntropyLoss(result, sigmoid(score));
       }
       return totalCost;
     } catch (InterruptedException | ExecutionException e) {
