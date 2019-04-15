@@ -295,6 +295,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
         if (logger != null) {
           logger.log(Level.SEVERE, e, e::getMessage);
         }
+        Thread.currentThread().interrupt();
       }
     }
     cost /= samples;
