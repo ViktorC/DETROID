@@ -25,7 +25,7 @@ import net.viktorc.detroid.framework.util.NadamSGD;
  * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent algorithm with a possibly parallel cost
  * function. The cost function is based on that of the
  * <a href="https://www.chessprogramming.org/Texel%27s_Tuning_Method">Texel Tuning Method</a>
- * which is the average binary cross entropy loss of the evaluation scores of a set of positions exported from games with known outcomes.
+ * which is the mean squared error of the evaluation scores of a set of positions exported from games with known outcomes.
  *
  * @author Viktor
  */
@@ -204,14 +204,14 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   /**
-   * Computes the binary cross entropy loss of the evaluation given the game's result and the squashed score of the 0-depth search.
+   * Computes the squared error of the evaluation given the game's result and the squashed score of the 0-depth search.
    *
    * @param label The game's result. 1 for white win, 0 for black win, 0.5 for draw.
-   * @param sigmoid The sigmoid of the score of the quiescence search returns.
+   * @param prediction The sigmoid of the score of the quiescence search returns.
    * @return The cross entropy loss.
    */
-  private static double computeLoss(double label, double sigmoid) {
-    return -(label * Math.log(sigmoid) + (1d - label) * Math.log(1d - sigmoid));
+  private static double squaredError(double label, double prediction) {
+    return Math.pow(label - prediction, 2d);
   }
 
   /**
@@ -284,9 +284,11 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
           double result = batch.get(i).getValue();
           double score = scores.get(i);
           double sigmoid = sigmoid(score);
-          cost += computeLoss(result, sigmoid);
-          firstDerivative += score * (sigmoid - result);
-          secondDerivative += score * score * sigmoid * (1 - sigmoid);
+          double dSquaredErrorWrtSigmoid = 2d * (sigmoid - result);
+          double dSigmoidWrtK = score * sigmoid * (1d - sigmoid);
+          cost += squaredError(result, sigmoid);
+          firstDerivative += dSquaredErrorWrtSigmoid * dSigmoidWrtK;
+          secondDerivative += (2d * dSigmoidWrtK + dSquaredErrorWrtSigmoid * (score * (1d - 2d * sigmoid))) * dSigmoidWrtK;
         }
         samples += batch.size();
       } catch (InterruptedException | ExecutionException e) {
@@ -365,7 +367,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       for (int i = 0; i < dataSample.size(); i++) {
         double result = dataSample.get(i).getValue();
         double score = scores.get(i);
-        totalCost += computeLoss(result, sigmoid(score));
+        totalCost += squaredError(result, sigmoid(score));
       }
       return totalCost;
     } catch (InterruptedException | ExecutionException e) {
