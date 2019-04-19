@@ -40,6 +40,7 @@
   <rookValue>407</rookValue>
   <bishopValue>246</bishopValue>
   <knightValue>215</knightValue>
+  <pawnValue>100</pawnValue>
   <blockedPawnWeight1>76</blockedPawnWeight1>
   <blockedPawnWeight2>38</blockedPawnWeight2>
   <blockedPawnWeight3>40</blockedPawnWeight3>

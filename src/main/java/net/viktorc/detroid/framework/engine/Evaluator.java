@@ -31,10 +31,6 @@ public class Evaluator {
    * A symbolic, unattainable value.
    */
   private static final int KING_VALUE = 20000;
-  /**
-   * The base unit of evaluation.
-   */
-  private static final int PAWN_VALUE = 100;
 
   // MVV/LVA piece values.
   private static final byte[] MVV_LVA_PIECE_VALUES = new byte[]{0, 6, 5, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1};
@@ -230,7 +226,7 @@ public class Evaluator {
     } else if (pieceInd == Piece.W_KNIGHT.ind) {
       return params.knightValue;
     } else if (pieceInd == Piece.W_PAWN.ind) {
-      return PAWN_VALUE;
+      return params.pawnValue;
     } else if (pieceInd == Piece.B_KING.ind) {
       return KING_VALUE;
     } else if (pieceInd == Piece.B_QUEEN.ind) {
@@ -242,7 +238,7 @@ public class Evaluator {
     } else if (pieceInd == Piece.B_KNIGHT.ind) {
       return params.knightValue;
     } else if (pieceInd == Piece.B_PAWN.ind) {
-      return PAWN_VALUE;
+      return params.pawnValue;
     } else if (pieceInd == Piece.NULL.ind) {
       return 0;
     } else {
@@ -286,16 +282,16 @@ public class Evaluator {
     // In case the move is a promotion.
     if (move.type >= MoveType.PROMOTION_TO_QUEEN.ind) {
       if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
-        gains[i] += params.queenValue - PAWN_VALUE;
+        gains[i] += params.queenValue - params.pawnValue;
         attackerVal = params.queenValue;
       } else if (move.type == MoveType.PROMOTION_TO_ROOK.ind) {
-        gains[i] += params.rookValue - PAWN_VALUE;
+        gains[i] += params.rookValue - params.pawnValue;
         attackerVal = params.rookValue;
       } else if (move.type == MoveType.PROMOTION_TO_BISHOP.ind) {
-        gains[i] += params.bishopValue - PAWN_VALUE;
+        gains[i] += params.bishopValue - params.pawnValue;
         attackerVal = params.bishopValue;
       } else { // PROMOTION_TO_KNIGHT
-        gains[i] += params.knightValue - PAWN_VALUE;
+        gains[i] += params.knightValue - params.pawnValue;
         attackerVal = params.knightValue;
       }
     } else {
@@ -313,7 +309,7 @@ public class Evaluator {
       long attackers, bpAttack, rkAttack;
       if (whitesTurn) {
         if ((attackers = dB.getBlackPawnCaptureSet(pos.getWhitePawns()) & occupied) != Bitboard.EMPTY_BOARD) {
-          attackerVal = PAWN_VALUE;
+          attackerVal = params.pawnValue;
         } else if ((attackers = dB.getKnightMoveSet(pos.getWhiteKnights()) & occupied) != Bitboard.EMPTY_BOARD) {
           attackerVal = params.knightValue;
         } else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getWhiteBishops()) !=
@@ -331,7 +327,7 @@ public class Evaluator {
         }
       } else {
         if ((attackers = dB.getWhitePawnCaptureSet(pos.getBlackPawns()) & occupied) != Bitboard.EMPTY_BOARD) {
-          attackerVal = PAWN_VALUE;
+          attackerVal = params.pawnValue;
         } else if ((attackers = dB.getKnightMoveSet(pos.getBlackKnights()) & occupied) != Bitboard.EMPTY_BOARD) {
           attackerVal = params.knightValue;
         } else if ((attackers = (bpAttack = dB.getBishopMoveSet(occupied, occupied)) & pos.getBlackBishops()) !=
@@ -560,7 +556,7 @@ public class Evaluator {
     score += params.rookValue * (numOfWhiteRooks - numOfBlackRooks);
     score += params.bishopValue * (numOfWhiteBishops - numOfBlackBishops);
     score += params.knightValue * (numOfWhiteKnights - numOfBlackKnights);
-    score += PAWN_VALUE * (numOfWhitePawns - numOfBlackPawns);
+    score += params.pawnValue * (numOfWhitePawns - numOfBlackPawns);
     short midgameScore = 0;
     short endgameScore = 0;
     // Piece-square scores.
@@ -747,7 +743,7 @@ public class Evaluator {
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whiteKnightAttacks,
           pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights()) - params.knightValue);
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whitePawnCaptures,
-          pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights()) - PAWN_VALUE);
+          pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights()) - params.pawnValue);
     } else {
       // Adjust score to side to move.
       score *= -1;
@@ -757,7 +753,7 @@ public class Evaluator {
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackKnightAttacks,
           pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights()) - params.knightValue);
       mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackPawnCaptures,
-          pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights()) - PAWN_VALUE);
+          pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights()) - params.pawnValue);
     }
     score += mostValuableExchange;
     // Tempo advantage.

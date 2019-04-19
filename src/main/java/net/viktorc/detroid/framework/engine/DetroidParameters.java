@@ -99,6 +99,8 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short knightValue;
   @Parameter
+  short pawnValue;
+  @Parameter
   byte blockedPawnWeight1;
   @Parameter
   byte blockedPawnWeight2;

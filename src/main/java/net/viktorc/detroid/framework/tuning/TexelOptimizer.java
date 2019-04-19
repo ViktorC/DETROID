@@ -25,7 +25,7 @@ import net.viktorc.detroid.framework.util.NadamSGD;
  * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent algorithm with a possibly parallel cost
  * function. The cost function is based on that of the
  * <a href="https://www.chessprogramming.org/Texel%27s_Tuning_Method">Texel Tuning Method</a>
- * which is the average binary cross entropy loss of the evaluation scores of a set of positions exported from games with known outcomes.
+ * which is the mean squared error of the evaluation scores of a set of positions exported from games with known outcomes.
  *
  * @author Viktor
  */
@@ -52,10 +52,18 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    */
   private static final Set<ParameterType> TYPE = new HashSet<>(Collections.singletonList(ParameterType.STATIC_EVALUATION));
   /**
+   * The size of the increments during the initial line search for K before the Newton-Raphson method is applied.
+   */
+  private static final double INIT_K_INCREMENT = .2d;
+  /**
+   * The maximum value to try for K during the initial line search.
+   */
+  private static final double INIT_K_MAX = 2.1d;
+  /**
    * The minimum first derivative of K needed to continue the line search. If the first derivative drops below this threshold, a local
    * minimum is assumed to have been found.
    */
-  private static final double MIN_K_1ST_DERIVATIVE = 1e-8;
+  private static final double MIN_K_1ST_DERIVATIVE = 1e-10;
 
   private final String fenFilePath;
   private final long dataSetSize;
@@ -194,24 +202,25 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   /**
-   * It applies the sigmoid function to the input value using the instance's scaling value K.
+   * It applies a sigmoid function to the input value using the instance's scaling value K. It maps the centi-pawn advantage to the
+   * probability of victory according to this article: https://www.chessprogramming.org/Pawn_Advantage,_Win_Percentage,_and_Elo.
    *
    * @param output The value to squash.
    * @return The squashed output value.
    */
   private double sigmoid(double output) {
-    return 1d / (1d + Math.exp(k * -output));
+    return 1d / (1d + Math.pow(10d, k * -output / 400));
   }
 
   /**
-   * Computes the binary cross entropy loss of the evaluation given the game's result and the squashed score of the 0-depth search.
+   * Computes the squared error of the evaluation given the game's result and the squashed score of the 0-depth search.
    *
    * @param label The game's result. 1 for white win, 0 for black win, 0.5 for draw.
-   * @param sigmoid The sigmoid of the score of the quiescence search returns.
+   * @param prediction The sigmoid of the score of the quiescence search returns.
    * @return The cross entropy loss.
    */
-  private static double binaryCrossEntropyLoss(double label, double sigmoid) {
-    return -(label * Math.log(sigmoid) + (1d - label) * Math.log(1d - sigmoid));
+  private static double squaredError(double label, double prediction) {
+    return Math.pow(label - prediction, 2d);
   }
 
   /**
@@ -284,9 +293,13 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
           double result = batch.get(i).getValue();
           double score = scores.get(i);
           double sigmoid = sigmoid(score);
-          cost += binaryCrossEntropyLoss(result, sigmoid);
-          firstDerivative += score * (sigmoid - result);
-          secondDerivative += score * score * sigmoid * (1 - sigmoid);
+          double dSquaredErrorWrtSigmoid = 2d * (sigmoid - result);
+          double dSigmoidWrtKConstTerm = score * Math.log(10d) / 400d;
+          double dSigmoidWrtK = dSigmoidWrtKConstTerm * sigmoid * (1d - sigmoid);
+          double d2SigmoidWrtK = dSigmoidWrtKConstTerm * (1d - 2d * sigmoid);
+          cost += squaredError(result, sigmoid);
+          firstDerivative += dSquaredErrorWrtSigmoid * dSigmoidWrtK;
+          secondDerivative += (2d * dSigmoidWrtK + dSquaredErrorWrtSigmoid * d2SigmoidWrtK) * dSigmoidWrtK;
         }
         samples += batch.size();
       } catch (InterruptedException | ExecutionException e) {
@@ -306,9 +319,33 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * Computes the optimal scaling constant K for the sigmoid function used to calculate the prediction loss. It employs Newton's method.
    */
   private void computeAndSetOptimalK() {
-    k = 0;
-    for (;;) {
+    /* The cost function is non-convex in K, so first perform a crude line search to find an informed first guess for K that is hopefully
+     * close to the global minimum... */
+    double lowestCost = Double.MAX_VALUE;
+    double bestK = 0d;
+    double[] bestKValues = null;
+    if (logger != null) {
+      logger.info("Starting line search for K");
+    }
+    for (k = 0d; k < INIT_K_MAX; k += INIT_K_INCREMENT) {
       double[] values = computeCostAndDerivativesOfK();
+      double cost = values[0];
+      if (logger != null) {
+        logger.info("K: " + k + "; Total cost: " + cost);
+      }
+      if (cost <= lowestCost) {
+        lowestCost = cost;
+        bestK = k;
+        bestKValues = values;
+      }
+    }
+    if (logger != null) {
+      logger.info("Refining K using the Newton-Raphson method");
+    }
+    k = bestK;
+    double[] values = bestKValues;
+    // Then use Newton's method to find a local minimum (which is hopefully also the global one).
+    for (;;) {
       double cost = values[0];
       double firstDerivative = values[1];
       if (logger != null) {
@@ -319,6 +356,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       }
       double secondDerivative = values[2];
       k -= firstDerivative / secondDerivative;
+      values = computeCostAndDerivativesOfK();
     }
   }
 
@@ -366,7 +404,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       for (int i = 0; i < dataSample.size(); i++) {
         double result = dataSample.get(i).getValue();
         double score = scores.get(i);
-        totalCost += binaryCrossEntropyLoss(result, sigmoid(score));
+        totalCost += squaredError(result, sigmoid(score));
       }
       return totalCost;
     } catch (InterruptedException | ExecutionException e) {
