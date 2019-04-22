@@ -37,7 +37,7 @@ public abstract class NadamSGD<E, L> {
   /**
    * The default factor by which the learning rate is multiplied after every epoch.
    */
-  protected static final double LEARNING_ANNEALING_RATE = .95;
+  protected static final double LEARNING_ANNEALING_RATE = .99;
   /**
    * The default decay constant of the accumulated Nesterov momentum.
    */

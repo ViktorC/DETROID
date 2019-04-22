@@ -46,7 +46,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   /**
    * The learning rate annealing rate for the gradient descent.
    */
-  private static final double DEF_ANNEALING_RATE = .9;
+  private static final double DEF_ANNEALING_RATE = .99;
   /**
    * The only parameter type the optimizer is concerned with.
    */

@@ -455,7 +455,7 @@ public abstract class EngineParameters {
    */
   public final String toGrayCodeString(Set<ParameterType> types) {
     List<Field> params = getParamFields(types);
-    String genome = "";
+    StringBuilder genomeStringBuilder = new StringBuilder();
     try {
       for (Field f : params) {
         Object fieldValue = f.get(this);
@@ -465,31 +465,31 @@ public abstract class EngineParameters {
           continue;
         }
         if (fieldValue instanceof Boolean) {
-          genome += f.getBoolean(this) ? "1" : "0";
+          genomeStringBuilder.append(f.getBoolean(this) ? "1" : "0");
         } else if (fieldValue instanceof Byte) {
-          genome += BitOperations.toBinaryString(GrayCode.encode(f.getByte(this)))
-              .substring(Math.max(bitLimit, 57));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode(f.getByte(this)))
+              .substring(Math.max(bitLimit, 57)));
         } else if (fieldValue instanceof Short) {
-          genome += BitOperations.toBinaryString(GrayCode.encode(f.getShort(this)))
-              .substring(Math.max(bitLimit, 49));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode(f.getShort(this)))
+              .substring(Math.max(bitLimit, 49)));
         } else if (fieldValue instanceof Integer) {
-          genome += BitOperations.toBinaryString(GrayCode.encode(f.getInt(this)))
-              .substring(Math.max(bitLimit, 33));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode(f.getInt(this)))
+              .substring(Math.max(bitLimit, 33)));
         } else if (fieldValue instanceof Long) {
-          genome += BitOperations.toBinaryString(GrayCode.encode(f.getLong(this)))
-              .substring(Math.max(bitLimit, 1));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode(f.getLong(this)))
+              .substring(Math.max(bitLimit, 1)));
         } else if (fieldValue instanceof Float) {
-          genome += BitOperations.toBinaryString(GrayCode.encode((int) f.getFloat(this)))
-              .substring(Math.max(bitLimit, 33));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode((int) f.getFloat(this)))
+              .substring(Math.max(bitLimit, 33)));
         } else if (fieldValue instanceof Double) {
-          genome += BitOperations.toBinaryString(GrayCode.encode((long) f.getDouble(this)))
-              .substring(Math.max(bitLimit, 1));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode((long) f.getDouble(this)))
+              .substring(Math.max(bitLimit, 1)));
         } else if (fieldValue instanceof Character) {
-          genome += BitOperations.toBinaryString(GrayCode.encode(Character.getNumericValue(f.getChar(this))))
-              .substring(Math.max(bitLimit, 48));
+          genomeStringBuilder.append(BitOperations.toBinaryString(GrayCode.encode(Character.getNumericValue(f.getChar(this))))
+              .substring(Math.max(bitLimit, 48)));
         }
       }
-      return genome;
+      return genomeStringBuilder.toString();
     } catch (IllegalArgumentException | IllegalAccessException e) {
       return null;
     }
@@ -497,7 +497,7 @@ public abstract class EngineParameters {
 
   @Override
   public String toString() {
-    String out = "";
+    StringBuilder stringBuilder = new StringBuilder();
     for (Field f : allParamFields) {
       String subString = "";
       try {
@@ -505,9 +505,9 @@ public abstract class EngineParameters {
       } catch (IllegalArgumentException | IllegalAccessException e) {
         continue;
       }
-      out += subString;
+      stringBuilder.append(subString);
     }
-    return out;
+    return stringBuilder.toString();
   }
 
 }

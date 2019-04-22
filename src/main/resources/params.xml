@@ -36,36 +36,36 @@
   <maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
   <maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
   <nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
-  <queenValue>1158</queenValue>
-  <rookValue>407</rookValue>
-  <bishopValue>246</bishopValue>
-  <knightValue>215</knightValue>
-  <pawnValue>100</pawnValue>
-  <blockedPawnWeight1>76</blockedPawnWeight1>
-  <blockedPawnWeight2>38</blockedPawnWeight2>
+  <queenValue>1153</queenValue>
+  <rookValue>404</rookValue>
+  <bishopValue>245</bishopValue>
+  <knightValue>195</knightValue>
+  <pawnValue>91</pawnValue>
+  <blockedPawnWeight1>64</blockedPawnWeight1>
+  <blockedPawnWeight2>37</blockedPawnWeight2>
   <blockedPawnWeight3>40</blockedPawnWeight3>
-  <passedPawnWeight>10</passedPawnWeight>
-  <isolatedPawnWeight>16</isolatedPawnWeight>
-  <backwardPawnWeight>6</backwardPawnWeight>
-  <stoppedPawnWeight>31</stoppedPawnWeight>
-  <bishopPairAdvantage>71</bishopPairAdvantage>
-  <pinnedQueenWeight>123</pinnedQueenWeight>
+  <passedPawnWeight>11</passedPawnWeight>
+  <isolatedPawnWeight>15</isolatedPawnWeight>
+  <backwardPawnWeight>9</backwardPawnWeight>
+  <stoppedPawnWeight>25</stoppedPawnWeight>
+  <bishopPairAdvantage>64</bishopPairAdvantage>
+  <pinnedQueenWeight>105</pinnedQueenWeight>
   <pinnedRookWeight>0</pinnedRookWeight>
-  <pinnedBishopWeight>17</pinnedBishopWeight>
-  <pinnedKnightWeight>58</pinnedKnightWeight>
-  <pinnedPawnWeight>21</pinnedPawnWeight>
-  <queenMobilityWeight>2</queenMobilityWeight>
+  <pinnedBishopWeight>23</pinnedBishopWeight>
+  <pinnedKnightWeight>42</pinnedKnightWeight>
+  <pinnedPawnWeight>12</pinnedPawnWeight>
+  <queenMobilityWeight>3</queenMobilityWeight>
   <rookMobilityWeight>10</rookMobilityWeight>
   <bishopMobilityWeight>9</bishopMobilityWeight>
-  <knightMobilityWeight>4</knightMobilityWeight>
-  <friendlyNormalPawnTropismWeight>23</friendlyNormalPawnTropismWeight>
-  <friendlyWeakPawnTropismWeight>6</friendlyWeakPawnTropismWeight>
+  <knightMobilityWeight>3</knightMobilityWeight>
+  <friendlyNormalPawnTropismWeight>19</friendlyNormalPawnTropismWeight>
+  <friendlyWeakPawnTropismWeight>8</friendlyWeakPawnTropismWeight>
   <friendlyPassedPawnTropismWeight>0</friendlyPassedPawnTropismWeight>
-  <opponentNormalPawnTropismWeight>7</opponentNormalPawnTropismWeight>
-  <opponentWeakPawnTropismWeight>0</opponentWeakPawnTropismWeight>
+  <opponentNormalPawnTropismWeight>10</opponentNormalPawnTropismWeight>
+  <opponentWeakPawnTropismWeight>4</opponentWeakPawnTropismWeight>
   <opponentPassedPawnTropismWeight>0</opponentPassedPawnTropismWeight>
   <opponentQueenTropismWeight>47</opponentQueenTropismWeight>
-  <tempoAdvantage>60</tempoAdvantage>
+  <tempoAdvantage>57</tempoAdvantage>
   <pstPawnMg8>127</pstPawnMg8>
   <pstPawnMg9>127</pstPawnMg9>
   <pstPawnMg10>127</pstPawnMg10>
