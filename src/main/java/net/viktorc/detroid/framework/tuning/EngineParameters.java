@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -81,7 +82,7 @@ public abstract class EngineParameters {
         if (!fieldType.isPrimitive() || Modifier.isStatic(modifiers)) {
           throw new ParameterException("Illegal field: " + f.getName() + "; Only non-static primitive, " +
               "that is boolean, byte, short, int, long, float, double, and char fields are allowed " +
-              "to be annotated as Parameters.");
+              "to be annotated as parameters.");
         }
         allParamFields.add(f);
         if (param.type() == ParameterType.STATIC_EVALUATION) {
@@ -346,6 +347,23 @@ public abstract class EngineParameters {
   }
 
   /**
+   * Builds an array of values based on the entries of the provided map. All parameters not present in the map will have a default value
+   * of 0.
+   *
+   * @param paramValues A map of parameter names and their corresponding values.
+   * @return The values array.
+   */
+  public final double[] valuesFromMap(Map<String, Double> paramValues, Set<ParameterType> types) {
+    List<Field> params = getParamFields(types);
+    double[] arr = new double[params.size()];
+    int i = 0;
+    for (Field f : params) {
+      arr[i++] = paramValues.getOrDefault(f.getName(), 0d);
+    }
+    return arr;
+  }
+
+  /**
    * Returns an array of doubles holding the values of all the fields declared as parameters by the {@link
    * net.viktorc.detroid.framework.tuning.Parameter} annotation. Boolean values will be converted to either 1 or 0 depending on whether they
    * are true or false.
@@ -372,7 +390,7 @@ public abstract class EngineParameters {
     for (Field f : params) {
       try {
         if (f.getType().equals(boolean.class)) {
-          arr[i++] = (f.getBoolean(this) ? 1 : 0);
+          arr[i++] = (f.getBoolean(this) ? 1d : 0d);
         } else {
           arr[i++] = f.getDouble(this);
         }

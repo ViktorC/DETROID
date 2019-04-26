@@ -87,6 +87,7 @@ public final class EngineFramework implements Runnable {
    * [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string>
    * [--maxgames <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string>
    * [--destfile <string> {fens.txt}]} <br> Removing obvious mates from a FEN-file: {@code -f mates -sourcefile <string>
+   * [--destfile <string> {fens.txt}]} <br> Removing tactical positions from a FEN-file: {@code -f tacticals -sourcefile <string>
    * [--destfile <string> {fens.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string>
    * -firstxmoves <integer> [--destfile <string> {fens.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector
    * -value <quoted_comma_separated_decimals> [--paramtype <eval | control | management | eval+control | control+management | all> {all}]
@@ -472,6 +473,14 @@ public final class EngineFramework implements Runnable {
     }
   }
 
+  private void runInTacticalPositionFiltrationMode(String sourceFile, String destFile) {
+    try (ControllerEngine controllerEngine = factory.newControllerEngineInstance()) {
+      FENFileUtil.filterTacticalPositions(sourceFile, destFile, controllerEngine);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private void runInNoParamFiltrationMode(String[] args, BiConsumer<String,String> filtrationFunction) {
     String sourceFile = null;
     String destFile = DEF_FENS_FILE_PATH;
@@ -500,6 +509,10 @@ public final class EngineFramework implements Runnable {
 
   private void runInMateFiltrationMode(String[] args) {
     runInNoParamFiltrationMode(args, this::runInMateFiltrationMode);
+  }
+
+  private void runInTacticalPositionFiltrationMode(String[] args) {
+    runInNoParamFiltrationMode(args, this::runInTacticalPositionFiltrationMode);
   }
 
   private void runInOpeningFiltrationMode(String sourceFile, String destFile, int numOfPositionsToFilter) {
@@ -542,9 +555,11 @@ public final class EngineFramework implements Runnable {
       runInDrawFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
     } else if ("mates".equals(arg0)) {
       runInMateFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
+    } else if ("tacticals".equals(arg0)) {
+      runInTacticalPositionFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
     } else if ("openings".equals(arg0)) {
       runInOpeningFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
-    }else {
+    } else {
       throw new IllegalArgumentException();
     }
   }

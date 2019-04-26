@@ -228,7 +228,7 @@ public final class FENFileUtil {
     if (!engine.isInit()) {
       engine.init();
     }
-    engine.setDeterministicZeroDepthMode(true);
+    engine.setDeterministicEvaluationMode(true);
     try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
         BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
       String line;
@@ -266,6 +266,35 @@ public final class FENFileUtil {
           res = res.trim();
         }
         if (!"0.5".equals(res)) {
+          writer.write(line + System.lineSeparator());
+        }
+      }
+    }
+  }
+
+  /**
+   * Copies all the lines from the source FEN file to the destination file except the positions that allow for legal tactical moves.
+   *
+   * @param sourceFenFile The file path to the source FEN file.
+   * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
+   * @param engine The engine to use for obvious mate detection.
+   * @throws Exception If the source and destination paths are the same, there is an I/O issue or the engine cannot be initialized.
+   */
+  public static void filterTacticalPositions(String sourceFenFile, String destinationFenFile, ControllerEngine engine)
+      throws Exception {
+    if (sourceFenFile.equals(destinationFenFile)) {
+      throw new IllegalArgumentException();
+    }
+    if (!engine.isInit()) {
+      engine.init();
+    }
+    try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        String fen = line.split(";")[0];
+        engine.setPosition(fen);
+        if (engine.isQuiet()) {
           writer.write(line + System.lineSeparator());
         }
       }

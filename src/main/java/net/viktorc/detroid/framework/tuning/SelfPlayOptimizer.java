@@ -182,14 +182,14 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
   }
 
   @Override
-  protected double fitnessFunction(String genotype) {
+  protected double computeFitness(String genotype) {
     int currGen = getCurrentGeneration();
     if (tempGeneration != currGen) {
       tempGeneration = currGen;
       double[] probVec = getProbabilityVector();
-      String set = "";
+      StringBuilder setBuilder = new StringBuilder();
       for (double prob : probVec) {
-        set += (prob >= 0.5 ? "1" : "0");
+        setBuilder.append(prob >= 0.5 ? "1" : "0");
       }
       for (SelfPlayEngines<TunableEngine> tunableEngines : engines) {
         TunableEngine oppEngine = tunableEngines.getOpponentEngine();
@@ -200,7 +200,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
             throw new RuntimeException(e);
           }
         }
-        oppEngine.getParameters().set(set, parameterTypes);
+        oppEngine.getParameters().set(setBuilder.toString(), parameterTypes);
         oppEngine.notifyParametersChanged();
       }
     }

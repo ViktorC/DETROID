@@ -8,8 +8,10 @@ import java.lang.reflect.Array;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -18,7 +20,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.util.NadamSGD;
 
 /**
@@ -73,6 +74,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   private double k;
   private long trainingDataReaderHead;
   private long testDataReaderHead;
+  private double[] gradient;
 
   /**
    * Constructs and returns a new instance according to the specified parameters.
@@ -101,8 +103,8 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * @throws Exception If the engines cannot be initialised.
    * @throws IllegalArgumentException If the logger is null, or the batch size is not greater than 0, or the data set is too small.
    */
-  public TexelOptimizer(TunableEngine[] engines, long trainingBatchSize, int epochs, Double h, Double baseLearningRate, Double learningAnnealingRate,
-      String fenFilePath, Long costCalculationBatchSize, Double k, Double testDataProportion, Logger logger)
+  public TexelOptimizer(TunableEngine[] engines, long trainingBatchSize, int epochs, Double h, Double baseLearningRate,
+      Double learningAnnealingRate, String fenFilePath, Long costCalculationBatchSize, Double k, Double testDataProportion, Logger logger)
       throws Exception, IllegalArgumentException {
     super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
         engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE), trainingBatchSize,
@@ -132,7 +134,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
         if (!e.isInit()) {
           e.init();
         }
-        e.setDeterministicZeroDepthMode(true);
+        e.setDeterministicEvaluationMode(true);
         enginesList.add(e);
       }
     }
@@ -224,16 +226,18 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   /**
-   * Evaluates the position instances given the specified parameters using a 0-depth quiescence search.
+   * Evaluates the position instances given the specified parameters using a deterministic static evaluation function. It also stores the
+   * gradient of the evaluation function w.r.t. the parameters.
    *
    * @param parameters The engine parameters.
    * @param dataSample A data sample containing the chess position strings and their corresponding labels representing the outcome of the
    * game in which the position occurred.
+   * @param calculateGradient Whether the gradient of the static evaluation function should be calculated.
    * @return A list of scores corresponding to the chess positions.
    * @throws ExecutionException If an execution error happens in one of the threads.
    * @throws InterruptedException If the current thread is interrupted while waiting for the worker threads to finish.
    */
-  private List<Short> predict(double[] parameters, List<Entry<String, Float>> dataSample)
+  private List<Short> predict(double[] parameters, List<Entry<String, Float>> dataSample, boolean calculateGradient)
       throws InterruptedException, ExecutionException {
     ArrayList<Future<List<Short>>> futures = new ArrayList<>();
     int startInd = 0;
@@ -241,24 +245,48 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     for (int i = 0; i < engines.length && startInd < dataSample.size(); i++) {
       final int finalStartInd = startInd;
       final TunableEngine e = engines[i];
+      if (i == 0 && calculateGradient && e.isGradientDefined()) {
+        gradient = e.getParameters().valuesFromMap(new HashMap<>(), TYPE);
+      }
       e.getParameters().set(parameters, TYPE);
       e.notifyParametersChanged();
       futures.add(pool.submit(() -> {
         try {
           List<Short> predictions = new ArrayList<>();
+          Map<String, Double> partitionGradientCache = calculateGradient && e.isGradientDefined() ? new HashMap<>() : null;
           int endInd = Math.min(dataSample.size(), finalStartInd + workLoadPerThread);
           for (int j = finalStartInd; j < endInd; j++) {
             Entry<String, Float> dataPair = dataSample.get(j);
             String fen = dataPair.getKey();
             e.setPosition(fen);
-            SearchResults res = e.search(null, null, null, null, null, null, null, 0,
-                null, null, null, null);
-            Short score = res.getScore().orElse((short) 0);
+            Map<String, Double> gradientCache = partitionGradientCache != null ? new HashMap<>() : null;
+            short score = e.eval(gradientCache);
             // Check if it's white's turn.
             if (!fen.contains("w")) {
               score = (short) -score;
             }
             predictions.add(score);
+            if (partitionGradientCache != null) {
+              // Use the chain rule to calculate the gradient of the loss function w.r.t. the evaluation parameters.
+              double label = dataPair.getValue().doubleValue();
+              double sigmoid = sigmoid(score);
+              double dSquaredErrorWrtSigmoid = 2d * (sigmoid - label);
+              double dSigmoidWrtScore = k * Math.log(10d) / 400d * sigmoid * (1d - sigmoid);
+              double dSquaredErrorWrtScore = dSquaredErrorWrtSigmoid * dSigmoidWrtScore;
+              for (Entry<String, Double> gradEntry : gradientCache.entrySet()) {
+                String key = gradEntry.getKey();
+                Double partitionGradEntry = partitionGradientCache.getOrDefault(key, 0d);
+                partitionGradientCache.put(key, gradEntry.getValue() * dSquaredErrorWrtScore + partitionGradEntry);
+              }
+            }
+          }
+          if (partitionGradientCache != null) {
+            double[] partitionGradient = e.getParameters().valuesFromMap(partitionGradientCache, TYPE);
+            synchronized (gradient) {
+              for (int j = 0; j < gradient.length; j++) {
+                gradient[j] += partitionGradient[j];
+              }
+            }
           }
           return predictions;
         } catch (Exception e1) {
@@ -288,7 +316,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     List<Entry<String, Float>> batch;
     while (!(batch = getTrainingData(costCalculationBatchSize)).isEmpty()) {
       try {
-        List<Short> scores = predict(parameters, batch);
+        List<Short> scores = predict(parameters, batch, false);
         for (int i = 0; i < batch.size(); i++) {
           double result = batch.get(i).getValue();
           double score = scores.get(i);
@@ -397,16 +425,30 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   @Override
-  protected double costFunction(double[] parameters, List<Entry<String, Float>> dataSample) {
+  protected double computeCost(double[] parameters, List<Entry<String, Float>> dataSample) {
     try {
       double totalCost = 0;
-      List<Short> scores = predict(parameters, dataSample);
+      List<Short> scores = predict(parameters, dataSample, false);
       for (int i = 0; i < dataSample.size(); i++) {
         double result = dataSample.get(i).getValue();
         double score = scores.get(i);
         totalCost += squaredError(result, sigmoid(score));
       }
       return totalCost;
+    } catch (InterruptedException | ExecutionException e) {
+      logger.log(Level.SEVERE, e.getMessage(), e);
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected double[] computeGradient(double[] parameters, List<Entry<String, Float>> dataSample) {
+    try {
+      predict(parameters, dataSample, true);
+      double[] gradientCopy = new double[gradient.length];
+      System.arraycopy(gradient, 0, gradientCopy, 0, gradient.length);
+      return gradientCopy;
     } catch (InterruptedException | ExecutionException e) {
       logger.log(Level.SEVERE, e.getMessage(), e);
       Thread.currentThread().interrupt();

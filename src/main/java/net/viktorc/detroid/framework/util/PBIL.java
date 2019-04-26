@@ -6,8 +6,8 @@ import java.util.logging.Logger;
 
 /**
  * An abstract Population-based Incremental Learning algorithm implementation for optimizing parameters represented by strings of binary
- * digits. The fitness of the individuals in each population is measured by the abstract method {@link #fitnessFunction(String)
- * fitnessFunction} which must be implemented.
+ * digits. The fitness of the individuals in each population is measured by the abstract method {@link #computeFitness(String)
+ * computeFitness} which must be implemented.
  *
  * PBIL: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.61.8554">http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.61.8554</a>
  *
@@ -193,7 +193,7 @@ public abstract class PBIL {
       // Measure the fitness of each individual in the population.
       for (int i = 0; i < populationSize; i++) {
         String genome = genotypes[i];
-        double fitness = fitnessFunction(genome);
+        double fitness = computeFitness(genome);
         // Track the genotypes responsible for the fittest and least fit individuals.
         if (fitness > currentHighestFitness) {
           currentHighestFitness = fitness;
@@ -236,6 +236,6 @@ public abstract class PBIL {
    * @param genotype The genotype represented by a string of binary digits of the specified length.
    * @return The fitness level of the genotype.
    */
-  protected abstract double fitnessFunction(String genotype);
+  protected abstract double computeFitness(String genotype);
 
 }

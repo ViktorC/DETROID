@@ -298,134 +298,520 @@ class DetroidParameters extends EngineParameters {
   byte pstPawnEg51;
 
   @Parameter
-  byte pstKnight0;
+  byte pstKnightMg0;
   @Parameter
-  byte pstKnight1;
+  byte pstKnightMg1;
   @Parameter
-  byte pstKnight2;
+  byte pstKnightMg2;
   @Parameter
-  byte pstKnight3;
+  byte pstKnightMg3;
   @Parameter
-  byte pstKnight8;
+  byte pstKnightMg4;
   @Parameter
-  byte pstKnight9;
+  byte pstKnightMg5;
   @Parameter
-  byte pstKnight10;
+  byte pstKnightMg6;
   @Parameter
-  byte pstKnight11;
+  byte pstKnightMg7;
   @Parameter
-  byte pstKnight16;
+  byte pstKnightMg8;
   @Parameter
-  byte pstKnight17;
+  byte pstKnightMg9;
   @Parameter
-  byte pstKnight18;
+  byte pstKnightMg10;
   @Parameter
-  byte pstKnight19;
+  byte pstKnightMg11;
   @Parameter
-  byte pstKnight24;
+  byte pstKnightMg12;
   @Parameter
-  byte pstKnight25;
+  byte pstKnightMg13;
   @Parameter
-  byte pstKnight26;
+  byte pstKnightMg14;
   @Parameter
-  byte pstKnight27;
+  byte pstKnightMg15;
   @Parameter
-  byte pstKnight32;
+  byte pstKnightMg16;
   @Parameter
-  byte pstKnight33;
+  byte pstKnightMg17;
   @Parameter
-  byte pstKnight34;
+  byte pstKnightMg18;
   @Parameter
-  byte pstKnight35;
+  byte pstKnightMg19;
   @Parameter
-  byte pstKnight40;
+  byte pstKnightMg20;
   @Parameter
-  byte pstKnight41;
+  byte pstKnightMg21;
   @Parameter
-  byte pstKnight42;
+  byte pstKnightMg22;
   @Parameter
-  byte pstKnight43;
+  byte pstKnightMg23;
   @Parameter
-  byte pstKnight48;
+  byte pstKnightMg24;
   @Parameter
-  byte pstKnight49;
+  byte pstKnightMg25;
   @Parameter
-  byte pstKnight50;
+  byte pstKnightMg26;
   @Parameter
-  byte pstKnight51;
+  byte pstKnightMg27;
   @Parameter
-  byte pstKnight56;
+  byte pstKnightMg28;
   @Parameter
-  byte pstKnight57;
+  byte pstKnightMg29;
   @Parameter
-  byte pstKnight58;
+  byte pstKnightMg30;
   @Parameter
-  byte pstKnight59;
+  byte pstKnightMg31;
+  @Parameter
+  byte pstKnightMg32;
+  @Parameter
+  byte pstKnightMg33;
+  @Parameter
+  byte pstKnightMg34;
+  @Parameter
+  byte pstKnightMg35;
+  @Parameter
+  byte pstKnightMg36;
+  @Parameter
+  byte pstKnightMg37;
+  @Parameter
+  byte pstKnightMg38;
+  @Parameter
+  byte pstKnightMg39;
+  @Parameter
+  byte pstKnightMg40;
+  @Parameter
+  byte pstKnightMg41;
+  @Parameter
+  byte pstKnightMg42;
+  @Parameter
+  byte pstKnightMg43;
+  @Parameter
+  byte pstKnightMg44;
+  @Parameter
+  byte pstKnightMg45;
+  @Parameter
+  byte pstKnightMg46;
+  @Parameter
+  byte pstKnightMg47;
+  @Parameter
+  byte pstKnightMg48;
+  @Parameter
+  byte pstKnightMg49;
+  @Parameter
+  byte pstKnightMg50;
+  @Parameter
+  byte pstKnightMg51;
+  @Parameter
+  byte pstKnightMg52;
+  @Parameter
+  byte pstKnightMg53;
+  @Parameter
+  byte pstKnightMg54;
+  @Parameter
+  byte pstKnightMg55;
+  @Parameter
+  byte pstKnightMg56;
+  @Parameter
+  byte pstKnightMg57;
+  @Parameter
+  byte pstKnightMg58;
+  @Parameter
+  byte pstKnightMg59;
+  @Parameter
+  byte pstKnightMg60;
+  @Parameter
+  byte pstKnightMg61;
+  @Parameter
+  byte pstKnightMg62;
+  @Parameter
+  byte pstKnightMg63;
 
   @Parameter
-  byte pstBishop0;
+  byte pstKnightEg0;
   @Parameter
-  byte pstBishop1;
+  byte pstKnightEg1;
   @Parameter
-  byte pstBishop2;
+  byte pstKnightEg2;
   @Parameter
-  byte pstBishop3;
+  byte pstKnightEg3;
   @Parameter
-  byte pstBishop8;
+  byte pstKnightEg4;
   @Parameter
-  byte pstBishop9;
+  byte pstKnightEg5;
   @Parameter
-  byte pstBishop10;
+  byte pstKnightEg6;
   @Parameter
-  byte pstBishop11;
+  byte pstKnightEg7;
   @Parameter
-  byte pstBishop16;
+  byte pstKnightEg8;
   @Parameter
-  byte pstBishop17;
+  byte pstKnightEg9;
   @Parameter
-  byte pstBishop18;
+  byte pstKnightEg10;
   @Parameter
-  byte pstBishop19;
+  byte pstKnightEg11;
   @Parameter
-  byte pstBishop24;
+  byte pstKnightEg12;
   @Parameter
-  byte pstBishop25;
+  byte pstKnightEg13;
   @Parameter
-  byte pstBishop26;
+  byte pstKnightEg14;
   @Parameter
-  byte pstBishop27;
+  byte pstKnightEg15;
   @Parameter
-  byte pstBishop32;
+  byte pstKnightEg16;
   @Parameter
-  byte pstBishop33;
+  byte pstKnightEg17;
   @Parameter
-  byte pstBishop34;
+  byte pstKnightEg18;
   @Parameter
-  byte pstBishop35;
+  byte pstKnightEg19;
   @Parameter
-  byte pstBishop40;
+  byte pstKnightEg20;
   @Parameter
-  byte pstBishop41;
+  byte pstKnightEg21;
   @Parameter
-  byte pstBishop42;
+  byte pstKnightEg22;
   @Parameter
-  byte pstBishop43;
+  byte pstKnightEg23;
   @Parameter
-  byte pstBishop48;
+  byte pstKnightEg24;
   @Parameter
-  byte pstBishop49;
+  byte pstKnightEg25;
   @Parameter
-  byte pstBishop50;
+  byte pstKnightEg26;
   @Parameter
-  byte pstBishop51;
+  byte pstKnightEg27;
   @Parameter
-  byte pstBishop56;
+  byte pstKnightEg28;
   @Parameter
-  byte pstBishop57;
+  byte pstKnightEg29;
   @Parameter
-  byte pstBishop58;
+  byte pstKnightEg30;
   @Parameter
-  byte pstBishop59;
+  byte pstKnightEg31;
+  @Parameter
+  byte pstKnightEg32;
+  @Parameter
+  byte pstKnightEg33;
+  @Parameter
+  byte pstKnightEg34;
+  @Parameter
+  byte pstKnightEg35;
+  @Parameter
+  byte pstKnightEg36;
+  @Parameter
+  byte pstKnightEg37;
+  @Parameter
+  byte pstKnightEg38;
+  @Parameter
+  byte pstKnightEg39;
+  @Parameter
+  byte pstKnightEg40;
+  @Parameter
+  byte pstKnightEg41;
+  @Parameter
+  byte pstKnightEg42;
+  @Parameter
+  byte pstKnightEg43;
+  @Parameter
+  byte pstKnightEg44;
+  @Parameter
+  byte pstKnightEg45;
+  @Parameter
+  byte pstKnightEg46;
+  @Parameter
+  byte pstKnightEg47;
+  @Parameter
+  byte pstKnightEg48;
+  @Parameter
+  byte pstKnightEg49;
+  @Parameter
+  byte pstKnightEg50;
+  @Parameter
+  byte pstKnightEg51;
+  @Parameter
+  byte pstKnightEg52;
+  @Parameter
+  byte pstKnightEg53;
+  @Parameter
+  byte pstKnightEg54;
+  @Parameter
+  byte pstKnightEg55;
+  @Parameter
+  byte pstKnightEg56;
+  @Parameter
+  byte pstKnightEg57;
+  @Parameter
+  byte pstKnightEg58;
+  @Parameter
+  byte pstKnightEg59;
+  @Parameter
+  byte pstKnightEg60;
+  @Parameter
+  byte pstKnightEg61;
+  @Parameter
+  byte pstKnightEg62;
+  @Parameter
+  byte pstKnightEg63;
+
+  @Parameter
+  byte pstBishopMg0;
+  @Parameter
+  byte pstBishopMg1;
+  @Parameter
+  byte pstBishopMg2;
+  @Parameter
+  byte pstBishopMg3;
+  @Parameter
+  byte pstBishopMg4;
+  @Parameter
+  byte pstBishopMg5;
+  @Parameter
+  byte pstBishopMg6;
+  @Parameter
+  byte pstBishopMg7;
+  @Parameter
+  byte pstBishopMg8;
+  @Parameter
+  byte pstBishopMg9;
+  @Parameter
+  byte pstBishopMg10;
+  @Parameter
+  byte pstBishopMg11;
+  @Parameter
+  byte pstBishopMg12;
+  @Parameter
+  byte pstBishopMg13;
+  @Parameter
+  byte pstBishopMg14;
+  @Parameter
+  byte pstBishopMg15;
+  @Parameter
+  byte pstBishopMg16;
+  @Parameter
+  byte pstBishopMg17;
+  @Parameter
+  byte pstBishopMg18;
+  @Parameter
+  byte pstBishopMg19;
+  @Parameter
+  byte pstBishopMg20;
+  @Parameter
+  byte pstBishopMg21;
+  @Parameter
+  byte pstBishopMg22;
+  @Parameter
+  byte pstBishopMg23;
+  @Parameter
+  byte pstBishopMg24;
+  @Parameter
+  byte pstBishopMg25;
+  @Parameter
+  byte pstBishopMg26;
+  @Parameter
+  byte pstBishopMg27;
+  @Parameter
+  byte pstBishopMg28;
+  @Parameter
+  byte pstBishopMg29;
+  @Parameter
+  byte pstBishopMg30;
+  @Parameter
+  byte pstBishopMg31;
+  @Parameter
+  byte pstBishopMg32;
+  @Parameter
+  byte pstBishopMg33;
+  @Parameter
+  byte pstBishopMg34;
+  @Parameter
+  byte pstBishopMg35;
+  @Parameter
+  byte pstBishopMg36;
+  @Parameter
+  byte pstBishopMg37;
+  @Parameter
+  byte pstBishopMg38;
+  @Parameter
+  byte pstBishopMg39;
+  @Parameter
+  byte pstBishopMg40;
+  @Parameter
+  byte pstBishopMg41;
+  @Parameter
+  byte pstBishopMg42;
+  @Parameter
+  byte pstBishopMg43;
+  @Parameter
+  byte pstBishopMg44;
+  @Parameter
+  byte pstBishopMg45;
+  @Parameter
+  byte pstBishopMg46;
+  @Parameter
+  byte pstBishopMg47;
+  @Parameter
+  byte pstBishopMg48;
+  @Parameter
+  byte pstBishopMg49;
+  @Parameter
+  byte pstBishopMg50;
+  @Parameter
+  byte pstBishopMg51;
+  @Parameter
+  byte pstBishopMg52;
+  @Parameter
+  byte pstBishopMg53;
+  @Parameter
+  byte pstBishopMg54;
+  @Parameter
+  byte pstBishopMg55;
+  @Parameter
+  byte pstBishopMg56;
+  @Parameter
+  byte pstBishopMg57;
+  @Parameter
+  byte pstBishopMg58;
+  @Parameter
+  byte pstBishopMg59;
+  @Parameter
+  byte pstBishopMg60;
+  @Parameter
+  byte pstBishopMg61;
+  @Parameter
+  byte pstBishopMg62;
+  @Parameter
+  byte pstBishopMg63;
+
+  @Parameter
+  byte pstBishopEg0;
+  @Parameter
+  byte pstBishopEg1;
+  @Parameter
+  byte pstBishopEg2;
+  @Parameter
+  byte pstBishopEg3;
+  @Parameter
+  byte pstBishopEg4;
+  @Parameter
+  byte pstBishopEg5;
+  @Parameter
+  byte pstBishopEg6;
+  @Parameter
+  byte pstBishopEg7;
+  @Parameter
+  byte pstBishopEg8;
+  @Parameter
+  byte pstBishopEg9;
+  @Parameter
+  byte pstBishopEg10;
+  @Parameter
+  byte pstBishopEg11;
+  @Parameter
+  byte pstBishopEg12;
+  @Parameter
+  byte pstBishopEg13;
+  @Parameter
+  byte pstBishopEg14;
+  @Parameter
+  byte pstBishopEg15;
+  @Parameter
+  byte pstBishopEg16;
+  @Parameter
+  byte pstBishopEg17;
+  @Parameter
+  byte pstBishopEg18;
+  @Parameter
+  byte pstBishopEg19;
+  @Parameter
+  byte pstBishopEg20;
+  @Parameter
+  byte pstBishopEg21;
+  @Parameter
+  byte pstBishopEg22;
+  @Parameter
+  byte pstBishopEg23;
+  @Parameter
+  byte pstBishopEg24;
+  @Parameter
+  byte pstBishopEg25;
+  @Parameter
+  byte pstBishopEg26;
+  @Parameter
+  byte pstBishopEg27;
+  @Parameter
+  byte pstBishopEg28;
+  @Parameter
+  byte pstBishopEg29;
+  @Parameter
+  byte pstBishopEg30;
+  @Parameter
+  byte pstBishopEg31;
+  @Parameter
+  byte pstBishopEg32;
+  @Parameter
+  byte pstBishopEg33;
+  @Parameter
+  byte pstBishopEg34;
+  @Parameter
+  byte pstBishopEg35;
+  @Parameter
+  byte pstBishopEg36;
+  @Parameter
+  byte pstBishopEg37;
+  @Parameter
+  byte pstBishopEg38;
+  @Parameter
+  byte pstBishopEg39;
+  @Parameter
+  byte pstBishopEg40;
+  @Parameter
+  byte pstBishopEg41;
+  @Parameter
+  byte pstBishopEg42;
+  @Parameter
+  byte pstBishopEg43;
+  @Parameter
+  byte pstBishopEg44;
+  @Parameter
+  byte pstBishopEg45;
+  @Parameter
+  byte pstBishopEg46;
+  @Parameter
+  byte pstBishopEg47;
+  @Parameter
+  byte pstBishopEg48;
+  @Parameter
+  byte pstBishopEg49;
+  @Parameter
+  byte pstBishopEg50;
+  @Parameter
+  byte pstBishopEg51;
+  @Parameter
+  byte pstBishopEg52;
+  @Parameter
+  byte pstBishopEg53;
+  @Parameter
+  byte pstBishopEg54;
+  @Parameter
+  byte pstBishopEg55;
+  @Parameter
+  byte pstBishopEg56;
+  @Parameter
+  byte pstBishopEg57;
+  @Parameter
+  byte pstBishopEg58;
+  @Parameter
+  byte pstBishopEg59;
+  @Parameter
+  byte pstBishopEg60;
+  @Parameter
+  byte pstBishopEg61;
+  @Parameter
+  byte pstBishopEg62;
+  @Parameter
+  byte pstBishopEg63;
 
   @Parameter
   byte pstRookMg0;
@@ -565,6 +951,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstRookEg3;
   @Parameter
+  byte pstRookEg4;
+  @Parameter
+  byte pstRookEg5;
+  @Parameter
+  byte pstRookEg6;
+  @Parameter
+  byte pstRookEg7;
+  @Parameter
   byte pstRookEg8;
   @Parameter
   byte pstRookEg9;
@@ -572,6 +966,14 @@ class DetroidParameters extends EngineParameters {
   byte pstRookEg10;
   @Parameter
   byte pstRookEg11;
+  @Parameter
+  byte pstRookEg12;
+  @Parameter
+  byte pstRookEg13;
+  @Parameter
+  byte pstRookEg14;
+  @Parameter
+  byte pstRookEg15;
   @Parameter
   byte pstRookEg16;
   @Parameter
@@ -581,6 +983,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstRookEg19;
   @Parameter
+  byte pstRookEg20;
+  @Parameter
+  byte pstRookEg21;
+  @Parameter
+  byte pstRookEg22;
+  @Parameter
+  byte pstRookEg23;
+  @Parameter
   byte pstRookEg24;
   @Parameter
   byte pstRookEg25;
@@ -588,6 +998,14 @@ class DetroidParameters extends EngineParameters {
   byte pstRookEg26;
   @Parameter
   byte pstRookEg27;
+  @Parameter
+  byte pstRookEg28;
+  @Parameter
+  byte pstRookEg29;
+  @Parameter
+  byte pstRookEg30;
+  @Parameter
+  byte pstRookEg31;
   @Parameter
   byte pstRookEg32;
   @Parameter
@@ -597,6 +1015,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstRookEg35;
   @Parameter
+  byte pstRookEg36;
+  @Parameter
+  byte pstRookEg37;
+  @Parameter
+  byte pstRookEg38;
+  @Parameter
+  byte pstRookEg39;
+  @Parameter
   byte pstRookEg40;
   @Parameter
   byte pstRookEg41;
@@ -604,6 +1030,14 @@ class DetroidParameters extends EngineParameters {
   byte pstRookEg42;
   @Parameter
   byte pstRookEg43;
+  @Parameter
+  byte pstRookEg44;
+  @Parameter
+  byte pstRookEg45;
+  @Parameter
+  byte pstRookEg46;
+  @Parameter
+  byte pstRookEg47;
   @Parameter
   byte pstRookEg48;
   @Parameter
@@ -613,6 +1047,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstRookEg51;
   @Parameter
+  byte pstRookEg52;
+  @Parameter
+  byte pstRookEg53;
+  @Parameter
+  byte pstRookEg54;
+  @Parameter
+  byte pstRookEg55;
+  @Parameter
   byte pstRookEg56;
   @Parameter
   byte pstRookEg57;
@@ -620,71 +1062,272 @@ class DetroidParameters extends EngineParameters {
   byte pstRookEg58;
   @Parameter
   byte pstRookEg59;
+  @Parameter
+  byte pstRookEg60;
+  @Parameter
+  byte pstRookEg61;
+  @Parameter
+  byte pstRookEg62;
+  @Parameter
+  byte pstRookEg63;
 
   @Parameter
-  byte pstQueen0;
+  byte pstQueenMg0;
   @Parameter
-  byte pstQueen1;
+  byte pstQueenMg1;
   @Parameter
-  byte pstQueen2;
+  byte pstQueenMg2;
   @Parameter
-  byte pstQueen3;
+  byte pstQueenMg3;
   @Parameter
-  byte pstQueen8;
+  byte pstQueenMg4;
   @Parameter
-  byte pstQueen9;
+  byte pstQueenMg5;
   @Parameter
-  byte pstQueen10;
+  byte pstQueenMg6;
   @Parameter
-  byte pstQueen11;
+  byte pstQueenMg7;
   @Parameter
-  byte pstQueen16;
+  byte pstQueenMg8;
   @Parameter
-  byte pstQueen17;
+  byte pstQueenMg9;
   @Parameter
-  byte pstQueen18;
+  byte pstQueenMg10;
   @Parameter
-  byte pstQueen19;
+  byte pstQueenMg11;
   @Parameter
-  byte pstQueen24;
+  byte pstQueenMg12;
   @Parameter
-  byte pstQueen25;
+  byte pstQueenMg13;
   @Parameter
-  byte pstQueen26;
+  byte pstQueenMg14;
   @Parameter
-  byte pstQueen27;
+  byte pstQueenMg15;
   @Parameter
-  byte pstQueen32;
+  byte pstQueenMg16;
   @Parameter
-  byte pstQueen33;
+  byte pstQueenMg17;
   @Parameter
-  byte pstQueen34;
+  byte pstQueenMg18;
   @Parameter
-  byte pstQueen35;
+  byte pstQueenMg19;
   @Parameter
-  byte pstQueen40;
+  byte pstQueenMg20;
   @Parameter
-  byte pstQueen41;
+  byte pstQueenMg21;
   @Parameter
-  byte pstQueen42;
+  byte pstQueenMg22;
   @Parameter
-  byte pstQueen43;
+  byte pstQueenMg23;
   @Parameter
-  byte pstQueen48;
+  byte pstQueenMg24;
   @Parameter
-  byte pstQueen49;
+  byte pstQueenMg25;
   @Parameter
-  byte pstQueen50;
+  byte pstQueenMg26;
   @Parameter
-  byte pstQueen51;
+  byte pstQueenMg27;
   @Parameter
-  byte pstQueen56;
+  byte pstQueenMg28;
   @Parameter
-  byte pstQueen57;
+  byte pstQueenMg29;
   @Parameter
-  byte pstQueen58;
+  byte pstQueenMg30;
   @Parameter
-  byte pstQueen59;
+  byte pstQueenMg31;
+  @Parameter
+  byte pstQueenMg32;
+  @Parameter
+  byte pstQueenMg33;
+  @Parameter
+  byte pstQueenMg34;
+  @Parameter
+  byte pstQueenMg35;
+  @Parameter
+  byte pstQueenMg36;
+  @Parameter
+  byte pstQueenMg37;
+  @Parameter
+  byte pstQueenMg38;
+  @Parameter
+  byte pstQueenMg39;
+  @Parameter
+  byte pstQueenMg40;
+  @Parameter
+  byte pstQueenMg41;
+  @Parameter
+  byte pstQueenMg42;
+  @Parameter
+  byte pstQueenMg43;
+  @Parameter
+  byte pstQueenMg44;
+  @Parameter
+  byte pstQueenMg45;
+  @Parameter
+  byte pstQueenMg46;
+  @Parameter
+  byte pstQueenMg47;
+  @Parameter
+  byte pstQueenMg48;
+  @Parameter
+  byte pstQueenMg49;
+  @Parameter
+  byte pstQueenMg50;
+  @Parameter
+  byte pstQueenMg51;
+  @Parameter
+  byte pstQueenMg52;
+  @Parameter
+  byte pstQueenMg53;
+  @Parameter
+  byte pstQueenMg54;
+  @Parameter
+  byte pstQueenMg55;
+  @Parameter
+  byte pstQueenMg56;
+  @Parameter
+  byte pstQueenMg57;
+  @Parameter
+  byte pstQueenMg58;
+  @Parameter
+  byte pstQueenMg59;
+  @Parameter
+  byte pstQueenMg60;
+  @Parameter
+  byte pstQueenMg61;
+  @Parameter
+  byte pstQueenMg62;
+  @Parameter
+  byte pstQueenMg63;
+
+  @Parameter
+  byte pstQueenEg0;
+  @Parameter
+  byte pstQueenEg1;
+  @Parameter
+  byte pstQueenEg2;
+  @Parameter
+  byte pstQueenEg3;
+  @Parameter
+  byte pstQueenEg4;
+  @Parameter
+  byte pstQueenEg5;
+  @Parameter
+  byte pstQueenEg6;
+  @Parameter
+  byte pstQueenEg7;
+  @Parameter
+  byte pstQueenEg8;
+  @Parameter
+  byte pstQueenEg9;
+  @Parameter
+  byte pstQueenEg10;
+  @Parameter
+  byte pstQueenEg11;
+  @Parameter
+  byte pstQueenEg12;
+  @Parameter
+  byte pstQueenEg13;
+  @Parameter
+  byte pstQueenEg14;
+  @Parameter
+  byte pstQueenEg15;
+  @Parameter
+  byte pstQueenEg16;
+  @Parameter
+  byte pstQueenEg17;
+  @Parameter
+  byte pstQueenEg18;
+  @Parameter
+  byte pstQueenEg19;
+  @Parameter
+  byte pstQueenEg20;
+  @Parameter
+  byte pstQueenEg21;
+  @Parameter
+  byte pstQueenEg22;
+  @Parameter
+  byte pstQueenEg23;
+  @Parameter
+  byte pstQueenEg24;
+  @Parameter
+  byte pstQueenEg25;
+  @Parameter
+  byte pstQueenEg26;
+  @Parameter
+  byte pstQueenEg27;
+  @Parameter
+  byte pstQueenEg28;
+  @Parameter
+  byte pstQueenEg29;
+  @Parameter
+  byte pstQueenEg30;
+  @Parameter
+  byte pstQueenEg31;
+  @Parameter
+  byte pstQueenEg32;
+  @Parameter
+  byte pstQueenEg33;
+  @Parameter
+  byte pstQueenEg34;
+  @Parameter
+  byte pstQueenEg35;
+  @Parameter
+  byte pstQueenEg36;
+  @Parameter
+  byte pstQueenEg37;
+  @Parameter
+  byte pstQueenEg38;
+  @Parameter
+  byte pstQueenEg39;
+  @Parameter
+  byte pstQueenEg40;
+  @Parameter
+  byte pstQueenEg41;
+  @Parameter
+  byte pstQueenEg42;
+  @Parameter
+  byte pstQueenEg43;
+  @Parameter
+  byte pstQueenEg44;
+  @Parameter
+  byte pstQueenEg45;
+  @Parameter
+  byte pstQueenEg46;
+  @Parameter
+  byte pstQueenEg47;
+  @Parameter
+  byte pstQueenEg48;
+  @Parameter
+  byte pstQueenEg49;
+  @Parameter
+  byte pstQueenEg50;
+  @Parameter
+  byte pstQueenEg51;
+  @Parameter
+  byte pstQueenEg52;
+  @Parameter
+  byte pstQueenEg53;
+  @Parameter
+  byte pstQueenEg54;
+  @Parameter
+  byte pstQueenEg55;
+  @Parameter
+  byte pstQueenEg56;
+  @Parameter
+  byte pstQueenEg57;
+  @Parameter
+  byte pstQueenEg58;
+  @Parameter
+  byte pstQueenEg59;
+  @Parameter
+  byte pstQueenEg60;
+  @Parameter
+  byte pstQueenEg61;
+  @Parameter
+  byte pstQueenEg62;
+  @Parameter
+  byte pstQueenEg63;
 
   @Parameter
   byte pstKingMg0;
@@ -824,6 +1467,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstKingEg3;
   @Parameter
+  byte pstKingEg4;
+  @Parameter
+  byte pstKingEg5;
+  @Parameter
+  byte pstKingEg6;
+  @Parameter
+  byte pstKingEg7;
+  @Parameter
   byte pstKingEg8;
   @Parameter
   byte pstKingEg9;
@@ -831,6 +1482,14 @@ class DetroidParameters extends EngineParameters {
   byte pstKingEg10;
   @Parameter
   byte pstKingEg11;
+  @Parameter
+  byte pstKingEg12;
+  @Parameter
+  byte pstKingEg13;
+  @Parameter
+  byte pstKingEg14;
+  @Parameter
+  byte pstKingEg15;
   @Parameter
   byte pstKingEg16;
   @Parameter
@@ -840,6 +1499,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstKingEg19;
   @Parameter
+  byte pstKingEg20;
+  @Parameter
+  byte pstKingEg21;
+  @Parameter
+  byte pstKingEg22;
+  @Parameter
+  byte pstKingEg23;
+  @Parameter
   byte pstKingEg24;
   @Parameter
   byte pstKingEg25;
@@ -847,6 +1514,14 @@ class DetroidParameters extends EngineParameters {
   byte pstKingEg26;
   @Parameter
   byte pstKingEg27;
+  @Parameter
+  byte pstKingEg28;
+  @Parameter
+  byte pstKingEg29;
+  @Parameter
+  byte pstKingEg30;
+  @Parameter
+  byte pstKingEg31;
   @Parameter
   byte pstKingEg32;
   @Parameter
@@ -856,6 +1531,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstKingEg35;
   @Parameter
+  byte pstKingEg36;
+  @Parameter
+  byte pstKingEg37;
+  @Parameter
+  byte pstKingEg38;
+  @Parameter
+  byte pstKingEg39;
+  @Parameter
   byte pstKingEg40;
   @Parameter
   byte pstKingEg41;
@@ -863,6 +1546,14 @@ class DetroidParameters extends EngineParameters {
   byte pstKingEg42;
   @Parameter
   byte pstKingEg43;
+  @Parameter
+  byte pstKingEg44;
+  @Parameter
+  byte pstKingEg45;
+  @Parameter
+  byte pstKingEg46;
+  @Parameter
+  byte pstKingEg47;
   @Parameter
   byte pstKingEg48;
   @Parameter
@@ -872,6 +1563,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   byte pstKingEg51;
   @Parameter
+  byte pstKingEg52;
+  @Parameter
+  byte pstKingEg53;
+  @Parameter
+  byte pstKingEg54;
+  @Parameter
+  byte pstKingEg55;
+  @Parameter
   byte pstKingEg56;
   @Parameter
   byte pstKingEg57;
@@ -879,6 +1578,146 @@ class DetroidParameters extends EngineParameters {
   byte pstKingEg58;
   @Parameter
   byte pstKingEg59;
+  @Parameter
+  byte pstKingEg60;
+  @Parameter
+  byte pstKingEg61;
+  @Parameter
+  byte pstKingEg62;
+  @Parameter
+  byte pstKingEg63;
+
+  static final String[] PST_PAWN_MG_PARAM_NAMES = new String[]{
+      null, null, null, null, null, null, null, null,
+      "pstPawnMg8", "pstPawnMg9", "pstPawnMg10", "pstPawnMg11", "pstPawnMg12", "pstPawnMg13", "pstPawnMg14", "pstPawnMg15",
+      "pstPawnMg16", "pstPawnMg17", "pstPawnMg18", "pstPawnMg19", "pstPawnMg20", "pstPawnMg21", "pstPawnMg22", "pstPawnMg23",
+      "pstPawnMg24", "pstPawnMg25", "pstPawnMg26", "pstPawnMg27", "pstPawnMg28", "pstPawnMg29", "pstPawnMg30", "pstPawnMg31",
+      "pstPawnMg32", "pstPawnMg33", "pstPawnMg34", "pstPawnMg35", "pstPawnMg36", "pstPawnMg37", "pstPawnMg38", "pstPawnMg39",
+      "pstPawnMg40", "pstPawnMg41", "pstPawnMg42", "pstPawnMg43", "pstPawnMg44", "pstPawnMg45", "pstPawnMg46", "pstPawnMg47",
+      "pstPawnMg48", "pstPawnMg49", "pstPawnMg50", "pstPawnMg51", "pstPawnMg52", "pstPawnMg53", "pstPawnMg54", "pstPawnMg55",
+      null, null, null, null, null, null, null, null
+  };
+
+  static final String[] PST_PAWN_EG_PARAM_NAMES = new String[]{
+      null, null, null, null, null, null, null, null,
+      "pstPawnEg8", "pstPawnEg9", "pstPawnEg10", "pstPawnEg11", "pstPawnEg11", "pstPawnEg10", "pstPawnEg9", "pstPawnEg8",
+      "pstPawnEg16", "pstPawnEg17", "pstPawnEg18", "pstPawnEg19", "pstPawnEg19", "pstPawnEg18", "pstPawnEg17", "pstPawnEg16",
+      "pstPawnEg24", "pstPawnEg25", "pstPawnEg26", "pstPawnEg27", "pstPawnEg27", "pstPawnEg26", "pstPawnEg25", "pstPawnEg24",
+      "pstPawnEg32", "pstPawnEg33", "pstPawnEg34", "pstPawnEg35", "pstPawnEg35", "pstPawnEg34", "pstPawnEg33", "pstPawnEg32",
+      "pstPawnEg40", "pstPawnEg41", "pstPawnEg42", "pstPawnEg43", "pstPawnEg43", "pstPawnEg42", "pstPawnEg41", "pstPawnEg40",
+      "pstPawnEg48", "pstPawnEg49", "pstPawnEg50", "pstPawnEg51", "pstPawnEg51", "pstPawnEg50", "pstPawnEg49", "pstPawnEg48",
+      null, null, null, null, null, null, null, null
+  };
+
+  static final String[] PST_KNIGHT_MG_PARAM_NAMES =  new String[]{
+      "pstKnightMg0", "pstKnightMg1", "pstKnightMg2", "pstKnightMg3", "pstKnightMg4", "pstKnightMg5", "pstKnightMg6", "pstKnightMg7",
+      "pstKnightMg8", "pstKnightMg9", "pstKnightMg10", "pstKnightMg11", "pstKnightMg12", "pstKnightMg13", "pstKnightMg14", "pstKnightMg15",
+      "pstKnightMg16", "pstKnightMg17", "pstKnightMg18", "pstKnightMg19", "pstKnightMg20", "pstKnightMg21", "pstKnightMg22", "pstKnightMg23",
+      "pstKnightMg24", "pstKnightMg25", "pstKnightMg26", "pstKnightMg27", "pstKnightMg28", "pstKnightMg29", "pstKnightMg30", "pstKnightMg31",
+      "pstKnightMg32", "pstKnightMg33", "pstKnightMg34", "pstKnightMg35", "pstKnightMg36", "pstKnightMg37", "pstKnightMg38", "pstKnightMg39",
+      "pstKnightMg40", "pstKnightMg41", "pstKnightMg42", "pstKnightMg43", "pstKnightMg44", "pstKnightMg45", "pstKnightMg46", "pstKnightMg47",
+      "pstKnightMg48", "pstKnightMg49", "pstKnightMg50", "pstKnightMg51", "pstKnightMg52", "pstKnightMg53", "pstKnightMg54", "pstKnightMg55",
+      "pstKnightMg56", "pstKnightMg57", "pstKnightMg58", "pstKnightMg59", "pstKnightMg60", "pstKnightMg61", "pstKnightMg62", "pstKnightMg63"
+  };
+
+  static final String[] PST_KNIGHT_EG_PARAM_NAMES =  new String[]{
+      "pstKnightEg0", "pstKnightEg1", "pstKnightEg2", "pstKnightEg3", "pstKnightEg4", "pstKnightEg5", "pstKnightEg6", "pstKnightEg7",
+      "pstKnightEg8", "pstKnightEg9", "pstKnightEg10", "pstKnightEg11", "pstKnightEg12", "pstKnightEg13", "pstKnightEg14", "pstKnightEg15",
+      "pstKnightEg16", "pstKnightEg17", "pstKnightEg18", "pstKnightEg19", "pstKnightEg20", "pstKnightEg21", "pstKnightEg22", "pstKnightEg23",
+      "pstKnightEg24", "pstKnightEg25", "pstKnightEg26", "pstKnightEg27", "pstKnightEg28", "pstKnightEg29", "pstKnightEg30", "pstKnightEg31",
+      "pstKnightEg32", "pstKnightEg33", "pstKnightEg34", "pstKnightEg35", "pstKnightEg36", "pstKnightEg37", "pstKnightEg38", "pstKnightEg39",
+      "pstKnightEg40", "pstKnightEg41", "pstKnightEg42", "pstKnightEg43", "pstKnightEg44", "pstKnightEg45", "pstKnightEg46", "pstKnightEg47",
+      "pstKnightEg48", "pstKnightEg49", "pstKnightEg50", "pstKnightEg51", "pstKnightEg52", "pstKnightEg53", "pstKnightEg54", "pstKnightEg55",
+      "pstKnightEg56", "pstKnightEg57", "pstKnightEg58", "pstKnightEg59", "pstKnightEg60", "pstKnightEg61", "pstKnightEg62", "pstKnightEg63"
+  };
+
+  static final String[] PST_BISHOP_MG_PARAM_NAMES =  new String[]{
+      "pstBishopMg0", "pstBishopMg1", "pstBishopMg2", "pstBishopMg3", "pstBishopMg4", "pstBishopMg5", "pstBishopMg6", "pstBishopMg7",
+      "pstBishopMg8", "pstBishopMg9", "pstBishopMg10", "pstBishopMg11", "pstBishopMg12", "pstBishopMg13", "pstBishopMg14", "pstBishopMg15",
+      "pstBishopMg16", "pstBishopMg17", "pstBishopMg18", "pstBishopMg19", "pstBishopMg20", "pstBishopMg21", "pstBishopMg22", "pstBishopMg23",
+      "pstBishopMg24", "pstBishopMg25", "pstBishopMg26", "pstBishopMg27", "pstBishopMg28", "pstBishopMg29", "pstBishopMg30", "pstBishopMg31",
+      "pstBishopMg32", "pstBishopMg33", "pstBishopMg34", "pstBishopMg35", "pstBishopMg36", "pstBishopMg37", "pstBishopMg38", "pstBishopMg39",
+      "pstBishopMg40", "pstBishopMg41", "pstBishopMg42", "pstBishopMg43", "pstBishopMg44", "pstBishopMg45", "pstBishopMg46", "pstBishopMg47",
+      "pstBishopMg48", "pstBishopMg49", "pstBishopMg50", "pstBishopMg51", "pstBishopMg52", "pstBishopMg53", "pstBishopMg54", "pstBishopMg55",
+      "pstBishopMg56", "pstBishopMg57", "pstBishopMg58", "pstBishopMg59", "pstBishopMg60", "pstBishopMg61", "pstBishopMg62", "pstBishopMg63"
+  };
+
+  static final String[] PST_BISHOP_EG_PARAM_NAMES =  new String[]{
+      "pstBishopEg0", "pstBishopEg1", "pstBishopEg2", "pstBishopEg3", "pstBishopEg4", "pstBishopEg5", "pstBishopEg6", "pstBishopEg7",
+      "pstBishopEg8", "pstBishopEg9", "pstBishopEg10", "pstBishopEg11", "pstBishopEg12", "pstBishopEg13", "pstBishopEg14", "pstBishopEg15",
+      "pstBishopEg16", "pstBishopEg17", "pstBishopEg18", "pstBishopEg19", "pstBishopEg20", "pstBishopEg21", "pstBishopEg22", "pstBishopEg23",
+      "pstBishopEg24", "pstBishopEg25", "pstBishopEg26", "pstBishopEg27", "pstBishopEg28", "pstBishopEg29", "pstBishopEg30", "pstBishopEg31",
+      "pstBishopEg32", "pstBishopEg33", "pstBishopEg34", "pstBishopEg35", "pstBishopEg36", "pstBishopEg37", "pstBishopEg38", "pstBishopEg39",
+      "pstBishopEg40", "pstBishopEg41", "pstBishopEg42", "pstBishopEg43", "pstBishopEg44", "pstBishopEg45", "pstBishopEg46", "pstBishopEg47",
+      "pstBishopEg48", "pstBishopEg49", "pstBishopEg50", "pstBishopEg51", "pstBishopEg52", "pstBishopEg53", "pstBishopEg54", "pstBishopEg55",
+      "pstBishopEg56", "pstBishopEg57", "pstBishopEg58", "pstBishopEg59", "pstBishopEg60", "pstBishopEg61", "pstBishopEg62", "pstBishopEg63"
+  };
+
+  static final String[] PST_ROOK_MG_PARAM_NAMES =  new String[]{
+      "pstRookMg0", "pstRookMg1", "pstRookMg2", "pstRookMg3", "pstRookMg4", "pstRookMg5", "pstRookMg6", "pstRookMg7",
+      "pstRookMg8", "pstRookMg9", "pstRookMg10", "pstRookMg11", "pstRookMg12", "pstRookMg13", "pstRookMg14", "pstRookMg15",
+      "pstRookMg16", "pstRookMg17", "pstRookMg18", "pstRookMg19", "pstRookMg20", "pstRookMg21", "pstRookMg22", "pstRookMg23",
+      "pstRookMg24", "pstRookMg25", "pstRookMg26", "pstRookMg27", "pstRookMg28", "pstRookMg29", "pstRookMg30", "pstRookMg31",
+      "pstRookMg32", "pstRookMg33", "pstRookMg34", "pstRookMg35", "pstRookMg36", "pstRookMg37", "pstRookMg38", "pstRookMg39",
+      "pstRookMg40", "pstRookMg41", "pstRookMg42", "pstRookMg43", "pstRookMg44", "pstRookMg45", "pstRookMg46", "pstRookMg47",
+      "pstRookMg48", "pstRookMg49", "pstRookMg50", "pstRookMg51", "pstRookMg52", "pstRookMg53", "pstRookMg54", "pstRookMg55",
+      "pstRookMg56", "pstRookMg57", "pstRookMg58", "pstRookMg59", "pstRookMg60", "pstRookMg61", "pstRookMg62", "pstRookMg63"
+  };
+
+  static final String[] PST_ROOK_EG_PARAM_NAMES =  new String[]{
+      "pstRookEg0", "pstRookEg1", "pstRookEg2", "pstRookEg3", "pstRookEg4", "pstRookEg5", "pstRookEg6", "pstRookEg7",
+      "pstRookEg8", "pstRookEg9", "pstRookEg10", "pstRookEg11", "pstRookEg12", "pstRookEg13", "pstRookEg14", "pstRookEg15",
+      "pstRookEg16", "pstRookEg17", "pstRookEg18", "pstRookEg19", "pstRookEg20", "pstRookEg21", "pstRookEg22", "pstRookEg23",
+      "pstRookEg24", "pstRookEg25", "pstRookEg26", "pstRookEg27", "pstRookEg28", "pstRookEg29", "pstRookEg30", "pstRookEg31",
+      "pstRookEg32", "pstRookEg33", "pstRookEg34", "pstRookEg35", "pstRookEg36", "pstRookEg37", "pstRookEg38", "pstRookEg39",
+      "pstRookEg40", "pstRookEg41", "pstRookEg42", "pstRookEg43", "pstRookEg44", "pstRookEg45", "pstRookEg46", "pstRookEg47",
+      "pstRookEg48", "pstRookEg49", "pstRookEg50", "pstRookEg51", "pstRookEg52", "pstRookEg53", "pstRookEg54", "pstRookEg55",
+      "pstRookEg56", "pstRookEg57", "pstRookEg58", "pstRookEg59", "pstRookEg60", "pstRookEg61", "pstRookEg62", "pstRookEg63"
+  };
+
+  static final String[] PST_QUEEN_MG_PARAM_NAMES = new String[]{
+      "pstQueenMg0", "pstQueenMg1", "pstQueenMg2", "pstQueenMg3", "pstQueenMg4", "pstQueenMg5", "pstQueenMg6", "pstQueenMg7",
+      "pstQueenMg8", "pstQueenMg9", "pstQueenMg10", "pstQueenMg11", "pstQueenMg12", "pstQueenMg13", "pstQueenMg14", "pstQueenMg15",
+      "pstQueenMg16", "pstQueenMg17", "pstQueenMg18", "pstQueenMg19", "pstQueenMg20", "pstQueenMg21", "pstQueenMg22", "pstQueenMg23",
+      "pstQueenMg24", "pstQueenMg25", "pstQueenMg26", "pstQueenMg27", "pstQueenMg28", "pstQueenMg29", "pstQueenMg30", "pstQueenMg31",
+      "pstQueenMg32", "pstQueenMg33", "pstQueenMg34", "pstQueenMg35", "pstQueenMg36", "pstQueenMg37", "pstQueenMg38", "pstQueenMg39",
+      "pstQueenMg40", "pstQueenMg41", "pstQueenMg42", "pstQueenMg43", "pstQueenMg44", "pstQueenMg45", "pstQueenMg46", "pstQueenMg47",
+      "pstQueenMg48", "pstQueenMg49", "pstQueenMg50", "pstQueenMg51", "pstQueenMg52", "pstQueenMg53", "pstQueenMg54", "pstQueenMg55",
+      "pstQueenMg56", "pstQueenMg57", "pstQueenMg58", "pstQueenMg59", "pstQueenMg60", "pstQueenMg61", "pstQueenMg62", "pstQueenMg63"
+  };
+
+  static final String[] PST_QUEEN_EG_PARAM_NAMES = new String[]{
+      "pstQueenEg0", "pstQueenEg1", "pstQueenEg2", "pstQueenEg3", "pstQueenEg4", "pstQueenEg5", "pstQueenEg6", "pstQueenEg7",
+      "pstQueenEg8", "pstQueenEg9", "pstQueenEg10", "pstQueenEg11", "pstQueenEg12", "pstQueenEg13", "pstQueenEg14", "pstQueenEg15",
+      "pstQueenEg16", "pstQueenEg17", "pstQueenEg18", "pstQueenEg19", "pstQueenEg20", "pstQueenEg21", "pstQueenEg22", "pstQueenEg23",
+      "pstQueenEg24", "pstQueenEg25", "pstQueenEg26", "pstQueenEg27", "pstQueenEg28", "pstQueenEg29", "pstQueenEg30", "pstQueenEg31",
+      "pstQueenEg32", "pstQueenEg33", "pstQueenEg34", "pstQueenEg35", "pstQueenEg36", "pstQueenEg37", "pstQueenEg38", "pstQueenEg39",
+      "pstQueenEg40", "pstQueenEg41", "pstQueenEg42", "pstQueenEg43", "pstQueenEg44", "pstQueenEg45", "pstQueenEg46", "pstQueenEg47",
+      "pstQueenEg48", "pstQueenEg49", "pstQueenEg50", "pstQueenEg51", "pstQueenEg52", "pstQueenEg53", "pstQueenEg54", "pstQueenEg55",
+      "pstQueenEg56", "pstQueenEg57", "pstQueenEg58", "pstQueenEg59", "pstQueenEg60", "pstQueenEg61", "pstQueenEg62", "pstQueenEg63"
+  };
+
+  static final String[] PST_KING_MG_PARAM_NAMES =  new String[]{
+      "pstKingMg0", "pstKingMg1", "pstKingMg2", "pstKingMg3", "pstKingMg4", "pstKingMg5", "pstKingMg6", "pstKingMg7",
+      "pstKingMg8", "pstKingMg9", "pstKingMg10", "pstKingMg11", "pstKingMg12", "pstKingMg13", "pstKingMg14", "pstKingMg15",
+      "pstKingMg16", "pstKingMg17", "pstKingMg18", "pstKingMg19", "pstKingMg20", "pstKingMg21", "pstKingMg22", "pstKingMg23",
+      "pstKingMg24", "pstKingMg25", "pstKingMg26", "pstKingMg27", "pstKingMg28", "pstKingMg29", "pstKingMg30", "pstKingMg31",
+      "pstKingMg32", "pstKingMg33", "pstKingMg34", "pstKingMg35", "pstKingMg36", "pstKingMg37", "pstKingMg38", "pstKingMg39",
+      "pstKingMg40", "pstKingMg41", "pstKingMg42", "pstKingMg43", "pstKingMg44", "pstKingMg45", "pstKingMg46", "pstKingMg47",
+      "pstKingMg48", "pstKingMg49", "pstKingMg50", "pstKingMg51", "pstKingMg52", "pstKingMg53", "pstKingMg54", "pstKingMg55",
+      "pstKingMg56", "pstKingMg57", "pstKingMg58", "pstKingMg59", "pstKingMg60", "pstKingMg61", "pstKingMg62", "pstKingMg63"
+  };
+
+  static final String[] PST_KING_EG_PARAM_NAMES =  new String[]{
+      "pstKingEg0", "pstKingEg1", "pstKingEg2", "pstKingEg3", "pstKingEg4", "pstKingEg5", "pstKingEg6", "pstKingEg7",
+      "pstKingEg8", "pstKingEg9", "pstKingEg10", "pstKingEg11", "pstKingEg12", "pstKingEg13", "pstKingEg14", "pstKingEg15",
+      "pstKingEg16", "pstKingEg17", "pstKingEg18", "pstKingEg19", "pstKingEg20", "pstKingEg21", "pstKingEg22", "pstKingEg23",
+      "pstKingEg24", "pstKingEg25", "pstKingEg26", "pstKingEg27", "pstKingEg28", "pstKingEg29", "pstKingEg30", "pstKingEg31",
+      "pstKingEg32", "pstKingEg33", "pstKingEg34", "pstKingEg35", "pstKingEg36", "pstKingEg37", "pstKingEg38", "pstKingEg39",
+      "pstKingEg40", "pstKingEg41", "pstKingEg42", "pstKingEg43", "pstKingEg44", "pstKingEg45", "pstKingEg46", "pstKingEg47",
+      "pstKingEg48", "pstKingEg49", "pstKingEg50", "pstKingEg51", "pstKingEg52", "pstKingEg53", "pstKingEg54", "pstKingEg55",
+      "pstKingEg56", "pstKingEg57", "pstKingEg58", "pstKingEg59", "pstKingEg60", "pstKingEg61", "pstKingEg62", "pstKingEg63"
+  };
 
   /**
    * Constructs an uninitialized instance.
@@ -915,29 +1754,55 @@ class DetroidParameters extends EngineParameters {
     };
   }
 
-  byte[] getPstKnight() {
+  byte[] getPstKnightMg() {
     return new byte[]{
-        pstKnight0, pstKnight1, pstKnight2, pstKnight3, pstKnight3, pstKnight2, pstKnight1, pstKnight0,
-        pstKnight8, pstKnight9, pstKnight10, pstKnight11, pstKnight11, pstKnight10, pstKnight9, pstKnight8,
-        pstKnight16, pstKnight17, pstKnight18, pstKnight19, pstKnight19, pstKnight18, pstKnight17, pstKnight16,
-        pstKnight24, pstKnight25, pstKnight26, pstKnight27, pstKnight27, pstKnight26, pstKnight25, pstKnight24,
-        pstKnight32, pstKnight33, pstKnight34, pstKnight35, pstKnight35, pstKnight34, pstKnight33, pstKnight32,
-        pstKnight40, pstKnight41, pstKnight42, pstKnight43, pstKnight43, pstKnight42, pstKnight41, pstKnight40,
-        pstKnight48, pstKnight49, pstKnight50, pstKnight51, pstKnight51, pstKnight50, pstKnight49, pstKnight48,
-        pstKnight56, pstKnight57, pstKnight58, pstKnight59, pstKnight59, pstKnight58, pstKnight57, pstKnight56
+        pstKnightMg0, pstKnightMg1, pstKnightMg2, pstKnightMg3, pstKnightMg4, pstKnightMg5, pstKnightMg6, pstKnightMg7,
+        pstKnightMg8, pstKnightMg9, pstKnightMg10, pstKnightMg11, pstKnightMg12, pstKnightMg13, pstKnightMg14, pstKnightMg15,
+        pstKnightMg16, pstKnightMg17, pstKnightMg18, pstKnightMg19, pstKnightMg20, pstKnightMg21, pstKnightMg22, pstKnightMg23,
+        pstKnightMg24, pstKnightMg25, pstKnightMg26, pstKnightMg27, pstKnightMg28, pstKnightMg29, pstKnightMg30, pstKnightMg31,
+        pstKnightMg32, pstKnightMg33, pstKnightMg34, pstKnightMg35, pstKnightMg36, pstKnightMg37, pstKnightMg38, pstKnightMg39,
+        pstKnightMg40, pstKnightMg41, pstKnightMg42, pstKnightMg43, pstKnightMg44, pstKnightMg45, pstKnightMg46, pstKnightMg47,
+        pstKnightMg48, pstKnightMg49, pstKnightMg50, pstKnightMg51, pstKnightMg52, pstKnightMg53, pstKnightMg54, pstKnightMg55,
+        pstKnightMg56, pstKnightMg57, pstKnightMg58, pstKnightMg59, pstKnightMg60, pstKnightMg61, pstKnightMg62, pstKnightMg63
     };
   }
 
-  byte[] getPstBishop() {
+  byte[] getPstKnightEg() {
     return new byte[]{
-        pstBishop0, pstBishop1, pstBishop2, pstBishop3, pstBishop3, pstBishop2, pstBishop1, pstBishop0,
-        pstBishop8, pstBishop9, pstBishop10, pstBishop11, pstBishop11, pstBishop10, pstBishop9, pstBishop8,
-        pstBishop16, pstBishop17, pstBishop18, pstBishop19, pstBishop19, pstBishop18, pstBishop17, pstBishop16,
-        pstBishop24, pstBishop25, pstBishop26, pstBishop27, pstBishop27, pstBishop26, pstBishop25, pstBishop24,
-        pstBishop32, pstBishop33, pstBishop34, pstBishop35, pstBishop35, pstBishop34, pstBishop33, pstBishop32,
-        pstBishop40, pstBishop41, pstBishop42, pstBishop43, pstBishop43, pstBishop42, pstBishop41, pstBishop40,
-        pstBishop48, pstBishop49, pstBishop50, pstBishop51, pstBishop51, pstBishop50, pstBishop49, pstBishop48,
-        pstBishop56, pstBishop57, pstBishop58, pstBishop59, pstBishop59, pstBishop58, pstBishop57, pstBishop56
+        pstKnightEg0, pstKnightEg1, pstKnightEg2, pstKnightEg3, pstKnightEg4, pstKnightEg5, pstKnightEg6, pstKnightEg7,
+        pstKnightEg8, pstKnightEg9, pstKnightEg10, pstKnightEg11, pstKnightEg12, pstKnightEg13, pstKnightEg14, pstKnightEg15,
+        pstKnightEg16, pstKnightEg17, pstKnightEg18, pstKnightEg19, pstKnightEg20, pstKnightEg21, pstKnightEg22, pstKnightEg23,
+        pstKnightEg24, pstKnightEg25, pstKnightEg26, pstKnightEg27, pstKnightEg28, pstKnightEg29, pstKnightEg30, pstKnightEg31,
+        pstKnightEg32, pstKnightEg33, pstKnightEg34, pstKnightEg35, pstKnightEg36, pstKnightEg37, pstKnightEg38, pstKnightEg39,
+        pstKnightEg40, pstKnightEg41, pstKnightEg42, pstKnightEg43, pstKnightEg44, pstKnightEg45, pstKnightEg46, pstKnightEg47,
+        pstKnightEg48, pstKnightEg49, pstKnightEg50, pstKnightEg51, pstKnightEg52, pstKnightEg53, pstKnightEg54, pstKnightEg55,
+        pstKnightEg56, pstKnightEg57, pstKnightEg58, pstKnightEg59, pstKnightEg60, pstKnightEg61, pstKnightEg62, pstKnightEg63
+    };
+  }
+
+  byte[] getPstBishopMg() {
+    return new byte[]{
+        pstBishopMg0, pstBishopMg1, pstBishopMg2, pstBishopMg3, pstBishopMg4, pstBishopMg5, pstBishopMg6, pstBishopMg7,
+        pstBishopMg8, pstBishopMg9, pstBishopMg10, pstBishopMg11, pstBishopMg12, pstBishopMg13, pstBishopMg14, pstBishopMg15,
+        pstBishopMg16, pstBishopMg17, pstBishopMg18, pstBishopMg19, pstBishopMg20, pstBishopMg21, pstBishopMg22, pstBishopMg23,
+        pstBishopMg24, pstBishopMg25, pstBishopMg26, pstBishopMg27, pstBishopMg28, pstBishopMg29, pstBishopMg30, pstBishopMg31,
+        pstBishopMg32, pstBishopMg33, pstBishopMg34, pstBishopMg35, pstBishopMg36, pstBishopMg37, pstBishopMg38, pstBishopMg39,
+        pstBishopMg40, pstBishopMg41, pstBishopMg42, pstBishopMg43, pstBishopMg44, pstBishopMg45, pstBishopMg46, pstBishopMg47,
+        pstBishopMg48, pstBishopMg49, pstBishopMg50, pstBishopMg51, pstBishopMg52, pstBishopMg53, pstBishopMg54, pstBishopMg55,
+        pstBishopMg56, pstBishopMg57, pstBishopMg58, pstBishopMg59, pstBishopMg60, pstBishopMg61, pstBishopMg62, pstBishopMg63
+    };
+  }
+
+  byte[] getPstBishopEg() {
+    return new byte[]{
+        pstBishopEg0, pstBishopEg1, pstBishopEg2, pstBishopEg3, pstBishopEg4, pstBishopEg5, pstBishopEg6, pstBishopEg7,
+        pstBishopEg8, pstBishopEg9, pstBishopEg10, pstBishopEg11, pstBishopEg12, pstBishopEg13, pstBishopEg14, pstBishopEg15,
+        pstBishopEg16, pstBishopEg17, pstBishopEg18, pstBishopEg19, pstBishopEg20, pstBishopEg21, pstBishopEg22, pstBishopEg23,
+        pstBishopEg24, pstBishopEg25, pstBishopEg26, pstBishopEg27, pstBishopEg28, pstBishopEg29, pstBishopEg30, pstBishopEg31,
+        pstBishopEg32, pstBishopEg33, pstBishopEg34, pstBishopEg35, pstBishopEg36, pstBishopEg37, pstBishopEg38, pstBishopEg39,
+        pstBishopEg40, pstBishopEg41, pstBishopEg42, pstBishopEg43, pstBishopEg44, pstBishopEg45, pstBishopEg46, pstBishopEg47,
+        pstBishopEg48, pstBishopEg49, pstBishopEg50, pstBishopEg51, pstBishopEg52, pstBishopEg53, pstBishopEg54, pstBishopEg55,
+        pstBishopEg56, pstBishopEg57, pstBishopEg58, pstBishopEg59, pstBishopEg60, pstBishopEg61, pstBishopEg62, pstBishopEg63
     };
   }
 
@@ -956,27 +1821,40 @@ class DetroidParameters extends EngineParameters {
 
   byte[] getPstRookEg() {
     return new byte[]{
-        pstRookEg0, pstRookEg1, pstRookEg2, pstRookEg3, pstRookEg3, pstRookEg2, pstRookEg1, pstRookEg0,
-        pstRookEg8, pstRookEg9, pstRookEg10, pstRookEg11, pstRookEg11, pstRookEg10, pstRookEg9, pstRookEg8,
-        pstRookEg16, pstRookEg17, pstRookEg18, pstRookEg19, pstRookEg19, pstRookEg18, pstRookEg17, pstRookEg16,
-        pstRookEg24, pstRookEg25, pstRookEg26, pstRookEg27, pstRookEg27, pstRookEg26, pstRookEg25, pstRookEg24,
-        pstRookEg32, pstRookEg33, pstRookEg34, pstRookEg35, pstRookEg35, pstRookEg34, pstRookEg33, pstRookEg32,
-        pstRookEg40, pstRookEg41, pstRookEg42, pstRookEg43, pstRookEg43, pstRookEg42, pstRookEg41, pstRookEg40,
-        pstRookEg48, pstRookEg49, pstRookEg50, pstRookEg51, pstRookEg51, pstRookEg50, pstRookEg49, pstRookEg48,
-        pstRookEg56, pstRookEg57, pstRookEg58, pstRookEg59, pstRookEg59, pstRookEg58, pstRookEg57, pstRookEg56
+        pstRookEg0, pstRookEg1, pstRookEg2, pstRookEg3, pstRookEg4, pstRookEg5, pstRookEg6, pstRookEg7,
+        pstRookEg8, pstRookEg9, pstRookEg10, pstRookEg11, pstRookEg12, pstRookEg13, pstRookEg14, pstRookEg15,
+        pstRookEg16, pstRookEg17, pstRookEg18, pstRookEg19, pstRookEg20, pstRookEg21, pstRookEg22, pstRookEg23,
+        pstRookEg24, pstRookEg25, pstRookEg26, pstRookEg27, pstRookEg28, pstRookEg29, pstRookEg30, pstRookEg31,
+        pstRookEg32, pstRookEg33, pstRookEg34, pstRookEg35, pstRookEg36, pstRookEg37, pstRookEg38, pstRookEg39,
+        pstRookEg40, pstRookEg41, pstRookEg42, pstRookEg43, pstRookEg44, pstRookEg45, pstRookEg46, pstRookEg47,
+        pstRookEg48, pstRookEg49, pstRookEg50, pstRookEg51, pstRookEg52, pstRookEg53, pstRookEg54, pstRookEg55,
+        pstRookEg56, pstRookEg57, pstRookEg58, pstRookEg59, pstRookEg60, pstRookEg61, pstRookEg62, pstRookEg63
     };
   }
 
-  byte[] getPstQueen() {
+  byte[] getPstQueenMg() {
     return new byte[]{
-        pstQueen0, pstQueen1, pstQueen2, pstQueen3, pstQueen3, pstQueen2, pstQueen1, pstQueen0,
-        pstQueen8, pstQueen9, pstQueen10, pstQueen11, pstQueen11, pstQueen10, pstQueen9, pstQueen8,
-        pstQueen16, pstQueen17, pstQueen18, pstQueen19, pstQueen19, pstQueen18, pstQueen17, pstQueen16,
-        pstQueen24, pstQueen25, pstQueen26, pstQueen27, pstQueen27, pstQueen26, pstQueen25, pstQueen24,
-        pstQueen32, pstQueen33, pstQueen34, pstQueen35, pstQueen35, pstQueen34, pstQueen33, pstQueen32,
-        pstQueen40, pstQueen41, pstQueen42, pstQueen43, pstQueen43, pstQueen42, pstQueen41, pstQueen40,
-        pstQueen48, pstQueen49, pstQueen50, pstQueen51, pstQueen51, pstQueen50, pstQueen49, pstQueen48,
-        pstQueen56, pstQueen57, pstQueen58, pstQueen59, pstQueen59, pstQueen58, pstQueen57, pstQueen56
+        pstQueenMg0, pstQueenMg1, pstQueenMg2, pstQueenMg3, pstQueenMg4, pstQueenMg5, pstQueenMg6, pstQueenMg7,
+        pstQueenMg8, pstQueenMg9, pstQueenMg10, pstQueenMg11, pstQueenMg12, pstQueenMg13, pstQueenMg14, pstQueenMg15,
+        pstQueenMg16, pstQueenMg17, pstQueenMg18, pstQueenMg19, pstQueenMg20, pstQueenMg21, pstQueenMg22, pstQueenMg23,
+        pstQueenMg24, pstQueenMg25, pstQueenMg26, pstQueenMg27, pstQueenMg28, pstQueenMg29, pstQueenMg30, pstQueenMg31,
+        pstQueenMg32, pstQueenMg33, pstQueenMg34, pstQueenMg35, pstQueenMg36, pstQueenMg37, pstQueenMg38, pstQueenMg39,
+        pstQueenMg40, pstQueenMg41, pstQueenMg42, pstQueenMg43, pstQueenMg44, pstQueenMg45, pstQueenMg46, pstQueenMg47,
+        pstQueenMg48, pstQueenMg49, pstQueenMg50, pstQueenMg51, pstQueenMg52, pstQueenMg53, pstQueenMg54, pstQueenMg55,
+        pstQueenMg56, pstQueenMg57, pstQueenMg58, pstQueenMg59, pstQueenMg60, pstQueenMg61, pstQueenMg62, pstQueenMg63
+    };
+  }
+
+  byte[] getPstQueenEg() {
+    return new byte[]{
+        pstQueenEg0, pstQueenEg1, pstQueenEg2, pstQueenEg3, pstQueenEg4, pstQueenEg5, pstQueenEg6, pstQueenEg7,
+        pstQueenEg8, pstQueenEg9, pstQueenEg10, pstQueenEg11, pstQueenEg12, pstQueenEg13, pstQueenEg14, pstQueenEg15,
+        pstQueenEg16, pstQueenEg17, pstQueenEg18, pstQueenEg19, pstQueenEg20, pstQueenEg21, pstQueenEg22, pstQueenEg23,
+        pstQueenEg24, pstQueenEg25, pstQueenEg26, pstQueenEg27, pstQueenEg28, pstQueenEg29, pstQueenEg30, pstQueenEg31,
+        pstQueenEg32, pstQueenEg33, pstQueenEg34, pstQueenEg35, pstQueenEg36, pstQueenEg37, pstQueenEg38, pstQueenEg39,
+        pstQueenEg40, pstQueenEg41, pstQueenEg42, pstQueenEg43, pstQueenEg44, pstQueenEg45, pstQueenEg46, pstQueenEg47,
+        pstQueenEg48, pstQueenEg49, pstQueenEg50, pstQueenEg51, pstQueenEg52, pstQueenEg53, pstQueenEg54, pstQueenEg55,
+        pstQueenEg56, pstQueenEg57, pstQueenEg58, pstQueenEg59, pstQueenEg60, pstQueenEg61, pstQueenEg62, pstQueenEg63
     };
   }
 
@@ -995,14 +1873,14 @@ class DetroidParameters extends EngineParameters {
 
   byte[] getPstKingEg() {
     return new byte[]{
-        pstKingEg0, pstKingEg1, pstKingEg2, pstKingEg3, pstKingEg3, pstKingEg2, pstKingEg1, pstKingEg0,
-        pstKingEg8, pstKingEg9, pstKingEg10, pstKingEg11, pstKingEg11, pstKingEg10, pstKingEg9, pstKingEg8,
-        pstKingEg16, pstKingEg17, pstKingEg18, pstKingEg19, pstKingEg19, pstKingEg18, pstKingEg17, pstKingEg16,
-        pstKingEg24, pstKingEg25, pstKingEg26, pstKingEg27, pstKingEg27, pstKingEg26, pstKingEg25, pstKingEg24,
-        pstKingEg32, pstKingEg33, pstKingEg34, pstKingEg35, pstKingEg35, pstKingEg34, pstKingEg33, pstKingEg32,
-        pstKingEg40, pstKingEg41, pstKingEg42, pstKingEg43, pstKingEg43, pstKingEg42, pstKingEg41, pstKingEg40,
-        pstKingEg48, pstKingEg49, pstKingEg50, pstKingEg51, pstKingEg51, pstKingEg50, pstKingEg49, pstKingEg48,
-        pstKingEg56, pstKingEg57, pstKingEg58, pstKingEg59, pstKingEg59, pstKingEg58, pstKingEg57, pstKingEg56
+        pstKingEg0, pstKingEg1, pstKingEg2, pstKingEg3, pstKingEg4, pstKingEg5, pstKingEg6, pstKingEg7,
+        pstKingEg8, pstKingEg9, pstKingEg10, pstKingEg11, pstKingEg12, pstKingEg13, pstKingEg14, pstKingEg15,
+        pstKingEg16, pstKingEg17, pstKingEg18, pstKingEg19, pstKingEg20, pstKingEg21, pstKingEg22, pstKingEg23,
+        pstKingEg24, pstKingEg25, pstKingEg26, pstKingEg27, pstKingEg28, pstKingEg29, pstKingEg30, pstKingEg31,
+        pstKingEg32, pstKingEg33, pstKingEg34, pstKingEg35, pstKingEg36, pstKingEg37, pstKingEg38, pstKingEg39,
+        pstKingEg40, pstKingEg41, pstKingEg42, pstKingEg43, pstKingEg44, pstKingEg45, pstKingEg46, pstKingEg47,
+        pstKingEg48, pstKingEg49, pstKingEg50, pstKingEg51, pstKingEg52, pstKingEg53, pstKingEg54, pstKingEg55,
+        pstKingEg56, pstKingEg57, pstKingEg58, pstKingEg59, pstKingEg60, pstKingEg61, pstKingEg62, pstKingEg63
     };
   }
 

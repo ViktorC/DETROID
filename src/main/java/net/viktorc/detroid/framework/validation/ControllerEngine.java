@@ -52,6 +52,13 @@ public interface ControllerEngine extends UCIEngine {
   List<String> getLegalMoves();
 
   /**
+   * Determines whether the current position is quiet, i.e. there are no legal tactical no moves.
+   *
+   * @return Whether the current position is quiet.
+   */
+  boolean isQuiet();
+
+  /**
    * Parses the Portable Game Notation string and sets its internal data structure tracking the state of the game accordingly. It returns
    * whether the game could be successfully set or not.
    *

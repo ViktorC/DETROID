@@ -1,5 +1,6 @@
 package net.viktorc.detroid.framework.tuning;
 
+import java.util.Map;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 
 /**
@@ -25,14 +26,33 @@ public interface TunableEngine extends UCIEngine {
   void notifyParametersChanged();
 
   /**
-   * Sets whether the engine should support deterministic 0-depth search which is a quiescence search without the use of hash tables such as
-   * a transposition table or any other mechanisms that bring non-determinism to the search. A 0-depth search is triggered by calling the
-   * {@link #search(java.util.Set, Boolean, Long, Long, Long, Long, Integer, Integer, Long, Integer, Long, Boolean) search} method with
-   * depth set to 0 and everything else to null while deterministic 0-depth mode is set to true. A 0-depth search is not expected to return
-   * a move, only a score. When in deterministic 0-depth mode, engines should keep their hash size minimal.
+   * Sets whether the engine should support deterministic static evaluation without the use of hash tables  or any other mechanisms that
+   * introduce non-determinism.
    *
-   * @param on Whether the engine should support deterministic 0-depth search.
+   * @param on Whether the engine should support deterministic evaluation mode.
    */
-  void setDeterministicZeroDepthMode(boolean on);
+  void setDeterministicEvaluationMode(boolean on);
+
+  /**
+   * Statically evaluates the current position and records the gradient of the evaluation function w.r.t. the parameters in the provided
+   * map.
+   *
+   * @param gradientCache A map for recording the partial derivatives of the objective evaluation function (where a positive output means
+   * white is in the lead and negative output means black is in the lead) with respect to the static evaluation parameters. The key
+   * should be the name of the parameter and the value should be the derivative. If {@link #isGradientDefined()} returns false, it is null.
+   * @return The static evaluation score of the position.
+   */
+  short eval(Map<String, Double> gradientCache);
+
+  /**
+   * Specifies whether the gradient of the evaluation function is mathematically defined. If it is not, numerical differentiation is
+   * used to approximate the gradient when needed. If it is, the partial derivatives are resolved based on the entries of the
+   * {@code gradientCache} parameter of the {@link #eval(Map)} method.
+   *
+   * @return Whether the symbolic gradient of the evaluation function is defined.
+   */
+  default boolean isGradientDefined() {
+    return true;
+  }
 
 }

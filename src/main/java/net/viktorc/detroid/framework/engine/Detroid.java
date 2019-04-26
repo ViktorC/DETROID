@@ -117,7 +117,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
   private volatile boolean init;
   private volatile boolean debugMode;
   private volatile boolean controllerMode;
-  private volatile boolean deterministicZeroDepthMode;
+  private volatile boolean deterministicEvalMode;
   private volatile boolean stop;
   private volatile boolean ponderHit;
   private volatile boolean newGame;
@@ -134,10 +134,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
     long sizeInBytes = hashSize * 1024L * 1024L;
     SizeEstimator estimator = SizeEstimator.getInstance();
     double transTableShare = ((double) params.transTableShare16th) / 16;
-    transTable = new Cache<>(TTEntry::new,
-        (int) (sizeInBytes * transTableShare / estimator.sizeOf(TTEntry.class)));
-    evalTable = new Cache<>(ETEntry::new,
-        (int) (sizeInBytes * (1d - transTableShare) / estimator.sizeOf(ETEntry.class)));
+    transTable = new Cache<>(TTEntry::new, (int) (sizeInBytes * transTableShare / estimator.sizeOf(TTEntry.class)));
+    evalTable = new Cache<>(ETEntry::new, (int) (sizeInBytes * (1d - transTableShare) / estimator.sizeOf(ETEntry.class)));
+    gen = 0;
     // Prompt for garbage collection.
     System.gc();
     if (debugMode) {
@@ -315,7 +314,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
       debugInfo = new DetroidDebugInfo();
       debugMode = false;
       controllerMode = false;
-      deterministicZeroDepthMode = false;
+      deterministicEvalMode = false;
       ponderHit = false;
       stop = false;
       game = new Game();
@@ -355,8 +354,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
       options.put(uciOpponent, uciOpponent.getDefaultValue().get());
       options.put(uciAnalysis, uciAnalysis.getDefaultValue().get());
       searchInfo = new DetroidSearchInformation();
-      setHashSize(controllerMode || deterministicZeroDepthMode ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
-      eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
+      setHashSize(controllerMode || deterministicEvalMode ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
+      eval = new Evaluator(params, controllerMode || deterministicEvalMode ? null : evalTable);
       executor = Executors.newSingleThreadExecutor();
       init = true;
     }
@@ -391,7 +390,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
           if (MIN_HASH_SIZE <= val && MAX_HASH_SIZE >= val) {
             if (val != (Integer) options.get(hashSize)) {
               setHashSize(val);
-              eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
+              eval = new Evaluator(params, controllerMode || deterministicEvalMode ? null : evalTable);
               options.put(hashSize, value);
             }
             if (debugMode) {
@@ -606,7 +605,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
       newGame = true;
       outOfBook = false;
       movesOutOfBook = 0;
-      if (!controllerMode && !deterministicZeroDepthMode) {
+      if (!controllerMode && !deterministicEvalMode) {
         clearHash();
       }
       if (egtb.isProbingLibLoaded()) {
@@ -644,7 +643,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
           if (!bookMove) {
             movesOutOfBook++;
           }
-          if (!controllerMode && !deterministicZeroDepthMode) {
+          if (!controllerMode && !deterministicEvalMode) {
             if (gen == 127) {
               transTable.clear();
               evalTable.clear();
@@ -712,9 +711,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
       SearchResults results = null;
       boolean analysisMode = (Boolean) options.get(uciAnalysis);
       // Search the book if possible.
-      if (book != null && !deterministicZeroDepthMode && !analysisMode && !outOfBook &&
-          searchMoves == null && (ponder == null || !ponder) && depth == null && nodes == null &&
-          mateDistance == null && searchTime == null && (infinite == null || !infinite) &&
+      if (book != null && !analysisMode && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null &&
+          nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite) &&
           (Boolean) options.get(ownBook)) {
         long bookSearchStart = System.currentTimeMillis();
         search = executor.submit(() -> {
@@ -795,11 +793,10 @@ public class Detroid implements ControllerEngine, TunableEngine {
           if (egtb.isProbingLibLoaded() && egtb.isInit()) {
             egtb.resetStats();
           }
-          int nThreads = deterministicZeroDepthMode ? 1 : (int) options.get(numOfSearchThreads);
-          Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo,
-              nThreads, transTable, gen, analysisMode, doPonder || doInfinite, depth == null ?
-              (mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ?
-              Long.MAX_VALUE : nodes, allowedMoves);
+          Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo, (int) options.get(numOfSearchThreads),
+              transTable, gen, analysisMode, doPonder || doInfinite,
+              depth == null ? (mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth,
+              nodes == null ? Long.MAX_VALUE : nodes, allowedMoves);
           search = gameTreeSearch;
           executor.submit(gameTreeSearch);
           if (debugMode) {
@@ -895,7 +892,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
           }
           return null;
         }
-        if (!deterministicZeroDepthMode && (results == null || results.getBestMove() == null)) {
+        if (results == null || results.getBestMove() == null) {
           results = new SearchResults(getRandomMove(), null, null, null);
         }
       }
@@ -1028,6 +1025,11 @@ public class Detroid implements ControllerEngine, TunableEngine {
   }
 
   @Override
+  public boolean isQuiet() {
+    return game.getPosition().getTacticalMoves().size() == 0;
+  }
+
+  @Override
   public boolean setGame(String pgn) {
     synchronized (lock) {
       try {
@@ -1147,19 +1149,24 @@ public class Detroid implements ControllerEngine, TunableEngine {
   public void notifyParametersChanged() {
     synchronized (lock) {
       if (init) {
-        eval = new Evaluator(params, controllerMode || deterministicZeroDepthMode ? null : evalTable);
+        eval = new Evaluator(params, controllerMode || deterministicEvalMode ? null : evalTable);
       }
     }
   }
 
   @Override
-  public void setDeterministicZeroDepthMode(boolean on) {
+  public void setDeterministicEvaluationMode(boolean on) {
     synchronized (lock) {
-      deterministicZeroDepthMode = on;
+      deterministicEvalMode = on;
       if (init) {
         setHashSize(on ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
       }
     }
+  }
+
+  @Override
+  public short eval(Map<String, Double> gradientCache) {
+    return eval.score(game.getPosition(), gen, new ETEntry(), gradientCache);
   }
 
 }

@@ -13,10 +13,11 @@ import java.util.logging.Logger;
 /**
  * An adaptive stochastic gradient descent implementation for supervised learning. It is based on the Nadam (Nesterov-accelerated adaptive
  * moment estimation) algorithm. It can be employed as a stochastic, mini-batch, or standard batch gradient descent algorithm. There are
- * five abstract methods to implement for its subclasses, {@link #costFunction(double[], List)} which is ideally a differentiable, smooth,
+ * five abstract methods to implement for its subclasses, {@link #computeCost(double[], List)} which is ideally a differentiable, smooth,
  * convex function whose (global) minimum is to be found (if the function is not convex, the algorithm might converge to a local minimum),
- * {@link #getTrainingData(long)} which fetches batches the training data, {@link #resetTrainingDataReader()} which resets the data reader to
- * the beginning of the training data, and {@link #getTestData(long)} and {@link #resetTestDataReader()} which do the same for the test data.
+ * {@link #getTrainingData(long)} which fetches batches the training data, {@link #resetTrainingDataReader()} which resets the data reader
+ * to the beginning of the training data, and {@link #getTestData(long)} and {@link #resetTestDataReader()} which do the same for the test
+ * data.
  *
  * Nadam: <a href="http://cs229.stanford.edu/proj2015/054_report.pdf">http://cs229.stanford.edu/proj2015/054_report.pdf</a>
  *
@@ -197,7 +198,6 @@ public abstract class NadamSGD<E, L> {
         int iterations = 0;
         List<Entry<E, L>> batch;
         while (!(batch = getTrainingData(trainingBatchSize)).isEmpty()) {
-          double batchSizeBiasOffset = 1d / (double) batch.size();
           // Compute the gradient.
           double[] gradient = computeGradient(batch);
           // Compute the initialization bias correction factors (serves as annealing as well).
@@ -206,7 +206,7 @@ public abstract class NadamSGD<E, L> {
           double secondMomentCorrection = 1d / (1d - Math.pow(secondMomentDecayRate, (double) updates));
           for (int i = 0; i < parameters.length; i++) {
             // Ensure that the magnitude of the gradient is proportional to the batch size.
-            double derivative = gradient[i] * batchSizeBiasOffset;
+            double derivative = gradient[i];
             double firstMoment = firstMomentDecayRate * firstMomentVector[i] + (1d - firstMomentDecayRate) * derivative;
             double secondMoment = secondMomentDecayRate * secondMomentVector[i] + (1d - secondMomentDecayRate) * derivative * derivative;
             firstMomentVector[i] = firstMoment;
@@ -246,7 +246,6 @@ public abstract class NadamSGD<E, L> {
       }
       /* Calculate the cost over the test data set. This is just to test how well the parameters generalize;
        * it is not used for learning! */
-      resetTrainingDataReader();
       if (logger != null) {
         logger.info("Epoch: " + t + "; Training cost: " + computeAverageTrainingCost() + "; Test cost: " + computeAverageTestCost());
       }
@@ -261,47 +260,94 @@ public abstract class NadamSGD<E, L> {
    * @return The gradient of the cost function.
    */
   private double[] computeGradient(List<Entry<E, L>> dataSample) {
-    double[] gradient = new double[parameters.length];
+    double[] gradient = computeGradient(parameters, dataSample);
+    if (gradient == null) {
+      gradient = approximateGradient(dataSample);
+    }
+    double sampleSize = dataSample.size();
     for (int i = 0; i < gradient.length; i++) {
-      gradient[i] = computeCostFunctionDerivative(i, dataSample);
+      gradient[i] /= sampleSize;
     }
     return gradient;
   }
 
   /**
    * It uses a two-point numerical differentiation formula (centered difference formula or in corner cases, Newton's difference quotient) to
-   * approximate the derivative of the cost function for the training data sample with respect to the parameter at index i in the parameters
-   * array.
+   * approximate the derivative of the cost function for the training data sample with respect to the parameters.
    *
-   * @param i The index of the parameter for which the derivative of the cost function is to be computed.
    * @param dataSample An iterable data set on which the cost function is to be calculated.
-   * @return The derivative of the cost function with respect to the parameter at index i in the parameter set.
+   * @return The estimated gradient of the parameters.
    */
-  private double computeCostFunctionDerivative(int i, List<Entry<E, L>> dataSample) {
-    double cost1, cost2, denominator;
-    double parameter = parameters[i];
-    if (indicesToIgnore.contains(i)) {
-      return 0;
+  private double[] approximateGradient(List<Entry<E, L>> dataSample) {
+    double[] gradient = new double[parameters.length];
+    for (int i = 0; i < gradient.length; i++) {
+      if (indicesToIgnore.contains(i)) {
+        continue;
+      }
+      double cost1, cost2, denominator;
+      double parameter = parameters[i];
+      if (parameter > maxValues[i] - h) {
+        cost1 = computeCost(parameters, dataSample);
+        parameters[i] = parameter - h;
+        cost2 = computeCost(parameters, dataSample);
+        denominator = h;
+      } else if (parameter < minValues[i] - h) {
+        cost2 = computeCost(parameters, dataSample);
+        parameters[i] = parameter + h;
+        cost1 = computeCost(parameters, dataSample);
+        denominator = h;
+      } else {
+        parameters[i] = parameter + h;
+        cost1 = computeCost(parameters, dataSample);
+        parameters[i] = parameter - h;
+        cost2 = computeCost(parameters, dataSample);
+        denominator = 2 * h;
+      }
+      parameters[i] = parameter;
+      gradient[i] = (cost1 - cost2) / denominator;
     }
-    if (parameter > maxValues[i] - h) {
-      cost1 = costFunction(parameters, dataSample);
-      parameters[i] = parameter - h;
-      cost2 = costFunction(parameters, dataSample);
-      denominator = h;
-    } else if (parameter < minValues[i] - h) {
-      cost2 = costFunction(parameters, dataSample);
-      parameters[i] = parameter + h;
-      cost1 = costFunction(parameters, dataSample);
-      denominator = h;
-    } else {
-      parameters[i] = parameter + h;
-      cost1 = costFunction(parameters, dataSample);
-      parameters[i] = parameter - h;
-      cost2 = costFunction(parameters, dataSample);
-      denominator = 2 * h;
+    return gradient;
+  }
+
+  /**
+   * Verifies the correctness of the symbolic gradient.
+   *
+   * @param dataSample The data batch for which the gradients are to be computed.
+   * @param absTol The maximum acceptable absolute difference between the symbolic gradient and the numerical gradient.
+   * @param relTol The maximum acceptable relative difference between the symbolic gradient and the numerical gradient.
+   * @return Whether the symbolic and the numerical gradients are sufficiently close.
+   */
+  protected boolean verifyGradient(List<Entry<E, L>> dataSample, double absTol, double relTol) {
+    double[] symbolicGradient = computeGradient(parameters, dataSample);
+    double[] numericalGradient = approximateGradient(dataSample);
+    if (symbolicGradient == null) {
+      return false;
     }
-    parameters[i] = parameter;
-    return (cost1 - cost2) / denominator;
+    boolean pass = true;
+    for (int i = 0; i < parameters.length; i++) {
+      double symbolicDerivative = symbolicGradient[i];
+      double numericalDerivative = numericalGradient[i];
+      boolean match = true;
+      if (Math.abs(symbolicDerivative - numericalDerivative) > absTol) {
+        match = false;
+      } else {
+        double absSymbolicDerivative = Math.abs(symbolicDerivative);
+        double absNumericalDerivative = Math.abs(numericalDerivative);
+        if (absSymbolicDerivative >= absNumericalDerivative) {
+          if (absSymbolicDerivative / absNumericalDerivative - 1d > relTol) {
+            match = false;
+          }
+        } else {
+          if (absNumericalDerivative / absSymbolicDerivative - 1d > relTol) {
+            match = false;
+          }
+        }
+      }
+      System.out.println(String.format("Index: %d, Symbolic derivative: %f, Numerical derivative: %f %s",
+          i, symbolicDerivative, numericalDerivative, match ? "" : "- MISMATCH"));
+      pass = pass && match;
+    }
+    return pass;
   }
 
   /**
@@ -315,7 +361,7 @@ public abstract class NadamSGD<E, L> {
     long samples = 0;
     List<Entry<E, L>> batch;
     while (!(batch = dataProvider.apply(costCalculationBatchSize)).isEmpty()) {
-      double loss = costFunction(parameters, batch);
+      double loss = computeCost(parameters, batch);
       totalCost += loss;
       samples += batch.size();
     }
@@ -383,6 +429,15 @@ public abstract class NadamSGD<E, L> {
    * @param dataSample A list of the training data mapped to the correct labels on which the cost function is to be calculated.
    * @return The cost associated with the given parameters.
    */
-  protected abstract double costFunction(double[] parameters, List<Entry<E, L>> dataSample);
+  protected abstract double computeCost(double[] parameters, List<Entry<E, L>> dataSample);
+
+  /**
+   * Calculates the derivative of the cost function with respect to the parameters.
+   *
+   * @param parameters An array of parameters.
+   * @param dataSample A list of the training data mapped to the correct labels on which the cost function is to be calculated.
+   * @return The gradient of the parameters.
+   */
+  protected abstract double[] computeGradient(double[] parameters, List<Entry<E, L>> dataSample);
 
 }

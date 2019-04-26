@@ -221,13 +221,6 @@ public class Search implements Runnable, Future<SearchResults> {
     int alpha = Score.MIN.value;
     int beta = Score.MAX.value;
     SearchThread masterThread = new SearchThread(rootPos, null);
-    // Zero-depth mode.
-    if (maxNominalDepth == 0) {
-      masterThread.setPly((short) 0);
-      masterThread.setBounds(alpha, beta);
-      Entry<Short, ScoreType> res = adjustExactScore(masterThread.call());
-      return new SearchResults(null, null, res.getKey(), res.getValue());
-    }
     rootMoves = areMovesRestricted ? allowedRootMoves : rootPos.getMoves();
     movesToNodes = new HashMap<>();
     for (Move m : rootMoves) {

@@ -36,36 +36,36 @@
   <maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
   <maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
   <nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
-  <queenValue>1153</queenValue>
-  <rookValue>404</rookValue>
-  <bishopValue>245</bishopValue>
-  <knightValue>195</knightValue>
-  <pawnValue>91</pawnValue>
-  <blockedPawnWeight1>64</blockedPawnWeight1>
-  <blockedPawnWeight2>37</blockedPawnWeight2>
-  <blockedPawnWeight3>40</blockedPawnWeight3>
-  <passedPawnWeight>11</passedPawnWeight>
-  <isolatedPawnWeight>15</isolatedPawnWeight>
-  <backwardPawnWeight>9</backwardPawnWeight>
-  <stoppedPawnWeight>25</stoppedPawnWeight>
-  <bishopPairAdvantage>64</bishopPairAdvantage>
-  <pinnedQueenWeight>105</pinnedQueenWeight>
+  <queenValue>1363</queenValue>
+  <rookValue>543</rookValue>
+  <bishopValue>322</bishopValue>
+  <knightValue>255</knightValue>
+  <pawnValue>136</pawnValue>
+  <blockedPawnWeight1>77</blockedPawnWeight1>
+  <blockedPawnWeight2>40</blockedPawnWeight2>
+  <blockedPawnWeight3>50</blockedPawnWeight3>
+  <passedPawnWeight>6</passedPawnWeight>
+  <isolatedPawnWeight>21</isolatedPawnWeight>
+  <backwardPawnWeight>13</backwardPawnWeight>
+  <stoppedPawnWeight>24</stoppedPawnWeight>
+  <bishopPairAdvantage>87</bishopPairAdvantage>
+  <pinnedQueenWeight>17</pinnedQueenWeight>
   <pinnedRookWeight>0</pinnedRookWeight>
-  <pinnedBishopWeight>23</pinnedBishopWeight>
-  <pinnedKnightWeight>42</pinnedKnightWeight>
-  <pinnedPawnWeight>12</pinnedPawnWeight>
-  <queenMobilityWeight>3</queenMobilityWeight>
-  <rookMobilityWeight>10</rookMobilityWeight>
-  <bishopMobilityWeight>9</bishopMobilityWeight>
-  <knightMobilityWeight>3</knightMobilityWeight>
-  <friendlyNormalPawnTropismWeight>19</friendlyNormalPawnTropismWeight>
-  <friendlyWeakPawnTropismWeight>8</friendlyWeakPawnTropismWeight>
+  <pinnedBishopWeight>5</pinnedBishopWeight>
+  <pinnedKnightWeight>0</pinnedKnightWeight>
+  <pinnedPawnWeight>10</pinnedPawnWeight>
+  <queenMobilityWeight>5</queenMobilityWeight>
+  <rookMobilityWeight>13</rookMobilityWeight>
+  <bishopMobilityWeight>11</bishopMobilityWeight>
+  <knightMobilityWeight>15</knightMobilityWeight>
+  <friendlyNormalPawnTropismWeight>12</friendlyNormalPawnTropismWeight>
+  <friendlyWeakPawnTropismWeight>0</friendlyWeakPawnTropismWeight>
   <friendlyPassedPawnTropismWeight>0</friendlyPassedPawnTropismWeight>
-  <opponentNormalPawnTropismWeight>10</opponentNormalPawnTropismWeight>
-  <opponentWeakPawnTropismWeight>4</opponentWeakPawnTropismWeight>
-  <opponentPassedPawnTropismWeight>0</opponentPassedPawnTropismWeight>
-  <opponentQueenTropismWeight>47</opponentQueenTropismWeight>
-  <tempoAdvantage>57</tempoAdvantage>
+  <opponentNormalPawnTropismWeight>12</opponentNormalPawnTropismWeight>
+  <opponentWeakPawnTropismWeight>9</opponentWeakPawnTropismWeight>
+  <opponentPassedPawnTropismWeight>10</opponentPassedPawnTropismWeight>
+  <opponentQueenTropismWeight>46</opponentQueenTropismWeight>
+  <tempoAdvantage>30</tempoAdvantage>
   <pstPawnMg8>127</pstPawnMg8>
   <pstPawnMg9>127</pstPawnMg9>
   <pstPawnMg10>127</pstPawnMg10>
@@ -82,37 +82,37 @@
   <pstPawnMg21>127</pstPawnMg21>
   <pstPawnMg22>127</pstPawnMg22>
   <pstPawnMg23>127</pstPawnMg23>
-  <pstPawnMg24>71</pstPawnMg24>
-  <pstPawnMg25>50</pstPawnMg25>
-  <pstPawnMg26>63</pstPawnMg26>
-  <pstPawnMg27>79</pstPawnMg27>
-  <pstPawnMg28>117</pstPawnMg28>
-  <pstPawnMg29>121</pstPawnMg29>
-  <pstPawnMg30>89</pstPawnMg30>
-  <pstPawnMg31>108</pstPawnMg31>
-  <pstPawnMg32>7</pstPawnMg32>
+  <pstPawnMg24>63</pstPawnMg24>
+  <pstPawnMg25>58</pstPawnMg25>
+  <pstPawnMg26>59</pstPawnMg26>
+  <pstPawnMg27>85</pstPawnMg27>
+  <pstPawnMg28>121</pstPawnMg28>
+  <pstPawnMg29>127</pstPawnMg29>
+  <pstPawnMg30>88</pstPawnMg30>
+  <pstPawnMg31>91</pstPawnMg31>
+  <pstPawnMg32>9</pstPawnMg32>
   <pstPawnMg33>23</pstPawnMg33>
-  <pstPawnMg34>41</pstPawnMg34>
-  <pstPawnMg35>60</pstPawnMg35>
-  <pstPawnMg36>57</pstPawnMg36>
-  <pstPawnMg37>63</pstPawnMg37>
-  <pstPawnMg38>49</pstPawnMg38>
-  <pstPawnMg39>26</pstPawnMg39>
+  <pstPawnMg34>53</pstPawnMg34>
+  <pstPawnMg35>67</pstPawnMg35>
+  <pstPawnMg36>76</pstPawnMg36>
+  <pstPawnMg37>72</pstPawnMg37>
+  <pstPawnMg38>54</pstPawnMg38>
+  <pstPawnMg39>24</pstPawnMg39>
   <pstPawnMg40>0</pstPawnMg40>
-  <pstPawnMg41>9</pstPawnMg41>
-  <pstPawnMg42>24</pstPawnMg42>
-  <pstPawnMg43>30</pstPawnMg43>
-  <pstPawnMg44>56</pstPawnMg44>
-  <pstPawnMg45>33</pstPawnMg45>
-  <pstPawnMg46>54</pstPawnMg46>
-  <pstPawnMg47>30</pstPawnMg47>
+  <pstPawnMg41>7</pstPawnMg41>
+  <pstPawnMg42>9</pstPawnMg42>
+  <pstPawnMg43>25</pstPawnMg43>
+  <pstPawnMg44>69</pstPawnMg44>
+  <pstPawnMg45>49</pstPawnMg45>
+  <pstPawnMg46>59</pstPawnMg46>
+  <pstPawnMg47>17</pstPawnMg47>
   <pstPawnMg48>0</pstPawnMg48>
   <pstPawnMg49>0</pstPawnMg49>
   <pstPawnMg50>0</pstPawnMg50>
-  <pstPawnMg51>16</pstPawnMg51>
-  <pstPawnMg52>33</pstPawnMg52>
-  <pstPawnMg53>38</pstPawnMg53>
-  <pstPawnMg54>40</pstPawnMg54>
+  <pstPawnMg51>23</pstPawnMg51>
+  <pstPawnMg52>43</pstPawnMg52>
+  <pstPawnMg53>45</pstPawnMg53>
+  <pstPawnMg54>63</pstPawnMg54>
   <pstPawnMg55>0</pstPawnMg55>
   <pstPawnEg8>127</pstPawnEg8>
   <pstPawnEg9>127</pstPawnEg9>
@@ -125,219 +125,539 @@
   <pstPawnEg24>127</pstPawnEg24>
   <pstPawnEg25>127</pstPawnEg25>
   <pstPawnEg26>127</pstPawnEg26>
-  <pstPawnEg27>115</pstPawnEg27>
-  <pstPawnEg32>93</pstPawnEg32>
-  <pstPawnEg33>127</pstPawnEg33>
-  <pstPawnEg34>91</pstPawnEg34>
-  <pstPawnEg35>80</pstPawnEg35>
-  <pstPawnEg40>71</pstPawnEg40>
-  <pstPawnEg41>90</pstPawnEg41>
-  <pstPawnEg42>99</pstPawnEg42>
-  <pstPawnEg43>99</pstPawnEg43>
-  <pstPawnEg48>82</pstPawnEg48>
-  <pstPawnEg49>127</pstPawnEg49>
-  <pstPawnEg50>127</pstPawnEg50>
+  <pstPawnEg27>103</pstPawnEg27>
+  <pstPawnEg32>66</pstPawnEg32>
+  <pstPawnEg33>93</pstPawnEg33>
+  <pstPawnEg34>80</pstPawnEg34>
+  <pstPawnEg35>56</pstPawnEg35>
+  <pstPawnEg40>41</pstPawnEg40>
+  <pstPawnEg41>74</pstPawnEg41>
+  <pstPawnEg42>75</pstPawnEg42>
+  <pstPawnEg43>93</pstPawnEg43>
+  <pstPawnEg48>66</pstPawnEg48>
+  <pstPawnEg49>103</pstPawnEg49>
+  <pstPawnEg50>111</pstPawnEg50>
   <pstPawnEg51>127</pstPawnEg51>
-  <pstKnight0>0</pstKnight0>
-  <pstKnight1>106</pstKnight1>
-  <pstKnight2>82</pstKnight2>
-  <pstKnight3>127</pstKnight3>
-  <pstKnight8>70</pstKnight8>
-  <pstKnight9>92</pstKnight9>
-  <pstKnight10>127</pstKnight10>
-  <pstKnight11>106</pstKnight11>
-  <pstKnight16>96</pstKnight16>
-  <pstKnight17>119</pstKnight17>
-  <pstKnight18>108</pstKnight18>
-  <pstKnight19>127</pstKnight19>
-  <pstKnight24>102</pstKnight24>
-  <pstKnight25>111</pstKnight25>
-  <pstKnight26>127</pstKnight26>
-  <pstKnight27>125</pstKnight27>
-  <pstKnight32>43</pstKnight32>
-  <pstKnight33>100</pstKnight33>
-  <pstKnight34>127</pstKnight34>
-  <pstKnight35>88</pstKnight35>
-  <pstKnight40>0</pstKnight40>
-  <pstKnight41>49</pstKnight41>
-  <pstKnight42>75</pstKnight42>
-  <pstKnight43>106</pstKnight43>
-  <pstKnight48>0</pstKnight48>
-  <pstKnight49>0</pstKnight49>
-  <pstKnight50>17</pstKnight50>
-  <pstKnight51>55</pstKnight51>
-  <pstKnight56>0</pstKnight56>
-  <pstKnight57>0</pstKnight57>
-  <pstKnight58>0</pstKnight58>
-  <pstKnight59>0</pstKnight59>
-  <pstBishop0>0</pstBishop0>
-  <pstBishop1>45</pstBishop1>
-  <pstBishop2>0</pstBishop2>
-  <pstBishop3>11</pstBishop3>
-  <pstBishop8>20</pstBishop8>
-  <pstBishop9>0</pstBishop9>
-  <pstBishop10>59</pstBishop10>
-  <pstBishop11>0</pstBishop11>
-  <pstBishop16>39</pstBishop16>
-  <pstBishop17>41</pstBishop17>
-  <pstBishop18>57</pstBishop18>
-  <pstBishop19>53</pstBishop19>
-  <pstBishop24>19</pstBishop24>
-  <pstBishop25>11</pstBishop25>
-  <pstBishop26>62</pstBishop26>
-  <pstBishop27>48</pstBishop27>
-  <pstBishop32>17</pstBishop32>
-  <pstBishop33>0</pstBishop33>
-  <pstBishop34>19</pstBishop34>
-  <pstBishop35>42</pstBishop35>
-  <pstBishop40>36</pstBishop40>
-  <pstBishop41>34</pstBishop41>
-  <pstBishop42>7</pstBishop42>
-  <pstBishop43>35</pstBishop43>
-  <pstBishop48>23</pstBishop48>
-  <pstBishop49>45</pstBishop49>
-  <pstBishop50>44</pstBishop50>
-  <pstBishop51>0</pstBishop51>
-  <pstBishop56>0</pstBishop56>
-  <pstBishop57>30</pstBishop57>
-  <pstBishop58>0</pstBishop58>
-  <pstBishop59>0</pstBishop59>
-  <pstRookMg0>0</pstRookMg0>
-  <pstRookMg1>0</pstRookMg1>
+  <pstKnightMg0>0</pstKnightMg0>
+  <pstKnightMg1>70</pstKnightMg1>
+  <pstKnightMg2>0</pstKnightMg2>
+  <pstKnightMg3>98</pstKnightMg3>
+  <pstKnightMg4>127</pstKnightMg4>
+  <pstKnightMg5>0</pstKnightMg5>
+  <pstKnightMg6>125</pstKnightMg6>
+  <pstKnightMg7>0</pstKnightMg7>
+  <pstKnightMg8>0</pstKnightMg8>
+  <pstKnightMg9>35</pstKnightMg9>
+  <pstKnightMg10>127</pstKnightMg10>
+  <pstKnightMg11>70</pstKnightMg11>
+  <pstKnightMg12>127</pstKnightMg12>
+  <pstKnightMg13>127</pstKnightMg13>
+  <pstKnightMg14>127</pstKnightMg14>
+  <pstKnightMg15>127</pstKnightMg15>
+  <pstKnightMg16>42</pstKnightMg16>
+  <pstKnightMg17>72</pstKnightMg17>
+  <pstKnightMg18>7</pstKnightMg18>
+  <pstKnightMg19>127</pstKnightMg19>
+  <pstKnightMg20>127</pstKnightMg20>
+  <pstKnightMg21>127</pstKnightMg21>
+  <pstKnightMg22>81</pstKnightMg22>
+  <pstKnightMg23>127</pstKnightMg23>
+  <pstKnightMg24>55</pstKnightMg24>
+  <pstKnightMg25>56</pstKnightMg25>
+  <pstKnightMg26>83</pstKnightMg26>
+  <pstKnightMg27>102</pstKnightMg27>
+  <pstKnightMg28>56</pstKnightMg28>
+  <pstKnightMg29>127</pstKnightMg29>
+  <pstKnightMg30>92</pstKnightMg30>
+  <pstKnightMg31>127</pstKnightMg31>
+  <pstKnightMg32>25</pstKnightMg32>
+  <pstKnightMg33>24</pstKnightMg33>
+  <pstKnightMg34>56</pstKnightMg34>
+  <pstKnightMg35>7</pstKnightMg35>
+  <pstKnightMg36>63</pstKnightMg36>
+  <pstKnightMg37>85</pstKnightMg37>
+  <pstKnightMg38>105</pstKnightMg38>
+  <pstKnightMg39>55</pstKnightMg39>
+  <pstKnightMg40>0</pstKnightMg40>
+  <pstKnightMg41>0</pstKnightMg41>
+  <pstKnightMg42>17</pstKnightMg42>
+  <pstKnightMg43>64</pstKnightMg43>
+  <pstKnightMg44>85</pstKnightMg44>
+  <pstKnightMg45>53</pstKnightMg45>
+  <pstKnightMg46>68</pstKnightMg46>
+  <pstKnightMg47>39</pstKnightMg47>
+  <pstKnightMg48>0</pstKnightMg48>
+  <pstKnightMg49>0</pstKnightMg49>
+  <pstKnightMg50>0</pstKnightMg50>
+  <pstKnightMg51>48</pstKnightMg51>
+  <pstKnightMg52>51</pstKnightMg52>
+  <pstKnightMg53>59</pstKnightMg53>
+  <pstKnightMg54>1</pstKnightMg54>
+  <pstKnightMg55>4</pstKnightMg55>
+  <pstKnightMg56>0</pstKnightMg56>
+  <pstKnightMg57>0</pstKnightMg57>
+  <pstKnightMg58>0</pstKnightMg58>
+  <pstKnightMg59>0</pstKnightMg59>
+  <pstKnightMg60>0</pstKnightMg60>
+  <pstKnightMg61>4</pstKnightMg61>
+  <pstKnightMg62>18</pstKnightMg62>
+  <pstKnightMg63>0</pstKnightMg63>
+  <pstKnightEg0>108</pstKnightEg0>
+  <pstKnightEg1>127</pstKnightEg1>
+  <pstKnightEg2>127</pstKnightEg2>
+  <pstKnightEg3>127</pstKnightEg3>
+  <pstKnightEg4>127</pstKnightEg4>
+  <pstKnightEg5>127</pstKnightEg5>
+  <pstKnightEg6>127</pstKnightEg6>
+  <pstKnightEg7>0</pstKnightEg7>
+  <pstKnightEg8>108</pstKnightEg8>
+  <pstKnightEg9>127</pstKnightEg9>
+  <pstKnightEg10>127</pstKnightEg10>
+  <pstKnightEg11>127</pstKnightEg11>
+  <pstKnightEg12>127</pstKnightEg12>
+  <pstKnightEg13>127</pstKnightEg13>
+  <pstKnightEg14>127</pstKnightEg14>
+  <pstKnightEg15>127</pstKnightEg15>
+  <pstKnightEg16>127</pstKnightEg16>
+  <pstKnightEg17>127</pstKnightEg17>
+  <pstKnightEg18>127</pstKnightEg18>
+  <pstKnightEg19>127</pstKnightEg19>
+  <pstKnightEg20>127</pstKnightEg20>
+  <pstKnightEg21>127</pstKnightEg21>
+  <pstKnightEg22>127</pstKnightEg22>
+  <pstKnightEg23>127</pstKnightEg23>
+  <pstKnightEg24>127</pstKnightEg24>
+  <pstKnightEg25>127</pstKnightEg25>
+  <pstKnightEg26>127</pstKnightEg26>
+  <pstKnightEg27>127</pstKnightEg27>
+  <pstKnightEg28>127</pstKnightEg28>
+  <pstKnightEg29>127</pstKnightEg29>
+  <pstKnightEg30>127</pstKnightEg30>
+  <pstKnightEg31>127</pstKnightEg31>
+  <pstKnightEg32>120</pstKnightEg32>
+  <pstKnightEg33>127</pstKnightEg33>
+  <pstKnightEg34>127</pstKnightEg34>
+  <pstKnightEg35>127</pstKnightEg35>
+  <pstKnightEg36>127</pstKnightEg36>
+  <pstKnightEg37>127</pstKnightEg37>
+  <pstKnightEg38>127</pstKnightEg38>
+  <pstKnightEg39>64</pstKnightEg39>
+  <pstKnightEg40>0</pstKnightEg40>
+  <pstKnightEg41>44</pstKnightEg41>
+  <pstKnightEg42>76</pstKnightEg42>
+  <pstKnightEg43>95</pstKnightEg43>
+  <pstKnightEg44>81</pstKnightEg44>
+  <pstKnightEg45>36</pstKnightEg45>
+  <pstKnightEg46>31</pstKnightEg46>
+  <pstKnightEg47>0</pstKnightEg47>
+  <pstKnightEg48>0</pstKnightEg48>
+  <pstKnightEg49>31</pstKnightEg49>
+  <pstKnightEg50>0</pstKnightEg50>
+  <pstKnightEg51>14</pstKnightEg51>
+  <pstKnightEg52>0</pstKnightEg52>
+  <pstKnightEg53>0</pstKnightEg53>
+  <pstKnightEg54>1</pstKnightEg54>
+  <pstKnightEg55>0</pstKnightEg55>
+  <pstKnightEg56>0</pstKnightEg56>
+  <pstKnightEg57>0</pstKnightEg57>
+  <pstKnightEg58>0</pstKnightEg58>
+  <pstKnightEg59>0</pstKnightEg59>
+  <pstKnightEg60>0</pstKnightEg60>
+  <pstKnightEg61>0</pstKnightEg61>
+  <pstKnightEg62>0</pstKnightEg62>
+  <pstKnightEg63>0</pstKnightEg63>
+  <pstBishopMg0>0</pstBishopMg0>
+  <pstBishopMg1>0</pstBishopMg1>
+  <pstBishopMg2>0</pstBishopMg2>
+  <pstBishopMg3>0</pstBishopMg3>
+  <pstBishopMg4>0</pstBishopMg4>
+  <pstBishopMg5>0</pstBishopMg5>
+  <pstBishopMg6>46</pstBishopMg6>
+  <pstBishopMg7>0</pstBishopMg7>
+  <pstBishopMg8>0</pstBishopMg8>
+  <pstBishopMg9>0</pstBishopMg9>
+  <pstBishopMg10>52</pstBishopMg10>
+  <pstBishopMg11>0</pstBishopMg11>
+  <pstBishopMg12>0</pstBishopMg12>
+  <pstBishopMg13>127</pstBishopMg13>
+  <pstBishopMg14>0</pstBishopMg14>
+  <pstBishopMg15>96</pstBishopMg15>
+  <pstBishopMg16>0</pstBishopMg16>
+  <pstBishopMg17>36</pstBishopMg17>
+  <pstBishopMg18>0</pstBishopMg18>
+  <pstBishopMg19>74</pstBishopMg19>
+  <pstBishopMg20>54</pstBishopMg20>
+  <pstBishopMg21>0</pstBishopMg21>
+  <pstBishopMg22>127</pstBishopMg22>
+  <pstBishopMg23>63</pstBishopMg23>
+  <pstBishopMg24>0</pstBishopMg24>
+  <pstBishopMg25>6</pstBishopMg25>
+  <pstBishopMg26>28</pstBishopMg26>
+  <pstBishopMg27>61</pstBishopMg27>
+  <pstBishopMg28>42</pstBishopMg28>
+  <pstBishopMg29>60</pstBishopMg29>
+  <pstBishopMg30>11</pstBishopMg30>
+  <pstBishopMg31>61</pstBishopMg31>
+  <pstBishopMg32>32</pstBishopMg32>
+  <pstBishopMg33>0</pstBishopMg33>
+  <pstBishopMg34>0</pstBishopMg34>
+  <pstBishopMg35>39</pstBishopMg35>
+  <pstBishopMg36>15</pstBishopMg36>
+  <pstBishopMg37>6</pstBishopMg37>
+  <pstBishopMg38>0</pstBishopMg38>
+  <pstBishopMg39>45</pstBishopMg39>
+  <pstBishopMg40>48</pstBishopMg40>
+  <pstBishopMg41>34</pstBishopMg41>
+  <pstBishopMg42>16</pstBishopMg42>
+  <pstBishopMg43>15</pstBishopMg43>
+  <pstBishopMg44>11</pstBishopMg44>
+  <pstBishopMg45>3</pstBishopMg45>
+  <pstBishopMg46>33</pstBishopMg46>
+  <pstBishopMg47>57</pstBishopMg47>
+  <pstBishopMg48>69</pstBishopMg48>
+  <pstBishopMg49>43</pstBishopMg49>
+  <pstBishopMg50>81</pstBishopMg50>
+  <pstBishopMg51>0</pstBishopMg51>
+  <pstBishopMg52>9</pstBishopMg52>
+  <pstBishopMg53>24</pstBishopMg53>
+  <pstBishopMg54>61</pstBishopMg54>
+  <pstBishopMg55>35</pstBishopMg55>
+  <pstBishopMg56>0</pstBishopMg56>
+  <pstBishopMg57>74</pstBishopMg57>
+  <pstBishopMg58>4</pstBishopMg58>
+  <pstBishopMg59>0</pstBishopMg59>
+  <pstBishopMg60>0</pstBishopMg60>
+  <pstBishopMg61>14</pstBishopMg61>
+  <pstBishopMg62>23</pstBishopMg62>
+  <pstBishopMg63>3</pstBishopMg63>
+  <pstBishopEg0>91</pstBishopEg0>
+  <pstBishopEg1>101</pstBishopEg1>
+  <pstBishopEg2>110</pstBishopEg2>
+  <pstBishopEg3>68</pstBishopEg3>
+  <pstBishopEg4>116</pstBishopEg4>
+  <pstBishopEg5>3</pstBishopEg5>
+  <pstBishopEg6>81</pstBishopEg6>
+  <pstBishopEg7>0</pstBishopEg7>
+  <pstBishopEg8>79</pstBishopEg8>
+  <pstBishopEg9>88</pstBishopEg9>
+  <pstBishopEg10>89</pstBishopEg10>
+  <pstBishopEg11>91</pstBishopEg11>
+  <pstBishopEg12>86</pstBishopEg12>
+  <pstBishopEg13>63</pstBishopEg13>
+  <pstBishopEg14>0</pstBishopEg14>
+  <pstBishopEg15>80</pstBishopEg15>
+  <pstBishopEg16>126</pstBishopEg16>
+  <pstBishopEg17>85</pstBishopEg17>
+  <pstBishopEg18>127</pstBishopEg18>
+  <pstBishopEg19>86</pstBishopEg19>
+  <pstBishopEg20>127</pstBishopEg20>
+  <pstBishopEg21>127</pstBishopEg21>
+  <pstBishopEg22>91</pstBishopEg22>
+  <pstBishopEg23>63</pstBishopEg23>
+  <pstBishopEg24>63</pstBishopEg24>
+  <pstBishopEg25>127</pstBishopEg25>
+  <pstBishopEg26>124</pstBishopEg26>
+  <pstBishopEg27>127</pstBishopEg27>
+  <pstBishopEg28>116</pstBishopEg28>
+  <pstBishopEg29>126</pstBishopEg29>
+  <pstBishopEg30>102</pstBishopEg30>
+  <pstBishopEg31>77</pstBishopEg31>
+  <pstBishopEg32>60</pstBishopEg32>
+  <pstBishopEg33>52</pstBishopEg33>
+  <pstBishopEg34>125</pstBishopEg34>
+  <pstBishopEg35>120</pstBishopEg35>
+  <pstBishopEg36>92</pstBishopEg36>
+  <pstBishopEg37>87</pstBishopEg37>
+  <pstBishopEg38>81</pstBishopEg38>
+  <pstBishopEg39>0</pstBishopEg39>
+  <pstBishopEg40>17</pstBishopEg40>
+  <pstBishopEg41>75</pstBishopEg41>
+  <pstBishopEg42>64</pstBishopEg42>
+  <pstBishopEg43>84</pstBishopEg43>
+  <pstBishopEg44>102</pstBishopEg44>
+  <pstBishopEg45>65</pstBishopEg45>
+  <pstBishopEg46>19</pstBishopEg46>
+  <pstBishopEg47>36</pstBishopEg47>
+  <pstBishopEg48>0</pstBishopEg48>
+  <pstBishopEg49>6</pstBishopEg49>
+  <pstBishopEg50>0</pstBishopEg50>
+  <pstBishopEg51>3</pstBishopEg51>
+  <pstBishopEg52>51</pstBishopEg52>
+  <pstBishopEg53>22</pstBishopEg53>
+  <pstBishopEg54>74</pstBishopEg54>
+  <pstBishopEg55>0</pstBishopEg55>
+  <pstBishopEg56>0</pstBishopEg56>
+  <pstBishopEg57>0</pstBishopEg57>
+  <pstBishopEg58>0</pstBishopEg58>
+  <pstBishopEg59>0</pstBishopEg59>
+  <pstBishopEg60>0</pstBishopEg60>
+  <pstBishopEg61>48</pstBishopEg61>
+  <pstBishopEg62>0</pstBishopEg62>
+  <pstBishopEg63>0</pstBishopEg63>
+  <pstRookMg0>18</pstRookMg0>
+  <pstRookMg1>64</pstRookMg1>
   <pstRookMg2>0</pstRookMg2>
   <pstRookMg3>0</pstRookMg3>
-  <pstRookMg4>0</pstRookMg4>
-  <pstRookMg5>93</pstRookMg5>
-  <pstRookMg6>0</pstRookMg6>
-  <pstRookMg7>34</pstRookMg7>
-  <pstRookMg8>78</pstRookMg8>
-  <pstRookMg9>66</pstRookMg9>
+  <pstRookMg4>35</pstRookMg4>
+  <pstRookMg5>0</pstRookMg5>
+  <pstRookMg6>127</pstRookMg6>
+  <pstRookMg7>127</pstRookMg7>
+  <pstRookMg8>79</pstRookMg8>
+  <pstRookMg9>78</pstRookMg9>
   <pstRookMg10>127</pstRookMg10>
   <pstRookMg11>127</pstRookMg11>
   <pstRookMg12>127</pstRookMg12>
   <pstRookMg13>127</pstRookMg13>
   <pstRookMg14>127</pstRookMg14>
   <pstRookMg15>127</pstRookMg15>
-  <pstRookMg16>31</pstRookMg16>
-  <pstRookMg17>54</pstRookMg17>
-  <pstRookMg18>85</pstRookMg18>
-  <pstRookMg19>92</pstRookMg19>
-  <pstRookMg20>121</pstRookMg20>
+  <pstRookMg16>51</pstRookMg16>
+  <pstRookMg17>85</pstRookMg17>
+  <pstRookMg18>105</pstRookMg18>
+  <pstRookMg19>95</pstRookMg19>
+  <pstRookMg20>127</pstRookMg20>
   <pstRookMg21>127</pstRookMg21>
   <pstRookMg22>127</pstRookMg22>
   <pstRookMg23>127</pstRookMg23>
-  <pstRookMg24>36</pstRookMg24>
-  <pstRookMg25>10</pstRookMg25>
-  <pstRookMg26>37</pstRookMg26>
-  <pstRookMg27>71</pstRookMg27>
-  <pstRookMg28>61</pstRookMg28>
-  <pstRookMg29>75</pstRookMg29>
-  <pstRookMg30>83</pstRookMg30>
-  <pstRookMg31>79</pstRookMg31>
+  <pstRookMg24>33</pstRookMg24>
+  <pstRookMg25>22</pstRookMg25>
+  <pstRookMg26>21</pstRookMg26>
+  <pstRookMg27>92</pstRookMg27>
+  <pstRookMg28>71</pstRookMg28>
+  <pstRookMg29>80</pstRookMg29>
+  <pstRookMg30>112</pstRookMg30>
+  <pstRookMg31>95</pstRookMg31>
   <pstRookMg32>0</pstRookMg32>
   <pstRookMg33>0</pstRookMg33>
   <pstRookMg34>0</pstRookMg34>
-  <pstRookMg35>14</pstRookMg35>
+  <pstRookMg35>4</pstRookMg35>
   <pstRookMg36>0</pstRookMg36>
   <pstRookMg37>0</pstRookMg37>
-  <pstRookMg38>38</pstRookMg38>
-  <pstRookMg39>0</pstRookMg39>
+  <pstRookMg38>41</pstRookMg38>
+  <pstRookMg39>3</pstRookMg39>
   <pstRookMg40>0</pstRookMg40>
   <pstRookMg41>0</pstRookMg41>
-  <pstRookMg42>5</pstRookMg42>
+  <pstRookMg42>0</pstRookMg42>
   <pstRookMg43>0</pstRookMg43>
-  <pstRookMg44>22</pstRookMg44>
+  <pstRookMg44>21</pstRookMg44>
   <pstRookMg45>0</pstRookMg45>
-  <pstRookMg46>68</pstRookMg46>
-  <pstRookMg47>45</pstRookMg47>
+  <pstRookMg46>72</pstRookMg46>
+  <pstRookMg47>31</pstRookMg47>
   <pstRookMg48>0</pstRookMg48>
   <pstRookMg49>0</pstRookMg49>
   <pstRookMg50>0</pstRookMg50>
-  <pstRookMg51>18</pstRookMg51>
-  <pstRookMg52>6</pstRookMg52>
-  <pstRookMg53>33</pstRookMg53>
-  <pstRookMg54>68</pstRookMg54>
-  <pstRookMg55>7</pstRookMg55>
+  <pstRookMg51>13</pstRookMg51>
+  <pstRookMg52>8</pstRookMg52>
+  <pstRookMg53>34</pstRookMg53>
+  <pstRookMg54>78</pstRookMg54>
+  <pstRookMg55>15</pstRookMg55>
   <pstRookMg56>0</pstRookMg56>
-  <pstRookMg57>15</pstRookMg57>
-  <pstRookMg58>67</pstRookMg58>
-  <pstRookMg59>66</pstRookMg59>
-  <pstRookMg60>64</pstRookMg60>
-  <pstRookMg61>34</pstRookMg61>
-  <pstRookMg62>73</pstRookMg62>
-  <pstRookMg63>16</pstRookMg63>
-  <pstRookEg0>102</pstRookEg0>
-  <pstRookEg1>107</pstRookEg1>
-  <pstRookEg2>71</pstRookEg2>
-  <pstRookEg3>76</pstRookEg3>
+  <pstRookMg57>19</pstRookMg57>
+  <pstRookMg58>59</pstRookMg58>
+  <pstRookMg59>49</pstRookMg59>
+  <pstRookMg60>57</pstRookMg60>
+  <pstRookMg61>28</pstRookMg61>
+  <pstRookMg62>81</pstRookMg62>
+  <pstRookMg63>32</pstRookMg63>
+  <pstRookEg0>127</pstRookEg0>
+  <pstRookEg1>127</pstRookEg1>
+  <pstRookEg2>126</pstRookEg2>
+  <pstRookEg3>125</pstRookEg3>
+  <pstRookEg4>127</pstRookEg4>
+  <pstRookEg5>126</pstRookEg5>
+  <pstRookEg6>76</pstRookEg6>
+  <pstRookEg7>91</pstRookEg7>
   <pstRookEg8>127</pstRookEg8>
   <pstRookEg9>127</pstRookEg9>
   <pstRookEg10>127</pstRookEg10>
   <pstRookEg11>127</pstRookEg11>
+  <pstRookEg12>127</pstRookEg12>
+  <pstRookEg13>127</pstRookEg13>
+  <pstRookEg14>127</pstRookEg14>
+  <pstRookEg15>127</pstRookEg15>
   <pstRookEg16>127</pstRookEg16>
   <pstRookEg17>127</pstRookEg17>
   <pstRookEg18>127</pstRookEg18>
   <pstRookEg19>127</pstRookEg19>
-  <pstRookEg24>113</pstRookEg24>
-  <pstRookEg25>123</pstRookEg25>
+  <pstRookEg20>127</pstRookEg20>
+  <pstRookEg21>127</pstRookEg21>
+  <pstRookEg22>127</pstRookEg22>
+  <pstRookEg23>127</pstRookEg23>
+  <pstRookEg24>127</pstRookEg24>
+  <pstRookEg25>127</pstRookEg25>
   <pstRookEg26>127</pstRookEg26>
   <pstRookEg27>127</pstRookEg27>
-  <pstRookEg32>65</pstRookEg32>
-  <pstRookEg33>79</pstRookEg33>
-  <pstRookEg34>117</pstRookEg34>
-  <pstRookEg35>96</pstRookEg35>
-  <pstRookEg40>0</pstRookEg40>
-  <pstRookEg41>18</pstRookEg41>
-  <pstRookEg42>32</pstRookEg42>
-  <pstRookEg43>43</pstRookEg43>
+  <pstRookEg28>127</pstRookEg28>
+  <pstRookEg29>127</pstRookEg29>
+  <pstRookEg30>107</pstRookEg30>
+  <pstRookEg31>105</pstRookEg31>
+  <pstRookEg32>84</pstRookEg32>
+  <pstRookEg33>92</pstRookEg33>
+  <pstRookEg34>127</pstRookEg34>
+  <pstRookEg35>111</pstRookEg35>
+  <pstRookEg36>118</pstRookEg36>
+  <pstRookEg37>121</pstRookEg37>
+  <pstRookEg38>89</pstRookEg38>
+  <pstRookEg39>48</pstRookEg39>
+  <pstRookEg40>13</pstRookEg40>
+  <pstRookEg41>56</pstRookEg41>
+  <pstRookEg42>54</pstRookEg42>
+  <pstRookEg43>50</pstRookEg43>
+  <pstRookEg44>61</pstRookEg44>
+  <pstRookEg45>40</pstRookEg45>
+  <pstRookEg46>21</pstRookEg46>
+  <pstRookEg47>0</pstRookEg47>
   <pstRookEg48>0</pstRookEg48>
   <pstRookEg49>0</pstRookEg49>
-  <pstRookEg50>0</pstRookEg50>
-  <pstRookEg51>0</pstRookEg51>
+  <pstRookEg50>17</pstRookEg50>
+  <pstRookEg51>20</pstRookEg51>
+  <pstRookEg52>22</pstRookEg52>
+  <pstRookEg53>0</pstRookEg53>
+  <pstRookEg54>0</pstRookEg54>
+  <pstRookEg55>13</pstRookEg55>
   <pstRookEg56>0</pstRookEg56>
   <pstRookEg57>0</pstRookEg57>
-  <pstRookEg58>24</pstRookEg58>
-  <pstRookEg59>14</pstRookEg59>
-  <pstQueen0>77</pstQueen0>
-  <pstQueen1>96</pstQueen1>
-  <pstQueen2>64</pstQueen2>
-  <pstQueen3>7</pstQueen3>
-  <pstQueen8>57</pstQueen8>
-  <pstQueen9>37</pstQueen9>
-  <pstQueen10>56</pstQueen10>
-  <pstQueen11>27</pstQueen11>
-  <pstQueen16>24</pstQueen16>
-  <pstQueen17>82</pstQueen17>
-  <pstQueen18>71</pstQueen18>
-  <pstQueen19>37</pstQueen19>
-  <pstQueen24>28</pstQueen24>
-  <pstQueen25>10</pstQueen25>
-  <pstQueen26>20</pstQueen26>
-  <pstQueen27>15</pstQueen27>
-  <pstQueen32>28</pstQueen32>
-  <pstQueen33>16</pstQueen33>
-  <pstQueen34>8</pstQueen34>
-  <pstQueen35>2</pstQueen35>
-  <pstQueen40>70</pstQueen40>
-  <pstQueen41>35</pstQueen41>
-  <pstQueen42>46</pstQueen42>
-  <pstQueen43>8</pstQueen43>
-  <pstQueen48>77</pstQueen48>
-  <pstQueen49>71</pstQueen49>
-  <pstQueen50>77</pstQueen50>
-  <pstQueen51>81</pstQueen51>
-  <pstQueen56>117</pstQueen56>
-  <pstQueen57>89</pstQueen57>
-  <pstQueen58>71</pstQueen58>
-  <pstQueen59>116</pstQueen59>
-  <pstKingMg0>104</pstKingMg0>
+  <pstRookEg58>30</pstRookEg58>
+  <pstRookEg59>29</pstRookEg59>
+  <pstRookEg60>9</pstRookEg60>
+  <pstRookEg61>55</pstRookEg61>
+  <pstRookEg62>0</pstRookEg62>
+  <pstRookEg63>0</pstRookEg63>
+  <pstQueenMg0>93</pstQueenMg0>
+  <pstQueenMg1>127</pstQueenMg1>
+  <pstQueenMg2>79</pstQueenMg2>
+  <pstQueenMg3>0</pstQueenMg3>
+  <pstQueenMg4>55</pstQueenMg4>
+  <pstQueenMg5>127</pstQueenMg5>
+  <pstQueenMg6>127</pstQueenMg6>
+  <pstQueenMg7>127</pstQueenMg7>
+  <pstQueenMg8>10</pstQueenMg8>
+  <pstQueenMg9>0</pstQueenMg9>
+  <pstQueenMg10>35</pstQueenMg10>
+  <pstQueenMg11>0</pstQueenMg11>
+  <pstQueenMg12>0</pstQueenMg12>
+  <pstQueenMg13>74</pstQueenMg13>
+  <pstQueenMg14>60</pstQueenMg14>
+  <pstQueenMg15>127</pstQueenMg15>
+  <pstQueenMg16>0</pstQueenMg16>
+  <pstQueenMg17>33</pstQueenMg17>
+  <pstQueenMg18>0</pstQueenMg18>
+  <pstQueenMg19>0</pstQueenMg19>
+  <pstQueenMg20>23</pstQueenMg20>
+  <pstQueenMg21>118</pstQueenMg21>
+  <pstQueenMg22>101</pstQueenMg22>
+  <pstQueenMg23>0</pstQueenMg23>
+  <pstQueenMg24>21</pstQueenMg24>
+  <pstQueenMg25>0</pstQueenMg25>
+  <pstQueenMg26>0</pstQueenMg26>
+  <pstQueenMg27>0</pstQueenMg27>
+  <pstQueenMg28>0</pstQueenMg28>
+  <pstQueenMg29>0</pstQueenMg29>
+  <pstQueenMg30>0</pstQueenMg30>
+  <pstQueenMg31>1</pstQueenMg31>
+  <pstQueenMg32>6</pstQueenMg32>
+  <pstQueenMg33>0</pstQueenMg33>
+  <pstQueenMg34>0</pstQueenMg34>
+  <pstQueenMg35>0</pstQueenMg35>
+  <pstQueenMg36>0</pstQueenMg36>
+  <pstQueenMg37>0</pstQueenMg37>
+  <pstQueenMg38>0</pstQueenMg38>
+  <pstQueenMg39>36</pstQueenMg39>
+  <pstQueenMg40>61</pstQueenMg40>
+  <pstQueenMg41>30</pstQueenMg41>
+  <pstQueenMg42>10</pstQueenMg42>
+  <pstQueenMg43>0</pstQueenMg43>
+  <pstQueenMg44>0</pstQueenMg44>
+  <pstQueenMg45>32</pstQueenMg45>
+  <pstQueenMg46>64</pstQueenMg46>
+  <pstQueenMg47>81</pstQueenMg47>
+  <pstQueenMg48>95</pstQueenMg48>
+  <pstQueenMg49>82</pstQueenMg49>
+  <pstQueenMg50>93</pstQueenMg50>
+  <pstQueenMg51>101</pstQueenMg51>
+  <pstQueenMg52>90</pstQueenMg52>
+  <pstQueenMg53>111</pstQueenMg53>
+  <pstQueenMg54>82</pstQueenMg54>
+  <pstQueenMg55>127</pstQueenMg55>
+  <pstQueenMg56>127</pstQueenMg56>
+  <pstQueenMg57>124</pstQueenMg57>
+  <pstQueenMg58>106</pstQueenMg58>
+  <pstQueenMg59>127</pstQueenMg59>
+  <pstQueenMg60>127</pstQueenMg60>
+  <pstQueenMg61>67</pstQueenMg61>
+  <pstQueenMg62>23</pstQueenMg62>
+  <pstQueenMg63>127</pstQueenMg63>
+  <pstQueenEg0>127</pstQueenEg0>
+  <pstQueenEg1>127</pstQueenEg1>
+  <pstQueenEg2>126</pstQueenEg2>
+  <pstQueenEg3>127</pstQueenEg3>
+  <pstQueenEg4>127</pstQueenEg4>
+  <pstQueenEg5>127</pstQueenEg5>
+  <pstQueenEg6>127</pstQueenEg6>
+  <pstQueenEg7>127</pstQueenEg7>
+  <pstQueenEg8>127</pstQueenEg8>
+  <pstQueenEg9>127</pstQueenEg9>
+  <pstQueenEg10>127</pstQueenEg10>
+  <pstQueenEg11>127</pstQueenEg11>
+  <pstQueenEg12>127</pstQueenEg12>
+  <pstQueenEg13>127</pstQueenEg13>
+  <pstQueenEg14>127</pstQueenEg14>
+  <pstQueenEg15>127</pstQueenEg15>
+  <pstQueenEg16>127</pstQueenEg16>
+  <pstQueenEg17>127</pstQueenEg17>
+  <pstQueenEg18>127</pstQueenEg18>
+  <pstQueenEg19>127</pstQueenEg19>
+  <pstQueenEg20>127</pstQueenEg20>
+  <pstQueenEg21>127</pstQueenEg21>
+  <pstQueenEg22>127</pstQueenEg22>
+  <pstQueenEg23>119</pstQueenEg23>
+  <pstQueenEg24>122</pstQueenEg24>
+  <pstQueenEg25>127</pstQueenEg25>
+  <pstQueenEg26>98</pstQueenEg26>
+  <pstQueenEg27>115</pstQueenEg27>
+  <pstQueenEg28>127</pstQueenEg28>
+  <pstQueenEg29>127</pstQueenEg29>
+  <pstQueenEg30>55</pstQueenEg30>
+  <pstQueenEg31>127</pstQueenEg31>
+  <pstQueenEg32>127</pstQueenEg32>
+  <pstQueenEg33>87</pstQueenEg33>
+  <pstQueenEg34>36</pstQueenEg34>
+  <pstQueenEg35>98</pstQueenEg35>
+  <pstQueenEg36>65</pstQueenEg36>
+  <pstQueenEg37>59</pstQueenEg37>
+  <pstQueenEg38>69</pstQueenEg38>
+  <pstQueenEg39>22</pstQueenEg39>
+  <pstQueenEg40>81</pstQueenEg40>
+  <pstQueenEg41>48</pstQueenEg41>
+  <pstQueenEg42>103</pstQueenEg42>
+  <pstQueenEg43>38</pstQueenEg43>
+  <pstQueenEg44>91</pstQueenEg44>
+  <pstQueenEg45>103</pstQueenEg45>
+  <pstQueenEg46>14</pstQueenEg46>
+  <pstQueenEg47>0</pstQueenEg47>
+  <pstQueenEg48>0</pstQueenEg48>
+  <pstQueenEg49>0</pstQueenEg49>
+  <pstQueenEg50>0</pstQueenEg50>
+  <pstQueenEg51>0</pstQueenEg51>
+  <pstQueenEg52>0</pstQueenEg52>
+  <pstQueenEg53>0</pstQueenEg53>
+  <pstQueenEg54>0</pstQueenEg54>
+  <pstQueenEg55>0</pstQueenEg55>
+  <pstQueenEg56>48</pstQueenEg56>
+  <pstQueenEg57>0</pstQueenEg57>
+  <pstQueenEg58>0</pstQueenEg58>
+  <pstQueenEg59>46</pstQueenEg59>
+  <pstQueenEg60>0</pstQueenEg60>
+  <pstQueenEg61>0</pstQueenEg61>
+  <pstQueenEg62>0</pstQueenEg62>
+  <pstQueenEg63>0</pstQueenEg63>
+  <pstKingMg0>0</pstKingMg0>
   <pstKingMg1>127</pstKingMg1>
   <pstKingMg2>127</pstKingMg2>
-  <pstKingMg3>127</pstKingMg3>
-  <pstKingMg4>127</pstKingMg4>
+  <pstKingMg3>0</pstKingMg3>
+  <pstKingMg4>66</pstKingMg4>
   <pstKingMg5>127</pstKingMg5>
-  <pstKingMg6>127</pstKingMg6>
-  <pstKingMg7>24</pstKingMg7>
+  <pstKingMg6>0</pstKingMg6>
+  <pstKingMg7>127</pstKingMg7>
   <pstKingMg8>127</pstKingMg8>
   <pstKingMg9>127</pstKingMg9>
   <pstKingMg10>127</pstKingMg10>
@@ -345,85 +665,117 @@
   <pstKingMg12>127</pstKingMg12>
   <pstKingMg13>127</pstKingMg13>
   <pstKingMg14>127</pstKingMg14>
-  <pstKingMg15>71</pstKingMg15>
+  <pstKingMg15>0</pstKingMg15>
   <pstKingMg16>127</pstKingMg16>
   <pstKingMg17>127</pstKingMg17>
   <pstKingMg18>127</pstKingMg18>
   <pstKingMg19>127</pstKingMg19>
   <pstKingMg20>127</pstKingMg20>
   <pstKingMg21>127</pstKingMg21>
-  <pstKingMg22>127</pstKingMg22>
-  <pstKingMg23>64</pstKingMg23>
-  <pstKingMg24>54</pstKingMg24>
+  <pstKingMg22>0</pstKingMg22>
+  <pstKingMg23>127</pstKingMg23>
+  <pstKingMg24>127</pstKingMg24>
   <pstKingMg25>127</pstKingMg25>
   <pstKingMg26>127</pstKingMg26>
   <pstKingMg27>127</pstKingMg27>
   <pstKingMg28>127</pstKingMg28>
   <pstKingMg29>127</pstKingMg29>
-  <pstKingMg30>92</pstKingMg30>
-  <pstKingMg31>0</pstKingMg31>
-  <pstKingMg32>0</pstKingMg32>
-  <pstKingMg33>63</pstKingMg33>
-  <pstKingMg34>88</pstKingMg34>
-  <pstKingMg35>97</pstKingMg35>
+  <pstKingMg30>127</pstKingMg30>
+  <pstKingMg31>127</pstKingMg31>
+  <pstKingMg32>127</pstKingMg32>
+  <pstKingMg33>127</pstKingMg33>
+  <pstKingMg34>127</pstKingMg34>
+  <pstKingMg35>127</pstKingMg35>
   <pstKingMg36>0</pstKingMg36>
-  <pstKingMg37>0</pstKingMg37>
-  <pstKingMg38>0</pstKingMg38>
-  <pstKingMg39>0</pstKingMg39>
-  <pstKingMg40>0</pstKingMg40>
-  <pstKingMg41>58</pstKingMg41>
-  <pstKingMg42>0</pstKingMg42>
-  <pstKingMg43>0</pstKingMg43>
-  <pstKingMg44>0</pstKingMg44>
-  <pstKingMg45>0</pstKingMg45>
-  <pstKingMg46>37</pstKingMg46>
-  <pstKingMg47>0</pstKingMg47>
-  <pstKingMg48>90</pstKingMg48>
-  <pstKingMg49>51</pstKingMg49>
-  <pstKingMg50>55</pstKingMg50>
-  <pstKingMg51>21</pstKingMg51>
-  <pstKingMg52>0</pstKingMg52>
-  <pstKingMg53>39</pstKingMg53>
-  <pstKingMg54>101</pstKingMg54>
-  <pstKingMg55>67</pstKingMg55>
-  <pstKingMg56>80</pstKingMg56>
+  <pstKingMg37>127</pstKingMg37>
+  <pstKingMg38>127</pstKingMg38>
+  <pstKingMg39>127</pstKingMg39>
+  <pstKingMg40>127</pstKingMg40>
+  <pstKingMg41>127</pstKingMg41>
+  <pstKingMg42>127</pstKingMg42>
+  <pstKingMg43>127</pstKingMg43>
+  <pstKingMg44>127</pstKingMg44>
+  <pstKingMg45>127</pstKingMg45>
+  <pstKingMg46>127</pstKingMg46>
+  <pstKingMg47>127</pstKingMg47>
+  <pstKingMg48>127</pstKingMg48>
+  <pstKingMg49>127</pstKingMg49>
+  <pstKingMg50>0</pstKingMg50>
+  <pstKingMg51>127</pstKingMg51>
+  <pstKingMg52>127</pstKingMg52>
+  <pstKingMg53>127</pstKingMg53>
+  <pstKingMg54>127</pstKingMg54>
+  <pstKingMg55>127</pstKingMg55>
+  <pstKingMg56>127</pstKingMg56>
   <pstKingMg57>127</pstKingMg57>
-  <pstKingMg58>106</pstKingMg58>
-  <pstKingMg59>0</pstKingMg59>
-  <pstKingMg60>48</pstKingMg60>
-  <pstKingMg61>0</pstKingMg61>
+  <pstKingMg58>127</pstKingMg58>
+  <pstKingMg59>20</pstKingMg59>
+  <pstKingMg60>0</pstKingMg60>
+  <pstKingMg61>127</pstKingMg61>
   <pstKingMg62>127</pstKingMg62>
-  <pstKingMg63>87</pstKingMg63>
-  <pstKingEg0>121</pstKingEg0>
+  <pstKingMg63>108</pstKingMg63>
+  <pstKingEg0>0</pstKingEg0>
   <pstKingEg1>127</pstKingEg1>
   <pstKingEg2>127</pstKingEg2>
   <pstKingEg3>127</pstKingEg3>
+  <pstKingEg4>127</pstKingEg4>
+  <pstKingEg5>127</pstKingEg5>
+  <pstKingEg6>0</pstKingEg6>
+  <pstKingEg7>127</pstKingEg7>
   <pstKingEg8>127</pstKingEg8>
   <pstKingEg9>127</pstKingEg9>
   <pstKingEg10>127</pstKingEg10>
   <pstKingEg11>127</pstKingEg11>
+  <pstKingEg12>127</pstKingEg12>
+  <pstKingEg13>127</pstKingEg13>
+  <pstKingEg14>127</pstKingEg14>
+  <pstKingEg15>120</pstKingEg15>
   <pstKingEg16>127</pstKingEg16>
   <pstKingEg17>127</pstKingEg17>
   <pstKingEg18>127</pstKingEg18>
   <pstKingEg19>127</pstKingEg19>
-  <pstKingEg24>106</pstKingEg24>
+  <pstKingEg20>127</pstKingEg20>
+  <pstKingEg21>127</pstKingEg21>
+  <pstKingEg22>127</pstKingEg22>
+  <pstKingEg23>127</pstKingEg23>
+  <pstKingEg24>127</pstKingEg24>
   <pstKingEg25>127</pstKingEg25>
   <pstKingEg26>127</pstKingEg26>
   <pstKingEg27>127</pstKingEg27>
-  <pstKingEg32>37</pstKingEg32>
-  <pstKingEg33>94</pstKingEg33>
+  <pstKingEg28>127</pstKingEg28>
+  <pstKingEg29>127</pstKingEg29>
+  <pstKingEg30>127</pstKingEg30>
+  <pstKingEg31>127</pstKingEg31>
+  <pstKingEg32>127</pstKingEg32>
+  <pstKingEg33>127</pstKingEg33>
   <pstKingEg34>127</pstKingEg34>
   <pstKingEg35>127</pstKingEg35>
-  <pstKingEg40>0</pstKingEg40>
-  <pstKingEg41>31</pstKingEg41>
-  <pstKingEg42>55</pstKingEg42>
-  <pstKingEg43>67</pstKingEg43>
-  <pstKingEg48>0</pstKingEg48>
-  <pstKingEg49>19</pstKingEg49>
-  <pstKingEg50>24</pstKingEg50>
-  <pstKingEg51>3</pstKingEg51>
-  <pstKingEg56>0</pstKingEg56>
-  <pstKingEg57>20</pstKingEg57>
-  <pstKingEg58>0</pstKingEg58>
-  <pstKingEg59>0</pstKingEg59>
+  <pstKingEg36>50</pstKingEg36>
+  <pstKingEg37>127</pstKingEg37>
+  <pstKingEg38>127</pstKingEg38>
+  <pstKingEg39>127</pstKingEg39>
+  <pstKingEg40>127</pstKingEg40>
+  <pstKingEg41>127</pstKingEg41>
+  <pstKingEg42>127</pstKingEg42>
+  <pstKingEg43>127</pstKingEg43>
+  <pstKingEg44>127</pstKingEg44>
+  <pstKingEg45>127</pstKingEg45>
+  <pstKingEg46>127</pstKingEg46>
+  <pstKingEg47>127</pstKingEg47>
+  <pstKingEg48>127</pstKingEg48>
+  <pstKingEg49>127</pstKingEg49>
+  <pstKingEg50>127</pstKingEg50>
+  <pstKingEg51>127</pstKingEg51>
+  <pstKingEg52>127</pstKingEg52>
+  <pstKingEg53>127</pstKingEg53>
+  <pstKingEg54>127</pstKingEg54>
+  <pstKingEg55>127</pstKingEg55>
+  <pstKingEg56>103</pstKingEg56>
+  <pstKingEg57>127</pstKingEg57>
+  <pstKingEg58>127</pstKingEg58>
+  <pstKingEg59>127</pstKingEg59>
+  <pstKingEg60>0</pstKingEg60>
+  <pstKingEg61>127</pstKingEg61>
+  <pstKingEg62>127</pstKingEg62>
+  <pstKingEg63>0</pstKingEg63>
 </parameters>
