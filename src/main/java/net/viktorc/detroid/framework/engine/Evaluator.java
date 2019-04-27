@@ -140,8 +140,8 @@ public class Evaluator {
   // Evaluation score hash table.
   private final Cache<ETEntry> evalTable;
 
-  private byte[][] pstMg;
-  private byte[][] pstEg;
+  private short[][] pstMg;
+  private short[][] pstEg;
 
   /**
    * Initializes a chess position evaluator.
@@ -187,81 +187,81 @@ public class Evaluator {
   }
 
   private void initPieceSquareArrays() {
-    byte[] pstPawnMg = params.getPstPawnMg();
-    byte[] pstPawnEg = params.getPstPawnEg();
-    byte[] pstKnightMg = params.getPstKnightMg();
-    byte[] pstKnightEg = params.getPstKnightEg();
-    byte[] pstBishopMg = params.getPstBishopMg();
-    byte[] pstBishopEg = params.getPstBishopEg();
-    byte[] pstRookMg = params.getPstRookMg();
-    byte[] pstRookEg = params.getPstRookEg();
-    byte[] pstQueenMg = params.getPstQueenMg();
-    byte[] pstQueenEg = params.getPstQueenEg();
-    byte[] pstKingMg = params.getPstKingMg();
-    byte[] pstKingEg = params.getPstKingEg();
-    byte[] pstWPawnMg = new byte[64];
-    byte[] pstWPawnEg = new byte[64];
-    byte[] pstWKnightMg = new byte[64];
-    byte[] pstWKnightEg = new byte[64];
-    byte[] pstWBishopMg = new byte[64];
-    byte[] pstWBishopEg = new byte[64];
-    byte[] pstWRookMg = new byte[64];
-    byte[] pstWRookEg = new byte[64];
-    byte[] pstWQueenMg = new byte[64];
-    byte[] pstWQueenEg = new byte[64];
-    byte[] pstWKingMg = new byte[64];
-    byte[] pstWKingEg = new byte[64];
-    byte[] pstBPawnMg = new byte[64];
-    byte[] pstBPawnEg = new byte[64];
-    byte[] pstBKnightMg = new byte[64];
-    byte[] pstBKnightEg = new byte[64];
-    byte[] pstBBishopMg = new byte[64];
-    byte[] pstBBishopEg = new byte[64];
-    byte[] pstBRookMg = new byte[64];
-    byte[] pstBRookEg = new byte[64];
-    byte[] pstBQueenMg = new byte[64];
-    byte[] pstBQueenEg = new byte[64];
-    byte[] pstBKingMg = new byte[64];
-    byte[] pstBKingEg = new byte[64];
+    short[] pstPawnMg = params.getPstPawnMg();
+    short[] pstPawnEg = params.getPstPawnEg();
+    short[] pstKnightMg = params.getPstKnightMg();
+    short[] pstKnightEg = params.getPstKnightEg();
+    short[] pstBishopMg = params.getPstBishopMg();
+    short[] pstBishopEg = params.getPstBishopEg();
+    short[] pstRookMg = params.getPstRookMg();
+    short[] pstRookEg = params.getPstRookEg();
+    short[] pstQueenMg = params.getPstQueenMg();
+    short[] pstQueenEg = params.getPstQueenEg();
+    short[] pstKingMg = params.getPstKingMg();
+    short[] pstKingEg = params.getPstKingEg();
+    short[] pstWPawnMg = new short[64];
+    short[] pstWPawnEg = new short[64];
+    short[] pstWKnightMg = new short[64];
+    short[] pstWKnightEg = new short[64];
+    short[] pstWBishopMg = new short[64];
+    short[] pstWBishopEg = new short[64];
+    short[] pstWRookMg = new short[64];
+    short[] pstWRookEg = new short[64];
+    short[] pstWQueenMg = new short[64];
+    short[] pstWQueenEg = new short[64];
+    short[] pstWKingMg = new short[64];
+    short[] pstWKingEg = new short[64];
+    short[] pstBPawnMg = new short[64];
+    short[] pstBPawnEg = new short[64];
+    short[] pstBKnightMg = new short[64];
+    short[] pstBKnightEg = new short[64];
+    short[] pstBBishopMg = new short[64];
+    short[] pstBBishopEg = new short[64];
+    short[] pstBRookMg = new short[64];
+    short[] pstBRookEg = new short[64];
+    short[] pstBQueenMg = new short[64];
+    short[] pstBQueenEg = new short[64];
+    short[] pstBKingMg = new short[64];
+    short[] pstBKingEg = new short[64];
     /* Due to the reversed order of the rows in the definition of the white piece-square tables, they are just
      * right for black with negated values. */
     for (int i = 0; i < 64; i++) {
-      pstBPawnMg[i] = (byte) -pstPawnMg[i];
-      pstBPawnEg[i] = (byte) -pstPawnEg[i];
-      pstBKnightMg[i] = (byte) -pstKnightMg[i];
-      pstBKnightEg[i] = (byte) -pstKnightEg[i];
-      pstBBishopMg[i] = (byte) -pstBishopMg[i];
-      pstBBishopEg[i] = (byte) -pstBishopEg[i];
-      pstBRookMg[i] = (byte) -pstRookMg[i];
-      pstBRookEg[i] = (byte) -pstRookEg[i];
-      pstBQueenMg[i] = (byte) -pstQueenMg[i];
-      pstBQueenEg[i] = (byte) -pstQueenEg[i];
-      pstBKingMg[i] = (byte) -pstKingMg[i];
-      pstBKingEg[i] = (byte) -pstKingEg[i];
+      pstBPawnMg[i] = (short) -pstPawnMg[i];
+      pstBPawnEg[i] = (short) -pstPawnEg[i];
+      pstBKnightMg[i] = (short) -pstKnightMg[i];
+      pstBKnightEg[i] = (short) -pstKnightEg[i];
+      pstBBishopMg[i] = (short) -pstBishopMg[i];
+      pstBBishopEg[i] = (short) -pstBishopEg[i];
+      pstBRookMg[i] = (short) -pstRookMg[i];
+      pstBRookEg[i] = (short) -pstRookEg[i];
+      pstBQueenMg[i] = (short) -pstQueenMg[i];
+      pstBQueenEg[i] = (short) -pstQueenEg[i];
+      pstBKingMg[i] = (short) -pstKingMg[i];
+      pstBKingEg[i] = (short) -pstKingEg[i];
     }
     // To get the right values for the white piece-square tables, vertically mirror and negate the ones for black.
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
         int c1 = i * 8 + j;
         int c2 = ((7 - i) * 8) + j;
-        pstWPawnMg[c1] = (byte) -pstBPawnMg[c2];
-        pstWPawnEg[c1] = (byte) -pstBPawnEg[c2];
-        pstWKnightMg[c1] = (byte) -pstBKnightMg[c2];
-        pstWKnightEg[c1] = (byte) -pstBKnightEg[c2];
-        pstWBishopMg[c1] = (byte) -pstBBishopMg[c2];
-        pstWBishopEg[c1] = (byte) -pstBBishopEg[c2];
-        pstWRookMg[c1] = (byte) -pstBRookMg[c2];
-        pstWRookEg[c1] = (byte) -pstBRookEg[c2];
-        pstWQueenMg[c1] = (byte) -pstBQueenMg[c2];
-        pstWQueenEg[c1] = (byte) -pstBQueenEg[c2];
-        pstWKingMg[c1] = (byte) -pstBKingMg[c2];
-        pstWKingEg[c1] = (byte) -pstBKingEg[c2];
+        pstWPawnMg[c1] = (short) -pstBPawnMg[c2];
+        pstWPawnEg[c1] = (short) -pstBPawnEg[c2];
+        pstWKnightMg[c1] = (short) -pstBKnightMg[c2];
+        pstWKnightEg[c1] = (short) -pstBKnightEg[c2];
+        pstWBishopMg[c1] = (short) -pstBBishopMg[c2];
+        pstWBishopEg[c1] = (short) -pstBBishopEg[c2];
+        pstWRookMg[c1] = (short) -pstBRookMg[c2];
+        pstWRookEg[c1] = (short) -pstBRookEg[c2];
+        pstWQueenMg[c1] = (short) -pstBQueenMg[c2];
+        pstWQueenEg[c1] = (short) -pstBQueenEg[c2];
+        pstWKingMg[c1] = (short) -pstBKingMg[c2];
+        pstWKingEg[c1] = (short) -pstBKingEg[c2];
       }
     }
     // Set the opening and endgame arrays of piece square tables.
-    pstMg = new byte[][]{pstWKingMg, pstWQueenMg, pstWRookMg, pstWBishopMg, pstWKnightMg, pstWPawnMg,
+    pstMg = new short[][]{pstWKingMg, pstWQueenMg, pstWRookMg, pstWBishopMg, pstWKnightMg, pstWPawnMg,
         pstBKingMg, pstBQueenMg, pstBRookMg, pstBBishopMg, pstBKnightMg, pstBPawnMg};
-    pstEg = new byte[][]{pstWKingEg, pstWQueenEg, pstWRookEg, pstWBishopEg, pstWKnightEg, pstWPawnEg,
+    pstEg = new short[][]{pstWKingEg, pstWQueenEg, pstWRookEg, pstWBishopEg, pstWKnightEg, pstWPawnEg,
         pstBKingEg, pstBQueenEg, pstBRookEg, pstBBishopEg, pstBKnightEg, pstBPawnEg};
   }
 
@@ -309,7 +309,7 @@ public class Evaluator {
    * @param move The move to score.
    * @return The MVV/LVA score of the move.
    */
-  public short MVVLVA(Move move) {
+  public static short MVVLVA(Move move) {
     short score = 0;
     if (move.type == MoveType.PROMOTION_TO_QUEEN.ind) {
       byte queenValue = MVV_LVA_PIECE_VALUES[Piece.W_QUEEN.ind];
@@ -418,7 +418,7 @@ public class Evaluator {
     return gains[0];
   }
 
-  private int phaseScore(int numOfQueens, int numOfRooks, int numOfBishops, int numOfKnights) {
+  private static int phaseScore(int numOfQueens, int numOfRooks, int numOfBishops, int numOfKnights) {
     int phase = TOTAL_OPENING_PHASE_WEIGHT - (numOfQueens * QUEEN_PHASE_WEIGHT + numOfRooks * ROOK_PHASE_WEIGHT
         + numOfBishops * BISHOP_PHASE_WEIGHT + numOfKnights * KNIGHT_PHASE_WEIGHT);
     return (phase * MAX_PHASE_SCORE + TOTAL_OPENING_PHASE_WEIGHT / 2) / TOTAL_OPENING_PHASE_WEIGHT;
@@ -430,7 +430,7 @@ public class Evaluator {
    * @param pos The position whose phase is to be gauged.
    * @return The phase estimate.
    */
-  public int phaseScore(Position pos) {
+  public static int phaseScore(Position pos) {
     int numOfQueens = BitOperations.hammingWeight(pos.getWhiteQueens() | pos.getBlackQueens());
     int numOfRooks = BitOperations.hammingWeight(pos.getWhiteRooks() | pos.getBlackRooks());
     int numOfBishops = BitOperations.hammingWeight(pos.getWhiteBishops() | pos.getBlackBishops());
@@ -438,7 +438,7 @@ public class Evaluator {
     return phaseScore(numOfQueens, numOfRooks, numOfBishops, numOfKnights);
   }
 
-  private int taperedEvalScore(int mgEval, int egEval, int phaseScore) {
+  private static int taperedEvalScore(int mgEval, int egEval, int phaseScore) {
     return (mgEval * (MAX_PHASE_SCORE - phaseScore) + egEval * phaseScore) / MAX_PHASE_SCORE;
   }
 

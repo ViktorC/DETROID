@@ -508,7 +508,7 @@ public class Search implements Runnable, Future<SearchResults> {
       Move[] arr = new Move[moves.size()];
       int i = 0;
       for (Move move : moves) {
-        move.setValue(eval.MVVLVA(move));
+        move.setValue(Evaluator.MVVLVA(move));
         arr[i++] = move;
       }
       return QuickSort.sort(arr);
