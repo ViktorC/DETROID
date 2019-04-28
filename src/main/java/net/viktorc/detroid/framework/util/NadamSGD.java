@@ -238,8 +238,9 @@ public abstract class NadamSGD<E, L> {
             }
             logger.info("Epoch: " + t + "; Update: " + (iterations++) + System.lineSeparator() +
                 "Greatest deltas: " + Arrays.toString(greatestDelta) + System.lineSeparator() +
-                "Deltas: " + Arrays.toString(deltas) + System.lineSeparator() + "Parameters: " +
-                Arrays.toString(parameters));
+                "Deltas: " + Arrays.toString(deltas) + System.lineSeparator() +
+                "Gradient: " + Arrays.toString(gradient) + System.lineSeparator() +
+                "Parameters: " + Arrays.toString(parameters));
           }
         }
         learningRate *= learningAnnealingRate;
