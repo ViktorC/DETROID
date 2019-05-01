@@ -48,6 +48,14 @@ public abstract class NadamSGD<E, L> {
    */
   protected static final double SECOND_MOMENT_DECAY_RATE = .999;
   /**
+   * The default L1 regularization coefficient.
+   */
+  protected static final double L1_REGULARIZATION_COEFF = 0d;
+  /**
+   * The default L2 regularization coefficient.
+   */
+  protected static final double L2_REGULARIZATION_COEFF = 0d;
+  /**
    * The default fudgy factor used for conditioning the Root-Mean-Square of the decaying second moment estimates of the gradient as the
    * denominator in the deltas.
    */
@@ -62,6 +70,8 @@ public abstract class NadamSGD<E, L> {
   protected final double learningAnnealingRate;
   protected final double firstMomentDecayRate;
   protected final double secondMomentDecayRate;
+  protected final double l1RegularizationCoeff;
+  protected final double l2RegularizationCoeff;
   protected final double epsilon;
   protected final long trainingBatchSize;
   protected final long costCalculationBatchSize;
@@ -105,6 +115,8 @@ public abstract class NadamSGD<E, L> {
    * @param secondMomentDecayRate A constant that determines the base decay rate of the accumulated gradient squares. If it is null, a default
    * value of 0.999 is used. The lower this value, the faster the decay. It is not recommended to change this value. However, if it is
    * changed, the new value has to be within the range of 0 (inclusive) and 1 (inclusive).
+   * @param l1RegularizationCoeff The coefficient to use for L1 parameter regularization, by default 0.
+   * @param l2RegularizationCoeff The coefficient to use for L2 parameter regularization, by default 0.
    * @param epsilon A constant used to better condition the denominator when calculating the Root-Mean-Squares. If it is null, the default
    * value of 1e-8 will be used. It is not recommended to change this value.
    * @param logger A logger to log the status of the optimization. If it is null, no logging is performed.
@@ -113,7 +125,8 @@ public abstract class NadamSGD<E, L> {
    */
   protected NadamSGD(double[] parameters, double[] minValues, double[] maxValues, long trainingBatchSize, long costCalculationBatchSize,
       int epochs, Double h, Double baseLearningRate, Double learningAnnealingRate, Double firstMomentDecayRate,
-      Double secondMomentDecayRate, Double epsilon, Logger logger) throws IllegalArgumentException {
+      Double secondMomentDecayRate, Double l1RegularizationCoeff, Double l2RegularizationCoeff, Double epsilon, Logger logger)
+      throws IllegalArgumentException {
     if (parameters == null || parameters.length == 0) {
       throw new IllegalArgumentException("The parameters array cannot be null and its length has to be greater than 0.");
     }
@@ -173,13 +186,21 @@ public abstract class NadamSGD<E, L> {
       throw new IllegalArgumentException("The second momentum decay rate cannot be greater than 1 or smaller than 0.");
     }
     this.secondMomentDecayRate = (secondMomentDecayRate == null ? SECOND_MOMENT_DECAY_RATE : secondMomentDecayRate);
+    if (l1RegularizationCoeff != null && (l1RegularizationCoeff < 0)) {
+      throw new IllegalArgumentException("The L1 regularization coefficient has to be greater than 0.");
+    }
+    this.l1RegularizationCoeff = (l1RegularizationCoeff == null ? L1_REGULARIZATION_COEFF : l1RegularizationCoeff);
+    if (l2RegularizationCoeff != null && (l2RegularizationCoeff < 0)) {
+      throw new IllegalArgumentException("The L2 regularization coefficient has to be greater than 0.");
+    }
+    this.l2RegularizationCoeff = (l2RegularizationCoeff == null ? L2_REGULARIZATION_COEFF : l2RegularizationCoeff);
     this.epsilon = (epsilon == null ? EPSILON : epsilon);
     this.logger = logger;
   }
 
   /**
-   * Optimizes the parameters and returns the set that is associated with the minimum of the cost function (whether it's a local or global one
-   * depends on the convexity of the function).
+   * Optimizes the parameters and returns the set that is associated with the minimum of the cost function (whether it's a local or global
+   * one depends on the convexity of the function).
    *
    * @return The optimal parameter set.
    */
@@ -236,7 +257,7 @@ public abstract class NadamSGD<E, L> {
             for (int j = 0; j < greatestDelta.length; j++) {
               greatestDelta[j] = sortedDelta.get(sortedDelta.size() - (j + 1));
             }
-            logger.info("Epoch: " + t + "; Update: " + (iterations++) + System.lineSeparator() +
+            logger.info("Epoch: " + t + "; Update: " + (iterations++) + "; Batch size: " + batch.size() + System.lineSeparator() +
                 "Greatest deltas: " + Arrays.toString(greatestDelta) + System.lineSeparator() +
                 "Deltas: " + Arrays.toString(deltas) + System.lineSeparator() +
                 "Gradient: " + Arrays.toString(gradient) + System.lineSeparator() +
@@ -264,10 +285,20 @@ public abstract class NadamSGD<E, L> {
     double[] gradient = computeGradient(parameters, dataSample);
     if (gradient == null) {
       gradient = approximateGradient(dataSample);
+    } else {
+      for (int i = 0; i < gradient.length; i++) {
+        if (indicesToIgnore.contains(i)) {
+          gradient[i] = 0;
+        }
+      }
     }
     double sampleSize = dataSample.size();
     for (int i = 0; i < gradient.length; i++) {
-      gradient[i] /= sampleSize;
+      double parameter = parameters[i];
+      double derivative = gradient[i];
+      double l1Reg = parameter >= 0 ? l1RegularizationCoeff : -l1RegularizationCoeff;
+      double l2Reg = l2RegularizationCoeff * 2 * parameter;
+      gradient[i] = (derivative + l1Reg + l2Reg) / sampleSize;
     }
     return gradient;
   }
@@ -323,6 +354,12 @@ public abstract class NadamSGD<E, L> {
     double[] numericalGradient = approximateGradient(dataSample);
     if (symbolicGradient == null) {
       return false;
+    } else {
+      for (int i = 0; i < symbolicGradient.length; i++) {
+        if (indicesToIgnore.contains(i)) {
+          symbolicGradient[i] = 0;
+        }
+      }
     }
     boolean pass = true;
     for (int i = 0; i < parameters.length; i++) {
@@ -365,6 +402,9 @@ public abstract class NadamSGD<E, L> {
       double loss = computeCost(parameters, batch);
       totalCost += loss;
       samples += batch.size();
+    }
+    if (samples == 0) {
+      return 0;
     }
     return totalCost / samples;
   }

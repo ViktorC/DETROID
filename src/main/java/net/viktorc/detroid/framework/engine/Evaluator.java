@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.viktorc.detroid.framework.engine.Bitboard.Diagonal;
 import net.viktorc.detroid.framework.engine.Bitboard.File;
 import net.viktorc.detroid.framework.engine.Bitboard.Rank;
+import net.viktorc.detroid.framework.engine.Bitboard.Square;
 import net.viktorc.detroid.framework.util.BitOperations;
 import net.viktorc.detroid.framework.util.Cache;
 
@@ -135,6 +136,26 @@ public class Evaluator {
       }
     }
   }
+
+  private static long SHORT_CASTLED_W_KING_PAWN_SHIELD1 = Square.F2.bitboard | Square.G2.bitboard | Square.H2.bitboard;
+  private static long SHORT_CASTLED_W_KING_PAWN_SHIELD2 = SHORT_CASTLED_W_KING_PAWN_SHIELD1 << 8;
+  private static long SHORT_CASTLED_W_KING_PAWN_STORM1 = SHORT_CASTLED_W_KING_PAWN_SHIELD2;
+  private static long SHORT_CASTLED_W_KING_PAWN_STORM2 = SHORT_CASTLED_W_KING_PAWN_STORM1 << 8;
+
+  private static long SHORT_CASTLED_B_KING_PAWN_SHIELD1 = Square.F7.bitboard | Square.G7.bitboard | Square.H7.bitboard;
+  private static long SHORT_CASTLED_B_KING_PAWN_SHIELD2 = SHORT_CASTLED_B_KING_PAWN_SHIELD1 >>> 8;
+  private static long SHORT_CASTLED_B_KING_PAWN_STORM1 = SHORT_CASTLED_B_KING_PAWN_SHIELD2;
+  private static long SHORT_CASTLED_B_KING_PAWN_STORM2 = SHORT_CASTLED_B_KING_PAWN_STORM1 >>> 8;
+
+  private static long LONG_CASTLED_W_KING_PAWN_SHIELD1 = Square.A2.bitboard | Square.B2.bitboard | Square.C2.bitboard;
+  private static long LONG_CASTLED_W_KING_PAWN_SHIELD2 = LONG_CASTLED_W_KING_PAWN_SHIELD1 << 8;
+  private static long LONG_CASTLED_W_KING_PAWN_STORM1 = LONG_CASTLED_W_KING_PAWN_SHIELD2;
+  private static long LONG_CASTLED_W_KING_PAWN_STORM2 = LONG_CASTLED_W_KING_PAWN_STORM1 << 8;
+
+  private static long LONG_CASTLED_B_KING_PAWN_SHIELD1 = Square.A7.bitboard | Square.B7.bitboard | Square.C7.bitboard;
+  private static long LONG_CASTLED_B_KING_PAWN_SHIELD2 = LONG_CASTLED_B_KING_PAWN_SHIELD1 >>> 8;
+  private static long LONG_CASTLED_B_KING_PAWN_STORM1 = LONG_CASTLED_B_KING_PAWN_SHIELD2;
+  private static long LONG_CASTLED_B_KING_PAWN_STORM2 = LONG_CASTLED_B_KING_PAWN_STORM1 >>> 8;
 
   private final DetroidParameters params;
   // Evaluation score hash table.
@@ -442,153 +463,6 @@ public class Evaluator {
     return (mgEval * (MAX_PHASE_SCORE - phaseScore) + egEval * phaseScore) / MAX_PHASE_SCORE;
   }
 
-  private short pawnKingStructureScore(long whiteKing, long blackKing, long whitePawns, long blackPawns,
-      Map<String, Double> gradientCache) {
-    int score = 0;
-    // Pawn attacks.
-    long whitePawnAttacks = Bitboard.computeWhitePawnCaptureSets(whitePawns, Bitboard.FULL_BOARD);
-    long blackPawnAttacks = Bitboard.computeBlackPawnCaptureSets(blackPawns, Bitboard.FULL_BOARD);
-    // Blocked pawns.
-    int numOfBlockedPawnsDiff1 = (BitOperations.hammingWeight((blackPawns >>> 8) & blackPawns) -
-        BitOperations.hammingWeight((whitePawns << 8) & whitePawns));
-    int numOfBlockedPawnsDiff2 = (BitOperations.hammingWeight((blackPawns >>> 16) & blackPawns) -
-        BitOperations.hammingWeight((whitePawns << 16) & whitePawns));
-    int numOfBlockedPawnsDiff3 = (BitOperations.hammingWeight((blackPawns >>> 24) & blackPawns) -
-        BitOperations.hammingWeight((whitePawns << 24) & whitePawns));
-    score += params.blockedPawnWeight1 * numOfBlockedPawnsDiff1;
-    score += params.blockedPawnWeight2 * numOfBlockedPawnsDiff2;
-    score += params.blockedPawnWeight3 * numOfBlockedPawnsDiff3;
-    // Passed pawns.
-    long whiteAdvanceSpans = Bitboard.fillNorth(whitePawns) & ~whitePawns;
-    long whiteAttackSpans = ((whiteAdvanceSpans >>> 1) & ~File.H.bitboard) | ((whiteAdvanceSpans << 1) & ~File.A.bitboard);
-    long whiteFrontSpans = whiteAdvanceSpans | whiteAttackSpans;
-    long blackAdvanceSpans = Bitboard.fillSouth(blackPawns) & ~whitePawns;
-    long blackAttackSpans = ((blackAdvanceSpans >>> 1) & ~File.H.bitboard) | ((blackAdvanceSpans << 1) & ~File.A.bitboard);
-    long blackFrontSpans = blackAdvanceSpans | blackAttackSpans;
-    long whitePassedPawns = whitePawns & ~blackFrontSpans;
-    long blackPassedPawns = blackPawns & ~whiteFrontSpans;
-    int numOfPassedPawnsDiff = (BitOperations.hammingWeight(whitePassedPawns) - BitOperations.hammingWeight(blackPassedPawns));
-    score += params.passedPawnWeight * numOfPassedPawnsDiff;
-    // Isolated pawns.
-    long whiteSideSpans = Bitboard.fillSouth(whiteAttackSpans);
-    long blackSideSpans = Bitboard.fillNorth(blackAttackSpans);
-    long whiteIsolatedPawns = whitePawns & ~whiteSideSpans;
-    long blackIsolatedPawns = blackPawns & ~blackSideSpans;
-    int numOfIsolatedPawnsDiff = (BitOperations.hammingWeight(blackIsolatedPawns) - BitOperations.hammingWeight(whiteIsolatedPawns));
-    score += params.isolatedPawnWeight * numOfIsolatedPawnsDiff;
-    // Backward pawns.
-    long whiteBackwardPawns = whitePawns & ((blackPawnAttacks & ~whiteAttackSpans) >>> 8);
-    long blackBackwardPawns = blackPawns & ((whitePawnAttacks & ~blackAttackSpans) << 8);
-    int numOfBackwardPawnsDiff = (BitOperations.hammingWeight(blackBackwardPawns) - BitOperations.hammingWeight(whiteBackwardPawns));
-    score += params.backwardPawnWeight * numOfBackwardPawnsDiff;
-    long whiteWeakPawns = whiteIsolatedPawns | whiteBackwardPawns;
-    long blackWeakPawns = blackIsolatedPawns | blackBackwardPawns;
-    // King-pawn tropism.
-    int numOfWhitePawns = 0;
-    int numOfBlackPawns = 0;
-    byte whiteKingInd = BitOperations.indexOfBit(whiteKing);
-    byte blackKingInd = BitOperations.indexOfBit(blackKing);
-    int whiteKingWhitePassedPawnTropism = 0;
-    int whiteKingWhiteWeakPawnTropism = 0;
-    int whiteKingWhiteNormalPawnTropism = 0;
-    int blackKingWhitePassedPawnTropism = 0;
-    int blackKingWhiteWeakPawnTropism = 0;
-    int blackKingWhiteNormalPawnTropism = 0;
-    long whitePawnSet = whitePawns;
-    while (whitePawnSet != Bitboard.EMPTY_BOARD) {
-      numOfWhitePawns++;
-      long pawn = BitOperations.getLSBit(whitePawnSet);
-      byte pawnInd = BitOperations.indexOfBit(pawn);
-      if ((whitePassedPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingWhitePassedPawnTropism += MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingWhitePassedPawnTropism += MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-      } else if ((whiteWeakPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingWhiteWeakPawnTropism += MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingWhiteWeakPawnTropism += MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-      } else {
-        whiteKingWhiteNormalPawnTropism += MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingWhiteNormalPawnTropism += MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-      }
-      whitePawnSet = BitOperations.resetLSBit(whitePawnSet);
-    }
-    long blackPawnSet = blackPawns;
-    int whiteKingBlackPassedPawnTropism = 0;
-    int whiteKingBlackWeakPawnTropism = 0;
-    int whiteKingBlackNormalPawnTropism = 0;
-    int blackKingBlackPassedPawnTropism = 0;
-    int blackKingBlackWeakPawnTropism = 0;
-    int blackKingBlackNormalPawnTropism = 0;
-    while (blackPawnSet != Bitboard.EMPTY_BOARD) {
-      numOfBlackPawns++;
-      long pawn = BitOperations.getLSBit(blackPawnSet);
-      byte pawnInd = BitOperations.indexOfBit(pawn);
-      if ((blackPassedPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingBlackPassedPawnTropism += MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingBlackPassedPawnTropism += MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-      } else if ((blackWeakPawns & pawn) != Bitboard.EMPTY_BOARD) {
-        whiteKingBlackWeakPawnTropism += MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingBlackWeakPawnTropism += MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-      } else {
-        whiteKingBlackNormalPawnTropism += MANHATTAN_DISTANCE[whiteKingInd][pawnInd];
-        blackKingBlackNormalPawnTropism += MANHATTAN_DISTANCE[blackKingInd][pawnInd];
-      }
-      blackPawnSet = BitOperations.resetLSBit(blackPawnSet);
-    }
-    if (numOfWhitePawns > 0) {
-      score -= params.friendlyPassedPawnTropismWeight * whiteKingWhitePassedPawnTropism / numOfWhitePawns;
-      score -= params.friendlyWeakPawnTropismWeight * whiteKingWhiteWeakPawnTropism / numOfWhitePawns;
-      score -= params.friendlyNormalPawnTropismWeight * whiteKingWhiteNormalPawnTropism / numOfWhitePawns;
-      score += params.opponentPassedPawnTropismWeight * blackKingWhitePassedPawnTropism / numOfWhitePawns;
-      score += params.opponentWeakPawnTropismWeight * blackKingWhiteWeakPawnTropism / numOfWhitePawns;
-      score += params.opponentNormalPawnTropismWeight * blackKingWhiteNormalPawnTropism / numOfWhitePawns;
-    }
-    if (numOfBlackPawns > 0) {
-      score += params.friendlyPassedPawnTropismWeight * blackKingBlackPassedPawnTropism / numOfBlackPawns;
-      score += params.friendlyWeakPawnTropismWeight * blackKingBlackWeakPawnTropism / numOfBlackPawns;
-      score += params.friendlyNormalPawnTropismWeight * blackKingBlackNormalPawnTropism / numOfBlackPawns;
-      score -= params.opponentPassedPawnTropismWeight * whiteKingBlackPassedPawnTropism / numOfBlackPawns;
-      score -= params.opponentWeakPawnTropismWeight * whiteKingBlackWeakPawnTropism / numOfBlackPawns;
-      score -= params.opponentNormalPawnTropismWeight * whiteKingBlackNormalPawnTropism / numOfBlackPawns;
-    }
-    if (gradientCache != null) {
-      gradientCache.put("blockedPawnWeight1", (double) numOfBlockedPawnsDiff1);
-      gradientCache.put("blockedPawnWeight2", (double) numOfBlockedPawnsDiff2);
-      gradientCache.put("blockedPawnWeight3", (double) numOfBlockedPawnsDiff3);
-      gradientCache.put("passedPawnWeight", (double) numOfPassedPawnsDiff);
-      gradientCache.put("isolatedPawnWeight", (double) numOfIsolatedPawnsDiff);
-      gradientCache.put("backwardPawnWeight", (double) numOfBackwardPawnsDiff);
-      double dFriendlyPassedPawnTropismWeight = 0;
-      double dFriendlyWeakPawnTropismWeight = 0;
-      double dFriendlyNormalPawnTropismWeight = 0;
-      double dOpponentPassedPawnTropismWeight = 0;
-      double dOpponentWeakPawnTropismWeight = 0;
-      double dOpponentNormalPawnTropismWeight = 0;
-      if (numOfWhitePawns > 0) {
-        dFriendlyPassedPawnTropismWeight -= (double) whiteKingWhitePassedPawnTropism / numOfWhitePawns;
-        dFriendlyWeakPawnTropismWeight -= (double) whiteKingWhiteWeakPawnTropism / numOfWhitePawns;
-        dFriendlyNormalPawnTropismWeight -= (double) whiteKingWhiteNormalPawnTropism / numOfWhitePawns;
-        dOpponentPassedPawnTropismWeight += (double) blackKingWhitePassedPawnTropism / numOfWhitePawns;
-        dOpponentWeakPawnTropismWeight += (double) blackKingWhiteWeakPawnTropism / numOfWhitePawns;
-        dOpponentNormalPawnTropismWeight += (double) blackKingWhiteNormalPawnTropism / numOfWhitePawns;
-      }
-      if (numOfBlackPawns > 0) {
-        dFriendlyPassedPawnTropismWeight += (double) blackKingBlackPassedPawnTropism / numOfBlackPawns;
-        dFriendlyWeakPawnTropismWeight += (double) blackKingBlackWeakPawnTropism / numOfBlackPawns;
-        dFriendlyNormalPawnTropismWeight += (double) blackKingBlackNormalPawnTropism / numOfBlackPawns;
-        dOpponentPassedPawnTropismWeight -= (double) whiteKingBlackPassedPawnTropism / numOfBlackPawns;
-        dOpponentWeakPawnTropismWeight -= (double) whiteKingBlackWeakPawnTropism / numOfBlackPawns;
-        dOpponentNormalPawnTropismWeight -= (double) whiteKingBlackNormalPawnTropism / numOfBlackPawns;
-      }
-      gradientCache.put("friendlyPassedPawnTropismWeight", dFriendlyPassedPawnTropismWeight);
-      gradientCache.put("friendlyWeakPawnTropismWeight", dFriendlyWeakPawnTropismWeight);
-      gradientCache.put("friendlyNormalPawnTropismWeight", dFriendlyNormalPawnTropismWeight);
-      gradientCache.put("opponentPassedPawnTropismWeight", dOpponentPassedPawnTropismWeight);
-      gradientCache.put("opponentWeakPawnTropismWeight", dOpponentWeakPawnTropismWeight);
-      gradientCache.put("opponentNormalPawnTropismWeight", dOpponentNormalPawnTropismWeight);
-    }
-    return (short) score;
-  }
-
   private int getValueOfMostValuableRookCapture(long candidates, long queens, AtomicReference<String> victimParamName) {
     // If the attacker is a rook and it isn't attacking a queen, the exchange cannot be profitable.
     if ((queens & candidates) != Bitboard.EMPTY_BOARD) {
@@ -713,8 +587,6 @@ public class Evaluator {
       bishopPairAdvantageDiff -= 1;
     }
     score += params.bishopPairAdvantage * bishopPairAdvantageDiff;
-    // Pawn structure.
-    score += pawnKingStructureScore(pos.getWhiteKing(), pos.getBlackKing(), pos.getWhitePawns(), pos.getBlackPawns(), gradientCache);
     // Stopped pawns.
     int numOfStoppedPawnsDiff = BitOperations.hammingWeight(Bitboard.computeBlackPawnAdvanceSets(pos.getBlackPawns(),
         Bitboard.FULL_BOARD) & (pos.getAllWhiteOccupied() ^ pos.getWhitePawns())) -
@@ -722,8 +594,10 @@ public class Evaluator {
             Bitboard.FULL_BOARD) & (pos.getAllBlackOccupied() ^ pos.getBlackPawns()));
     score += params.stoppedPawnWeight * numOfStoppedPawnsDiff;
     // Pinned pieces.
-    byte whiteKingInd = BitOperations.indexOfBit(pos.getWhiteKing());
-    byte blackKingInd = BitOperations.indexOfBit(pos.getBlackKing());
+    long whiteKing = pos.getWhiteKing();
+    long blackKing = pos.getBlackKing();
+    byte whiteKingInd = BitOperations.indexOfBit(whiteKing);
+    byte blackKingInd = BitOperations.indexOfBit(blackKing);
     long whitePinningPieces = Bitboard.getPinningPieces(blackKingInd, pos.getWhiteQueens() | pos.getWhiteRooks(),
         pos.getWhiteQueens() | pos.getWhiteBishops(), pos.getAllOccupied(), pos.getAllBlackOccupied());
     long blackPinningPieces = Bitboard.getPinningPieces(whiteKingInd, pos.getBlackQueens() | pos.getBlackRooks(),
@@ -763,16 +637,117 @@ public class Evaluator {
     score += params.pinnedBishopWeight * numOfPinnedBishopsDiff;
     score += params.pinnedKnightWeight * numOfPinnedKnightsDiff;
     score += params.pinnedPawnWeight * numOfPinnedPawnsDiff;
+    // Pawn shield and pawn storm.
+    long whitePawns = pos.getWhitePawns();
+    long blackPawns = pos.getBlackPawns();
+    int pawnShield1Diff = 0;
+    int pawnShield2Diff = 0;
+    int pawnStorm1Diff = 0;
+    int pawnStorm2Diff = 0;
+    if (whiteKing == Square.G1.bitboard) {
+      pawnShield1Diff += BitOperations.hammingWeight(whitePawns & SHORT_CASTLED_W_KING_PAWN_SHIELD1);
+      pawnShield2Diff += BitOperations.hammingWeight(whitePawns & SHORT_CASTLED_W_KING_PAWN_SHIELD2);
+      pawnStorm1Diff -= BitOperations.hammingWeight(blackPawns & SHORT_CASTLED_W_KING_PAWN_STORM1);
+      pawnStorm2Diff -= BitOperations.hammingWeight(blackPawns & SHORT_CASTLED_W_KING_PAWN_STORM2);
+    } else if (whiteKing == Square.C1.bitboard) {
+      pawnShield1Diff += BitOperations.hammingWeight(whitePawns & LONG_CASTLED_W_KING_PAWN_SHIELD1);
+      pawnShield2Diff += BitOperations.hammingWeight(whitePawns & LONG_CASTLED_W_KING_PAWN_SHIELD2);
+      pawnStorm1Diff -= BitOperations.hammingWeight(blackPawns & LONG_CASTLED_W_KING_PAWN_STORM1);
+      pawnStorm2Diff -= BitOperations.hammingWeight(blackPawns & LONG_CASTLED_W_KING_PAWN_STORM2);
+    }
+    if (blackKing == Square.G8.bitboard) {
+      pawnShield1Diff -= BitOperations.hammingWeight(blackPawns & SHORT_CASTLED_B_KING_PAWN_SHIELD1);
+      pawnShield2Diff -= BitOperations.hammingWeight(blackPawns & SHORT_CASTLED_B_KING_PAWN_SHIELD2);
+      pawnStorm1Diff += BitOperations.hammingWeight(whitePawns & SHORT_CASTLED_B_KING_PAWN_STORM1);
+      pawnStorm2Diff += BitOperations.hammingWeight(whitePawns & SHORT_CASTLED_B_KING_PAWN_STORM2);
+    } else if (blackKing == Square.C8.bitboard) {
+      pawnShield1Diff -= BitOperations.hammingWeight(blackPawns & LONG_CASTLED_B_KING_PAWN_SHIELD1);
+      pawnShield2Diff -= BitOperations.hammingWeight(blackPawns & LONG_CASTLED_B_KING_PAWN_SHIELD2);
+      pawnStorm1Diff += BitOperations.hammingWeight(whitePawns & LONG_CASTLED_B_KING_PAWN_STORM1);
+      pawnStorm2Diff += BitOperations.hammingWeight(whitePawns & LONG_CASTLED_B_KING_PAWN_STORM2);
+    }
+    score += params.pawnShieldWeight1 * pawnShield1Diff;
+    score += params.pawnShieldWeight2 * pawnShield2Diff;
+    score += params.pawnStormWeight1 * pawnStorm1Diff;
+    score += params.pawnStormWeight2 * pawnStorm2Diff;
+    // Blocked pawns.
+    int numOfBlockedPawnsDiff1 = (BitOperations.hammingWeight((blackPawns >>> 8) & blackPawns) -
+        BitOperations.hammingWeight((whitePawns << 8) & whitePawns));
+    int numOfBlockedPawnsDiff2 = (BitOperations.hammingWeight((blackPawns >>> 16) & blackPawns) -
+        BitOperations.hammingWeight((whitePawns << 16) & whitePawns));
+    int numOfBlockedPawnsDiff3 = (BitOperations.hammingWeight((blackPawns >>> 24) & blackPawns) -
+        BitOperations.hammingWeight((whitePawns << 24) & whitePawns));
+    score += params.blockedPawnWeight1 * numOfBlockedPawnsDiff1;
+    score += params.blockedPawnWeight2 * numOfBlockedPawnsDiff2;
+    score += params.blockedPawnWeight3 * numOfBlockedPawnsDiff3;
+    // Passed pawns.
+    long whiteAdvanceSpans = Bitboard.fillNorth(whitePawns) << 8;
+    long whiteAttackSpans = ((whiteAdvanceSpans >>> 1) & ~File.H.bitboard) | ((whiteAdvanceSpans << 1) & ~File.A.bitboard);
+    long whiteFrontSpans = whiteAdvanceSpans | whiteAttackSpans;
+    long blackAdvanceSpans = Bitboard.fillSouth(blackPawns) >>> 8;
+    long blackAttackSpans = ((blackAdvanceSpans >>> 1) & ~File.H.bitboard) | ((blackAdvanceSpans << 1) & ~File.A.bitboard);
+    long blackFrontSpans = blackAdvanceSpans | blackAttackSpans;
+    long whitePassedPawns = whitePawns & ~blackFrontSpans & ~whiteAdvanceSpans;
+    long blackPassedPawns = blackPawns & ~whiteFrontSpans & ~blackAdvanceSpans;
+    int numOfPassedPawnsDiff = (BitOperations.hammingWeight(whitePassedPawns) - BitOperations.hammingWeight(blackPassedPawns));
+    score += params.passedPawnWeight * numOfPassedPawnsDiff;
+    // Isolated pawns.
+    long whiteSideSpans = Bitboard.fillSouth(whiteAttackSpans);
+    long blackSideSpans = Bitboard.fillNorth(blackAttackSpans);
+    long whiteIsolatedPawns = whitePawns & ~whiteSideSpans;
+    long blackIsolatedPawns = blackPawns & ~blackSideSpans;
+    int numOfIsolatedPawnsDiff = (BitOperations.hammingWeight(blackIsolatedPawns) - BitOperations.hammingWeight(whiteIsolatedPawns));
+    score += params.isolatedPawnWeight * numOfIsolatedPawnsDiff;
+    // Backward pawns.
+    long whitePawnCaptures = Bitboard.computeWhitePawnCaptureSets(pos.getWhitePawns() & ~whitePinnedPieces, Bitboard.FULL_BOARD);
+    long blackPawnCaptures = Bitboard.computeBlackPawnCaptureSets(pos.getBlackPawns() & ~blackPinnedPieces, Bitboard.FULL_BOARD);
+    long whiteBackwardPawns = whitePawns & ((blackPawnCaptures & ~whiteAttackSpans) >>> 8);
+    long blackBackwardPawns = blackPawns & ((whitePawnCaptures & ~blackAttackSpans) << 8);
+    int numOfBackwardPawnsDiff = (BitOperations.hammingWeight(blackBackwardPawns) - BitOperations.hammingWeight(whiteBackwardPawns));
+    score += params.backwardPawnWeight * numOfBackwardPawnsDiff;
+    long whiteWeakPawns = whiteIsolatedPawns | whiteBackwardPawns;
+    long blackWeakPawns = blackIsolatedPawns | blackBackwardPawns;
+    // Piece defense.
+    int numOfPawnDefendedQueensDiff = BitOperations.hammingWeight(pos.getWhiteQueens() & whitePawnCaptures) -
+        BitOperations.hammingWeight(pos.getBlackQueens() & blackPawnCaptures);
+    int numOfPawnDefendedRooksDiff = BitOperations.hammingWeight(pos.getWhiteRooks() & whitePawnCaptures) -
+        BitOperations.hammingWeight(pos.getBlackRooks() & blackPawnCaptures);
+    int numOfPawnDefendedBishopsDiff = BitOperations.hammingWeight(pos.getWhiteBishops() & whitePawnCaptures) -
+        BitOperations.hammingWeight(pos.getBlackBishops() & blackPawnCaptures);
+    int numOfPawnDefendedKnightsDiff = BitOperations.hammingWeight(pos.getWhiteKnights() & whitePawnCaptures) -
+        BitOperations.hammingWeight(pos.getBlackKnights() & blackPawnCaptures);
+    int numOfPawnDefendedPawnsDiff = BitOperations.hammingWeight(pos.getWhitePawns() & whitePawnCaptures) -
+        BitOperations.hammingWeight(pos.getBlackPawns() & blackPawnCaptures);
+    score += params.queenDefenseWeight * numOfPawnDefendedQueensDiff;
+    score += params.rookDefenseWeight * numOfPawnDefendedRooksDiff;
+    score += params.bishopDefenseWeight * numOfPawnDefendedBishopsDiff;
+    score += params.knightDefenseWeight * numOfPawnDefendedKnightsDiff;
+    score += params.pawnDefenseWeight * numOfPawnDefendedPawnsDiff;
     // Iterate over pieces to assess their mobility and distance from the opponent's king.
-    long whitePieceSet = ((pos.getAllWhiteOccupied() ^ pos.getWhitePawns()) ^ pos.getWhiteKing());
-    long blackPieceSet = ((pos.getAllBlackOccupied() ^ pos.getBlackPawns()) ^ pos.getBlackKing());
-    long whitePawnCaptors = Bitboard.computeBlackPawnCaptureSets(blackPieceSet, pos.getWhitePawns());
-    long blackPawnCaptors = Bitboard.computeWhitePawnCaptureSets(whitePieceSet, pos.getBlackPawns());
-    whitePieceSet |= whitePawnCaptors;
-    blackPieceSet |= blackPawnCaptors;
-    int whiteQueenKingTropism = 0;
-    int blackQueenKingTropism = 0;
-    long whitePawnCaptures = Bitboard.EMPTY_BOARD;
+    long whiteKingZone = pos.getWhiteKing() | Bitboard.computeKingMoveSets(whiteKing, Bitboard.FULL_BOARD);
+    whiteKingZone |= whiteKingZone << 8;
+    long blackKingZone = pos.getBlackKing() | Bitboard.computeKingMoveSets(blackKing, Bitboard.FULL_BOARD);
+    whiteKingZone |= whiteKingZone >>> 8;
+    long attackedWhiteKingZoneSquares = 0;
+    long attackedBlackKingZoneSquares = 0;
+    int numKingZoneAttackersDiff = 0;
+    long whitePieceSet = pos.getAllWhiteOccupied() ^ whiteKing;
+    long blackPieceSet = pos.getAllBlackOccupied() ^ blackKing;
+    int whiteQueenWhiteKingTropism = 0;
+    int whiteRookWhiteKingTropism = 0;
+    int whiteBishopWhiteKingTropism = 0;
+    int whiteKnightWhiteKingTropism = 0;
+    int whiteQueenBlackKingTropism = 0;
+    int whiteRookBlackKingTropism = 0;
+    int whiteBishopBlackKingTropism = 0;
+    int whiteKnightBlackKingTropism = 0;
+    int whitePassedPawnWhiteKingTropism = 0;
+    int whiteWeakPawnWhiteKingTropism = 0;
+    int whiteNormalPawnWhiteKingTropism = 0;
+    int whitePassedPawnBlackKingTropism = 0;
+    int whiteWeakPawnBlackKingTropism = 0;
+    int whiteNormalPawnBlackKingTropism = 0;
+    long whitePawnAttacks = Bitboard.EMPTY_BOARD;
     long whiteKnightAttacks = Bitboard.EMPTY_BOARD;
     long whiteBishopAttacks = Bitboard.EMPTY_BOARD;
     long whiteRookAttacks = Bitboard.EMPTY_BOARD;
@@ -780,6 +755,7 @@ public class Evaluator {
     int whiteRookMobility = 0;
     int whiteBishopMobility = 0;
     int whiteKnightMobility = 0;
+    int whitePawnMobility = 0;
     while (whitePieceSet != Bitboard.EMPTY_BOARD) {
       long piece = BitOperations.getLSBit(whitePieceSet);
       long pinnedPieceMoveSetRestriction = Bitboard.FULL_BOARD;
@@ -794,29 +770,72 @@ public class Evaluator {
       byte pieceInd = BitOperations.indexOfBit(piece);
       byte pieceType = pos.getPiece(pieceInd);
       MoveSetBase moveSetDb = MoveSetBase.getByIndex(pieceInd);
+      long unrestrictedMoveSet;
       if (pieceType == Piece.W_QUEEN.ind) {
-        long moveSet = (moveSetDb.getQueenMoveSet(pos.getAllNonWhiteOccupied(), pos.getAllOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getQueenMoveSet(pos.getAllNonWhiteOccupied(), pos.getAllOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         whiteQueenMobility += BitOperations.hammingWeight(moveSet);
-        whiteQueenKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
+        whiteQueenWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        whiteQueenBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else if (pieceType == Piece.W_ROOK.ind) {
-        long moveSet = (moveSetDb.getRookMoveSet(pos.getAllNonWhiteOccupied(), pos.getAllOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getRookMoveSet(pos.getAllNonWhiteOccupied(), pos.getAllOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         whiteRookAttacks |= moveSet;
         whiteRookMobility += BitOperations.hammingWeight(moveSet);
+        whiteRookWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        whiteRookBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else if (pieceType == Piece.W_BISHOP.ind) {
-        long moveSet = (moveSetDb.getBishopMoveSet(pos.getAllNonWhiteOccupied(), pos.getAllOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getBishopMoveSet(pos.getAllNonWhiteOccupied(), pos.getAllOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         whiteBishopAttacks |= moveSet;
         whiteBishopMobility += BitOperations.hammingWeight(moveSet);
+        whiteBishopWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        whiteBishopBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else if (pieceType == Piece.W_KNIGHT.ind) {
-        long moveSet = (moveSetDb.getKnightMoveSet(pos.getAllNonWhiteOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getKnightMoveSet(pos.getAllNonWhiteOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         whiteKnightAttacks |= moveSet;
         whiteKnightMobility += BitOperations.hammingWeight(moveSet);
+        whiteKnightWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        whiteKnightBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else { // W_PAWN
-        long moveSet = (moveSetDb.getWhitePawnCaptureSet(pos.getAllBlackOccupied()) & pinnedPieceMoveSetRestriction);
-        whitePawnCaptures |= moveSet;
+        unrestrictedMoveSet = moveSetDb.getWhitePawnMoveSet(pos.getAllBlackOccupied(), pos.getAllEmpty());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
+        whitePawnAttacks |= moveSet;
+        whitePawnMobility += BitOperations.hammingWeight(moveSet);
+        if ((whitePassedPawns & piece) != Bitboard.EMPTY_BOARD) {
+          whitePassedPawnWhiteKingTropism += MANHATTAN_DISTANCE[pieceInd][whiteKingInd];
+          whitePassedPawnBlackKingTropism += MANHATTAN_DISTANCE[pieceInd][blackKingInd];
+        } else if ((whiteWeakPawns & piece) != Bitboard.EMPTY_BOARD) {
+          whiteWeakPawnWhiteKingTropism += MANHATTAN_DISTANCE[pieceInd][whiteKingInd];
+          whiteWeakPawnBlackKingTropism += MANHATTAN_DISTANCE[pieceInd][blackKingInd];
+        } else {
+          whiteNormalPawnWhiteKingTropism += MANHATTAN_DISTANCE[pieceInd][whiteKingInd];
+          whiteNormalPawnBlackKingTropism += MANHATTAN_DISTANCE[pieceInd][blackKingInd];
+        }
+      }
+      long attackedKingZoneSquares = unrestrictedMoveSet & blackKingZone;
+      if (attackedKingZoneSquares != Bitboard.EMPTY_BOARD) {
+        numKingZoneAttackersDiff++;
+        attackedWhiteKingZoneSquares |= attackedKingZoneSquares;
       }
       whitePieceSet = BitOperations.resetLSBit(whitePieceSet);
     }
-    long blackPawnCaptures = Bitboard.EMPTY_BOARD;
+    int blackQueenBlackKingTropism = 0;
+    int blackRookBlackKingTropism = 0;
+    int blackBishopBlackKingTropism = 0;
+    int blackKnightBlackKingTropism = 0;
+    int blackQueenWhiteKingTropism = 0;
+    int blackRookWhiteKingTropism = 0;
+    int blackBishopWhiteKingTropism = 0;
+    int blackKnightWhiteKingTropism = 0;
+    int blackPassedPawnWhiteKingTropism = 0;
+    int blackWeakPawnWhiteKingTropism = 0;
+    int blackNormalPawnWhiteKingTropism = 0;
+    int blackPassedPawnBlackKingTropism = 0;
+    int blackWeakPawnBlackKingTropism = 0;
+    int blackNormalPawnBlackKingTropism = 0;
+    long blackPawnAttacks = Bitboard.EMPTY_BOARD;
     long blackKnightAttacks = Bitboard.EMPTY_BOARD;
     long blackBishopAttacks = Bitboard.EMPTY_BOARD;
     long blackRookAttacks = Bitboard.EMPTY_BOARD;
@@ -824,6 +843,7 @@ public class Evaluator {
     int blackRookMobility = 0;
     int blackBishopMobility = 0;
     int blackKnightMobility = 0;
+    int blackPawnMobility = 0;
     while (blackPieceSet != Bitboard.EMPTY_BOARD) {
       long piece = BitOperations.getLSBit(blackPieceSet);
       long pinnedPieceMoveSetRestriction = Bitboard.FULL_BOARD;
@@ -838,51 +858,108 @@ public class Evaluator {
       byte pieceInd = BitOperations.indexOfBit(piece);
       byte pieceType = pos.getPiece(pieceInd);
       MoveSetBase moveSetDb = MoveSetBase.getByIndex(pieceInd);
+      long unrestrictedMoveSet;
       if (pieceType == Piece.B_QUEEN.ind) {
-        long moveSet = (moveSetDb.getQueenMoveSet(pos.getAllNonBlackOccupied(), pos.getAllOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getQueenMoveSet(pos.getAllNonBlackOccupied(), pos.getAllOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         blackQueenMobility += BitOperations.hammingWeight(moveSet);
-        blackQueenKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        blackQueenWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        blackQueenBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else if (pieceType == Piece.B_ROOK.ind) {
-        long moveSet = (moveSetDb.getRookMoveSet(pos.getAllNonBlackOccupied(), pos.getAllOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getRookMoveSet(pos.getAllNonBlackOccupied(), pos.getAllOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         blackRookAttacks |= moveSet;
         blackRookMobility += BitOperations.hammingWeight(moveSet);
+        blackRookWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        blackRookBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else if (pieceType == Piece.B_BISHOP.ind) {
-        long moveSet = (moveSetDb.getBishopMoveSet(pos.getAllNonBlackOccupied(), pos.getAllOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getBishopMoveSet(pos.getAllNonBlackOccupied(), pos.getAllOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         blackBishopAttacks |= moveSet;
         blackBishopMobility += BitOperations.hammingWeight(moveSet);
+        blackBishopWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        blackBishopBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else if (pieceType == Piece.B_KNIGHT.ind) {
-        long moveSet = (moveSetDb.getKnightMoveSet(pos.getAllNonBlackOccupied()) & pinnedPieceMoveSetRestriction);
+        unrestrictedMoveSet = moveSetDb.getKnightMoveSet(pos.getAllNonBlackOccupied());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
         blackKnightAttacks |= moveSet;
         blackKnightMobility += BitOperations.hammingWeight(moveSet);
+        blackKnightWhiteKingTropism += CHEBYSHEV_DISTANCE[pieceInd][whiteKingInd];
+        blackKnightBlackKingTropism += CHEBYSHEV_DISTANCE[pieceInd][blackKingInd];
       } else { // B_PAWN
-        long moveSet = (moveSetDb.getBlackPawnCaptureSet(pos.getAllWhiteOccupied()) & pinnedPieceMoveSetRestriction);
-        blackPawnCaptures |= moveSet;
+        unrestrictedMoveSet = moveSetDb.getBlackPawnMoveSet(pos.getAllWhiteOccupied(), pos.getAllEmpty());
+        long moveSet = unrestrictedMoveSet & pinnedPieceMoveSetRestriction;
+        blackPawnAttacks |= moveSet;
+        blackPawnMobility += BitOperations.hammingWeight(moveSet);
+        if ((blackPassedPawns & piece) != Bitboard.EMPTY_BOARD) {
+          blackPassedPawnBlackKingTropism += MANHATTAN_DISTANCE[pieceInd][blackKingInd];
+          blackPassedPawnWhiteKingTropism += MANHATTAN_DISTANCE[pieceInd][whiteKingInd];
+        } else if ((blackWeakPawns & piece) != Bitboard.EMPTY_BOARD) {
+          blackWeakPawnBlackKingTropism += MANHATTAN_DISTANCE[pieceInd][blackKingInd];
+          blackWeakPawnWhiteKingTropism += MANHATTAN_DISTANCE[pieceInd][whiteKingInd];
+        } else {
+          blackNormalPawnBlackKingTropism += MANHATTAN_DISTANCE[pieceInd][blackKingInd];
+          blackNormalPawnWhiteKingTropism += MANHATTAN_DISTANCE[pieceInd][whiteKingInd];
+        }
+      }
+      long attackedKingZoneSquares = unrestrictedMoveSet & whiteKingZone;
+      if (attackedKingZoneSquares != Bitboard.EMPTY_BOARD) {
+        numKingZoneAttackersDiff--;
+        attackedBlackKingZoneSquares |= attackedKingZoneSquares;
       }
       blackPieceSet = BitOperations.resetLSBit(blackPieceSet);
     }
     // Mobility scores.
     int queenMobilityDiff = whiteQueenMobility - blackQueenMobility;
     int rookMobilityDiff = whiteRookMobility - blackRookMobility;
-    int bishopMobilityDIff = whiteBishopMobility - blackBishopMobility;
+    int bishopMobilityDiff = whiteBishopMobility - blackBishopMobility;
     int knightMobilityDiff = whiteKnightMobility - blackKnightMobility;
+    int pawnMobilityDiff = whitePawnMobility - blackPawnMobility;
     score += params.queenMobilityWeight * queenMobilityDiff;
     score += params.rookMobilityWeight * rookMobilityDiff;
-    score += params.bishopMobilityWeight * bishopMobilityDIff;
+    score += params.bishopMobilityWeight * bishopMobilityDiff;
     score += params.knightMobilityWeight * knightMobilityDiff;
-    int queenKingTropismDiff = 0;
-    short mgScore = 0;
-    short egScore = 0;
+    score += params.pawnMobilityWeight * pawnMobilityDiff;
+    // Piece-king tropism.
+    int friendlyQueenKingTropismDiff = blackQueenBlackKingTropism - whiteQueenWhiteKingTropism;
+    int friendlyRookKingTropismDiff = blackRookBlackKingTropism - whiteRookWhiteKingTropism;
+    int friendlyBishopKingTropismDiff = blackBishopBlackKingTropism - whiteBishopWhiteKingTropism;
+    int friendlyKnightKingTropismDiff = blackKnightBlackKingTropism - whiteKnightWhiteKingTropism;
+    int friendlyPassedPawnKingTropismDiff = blackPassedPawnBlackKingTropism - whitePassedPawnWhiteKingTropism;
+    int friendlyWeakPawnKingTropismDiff = blackWeakPawnBlackKingTropism - whiteWeakPawnWhiteKingTropism;
+    int friendlyNormalPawnKingTropismDiff = blackNormalPawnBlackKingTropism - whiteNormalPawnWhiteKingTropism;
+    int opponentQueenKingTropismDiff = blackQueenWhiteKingTropism - whiteQueenBlackKingTropism;
+    int opponentRookKingTropismDiff = blackRookWhiteKingTropism - whiteRookBlackKingTropism;
+    int opponentBishopKingTropismDiff = blackBishopWhiteKingTropism - whiteBishopBlackKingTropism;
+    int opponentKnightKingTropismDiff = blackKnightWhiteKingTropism - whiteKnightBlackKingTropism;
+    int opponentPassedPawnKingTropismDiff = whitePassedPawnBlackKingTropism - blackPassedPawnWhiteKingTropism;
+    int opponentWeakPawnKingTropismDiff = whiteWeakPawnBlackKingTropism - blackWeakPawnWhiteKingTropism;
+    int opponentNormalPawnKingTropismDiff = whiteNormalPawnBlackKingTropism - blackNormalPawnWhiteKingTropism;
+    score += params.friendlyQueenTropismWeight * friendlyQueenKingTropismDiff;
+    score += params.friendlyRookTropismWeight * friendlyRookKingTropismDiff;
+    score += params.friendlyBishopTropismWeight * friendlyBishopKingTropismDiff;
+    score += params.friendlyKnightTropismWeight * friendlyKnightKingTropismDiff;
+    score += params.friendlyPassedPawnTropismWeight * friendlyPassedPawnKingTropismDiff;
+    score += params.friendlyWeakPawnTropismWeight * friendlyWeakPawnKingTropismDiff;
+    score += params.friendlyNormalPawnTropismWeight * friendlyNormalPawnKingTropismDiff;
+    score += params.opponentQueenTropismWeight * opponentQueenKingTropismDiff;
+    score += params.opponentRookTropismWeight * opponentRookKingTropismDiff;
+    score += params.opponentBishopTropismWeight * opponentBishopKingTropismDiff;
+    score += params.opponentKnightTropismWeight * opponentKnightKingTropismDiff;
+    score += params.opponentPassedPawnTropismWeight * opponentPassedPawnKingTropismDiff;
+    score += params.opponentWeakPawnTropismWeight * opponentWeakPawnKingTropismDiff;
+    score += params.opponentNormalPawnTropismWeight * opponentNormalPawnKingTropismDiff;
+    // King zone attacks.
+    int uniqueAttackedKingZoneSquaresDiff = BitOperations.hammingWeight(attackedBlackKingZoneSquares) -
+        BitOperations.hammingWeight(attackedWhiteKingZoneSquares);
+    score += params.attackedKingZoneSquareWeight * uniqueAttackedKingZoneSquaresDiff;
+    score += params.kingZoneAttackerWeight * numKingZoneAttackersDiff;
     // Phase score for tapered evaluation.
     int phaseScore = phaseScore(numOfWhiteQueens + numOfBlackQueens, numOfWhiteRooks + numOfBlackRooks,
         numOfWhiteBishops + numOfBlackBishops, numOfWhiteKnights + numOfBlackKnights);
+    short mgScore = 0;
+    short egScore = 0;
     if (gradientCache == null) {
-      // Queen-king tropism.
-      if (numOfWhiteQueens > 0) {
-        queenKingTropismDiff -= params.opponentQueenTropismWeight * whiteQueenKingTropism / numOfWhiteQueens;
-      }
-      if (numOfBlackQueens > 0) {
-        queenKingTropismDiff += params.opponentQueenTropismWeight * blackQueenKingTropism / numOfBlackQueens;
-      }
       // Piece-square scores.
       for (int i = 0; i < 64; i++) {
         byte piece = (byte) (pos.getPiece(i) - 1);
@@ -901,7 +978,7 @@ public class Evaluator {
             pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights(), null) - params.bishopValue);
         mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whiteKnightAttacks,
             pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights(), null) - params.knightValue);
-        mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whitePawnCaptures,
+        mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(whitePawnAttacks,
             pos.getBlackQueens(), pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights(), null) - params.pawnValue);
       } else {
         mostValuableExchange = Math.max(0, getValueOfMostValuableRookCapture(blackRookAttacks, pos.getWhiteQueens(),
@@ -910,7 +987,7 @@ public class Evaluator {
             pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights(), null) - params.bishopValue);
         mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackKnightAttacks,
             pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights(), null) - params.knightValue);
-        mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackPawnCaptures,
+        mostValuableExchange = Math.max(mostValuableExchange, getValueOfMostValuableMinorPieceOrPawnCapture(blackPawnAttacks,
             pos.getWhiteQueens(), pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights(), null) - params.pawnValue);
       }
     } else {
@@ -926,20 +1003,42 @@ public class Evaluator {
       gradientCache.put("pinnedBishopWeight", (double) numOfPinnedBishopsDiff);
       gradientCache.put("pinnedKnightWeight", (double) numOfPinnedKnightsDiff);
       gradientCache.put("pinnedPawnWeight", (double) numOfPinnedPawnsDiff);
+      gradientCache.put("pawnShieldWeight1", (double) pawnShield1Diff);
+      gradientCache.put("pawnShieldWeight2", (double) pawnShield2Diff);
+      gradientCache.put("pawnStormWeight1", (double) pawnStorm1Diff);
+      gradientCache.put("pawnStormWeight2", (double) pawnStorm2Diff);
+      gradientCache.put("blockedPawnWeight1", (double) numOfBlockedPawnsDiff1);
+      gradientCache.put("blockedPawnWeight2", (double) numOfBlockedPawnsDiff2);
+      gradientCache.put("blockedPawnWeight3", (double) numOfBlockedPawnsDiff3);
+      gradientCache.put("passedPawnWeight", (double) numOfPassedPawnsDiff);
+      gradientCache.put("isolatedPawnWeight", (double) numOfIsolatedPawnsDiff);
+      gradientCache.put("backwardPawnWeight", (double) numOfBackwardPawnsDiff);
+      gradientCache.put("queenDefenseWeight", (double) numOfPawnDefendedQueensDiff);
+      gradientCache.put("rookDefenseWeight", (double) numOfPawnDefendedRooksDiff);
+      gradientCache.put("bishopDefenseWeight", (double) numOfPawnDefendedBishopsDiff);
+      gradientCache.put("knightDefenseWeight", (double) numOfPawnDefendedKnightsDiff);
+      gradientCache.put("pawnDefenseWeight", (double) numOfPawnDefendedPawnsDiff);
       gradientCache.put("queenMobilityWeight", (double) queenMobilityDiff);
       gradientCache.put("rookMobilityWeight", (double) rookMobilityDiff);
-      gradientCache.put("bishopMobilityWeight", (double) bishopMobilityDIff);
+      gradientCache.put("bishopMobilityWeight", (double) bishopMobilityDiff);
       gradientCache.put("knightMobilityWeight", (double) knightMobilityDiff);
-      double dOpponentQueenTropismWeight = 0;
-      if (numOfWhiteQueens > 0) {
-        queenKingTropismDiff -= params.opponentQueenTropismWeight * whiteQueenKingTropism / numOfWhiteQueens;
-        dOpponentQueenTropismWeight -= (double) whiteQueenKingTropism / numOfWhiteQueens;
-      }
-      if (numOfBlackQueens > 0) {
-        queenKingTropismDiff += params.opponentQueenTropismWeight * blackQueenKingTropism / numOfBlackQueens;
-        dOpponentQueenTropismWeight += (double) blackQueenKingTropism / numOfBlackQueens;
-      }
-      gradientCache.put("opponentQueenTropismWeight", dOpponentQueenTropismWeight);
+      gradientCache.put("pawnMobilityWeight", (double) pawnMobilityDiff);
+      gradientCache.put("friendlyQueenTropismWeight", (double) friendlyQueenKingTropismDiff);
+      gradientCache.put("friendlyRookTropismWeight", (double) friendlyRookKingTropismDiff);
+      gradientCache.put("friendlyBishopTropismWeight", (double) friendlyBishopKingTropismDiff);
+      gradientCache.put("friendlyKnightTropismWeight", (double) friendlyKnightKingTropismDiff);
+      gradientCache.put("friendlyPassedPawnTropismWeight", (double) friendlyPassedPawnKingTropismDiff);
+      gradientCache.put("friendlyWeakPawnTropismWeight", (double) friendlyWeakPawnKingTropismDiff);
+      gradientCache.put("friendlyNormalPawnTropismWeight", (double) friendlyNormalPawnKingTropismDiff);
+      gradientCache.put("opponentQueenTropismWeight", (double) opponentQueenKingTropismDiff);
+      gradientCache.put("opponentRookTropismWeight", (double) opponentRookKingTropismDiff);
+      gradientCache.put("opponentBishopTropismWeight", (double) opponentBishopKingTropismDiff);
+      gradientCache.put("opponentKnightTropismWeight", (double) opponentKnightKingTropismDiff);
+      gradientCache.put("opponentPassedPawnTropismWeight", (double) opponentPassedPawnKingTropismDiff);
+      gradientCache.put("opponentWeakPawnTropismWeight", (double) opponentWeakPawnKingTropismDiff);
+      gradientCache.put("opponentNormalPawnTropismWeight", (double) opponentNormalPawnKingTropismDiff);
+      gradientCache.put("attackedKingZoneSquareWeight", (double) uniqueAttackedKingZoneSquaresDiff);
+      gradientCache.put("kingZoneAttackerWeight", (double) numKingZoneAttackersDiff);
       // Calculate the derivative of the tapered evaluation w.r.t. the mid-game and end-game piece square table parameters.
       double dPstEgParam = (double) phaseScore / MAX_PHASE_SCORE;
       double dPstMgParam = 1d - dPstEgParam;
@@ -977,7 +1076,7 @@ public class Evaluator {
             pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights(), bishopVictimParamName) - params.bishopValue;
         mostValuableKnightExchange = getValueOfMostValuableMinorPieceOrPawnCapture(whiteKnightAttacks, pos.getBlackQueens(),
             pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights(), knightVictimParamName) - params.knightValue;
-        mostValuablePawnExchange = getValueOfMostValuableMinorPieceOrPawnCapture(whitePawnCaptures, pos.getBlackQueens(),
+        mostValuablePawnExchange = getValueOfMostValuableMinorPieceOrPawnCapture(whitePawnAttacks, pos.getBlackQueens(),
             pos.getBlackRooks(), pos.getBlackBishops(), pos.getBlackKnights(), pawnVictimParamName) - params.pawnValue;
       } else {
         colorFactor = -1d;
@@ -987,7 +1086,7 @@ public class Evaluator {
             pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights(), bishopVictimParamName) - params.bishopValue;
         mostValuableKnightExchange = getValueOfMostValuableMinorPieceOrPawnCapture(blackKnightAttacks, pos.getWhiteQueens(),
             pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights(), knightVictimParamName) - params.knightValue;
-        mostValuablePawnExchange = getValueOfMostValuableMinorPieceOrPawnCapture(blackPawnCaptures, pos.getWhiteQueens(),
+        mostValuablePawnExchange = getValueOfMostValuableMinorPieceOrPawnCapture(blackPawnAttacks, pos.getWhiteQueens(),
             pos.getWhiteRooks(), pos.getWhiteBishops(), pos.getWhiteKnights(), pawnVictimParamName) - params.pawnValue;
       }
       String captorParamName = null;
@@ -1020,7 +1119,6 @@ public class Evaluator {
       }
       gradientCache.put("tempoAdvantage", colorFactor);
     }
-    score += queenKingTropismDiff;
     score += (short) taperedEvalScore(mgScore, egScore, phaseScore);
     // Adjust score to side to move.
     if (!pos.isWhitesTurn()) {

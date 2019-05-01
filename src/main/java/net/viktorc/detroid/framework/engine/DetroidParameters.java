@@ -101,6 +101,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short pawnValue;
   @Parameter
+  short pawnShieldWeight1;
+  @Parameter
+  short pawnShieldWeight2;
+  @Parameter
+  short pawnStormWeight1;
+  @Parameter
+  short pawnStormWeight2;
+  @Parameter
   short blockedPawnWeight1;
   @Parameter
   short blockedPawnWeight2;
@@ -127,6 +135,16 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short pinnedPawnWeight;
   @Parameter
+  short queenDefenseWeight;
+  @Parameter
+  short rookDefenseWeight;
+  @Parameter
+  short bishopDefenseWeight;
+  @Parameter
+  short knightDefenseWeight;
+  @Parameter
+  short pawnDefenseWeight;
+  @Parameter
   short queenMobilityWeight;
   @Parameter
   short rookMobilityWeight;
@@ -135,11 +153,29 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short knightMobilityWeight;
   @Parameter
+  short pawnMobilityWeight;
+  @Parameter
+  short friendlyQueenTropismWeight;
+  @Parameter
+  short friendlyRookTropismWeight;
+  @Parameter
+  short friendlyBishopTropismWeight;
+  @Parameter
+  short friendlyKnightTropismWeight;
+  @Parameter
   short friendlyNormalPawnTropismWeight;
   @Parameter
   short friendlyWeakPawnTropismWeight;
   @Parameter
   short friendlyPassedPawnTropismWeight;
+  @Parameter
+  short opponentQueenTropismWeight;
+  @Parameter
+  short opponentRookTropismWeight;
+  @Parameter
+  short opponentBishopTropismWeight;
+  @Parameter
+  short opponentKnightTropismWeight;
   @Parameter
   short opponentNormalPawnTropismWeight;
   @Parameter
@@ -147,7 +183,9 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short opponentPassedPawnTropismWeight;
   @Parameter
-  short opponentQueenTropismWeight;
+  short kingZoneAttackerWeight;
+  @Parameter
+  short attackedKingZoneSquareWeight;
   @Parameter
   short tempoAdvantage;
 
