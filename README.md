@@ -63,13 +63,13 @@ The other optimization method uses a stochastic gradient descent algorithm with 
 
 #### FEN-file generation
 The framework provides two different ways to generate a FEN-file for static evaluation tuning. The first way is self-play. With the exception of one, all parameters and their descriptions can be found in the paragraph describing the self-play based optimization method. The only novel parameter is the target path for the FEN-file which defaults to _fens.txt_. Positions arising from book moves or positions in which the engine found a mate are not logged to the FEN-file. For short time controls (below 2s), concurrency is not recommended to have a value greater than the number of available physical cores divided by two.
-**Usage:** `-g byselfplay -games 60000 -tc 2000 --inc 10 --trybook true --tryhash 8 --destfile my_fens.txt --concurrency 2`
+**Usage:** `-g selfplay -games 60000 -tc 2000 --inc 10 --trybook true --tryhash 8 --destfile my_fens.txt --concurrency 2`
 
-The other way is PGN conversion. This requires a PGN file of chess games which can then be converted to a FEN-file. The only mandatory parameter is the file path to the PGN file. The optional parameters are the maximum number of games from the PGN file to convert, and the file path of the generated FEN-file.
-**Usage:** `-g bypgnconversion -sourcefile my_pgn.pgn --maxgames 50000 --destfile my_fens.txt`
+The other way is PGN conversion. This requires a PGN file of chess games which can then be converted to a FEN-file. The only mandatory parameter is the file path to the PGN file. The optional parameters are the maximum number of games from the PGN file to convert, the minimum Elo rating each player is required to have to process a game, and the file path of the generated FEN-file.
+**Usage:** `-g pgnconversion -sourcefile my_pgn.pgn --maxgames 50000 --minelo 2700 --destfile my_fens.txt`
 
 #### FEN-file filtering
-The generated FEN-files can also be filtered to possibly improve the optimization results. For example, all the positions and their labels from drawn games can be removed from the FEN-file. The file path to the source FEN-file is a mandatory parameter, while the destination file path is optional and defaults to `fens.txt`.  
+The generated FEN-files can also be filtered to possibly improve the optimization results. For example, all the positions and their labels from drawn games can be removed from the FEN-file. The file path to the source FEN-file is a mandatory parameter, while the destination file path is optional and defaults to `fens.txt`.
 **Usage:** `-f draws -sourcefile old_fen.txt --destfile new_fen.txt`
 
 The same can be done for obvious mates as well (mates found by the 0-depth quiescence search of the engine to be tuned). This is only needed, and in fact, highly recommended, if the FEN-file is generated from a PGN file.  
