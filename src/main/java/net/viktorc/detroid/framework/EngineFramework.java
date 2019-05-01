@@ -88,7 +88,7 @@ public final class EngineFramework implements Runnable {
    * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}]
    * [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
    * [--concurrency <integer> {1}]}<br>
-   * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>]
+   * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>] [--minelo <integer>]
    * [--destfile <string> {fens.txt}]}<br>
    * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
    * Removing obvious mates from a FEN-file: {@code -f mates -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
@@ -429,9 +429,9 @@ public final class EngineFramework implements Runnable {
     runInSelfPlayGenerationMode(destFile, concurrency, games, tc, tcInc, useBook, hash, threads);
   }
 
-  private void runInPGNGenerationMode(String sourceFile, String destFile, int maxNumOfGames) {
+  private void runInPGNGenerationMode(String sourceFile, String destFile, int maxNumOfGames, Integer minElo) {
     try (ControllerEngine engine = factory.newControllerEngineInstance()) {
-      FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
+      FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames, minElo);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -441,6 +441,7 @@ public final class EngineFramework implements Runnable {
     String destFile = DEF_FENS_FILE_PATH;
     String sourceFile = null;
     int maxNumOfGames = Integer.MAX_VALUE;
+    Integer minElo = null;
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       switch (arg) {
@@ -450,6 +451,9 @@ public final class EngineFramework implements Runnable {
         case "--maxgames":
           maxNumOfGames = Integer.parseInt(args[++i]);
           break;
+        case "--minelo":
+          minElo = Integer.parseInt(args[++i]);
+          break;
         case "--destfile":
           destFile = args[++i];
           break;
@@ -457,7 +461,7 @@ public final class EngineFramework implements Runnable {
           throw new IllegalArgumentException();
       }
     }
-    runInPGNGenerationMode(sourceFile, destFile, maxNumOfGames);
+    runInPGNGenerationMode(sourceFile, destFile, maxNumOfGames, minElo);
   }
 
   private void runInGenerationMode(String[] args) {

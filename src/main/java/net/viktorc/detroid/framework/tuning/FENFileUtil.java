@@ -36,6 +36,8 @@ public final class FENFileUtil {
    * The pattern of the first line of every game in PGN.
    */
   private static final String FIRST_PGN_LINE_PATTERN = "(?i)^\\[EVENT (.)+\\]$";
+  private static final Pattern WHITE_ELO_PATTERN = Pattern.compile("\\[WhiteElo \"([0-9]+)\"\\]");
+  private static final Pattern BLACK_ELO_PATTERN = Pattern.compile("\\[BlackElo \"([0-9]+)\"\\]");
 
   private FENFileUtil() {
   }
@@ -48,10 +50,12 @@ public final class FENFileUtil {
    * @param pgnFilePath The path to the file containing the games in PGN.
    * @param fenFilePath The output file path.
    * @param maxNumOfGames The maximum number of games that will be parsed and converted into lines of FEN.
+   * @param minElo The minimum Elo rating required for each party to process the game.
    * @throws Exception If the input file does not exist or cannot be read, if the output file path is invalid, or if the engine is not
    * initialized and cannot be initialized.
    */
-  public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath, int maxNumOfGames) throws Exception {
+  public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath, int maxNumOfGames, Integer minElo)
+      throws Exception {
     try (BufferedReader reader = new BufferedReader(new FileReader(pgnFilePath));
         BufferedWriter writer = new BufferedWriter(new FileWriter(fenFilePath))) {
       String line;
@@ -75,21 +79,43 @@ public final class FENFileUtil {
         if (doProcess) {
           gameCount++;
           String pgn = pgnBuffer.toString().trim();
-          engine.setGame(pgn);
-          String result;
-          GameState state = engine.getGameState();
-          if (state != GameState.IN_PROGRESS) {
-            if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN) {
-              result = "1";
-            } else if (state == GameState.BLACK_MATES || state == GameState.UNSPECIFIED_BLACK_WIN) {
-              result = "0";
-            } else {
-              result = "0.5";
+          boolean skip = false;
+          if (minElo != null) {
+            Matcher whiteEloMatcher = WHITE_ELO_PATTERN.matcher(pgn);
+            Matcher blackEloMatcher = BLACK_ELO_PATTERN.matcher(pgn);
+            if (!whiteEloMatcher.find()) {
+              skip = true;
             }
-            do {
-              String fen = engine.toFEN();
-              writer.write(fen + ";" + result + "\n");
-            } while (engine.unplayLastMove() != null);
+            if (!blackEloMatcher.find()) {
+              skip = true;
+            }
+            if (!skip) {
+              try {
+                int whiteElo = Integer.parseInt(whiteEloMatcher.group(1));
+                int blackElo = Integer.parseInt(blackEloMatcher.group(1));
+                skip = whiteElo < minElo || blackElo < minElo;
+              } catch (Exception e) {
+                skip = true;
+              }
+            }
+          }
+          if (!skip) {
+            engine.setGame(pgn);
+            String result;
+            GameState state = engine.getGameState();
+            if (state != GameState.IN_PROGRESS) {
+              if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN) {
+                result = "1";
+              } else if (state == GameState.BLACK_MATES || state == GameState.UNSPECIFIED_BLACK_WIN) {
+                result = "0";
+              } else {
+                result = "0.5";
+              }
+              do {
+                String fen = engine.toFEN();
+                writer.write(fen + ";" + result + "\n");
+              } while (engine.unplayLastMove() != null);
+            }
           }
           pgnBuffer = new StringBuffer();
         }

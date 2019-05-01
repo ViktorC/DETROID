@@ -295,6 +295,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short pstPawnEg11;
   @Parameter
+  short pstPawnEg12;
+  @Parameter
+  short pstPawnEg13;
+  @Parameter
+  short pstPawnEg14;
+  @Parameter
+  short pstPawnEg15;
+  @Parameter
   short pstPawnEg16;
   @Parameter
   short pstPawnEg17;
@@ -302,6 +310,14 @@ class DetroidParameters extends EngineParameters {
   short pstPawnEg18;
   @Parameter
   short pstPawnEg19;
+  @Parameter
+  short pstPawnEg20;
+  @Parameter
+  short pstPawnEg21;
+  @Parameter
+  short pstPawnEg22;
+  @Parameter
+  short pstPawnEg23;
   @Parameter
   short pstPawnEg24;
   @Parameter
@@ -311,6 +327,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short pstPawnEg27;
   @Parameter
+  short pstPawnEg28;
+  @Parameter
+  short pstPawnEg29;
+  @Parameter
+  short pstPawnEg30;
+  @Parameter
+  short pstPawnEg31;
+  @Parameter
   short pstPawnEg32;
   @Parameter
   short pstPawnEg33;
@@ -318,6 +342,14 @@ class DetroidParameters extends EngineParameters {
   short pstPawnEg34;
   @Parameter
   short pstPawnEg35;
+  @Parameter
+  short pstPawnEg36;
+  @Parameter
+  short pstPawnEg37;
+  @Parameter
+  short pstPawnEg38;
+  @Parameter
+  short pstPawnEg39;
   @Parameter
   short pstPawnEg40;
   @Parameter
@@ -327,6 +359,14 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short pstPawnEg43;
   @Parameter
+  short pstPawnEg44;
+  @Parameter
+  short pstPawnEg45;
+  @Parameter
+  short pstPawnEg46;
+  @Parameter
+  short pstPawnEg47;
+  @Parameter
   short pstPawnEg48;
   @Parameter
   short pstPawnEg49;
@@ -334,6 +374,14 @@ class DetroidParameters extends EngineParameters {
   short pstPawnEg50;
   @Parameter
   short pstPawnEg51;
+  @Parameter
+  short pstPawnEg52;
+  @Parameter
+  short pstPawnEg53;
+  @Parameter
+  short pstPawnEg54;
+  @Parameter
+  short pstPawnEg55;
 
   @Parameter
   short pstKnightMg0;
@@ -1638,12 +1686,12 @@ class DetroidParameters extends EngineParameters {
 
   static final String[] PST_PAWN_EG_PARAM_NAMES = new String[]{
       null, null, null, null, null, null, null, null,
-      "pstPawnEg8", "pstPawnEg9", "pstPawnEg10", "pstPawnEg11", "pstPawnEg11", "pstPawnEg10", "pstPawnEg9", "pstPawnEg8",
-      "pstPawnEg16", "pstPawnEg17", "pstPawnEg18", "pstPawnEg19", "pstPawnEg19", "pstPawnEg18", "pstPawnEg17", "pstPawnEg16",
-      "pstPawnEg24", "pstPawnEg25", "pstPawnEg26", "pstPawnEg27", "pstPawnEg27", "pstPawnEg26", "pstPawnEg25", "pstPawnEg24",
-      "pstPawnEg32", "pstPawnEg33", "pstPawnEg34", "pstPawnEg35", "pstPawnEg35", "pstPawnEg34", "pstPawnEg33", "pstPawnEg32",
-      "pstPawnEg40", "pstPawnEg41", "pstPawnEg42", "pstPawnEg43", "pstPawnEg43", "pstPawnEg42", "pstPawnEg41", "pstPawnEg40",
-      "pstPawnEg48", "pstPawnEg49", "pstPawnEg50", "pstPawnEg51", "pstPawnEg51", "pstPawnEg50", "pstPawnEg49", "pstPawnEg48",
+      "pstPawnEg8", "pstPawnEg9", "pstPawnEg10", "pstPawnEg11", "pstPawnEg12", "pstPawnEg13", "pstPawnEg14", "pstPawnEg15",
+      "pstPawnEg16", "pstPawnEg17", "pstPawnEg18", "pstPawnEg19", "pstPawnEg20", "pstPawnEg21", "pstPawnEg22", "pstPawnEg23",
+      "pstPawnEg24", "pstPawnEg25", "pstPawnEg26", "pstPawnEg27", "pstPawnEg28", "pstPawnEg29", "pstPawnEg30", "pstPawnEg31",
+      "pstPawnEg32", "pstPawnEg33", "pstPawnEg34", "pstPawnEg35", "pstPawnEg36", "pstPawnEg37", "pstPawnEg38", "pstPawnEg39",
+      "pstPawnEg40", "pstPawnEg41", "pstPawnEg42", "pstPawnEg43", "pstPawnEg44", "pstPawnEg45", "pstPawnEg46", "pstPawnEg47",
+      "pstPawnEg48", "pstPawnEg49", "pstPawnEg50", "pstPawnEg51", "pstPawnEg52", "pstPawnEg53", "pstPawnEg54", "pstPawnEg55",
       null, null, null, null, null, null, null, null
   };
 
@@ -1782,12 +1830,12 @@ class DetroidParameters extends EngineParameters {
   short[] getPstPawnEg() {
     return new short[]{
         0, 0, 0, 0, 0, 0, 0, 0,
-        pstPawnEg8, pstPawnEg9, pstPawnEg10, pstPawnEg11, pstPawnEg11, pstPawnEg10, pstPawnEg9, pstPawnEg8,
-        pstPawnEg16, pstPawnEg17, pstPawnEg18, pstPawnEg19, pstPawnEg19, pstPawnEg18, pstPawnEg17, pstPawnEg16,
-        pstPawnEg24, pstPawnEg25, pstPawnEg26, pstPawnEg27, pstPawnEg27, pstPawnEg26, pstPawnEg25, pstPawnEg24,
-        pstPawnEg32, pstPawnEg33, pstPawnEg34, pstPawnEg35, pstPawnEg35, pstPawnEg34, pstPawnEg33, pstPawnEg32,
-        pstPawnEg40, pstPawnEg41, pstPawnEg42, pstPawnEg43, pstPawnEg43, pstPawnEg42, pstPawnEg41, pstPawnEg40,
-        pstPawnEg48, pstPawnEg49, pstPawnEg50, pstPawnEg51, pstPawnEg51, pstPawnEg50, pstPawnEg49, pstPawnEg48,
+        pstPawnEg8, pstPawnEg9, pstPawnEg10, pstPawnEg11, pstPawnEg12, pstPawnEg13, pstPawnEg14, pstPawnEg15,
+        pstPawnEg16, pstPawnEg17, pstPawnEg18, pstPawnEg19, pstPawnEg20, pstPawnEg21, pstPawnEg22, pstPawnEg23,
+        pstPawnEg24, pstPawnEg25, pstPawnEg26, pstPawnEg27, pstPawnEg28, pstPawnEg29, pstPawnEg30, pstPawnEg31,
+        pstPawnEg32, pstPawnEg33, pstPawnEg34, pstPawnEg35, pstPawnEg36, pstPawnEg37, pstPawnEg38, pstPawnEg39,
+        pstPawnEg40, pstPawnEg41, pstPawnEg42, pstPawnEg43, pstPawnEg44, pstPawnEg45, pstPawnEg46, pstPawnEg47,
+        pstPawnEg48, pstPawnEg49, pstPawnEg50, pstPawnEg51, pstPawnEg52, pstPawnEg53, pstPawnEg54, pstPawnEg55,
         0, 0, 0, 0, 0, 0, 0, 0
     };
   }
