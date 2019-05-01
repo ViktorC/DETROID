@@ -85,10 +85,10 @@ public final class EngineFramework implements Runnable {
    * [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.95}] [--l1reg <decimal> {.1}]
    * [--l2reg <decimal> {.01}] [--costbatchsize <integer>] [--k <decimal>] [--fensfile <string> {fens.txt}]
    * [--log <string> {log.txt}] [--concurrency <integer> {1}]}<br>
-   * FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}]
+   * FEN-file generation by self-play: {@code -g selfplay -games <integer> -tc <integer> [--inc <integer> {0}]
    * [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
    * [--concurrency <integer> {1}]}<br>
-   * FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string> [--maxgames <integer>] [--minelo <integer>]
+   * FEN-file generation by PGN conversion: {@code -g pgnconversion -sourcefile <string> [--maxgames <integer>] [--minelo <integer>]
    * [--destfile <string> {fens.txt}]}<br>
    * Removing draws from a FEN-file: {@code -f draws -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
    * Removing obvious mates from a FEN-file: {@code -f mates -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
@@ -466,9 +466,9 @@ public final class EngineFramework implements Runnable {
 
   private void runInGenerationMode(String[] args) {
     String arg0 = args[0];
-    if ("byselfplay".equals(arg0)) {
+    if ("selfplay".equals(arg0)) {
       runInSelfPlayGenerationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("bypgnconversion".equals(arg0)) {
+    } else if ("pgnconversion".equals(arg0)) {
       runInPGNGenerationMode(Arrays.copyOfRange(args, 1, args.length));
     } else {
       throw new IllegalArgumentException();
