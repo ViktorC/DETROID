@@ -39,7 +39,8 @@ public interface TunableEngine extends UCIEngine {
    *
    * @param gradientCache A map for recording the partial derivatives of the objective evaluation function (where a positive output means
    * white is in the lead and negative output means black is in the lead) with respect to the static evaluation parameters. The key
-   * should be the name of the parameter and the value should be the derivative. If {@link #isGradientDefined()} returns false, it is null.
+   * should be the name of the parameter and the value should be the derivative. It can be null if the calculation of the gradient is not
+   * needed or if {@link #isGradientDefined()} returns false.
    * @return The static evaluation score of the position.
    */
   short eval(Map<String, Double> gradientCache);

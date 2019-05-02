@@ -65,7 +65,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
   // The minimum allowed number of search threads to use.
   private static final int MIN_SEARCH_THREADS = 1;
   // The maximum allowed number of search threads to use.
-  private static final int MAX_SEARCH_THREADS = 1;
+  private static final int MAX_SEARCH_THREADS = Runtime.getRuntime().availableProcessors();
   // The default number of search threads to use.
   private static final int DEFAULT_SEARCH_THREADS = Math.max(MIN_SEARCH_THREADS, MAX_SEARCH_THREADS / 2);
   // The minimum allowed hash size in MB.
@@ -1166,7 +1166,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public short eval(Map<String, Double> gradientCache) {
-    return eval.score(game.getPosition(), gen, new ETEntry(), gradientCache);
+    return eval.score(game.getPosition(), gen, true, new ETEntry(), gradientCache);
   }
 
 }

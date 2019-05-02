@@ -19,8 +19,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.viktorc.detroid.framework.uci.ScoreType;
-import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.GameState;
@@ -35,9 +33,11 @@ public final class FENFileUtil {
   /**
    * The pattern of the first line of every game in PGN.
    */
-  private static final String FIRST_PGN_LINE_PATTERN = "(?i)^\\[EVENT (.)+\\]$";
+  private static final String FIRST_PGN_LINE_REGEX = "(?i)^\\[EVENT (.)+\\]$";
   private static final Pattern WHITE_ELO_PATTERN = Pattern.compile("\\[WhiteElo \"([0-9]+)\"\\]");
   private static final Pattern BLACK_ELO_PATTERN = Pattern.compile("\\[BlackElo \"([0-9]+)\"\\]");
+  private static final Pattern FULL_MOVE_PATTERN = Pattern.compile("[0-9]+;");
+  private static final String SEPARATOR = ";";
 
   private FENFileUtil() {
   }
@@ -51,10 +51,11 @@ public final class FENFileUtil {
    * @param fenFilePath The output file path.
    * @param maxNumOfGames The maximum number of games that will be parsed and converted into lines of FEN.
    * @param minElo The minimum Elo rating required for each party to process the game.
+   * @return The number of games processed.
    * @throws Exception If the input file does not exist or cannot be read, if the output file path is invalid, or if the engine is not
    * initialized and cannot be initialized.
    */
-  public static void generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath, int maxNumOfGames, Integer minElo)
+  public static int generateFENFile(ControllerEngine engine, String pgnFilePath, String fenFilePath, long maxNumOfGames, Integer minElo)
       throws Exception {
     try (BufferedReader reader = new BufferedReader(new FileReader(pgnFilePath));
         BufferedWriter writer = new BufferedWriter(new FileWriter(fenFilePath))) {
@@ -70,26 +71,19 @@ public final class FENFileUtil {
           continue;
         }
         boolean doProcess = false;
-        if (line.matches(FIRST_PGN_LINE_PATTERN) && pgnBuffer.length() > 0) {
+        if (line.matches(FIRST_PGN_LINE_REGEX) && pgnBuffer.length() > 0) {
           doProcess = true;
         } else if (!reader.ready()) {
           pgnBuffer.append(line).append("\n");
           doProcess = true;
         }
         if (doProcess) {
-          gameCount++;
           String pgn = pgnBuffer.toString().trim();
           boolean skip = false;
           if (minElo != null) {
             Matcher whiteEloMatcher = WHITE_ELO_PATTERN.matcher(pgn);
             Matcher blackEloMatcher = BLACK_ELO_PATTERN.matcher(pgn);
-            if (!whiteEloMatcher.find()) {
-              skip = true;
-            }
-            if (!blackEloMatcher.find()) {
-              skip = true;
-            }
-            if (!skip) {
+            if (whiteEloMatcher.find() && blackEloMatcher.find()) {
               try {
                 int whiteElo = Integer.parseInt(whiteEloMatcher.group(1));
                 int blackElo = Integer.parseInt(blackEloMatcher.group(1));
@@ -97,9 +91,12 @@ public final class FENFileUtil {
               } catch (Exception e) {
                 skip = true;
               }
+            } else {
+              skip = true;
             }
           }
           if (!skip) {
+            gameCount++;
             engine.setGame(pgn);
             String result;
             GameState state = engine.getGameState();
@@ -113,7 +110,7 @@ public final class FENFileUtil {
               }
               do {
                 String fen = engine.toFEN();
-                writer.write(fen + ";" + result + "\n");
+                writer.write(fen + SEPARATOR + result + System.lineSeparator());
               } while (engine.unplayLastMove() != null);
             }
           }
@@ -124,6 +121,7 @@ public final class FENFileUtil {
         }
         pgnBuffer.append(line).append("\n");
       }
+      return gameCount;
     }
   }
 
@@ -220,12 +218,11 @@ public final class FENFileUtil {
     if (sourceFenFile.equals(destinationFenFile)) {
       throw new IllegalArgumentException();
     }
-    Pattern halfMovePattern = Pattern.compile("[0-9]+;");
     try (BufferedReader reader = new BufferedReader(new FileReader(sourceFenFile));
         BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        Matcher matcher = halfMovePattern.matcher(line);
+        Matcher matcher = FULL_MOVE_PATTERN.matcher(line);
         if (matcher.find()) {
           String match = matcher.group();
           int fullMoveInd = Integer.parseInt(match.substring(0, match.length() - 1));
@@ -238,15 +235,16 @@ public final class FENFileUtil {
   }
 
   /**
-   * Copies all the lines from the source FEN file to the destination file except for the obvious mates based on a 0-depth quiescence
-   * search.
+   * Copies all the lines from the source FEN file to the destination file except for the ones representing highly unbalanced positions
+   * based on the engine to tune's evaluation function.
    *
    * @param sourceFenFile The file path to the source FEN file.
    * @param destinationFenFile The path to the destination file. If it doesn't exist it will be created.
-   * @param engine The engine to use for obvious mate detection.
+   * @param maxImbalance The maximum allowed absolute score difference in centi-pawns.
+   * @param engine The engine to use for unbalanced position detection.
    * @throws Exception If the source and destination paths are the same, there is an I/O issue or the engine cannot be initialized.
    */
-  public static void filterObviousMates(String sourceFenFile, String destinationFenFile, TunableEngine engine)
+  public static void filterUnbalancedPositions(String sourceFenFile, String destinationFenFile, short maxImbalance, TunableEngine engine)
       throws Exception {
     if (sourceFenFile.equals(destinationFenFile)) {
       throw new IllegalArgumentException();
@@ -259,14 +257,11 @@ public final class FENFileUtil {
         BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        String fen = line.split(";")[0];
+        String fen = line.split(SEPARATOR)[0];
         engine.setPosition(fen);
-        SearchResults res = engine.search(null, null, null, null, null, null, null, 0, null, null, null, null);
-        if (res.getScoreType().isPresent()) {
-          ScoreType scoreType = res.getScoreType().get();
-          if (scoreType != ScoreType.MATE) {
-            writer.write(line + System.lineSeparator());
-          }
+        short score = engine.eval(null);
+        if (Math.abs(score) < maxImbalance) {
+          writer.write(line + System.lineSeparator());
         }
       }
     }
@@ -287,7 +282,7 @@ public final class FENFileUtil {
         BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        String res = line.split(";")[1];
+        String res = line.split(SEPARATOR)[1];
         if (res != null) {
           res = res.trim();
         }
@@ -318,7 +313,7 @@ public final class FENFileUtil {
         BufferedWriter writer = new BufferedWriter(new FileWriter(destinationFenFile, true))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        String fen = line.split(";")[0];
+        String fen = line.split(SEPARATOR)[0];
         engine.setPosition(fen);
         if (engine.isQuiet()) {
           writer.write(line + System.lineSeparator());
