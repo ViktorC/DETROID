@@ -49,6 +49,14 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    */
   private static final double DEF_ANNEALING_RATE = .99;
   /**
+   * The L1 regularization coefficient.
+   */
+  private static final double DEF_L1_REG_COEFF = .01;
+  /**
+   * The L2 regularization coefficient.
+   */
+  private static final double DEF_L2_REG_COEFF = .001;
+  /**
    * The only parameter type the optimizer is concerned with.
    */
   private static final Set<ParameterType> TYPE = new HashSet<>(Collections.singletonList(ParameterType.STATIC_EVALUATION));
@@ -92,41 +100,41 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * sense).
    * @param baseLearningRate The base step size for the gradient descent. If it is null, it defaults to 1.
    * @param learningAnnealingRate The factor by which the learning rate is multiplied after every epoch. If it is null, it defaults to 0.9.
+   * @param l1RegularizationCoeff The coefficient to use for L1 parameter regularization, by default .01.
+   * @param l2RegularizationCoeff The coefficient to use for L2 parameter regularization, by default 0.001.
    * @param fenFilePath The path to the file containing the FEN list of positions to evaluate. If it doesn't exist an {@link
    * java.io.IOException} is thrown.
    * @param costCalculationBatchSize The number of samples in the batches used for calculating the total training and test costs. If it is
    * null, it defaults to 4 million.
    * @param k A scaling constant for the sigmoid function used calculate the average error.
-   * @param testDataProportion The proportion of the entire data set that should be used as test data. It has to be greater than 0 and less
-   * than 1. If it is null, it defaults to {@link #DEF_TEST_DATA_PROPORTION}.
+   * @param testDataProportion The proportion of the entire data set that should be used as test data. It has to be greater than or equal
+   * to 0 and less than 1. If it is null, it defaults to {@link #DEF_TEST_DATA_PROPORTION}.
    * @param logger A logger to log the status of the optimization. It cannot be null.
    * @throws Exception If the engines cannot be initialised.
    * @throws IllegalArgumentException If the logger is null, or the batch size is not greater than 0, or the data set is too small.
    */
   public TexelOptimizer(TunableEngine[] engines, long trainingBatchSize, int epochs, Double h, Double baseLearningRate,
-      Double learningAnnealingRate, String fenFilePath, Long costCalculationBatchSize, Double k, Double testDataProportion, Logger logger)
-      throws Exception, IllegalArgumentException {
+      Double learningAnnealingRate, Double l1RegularizationCoeff, Double l2RegularizationCoeff, String fenFilePath,
+      Long costCalculationBatchSize, Double k, Double testDataProportion, Logger logger) throws Exception, IllegalArgumentException {
     super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
         engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE), trainingBatchSize,
         costCalculationBatchSize == null ? DEF_COST_CALC_BATCH_SIZE : costCalculationBatchSize, epochs, h == null ? 1d : h,
         baseLearningRate == null ? DEF_BASE_LEARNING_RATE : baseLearningRate,
-        learningAnnealingRate == null ? DEF_ANNEALING_RATE : learningAnnealingRate, null, null, null, logger);
+        learningAnnealingRate == null ? DEF_ANNEALING_RATE : learningAnnealingRate, null, null,
+        l1RegularizationCoeff == null ? DEF_L1_REG_COEFF : l1RegularizationCoeff,
+        l2RegularizationCoeff == null ? DEF_L2_REG_COEFF : l2RegularizationCoeff, null, logger);
     if (logger == null) {
       throw new IllegalArgumentException("The logger cannot be null.");
     }
     if (baseLearningRate != null && baseLearningRate <= 0) {
       throw new IllegalArgumentException("The base learning rate has to be greater than 0.");
     }
-    if (testDataProportion != null && (testDataProportion >= 1 || testDataProportion <= 0)) {
-      throw new IllegalArgumentException("The test data proportion has to be greater than 0 and less than 1.");
+    if (testDataProportion != null && (testDataProportion >= 1 || testDataProportion < 0)) {
+      throw new IllegalArgumentException("The test data proportion has to be greater than or equal to 0 and less than 1.");
     }
     this.fenFilePath = fenFilePath;
     testDataProportion = testDataProportion == null ? DEF_TEST_DATA_PROPORTION : testDataProportion;
     this.dataSetSize = countDataSetSize();
-    if (dataSetSize < Math.ceil(1d / testDataProportion)) {
-      throw new IllegalArgumentException("The complete data set has to contain at least " +
-          Math.ceil(1d / testDataProportion) + " data rows.");
-    }
     testDataStartInd = (int) (dataSetSize * (1 - testDataProportion));
     ArrayList<TunableEngine> enginesList = new ArrayList<>();
     for (TunableEngine e : engines) {

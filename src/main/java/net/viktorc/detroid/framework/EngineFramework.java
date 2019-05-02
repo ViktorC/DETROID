@@ -75,24 +75,30 @@ public final class EngineFramework implements Runnable {
    *
    * @param factory An instance of a class extending the {@link net.viktorc.detroid.framework.EngineFactory} interface. It provides the
    * engine instances required for different parameters of the framework.
-   * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else: <br> UCI mode: {@code -u} <br> Self
-   * play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | management |
+   * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else:<br>
+   * UCI mode: {@code -u}<br>
+   * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | management |
    * eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}] [--initprobvector
    * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
-   * {log.txt}] [--concurrency <integer>] {1}]} <br> Texel tuning: {@code -t texel -batchsize <integer> [--epochs <integer>]
-   * [--testdataprop <decimal> {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.95}]
-   * [--costbatchsize <integer>] [--k <decimal>] [--fensfile <string> {fens.txt}] [--log <string> {log.txt}] [--concurrency <integer> {1}]}
-   * <br> FEN-file generation by self-play: {@code -g byselfplay -games <integer> -tc <integer> [--inc <integer> {0}]
+   * {log.txt}] [--concurrency <integer>] {1}]} <br>
+   * Texel tuning: {@code -t texel -batchsize <integer> [--epochs <integer>] [--testdataprop <decimal> {0.2}]
+   * [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.95}] [--l1reg <decimal> {.1}]
+   * [--l2reg <decimal> {.01}] [--costbatchsize <integer>] [--k <decimal>] [--fensfile <string> {fens.txt}]
+   * [--log <string> {log.txt}] [--concurrency <integer> {1}]}<br>
+   * FEN-file generation by self-play: {@code -g selfplay -games <integer> -tc <integer> [--inc <integer> {0}]
    * [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
-   * [--concurrency <integer> {1}]} <br> FEN-file generation by PGN conversion: {@code -g bypgnconversion -sourcefile <string>
-   * [--maxgames <integer>] [--destfile <string> {fens.txt}]} <br> Removing draws from a FEN-file: {@code -f draws -sourcefile <string>
-   * [--destfile <string> {fens.txt}]} <br> Removing obvious mates from a FEN-file: {@code -f mates -sourcefile <string>
-   * [--destfile <string> {fens.txt}]} <br> Removing tactical positions from a FEN-file: {@code -f tacticals -sourcefile <string>
-   * [--destfile <string> {fens.txt}]} <br> Removing openings from a FEN-file: {@code -f openings -sourcefile <string>
-   * -firstxmoves <integer> [--destfile <string> {fens.txt}]} <br> Probability vector conversion to parameters file: {@code -c probvector
-   * -value <quoted_comma_separated_decimals> [--paramtype <eval | control | management | eval+control | control+management | all> {all}]
-   * [--paramsfile <string> {params.xml}]} <br> Parameter value array conversion to parameters file: {@code -c parameters
-   * -value <quoted_comma_separated_decimals> [--paramsfile <string> {params.xml}]}
+   * [--concurrency <integer> {1}]}<br>
+   * FEN-file generation by PGN conversion: {@code -g pgnconversion -sourcefile <string> [--maxgames <integer>] [--minelo <integer>]
+   * [--destfile <string> {fens.txt}]}<br>
+   * Removing draws from a FEN-file: {@code -f draw -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
+   * Removing tactical positions from a FEN-file: {@code -f tactical -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
+   * Removing unbalanced positions from a FEN-file: {@code -f unbalanced -sourcefile <string> -maximbalance <integer>
+   * [--destfile <string> {fens.txt}]}<br>
+   * Removing openings from a FEN-file: {@code -f opening -sourcefile <string> -firstxmoves <integer> [--destfile <string> {fens.txt}]}<br>
+   * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals>
+   * [--paramtype <eval | control | management | eval+control | control+management | all> {all}] [--paramsfile <string> {params.xml}]}<br>
+   * Parameter value array conversion to parameters file: {@code -c parameters -value <quoted_comma_separated_decimals>
+   * [--paramsfile <string> {params.xml}]}
    */
   public EngineFramework(EngineFactory factory, String[] args) {
     this.factory = factory;
@@ -245,7 +251,8 @@ public final class EngineFramework implements Runnable {
   }
 
   private void runInTexelTuningMode(String logFilePath, String fensFilePath, int concurrency, long trainingBatchSize,
-      int epochs, Long costCalcBatchSize, Double k, Double h, Double learningRate, Double annealingRate, Double testDataProp) {
+      int epochs, Long costCalcBatchSize, Double k, Double h, Double learningRate, Double annealingRate, Double l1RegCoeff,
+      Double l2RegCoeff, Double testDataProp) {
     TunableEngine[] engines = new TunableEngine[concurrency];
     for (int i = 0; i < concurrency; i++) {
       engines[i] = factory.newTunableEngineInstance();
@@ -261,8 +268,8 @@ public final class EngineFramework implements Runnable {
     } catch (SecurityException | IOException e) {
       throw new IllegalArgumentException(e);
     }
-    try (TexelOptimizer optimizer = new TexelOptimizer(engines, trainingBatchSize, epochs, h, learningRate, annealingRate, fensFilePath,
-        costCalcBatchSize, k, testDataProp, logger)) {
+    try (TexelOptimizer optimizer = new TexelOptimizer(engines, trainingBatchSize, epochs, h, learningRate, annealingRate, l1RegCoeff,
+        l2RegCoeff, fensFilePath, costCalcBatchSize, k, testDataProp, logger)) {
       optimizer.optimize();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -280,6 +287,8 @@ public final class EngineFramework implements Runnable {
     Double h = null;
     Double learningRate = null;
     Double annealingRate = null;
+    Double l1RegCoeff = null;
+    Double l2RegCoeff = null;
     Double testDataProp = null;
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
@@ -305,6 +314,12 @@ public final class EngineFramework implements Runnable {
         case "--annealingrate":
           annealingRate = Double.parseDouble(args[++i]);
           break;
+        case "--l1reg":
+          l1RegCoeff = Double.parseDouble(args[++i]);
+          break;
+        case "--l2reg":
+          l2RegCoeff = Double.parseDouble(args[++i]);
+          break;
         case "--costbatchsize":
           costCalcBatchSize = Long.parseLong(args[++i]);
           break;
@@ -324,8 +339,8 @@ public final class EngineFramework implements Runnable {
     if (batchSize == -1) {
       throw new IllegalArgumentException();
     }
-    runInTexelTuningMode(logFilePath, fensFilePath, concurrency, batchSize, epochs, costCalcBatchSize, k, h,
-        learningRate, annealingRate, testDataProp);
+    runInTexelTuningMode(logFilePath, fensFilePath, concurrency, batchSize, epochs, costCalcBatchSize, k, h, learningRate, annealingRate,
+        l1RegCoeff, l2RegCoeff, testDataProp);
   }
 
   private void runInTuningMode(String[] args) {
@@ -415,9 +430,9 @@ public final class EngineFramework implements Runnable {
     runInSelfPlayGenerationMode(destFile, concurrency, games, tc, tcInc, useBook, hash, threads);
   }
 
-  private void runInPGNGenerationMode(String sourceFile, String destFile, int maxNumOfGames) {
+  private void runInPGNGenerationMode(String sourceFile, String destFile, long maxNumOfGames, Integer minElo) {
     try (ControllerEngine engine = factory.newControllerEngineInstance()) {
-      FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames);
+      FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames, minElo);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -426,7 +441,8 @@ public final class EngineFramework implements Runnable {
   private void runInPGNGenerationMode(String[] args) {
     String destFile = DEF_FENS_FILE_PATH;
     String sourceFile = null;
-    int maxNumOfGames = Integer.MAX_VALUE;
+    long maxNumOfGames = Long.MAX_VALUE;
+    Integer minElo = null;
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       switch (arg) {
@@ -434,7 +450,10 @@ public final class EngineFramework implements Runnable {
           sourceFile = args[++i];
           break;
         case "--maxgames":
-          maxNumOfGames = Integer.parseInt(args[++i]);
+          maxNumOfGames = Long.parseLong(args[++i]);
+          break;
+        case "--minelo":
+          minElo = Integer.parseInt(args[++i]);
           break;
         case "--destfile":
           destFile = args[++i];
@@ -443,14 +462,14 @@ public final class EngineFramework implements Runnable {
           throw new IllegalArgumentException();
       }
     }
-    runInPGNGenerationMode(sourceFile, destFile, maxNumOfGames);
+    runInPGNGenerationMode(sourceFile, destFile, maxNumOfGames, minElo);
   }
 
   private void runInGenerationMode(String[] args) {
     String arg0 = args[0];
-    if ("byselfplay".equals(arg0)) {
+    if ("selfplay".equals(arg0)) {
       runInSelfPlayGenerationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("bypgnconversion".equals(arg0)) {
+    } else if ("pgnconversion".equals(arg0)) {
       runInPGNGenerationMode(Arrays.copyOfRange(args, 1, args.length));
     } else {
       throw new IllegalArgumentException();
@@ -461,14 +480,6 @@ public final class EngineFramework implements Runnable {
     try {
       FENFileUtil.filterDraws(sourceFile, destFile);
     } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void runInMateFiltrationMode(String sourceFile, String destFile) {
-    try (TunableEngine tunableEngine = factory.newTunableEngineInstance()) {
-      FENFileUtil.filterObviousMates(sourceFile, destFile, tunableEngine);
-    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -507,12 +518,42 @@ public final class EngineFramework implements Runnable {
     runInNoParamFiltrationMode(args, this::runInDrawFiltrationMode);
   }
 
-  private void runInMateFiltrationMode(String[] args) {
-    runInNoParamFiltrationMode(args, this::runInMateFiltrationMode);
-  }
-
   private void runInTacticalPositionFiltrationMode(String[] args) {
     runInNoParamFiltrationMode(args, this::runInTacticalPositionFiltrationMode);
+  }
+
+  private void runInUnbalancedPositionFiltrationMode(String sourceFile, String destFile, short maxImbalance) {
+    try (TunableEngine tunableEngine = factory.newTunableEngineInstance()) {
+      FENFileUtil.filterUnbalancedPositions(sourceFile, destFile, maxImbalance, tunableEngine);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void runInUnbalancedPositionFiltrationMode(String[] args) {
+    String sourceFile = null;
+    String destFile = DEF_FENS_FILE_PATH;
+    short maxImbalance = -1;
+    for (int i = 0; i < args.length; i++) {
+      String arg = args[i];
+      switch (arg) {
+        case "-maximbalance":
+          maxImbalance = Short.parseShort(args[++i]);
+          break;
+        case "-sourcefile":
+          sourceFile = args[++i];
+          break;
+        case "--destfile":
+          destFile = args[++i];
+          break;
+        default:
+          throw new IllegalArgumentException();
+      }
+    }
+    if (sourceFile == null || maxImbalance <= 0) {
+      throw new IllegalArgumentException();
+    }
+    runInUnbalancedPositionFiltrationMode(sourceFile, destFile, maxImbalance);
   }
 
   private void runInOpeningFiltrationMode(String sourceFile, String destFile, int numOfPositionsToFilter) {
@@ -551,13 +592,13 @@ public final class EngineFramework implements Runnable {
 
   private void runInFiltrationMode(String[] args) {
     String arg0 = args[0];
-    if ("draws".equals(arg0)) {
+    if ("draw".equals(arg0)) {
       runInDrawFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("mates".equals(arg0)) {
-      runInMateFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("tacticals".equals(arg0)) {
+    } else if ("tactical".equals(arg0)) {
       runInTacticalPositionFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("openings".equals(arg0)) {
+    } else if ("unbalanced".equals(arg0)) {
+      runInUnbalancedPositionFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
+    } else if ("opening".equals(arg0)) {
       runInOpeningFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
     } else {
       throw new IllegalArgumentException();

@@ -598,7 +598,7 @@ public class Search implements Runnable, Future<SearchResults> {
         return Score.DRAW_CLAIMED.value;
       }
       // Evaluate the pos statically.
-      int bestScore = pos.isInCheck() ? mateValue : eval.score(pos, hashEntryGen, evalTableEntry);
+      int bestScore = pos.isInCheck() ? mateValue : eval.score(pos, hashEntryGen, false, evalTableEntry);
       // Fail soft.
       if (bestScore > alpha) {
         alpha = bestScore;
@@ -887,7 +887,7 @@ public class Search implements Runnable, Future<SearchResults> {
                 razMargin = 0;
             }
             if (evalScore == Score.NULL.value) {
-              evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
+              evalScore = eval.score(pos, hashEntryGen, false, evalTableEntry);
             }
             if (evalScore - razMargin >= beta) {
               searchStats.reverseRazorCutoffs.incrementAndGet();
@@ -898,7 +898,7 @@ public class Search implements Runnable, Future<SearchResults> {
           // Try null move pruning if the conditions are met.
           if (nullMoveAllowed && depth / ply >= params.nullMoveReductionMinDepthLeft) {
             if (evalScore == Score.NULL.value) {
-              evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
+              evalScore = eval.score(pos, hashEntryGen, false, evalTableEntry);
             }
             if (evalScore > alpha) {
               searchStats.nullMoveReductions.incrementAndGet();
@@ -1217,7 +1217,7 @@ public class Search implements Runnable, Future<SearchResults> {
           // Futility pruning.
           if (prunable && depth / FULL_PLY <= 5 && !pos.givesCheck(move)) {
             if (evalScore == Score.NULL.value) {
-              evalScore = eval.score(pos, hashEntryGen, evalTableEntry);
+              evalScore = eval.score(pos, hashEntryGen, false, evalTableEntry);
             }
             if (evalScore <= alpha - futMargin) {
               searchStats.futilityPrunes.incrementAndGet();
