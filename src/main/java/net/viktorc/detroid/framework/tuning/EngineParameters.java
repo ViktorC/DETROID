@@ -351,6 +351,7 @@ public abstract class EngineParameters {
    * of 0.
    *
    * @param paramValues A map of parameter names and their corresponding values.
+   * @param types The types of parameters to include.
    * @return The values array.
    */
   public final double[] valuesFromMap(Map<String, Double> paramValues, Set<ParameterType> types) {
