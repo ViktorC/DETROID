@@ -222,11 +222,11 @@ public class ZobristKeyGenerator {
   private ZobristKeyGenerator() {
     Random random = new Random();
     turn = random.nextLong();
-    for (int i = 0; i < board[0].length; i++) {
-      board[0][i] = 0;
+    for (int i = 0; i < board[Piece.NULL.ind].length; i++) {
+      board[Piece.NULL.ind][i] = Bitboard.EMPTY_BOARD;
     }
     for (int i = 1; i < board.length; i++) {
-      for (int j = 0; j < board[0].length; j++) {
+      for (int j = 0; j < board[Piece.NULL.ind].length; j++) {
         board[i][j] = random.nextLong();
       }
     }
@@ -303,7 +303,7 @@ public class ZobristKeyGenerator {
     int bCastlingRights = pos.getBlackCastlingRights();
     int enPassantRights = pos.getEnPassantRights();
     boolean whitesTurn = pos.isWhitesTurn();
-    for (int i = 0; i < board.length; i++) {
+    for (int i = 0; i < Bitboard.Square.values().length; i++) {
       int pieceNote;
       int piece = pos.getPiece(i);
       if (piece == Piece.NULL.ind) {
