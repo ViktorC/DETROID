@@ -135,15 +135,25 @@ class DetroidParameters extends EngineParameters {
   @Parameter
   short pinnedPawnWeight;
   @Parameter
-  short queenDefenseWeight;
+  short pieceDefendedQueenWeight;
   @Parameter
-  short rookDefenseWeight;
+  short pieceDefendedRookWeight;
   @Parameter
-  short bishopDefenseWeight;
+  short pieceDefendedBishopWeight;
   @Parameter
-  short knightDefenseWeight;
+  short pieceDefendedKnightWeight;
   @Parameter
-  short pawnDefenseWeight;
+  short pieceDefendedPawnWeight;
+  @Parameter
+  short pawnDefendedQueenWeight;
+  @Parameter
+  short pawnDefendedRookWeight;
+  @Parameter
+  short pawnDefendedBishopWeight;
+  @Parameter
+  short pawnDefendedKnightWeight;
+  @Parameter
+  short pawnDefendedPawnWeight;
   @Parameter
   short queenMobilityWeight;
   @Parameter

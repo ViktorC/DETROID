@@ -51,11 +51,11 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   /**
    * The L1 regularization coefficient.
    */
-  private static final double DEF_L1_REG_COEFF = .01;
+  private static final double DEF_L1_REG_COEFF = 1e-3;
   /**
    * The L2 regularization coefficient.
    */
-  private static final double DEF_L2_REG_COEFF = .001;
+  private static final double DEF_L2_REG_COEFF = 1e-4;
   /**
    * The only parameter type the optimizer is concerned with.
    */
@@ -100,8 +100,8 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * sense).
    * @param baseLearningRate The base step size for the gradient descent. If it is null, it defaults to 1.
    * @param learningAnnealingRate The factor by which the learning rate is multiplied after every epoch. If it is null, it defaults to 0.9.
-   * @param l1RegularizationCoeff The coefficient to use for L1 parameter regularization, by default .01.
-   * @param l2RegularizationCoeff The coefficient to use for L2 parameter regularization, by default 0.001.
+   * @param l1RegularizationCoeff The coefficient to use for L1 parameter regularization, by default 0.001.
+   * @param l2RegularizationCoeff The coefficient to use for L2 parameter regularization, by default 0.0001.
    * @param fenFilePath The path to the file containing the FEN list of positions to evaluate. If it doesn't exist an {@link
    * java.io.IOException} is thrown.
    * @param costCalculationBatchSize The number of samples in the batches used for calculating the total training and test costs. If it is
