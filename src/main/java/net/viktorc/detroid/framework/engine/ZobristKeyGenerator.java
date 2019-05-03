@@ -278,11 +278,11 @@ public class ZobristKeyGenerator {
     long key = 0;
     long whitePawns = pos.getWhitePawns();
     long blackPawns = pos.getBlackPawns();
-    while (whitePawns != 0) {
+    while (whitePawns != Bitboard.EMPTY_BOARD) {
       key ^= board[Piece.W_PAWN.ind][BitOperations.indexOfLSBit(whitePawns)];
       whitePawns = BitOperations.resetLSBit(whitePawns);
     }
-    while (blackPawns != 0) {
+    while (blackPawns != Bitboard.EMPTY_BOARD) {
       key ^= board[Piece.B_PAWN.ind][BitOperations.indexOfLSBit(blackPawns)];
       blackPawns = BitOperations.resetLSBit(blackPawns);
     }
@@ -352,12 +352,12 @@ public class ZobristKeyGenerator {
     if (enPassantRights != EnPassantRights.NONE.ind) {
       if (whitesTurn) {
         MoveSetBase mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_W_DEST_SQR_IND);
-        if (mD.getBlackPawnCaptureSet(pos.getWhitePawns()) != 0) {
+        if (mD.getBlackPawnCaptureSet(pos.getWhitePawns()) != Bitboard.EMPTY_BOARD) {
           key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
         }
       } else {
         MoveSetBase mD = MoveSetBase.getByIndex(enPassantRights + EnPassantRights.TO_B_DEST_SQR_IND);
-        if (mD.getWhitePawnCaptureSet(pos.getBlackPawns()) != 0) {
+        if (mD.getWhitePawnCaptureSet(pos.getBlackPawns()) != Bitboard.EMPTY_BOARD) {
           key ^= POLYGLOT_RANDOM_64[772 + enPassantRights];
         }
       }
