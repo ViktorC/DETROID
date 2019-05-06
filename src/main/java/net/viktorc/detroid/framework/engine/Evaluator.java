@@ -1154,11 +1154,13 @@ public class Evaluator {
         }
       }
       double colorFactor = pos.isWhitesTurn() ? 1d : -1d;
-      if (victimParamNameRef.get() != null) {
-        gradientCache.put(victimParamNameRef.get(), colorFactor);
+      String victimParamName = victimParamNameRef.get();
+      String captorParamName = captorParamNameRef.get();
+      if (victimParamName != null) {
+        gradientCache.put(victimParamName, gradientCache.getOrDefault(victimParamName, 0d) + colorFactor);
       }
-      if (captorParamNameRef.get() != null) {
-        gradientCache.put(captorParamNameRef.get(), -colorFactor);
+      if (captorParamName != null) {
+        gradientCache.put(captorParamName, gradientCache.getOrDefault(captorParamName, 0d) - colorFactor);
       }
       gradientCache.put("tempoAdvantage", colorFactor);
     }
