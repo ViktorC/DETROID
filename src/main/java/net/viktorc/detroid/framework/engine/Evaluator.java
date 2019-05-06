@@ -140,26 +140,18 @@ public class Evaluator {
   private static long SHORT_CASTLED_W_KING_LOC = Square.F1.bitboard | Square.G1.bitboard | Square.H1.bitboard;
   private static long SHORT_CASTLED_W_KING_PAWN_SHIELD1 = SHORT_CASTLED_W_KING_LOC << 8;
   private static long SHORT_CASTLED_W_KING_PAWN_SHIELD2 = SHORT_CASTLED_W_KING_PAWN_SHIELD1 << 8;
-  private static long SHORT_CASTLED_W_KING_PAWN_STORM1 = SHORT_CASTLED_W_KING_PAWN_SHIELD2;
-  private static long SHORT_CASTLED_W_KING_PAWN_STORM2 = SHORT_CASTLED_W_KING_PAWN_STORM1 << 8;
 
   private static long SHORT_CASTLED_B_KING_LOC = Square.F8.bitboard | Square.G8.bitboard | Square.H8.bitboard;
   private static long SHORT_CASTLED_B_KING_PAWN_SHIELD1 = SHORT_CASTLED_B_KING_LOC >>> 8;
   private static long SHORT_CASTLED_B_KING_PAWN_SHIELD2 = SHORT_CASTLED_B_KING_PAWN_SHIELD1 >>> 8;
-  private static long SHORT_CASTLED_B_KING_PAWN_STORM1 = SHORT_CASTLED_B_KING_PAWN_SHIELD2;
-  private static long SHORT_CASTLED_B_KING_PAWN_STORM2 = SHORT_CASTLED_B_KING_PAWN_STORM1 >>> 8;
 
   private static long LONG_CASTLED_W_KING_LOC = Square.A1.bitboard | Square.B1.bitboard | Square.C1.bitboard;
   private static long LONG_CASTLED_W_KING_PAWN_SHIELD1 = LONG_CASTLED_W_KING_LOC << 8;
   private static long LONG_CASTLED_W_KING_PAWN_SHIELD2 = LONG_CASTLED_W_KING_PAWN_SHIELD1 << 8;
-  private static long LONG_CASTLED_W_KING_PAWN_STORM1 = LONG_CASTLED_W_KING_PAWN_SHIELD2;
-  private static long LONG_CASTLED_W_KING_PAWN_STORM2 = LONG_CASTLED_W_KING_PAWN_STORM1 << 8;
 
   private static long LONG_CASTLED_B_KING_LOC = Square.A8.bitboard | Square.B8.bitboard | Square.C8.bitboard;
   private static long LONG_CASTLED_B_KING_PAWN_SHIELD1 = LONG_CASTLED_B_KING_LOC >>> 8;
   private static long LONG_CASTLED_B_KING_PAWN_SHIELD2 = LONG_CASTLED_B_KING_PAWN_SHIELD1 >>> 8;
-  private static long LONG_CASTLED_B_KING_PAWN_STORM1 = LONG_CASTLED_B_KING_PAWN_SHIELD2;
-  private static long LONG_CASTLED_B_KING_PAWN_STORM2 = LONG_CASTLED_B_KING_PAWN_STORM1 >>> 8;
 
   private final DetroidParameters params;
   // Evaluation score hash table.
