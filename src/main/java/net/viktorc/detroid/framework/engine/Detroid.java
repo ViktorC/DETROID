@@ -80,6 +80,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
   private static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
   // The default endgame tablebase cache size in MB.
   private static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS * 16, MAX_EGTB_CACHE_SIZE);
+  // The scaling factor of the exponent in the sigmoid function used to calculate the number of remaining moves.
+  private static final double LAMBDA = 1.75e-2d;
 
   private final Object lock;
 
@@ -157,7 +159,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   private int movesLeftBasedOnPhaseScore(int phaseScore) {
     double movesToGoInterval = params.maxMovesToGo - params.minMovesToGo;
-    double exp = Math.pow(Math.E, 3.5e-2d * ((double) (phaseScore - Position.MAX_PHASE_SCORE)) / 2);
+    double exp = Math.exp(LAMBDA * (phaseScore - Position.MAX_PHASE_SCORE));
     double res = movesToGoInterval / (1d + exp);
     return (int) Math.round(res + params.minMovesToGo);
   }
