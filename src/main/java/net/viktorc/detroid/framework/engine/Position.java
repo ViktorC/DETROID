@@ -19,6 +19,19 @@ public class Position {
    */
   public final static String START_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+  static final short MAX_PHASE_SCORE = 256;
+
+  private static final short QUEEN_PHASE_WEIGHT = 4;
+  private static final short ROOK_PHASE_WEIGHT = 2;
+  private static final short BISHOP_PHASE_WEIGHT = 1;
+  private static final short KNIGHT_PHASE_WEIGHT = 1;
+  private static final short TOTAL_OPENING_PHASE_WEIGHT = 24;
+  private static final short[] PIECE_PHASE_WEIGHTS = new short[]{
+      0,
+      0, QUEEN_PHASE_WEIGHT, ROOK_PHASE_WEIGHT, BISHOP_PHASE_WEIGHT, KNIGHT_PHASE_WEIGHT, 0,
+      0, QUEEN_PHASE_WEIGHT, ROOK_PHASE_WEIGHT, BISHOP_PHASE_WEIGHT, KNIGHT_PHASE_WEIGHT, 0
+  };
+
   private long whiteKing;
   private long whiteQueens;
   private long whiteRooks;
@@ -41,6 +54,8 @@ public class Position {
   private boolean inCheck;
   private boolean whitesTurn;
   private byte[] squares;
+  private short phase;
+  private short phaseScore;
   private int halfMoveIndex;
   private byte fiftyMoveRuleClock;
   private byte enPassantRights;
@@ -196,6 +211,13 @@ public class Position {
         pos.getWhiteCheckers(BitOperations.indexOfBit(pos.blackKing));
     pos.inCheck = pos.checkers != Bitboard.EMPTY_BOARD;
     pos.key = ZobristKeyGenerator.getInstance().generateHashKey(pos);
+    int numOfQueens = BitOperations.hammingWeight(pos.getWhiteQueens() | pos.getBlackQueens());
+    int numOfRooks = BitOperations.hammingWeight(pos.getWhiteRooks() | pos.getBlackRooks());
+    int numOfBishops = BitOperations.hammingWeight(pos.getWhiteBishops() | pos.getBlackBishops());
+    int numOfKnights = BitOperations.hammingWeight(pos.getWhiteKnights() | pos.getBlackKnights());
+    pos.phase = (short) (TOTAL_OPENING_PHASE_WEIGHT - (numOfQueens * QUEEN_PHASE_WEIGHT + numOfRooks * ROOK_PHASE_WEIGHT
+        + numOfBishops * BISHOP_PHASE_WEIGHT + numOfKnights * KNIGHT_PHASE_WEIGHT));
+    pos.setPhaseScore();
     if (pos.halfMoveIndex >= pos.keyHistory.length) {
       int keyHistLength = pos.keyHistory.length;
       while (keyHistLength <= pos.halfMoveIndex) {
@@ -246,6 +268,8 @@ public class Position {
     whitesTurn = pos.whitesTurn;
     inCheck = pos.inCheck;
     checkers = pos.checkers;
+    phase = pos.phase;
+    phaseScore = pos.phaseScore;
     halfMoveIndex = pos.halfMoveIndex;
     fiftyMoveRuleClock = pos.fiftyMoveRuleClock;
     key = pos.key;
@@ -411,6 +435,13 @@ public class Position {
   }
 
   /**
+   * @return The phase score of the board.
+   */
+  public short getPhaseScore() {
+    return phaseScore;
+  }
+
+  /**
    * @return The number of half moves made.
    */
   public int getHalfMoveIndex() {
@@ -500,6 +531,10 @@ public class Position {
       }
     }
     return repetitions >= numberOfTimes;
+  }
+
+  private void setPhaseScore() {
+    phaseScore = (short) ((Math.max(0, phase) * MAX_PHASE_SCORE + TOTAL_OPENING_PHASE_WEIGHT / 2) / TOTAL_OPENING_PHASE_WEIGHT);
   }
 
   private void updateAggregateBitboards() {
@@ -696,12 +731,14 @@ public class Position {
   private void makeWhiteNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = movedPiece;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
     makeWhiteNormalMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), movedPiece, capturedPiece);
   }
 
   private void makeBlackNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = movedPiece;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
     makeBlackNormalMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), movedPiece, capturedPiece);
   }
 
@@ -754,53 +791,69 @@ public class Position {
   private void makeWhiteQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.W_QUEEN.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= QUEEN_PHASE_WEIGHT;
     makeWhiteQueenPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeBlackQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.B_QUEEN.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= QUEEN_PHASE_WEIGHT;
     makeBlackQueenPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeWhiteRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.W_ROOK.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= ROOK_PHASE_WEIGHT;
     makeWhiteRookPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeBlackRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.B_ROOK.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= ROOK_PHASE_WEIGHT;
     makeBlackRookPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeWhiteBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.W_BISHOP.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= BISHOP_PHASE_WEIGHT;
     makeWhiteBishopPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeBlackBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.B_BISHOP.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= BISHOP_PHASE_WEIGHT;
     makeBlackBishopPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeWhiteKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.W_KNIGHT.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= KNIGHT_PHASE_WEIGHT;
     makeWhiteKnightPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void makeBlackKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.NULL.ind;
     squares[to] = Piece.B_KNIGHT.ind;
+    phase += PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase -= KNIGHT_PHASE_WEIGHT;
     makeBlackKnightPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to),
         capturedPiece);
   }
 
-  private void makeWhiteMoveAndUpdateKeyOnBoard(Move move) {
+  private void makeWhiteMoveOnBoardAndUpdateKey(Move move) {
     byte moveType = move.type;
     ZobristKeyGenerator gen = ZobristKeyGenerator.getInstance();
     if (moveType == MoveType.NORMAL.ind) {
@@ -835,7 +888,7 @@ public class Position {
     }
   }
 
-  private void makeBlackMoveAndUpdateKeyOnBoard(Move move) {
+  private void makeBlackMoveOnBoardAndUpdateKey(Move move) {
     byte moveType = move.type;
     ZobristKeyGenerator gen = ZobristKeyGenerator.getInstance();
     if (moveType == MoveType.NORMAL.ind) {
@@ -966,7 +1019,7 @@ public class Position {
     stateHistory.addFirst(new PositionStateRecord(whiteCastlingRights, blackCastlingRights, enPassantRights,
         fiftyMoveRuleClock, checkers));
     if (whitesTurn) {
-      makeWhiteMoveAndUpdateKeyOnBoard(move);
+      makeWhiteMoveOnBoardAndUpdateKey(move);
       checkers = getWhiteCheckers(BitOperations.indexOfBit(blackKing));
       updateBlackCastlingRights();
       enPassantRights = (move.movedPiece == Piece.W_PAWN.ind &&
@@ -974,7 +1027,7 @@ public class Position {
       fiftyMoveRuleClock = (move.capturedPiece != Piece.NULL.ind ||
           move.movedPiece == Piece.W_PAWN.ind) ? 0 : (byte) (fiftyMoveRuleClock + 1);
     } else {
-      makeBlackMoveAndUpdateKeyOnBoard(move);
+      makeBlackMoveOnBoardAndUpdateKey(move);
       checkers = getBlackCheckers(BitOperations.indexOfBit(whiteKing));
       updateWhiteCastlingRights();
       enPassantRights = (move.movedPiece == Piece.B_PAWN.ind &&
@@ -984,6 +1037,7 @@ public class Position {
     }
     whitesTurn = !whitesTurn;
     inCheck = checkers != Bitboard.EMPTY_BOARD;
+    setPhaseScore();
     halfMoveIndex++;
     ensureKeyHistoryCapacity();
     key = ZobristKeyGenerator.getInstance().getUpdatedOffBoardHashKey(key, getLastState(),
@@ -1016,12 +1070,14 @@ public class Position {
   private void unmakeWhiteNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
     squares[from] = movedPiece;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
     makeWhiteNormalMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), movedPiece, capturedPiece);
   }
 
   private void unmakeBlackNormalMoveOnBoard(byte from, byte to, byte movedPiece, byte capturedPiece) {
     squares[from] = movedPiece;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
     makeBlackNormalMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), movedPiece, capturedPiece);
   }
 
@@ -1074,48 +1130,64 @@ public class Position {
   private void unmakeWhiteQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.W_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += QUEEN_PHASE_WEIGHT;
     makeWhiteQueenPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeBlackQueenPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.B_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += QUEEN_PHASE_WEIGHT;
     makeBlackQueenPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeWhiteRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.W_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += ROOK_PHASE_WEIGHT;
     makeWhiteRookPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeBlackRookPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.B_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += ROOK_PHASE_WEIGHT;
     makeBlackRookPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeWhiteBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.W_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += BISHOP_PHASE_WEIGHT;
     makeWhiteBishopPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeBlackBishopPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.B_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += BISHOP_PHASE_WEIGHT;
     makeBlackBishopPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeWhiteKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.W_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += KNIGHT_PHASE_WEIGHT;
     makeWhiteKnightPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
   private void unmakeBlackKnightPromotionMoveOnBoard(byte from, byte to, byte capturedPiece) {
     squares[from] = Piece.B_PAWN.ind;
     squares[to] = capturedPiece;
+    phase -= PIECE_PHASE_WEIGHTS[capturedPiece];
+    phase += KNIGHT_PHASE_WEIGHT;
     makeBlackKnightPromotionMoveOnBitboards(BitOperations.toBit(from), BitOperations.toBit(to), capturedPiece);
   }
 
@@ -1186,6 +1258,7 @@ public class Position {
     fiftyMoveRuleClock = prevState.getFiftyMoveRuleClock();
     checkers = prevState.getCheckers();
     inCheck = checkers != Bitboard.EMPTY_BOARD;
+    setPhaseScore();
     keyHistory[halfMoveIndex] = 0;
     key = keyHistory[--halfMoveIndex];
     return move;

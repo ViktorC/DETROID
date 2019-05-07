@@ -91,95 +91,185 @@ class DetroidParameters extends EngineParameters {
 
   // Evaluation parameters.
   @Parameter
-  short queenValue;
+  short queenValueMg;
   @Parameter
-  short rookValue;
+  short queenValueEg;
   @Parameter
-  short bishopValue;
+  short rookValueMg;
   @Parameter
-  short knightValue;
+  short rookValueEg;
   @Parameter
-  short pawnValue;
+  short bishopValueMg;
   @Parameter
-  short pawnShieldWeight1;
+  short bishopValueEg;
   @Parameter
-  short pawnShieldWeight2;
+  short knightValueMg;
   @Parameter
-  short blockedPawnWeight;
+  short knightValueEg;
   @Parameter
-  short passedPawnWeight;
+  short pawnValueMg;
   @Parameter
-  short isolatedPawnWeight;
+  short pawnValueEg;
   @Parameter
-  short backwardPawnWeight;
+  short pawnShieldWeight1Mg;
   @Parameter
-  short stoppedPawnWeight;
+  short pawnShieldWeight1Eg;
   @Parameter
-  short bishopPairAdvantage;
+  short pawnShieldWeight2Mg;
   @Parameter
-  short pieceDefendedQueenWeight;
+  short pawnShieldWeight2Eg;
   @Parameter
-  short pieceDefendedRookWeight;
+  short blockedPawnWeightMg;
   @Parameter
-  short pieceDefendedBishopWeight;
+  short blockedPawnWeightEg;
   @Parameter
-  short pieceDefendedKnightWeight;
+  short passedPawnWeightMg;
   @Parameter
-  short pieceDefendedPawnWeight;
+  short passedPawnWeightEg;
   @Parameter
-  short pawnDefendedQueenWeight;
+  short isolatedPawnWeightMg;
   @Parameter
-  short pawnDefendedRookWeight;
+  short isolatedPawnWeightEg;
   @Parameter
-  short pawnDefendedBishopWeight;
+  short backwardPawnWeightMg;
   @Parameter
-  short pawnDefendedKnightWeight;
+  short backwardPawnWeightEg;
   @Parameter
-  short pawnDefendedPawnWeight;
+  short stoppedPawnWeightMg;
   @Parameter
-  short queenMobilityWeight;
+  short stoppedPawnWeightEg;
   @Parameter
-  short rookMobilityWeight;
+  short bishopPairAdvantageMg;
   @Parameter
-  short bishopMobilityWeight;
+  short bishopPairAdvantageEg;
   @Parameter
-  short knightMobilityWeight;
+  short pieceDefendedQueenWeightMg;
   @Parameter
-  short pawnMobilityWeight;
+  short pieceDefendedQueenWeightEg;
   @Parameter
-  short friendlyQueenTropismWeight;
+  short pieceDefendedRookWeightMg;
   @Parameter
-  short friendlyRookTropismWeight;
+  short pieceDefendedRookWeightEg;
   @Parameter
-  short friendlyBishopTropismWeight;
+  short pieceDefendedBishopWeightMg;
   @Parameter
-  short friendlyKnightTropismWeight;
+  short pieceDefendedBishopWeightEg;
   @Parameter
-  short friendlyNormalPawnTropismWeight;
+  short pieceDefendedKnightWeightMg;
   @Parameter
-  short friendlyWeakPawnTropismWeight;
+  short pieceDefendedKnightWeightEg;
   @Parameter
-  short friendlyPassedPawnTropismWeight;
+  short pieceDefendedPawnWeightMg;
   @Parameter
-  short opponentQueenTropismWeight;
+  short pieceDefendedPawnWeightEg;
   @Parameter
-  short opponentRookTropismWeight;
+  short pawnDefendedQueenWeightMg;
   @Parameter
-  short opponentBishopTropismWeight;
+  short pawnDefendedQueenWeightEg;
   @Parameter
-  short opponentKnightTropismWeight;
+  short pawnDefendedRookWeightMg;
   @Parameter
-  short opponentNormalPawnTropismWeight;
+  short pawnDefendedRookWeightEg;
   @Parameter
-  short opponentWeakPawnTropismWeight;
+  short pawnDefendedBishopWeightMg;
   @Parameter
-  short opponentPassedPawnTropismWeight;
+  short pawnDefendedBishopWeightEg;
   @Parameter
-  short kingZoneAttackerWeight;
+  short pawnDefendedKnightWeightMg;
   @Parameter
-  short attackedKingZoneSquareWeight;
+  short pawnDefendedKnightWeightEg;
   @Parameter
-  short tempoAdvantage;
+  short pawnDefendedPawnWeightMg;
+  @Parameter
+  short pawnDefendedPawnWeightEg;
+  @Parameter
+  short queenMobilityWeightMg;
+  @Parameter
+  short queenMobilityWeightEg;
+  @Parameter
+  short rookMobilityWeightMg;
+  @Parameter
+  short rookMobilityWeightEg;
+  @Parameter
+  short bishopMobilityWeightMg;
+  @Parameter
+  short bishopMobilityWeightEg;
+  @Parameter
+  short knightMobilityWeightMg;
+  @Parameter
+  short knightMobilityWeightEg;
+  @Parameter
+  short pawnMobilityWeightMg;
+  @Parameter
+  short pawnMobilityWeightEg;
+  @Parameter
+  short friendlyQueenTropismWeightMg;
+  @Parameter
+  short friendlyQueenTropismWeightEg;
+  @Parameter
+  short friendlyRookTropismWeightMg;
+  @Parameter
+  short friendlyRookTropismWeightEg;
+  @Parameter
+  short friendlyBishopTropismWeightMg;
+  @Parameter
+  short friendlyBishopTropismWeightEg;
+  @Parameter
+  short friendlyKnightTropismWeightMg;
+  @Parameter
+  short friendlyKnightTropismWeightEg;
+  @Parameter
+  short friendlyNormalPawnTropismWeightMg;
+  @Parameter
+  short friendlyNormalPawnTropismWeightEg;
+  @Parameter
+  short friendlyWeakPawnTropismWeightMg;
+  @Parameter
+  short friendlyWeakPawnTropismWeightEg;
+  @Parameter
+  short friendlyPassedPawnTropismWeightMg;
+  @Parameter
+  short friendlyPassedPawnTropismWeightEg;
+  @Parameter
+  short opponentQueenTropismWeightMg;
+  @Parameter
+  short opponentQueenTropismWeightEg;
+  @Parameter
+  short opponentRookTropismWeightMg;
+  @Parameter
+  short opponentRookTropismWeightEg;
+  @Parameter
+  short opponentBishopTropismWeightMg;
+  @Parameter
+  short opponentBishopTropismWeightEg;
+  @Parameter
+  short opponentKnightTropismWeightMg;
+  @Parameter
+  short opponentKnightTropismWeightEg;
+  @Parameter
+  short opponentNormalPawnTropismWeightMg;
+  @Parameter
+  short opponentNormalPawnTropismWeightEg;
+  @Parameter
+  short opponentWeakPawnTropismWeightMg;
+  @Parameter
+  short opponentWeakPawnTropismWeightEg;
+  @Parameter
+  short opponentPassedPawnTropismWeightMg;
+  @Parameter
+  short opponentPassedPawnTropismWeightEg;
+  @Parameter
+  short kingZoneAttackerWeightMg;
+  @Parameter
+  short kingZoneAttackerWeightEg;
+  @Parameter
+  short attackedKingZoneSquareWeightMg;
+  @Parameter
+  short attackedKingZoneSquareWeightEg;
+  @Parameter
+  short tempoAdvantageMg;
+  @Parameter
+  short tempoAdvantageEg;
 
   @Parameter
   short pstPawnMg8;
