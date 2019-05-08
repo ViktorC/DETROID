@@ -69,7 +69,7 @@ The other way is PGN conversion. This requires a PGN file of chess games which c
 **Usage:** `-g pgnconversion -sourcefile my_pgn.pgn --maxgames 50000 --minelo 2700 --destfile my_fens.txt`
 
 #### Training data filtering
-The generated FEN-files can also be filtered to possibly improve the optimization results. For example, all the positions and their labels from drawn games can be removed from the FEN-file. The file path to the source FEN-file is a mandatory parameter, while the destination file path is optional and defaults to `fens.txt`.  
+The generated FEN-files can also be filtered to possibly improve the optimization results. For example, all the positions and their labels from drawn games can be removed from the FEN-file. The file path to the source FEN-file is a mandatory parameter, while the destination file path is optional and defaults to _fens.txt_.  
 **Usage:** `-f draw -sourcefile old_fen.txt --destfile new_fen.txt`
 
 Tactical positions can also be removed from the training data. This can be used to make sure that only quiet positions are left and thus the candidate engine's static evaluation function can better assess the position's score. If the original data set is big enough, it is highly recommended to keep only the quiet positions.  
@@ -78,7 +78,7 @@ Tactical positions can also be removed from the training data. This can be used 
 The same can be done for unbalanced positions as well (positions whose absolute score based on the tunable engine's evaluation function exceeds a certain threshold). This is highly recommended, especially if the training data is generated from a PGN file. The parameter `maximbalance` defines the maximum accepted absolute score in centi-pawns.  
 **Usage:** `-f unbalanced -sourcefile old_fen.txt -maximbalance 600 --destfile new_fen.txt`
 
-Another way to filter the training data is removing the first `x` positions from each game. The only new parameter defines the value of `x`, the others are the same as above.  
+Another way to filter the training data is removing the first _x_ positions from each game. The only new parameter defines the value of _x_, the others are the same as above.  
 **Usage:** `-f opening -sourcefile old_fen.txt -firstxmoves 8 --destfile new_fen.txt`
 
 #### Parameter conversion
