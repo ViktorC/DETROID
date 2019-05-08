@@ -36,7 +36,7 @@ import net.viktorc.detroid.framework.util.QuickSort;
 public class Search implements Runnable, Future<SearchResults> {
 
   /**
-   * The depth to which the pos is to be searched at the first iteration of the iterative deepening framework.
+   * The depth to which the position is to be searched at the first iteration of the iterative deepening framework.
    */
   private static final short INITIAL_DEPTH = 1;
   /**
@@ -94,7 +94,7 @@ public class Search implements Runnable, Future<SearchResults> {
    * @param ponder Whether the search should run in ponder mode.
    * @param maxDepth The maximum depth to search to.
    * @param maxNodes The maximum number of positions to search.
-   * @param moves The only moves from the root pos that should be searched. If it is <code>null</code>, all moves are to be searched.
+   * @param moves The only moves from the root position that should be searched. If it is <code>null</code>, all moves are to be searched.
    */
   public Search(Position pos, DetroidParameters params, Evaluator eval, EndGameTableBase egtb, DetroidSearchInformation info,
       int numOfSearchThreads, Cache<TTEntry> transTable, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth, long maxNodes,
@@ -443,7 +443,7 @@ public class Search implements Runnable, Future<SearchResults> {
     }
 
     /**
-     * @param ply The depth to which the pos is to be searched.
+     * @param ply The depth to which the position is to be searched.
      */
     void setPly(short ply) {
       this.ply = ply;
