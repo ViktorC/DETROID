@@ -5,7 +5,7 @@
   <evalTableEntryLifeCycle>2</evalTableEntryLifeCycle>
   <minTimePortionNeededForExtraDepth16th>10</minTimePortionNeededForExtraDepth16th>
   <minMovesToGo>40</minMovesToGo>
-  <maxMovesToGo>60</maxMovesToGo>
+  <maxMovesToGo>80</maxMovesToGo>
   <nullMoveReduction>2</nullMoveReduction>
   <nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
   <extraNullMoveReduction>1</extraNullMoveReduction>
