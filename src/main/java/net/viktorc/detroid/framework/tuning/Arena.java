@@ -104,8 +104,9 @@ class Arena implements AutoCloseable {
     SearchResults res = engine.search(null, null, white ? timeLeft.get() : oppTimeLeft,
         white ? oppTimeLeft : timeLeft.get(), timeIncPerMove, timeIncPerMove, null, null,
         null, null, null, null);
+    long end = System.nanoTime();
     task.cancel();
-    timeLeft.set(timeLeft.get() - (long) ((System.nanoTime() - start) / 1e6));
+    timeLeft.set(timeLeft.get() - Math.round((double) (end - start) / 1e6));
     if (timeLeft.get() <= 0 || !controller.play(res.getBestMove())) {
       throw new GameOverException(timeLeft.get() <= 0 ?
           "Engine1 lost on time." : "Engine1 returned an illegal move: " + res.getBestMove() + ".");

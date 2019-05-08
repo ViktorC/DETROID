@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <parameters>
-  <transTableShare16th>13</transTableShare16th>
+  <transTableShare16th>12</transTableShare16th>
   <transTableEntryLifeCycle>1</transTableEntryLifeCycle>
   <evalTableEntryLifeCycle>2</evalTableEntryLifeCycle>
   <minTimePortionNeededForExtraDepth16th>10</minTimePortionNeededForExtraDepth16th>
-  <minMovesToGo>20</minMovesToGo>
-  <maxMovesToGo>35</maxMovesToGo>
+  <minMovesToGo>40</minMovesToGo>
+  <maxMovesToGo>60</maxMovesToGo>
   <nullMoveReduction>2</nullMoveReduction>
   <nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
   <extraNullMoveReduction>1</extraNullMoveReduction>

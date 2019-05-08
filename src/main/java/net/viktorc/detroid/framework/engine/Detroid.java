@@ -160,8 +160,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
   private int movesLeftBasedOnPhaseScore(int phaseScore) {
     double movesToGoInterval = params.maxMovesToGo - params.minMovesToGo;
     double exp = Math.exp(LAMBDA * (phaseScore - Position.MAX_PHASE_SCORE));
-    double res = movesToGoInterval / (1d + exp);
-    return (int) Math.round(res + params.minMovesToGo);
+    double res = 2 * movesToGoInterval / (1d + exp) - movesToGoInterval;
+    return (int) Math.round(params.minMovesToGo + res);
   }
 
   private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement,
