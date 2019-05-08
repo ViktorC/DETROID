@@ -285,20 +285,18 @@ public abstract class NadamSGD<E, L> {
     double[] gradient = computeGradient(parameters, dataSample);
     if (gradient == null) {
       gradient = approximateGradient(dataSample);
-    } else {
-      for (int i = 0; i < gradient.length; i++) {
-        if (indicesToIgnore.contains(i)) {
-          gradient[i] = 0;
-        }
-      }
     }
     double sampleSize = dataSample.size();
     for (int i = 0; i < gradient.length; i++) {
-      double parameter = parameters[i];
-      double derivative = gradient[i];
-      double l1Reg = parameter >= 0 ? l1RegularizationCoeff : -l1RegularizationCoeff;
-      double l2Reg = l2RegularizationCoeff * 2 * parameter;
-      gradient[i] = (derivative + l1Reg + l2Reg) / sampleSize;
+      if (indicesToIgnore.contains(i)) {
+        gradient[i] = 0;
+      } else {
+        double parameter = parameters[i];
+        double derivative = gradient[i];
+        double l1Reg = parameter >= 0 ? l1RegularizationCoeff : -l1RegularizationCoeff;
+        double l2Reg = l2RegularizationCoeff * 2 * parameter;
+        gradient[i] = (derivative + l1Reg + l2Reg) / sampleSize;
+      }
     }
     return gradient;
   }

@@ -270,6 +270,8 @@ class DetroidParameters extends EngineParameters {
   short tempoAdvantageMg;
   @Parameter
   short tempoAdvantageEg;
+  @Parameter
+  short mopUpCenterTropismWeight;
 
   @Parameter
   short pstPawnMg8;

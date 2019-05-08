@@ -36,10 +36,6 @@ public class Evaluator {
   private static final byte[][] MVV_LVA;
 
   static {
-    short comb;
-    byte assignedVal;
-    int attackerVal, victimVal, lastVal;
-    int attacker, victim;
     byte kingValue = MVV_LVA_PIECE_VALUES[Piece.W_KING.ind];
     MVV_LVA = new byte[13][13];
     List<Entry<Short, Integer>> combVals = new ArrayList<>();
@@ -48,9 +44,9 @@ public class Evaluator {
       if (a != Piece.NULL) {
         for (Piece v : Piece.values()) {
           if (v != Piece.NULL) {
-            comb = (short) (((short) v.ind) | (((short) a.ind) << 7));
-            attackerVal = MVV_LVA_PIECE_VALUES[a.ind];
-            victimVal = MVV_LVA_PIECE_VALUES[v.ind];
+            short comb = (short) (((short) v.ind) | (((short) a.ind) << 7));
+            int attackerVal = MVV_LVA_PIECE_VALUES[a.ind];
+            int victimVal = MVV_LVA_PIECE_VALUES[v.ind];
             victimVal *= kingValue;
             combVals.add(new SimpleEntry<>(comb, victimVal - attackerVal));
           }
@@ -58,14 +54,15 @@ public class Evaluator {
       }
     }
     combVals.sort(Comparator.comparingInt(Entry<Short, Integer>::getValue));
-    lastVal = assignedVal = 0;
+    int lastVal = 0;
+    byte assignedVal = 0;
     for (Entry<Short, Integer> entry : combVals) {
       if (entry.getValue() > lastVal) {
         assignedVal++;
       }
       lastVal = entry.getValue();
-      victim = entry.getKey() & 127;
-      attacker = entry.getKey() >>> 7;
+      int victim = entry.getKey() & 127;
+      int attacker = entry.getKey() >>> 7;
       MVV_LVA[attacker][victim] = assignedVal;
     }
   }
@@ -75,20 +72,30 @@ public class Evaluator {
   private static final byte[][] CHEBYSHEV_DISTANCE = new byte[64][64];
 
   static {
-    int r1, r2;
-    int f1, f2;
-    int rankDist, fileDist;
     for (int i = 0; i < 64; i++) {
-      r1 = Rank.getBySquareIndex(i).ind;
-      f1 = File.getBySquareIndex(i).ind;
+      int r1 = Rank.getBySquareIndex(i).ind;
+      int f1 = File.getBySquareIndex(i).ind;
       for (int j = 0; j < 64; j++) {
-        r2 = Rank.getBySquareIndex(j).ind;
-        f2 = File.getBySquareIndex(j).ind;
-        rankDist = Math.abs(r2 - r1);
-        fileDist = Math.abs(f2 - f1);
+        int r2 = Rank.getBySquareIndex(j).ind;
+        int f2 = File.getBySquareIndex(j).ind;
+        int rankDist = Math.abs(r2 - r1);
+        int fileDist = Math.abs(f2 - f1);
         MANHATTAN_DISTANCE[i][j] = (byte) (rankDist + fileDist);
         CHEBYSHEV_DISTANCE[i][j] = (byte) Math.max(rankDist, fileDist);
       }
+    }
+  }
+
+  private static final byte[] MANHATTAN_DISTANCE_TO_CENTER = new byte[64];
+
+  static {
+    for (int i = 0; i < 64; i++) {
+      byte distToCenterSquare1 = MANHATTAN_DISTANCE[i][Square.D4.ind];
+      byte distToCenterSquare2 = MANHATTAN_DISTANCE[i][Square.D5.ind];
+      byte distToCenterSquare3 = MANHATTAN_DISTANCE[i][Square.E4.ind];
+      byte distToCenterSquare4 = MANHATTAN_DISTANCE[i][Square.E5.ind];
+      int minDistance = Math.min(distToCenterSquare1, Math.min(distToCenterSquare2, Math.min(distToCenterSquare3, distToCenterSquare4)));
+      MANHATTAN_DISTANCE_TO_CENTER[i] = (byte) minDistance;
     }
   }
 
@@ -950,6 +957,11 @@ public class Evaluator {
       }
       blackPieceSet = BitOperations.resetLSBit(blackPieceSet);
     }
+    // King piece-square scores.
+    mgScore += pstWhiteKingMg[whiteKingInd];
+    egScore += pstWhiteKingEg[whiteKingInd];
+    mgScore -= pstBlackKingMg[blackKingInd];
+    egScore -= pstBlackKingEg[blackKingInd];
     // Mobility scores.
     int queenMobilityDiff = whiteQueenMobility - blackQueenMobility;
     int rookMobilityDiff = whiteRookMobility - blackRookMobility;
@@ -1058,7 +1070,7 @@ public class Evaluator {
     egScore += params.attackedKingZoneSquareWeightEg * uniqueAttackedKingZoneSquaresDiff;
     mgScore += params.kingZoneAttackerWeightMg * numKingZoneAttackersDiff;
     egScore += params.kingZoneAttackerWeightEg * numKingZoneAttackersDiff;
-    // Asymmetric evaluation terms for possible captures and promotions for unquiet positions.
+    // Asymmetric evaluation terms.
     int highestExchangeValue = 0;
     AtomicReference<String> victimParamNameRef;
     AtomicReference<String> captorParamNameRef;
@@ -1069,30 +1081,40 @@ public class Evaluator {
       victimParamNameRef = null;
       captorParamNameRef = null;
     }
-    // Find the most valuable immediate capture.
+    // The most valuable immediate capture.
+    double colorFactor;
     if (pos.isWhitesTurn()) {
+      colorFactor = 1d;
       if (((whitePawnCaptures | whitePieceAttacksAndDefense) & pos.getAllBlackOccupied()) != Bitboard.EMPTY_BOARD) {
         highestExchangeValue = highestValueImmediateCapture(queenValue, rookValue, bishopValue, knightValue, pawnValue, whitePawnAttacks,
             whiteKnightAttacks, whiteBishopAttacks, whiteRookAttacks, pos.getBlackKnights(), pos.getBlackBishops(), pos.getBlackRooks(),
             pos.getBlackQueens(), victimParamNameRef, captorParamNameRef);
       }
     } else {
+      colorFactor = -1d;
       if (((blackPawnCaptures | blackPieceAttacksAndDefense) & pos.getAllWhiteOccupied()) != Bitboard.EMPTY_BOARD) {
         highestExchangeValue = highestValueImmediateCapture(queenValue, rookValue, bishopValue, knightValue, pawnValue, blackPawnAttacks,
             blackKnightAttacks, blackBishopAttacks, blackRookAttacks, pos.getWhiteKnights(), pos.getWhiteBishops(), pos.getWhiteRooks(),
             pos.getWhiteQueens(), victimParamNameRef, captorParamNameRef);
       }
     }
-    // Piece-square scores.
-    mgScore += pstWhiteKingMg[whiteKingInd];
-    egScore += pstWhiteKingEg[whiteKingInd];
-    mgScore -= pstBlackKingMg[blackKingInd];
-    egScore -= pstBlackKingEg[blackKingInd];
-    double colorFactor = pos.isWhitesTurn() ? 1d : -1d;
     mgScore += params.tempoAdvantageMg * colorFactor;
     egScore += params.tempoAdvantageEg * colorFactor;
     score += taperedEvalScore(mgScore, egScore, phaseScore);
     score += highestExchangeValue * colorFactor;
+    // Mop-up evaluation for KRK and KQK end-games.
+    int numOfPieces = numOfWhitePawns + numOfBlackPawns + numOfWhiteKnights + numOfBlackKnights + numOfWhiteBishops + numOfBlackBishops +
+        numOfWhiteRooks + numOfBlackRooks + numOfWhiteQueens + numOfBlackQueens;
+    int weakKingCenterTropism = 0;
+    if (numOfPieces == 1) {
+      if (numOfWhiteRooks == 1 || numOfWhiteQueens == 1) {
+        weakKingCenterTropism = MANHATTAN_DISTANCE_TO_CENTER[blackKingInd];
+      } else if (numOfBlackRooks == 1 || numOfBlackQueens == 1) {
+        weakKingCenterTropism = -MANHATTAN_DISTANCE_TO_CENTER[whiteKingInd];
+      }
+    }
+    score += params.mopUpCenterTropismWeight * weakKingCenterTropism;
+    // Adjust the score based on the color to move.
     score *= colorFactor;
     if (evalTable != null) {
       entry.set(pos.getKey(), score, hashGen);
@@ -1191,6 +1213,7 @@ public class Evaluator {
       gradientCache.put("attackedKingZoneSquareWeightEg", dPstEgParam * uniqueAttackedKingZoneSquaresDiff);
       gradientCache.put("kingZoneAttackerWeightMg", dPstMgParam * numKingZoneAttackersDiff);
       gradientCache.put("kingZoneAttackerWeightEg", dPstEgParam * numKingZoneAttackersDiff);
+      gradientCache.put("mopUpCenterTropismWeight", (double) weakKingCenterTropism);
       for (int i = 0; i < 64; i++) {
         byte piece = pos.getPiece(i);
         if (piece == Piece.NULL.ind) {
