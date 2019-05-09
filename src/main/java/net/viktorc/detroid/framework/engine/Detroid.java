@@ -164,10 +164,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
     return (int) Math.round(params.minMovesToGo + res);
   }
 
-  private long computeSearchTime(Long whiteTime, Long blackTime, Long whiteIncrement,
-      Long blackIncrement, Integer movesToGo, int phaseScore) {
-    whiteIncrement = whiteIncrement == null ? 0 : whiteIncrement;
-    blackIncrement = blackIncrement == null ? 0 : blackIncrement;
+  private long computeSearchTime(Long whiteTime, Long blackTime, Integer movesToGo, int phaseScore) {
     if ((game.isWhitesTurn() && (whiteTime == null || whiteTime <= 0) ||
         (!game.isWhitesTurn() && (blackTime == null || blackTime <= 0)))) {
       return 0;
@@ -180,9 +177,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
             "Expected number of moves left until end - " + movesToGo);
       }
     }
-    long target = game.isWhitesTurn() ?
-        Math.max(1, (whiteTime + Math.max(0, movesToGo) * whiteIncrement) / Math.max(1, movesToGo)) :
-        Math.max(1, (blackTime + Math.max(0, movesToGo) * blackIncrement) / Math.max(1, movesToGo));
+    long target = Math.max(1, (game.isWhitesTurn() ? whiteTime : blackTime) / Math.max(1, movesToGo));
     // Extended thinking time for the first moves out of the book based on Hyatt's Using Time Wisely.
     return Math.round(target * (2d - ((double) Math.min(movesOutOfBook, 10)) / 10));
   }
@@ -206,7 +201,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
         search.get(searchTime, TimeUnit.MILLISECONDS);
       } else {
         int phaseScore = game.getPosition().getPhaseScore();
-        long time = computeSearchTime(whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo, phaseScore);
+        long time = computeSearchTime(whiteTime, blackTime, movesToGo, phaseScore);
         long timeLeft = time;
         boolean doTerminate = false;
         if (debugMode) {
@@ -231,9 +226,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
             if (debugMode) {
               debugInfo.set("Search extended.");
             }
-            search.get(computeSearchTime(game.isWhitesTurn() ? whiteTime - time :
-                    whiteTime, game.isWhitesTurn() ? blackTime : blackTime - time,
-                whiteIncrement, blackIncrement, movesToGo, phaseScore), TimeUnit.MILLISECONDS);
+            search.get(computeSearchTime(game.isWhitesTurn() ? whiteTime - time : whiteTime,
+                game.isWhitesTurn() ? blackTime : blackTime - time, movesToGo, phaseScore), TimeUnit.MILLISECONDS);
           } catch (TimeoutException e) {
             if (debugMode) {
               debugInfo.set("Extra time up");

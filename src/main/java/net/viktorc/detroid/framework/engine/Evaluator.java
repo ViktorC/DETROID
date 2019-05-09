@@ -616,11 +616,12 @@ public class Evaluator {
     int numOfBishopsDiff = numOfWhiteBishops - numOfBlackBishops;
     int numOfKnightsDiff = numOfWhiteKnights - numOfBlackKnights;
     int numOfPawnsDiff = numOfWhitePawns - numOfBlackPawns;
-    score += queenValue * numOfQueensDiff;
-    score += rookValue * numOfRooksDiff;
-    score += bishopValue * numOfBishopsDiff;
-    score += knightValue * numOfKnightsDiff;
-    score += pawnValue * numOfPawnsDiff;
+    int materialScore = queenValue * numOfQueensDiff +
+        rookValue * numOfRooksDiff +
+        bishopValue * numOfBishopsDiff +
+        knightValue * numOfKnightsDiff +
+        pawnValue * numOfPawnsDiff;
+    score += materialScore;
     // Bishop pair advantage.
     int bishopPairAdvantageDiff = 0;
     if (numOfWhiteBishops >= 2 && Diagonal.getBySquareIndex(BitOperations.indexOfLSBit(
@@ -1102,18 +1103,30 @@ public class Evaluator {
     egScore += params.tempoAdvantageEg * colorFactor;
     score += taperedEvalScore(mgScore, egScore, phaseScore);
     score += highestExchangeValue * colorFactor;
-    // Mop-up evaluation for KRK and KQK end-games.
-    int numOfPieces = numOfWhitePawns + numOfBlackPawns + numOfWhiteKnights + numOfBlackKnights + numOfWhiteBishops + numOfBlackBishops +
-        numOfWhiteRooks + numOfBlackRooks + numOfWhiteQueens + numOfBlackQueens;
+    // Mop-up evaluation for end-games.
     int weakKingCenterTropism = 0;
-    if (numOfPieces == 1) {
-      if (numOfWhiteRooks == 1 || numOfWhiteQueens == 1) {
-        weakKingCenterTropism = MANHATTAN_DISTANCE_TO_CENTER[blackKingInd];
-      } else if (numOfBlackRooks == 1 || numOfBlackQueens == 1) {
-        weakKingCenterTropism = -MANHATTAN_DISTANCE_TO_CENTER[whiteKingInd];
+    int kingKingTropism = 0;
+    int numOfPawns = numOfWhitePawns + numOfBlackPawns;
+    if (numOfPawns == 0) {
+      int numOfWhitePieces = numOfWhiteKnights + numOfWhiteBishops + numOfWhiteRooks + numOfWhiteQueens;
+      int numOfBlackPieces = numOfBlackKnights + numOfBlackBishops + numOfBlackRooks + numOfBlackQueens;
+      int numOfPieces = numOfWhitePieces + numOfBlackPieces;
+      if (numOfPieces <= 3) {
+        if (materialScore > 0) {
+          kingKingTropism = -CHEBYSHEV_DISTANCE[whiteKingInd][blackKingInd];
+          if (numOfBlackPieces == 0) {
+            weakKingCenterTropism = MANHATTAN_DISTANCE_TO_CENTER[blackKingInd];
+          }
+        } else if (materialScore < 0) {
+          kingKingTropism = CHEBYSHEV_DISTANCE[blackKingInd][whiteKingInd];
+          if (numOfWhitePieces == 0) {
+            weakKingCenterTropism = -MANHATTAN_DISTANCE_TO_CENTER[whiteKingInd];
+          }
+        }
       }
     }
     score += params.mopUpCenterTropismWeight * weakKingCenterTropism;
+    score += params.mopUpKingTropismWeight * kingKingTropism;
     // Adjust the score based on the color to move.
     score *= colorFactor;
     if (evalTable != null) {
@@ -1214,6 +1227,7 @@ public class Evaluator {
       gradientCache.put("kingZoneAttackerWeightMg", dPstMgParam * numKingZoneAttackersDiff);
       gradientCache.put("kingZoneAttackerWeightEg", dPstEgParam * numKingZoneAttackersDiff);
       gradientCache.put("mopUpCenterTropismWeight", (double) weakKingCenterTropism);
+      gradientCache.put("mopUpKingTropismWeight", (double) kingKingTropism);
       for (int i = 0; i < 64; i++) {
         byte piece = pos.getPiece(i);
         if (piece == Piece.NULL.ind) {
