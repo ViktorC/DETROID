@@ -394,23 +394,14 @@ public class Game {
 
   @Override
   public String toString() {
-    String pgn = "", result;
+    String pgn = "";
     pgn += "[Event \"" + (event == null ? "N/A" : event) + "\"]\n";
     pgn += "[Site \"" + (site == null ? "N/A" : site) + "\"]\n";
     pgn += "[Date \"" + date + "\"]\n";
     pgn += "[Round \"" + (round == -1 ? "?" : round) + "\"]\n";
     pgn += "[White \"" + (whitePlayerName == null ? "N/A" : whitePlayerName) + "\"]\n";
     pgn += "[Black \"" + (blackPlayerName == null ? "N/A" : blackPlayerName) + "\"]\n";
-    if (state == GameState.IN_PROGRESS) {
-      result = "*";
-    } else if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN) {
-      result = "1-0";
-    } else if (state == GameState.BLACK_MATES || state == GameState.UNSPECIFIED_BLACK_WIN) {
-      result = "0-1";
-    } else {
-      result = "1/2-1/2";
-    }
-    pgn += "[Result \"" + result + "\"]\n";
+    pgn += "[Result \"" + state.getPGNCode() + "\"]\n";
     pgn += "[FEN \"" + startPosition.toString() + "\"]\n";
     pgn += moveListToSAN();
     return pgn;

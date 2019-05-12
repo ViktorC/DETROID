@@ -3,7 +3,7 @@ package net.viktorc.detroid.framework.engine;
 import java.util.List;
 import java.util.Map.Entry;
 import net.viktorc.detroid.framework.uci.UCIEngine;
-import net.viktorc.detroid.framework.validation.TTDRecord;
+import net.viktorc.detroid.framework.validation.EPDRecord;
 import net.viktorc.detroid.framework.validation.TTDSuite;
 import org.junit.Assume;
 import org.junit.Test;
@@ -15,7 +15,7 @@ import org.junit.Test;
  */
 public final class TimeToDepthTest {
 
-  private static final String TTD_PATH = "/ttd.txt";
+  private static final String TTD_PATH = "/ttd.epd";
 
   /**
    * It runs a test on the specified TTD suite using the specified engine running the specified number of search threads.
@@ -32,9 +32,9 @@ public final class TimeToDepthTest {
     long time = 0;
     long nodes = 0;
     long totalDepth = 0;
-    List<TTDRecord> records = suite.getRecords();
-    for (TTDRecord record : records) {
-      totalDepth += Math.max(1, record.getDepth() + additionalDepth);
+    List<EPDRecord> records = suite.getRecords();
+    for (EPDRecord record : records) {
+      totalDepth += Math.max(1, record.getIntegerOperand(TTDSuite.TTD_DEPTH_OP_CODE) + additionalDepth);
       Entry<Long, Long> res = TTDSuite.searchTest(engine, record, additionalDepth);
       time += res.getKey();
       if (res.getValue() != null) {

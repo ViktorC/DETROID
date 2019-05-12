@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
-import net.viktorc.detroid.framework.validation.PerftRecord;
+import net.viktorc.detroid.framework.validation.EPDRecord;
 import net.viktorc.detroid.framework.validation.PerftSuite;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -22,17 +22,17 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public final class PerfTest {
 
-  private static final String PERFT_FILE_PATH = "/perft.txt";
+  private static final String PERFT_FILE_PATH = "/perft.epd";
   private static final ControllerEngine CONTROLLER = new Detroid();
 
   @Parameter
-  public PerftRecord record;
+  public EPDRecord record;
 
   @Parameters
   public static Collection<Object[]> provideData() throws IOException {
     PerftSuite suite = new PerftSuite(PERFT_FILE_PATH);
     Collection<Object[]> data = new ArrayList<>();
-    for (PerftRecord r : suite.getRecords()) {
+    for (EPDRecord r : suite.getRecords()) {
       data.add(new Object[]{r});
     }
     return data;

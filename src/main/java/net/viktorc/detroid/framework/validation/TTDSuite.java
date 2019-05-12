@@ -16,7 +16,9 @@ import net.viktorc.detroid.framework.uci.UCIEngine;
  */
 public class TTDSuite {
 
-  private final List<TTDRecord> records;
+  public static final String TTD_DEPTH_OP_CODE = "Ttdd";
+
+  private final List<EPDRecord> records;
 
   /**
    * Parses the time-to-depth entries.
@@ -30,7 +32,7 @@ public class TTDSuite {
         .getResourceAsStream(ttdEntriesFilePath)))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        records.add(new TTDRecord(line));
+        records.add(EPDRecord.parse(line));
       }
     }
   }
@@ -40,7 +42,7 @@ public class TTDSuite {
    *
    * @return A list of the TTD records.
    */
-  public List<TTDRecord> getRecords() {
+  public List<EPDRecord> getRecords() {
     return new ArrayList<>(records);
   }
 
@@ -55,7 +57,7 @@ public class TTDSuite {
    * of nodes searched during the search if that information is available.
    * @throws Exception If the engine is not initialized and it cannot be initialized.
    */
-  public static Entry<Long, Long> searchTest(UCIEngine engine, TTDRecord record, int additionalDepth)
+  public static Entry<Long, Long> searchTest(UCIEngine engine, EPDRecord record, int additionalDepth)
       throws Exception {
     if (!engine.isInit()) {
       engine.init();
@@ -63,12 +65,12 @@ public class TTDSuite {
     engine.newGame();
     engine.setPosition(record.getPosition());
     long start = System.nanoTime();
-    engine.search(null, null, null, null, null, null, null, Math.max(1, record.getDepth() + additionalDepth),
+    engine.search(null, null, null, null, null, null, null, Math.max(1, record.getIntegerOperand(TTD_DEPTH_OP_CODE) + additionalDepth),
         null, null, null, null);
     long time = System.nanoTime() - start;
     long nodes = engine.getSearchInfo().getNodes();
     double knps = nodes != 0 ? ((double) nodes * 1000000) / time : 0;
-    String log = String.format("%s - %.2f ms %.2f kNPS", record.toString(), ((double) time) / 1000000, knps);
+    String log = String.format("%s - %.2f ms %.2f kNPS", record, ((double) time) / 1000000, knps);
     System.out.println(log);
     return new SimpleImmutableEntry<>(time, nodes);
   }

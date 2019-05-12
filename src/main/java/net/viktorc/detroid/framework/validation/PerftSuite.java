@@ -13,10 +13,13 @@ import java.util.List;
  */
 public class PerftSuite {
 
-  private final List<PerftRecord> records;
+  public static final String PERFT_DEPTH_OP_CODE = "Pd";
+  public static final String PERFT_NODE_COUNT_OP_CODE = "Pnc";
+
+  private final List<EPDRecord> records;
 
   /**
-   * Parses the perft records of the format "[FEN]; [depth]; [nodes];" in the specified file and holds them in a list.
+   * Parses the perft records in the specified file and holds them in a list.
    *
    * @param perftEntriesFilePath The path to the file containing the perft test records.
    * @throws IOException If the file does not exist or cannot be read.
@@ -27,17 +30,15 @@ public class PerftSuite {
         new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(perftEntriesFilePath)))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        records.add(new PerftRecord(line));
+        records.add(EPDRecord.parse(line));
       }
     }
   }
 
   /**
-   * Returns a list of perft records.
-   *
    * @return A list of perft records.
    */
-  public List<PerftRecord> getRecords() {
+  public List<EPDRecord> getRecords() {
     return new ArrayList<>(records);
   }
 
@@ -50,22 +51,21 @@ public class PerftSuite {
    * @return Whether the engine returned the same node count as defined in the record.
    * @throws Exception If the engine cannot be initialized.
    */
-  public static boolean perft(ControllerEngine engine, PerftRecord record) throws Exception {
-    long start, end;
-    long nodes;
+  public static boolean perft(ControllerEngine engine, EPDRecord record) throws Exception {
     if (!engine.isInit()) {
       engine.init();
     }
+    int depth = record.getIntegerOperand(PERFT_DEPTH_OP_CODE);
+    long expectedNodes = record.getLongOperand(PERFT_NODE_COUNT_OP_CODE);
     engine.setControllerMode(true);
     engine.newGame();
     engine.setPosition(record.getPosition());
-    start = System.currentTimeMillis();
-    nodes = engine.perft(record.getDepth());
-    end = System.currentTimeMillis();
-    String log = String.format("%s; %d; %d; - %d in %.3fs", record.getPosition(), record.getDepth(), record.getNodes(),
-        nodes, ((double) (end - start)) / 1000);
+    long start = System.currentTimeMillis();
+    long nodes = engine.perft(depth);
+    long end = System.currentTimeMillis();
+    String log = String.format("%s - %d in %.3fs", record, nodes, ((double) (end - start)) / 1000);
     System.out.println(log);
-    return record.getNodes() == nodes;
+    return expectedNodes == nodes;
   }
 
 }

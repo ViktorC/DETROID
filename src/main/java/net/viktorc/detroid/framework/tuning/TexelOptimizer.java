@@ -21,6 +21,8 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.viktorc.detroid.framework.util.NadamSGD;
+import net.viktorc.detroid.framework.validation.EPDRecord;
+import net.viktorc.detroid.framework.validation.GameState;
 
 /**
  * A class for optimizing chess engine evaluation parameters using a stochastic gradient descent algorithm with a possibly parallel cost
@@ -74,7 +76,8 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    */
   private static final double MIN_K_1ST_DERIVATIVE = 1e-10;
 
-  private final String fenFilePath;
+  private final String epdFilePath;
+  private final String gameResultOpCode;
   private final long dataSetSize;
   private final int testDataStartInd;
   private final TunableEngine[] engines;
@@ -102,8 +105,9 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * @param learningAnnealingRate The factor by which the learning rate is multiplied after every epoch. If it is null, it defaults to 0.9.
    * @param l1RegularizationCoeff The coefficient to use for L1 parameter regularization, by default 0.001.
    * @param l2RegularizationCoeff The coefficient to use for L2 parameter regularization, by default 0.0001.
-   * @param fenFilePath The path to the file containing the FEN list of positions to evaluate. If it doesn't exist an {@link
+   * @param epdFilePath The path to the file containing the FEN list of positions to evaluate. If it doesn't exist an {@link
    * java.io.IOException} is thrown.
+   * @param gameResultOpCode The EPD operation code of the result of the game the position occurred in.
    * @param costCalculationBatchSize The number of samples in the batches used for calculating the total training and test costs. If it is
    * null, it defaults to 4 million.
    * @param k A scaling constant for the sigmoid function used calculate the average error.
@@ -114,7 +118,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * @throws IllegalArgumentException If the logger is null, or the batch size is not greater than 0, or the data set is too small.
    */
   public TexelOptimizer(TunableEngine[] engines, long trainingBatchSize, int epochs, Double h, Double baseLearningRate,
-      Double learningAnnealingRate, Double l1RegularizationCoeff, Double l2RegularizationCoeff, String fenFilePath,
+      Double learningAnnealingRate, Double l1RegularizationCoeff, Double l2RegularizationCoeff, String epdFilePath, String gameResultOpCode,
       Long costCalculationBatchSize, Double k, Double testDataProportion, Logger logger) throws Exception, IllegalArgumentException {
     super(engines[0].getParameters().values(TYPE), (double[]) Array.newInstance(double.class,
         engines[0].getParameters().values(TYPE).length), engines[0].getParameters().maxValues(TYPE), trainingBatchSize,
@@ -132,7 +136,8 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     if (testDataProportion != null && (testDataProportion >= 1 || testDataProportion < 0)) {
       throw new IllegalArgumentException("The test data proportion has to be greater than or equal to 0 and less than 1.");
     }
-    this.fenFilePath = fenFilePath;
+    this.epdFilePath = epdFilePath;
+    this.gameResultOpCode = gameResultOpCode;
     testDataProportion = testDataProportion == null ? DEF_TEST_DATA_PROPORTION : testDataProportion;
     this.dataSetSize = countDataSetSize();
     testDataStartInd = (int) (dataSetSize * (1 - testDataProportion));
@@ -166,7 +171,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    */
   private long countDataSetSize() throws FileNotFoundException, IOException {
     long count = 0;
-    try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(epdFilePath))) {
       String line;
       while ((line = reader.readLine()) != null) {
         line = line.trim();
@@ -179,7 +184,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   /**
-   * Reads the data into a list of key-pair values where the key is FEN position and the value is the label denoting which side won the
+   * Reads the data into a list of key-pair values where the key is an EPD position and the value is the label denoting which side won the
    * game in which the position occurred.
    *
    * @param fromInd The line number from which on the lines will be loaded into the data set.
@@ -193,16 +198,26 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       return data;
     }
     long count = 0;
-    try (BufferedReader reader = new BufferedReader(new FileReader(fenFilePath))) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(epdFilePath))) {
       String line;
       while ((line = reader.readLine()) != null) {
         if (count >= fromInd && count < toInd) {
           line = line.trim();
           if (!line.isEmpty()) {
-            String[] parts = line.split(";");
-            String fen = parts[0];
-            Float result = Float.parseFloat(parts[1]);
-            data.add(new SimpleEntry<>(fen, result));
+            EPDRecord record = EPDRecord.parse(line);
+            String pos = record.getPosition();
+            float result;
+            String resultString = record.getOperand(gameResultOpCode);
+            if (GameState.WHITE_MATES.getPGNCode().equals(resultString)) {
+              result = 1f;
+            } else if (GameState.BLACK_MATES.getPGNCode().equals(resultString)) {
+              result = 0f;
+            } else if (GameState.STALE_MATE.getPGNCode().equals(resultString)) {
+              result = .5f;
+            } else {
+              continue;
+            }
+            data.add(new SimpleEntry<>(pos, result));
           }
         }
         count++;

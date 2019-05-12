@@ -1,7 +1,5 @@
 package net.viktorc.detroid.framework.tuning;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -9,7 +7,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
-import net.viktorc.detroid.framework.uci.ScoreType;
 import net.viktorc.detroid.framework.uci.SearchResults;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
@@ -29,25 +26,24 @@ class Arena implements AutoCloseable {
    */
   public static final String EVENT = "DETROID Computer Chess Arena";
 
+  private static final long MIN_TC = 500;
+
   private ControllerEngine controller;
   private ExecutorService pool;
   private Random rand;
   private Logger resultLogger;
-  private Logger fenLogger;
+  private Logger pgnLogger;
   private long id;
 
   /**
-   * Constructs an arena controlled by the specified engine. A logger can be provided that will be used to log game results. Furthermore,
-   * another logger can be provided as well for the logging of all positions in which no mate has been found in FEN format to create data
-   * sets to use for learning.
+   * Constructs an arena controlled by the specified engine. A logger can be provided that will be used to log game results.
    *
    * @param controller The engine to control the match.
-   * @param resultLogger The logger to log the game results and the complete game in PGN format.
-   * @param fenLogger A logger to log each position occurring during the games in which the engine that searched the position didn't find a
-   * mate in FEN format followed by semicolon separator and the result of the game as in 1 - white wins, 0.5 - draw, 0 - black wins.
+   * @param resultLogger The logger to log the results of the games.
+   * @param pgnLogger The logger to log the complete games in PGN format.
    * @throws Exception If the controller engine cannot be initialised.
    */
-  public Arena(ControllerEngine controller, Logger resultLogger, Logger fenLogger) throws Exception {
+  public Arena(ControllerEngine controller, Logger resultLogger, Logger pgnLogger) throws Exception {
     this.controller = controller;
     if (!this.controller.isInit()) {
       this.controller.init();
@@ -55,20 +51,9 @@ class Arena implements AutoCloseable {
     this.controller.setControllerMode(true);
     pool = Executors.newCachedThreadPool();
     this.resultLogger = resultLogger;
-    this.fenLogger = fenLogger;
+    this.pgnLogger = pgnLogger;
     rand = new Random(System.nanoTime());
     id = rand.nextLong();
-  }
-
-  /**
-   * Constructs an arena controlled by the specified engine. A logger can be provided that will be used to log game results.
-   *
-   * @param controller The engine to control the match.
-   * @param resultLogger The logger to log the game results and the complete game in PGN format.
-   * @throws Exception If the controller engine cannot be initialised.
-   */
-  public Arena(ControllerEngine controller, Logger resultLogger) throws Exception {
-    this(controller, resultLogger, null);
   }
 
   /**
@@ -115,6 +100,12 @@ class Arena implements AutoCloseable {
     return res;
   }
 
+  private void assignEngineNames(boolean engine1White) {
+    controller.setPlayers(engine1White ? "Engine1" : "Engine2", engine1White ? "Engine2" : "Engine1");
+    controller.setEvent(EVENT);
+    controller.setSite("?");
+  }
+
   private void logArenaHeader(String engine1Name, String engine2Name, int games, long timePerGame,
       long timeIncPerMove) {
     if (resultLogger != null) {
@@ -126,16 +117,7 @@ class Arena implements AutoCloseable {
     }
   }
 
-  private void assignEngineNames(boolean engine1White) {
-    if (resultLogger != null) {
-      controller.setPlayers(engine1White ? "Engine1" : "Engine2", engine1White ? "Engine2" : "Engine1");
-      controller.setEvent(EVENT);
-      controller.setSite("?");
-    }
-  }
-
-  private void logResults(GameState outcome, String reason, boolean engine1White, int engine1Wins, int engine2Wins,
-      int draws) {
+  private void logResults(GameState outcome, String reason, boolean engine1White, int engine1Wins, int engine2Wins, int draws) {
     if (resultLogger != null) {
       String result;
       String state;
@@ -178,7 +160,7 @@ class Arena implements AutoCloseable {
           break;
       }
       resultLogger.info("Arena: " + id + "\n" + result + "\n" + state + " - " + reason + "\n" +
-          controller.toPGN() + "\nSTANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
+          "STANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
     }
   }
 
@@ -203,9 +185,8 @@ class Arena implements AutoCloseable {
     int engine2Wins = 0;
     int draws = 0;
     games = Math.max(0, games);
-    timePerGame = Math.max(500, timePerGame);
+    timePerGame = Math.max(MIN_TC, timePerGame);
     timeIncPerMove = Math.max(0, timeIncPerMove);
-    List<String> fenLog = null;
     if (!engine1.isInit()) {
       engine1.init();
     }
@@ -216,9 +197,6 @@ class Arena implements AutoCloseable {
     boolean engine1White = rand.nextBoolean();
     Games:
     for (int i = 0; i < games; i++, engine1White = !engine1White) {
-      if (fenLogger != null) {
-        fenLog = new ArrayList<>();
-      }
       SearchResults res;
       AtomicLong engine1Time = new AtomicLong(timePerGame);
       AtomicLong engine2Time = new AtomicLong(timePerGame);
@@ -258,40 +236,30 @@ class Arena implements AutoCloseable {
             continue Games;
           }
         }
-        if (fenLogger != null && res.getScoreType().isPresent() && res.getScoreType().get() != ScoreType.MATE) {
-          fenLog.add(controller.toFEN());
-        }
         engine1.play(res.getBestMove());
         engine2.play(res.getBestMove());
         engine1Turn = !engine1Turn;
       }
       GameState state = controller.getGameState();
-      boolean whiteWin = false, blackWin = false;
       if (state == GameState.WHITE_MATES || state == GameState.UNSPECIFIED_WHITE_WIN) {
         if (engine1White) {
           engine1Wins++;
         } else {
           engine2Wins++;
         }
-        whiteWin = true;
       } else if (state == GameState.BLACK_MATES || state == GameState.UNSPECIFIED_BLACK_WIN) {
         if (engine1White) {
           engine2Wins++;
         } else {
           engine1Wins++;
         }
-        blackWin = true;
       } else {
         draws++;
       }
       logResults(state, "", engine1White, engine1Wins, engine2Wins, draws);
-      if (fenLogger != null) {
-        for (int j = 0; j < fenLog.size(); j++) {
-          fenLog.set(j, fenLog.get(j) + ";" + (whiteWin ? "1" : (blackWin ? "0" : "0.5")));
-        }
-        for (String s : fenLog) {
-          fenLogger.info(s);
-        }
+      if (pgnLogger != null) {
+        String pgn = controller.toPGN();
+        pgnLogger.info(pgn);
       }
     }
     if (timer != null) {

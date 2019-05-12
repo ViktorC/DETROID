@@ -7,13 +7,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import javafx.application.Application;
 import net.viktorc.detroid.framework.gui.GUI;
+import net.viktorc.detroid.framework.tuning.DataSetUtils;
 import net.viktorc.detroid.framework.tuning.EngineParameters;
-import net.viktorc.detroid.framework.tuning.FENFileUtil;
 import net.viktorc.detroid.framework.tuning.ParameterType;
 import net.viktorc.detroid.framework.tuning.SelfPlayEngines;
 import net.viktorc.detroid.framework.tuning.SelfPlayOptimizer;
@@ -27,21 +26,21 @@ import net.viktorc.detroid.framework.validation.ControllerEngine;
  * The application that serves as a chess engine framework handling communication via the UCI protocol, providing a GUI, and offering
  * flexible engine parameter tuning methods using machine learning.
  *
- * The application framework offers six main functionalities: GUI mode, UCI mode, tuning, FEN-file generation, FEN-file filtering, and
- * parameter conversion. The default launch mode is the GUI mode which provides an interface that allows for playing chess games against an
- * engine and track its search statistics. The UCI mode implements the Universal Chess Interface protocol as described at
- * <a href="http://wbec-ridderkerk.nl/html/UCIProtocol.html">http://wbec-ridderkerk.nl/html/UCIProtocol.html</a> by
+ * The application framework offers six main functionalities: GUI mode, UCI mode, tuning, PGN file generation, EPD file generation, EPD
+ * file filtering, and parameter conversion. The default launch mode is the GUI mode which provides an interface that allows for playing
+ * chess games against an engine and track its search statistics. The UCI mode implements the Universal Chess Interface protocol as
+ * described at <a href="http://wbec-ridderkerk.nl/html/UCIProtocol.html">http://wbec-ridderkerk.nl/html/UCIProtocol.html</a> by
  * Stefan-Meyer Kahlen. Two different tuning methods are supported; an evolutionary algorithm for optimizing all or only a certain type of
  * engine parameters using self-play to assess the fitness of the different parameter sets generated, and an adaptive stochastic gradient
  * descent algorithm for training the engine by optimizing the static evaluation parameters using the "Texel" cost function (
  * <a href="https://chessprogramming.wikispaces.com/Texel's+Tuning+Method">https://chessprogramming.wikispaces.com/Texel's+Tuning+Method</a>)
- * based on so called FEN-files which contain position descriptions in Forsyth-Edwards notation, each labelled by the side that won the game
- * in which the position occurred. The FEN-file generation mode provides the functionalities needed to generate the files used for static
- * evaluation tuning. They can be generated either by self-play or by providing a Portable Game Notation file to convert. The FEN-file
- * filtering mode allows for removing draws or opening positions from the FEN-file which can, in certain cases, possibly improve the tuning
- * results. Last but not least, the conversion mode allows for converting the numbers logged by the tuning methods into XML files that the
- * engine can read its parameters' values from. The game play optimization algorithm logs the probability vector, while the static
- * evaluation tuning method logs the optimal values of the parameter fields.
+ * based on an EPD file which contain position descriptions labelled by the side that won the game in which the position occurred. The EPD
+ * file generation mode provides the functionalities needed to generate the files used for static evaluation tuning. They can be generated
+ * by providing a PGN file to convert. PGN files can also be generated through self-play. The EPD file filtering mode allows for removing
+ * draws or tactical positions from the EPD file which can, in certain cases, improve the tuning results. Last but not least, the
+ * conversion mode allows for converting the numbers logged by the tuning methods into XML files that the engine can read its parameters'
+ * values from. The game play optimization algorithm logs the probability vector, while the static evaluation tuning method logs the
+ * optimal values of the parameter fields.
  *
  * @author Viktor
  */
@@ -56,13 +55,21 @@ public final class EngineFramework implements Runnable {
    */
   private static final String DEF_LOG_FILE_PATH = "log.txt";
   /**
-   * The default FENs file path for static evaluation tuning.
-   */
-  private static final String DEF_FENS_FILE_PATH = "fens.txt";
-  /**
    * The default path to the file to which the parameters converted from binary strings or double arrays are written.
    */
-  private static final String DEF_CONVERTED_PARAMS_PATH = "params.xml";
+  private static final String DEF_PARAMS_FILE_PATH = "params.xml";
+  /**
+   * The default path to the training EPD file.
+   */
+  private static final String DEF_EPD_FILE_PATH = "positions.epd";
+  /**
+   * The default path to the PGN file.
+   */
+  private static final String DEF_PGN_FILE_PATH = "games.pgn";
+  /**
+   * The default EPD game result operation code.
+   */
+  private static final String DEF_GAME_RES_OP_CODE = "Gr";
 
   private EngineFactory factory;
   private String[] args;
@@ -81,20 +88,19 @@ public final class EngineFramework implements Runnable {
    * eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}] [--initprobvector
    * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
    * {log.txt}] [--concurrency <integer>] {1}]} <br>
-   * Texel tuning: {@code -t texel -batchsize <integer> [--epochs <integer>] [--testdataprop <decimal> {0.2}]
-   * [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.95}] [--l1reg <decimal> {.1}]
-   * [--l2reg <decimal> {.01}] [--costbatchsize <integer>] [--k <decimal>] [--fensfile <string> {fens.txt}]
-   * [--log <string> {log.txt}] [--concurrency <integer> {1}]}<br>
-   * FEN-file generation by self-play: {@code -g selfplay -games <integer> -tc <integer> [--inc <integer> {0}]
-   * [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {fens.txt}]
+   * Texel tuning: {@code -t texel -epdfile <string> -batchsize <integer> [--labelopcode <string> {Gr}] [--epochs <integer>]
+   * [--testdataprop <decimal> {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.99}]
+   * [--l1reg <decimal> {.001}] [--l2reg <decimal> {.0001}] [--costbatchsize <integer>] [--k <decimal>] [--log <string> {log.txt}]
    * [--concurrency <integer> {1}]}<br>
-   * FEN-file generation by PGN conversion: {@code -g pgnconversion -sourcefile <string> [--maxgames <integer>] [--minelo <integer>]
-   * [--destfile <string> {fens.txt}]}<br>
-   * Removing draws from a FEN-file: {@code -f draw -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
-   * Removing tactical positions from a FEN-file: {@code -f tactical -sourcefile <string> [--destfile <string> {fens.txt}]}<br>
-   * Removing unbalanced positions from a FEN-file: {@code -f unbalanced -sourcefile <string> -maximbalance <integer>
-   * [--destfile <string> {fens.txt}]}<br>
-   * Removing openings from a FEN-file: {@code -f opening -sourcefile <string> -firstxmoves <integer> [--destfile <string> {fens.txt}]}<br>
+   * EPD file generation from a PGN file: {@code -g epd -pgnfile <string> [--maxgames <integer>] [--minelo <integer>]
+   * [--labelopcode <string> {Gr}] [--minhalfmoveind <integer>] [--destfile <string> {positions.epd}]}<br>
+   * PGN file generation by self-play: {@code -g pgn -games <integer> -tc <integer> [--inc <integer> {0}] [--trybook <bool> {false}]
+   * [--tryhash <integer>] [--trythreads <integer>] [--destfile <string> {games.pgn}] [--concurrency <integer> {1}]}<br>
+   * Removing draws from an EPD file: {@code -f draw -sourcefile <string> [--labelopcode <string> {Gr}]
+   * [--destfile <string> {games.pgn}]}<br>
+   * Removing tactical positions from an EPD file: {@code -f tactical -sourcefile <string> [--destfile <string> {positions.epd}]}<br>
+   * Removing unbalanced positions from an EPD file: {@code -f unbalanced -sourcefile <string> -imbalance <integer>
+   * [--destfile <string> {positions.epd}]}<br>
    * Probability vector conversion to parameters file: {@code -c probvector -value <quoted_comma_separated_decimals>
    * [--paramtype <eval | control | management | eval+control | control+management | all> {all}] [--paramsfile <string> {params.xml}]}<br>
    * Parameter value array conversion to parameters file: {@code -c parameters -value <quoted_comma_separated_decimals>
@@ -250,9 +256,9 @@ public final class EngineFramework implements Runnable {
         initProbVec, useBook, hash, threads);
   }
 
-  private void runInTexelTuningMode(String logFilePath, String fensFilePath, int concurrency, long trainingBatchSize,
-      int epochs, Long costCalcBatchSize, Double k, Double h, Double learningRate, Double annealingRate, Double l1RegCoeff,
-      Double l2RegCoeff, Double testDataProp) {
+  private void runInTexelTuningMode(String logFilePath, String epdFilePath, String gameResultOpCode, int concurrency,
+      long trainingBatchSize, int epochs, Long costCalcBatchSize, Double k, Double h, Double learningRate, Double annealingRate,
+      Double l1RegCoeff, Double l2RegCoeff, Double testDataProp) {
     TunableEngine[] engines = new TunableEngine[concurrency];
     for (int i = 0; i < concurrency; i++) {
       engines[i] = factory.newTunableEngineInstance();
@@ -269,7 +275,7 @@ public final class EngineFramework implements Runnable {
       throw new IllegalArgumentException(e);
     }
     try (TexelOptimizer optimizer = new TexelOptimizer(engines, trainingBatchSize, epochs, h, learningRate, annealingRate, l1RegCoeff,
-        l2RegCoeff, fensFilePath, costCalcBatchSize, k, testDataProp, logger)) {
+        l2RegCoeff, epdFilePath, gameResultOpCode, costCalcBatchSize, k, testDataProp, logger)) {
       optimizer.optimize();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -277,10 +283,11 @@ public final class EngineFramework implements Runnable {
   }
 
   private void runInTexelTuningMode(String[] args) {
-    String logFilePath = DEF_LOG_FILE_PATH;
-    String fensFilePath = DEF_FENS_FILE_PATH;
-    int concurrency = DEF_CONCURRENCY;
+    String epdFilePath = null;
     long batchSize = -1;
+    String logFilePath = DEF_LOG_FILE_PATH;
+    String gameResOpCode = DEF_GAME_RES_OP_CODE;
+    int concurrency = DEF_CONCURRENCY;
     int epochs = 0;
     Long costCalcBatchSize = null;
     Double k = null;
@@ -293,8 +300,14 @@ public final class EngineFramework implements Runnable {
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       switch (arg) {
+        case "-epdfile":
+          epdFilePath = args[++i];
+          break;
         case "-batchsize":
           batchSize = Long.parseLong(args[++i]);
+          break;
+        case "--labelopcode":
+          gameResOpCode = args[++i];
           break;
         case "--log":
           logFilePath = args[++i];
@@ -329,18 +342,15 @@ public final class EngineFramework implements Runnable {
         case "--testdataprop":
           testDataProp = Double.parseDouble(args[++i]);
           break;
-        case "--fensfile":
-          fensFilePath = args[++i];
-          break;
         default:
           throw new IllegalArgumentException();
       }
     }
-    if (batchSize == -1) {
+    if (epdFilePath == null || batchSize == -1) {
       throw new IllegalArgumentException();
     }
-    runInTexelTuningMode(logFilePath, fensFilePath, concurrency, batchSize, epochs, costCalcBatchSize, k, h, learningRate, annealingRate,
-        l1RegCoeff, l2RegCoeff, testDataProp);
+    runInTexelTuningMode(logFilePath, epdFilePath, gameResOpCode, concurrency, batchSize, epochs, costCalcBatchSize, k, h, learningRate,
+        annealingRate, l1RegCoeff, l2RegCoeff, testDataProp);
   }
 
   private void runInTuningMode(String[] args) {
@@ -354,8 +364,8 @@ public final class EngineFramework implements Runnable {
     }
   }
 
-  private void runInSelfPlayGenerationMode(String destFile, int concurrency, int games, long tc, long tcInc,
-      Boolean useBook, Integer hash, Integer threads) {
+  private void runInPGNGenerationMode(String destFile, int concurrency, int games, long tc, long tcInc, Boolean useBook, Integer hash,
+      Integer threads) {
     List<SelfPlayEngines<UCIEngine>> engines = new ArrayList<>(concurrency);
     for (int i = 0; i < concurrency; i++) {
       try {
@@ -372,7 +382,7 @@ public final class EngineFramework implements Runnable {
       }
     }
     try {
-      FENFileUtil.generateFENFile(engines, games, tc, tcInc, destFile);
+      DataSetUtils.generatePGNFile(engines, games, tc, tcInc, destFile);
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
@@ -384,8 +394,8 @@ public final class EngineFramework implements Runnable {
     }
   }
 
-  private void runInSelfPlayGenerationMode(String[] args) {
-    String destFile = DEF_FENS_FILE_PATH;
+  private void runInPGNGenerationMode(String[] args) {
+    String destFile = DEF_PGN_FILE_PATH;
     int concurrency = DEF_CONCURRENCY;
     int games = -1;
     long tc = -1;
@@ -427,33 +437,42 @@ public final class EngineFramework implements Runnable {
     if (games == -1 || tc == -1) {
       throw new IllegalArgumentException();
     }
-    runInSelfPlayGenerationMode(destFile, concurrency, games, tc, tcInc, useBook, hash, threads);
+    runInPGNGenerationMode(destFile, concurrency, games, tc, tcInc, useBook, hash, threads);
   }
 
-  private void runInPGNGenerationMode(String sourceFile, String destFile, long maxNumOfGames, Integer minElo) {
+  private void runInEPDGenerationMode(String sourceFile, String destFile, String gameResultOpCode, long maxNumOfGames, Integer minElo,
+      Integer minHalfMoveIndex) {
     try (ControllerEngine engine = factory.newControllerEngineInstance()) {
-      FENFileUtil.generateFENFile(engine, sourceFile, destFile, maxNumOfGames, minElo);
+      DataSetUtils.generateEPDFile(engine, sourceFile, destFile, gameResultOpCode, maxNumOfGames, minElo, minHalfMoveIndex);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void runInPGNGenerationMode(String[] args) {
-    String destFile = DEF_FENS_FILE_PATH;
+  private void runInEPDGenerationMode(String[] args) {
     String sourceFile = null;
+    String destFile = DEF_EPD_FILE_PATH;
+    String gameResOpCode = DEF_GAME_RES_OP_CODE;
     long maxNumOfGames = Long.MAX_VALUE;
     Integer minElo = null;
+    Integer minHalfMoveIndex = null;
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       switch (arg) {
-        case "-sourcefile":
+        case "-pgnfile":
           sourceFile = args[++i];
+          break;
+        case "--labelopcode":
+          gameResOpCode = args[++i];
           break;
         case "--maxgames":
           maxNumOfGames = Long.parseLong(args[++i]);
           break;
         case "--minelo":
           minElo = Integer.parseInt(args[++i]);
+          break;
+        case "--minhalfmoveind":
+          minHalfMoveIndex = Integer.parseInt(args[++i]);
           break;
         case "--destfile":
           destFile = args[++i];
@@ -462,39 +481,65 @@ public final class EngineFramework implements Runnable {
           throw new IllegalArgumentException();
       }
     }
-    runInPGNGenerationMode(sourceFile, destFile, maxNumOfGames, minElo);
+    runInEPDGenerationMode(sourceFile, destFile, gameResOpCode, maxNumOfGames, minElo, minHalfMoveIndex);
   }
 
   private void runInGenerationMode(String[] args) {
     String arg0 = args[0];
-    if ("selfplay".equals(arg0)) {
-      runInSelfPlayGenerationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("pgnconversion".equals(arg0)) {
+    if ("pgn".equals(arg0)) {
       runInPGNGenerationMode(Arrays.copyOfRange(args, 1, args.length));
+    } else if ("epd".equals(arg0)) {
+      runInEPDGenerationMode(Arrays.copyOfRange(args, 1, args.length));
     } else {
       throw new IllegalArgumentException();
     }
   }
 
-  private void runInDrawFiltrationMode(String sourceFile, String destFile) {
+  private void runInDrawFiltrationMode(String sourceFile, String destFile, String gameResOpCode) {
     try {
-      FENFileUtil.filterDraws(sourceFile, destFile);
+      DataSetUtils.filterDraws(sourceFile, destFile, gameResOpCode);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
+  private void runInDrawFiltrationMode(String[] args) {
+    String sourceFile = null;
+    String destFile = DEF_EPD_FILE_PATH;
+    String gameResOpCode = DEF_GAME_RES_OP_CODE;
+    for (int i = 0; i < args.length; i++) {
+      String arg = args[i];
+      switch (arg) {
+        case "-sourcefile":
+          sourceFile = args[++i];
+          break;
+        case "--labelopcode":
+          gameResOpCode = args[++i];
+          break;
+        case "--destfile":
+          destFile = args[++i];
+          break;
+        default:
+          throw new IllegalArgumentException();
+      }
+    }
+    if (sourceFile == null) {
+      throw new IllegalArgumentException();
+    }
+    runInDrawFiltrationMode(sourceFile, destFile, gameResOpCode);
+  }
+
   private void runInTacticalPositionFiltrationMode(String sourceFile, String destFile) {
     try (ControllerEngine controllerEngine = factory.newControllerEngineInstance()) {
-      FENFileUtil.filterTacticalPositions(sourceFile, destFile, controllerEngine);
+      DataSetUtils.filterTacticalPositions(sourceFile, destFile, controllerEngine);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void runInNoParamFiltrationMode(String[] args, BiConsumer<String,String> filtrationFunction) {
+  private void runInTacticalPositionFiltrationMode(String[] args) {
     String sourceFile = null;
-    String destFile = DEF_FENS_FILE_PATH;
+    String destFile = DEF_EPD_FILE_PATH;
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       switch (arg) {
@@ -511,20 +556,12 @@ public final class EngineFramework implements Runnable {
     if (sourceFile == null) {
       throw new IllegalArgumentException();
     }
-    filtrationFunction.accept(sourceFile, destFile);
-  }
-
-  private void runInDrawFiltrationMode(String[] args) {
-    runInNoParamFiltrationMode(args, this::runInDrawFiltrationMode);
-  }
-
-  private void runInTacticalPositionFiltrationMode(String[] args) {
-    runInNoParamFiltrationMode(args, this::runInTacticalPositionFiltrationMode);
+    runInTacticalPositionFiltrationMode(sourceFile, destFile);
   }
 
   private void runInUnbalancedPositionFiltrationMode(String sourceFile, String destFile, short maxImbalance) {
     try (TunableEngine tunableEngine = factory.newTunableEngineInstance()) {
-      FENFileUtil.filterUnbalancedPositions(sourceFile, destFile, maxImbalance, tunableEngine);
+      DataSetUtils.filterUnbalancedPositions(sourceFile, destFile, maxImbalance, tunableEngine);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -532,12 +569,12 @@ public final class EngineFramework implements Runnable {
 
   private void runInUnbalancedPositionFiltrationMode(String[] args) {
     String sourceFile = null;
-    String destFile = DEF_FENS_FILE_PATH;
-    short maxImbalance = -1;
+    String destFile = DEF_EPD_FILE_PATH;
+    Short maxImbalance = null;
     for (int i = 0; i < args.length; i++) {
       String arg = args[i];
       switch (arg) {
-        case "-maximbalance":
+        case "-imbalance":
           maxImbalance = Short.parseShort(args[++i]);
           break;
         case "-sourcefile":
@@ -550,44 +587,10 @@ public final class EngineFramework implements Runnable {
           throw new IllegalArgumentException();
       }
     }
-    if (sourceFile == null || maxImbalance <= 0) {
+    if (sourceFile == null || maxImbalance == null) {
       throw new IllegalArgumentException();
     }
     runInUnbalancedPositionFiltrationMode(sourceFile, destFile, maxImbalance);
-  }
-
-  private void runInOpeningFiltrationMode(String sourceFile, String destFile, int numOfPositionsToFilter) {
-    try {
-      FENFileUtil.filterOpeningPositions(sourceFile, destFile, numOfPositionsToFilter);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void runInOpeningFiltrationMode(String[] args) {
-    String sourceFile = null;
-    String destFile = DEF_FENS_FILE_PATH;
-    int numOfPositionsToFilter = -1;
-    for (int i = 0; i < args.length; i++) {
-      String arg = args[i];
-      switch (arg) {
-        case "-firstxmoves":
-          numOfPositionsToFilter = Integer.parseInt(args[++i]);
-          break;
-        case "-sourcefile":
-          sourceFile = args[++i];
-          break;
-        case "--destfile":
-          destFile = args[++i];
-          break;
-        default:
-          throw new IllegalArgumentException();
-      }
-    }
-    if (sourceFile == null || numOfPositionsToFilter <= 0) {
-      throw new IllegalArgumentException();
-    }
-    runInOpeningFiltrationMode(sourceFile, destFile, numOfPositionsToFilter);
   }
 
   private void runInFiltrationMode(String[] args) {
@@ -598,8 +601,6 @@ public final class EngineFramework implements Runnable {
       runInTacticalPositionFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
     } else if ("unbalanced".equals(arg0)) {
       runInUnbalancedPositionFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
-    } else if ("opening".equals(arg0)) {
-      runInOpeningFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
     } else {
       throw new IllegalArgumentException();
     }
@@ -649,7 +650,7 @@ public final class EngineFramework implements Runnable {
 
   private void runInConversionMode(String[] args) {
     String arg0 = args[0];
-    String destFile = DEF_CONVERTED_PARAMS_PATH;
+    String destFile = DEF_PARAMS_FILE_PATH;
     if (!"-value".equals(args[1])) {
       throw new IllegalArgumentException();
     }
@@ -692,11 +693,11 @@ public final class EngineFramework implements Runnable {
         case "-t":
           runInTuningMode(Arrays.copyOfRange(args, 1, args.length));
           break;
-        // Generate FENs file.
+        // Generate EPD or PGN files.
         case "-g":
           runInGenerationMode(Arrays.copyOfRange(args, 1, args.length));
           break;
-        // Filter FENs file.
+        // Filter EPD files.
         case "-f":
           runInFiltrationMode(Arrays.copyOfRange(args, 1, args.length));
           break;

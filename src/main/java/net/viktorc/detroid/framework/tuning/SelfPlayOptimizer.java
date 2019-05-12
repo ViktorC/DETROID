@@ -35,8 +35,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
    * @param engines A list of {@link net.viktorc.detroid.framework.tuning.SelfPlayEngines} instances that each contain the engines needed
    * for one optimization thread. For each non-null element in the list, a new thread will be utilized for the optimization. E.g. if engines
    * is a list of four non-null elements, the games in the fitness function will be distributed and played parallel on four threads. The
-   * list's first element cannot be null or a {@link java.lang.NullPointerException} is thrown. The maximum number of threads to use is the
-   * maximum of the number of available logical cores divided by two and 1.
+   * list's first element cannot be null or a {@link java.lang.NullPointerException} is thrown.
    * @param games The number of games to play to assess the fitness of the parameters.
    * @param timePerGame The time each engine will have per game in milliseconds.
    * @param timeIncPerMove The number of milliseconds with which the remaining time of an engine is incremented after each legal move.
@@ -73,14 +72,13 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
     }
     arenas = new Arena[this.engines.size()];
     for (int i = 0; i < this.engines.size(); i++) {
-      arenas[i] = new Arena(this.engines.get(i).getController(), Logger.getAnonymousLogger());
+      arenas[i] = new Arena(this.engines.get(i).getController(), Logger.getAnonymousLogger(), null);
     }
     this.games = games;
     this.timePerGame = timePerGame;
     this.timeIncPerMove = timeIncPerMove;
     this.validationFactor = validationFactor;
-    pool = Executors.newFixedThreadPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() / 2),
-        this.engines.size()));
+    pool = Executors.newFixedThreadPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors()), this.engines.size()));
     tempGeneration = -1;
   }
 

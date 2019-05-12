@@ -6,7 +6,7 @@ import java.util.Collection;
 import net.viktorc.detroid.framework.uci.UCIEngine;
 import net.viktorc.detroid.framework.validation.ControllerEngine;
 import net.viktorc.detroid.framework.validation.EPDRecord;
-import net.viktorc.detroid.framework.validation.EPDSuite;
+import net.viktorc.detroid.framework.validation.SearchTestSuite;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Test;
@@ -34,7 +34,7 @@ public final class WinAtChessTest {
 
   @Parameters
   public static Collection<Object[]> provideData() throws IOException {
-    EPDSuite suite = new EPDSuite(SUITE_NAME, WAC_FILE_PATH);
+    SearchTestSuite suite = new SearchTestSuite(SUITE_NAME, WAC_FILE_PATH);
     Collection<Object[]> data = new ArrayList<>();
     for (EPDRecord r : suite.getRecords()) {
       data.add(new Object[]{r});
@@ -44,7 +44,7 @@ public final class WinAtChessTest {
 
   @Test
   public void search() throws Exception {
-    Assume.assumeTrue(EPDSuite.searchTest(ENGINE, CONTROLLER, record, TIME_PER_POSITION));
+    Assume.assumeTrue(SearchTestSuite.searchTest(ENGINE, CONTROLLER, record, TIME_PER_POSITION));
   }
 
   @AfterClass

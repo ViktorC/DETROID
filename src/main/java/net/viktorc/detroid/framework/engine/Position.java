@@ -67,6 +67,47 @@ public class Position {
   private ArrayDeque<PositionStateRecord> stateHistory;
 
   /**
+   * Clones the specified position instance.
+   *
+   * @param pos The position to clone.
+   */
+  public Position(Position pos) {
+    whiteKing = pos.whiteKing;
+    whiteQueens = pos.whiteQueens;
+    whiteRooks = pos.whiteRooks;
+    whiteBishops = pos.whiteBishops;
+    whiteKnights = pos.whiteKnights;
+    whitePawns = pos.whitePawns;
+    blackKing = pos.blackKing;
+    blackQueens = pos.blackQueens;
+    blackRooks = pos.blackRooks;
+    blackBishops = pos.blackBishops;
+    blackKnights = pos.blackKnights;
+    blackPawns = pos.blackPawns;
+    allWhiteOccupied = pos.allWhiteOccupied;
+    allBlackOccupied = pos.allBlackOccupied;
+    allNonWhiteOccupied = pos.allNonWhiteOccupied;
+    allNonBlackOccupied = pos.allNonBlackOccupied;
+    allOccupied = pos.allOccupied;
+    allEmpty = pos.allEmpty;
+    enPassantRights = pos.enPassantRights;
+    whiteCastlingRights = pos.whiteCastlingRights;
+    blackCastlingRights = pos.blackCastlingRights;
+    whitesTurn = pos.whitesTurn;
+    inCheck = pos.inCheck;
+    checkers = pos.checkers;
+    phase = pos.phase;
+    phaseScore = pos.phaseScore;
+    halfMoveIndex = pos.halfMoveIndex;
+    fiftyMoveRuleClock = pos.fiftyMoveRuleClock;
+    key = pos.key;
+    squares = Arrays.copyOf(pos.squares, pos.squares.length);
+    keyHistory = Arrays.copyOf(pos.keyHistory, pos.keyHistory.length);
+    moveHistory = new ArrayDeque<>(pos.moveHistory);
+    stateHistory = new ArrayDeque<>(pos.stateHistory);
+  }
+
+  /**
    * It parses a FEN string and initializes a position instance based on it. Beside standard six-field FEN-strings, it also accepts
    * four-field Strings without the fifty-move rule clock and the move index.
    *
@@ -236,47 +277,6 @@ public class Position {
     moveHistory = new ArrayDeque<>();
     stateHistory = new ArrayDeque<>();
     keyHistory = new long[32]; // Factor of two.
-  }
-
-  /**
-   * Clones the specified position instance.
-   *
-   * @param pos The position to clone.
-   */
-  public Position(Position pos) {
-    whiteKing = pos.whiteKing;
-    whiteQueens = pos.whiteQueens;
-    whiteRooks = pos.whiteRooks;
-    whiteBishops = pos.whiteBishops;
-    whiteKnights = pos.whiteKnights;
-    whitePawns = pos.whitePawns;
-    blackKing = pos.blackKing;
-    blackQueens = pos.blackQueens;
-    blackRooks = pos.blackRooks;
-    blackBishops = pos.blackBishops;
-    blackKnights = pos.blackKnights;
-    blackPawns = pos.blackPawns;
-    allWhiteOccupied = pos.allWhiteOccupied;
-    allBlackOccupied = pos.allBlackOccupied;
-    allNonWhiteOccupied = pos.allNonWhiteOccupied;
-    allNonBlackOccupied = pos.allNonBlackOccupied;
-    allOccupied = pos.allOccupied;
-    allEmpty = pos.allEmpty;
-    enPassantRights = pos.enPassantRights;
-    whiteCastlingRights = pos.whiteCastlingRights;
-    blackCastlingRights = pos.blackCastlingRights;
-    whitesTurn = pos.whitesTurn;
-    inCheck = pos.inCheck;
-    checkers = pos.checkers;
-    phase = pos.phase;
-    phaseScore = pos.phaseScore;
-    halfMoveIndex = pos.halfMoveIndex;
-    fiftyMoveRuleClock = pos.fiftyMoveRuleClock;
-    key = pos.key;
-    squares = Arrays.copyOf(pos.squares, pos.squares.length);
-    keyHistory = Arrays.copyOf(pos.keyHistory, pos.keyHistory.length);
-    moveHistory = new ArrayDeque<>(pos.moveHistory);
-    stateHistory = new ArrayDeque<>(pos.stateHistory);
   }
 
   /**
