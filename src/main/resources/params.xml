@@ -9,11 +9,11 @@
   <nullMoveReduction>2</nullMoveReduction>
   <nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
   <extraNullMoveReduction>1</extraNullMoveReduction>
-  <extraNullMoveReductionDepthLimit>8</extraNullMoveReductionDepthLimit>
+  <extraNullMoveReductionDepthLimit>7</extraNullMoveReductionDepthLimit>
   <lateMoveReduction>1</lateMoveReduction>
   <lateMoveReductionMinDepthLeft>2</lateMoveReductionMinDepthLeft>
   <extraLateMoveReduction>1</extraLateMoveReduction>
-  <extraLateMoveReductionDepthLimit>6</extraLateMoveReductionDepthLimit>
+  <extraLateMoveReductionDepthLimit>5</extraLateMoveReductionDepthLimit>
   <minMovesSearchedForLmr>4</minMovesSearchedForLmr>
   <doRazor>true</doRazor>
   <revFutilityMargin1>236</revFutilityMargin1>

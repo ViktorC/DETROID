@@ -97,8 +97,8 @@ public class Search implements Runnable, Future<SearchResults> {
    * @param moves The only moves from the root position that should be searched. If it is <code>null</code>, all moves are to be searched.
    */
   public Search(Position pos, DetroidParameters params, Evaluator eval, EndGameTableBase egtb, DetroidSearchInformation info,
-      int numOfSearchThreads, Cache<TTEntry> transTable, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth, long maxNodes,
-      Set<Move> moves) {
+      int numOfSearchThreads, Cache<TTEntry> transTable, byte hashEntryGen, boolean analysisMode, boolean ponder, int maxDepth,
+      long maxNodes, Set<Move> moves) {
     this.params = params;
     this.info = info;
     this.eval = eval;
@@ -284,8 +284,7 @@ public class Search implements Runnable, Future<SearchResults> {
           alpha = Score.MIN.value;
           failLow = 2;
         } else {
-          alpha = failLow <= 1 ? Math.max(score - params.aspirationDelta, Score.MIN.value) :
-              Score.MIN.value;
+          alpha = failLow <= 1 ? Math.max(score - params.aspirationDelta, Score.MIN.value) : Score.MIN.value;
           failLow++;
         }
         ply--;
@@ -294,8 +293,7 @@ public class Search implements Runnable, Future<SearchResults> {
           beta = Score.MAX.value;
           failHigh = 2;
         } else {
-          beta = failHigh <= 1 ? Math.min(score + params.aspirationDelta, Score.MAX.value) :
-              Score.MAX.value;
+          beta = failHigh <= 1 ? Math.min(score + params.aspirationDelta, Score.MAX.value) : Score.MAX.value;
           failHigh++;
         }
         ply--;
@@ -329,8 +327,8 @@ public class Search implements Runnable, Future<SearchResults> {
       scoreType = adjustedScore.getValue();
     }
     updateInfo(rootPos, null, 0, ply, alpha, beta, score);
-    return new SearchResults(bestMove == null ? null : bestMove.toString(), ponderMove == null ? null :
-        ponderMove.toString(), finalScore, scoreType);
+    return new SearchResults(bestMove == null ? null : bestMove.toString(), ponderMove == null ? null : ponderMove.toString(), finalScore,
+        scoreType);
   }
 
   @Override
@@ -353,12 +351,12 @@ public class Search implements Runnable, Future<SearchResults> {
   }
 
   @Override
-  public boolean isDone() {
+  public synchronized boolean isDone() {
     return isDone;
   }
 
   @Override
-  public boolean cancel(boolean mayInterruptIfRunning) {
+  public synchronized boolean cancel(boolean mayInterruptIfRunning) {
     if (mayInterruptIfRunning && !isDone) {
       doStopSearch = true;
       return true;
@@ -367,7 +365,7 @@ public class Search implements Runnable, Future<SearchResults> {
   }
 
   @Override
-  public boolean isCancelled() {
+  public synchronized boolean isCancelled() {
     return doStopSearch;
   }
 
@@ -376,8 +374,8 @@ public class Search implements Runnable, Future<SearchResults> {
     startTime = System.currentTimeMillis();
     synchronized (this) {
       isDone = false;
+      doStopSearch = false;
     }
-    doStopSearch = false;
     if (numOfHelperThreads > 0) {
       executor = Executors.newFixedThreadPool(numOfHelperThreads);
     }
@@ -386,8 +384,8 @@ public class Search implements Runnable, Future<SearchResults> {
     if (executor != null) {
       executor.shutdown();
     }
-    doStopSearch = false;
     synchronized (this) {
+      doStopSearch = false;
       isDone = true;
       notifyAll();
     }
@@ -904,7 +902,7 @@ public class Search implements Runnable, Future<SearchResults> {
               searchStats.nullMoveReductions.incrementAndGet();
               // Dynamic depth reduction.
               int nullMoveReduction = params.nullMoveReduction * FULL_PLY +
-                  params.extraNullMoveReduction * depth / params.extraNullMoveReductionDepthLimit;
+                  params.extraNullMoveReduction * depth / (params.extraNullMoveReductionDepthLimit + 1);
               pos.makeNullMove();
               /* Use separate, tight-scoped try-blocks for the parts where exceptions may be thrown to
                * allow the compiler to make as many optimizations as possible. */
@@ -1164,7 +1162,7 @@ public class Search implements Runnable, Future<SearchResults> {
           depth = Math.min(depthLimit, depth + params.singleReplyExtension);
         }
         int lateMoveReduction = params.lateMoveReduction * FULL_PLY +
-            params.extraLateMoveReduction * depth / params.extraLateMoveReductionDepthLimit;
+            params.extraLateMoveReduction * depth / (params.extraLateMoveReductionDepthLimit + 1);
         int futMargin;
         boolean prunable = !pvNode && !dangerous && Math.abs(alpha) < wCheckMateLimit;
         // Futility pruning margin calculation.

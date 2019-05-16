@@ -206,8 +206,11 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
     int engine2Wins = 0;
     int draws = 0;
     ArrayList<Future<MatchResult>> futures = new ArrayList<>(engines.size());
+    int remainingGames = games;
     for (int i = 0; i < engines.size(); i++) {
       final int index = i;
+      final int workLoad = remainingGames / (engines.size() - i);
+      remainingGames -= workLoad;
       futures.add(pool.submit(() -> {
         TunableEngine tunEngine = engines.get(index).getEngine();
         UCIEngine oppEngine = engines.get(index).getOpponentEngine();
@@ -219,8 +222,7 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
         }
         tunEngine.getParameters().set(genotype, parameterTypes);
         tunEngine.notifyParametersChanged();
-        return arenas[index].match(tunEngine, oppEngine, games / engines.size(), timePerGame,
-            timeIncPerMove);
+        return arenas[index].match(tunEngine, oppEngine, workLoad, timePerGame, timeIncPerMove);
       }));
     }
     double fitness = assessResults(futures, engine1Wins, engine2Wins, draws);
@@ -230,10 +232,9 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
       futures = new ArrayList<>(engines.size());
       for (int i = 0; i < engines.size() && addGamesPlayed < encore; i++) {
         int index = i;
-        int gamesToPlay = (int) Math.min((double) encore - addGamesPlayed,
-            Math.ceil(((double) encore) / engines.size()));
-        futures.add(pool.submit(() -> arenas[index].match(engines.get(index).getEngine(),
-            engines.get(index).getOpponentEngine(), gamesToPlay, timePerGame, timeIncPerMove)));
+        int gamesToPlay = (int) Math.min((double) encore - addGamesPlayed, Math.ceil(((double) encore) / engines.size()));
+        futures.add(pool.submit(() -> arenas[index].match(engines.get(index).getEngine(), engines.get(index).getOpponentEngine(),
+            gamesToPlay, timePerGame, timeIncPerMove)));
         addGamesPlayed += gamesToPlay;
       }
       fitness = assessResults(futures, engine1Wins, engine2Wins, draws);

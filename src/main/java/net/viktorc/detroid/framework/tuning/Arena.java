@@ -75,8 +75,9 @@ class Arena implements AutoCloseable {
     return id;
   }
 
-  private SearchResults searchPosition(UCIEngine engine, Timer timer, AtomicLong timeLeft, long oppTimeLeft,
+  private SearchResults searchPosition(UCIEngine engine, Timer timer, AtomicLong timeLeft, AtomicLong oppTimeLeft,
       long timeIncPerMove, boolean white) throws Exception {
+    timeLeft.set(timeLeft.get() + timeIncPerMove);
     TimerTask task = new TimerTask() {
 
       @Override
@@ -86,8 +87,8 @@ class Arena implements AutoCloseable {
     };
     timer.schedule(task, timeLeft.get());
     long start = System.nanoTime();
-    SearchResults res = engine.search(null, null, white ? timeLeft.get() : oppTimeLeft,
-        white ? oppTimeLeft : timeLeft.get(), timeIncPerMove, timeIncPerMove, null, null,
+    SearchResults res = engine.search(null, null, white ? timeLeft.get() : oppTimeLeft.get(),
+        white ? oppTimeLeft.get() : timeLeft.get(), timeIncPerMove, timeIncPerMove, null, null,
         null, null, null, null);
     long end = System.nanoTime();
     task.cancel();
@@ -96,7 +97,6 @@ class Arena implements AutoCloseable {
       throw new GameOverException(timeLeft.get() <= 0 ?
           "Engine1 lost on time." : "Engine1 returned an illegal move: " + res.getBestMove() + ".");
     }
-    timeLeft.set(timeLeft.get() + timeIncPerMove);
     return res;
   }
 
@@ -159,7 +159,8 @@ class Arena implements AutoCloseable {
           state = "";
           break;
       }
-      resultLogger.info("Arena: " + id + "\n" + result + "\n" + state + " - " + reason + "\n" +
+      state += reason.isEmpty() ? "" : (" - " + reason);
+      resultLogger.info("Arena: " + id + "\n" + result + ": " + state + "\n" +
           "STANDINGS: " + engine1Wins + " - " + engine2Wins + " - " + draws + "\n\n");
     }
   }
@@ -215,24 +216,20 @@ class Arena implements AutoCloseable {
       while (controller.getGameState() == GameState.IN_PROGRESS) {
         if (engine1Turn) {
           try {
-            res = searchPosition(engine1, timer, engine1Time, engine2Time.get(), timeIncPerMove,
-                engine1White);
+            res = searchPosition(engine1, timer, engine1Time, engine2Time, timeIncPerMove, engine1White);
           } catch (Exception e) {
             timer.cancel();
             engine2Wins++;
-            logResults(GameState.UNSPECIFIED_BLACK_WIN, e.getMessage(), engine1White, engine1Wins,
-                engine2Wins, draws);
+            logResults(GameState.UNSPECIFIED_BLACK_WIN, e.getMessage(), engine1White, engine1Wins, engine2Wins, draws);
             continue Games;
           }
         } else {
           try {
-            res = searchPosition(engine2, timer, engine2Time, engine1Time.get(), timeIncPerMove,
-                !engine1White);
+            res = searchPosition(engine2, timer, engine2Time, engine1Time, timeIncPerMove, !engine1White);
           } catch (Exception e) {
             timer.cancel();
             engine1Wins++;
-            logResults(GameState.UNSPECIFIED_WHITE_WIN, e.getMessage(), engine1White, engine1Wins,
-                engine2Wins, draws);
+            logResults(GameState.UNSPECIFIED_WHITE_WIN, e.getMessage(), engine1White, engine1Wins, engine2Wins, draws);
             continue Games;
           }
         }

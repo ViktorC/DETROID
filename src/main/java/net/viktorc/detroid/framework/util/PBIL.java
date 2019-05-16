@@ -30,11 +30,11 @@ public abstract class PBIL {
   /**
    * The default learning rate.
    */
-  protected static final double LEARNING_RATE = 0.1d;
+  protected static final double LEARNING_RATE = 0.05d;
   /**
    * The default additional learning rate from 'negative' experience.
    */
-  protected static final double NEGATIVE_LEARNING_RATE = 0.025d;
+  protected static final double NEGATIVE_LEARNING_RATE = 0.005d;
   /**
    * The maximum difference from 0 or 1 each element of the probability vector can have for the set to be still possibly considered
    * optimized.
@@ -146,7 +146,7 @@ public abstract class PBIL {
   }
 
   /**
-   * Returns whether the number of processed generations has reached the predefined limit or if none was defined, whether all the elements
+   * Returns whether the number of processed generations has reached the predefined limit or, if none was defined, whether all the elements
    * of the probability vector have converged to either 0 or 1.
    *
    * @param currentGeneration The current generation count.
@@ -168,7 +168,7 @@ public abstract class PBIL {
 
   /**
    * An implementation of the Population-based Incremental Learning algorithm which optimizes a string of binary digits representing
-   * parameters to a system according to the instance's constructor parameters.
+   * the parameters of a fitness function.
    *
    * @return The probability vector.
    */
@@ -230,8 +230,8 @@ public abstract class PBIL {
   }
 
   /**
-   * Measures the fitness of the genotype. Higher values mean higher fitness levels. It is a crucial step, as the genes will be optimized to
-   * increase the value returned by this function.
+   * Measures the fitness of the genotype. Higher values mean higher fitness levels. The genes will be optimized to increase the value
+   * returned by this function.
    *
    * @param genotype The genotype represented by a string of binary digits of the specified length.
    * @return The fitness level of the genotype.

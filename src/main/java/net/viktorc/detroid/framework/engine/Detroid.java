@@ -83,7 +83,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
   // The scaling factor of the exponent in the sigmoid function used to calculate the number of remaining moves.
   private static final double LAMBDA = 1.75e-2d;
 
-  private final Object lock;
+  private final Object mainLock;
+  private final Object searchLock;
 
   private Option<?> hashSize;
   private Option<?> clearHash;
@@ -129,7 +130,8 @@ public class Detroid implements ControllerEngine, TunableEngine {
    * Instantiates the chess engine object.
    */
   public Detroid() {
-    lock = new Object();
+    mainLock = new Object();
+    searchLock = new Object();
   }
 
   private void setHashSize(int hashSize) {
@@ -155,6 +157,40 @@ public class Detroid implements ControllerEngine, TunableEngine {
     if (debugMode) {
       debugInfo.set("Hash tables cleared");
     }
+  }
+
+  private void setPlayerNames() {
+    if (newGame) {
+      if (game.isWhitesTurn()) {
+        setPlayers(NAME, (String) options.get(uciOpponent));
+      } else {
+        setPlayers((String) options.get(uciOpponent), NAME);
+      }
+      if (debugMode) {
+        debugInfo.set("Players' names set\n" +
+            "White - " + game.getWhitePlayerName() + "\n" +
+            "Black - " + game.getBlackPlayerName());
+      }
+      newGame = false;
+    }
+  }
+
+  private Set<Move> getAllowedMoves(Set<String> searchMoves) {
+    Set<Move> allowedMoves = null;
+    if (searchMoves != null && !searchMoves.isEmpty()) {
+      allowedMoves = new HashSet<>();
+      try {
+        Position pos = game.getPosition();
+        for (String s : searchMoves) {
+          allowedMoves.add(MoveStringUtils.parsePACN(pos, s));
+        }
+      } catch (ChessParseException | NullPointerException e) {
+        if (debugMode) {
+          debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
+        }
+      }
+    }
+    return allowedMoves;
   }
 
   private int movesLeftBasedOnPhaseScore(int phaseScore) {
@@ -190,15 +226,21 @@ public class Detroid implements ControllerEngine, TunableEngine {
     return timeLeft < searchTime * params.minTimePortionNeededForExtraDepth16th / 16 && !doExtendSearch();
   }
 
-  private void manageSearchTime(Long searchTime, Long whiteTime, Long blackTime,
-      Long whiteIncrement, Long blackIncrement, Integer movesToGo) throws Exception {
+  private void manageSearchTime(Long searchTime, Long whiteTime, Long blackTime, Integer movesToGo)
+      throws ExecutionException, InterruptedException {
     try {
       boolean fixed = searchTime != null && searchTime > 0;
       if (debugMode) {
         debugInfo.set("Search time fixed: " + fixed);
       }
       if (fixed) {
-        search.get(searchTime, TimeUnit.MILLISECONDS);
+        try {
+          search.get(searchTime, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+          if (debugMode) {
+            debugInfo.set("Fixed search time up");
+          }
+        }
       } else {
         int phaseScore = game.getPosition().getPhaseScore();
         long time = computeSearchTime(whiteTime, blackTime, movesToGo, phaseScore);
@@ -245,7 +287,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
     }
   }
 
-  private void waitForSearch() throws Exception {
+  private void waitForSearch() throws ExecutionException, InterruptedException {
     try {
       search.get();
     } catch (InterruptedException e) {
@@ -275,6 +317,180 @@ public class Detroid implements ControllerEngine, TunableEngine {
     return arr[(int) (Math.random() * arr.length)];
   }
 
+  private SearchResults searchBook(Boolean ponder, Long whiteTime, Long blackTime, Integer movesToGo, Boolean infinite) {
+    long bookSearchStart = System.currentTimeMillis();
+    synchronized (searchLock) {
+      if (stop) {
+        return null;
+      }
+      search = executor.submit(() -> {
+        Move bookMove;
+        try {
+          bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
+        } catch (Exception e) {
+          bookMove = null;
+        }
+        return new SearchResults(bookMove == null ? null : bookMove.toString(), null, null, null);
+      });
+    }
+    if (debugMode) {
+      debugInfo.set("Book search started");
+    }
+    SearchResults results = null;
+    try {
+      results = search.get();
+      bookMove = results != null && results.getBestMove() != null;
+    } catch (InterruptedException | ExecutionException e) {
+      if (debugMode) {
+        debugInfo.set(e.getMessage());
+      }
+      Thread.currentThread().interrupt();
+    } catch (CancellationException e) {
+      // Let the method finish.
+    }
+    if (debugMode) {
+      debugInfo.set("Book search done");
+    }
+    // If the book search has not been externally stopped, use the remaining time for a normal search if no move was found.
+    if (!stop && !bookMove) {
+      if (debugMode) {
+        debugInfo.set("No book move found. Out of book.");
+      }
+      outOfBook = true;
+      results = searchGameTree(null, ponder, game.isWhitesTurn() ? (whiteTime != null ?
+              whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
+          game.isWhitesTurn() ? blackTime : (blackTime != null ? blackTime - (System.currentTimeMillis() - bookSearchStart) : null),
+          movesToGo, null, null, null, null, infinite);
+    }
+    return results;
+  }
+
+  private void startGameTreeSearch(Set<Move> allowedMoves, boolean doPonder, boolean doInfinite, Integer depth, Long nodes,
+      Integer mateDistance) {
+    if (egtb.isProbingLibLoaded() && egtb.isInit()) {
+      egtb.resetStats();
+    }
+    boolean analysisMode = (Boolean) options.get(uciAnalysis);
+    Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo, (int) options.get(numOfSearchThreads),
+        transTable, gen, analysisMode, doPonder || doInfinite,
+        depth == null ? (mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth, nodes == null ? Long.MAX_VALUE : nodes,
+        allowedMoves);
+    search = gameTreeSearch;
+    executor.submit(gameTreeSearch);
+    if (debugMode) {
+      debugInfo.set("Search started");
+    }
+  }
+
+  private void waitForGameTreeSearchInPonderingMode(Long searchTime, Long whiteTime, Long blackTime, Integer movesToGo)
+      throws ExecutionException, InterruptedException {
+    // If in ponder mode, run the search until the ponder hit signal or until it is externally stopped.
+    if (debugMode) {
+      debugInfo.set("In ponder mode");
+    }
+    synchronized (searchLock) {
+      while (!stop && !ponderHit) {
+        searchLock.wait();
+      }
+    }
+    if (debugMode) {
+      debugInfo.set("Ponder stopped");
+    }
+    // If the search terminated due to a ponder hit, keep searching...
+    if (ponderHit) {
+      if (debugMode) {
+        debugInfo.set("Ponderhit acknowledged");
+      }
+      ponderHit = false;
+      // Time based search.
+      manageSearchTime(searchTime, whiteTime, blackTime, movesToGo);
+    } else {
+      // If it did not, return the best move found.
+      waitForSearch();
+    }
+  }
+
+  private void waitForGameTreeSearchInInfiniteMode() throws ExecutionException, InterruptedException {
+    // If in infinite mode, let the search run until it is externally stopped.
+    if (debugMode) {
+      debugInfo.set("In infinite mode");
+    }
+    waitForSearch();
+  }
+
+  private void waitForGameTreeSearchInFixedMode() throws ExecutionException, InterruptedException {
+    // Fixed node or depth search
+    if (debugMode) {
+      debugInfo.set("In fixed mode");
+    }
+    waitForSearch();
+  }
+
+  private SearchResults collectGameTreeSearchResults() {
+    try {
+      return search.get();
+    } catch (InterruptedException e) {
+      if (debugMode) {
+        debugInfo.set(e.getMessage());
+      }
+      Thread.currentThread().interrupt();
+      return null;
+    } catch (ExecutionException e) {
+      if (debugMode) {
+        debugInfo.set(e.getMessage());
+      }
+      return null;
+    }
+  }
+
+  private SearchResults searchGameTree(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime, Integer movesToGo,
+      Integer depth, Long nodes, Integer mateDistance, Long searchTime, Boolean infinite) {
+    boolean doPonder = false;
+    // Check if pondering is possible.
+    if (ponder != null && ponder) {
+      if (!(Boolean) options.get(this.ponder)) {
+        if (debugMode) {
+          debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
+        }
+        return null;
+      } else {
+        doPonder = true;
+      }
+    }
+    boolean doInfinite = (infinite != null && infinite) || (!doPonder && whiteTime == null && blackTime == null && depth == null &&
+        nodes == null && mateDistance == null && searchTime == null);
+    // Set root move restrictions if there are any.
+    Set<Move> allowedMoves = getAllowedMoves(searchMoves);
+    // Start the search.
+    synchronized (searchLock) {
+      if (stop) {
+        return null;
+      }
+      startGameTreeSearch(allowedMoves, doPonder, doInfinite, depth, nodes, mateDistance);
+    }
+    try {
+      if (doPonder) {
+        waitForGameTreeSearchInPonderingMode(searchTime, whiteTime, blackTime, movesToGo);
+      } else if (doInfinite) {
+        waitForGameTreeSearchInInfiniteMode();
+      } else if (whiteTime == null && blackTime == null && searchTime == null) {
+        waitForGameTreeSearchInFixedMode();
+      } else {
+        manageSearchTime(searchTime, whiteTime, blackTime, movesToGo);
+      }
+    } catch (Exception e) {
+      if (debugMode) {
+        debugInfo.set(e.getMessage());
+      }
+      return null;
+    }
+    if (debugMode) {
+      debugInfo.set("Search stopped");
+    }
+    // Return the final results.
+    return collectGameTreeSearchResults();
+  }
+
   private long perft(Position pos, int depth) {
     long leafNodes = 0;
     List<Move> moves = pos.getMoves();
@@ -291,7 +507,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void init() throws Exception {
-    synchronized (lock) {
+    synchronized (mainLock) {
       params = new DetroidParameters();
       params.loadFrom(DEFAULT_PARAMETERS_FILE_PATH);
       try {
@@ -357,7 +573,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public boolean isInit() {
-    return init;
+    synchronized (mainLock) {
+      return init;
+    }
   }
 
   @Override
@@ -372,12 +590,14 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public Map<Option<?>, Object> getOptions() {
-    return new LinkedHashMap<>(options);
+    synchronized (mainLock) {
+      return new LinkedHashMap<>(options);
+    }
   }
 
   @Override
   public <T> boolean setOption(Option<T> setting, T value) {
-    synchronized (lock) {
+    synchronized (mainLock) {
       try {
         if (hashSize.equals(setting)) {
           int val = (Integer) value;
@@ -590,12 +810,14 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void setDebugMode(boolean on) {
-    debugMode = on;
+    synchronized (mainLock) {
+      debugMode = on;
+    }
   }
 
   @Override
   public void newGame() {
-    synchronized (lock) {
+    synchronized (mainLock) {
       newGame = true;
       outOfBook = false;
       movesOutOfBook = 0;
@@ -610,7 +832,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public boolean setPosition(String fen) {
-    synchronized (lock) {
+    synchronized (mainLock) {
       try {
         Position pos = fen.equals(START_POSITION) ? Position.parse(Position.START_POSITION_FEN) :
             Position.parse(fen);
@@ -647,8 +869,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
               evalTable.remove(e -> e.getGeneration() < gen - params.evalTableEntryLifeCycle);
             }
           }
-          game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(),
-              game.getBlackPlayerName());
+          game = new Game(game.getStartPos(), game.getEvent(), game.getSite(), game.getWhitePlayerName(), game.getBlackPlayerName());
         }
         return true;
       } catch (ChessParseException | NullPointerException e) {
@@ -662,7 +883,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public boolean play(String pacn) {
-    synchronized (lock) {
+    synchronized (mainLock) {
       if (game.play(pacn)) {
         if (debugMode) {
           debugInfo.set("Move \"" + pacn + "\" played successfully");
@@ -680,215 +901,28 @@ public class Detroid implements ControllerEngine, TunableEngine {
   public SearchResults search(Set<String> searchMoves, Boolean ponder, Long whiteTime, Long blackTime,
       Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes,
       Integer mateDistance, Long searchTime, Boolean infinite) {
-    synchronized (lock) {
-      boolean doPonder = false;
-      boolean doInfinite = (infinite != null && infinite) || ((ponder == null || !ponder) && whiteTime == null &&
-          blackTime == null && depth == null && nodes == null && mateDistance == null && searchTime == null);
+    synchronized (mainLock) {
+      synchronized (searchLock) {
+        stop = false;
+      }
       bookMove = false;
-      stop = ponderHit = false;
+      ponderHit = false;
       // Set the names of the players once it is known which colour we are playing.
-      if (newGame) {
-        if (game.isWhitesTurn()) {
-          game.setWhitePlayerName(NAME);
-          game.setBlackPlayerName((String) options.get(uciOpponent));
-        } else {
-          game.setWhitePlayerName((String) options.get(uciOpponent));
-          game.setBlackPlayerName(NAME);
-        }
-        if (debugMode) {
-          debugInfo.set("Players' names set\n" +
-              "White - " + game.getWhitePlayerName() + "\n" +
-              "Black - " + game.getBlackPlayerName());
-        }
-        newGame = false;
-      }
-      SearchResults results = null;
+      setPlayerNames();
       boolean analysisMode = (Boolean) options.get(uciAnalysis);
+      boolean searchBook = book != null && !analysisMode && !outOfBook && searchMoves == null && (ponder == null || !ponder) &&
+          depth == null && nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite) &&
+          (Boolean) options.get(ownBook);
+      SearchResults results;
       // Search the book if possible.
-      if (book != null && !analysisMode && !outOfBook && searchMoves == null && (ponder == null || !ponder) && depth == null &&
-          nodes == null && mateDistance == null && searchTime == null && (infinite == null || !infinite) &&
-          (Boolean) options.get(ownBook)) {
-        long bookSearchStart = System.currentTimeMillis();
-        search = executor.submit(() -> {
-          Move bookMove;
-          try {
-            bookMove = book.getMove(game.getPosition(), SelectionModel.STOCHASTIC);
-          } catch (Exception e) {
-            bookMove = null;
-          }
-          return new SearchResults(bookMove == null ? null : bookMove.toString(), null, null, null);
-        });
-        if (debugMode) {
-          debugInfo.set("Book search started");
-        }
-        try {
-          results = search.get();
-          bookMove = results != null && results.getBestMove() != null;
-        } catch (InterruptedException | ExecutionException e1) {
-          if (debugMode) {
-            debugInfo.set(e1.getMessage());
-          }
-          Thread.currentThread().interrupt();
-          return null;
-        } catch (CancellationException e2) {
-          // Let the method finish.
-        }
-        if (debugMode) {
-          debugInfo.set("Book search done");
-        }
-        /* If the book search has not been externally stopped, use the remaining time for a normal search if no
-         * move was found. */
-        if (!stop && !bookMove) {
-          if (debugMode) {
-            debugInfo.set("No book move found. Out of book.");
-          }
-          outOfBook = true;
-          search(searchMoves, ponder, game.isWhitesTurn() ? (whiteTime != null ?
-                  whiteTime - (System.currentTimeMillis() - bookSearchStart) : null) : whiteTime,
-              game.isWhitesTurn() ? blackTime : (blackTime != null ?
-                  blackTime - (System.currentTimeMillis() - bookSearchStart) : null), whiteIncrement,
-              blackIncrement, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
-        }
+      if (searchBook) {
+        results = searchBook(ponder, whiteTime, blackTime, movesToGo, infinite);
+      } else {
+        results = searchGameTree(searchMoves, ponder, whiteTime, blackTime, movesToGo, depth, nodes, mateDistance, searchTime, infinite);
       }
-      // Run a game tree search.
-      else {
-        // Check if pondering is possible.
-        if (ponder != null && ponder) {
-          if (!(Boolean) options.get(this.ponder)) {
-            if (debugMode) {
-              debugInfo.set("Ponder mode started with ponder option disallowed - Abort");
-            }
-            return null;
-          } else {
-            doPonder = true;
-          }
-        }
-        Set<Move> allowedMoves;
-        // Set root move restrictions if there are any.
-        if (searchMoves != null && !searchMoves.isEmpty()) {
-          allowedMoves = new HashSet<>();
-          try {
-            Position pos = game.getPosition();
-            for (String s : searchMoves) {
-              allowedMoves.add(MoveStringUtils.parsePACN(pos, s));
-            }
-          } catch (ChessParseException | NullPointerException e) {
-            if (debugMode) {
-              debugInfo.set("Search moves could not be parsed\n" + e.getMessage());
-            }
-            return null;
-          }
-        } else {
-          allowedMoves = null;
-        }
-        // Start the search.
-        Search:
-        {
-          if (egtb.isProbingLibLoaded() && egtb.isInit()) {
-            egtb.resetStats();
-          }
-          Search gameTreeSearch = new Search(game.getPosition(), params, eval, egtb, searchInfo, (int) options.get(numOfSearchThreads),
-              transTable, gen, analysisMode, doPonder || doInfinite,
-              depth == null ? (mateDistance == null ? Integer.MAX_VALUE : mateDistance) : depth,
-              nodes == null ? Long.MAX_VALUE : nodes, allowedMoves);
-          search = gameTreeSearch;
-          executor.submit(gameTreeSearch);
-          if (debugMode) {
-            debugInfo.set("Search started");
-          }
-          // If in ponder mode, run the search until the ponder hit signal or until it is externally stopped.
-          if (doPonder) {
-            if (debugMode) {
-              debugInfo.set("In ponder mode");
-            }
-            while (!stop && !ponderHit) {
-              try {
-                lock.wait();
-              } catch (InterruptedException e) {
-                if (debugMode) {
-                  debugInfo.set(e.getMessage());
-                }
-                Thread.currentThread().interrupt();
-                return null;
-              }
-            }
-            if (debugMode) {
-              debugInfo.set("Ponder stopped");
-            }
-            // If the search terminated due to a ponder hit, keep searching...
-            if (ponderHit) {
-              if (debugMode) {
-                debugInfo.set("Ponderhit acknowledged");
-              }
-              ponderHit = false;
-            }
-            // If it did not, return the best move found.
-            else {
-              try {
-                waitForSearch();
-              } catch (Exception e) {
-                return null;
-              }
-              break Search;
-            }
-          }
-          // If in infinite mode, let the search run until it is externally stopped.
-          else if (doInfinite) {
-            if (debugMode) {
-              debugInfo.set("In infinite mode");
-            }
-            try {
-              waitForSearch();
-            } catch (Exception e) {
-              return null;
-            }
-            break Search;
-          }
-          // Fixed node or depth search
-          else if (whiteTime == null && blackTime == null && searchTime == null) {
-            if (debugMode) {
-              debugInfo.set("In fixed mode");
-            }
-            try {
-              waitForSearch();
-            } catch (Exception e) {
-              return null;
-            }
-            break Search;
-          }
-          try {
-            // Time based search.
-            manageSearchTime(searchTime, whiteTime, blackTime, whiteIncrement, blackIncrement, movesToGo);
-          } catch (Exception e) {
-            if (debugMode) {
-              debugInfo.set(e.getMessage());
-            }
-            return null;
-          }
-        }
-        if (debugMode) {
-          debugInfo.set("Search stopped");
-        }
-      }
-      // Return the final results.
-      if (!bookMove) {
-        try {
-          results = search.get();
-        } catch (InterruptedException e) {
-          if (debugMode) {
-            debugInfo.set(e.getMessage());
-          }
-          Thread.currentThread().interrupt();
-          return null;
-        } catch (ExecutionException e) {
-          if (debugMode) {
-            debugInfo.set(e.getMessage());
-          }
-          return null;
-        }
-        if (results == null || results.getBestMove() == null) {
-          results = new SearchResults(getRandomMove(), null, null, null);
-        }
+      // If there are no results, pick a random move.
+      if (results == null || results.getBestMove() == null) {
+        results = new SearchResults(getRandomMove(), null, null, null);
       }
       return results;
     }
@@ -896,45 +930,44 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void stop() {
-    if (search != null) {
-      if (debugMode) {
-        debugInfo.set("Stopping search...");
-      }
-      stop = true;
-      search.cancel(true);
-      synchronized (lock) {
-        lock.notifyAll();
+    synchronized (searchLock) {
+      if (search != null) {
+        if (debugMode) {
+          debugInfo.set("Stopping search...");
+        }
+        stop = true;
+        search.cancel(true);
+        searchLock.notifyAll();
       }
     }
   }
 
   @Override
   public void ponderHit() {
-    if (debugMode) {
-      debugInfo.set("Signaling ponderhit...");
-    }
-    ponderHit = true;
-    synchronized (lock) {
-      lock.notifyAll();
+    synchronized (mainLock) {
+      if (debugMode) {
+        debugInfo.set("Signaling ponderhit...");
+      }
+      ponderHit = true;
+      mainLock.notifyAll();
     }
   }
 
   @Override
   public SearchInformation getSearchInfo() {
-    return searchInfo;
+    synchronized (mainLock) {
+      return searchInfo;
+    }
   }
 
   @Override
   public short getHashLoadPermill() {
-    long transLoad, transCapacity;
-    long evalLoad, evalCapacity;
-    long totalLoad, totalCapacity;
-    transLoad = transTable.size();
-    evalLoad = evalTable.size();
-    totalLoad = transLoad + evalLoad;
-    transCapacity = transTable.capacity();
-    evalCapacity = evalTable.capacity();
-    totalCapacity = transCapacity + evalCapacity;
+    long transLoad = transTable.size();
+    long evalLoad = evalTable.size();
+    long totalLoad = transLoad + evalLoad;
+    long transCapacity = transTable.capacity();
+    long evalCapacity = evalTable.capacity();
+    long totalCapacity = transCapacity + evalCapacity;
     if (debugMode) {
       debugInfo.set(String.format("TT load factor - %.2f%nET load factor - %.2f",
           ((float) transLoad) / transCapacity, ((float) evalLoad) / evalCapacity));
@@ -948,84 +981,97 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public DebugInformation getDebugInfo() {
-    return debugInfo;
+    synchronized (mainLock) {
+      return debugInfo;
+    }
   }
 
   @Override
   public void quit() {
-    if (init) {
+    synchronized (mainLock) {
+      if (!init) {
+        if (debugMode) {
+          debugInfo.set("The engine has not been initialized yet; cannot shut down.");
+        }
+        return;
+      }
       if (debugMode) {
         debugInfo.set("Shutting down...");
       }
-    } else {
-      if (debugMode) {
-        debugInfo.set("The engine has not been initialized yet; cannot shut down.");
-      }
-      return;
-    }
-    if (book != null) {
-      try {
-        book.close();
-      } catch (IOException e) {
-        if (debugMode) {
-          debugInfo.set(e.getMessage());
+      if (book != null) {
+        try {
+          book.close();
+        } catch (IOException e) {
+          if (debugMode) {
+            debugInfo.set(e.getMessage());
+          }
         }
       }
-    }
-    if (egtb.isProbingLibLoaded()) {
-      try {
-        egtb.close();
-      } catch (IOException e) {
-        if (debugMode) {
-          debugInfo.set(e.getMessage());
+      if (egtb.isProbingLibLoaded()) {
+        try {
+          egtb.close();
+        } catch (IOException e) {
+          if (debugMode) {
+            debugInfo.set(e.getMessage());
+          }
         }
       }
+      executor.shutdown();
+      searchInfo.deleteObservers();
+      transTable = null;
+      evalTable = null;
+      init = false;
     }
-    executor.shutdown();
-    searchInfo.deleteObservers();
-    transTable = null;
-    evalTable = null;
-    init = false;
   }
 
   @Override
   public boolean isWhitesTurn() {
-    return game.isWhitesTurn();
+    synchronized (mainLock) {
+      return game.isWhitesTurn();
+    }
   }
 
   @Override
   public String getStartPosition() {
-    return game.getStartPos().toString();
+    synchronized (mainLock) {
+      return game.getStartPos().toString();
+    }
   }
 
   @Override
   public GameState getGameState() {
-    synchronized (lock) {
+    synchronized (mainLock) {
       return game.getState();
     }
   }
 
   @Override
   public List<String> getMoveHistory() {
-    List<String> moves = game.getPosition().getMoveHistory().stream()
-        .map(Object::toString).collect(Collectors.toList());
-    Collections.reverse(moves);
-    return moves;
+    synchronized (mainLock) {
+      List<String> moves = game.getPosition().getMoveHistory().stream()
+          .map(Object::toString).collect(Collectors.toList());
+      Collections.reverse(moves);
+      return moves;
+    }
   }
 
   @Override
   public List<String> getLegalMoves() {
-    return game.getPosition().getMoves().stream().map(Object::toString).collect(Collectors.toList());
+    synchronized (mainLock) {
+      return game.getPosition().getMoves().stream().map(Object::toString).collect(Collectors.toList());
+    }
   }
 
   @Override
   public boolean isQuiet() {
-    return game.getPosition().getTacticalMoves().size() == 0;
+    synchronized (mainLock) {
+      return game.getPosition().getTacticalMoves().size() == 0;
+    }
   }
 
   @Override
   public boolean setGame(String pgn) {
-    synchronized (lock) {
+    synchronized (mainLock) {
       try {
         newGame();
         game = Game.parse(pgn);
@@ -1044,23 +1090,29 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void setPlayers(String whitePlayer, String blackPlayer) {
-    game.setWhitePlayerName(whitePlayer);
-    game.setBlackPlayerName(blackPlayer);
+    synchronized (mainLock) {
+      game.setWhitePlayerName(whitePlayer);
+      game.setBlackPlayerName(blackPlayer);
+    }
   }
 
   @Override
   public void setEvent(String event) {
-    game.setEvent(event);
+    synchronized (mainLock) {
+      game.setEvent(event);
+    }
   }
 
   @Override
   public void setSite(String site) {
-    game.setSite(site);
+    synchronized (mainLock) {
+      game.setSite(site);
+    }
   }
 
   @Override
   public void setControllerMode(boolean on) {
-    synchronized (lock) {
+    synchronized (mainLock) {
       controllerMode = on;
       if (init) {
         setHashSize(on ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
@@ -1070,78 +1122,92 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void drawByAgreement() {
-    game.setState(GameState.DRAW_BY_AGREEMENT);
+    synchronized (mainLock) {
+      game.setState(GameState.DRAW_BY_AGREEMENT);
+    }
   }
 
   @Override
   public void whiteForfeit() {
-    game.setState(GameState.UNSPECIFIED_BLACK_WIN);
+    synchronized (mainLock) {
+      game.setState(GameState.UNSPECIFIED_BLACK_WIN);
+    }
   }
 
   @Override
   public void blackForfeit() {
-    game.setState(GameState.UNSPECIFIED_WHITE_WIN);
+    synchronized (mainLock) {
+      game.setState(GameState.UNSPECIFIED_WHITE_WIN);
+    }
   }
 
   @Override
   public String unplayLastMove() {
-    synchronized (lock) {
+    synchronized (mainLock) {
       return game.unplay();
     }
   }
 
   @Override
   public String convertPACNToSAN(String move) {
-    try {
-      Position pos = game.getPosition();
-      return MoveStringUtils.toSAN(pos, MoveStringUtils.parsePACN(pos, move));
-    } catch (ChessParseException | NullPointerException e) {
-      if (debugMode) {
-        debugInfo.set("Error while converting PACN to SAN: " + e.getMessage());
+    synchronized (mainLock) {
+      try {
+        Position pos = game.getPosition();
+        return MoveStringUtils.toSAN(pos, MoveStringUtils.parsePACN(pos, move));
+      } catch (ChessParseException | NullPointerException e) {
+        if (debugMode) {
+          debugInfo.set("Error while converting PACN to SAN: " + e.getMessage());
+        }
+        throw new IllegalArgumentException("The parameter move cannot be converted to SAN.", e);
       }
-      throw new IllegalArgumentException("The parameter move cannot be converted to SAN.", e);
     }
   }
 
   @Override
   public String convertSANToPACN(String move) {
-    try {
-      return MoveStringUtils.parseSAN(game.getPosition(), move).toString();
-    } catch (ChessParseException | NullPointerException e) {
-      if (debugMode) {
-        debugInfo.set("Error while converting SAN to PACN: " + e.getMessage());
+    synchronized (mainLock) {
+      try {
+        return MoveStringUtils.parseSAN(game.getPosition(), move).toString();
+      } catch (ChessParseException | NullPointerException e) {
+        if (debugMode) {
+          debugInfo.set("Error while converting SAN to PACN: " + e.getMessage());
+        }
+        throw new IllegalArgumentException("The parameter move cannot be converted to PACN.", e);
       }
-      throw new IllegalArgumentException("The parameter move cannot be converted to PACN.", e);
     }
   }
 
   @Override
   public String toPGN() {
-    synchronized (lock) {
+    synchronized (mainLock) {
       return game.toString();
     }
   }
 
   @Override
   public String toFEN() {
-    synchronized (lock) {
+    synchronized (mainLock) {
       return game.getPosition().toString();
     }
   }
 
   @Override
   public long perft(int depth) {
-    return perft(game.getPosition(), depth);
+    synchronized (mainLock) {
+      return perft(game.getPosition(), depth);
+    }
   }
 
   @Override
   public EngineParameters getParameters() {
-    return params;
+    synchronized (mainLock) {
+      return params;
+    }
   }
 
   @Override
   public void notifyParametersChanged() {
-    synchronized (lock) {
+    synchronized (mainLock) {
       if (init) {
         eval = new Evaluator(params, controllerMode || deterministicEvalMode ? null : evalTable);
       }
@@ -1150,7 +1216,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void setDeterministicEvaluationMode(boolean on) {
-    synchronized (lock) {
+    synchronized (mainLock) {
       deterministicEvalMode = on;
       if (init) {
         setHashSize(on ? MIN_HASH_SIZE : DEFAULT_HASH_SIZE);
@@ -1160,7 +1226,9 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public short eval(Map<String, Double> gradientCache) {
-    return eval.score(game.getPosition(), gen, new ETEntry(), gradientCache);
+    synchronized (mainLock) {
+      return eval.score(game.getPosition(), gen, new ETEntry(), gradientCache);
+    }
   }
 
 }

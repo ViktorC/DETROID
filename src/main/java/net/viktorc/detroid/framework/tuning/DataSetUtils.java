@@ -76,8 +76,12 @@ public final class DataSetUtils {
         enginesList.size()));
     try {
       ArrayList<Future<Void>> futures = new ArrayList<>();
-      int workLoad = games / enginesList.size();
+      int remainingGames = games;
+      int remainingEngines = engines.size();
       for (SelfPlayEngines<UCIEngine> e : engines) {
+        int workLoad = remainingGames / remainingEngines;
+        remainingGames -= workLoad;
+        remainingEngines--;
         futures.add(pool.submit(() -> {
           Logger pgnLogger = Logger.getAnonymousLogger();
           pgnLogger.setUseParentHandlers(false);
