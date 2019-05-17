@@ -43,7 +43,6 @@ public class ConsoleAlert extends Alert implements Observer {
   public void update(Observable o, Object arg) {
     DebugInformation info = (DebugInformation) o;
     String content = info.getContent();
-    System.out.println(content);
     Platform.runLater(() -> area.appendText(content + System.lineSeparator()));
   }
 

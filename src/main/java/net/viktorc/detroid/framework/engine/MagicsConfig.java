@@ -113,7 +113,6 @@ public class MagicsConfig {
    */
   public synchronized void save() throws IOException {
     String filePath = getClass().getResource(PROPERTIES_FILE).getPath();
-    System.out.println(filePath);
     try (FileOutputStream out = new FileOutputStream(filePath)) {
       props.store(out, DESCRIPTION);
     }

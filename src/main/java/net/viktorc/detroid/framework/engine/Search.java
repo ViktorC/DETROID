@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -77,6 +78,7 @@ public class Search implements Runnable, Future<SearchResults> {
   private volatile boolean isDone;
   private volatile boolean doStopSearch;
   private volatile SearchResults results;
+  private volatile Throwable throwable;
 
   /**
    * Constructs a new instance using the specified parameters.
@@ -332,20 +334,26 @@ public class Search implements Runnable, Future<SearchResults> {
   }
 
   @Override
-  public synchronized SearchResults get() throws InterruptedException {
+  public synchronized SearchResults get() throws InterruptedException, ExecutionException {
     while (!isDone) {
       wait();
+    }
+    if (throwable != null) {
+      throw new ExecutionException(throwable);
     }
     return results;
   }
 
   @Override
-  public synchronized SearchResults get(long timeout, TimeUnit unit) throws InterruptedException {
+  public synchronized SearchResults get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
     long timeoutMs = unit.toMillis(timeout);
     while (!isDone && timeoutMs > 0) {
       long start = System.currentTimeMillis();
       wait(timeoutMs);
       timeoutMs -= (System.currentTimeMillis() - start);
+    }
+    if (throwable != null) {
+      throw new ExecutionException(throwable);
     }
     return results;
   }
@@ -375,11 +383,18 @@ public class Search implements Runnable, Future<SearchResults> {
     synchronized (this) {
       isDone = false;
       doStopSearch = false;
+      throwable = null;
     }
     if (numOfHelperThreads > 0) {
       executor = Executors.newFixedThreadPool(numOfHelperThreads);
     }
-    results = iterativeDeepening();
+    try {
+      results = iterativeDeepening();
+    } catch (Throwable e) {
+      synchronized (this) {
+        throwable = e;
+      }
+    }
     startTime = null;
     if (executor != null) {
       executor.shutdown();

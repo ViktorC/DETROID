@@ -995,6 +995,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
         }
         return;
       }
+      stop();
       if (debugMode) {
         debugInfo.set("Shutting down...");
       }
