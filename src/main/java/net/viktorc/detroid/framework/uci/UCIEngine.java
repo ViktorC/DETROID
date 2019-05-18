@@ -131,7 +131,7 @@ public interface UCIEngine extends Closeable {
   /**
    * Prompts the engine to stop searching and return the best move found up until that point. It should cause the {@link #search(Set,
    * Boolean, Long, Long, Long, Long, Integer, Integer, Long, Integer, Long, Boolean) search} method to terminate within a few milliseconds
-   * at most. If the engine is not searching at the time of the call, it should be ignored.
+   * at most. If the engine is not searching at the time of the call, it should be ignored. It should block until the search is finished.
    */
   void stop();
 

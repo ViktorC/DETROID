@@ -85,6 +85,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   private final Object mainLock;
   private final Object searchLock;
+  private final Object stopLock;
 
   private Option<?> hashSize;
   private Option<?> clearHash;
@@ -132,6 +133,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
   public Detroid() {
     mainLock = new Object();
     searchLock = new Object();
+    stopLock = new Object();
   }
 
   private void setHashSize(int hashSize) {
@@ -902,9 +904,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
       Long whiteIncrement, Long blackIncrement, Integer movesToGo, Integer depth, Long nodes,
       Integer mateDistance, Long searchTime, Boolean infinite) {
     synchronized (mainLock) {
-      synchronized (searchLock) {
-        stop = false;
-      }
       bookMove = false;
       ponderHit = false;
       // Set the names of the players once it is known which colour we are playing.
@@ -930,14 +929,22 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   @Override
   public void stop() {
-    synchronized (searchLock) {
-      if (search != null) {
-        if (debugMode) {
-          debugInfo.set("Stopping search...");
+    synchronized (stopLock) {
+      synchronized (searchLock) {
+        if (search != null) {
+          if (debugMode) {
+            debugInfo.set("Stopping search...");
+          }
+          stop = true;
+          search.cancel(true);
+          searchLock.notifyAll();
         }
-        stop = true;
-        search.cancel(true);
-        searchLock.notifyAll();
+      }
+      synchronized (mainLock) {
+        // Wait for the search to finish.
+      }
+      synchronized (searchLock) {
+        stop = false;
       }
     }
   }

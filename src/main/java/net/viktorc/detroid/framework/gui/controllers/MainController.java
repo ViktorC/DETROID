@@ -696,15 +696,13 @@ public final class MainController implements AutoCloseable, Observer {
   private void stopSearch() {
     isReset = true;
     searchEngine.stop();
-    if (isPondering) {
-      while (isPondering) {
-        synchronized (MainController.this) {
-          try {
-            MainController.this.wait();
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
-          }
+    while (isPondering) {
+      synchronized (MainController.this) {
+        try {
+          MainController.this.wait();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          return;
         }
       }
     }
