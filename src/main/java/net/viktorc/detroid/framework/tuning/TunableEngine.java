@@ -41,9 +41,10 @@ public interface TunableEngine extends UCIEngine {
    * white is in the lead and negative output means black is in the lead) with respect to the static evaluation parameters. The key
    * should be the name of the parameter and the value should be the derivative. It can be null if the calculation of the gradient is not
    * needed or if {@link #isGradientDefined()} returns false.
-   * @return The static evaluation score of the position.
+   * @return The static evaluation score of the position. Positive scores represent an advantage for white, negative scores represent an
+   * advantage for black.
    */
-  short eval(Map<String, Double> gradientCache);
+  double eval(Map<String, Double> gradientCache);
 
   /**
    * Specifies whether the gradient of the evaluation function is mathematically defined. If it is not, numerical differentiation is

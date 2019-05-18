@@ -1226,7 +1226,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
   }
 
   @Override
-  public short eval(Map<String, Double> gradientCache) {
+  public double eval(Map<String, Double> gradientCache) {
     synchronized (mainLock) {
       return eval.score(game.getPosition(), gen, new ETEntry(), gradientCache);
     }

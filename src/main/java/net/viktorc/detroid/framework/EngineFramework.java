@@ -85,11 +85,12 @@ public final class EngineFramework implements Runnable {
    * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else:<br>
    * UCI mode: {@code -u}<br>
    * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | management |
-   * eval+control | control+management | all> {all}] [--inc <integer> {0}] [--validfactor <decimal> {0}] [--initprobvector
-   * <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>] [--trythreads <integer>] [--log <string>
-   * {log.txt}] [--concurrency <integer>] {1}]} <br>
+   * eval+control | control+management | all> {all}] [--learningrate <decimal> {.025}] [--neglearningrate <decimal> {.005}]
+   * [--mutationprob <decimal> {.025}] [--mutationshift <decimal> {.05}] [--generations <integer>] [--inc <integer> {0}]
+   * [--validfactor <decimal> {0}] [--initprobvector <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>]
+   * [--trythreads <integer>] [--log <string> {log.txt}] [--concurrency <integer>] {1}]}<br>
    * Texel tuning: {@code -t texel -epdfile <string> -batchsize <integer> [--labelopcode <string> {Gr}] [--epochs <integer>]
-   * [--testdataprop <decimal> {0.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.99}]
+   * [--testdataprop <decimal> {.2}] [--h <decimal> {1}] [--learningrate <decimal> {1}] [--annealingrate <decimal> {.99}]
    * [--l1reg <decimal> {.001}] [--l2reg <decimal> {.0001}] [--costbatchsize <integer>] [--k <decimal>] [--log <string> {log.txt}]
    * [--concurrency <integer> {1}]}<br>
    * EPD file generation from a PGN file: {@code -g epd -pgnfile <string> [--maxgames <integer>] [--minelo <integer>]
@@ -155,9 +156,9 @@ public final class EngineFramework implements Runnable {
     }
   }
 
-  private void runInSelfPlayTuningMode(String logFilePath, int concurrency, int popSize,
-      int games, long tc, long tcInc, double validFactor, Set<ParameterType> paramTypes,
-      double[] initProbVec, Boolean useBook, Integer hash, Integer threads) {
+  private void runInSelfPlayTuningMode(Set<ParameterType> paramTypes, String logFilePath, int concurrency, int popSize, int games, long tc,
+      long tcInc, double validFactor, double[] initProbVec, Double learningRate, Double negLearningRate, Double mutationProb,
+      Double mutationShift, Integer generations, Boolean useBook, Integer hash, Integer threads) {
     List<SelfPlayEngines<TunableEngine>> engines = new ArrayList<>(concurrency);
     for (int i = 0; i < concurrency; i++) {
       try {
@@ -179,8 +180,8 @@ public final class EngineFramework implements Runnable {
     } catch (SecurityException | IOException e) {
       throw new IllegalArgumentException(e);
     }
-    try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, games, tc, tcInc,
-        validFactor, initProbVec, popSize, logger, paramTypes)) {
+    try (SelfPlayOptimizer optimizer = new SelfPlayOptimizer(engines, paramTypes, games, tc, tcInc, validFactor, initProbVec, popSize,
+        learningRate, negLearningRate, mutationProb, mutationShift, generations, logger)) {
       optimizer.optimize();
     } catch (Exception e) {
       throw new IllegalArgumentException(e);
@@ -188,6 +189,7 @@ public final class EngineFramework implements Runnable {
   }
 
   private void runInSelfPlayTuningMode(String[] args) {
+    Set<ParameterType> paramTypes = null;
     String logFilePath = DEF_LOG_FILE_PATH;
     int concurrency = DEF_CONCURRENCY;
     int popSize = -1;
@@ -195,8 +197,12 @@ public final class EngineFramework implements Runnable {
     long tc = -1;
     long tcInc = 0;
     double validFactor = 0;
-    Set<ParameterType> paramTypes = null;
     double[] initProbVec = null;
+    Double learningRate = null;
+    Double negLearningRate = null;
+    Double mutationProb = null;
+    Double mutationShift = null;
+    Integer generations = null;
     Boolean useBook = null;
     Integer hash = null;
     Integer threads = null;
@@ -211,6 +217,21 @@ public final class EngineFramework implements Runnable {
           break;
         case "-tc":
           tc = Long.parseLong(args[++i]);
+          break;
+        case "--learningrate":
+          learningRate = Double.parseDouble(args[++i]);
+          break;
+        case "--neglearningrate":
+          negLearningRate = Double.parseDouble(args[++i]);
+          break;
+        case "--mutationprob":
+          mutationProb = Double.parseDouble(args[++i]);
+          break;
+        case "--mutationshift":
+          mutationShift = Double.parseDouble(args[++i]);
+          break;
+        case "--generations":
+          generations = Integer.parseInt(args[++i]);
           break;
         case "--log":
           logFilePath = args[++i];
@@ -252,8 +273,8 @@ public final class EngineFramework implements Runnable {
     if (games == -1 || tc == -1 || popSize == -1) {
       throw new IllegalArgumentException();
     }
-    runInSelfPlayTuningMode(logFilePath, concurrency, popSize, games, tc, tcInc, validFactor, paramTypes,
-        initProbVec, useBook, hash, threads);
+    runInSelfPlayTuningMode(paramTypes, logFilePath, concurrency, popSize, games, tc, tcInc, validFactor, initProbVec, learningRate,
+        negLearningRate, mutationProb, mutationShift, generations, useBook, hash, threads);
   }
 
   private void runInTexelTuningMode(String logFilePath, String epdFilePath, String gameResultOpCode, int concurrency,

@@ -235,7 +235,7 @@ public final class DataSetUtils {
       while ((line = reader.readLine()) != null) {
         EPDRecord record = EPDRecord.parse(line);
         engine.setPosition(record.getPosition());
-        short score = engine.eval(null);
+        double score = engine.eval(null);
         if ((imbalance >= 0 && Math.abs(score) < imbalance) || (imbalance < 0 && Math.abs(score) > -imbalance)) {
           writer.write(line + System.lineSeparator());
         }

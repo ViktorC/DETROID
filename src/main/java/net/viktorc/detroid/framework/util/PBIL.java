@@ -22,24 +22,24 @@ public abstract class PBIL {
   /**
    * The default probability of mutation applied to the probability vector.
    */
-  protected static final double MUTATION_PROBABILITY = 0.02d;
+  protected static final double MUTATION_PROBABILITY = .02d;
   /**
    * The default amount of mutation applied to the probability vector.
    */
-  protected static final double MUTATION_SHIFT = 0.05d;
+  protected static final double MUTATION_SHIFT = .05d;
   /**
    * The default learning rate.
    */
-  protected static final double LEARNING_RATE = 0.05d;
+  protected static final double LEARNING_RATE = .1d;
   /**
    * The default additional learning rate from 'negative' experience.
    */
-  protected static final double NEGATIVE_LEARNING_RATE = 0.005d;
+  protected static final double NEGATIVE_LEARNING_RATE = .075d;
   /**
    * The maximum difference from 0 or 1 each element of the probability vector can have for the set to be still possibly considered
    * optimized.
    */
-  protected static final double MAX_DIVERGENCE = 0.1d;
+  protected static final double MAX_DIVERGENCE = .1d;
 
   private final int genotypeLength;
   private final int populationSize;
@@ -225,7 +225,7 @@ public abstract class PBIL {
             System.lineSeparator() + "Probability vector: " + Arrays.toString(probabilityVector));
       }
       currentGeneration++;
-    } while (isOptimized(currentGeneration));
+    } while (!isOptimized(currentGeneration));
     return getProbabilityVector();
   }
 

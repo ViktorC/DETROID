@@ -260,9 +260,9 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
    * @throws ExecutionException If an execution error happens in one of the threads.
    * @throws InterruptedException If the current thread is interrupted while waiting for the worker threads to finish.
    */
-  private List<Short> predict(double[] parameters, List<Entry<String, Float>> dataSample, boolean calculateGradient)
+  private synchronized List<Double> predict(double[] parameters, List<Entry<String, Float>> dataSample, boolean calculateGradient)
       throws InterruptedException, ExecutionException {
-    ArrayList<Future<List<Short>>> futures = new ArrayList<>();
+    ArrayList<Future<List<Double>>> futures = new ArrayList<>();
     int startInd = 0;
     int workLoadPerThread = (int) Math.ceil(((double) dataSample.size()) / engines.length);
     for (int i = 0; i < engines.length && startInd < dataSample.size(); i++) {
@@ -275,7 +275,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       e.notifyParametersChanged();
       futures.add(pool.submit(() -> {
         try {
-          List<Short> predictions = new ArrayList<>();
+          List<Double> predictions = new ArrayList<>();
           Map<String, Double> partitionGradientCache = calculateGradient && e.isGradientDefined() ? new HashMap<>() : null;
           int endInd = Math.min(dataSample.size(), finalStartInd + workLoadPerThread);
           for (int j = finalStartInd; j < endInd; j++) {
@@ -283,7 +283,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
             String fen = dataPair.getKey();
             e.setPosition(fen);
             Map<String, Double> gradientCache = partitionGradientCache != null ? new HashMap<>() : null;
-            short score = e.eval(gradientCache);
+            double score = e.eval(gradientCache);
             // Check if it's white's turn.
             if (!fen.contains("w")) {
               score = (short) -score;
@@ -318,8 +318,8 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
       }));
       startInd += workLoadPerThread;
     }
-    List<Short> allPredictions = new ArrayList<>();
-    for (Future<List<Short>> f : futures) {
+    List<Double> allPredictions = new ArrayList<>();
+    for (Future<List<Double>> f : futures) {
       allPredictions.addAll(f.get());
     }
     return allPredictions;
@@ -339,7 +339,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
     List<Entry<String, Float>> batch;
     while (!(batch = getTrainingData(costCalculationBatchSize)).isEmpty()) {
       try {
-        List<Short> scores = predict(parameters, batch, false);
+        List<Double> scores = predict(parameters, batch, false);
         for (int i = 0; i < batch.size(); i++) {
           double result = batch.get(i).getValue();
           double score = scores.get(i);
@@ -451,7 +451,7 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   protected double computeCost(double[] parameters, List<Entry<String, Float>> dataSample) {
     try {
       double totalCost = 0;
-      List<Short> scores = predict(parameters, dataSample, false);
+      List<Double> scores = predict(parameters, dataSample, false);
       for (int i = 0; i < dataSample.size(); i++) {
         double result = dataSample.get(i).getValue();
         double score = scores.get(i);

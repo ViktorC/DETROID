@@ -5,11 +5,11 @@ import java.util.Iterator;
 import java.util.function.Predicate;
 
 /**
- * A generic, pre-allocated hash table for statistical or turn-based game AI applications with massive hash storage requirements where
- * losslessness and dynamic heap allocation are inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and
- * constant time insertion that, instead of pushing out and relocating entries (and rehashing all of them when a cycle is entered) until all
- * hash collisions are resolved, only does a specified number of iterations of the standard cuckoo insertion loop in case of a hash
- * conflict. Entries of the hash table must implement the {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
+ * A generic, pre-allocated hash table to satisfy massive hash storage requirements where losslessness and dynamic heap allocation are
+ * inefficient. It utilizes a lossy version of cuckoo hashing with constant time look-up and constant time insertion that, instead of
+ * pushing out and relocating entries (and rehashing all of them when a cycle is entered) until all hash collisions are resolved, only
+ * does a specified number of iterations of the standard cuckoo insertion loop in case of a hash conflict. Entries of the hash table must
+ * implement the {@link net.viktorc.detroid.framework.util.Cache.Entry} interface.
  *
  * The storage scheme is based on asymmetric hashing with two hash tables with different sizes in decreasing order, thus it does not really
  * have two unique hash functions. All it ever does is take the absolute value of the hash keys of the entries and derive mod [respective
