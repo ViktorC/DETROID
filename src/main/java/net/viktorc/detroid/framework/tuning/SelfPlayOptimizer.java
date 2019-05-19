@@ -22,11 +22,11 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
   /**
    * The learning rate of the evolutionary algorithm.
    */
-  private static final double DEF_LEARNING_RATE = .025d;
+  private static final double DEF_LEARNING_RATE = .1d;
   /**
    * The negative learning rate of the evolutionary algorithm.
    */
-  private static final double DEF_NEGATIVE_LEARNING_RATE = .005d;
+  private static final double DEF_NEGATIVE_LEARNING_RATE = .075d;
   /**
    * The mutation probability of the genotypes.
    */

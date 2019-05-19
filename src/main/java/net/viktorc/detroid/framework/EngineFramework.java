@@ -85,7 +85,7 @@ public final class EngineFramework implements Runnable {
    * @param args The program arguments. If it is null or empty, the engine is started in GUI mode; else:<br>
    * UCI mode: {@code -u}<br>
    * Self play tuning: {@code -t selfplay -population <integer> -games <integer> -tc <integer> [--paramtype <eval | control | management |
-   * eval+control | control+management | all> {all}] [--learningrate <decimal> {.025}] [--neglearningrate <decimal> {.005}]
+   * eval+control | control+management | all> {all}] [--learningrate <decimal> {.1}] [--neglearningrate <decimal> {.05}]
    * [--mutationprob <decimal> {.025}] [--mutationshift <decimal> {.05}] [--generations <integer>] [--inc <integer> {0}]
    * [--validfactor <decimal> {0}] [--initprobvector <quoted_comma_separated_decimals>] [--trybook <bool> {false}] [--tryhash <integer>]
    * [--trythreads <integer>] [--log <string> {log.txt}] [--concurrency <integer>] {1}]}<br>
