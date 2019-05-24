@@ -40,14 +40,19 @@ public abstract class PBIL {
    * optimized.
    */
   protected static final double MAX_DIVERGENCE = .1d;
+  /**
+   * The default constant used to ensure numerical stability.
+   */
+  protected static final double EPSILON = 1e-8;
 
-  private final int genotypeLength;
-  private final int populationSize;
-  private final double mutationProbability;
-  private final double mutationShift;
-  private final double learningRate;
-  private final double negLearningRateAddition;
-  private final Integer generations;
+  protected final int genotypeLength;
+  protected final int populationSize;
+  protected final double mutationProbability;
+  protected final double mutationShift;
+  protected final double learningRate;
+  protected final double negLearningRate;
+  protected final Integer generations;
+  protected final double epsilon;
 
   private final double[] probabilityVector;
   private int currentGeneration;
@@ -65,11 +70,13 @@ public abstract class PBIL {
    * @param mutationShift The effect of mutation on the probability vector. If it is null, a default value of 0.05 will be used.
    * @param learningRate The effect the fittest specimen's genotype has on the probability vector. If it is null a default value of 0.1 will
    * be used.
-   * @param negLearningRateAddition The additional effect the fittest specimen's genes have on the probability vector at the points where
+   * @param negLearningRate The additional effect the fittest specimen's genes have on the probability vector at the points where
    * they differ from those of the least fit specimen in the population.  If it is null a default value of 0.025 will be used.
    * @param generations The number of iterations. If it is null, the set will be considered optimized, and thus the process will terminate,
    * when all the elements of the probability vector have converged to 0 or 1 within a margin dependent on the population size
    * [1/populationSize]. If an initial probability vector is provided and it already converged, no further optimization will be performed.
+   * @param epsilon A constant used to ensure numerical stability. If it is null, the default
+   * value of 1e-8 will be used. It is not recommended to change this value.
    * @param initialProbabilityVector The starting probability vector for the optimization. It allows the algorithm to pick up where a
    * previous, terminated optimization process left off. If the array's length is smaller than genomeLength, it will be extended with
    * elements of the value 0.5d; if the length of the array is greater than genomeLength, only the first x elements will be considered,
@@ -78,9 +85,9 @@ public abstract class PBIL {
    * @param logger The logger used to log the current status of the optimization process. If it is null, no logging is performed.
    * @throws IllegalArgumentException If the length of the genotype length is not greater than 0.
    */
-  protected PBIL(int genotypeLength, Integer populationSize, Double mutationProbability, Double mutationShift,
-      Double learningRate, Double negLearningRateAddition, Integer generations, double[] initialProbabilityVector,
-      Logger logger) throws IllegalArgumentException {
+  protected PBIL(int genotypeLength, Integer populationSize, Double mutationProbability, Double mutationShift, Double learningRate,
+      Double negLearningRate, Integer generations, Double epsilon, double[] initialProbabilityVector, Logger logger)
+      throws IllegalArgumentException {
     if (genotypeLength <= 0) {
       throw new IllegalArgumentException("The genotype length has to be greater than 0.");
     }
@@ -99,9 +106,9 @@ public abstract class PBIL {
     this.mutationProbability = (mutationProbability == null ? MUTATION_PROBABILITY : mutationProbability);
     this.mutationShift = (mutationShift == null ? MUTATION_SHIFT : mutationShift);
     this.learningRate = (learningRate == null ? LEARNING_RATE : learningRate);
-    this.negLearningRateAddition = (negLearningRateAddition == null ? NEGATIVE_LEARNING_RATE :
-        negLearningRateAddition);
+    this.negLearningRate = (negLearningRate == null ? NEGATIVE_LEARNING_RATE : negLearningRate);
     this.generations = generations;
+    this.epsilon = (epsilon == null ? EPSILON : epsilon);
     this.logger = logger;
   }
 
@@ -139,8 +146,9 @@ public abstract class PBIL {
    */
   public final double getEntropy() {
     double entropy = 0;
-    for (double d : probabilityVector) {
-      entropy += -d * Math.log(d) / Math.log(2);
+    for (double p : probabilityVector) {
+      p = Math.min(1 - epsilon, Math.max(epsilon, p));
+      entropy -= p * Math.log(p) / Math.log(2) + (1 - p) * Math.log(1 - p) / Math.log(2);
     }
     return entropy;
   }
@@ -210,7 +218,7 @@ public abstract class PBIL {
         /* At the points where the fittest genotype's gene differs from the least fit genome's gene,
          * magnify the effect on the probability vector by the value of diffLearningRateAddition. */
         double appliedLearningRate = (curLeastFitGenotype.charAt(j) == curFittestGenotype.charAt(j) ?
-            learningRate : learningRate + negLearningRateAddition);
+            learningRate : learningRate + negLearningRate);
         double newProbabilityVectorVal = probabilityVector[j] * (1d - appliedLearningRate) +
             (curFittestGenotype.charAt(j) == '1' ? appliedLearningRate : 0d);
         // Mutate the probability vector.

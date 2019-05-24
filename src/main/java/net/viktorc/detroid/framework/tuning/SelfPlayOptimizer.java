@@ -83,7 +83,8 @@ public final class SelfPlayOptimizer extends PBIL implements AutoCloseable {
     super(engines.get(0).getEngine().getParameters().toGrayCodeString(parameterTypes).length(), populationSize,
         mutationProbability == null ? DEF_MUTATION_PROB : mutationProbability, mutationShift == null ? DEF_MUTATION_SHIFT : mutationShift,
         learningRate == null ? DEF_LEARNING_RATE : learningRate,
-        negativeLearningRate == null ? DEF_NEGATIVE_LEARNING_RATE : negativeLearningRate, generations, initialProbabilityVector, logger);
+        negativeLearningRate == null ? DEF_NEGATIVE_LEARNING_RATE : negativeLearningRate, generations, null, initialProbabilityVector,
+        logger);
     if (logger == null) {
       throw new IllegalArgumentException("The logger cannot be null.");
     }

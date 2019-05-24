@@ -56,8 +56,7 @@ public abstract class NadamSGD<E, L> {
    */
   protected static final double L2_REGULARIZATION_COEFF = 0d;
   /**
-   * The default fudgy factor used for conditioning the Root-Mean-Square of the decaying second moment estimates of the gradient as the
-   * denominator in the deltas.
+   * The default constant used to avoid division by zero.
    */
   protected static final double EPSILON = 1e-8;
 
