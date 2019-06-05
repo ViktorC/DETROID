@@ -903,16 +903,14 @@ public final class MainController implements AutoCloseable, Observer {
     });
     // Ponder radio menu item handler: if selected the engine ponders while it is the user's turn.
     ponder.setOnAction(event -> {
-      synchronized (MainController.this) {
-        doPonder = ponder.selectedProperty().get();
-        if (usersTurn) {
-          if (doPonder) {
-            startPondering();
-          } else {
-            ponderMove = null;
-            isReset = true;
-            searchEngine.stop();
-          }
+      doPonder = ponder.selectedProperty().get();
+      if (usersTurn) {
+        if (doPonder) {
+          startPondering();
+        } else {
+          ponderMove = null;
+          isReset = true;
+          searchEngine.stop();
         }
       }
     });
