@@ -6,33 +6,33 @@
   <minTimePortionNeededForExtraDepth16th>10</minTimePortionNeededForExtraDepth16th>
   <minMovesToGo>40</minMovesToGo>
   <maxMovesToGo>80</maxMovesToGo>
-  <nullMoveReduction>2</nullMoveReduction>
-  <nullMoveReductionMinDepthLeft>0</nullMoveReductionMinDepthLeft>
-  <extraNullMoveReduction>1</extraNullMoveReduction>
-  <extraNullMoveReductionDepthLimit>7</extraNullMoveReductionDepthLimit>
+  <nullMoveReduction>1</nullMoveReduction>
+  <nullMoveReductionMinDepthLeft>1</nullMoveReductionMinDepthLeft>
+  <extraNullMoveReduction>3</extraNullMoveReduction>
+  <extraNullMoveReductionDepthLimit>10</extraNullMoveReductionDepthLimit>
   <lateMoveReduction>1</lateMoveReduction>
-  <lateMoveReductionMinDepthLeft>2</lateMoveReductionMinDepthLeft>
-  <extraLateMoveReduction>1</extraLateMoveReduction>
+  <lateMoveReductionMinDepthLeft>3</lateMoveReductionMinDepthLeft>
+  <extraLateMoveReduction>0</extraLateMoveReduction>
   <extraLateMoveReductionDepthLimit>5</extraLateMoveReductionDepthLimit>
-  <minMovesSearchedForLmr>4</minMovesSearchedForLmr>
+  <minMovesSearchedForLmr>3</minMovesSearchedForLmr>
   <doRazor>true</doRazor>
-  <revFutilityMargin1>236</revFutilityMargin1>
-  <revFutilityMargin2>683</revFutilityMargin2>
-  <revFutilityMargin3>1688</revFutilityMargin3>
-  <futilityMargin1>47</futilityMargin1>
-  <futilityMargin2>121</futilityMargin2>
-  <futilityMargin3>218</futilityMargin3>
-  <futilityMargin4>353</futilityMargin4>
-  <futilityMargin5>712</futilityMargin5>
-  <deltaPruningMargin>646</deltaPruningMargin>
-  <aspirationDelta>50</aspirationDelta>
+  <revFutilityMargin1>246</revFutilityMargin1>
+  <revFutilityMargin2>267</revFutilityMargin2>
+  <revFutilityMargin3>1150</revFutilityMargin3>
+  <futilityMargin1>49</futilityMargin1>
+  <futilityMargin2>98</futilityMargin2>
+  <futilityMargin3>485</futilityMargin3>
+  <futilityMargin4>479</futilityMargin4>
+  <futilityMargin5>573</futilityMargin5>
+  <deltaPruningMargin>723</deltaPruningMargin>
+  <aspirationDelta>99</aspirationDelta>
   <checkExtension>9</checkExtension>
-  <recapExtension>7</recapExtension>
-  <singleReplyExtension>13</singleReplyExtension>
-  <pawnPushExtension>6</pawnPushExtension>
-  <doIid>true</doIid>
-  <iidMinDepthLeft>6</iidMinDepthLeft>
-  <iidRelDepth16th>6</iidRelDepth16th>
+  <recapExtension>9</recapExtension>
+  <singleReplyExtension>8</singleReplyExtension>
+  <pawnPushExtension>4</pawnPushExtension>
+  <doIid>false</doIid>
+  <iidMinDepthLeft>8</iidMinDepthLeft>
+  <iidRelDepth16th>11</iidRelDepth16th>
   <maxDistFromRootForEgtbProbe>10</maxDistFromRootForEgtbProbe>
   <maxDistFromRootForHardEgtbProbe>2</maxDistFromRootForHardEgtbProbe>
   <nodeBusinessCheckMinDepthLeft>7</nodeBusinessCheckMinDepthLeft>
