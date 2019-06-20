@@ -39,8 +39,7 @@ import net.viktorc.detroid.framework.validation.GameState;
  */
 public class Detroid implements ControllerEngine, TunableEngine {
 
-  private static final float VERSION_NUMBER = 1.0f;
-  private static final String NAME = "DETROID " + VERSION_NUMBER;
+  private static final String NAME = "DETROID 1.0.1";
   private static final String AUTHOR = "Viktor Csomor";
   // Search, evaluation, and time control parameters.
   private static final String DEFAULT_PARAMETERS_FILE_PATH = "params.xml";
