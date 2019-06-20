@@ -3,9 +3,11 @@
   <transTableShare16th>12</transTableShare16th>
   <transTableEntryLifeCycle>1</transTableEntryLifeCycle>
   <evalTableEntryLifeCycle>2</evalTableEntryLifeCycle>
+  <totalTimePortionToUse16th>15</totalTimePortionToUse16th>
   <minTimePortionNeededForExtraDepth16th>8</minTimePortionNeededForExtraDepth16th>
-  <minMovesToGo>30</minMovesToGo>
-  <maxMovesToGo>50</maxMovesToGo>
+  <maxTimePortionToUseForExtension16th>8</maxTimePortionToUseForExtension16th>
+  <minMovesToGo>20</minMovesToGo>
+  <maxMovesToGo>40</maxMovesToGo>
   <nullMoveReduction>1</nullMoveReduction>
   <nullMoveReductionMinDepthLeft>1</nullMoveReductionMinDepthLeft>
   <extraNullMoveReduction>3</extraNullMoveReduction>

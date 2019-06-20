@@ -80,8 +80,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
   private static final int MAX_EGTB_CACHE_SIZE = Math.min(256, MAX_HASH_SIZE);
   // The default endgame tablebase cache size in MB.
   private static final int DEFAULT_EGTB_CACHE_SIZE = Math.min(DEFAULT_SEARCH_THREADS * 16, MAX_EGTB_CACHE_SIZE);
-  // The scaling factor of the exponent in the sigmoid function used to calculate the number of remaining moves.
-  private static final double LAMBDA = 1.75e-2d;
 
   private final Object mainLock;
   private final Object searchLock;
@@ -115,7 +113,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
   private Cache<ETEntry> evalTable;
   private ExecutorService executor;
   private Future<SearchResults> search;
-  private volatile int movesOutOfBook;
   private volatile boolean bookMove;
   private volatile boolean outOfBook;
   private volatile boolean init;
@@ -197,14 +194,13 @@ public class Detroid implements ControllerEngine, TunableEngine {
 
   private int movesLeftBasedOnPhaseScore(int phaseScore) {
     double movesToGoInterval = params.maxMovesToGo - params.minMovesToGo;
-    double exp = Math.exp(LAMBDA * (phaseScore - Position.MAX_PHASE_SCORE));
-    double res = 2 * movesToGoInterval / (1d + exp) - movesToGoInterval;
-    return (int) Math.round(params.minMovesToGo + res);
+    double remainingMoves = movesToGoInterval * phaseScore / Position.MAX_PHASE_SCORE;
+    return (int) Math.round(params.minMovesToGo + remainingMoves);
   }
 
-  private long computeSearchTime(Long whiteTime, Long blackTime, Integer movesToGo, int phaseScore) {
-    if ((game.isWhitesTurn() && (whiteTime == null || whiteTime <= 0) ||
-        (!game.isWhitesTurn() && (blackTime == null || blackTime <= 0)))) {
+  private long computeSearchTime(Long whiteTime, Long blackTime, Integer movesToGo, int phaseScore, boolean extension) {
+    Long remainingTime = game.isWhitesTurn() ? whiteTime : blackTime;
+    if (remainingTime == null || remainingTime <= 0) {
       return 0;
     }
     if (movesToGo == null) {
@@ -215,9 +211,12 @@ public class Detroid implements ControllerEngine, TunableEngine {
             "Expected number of moves left until end - " + movesToGo);
       }
     }
-    long target = Math.max(1, (game.isWhitesTurn() ? whiteTime : blackTime) / Math.max(1, movesToGo));
-    // Extended thinking time for the first moves out of the book based on Hyatt's Using Time Wisely.
-    return Math.round(target * (2d - ((double) Math.min(movesOutOfBook, 10)) / 10));
+    double remainingUsableTime = (double) (remainingTime * params.totalTimePortionToUse16th) / 16;
+    if (extension) {
+      remainingUsableTime *= (double) params.maxTimePortionToUseForExtension16th / 16;
+    }
+    long target = Math.round(remainingUsableTime / Math.max(1d, movesToGo));
+    return Math.max(1, target);
   }
 
   private boolean doExtendSearch() {
@@ -245,7 +244,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
         }
       } else {
         int phaseScore = game.getPosition().getPhaseScore();
-        long time = computeSearchTime(whiteTime, blackTime, movesToGo, phaseScore);
+        long time = computeSearchTime(whiteTime, blackTime, movesToGo, phaseScore, false);
         long timeLeft = time;
         boolean doTerminate = false;
         if (debugMode) {
@@ -271,7 +270,7 @@ public class Detroid implements ControllerEngine, TunableEngine {
               debugInfo.set("Search extended.");
             }
             search.get(computeSearchTime(game.isWhitesTurn() ? whiteTime - time : whiteTime,
-                game.isWhitesTurn() ? blackTime : blackTime - time, movesToGo, phaseScore), TimeUnit.MILLISECONDS);
+                game.isWhitesTurn() ? blackTime : blackTime - time, movesToGo, phaseScore, true), TimeUnit.MILLISECONDS);
           } catch (TimeoutException e) {
             if (debugMode) {
               debugInfo.set("Extra time up");
@@ -822,7 +821,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
     synchronized (mainLock) {
       newGame = true;
       outOfBook = false;
-      movesOutOfBook = 0;
       if (!controllerMode && !deterministicEvalMode) {
         clearHash();
       }
@@ -858,9 +856,6 @@ public class Detroid implements ControllerEngine, TunableEngine {
             debugInfo.set("Position0 set within the same game");
           }
           gen++;
-          if (!bookMove) {
-            movesOutOfBook++;
-          }
           if (!controllerMode && !deterministicEvalMode) {
             if (gen == 127) {
               transTable.clear();

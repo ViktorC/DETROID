@@ -20,8 +20,12 @@ class DetroidParameters extends EngineParameters {
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 0)
   byte evalTableEntryLifeCycle;
 
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
+  byte totalTimePortionToUse16th;
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
   byte minTimePortionNeededForExtraDepth16th;
+  @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 4)
+  byte maxTimePortionToUseForExtension16th;
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 5)
   byte minMovesToGo;
   @Parameter(type = ParameterType.ENGINE_MANAGEMENT, binaryLengthLimit = 6)
