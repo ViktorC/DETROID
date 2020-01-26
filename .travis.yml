@@ -4,8 +4,7 @@ jdk: oraclejdk8
 addons:
   sonarqube:
     organization: "viktorc-github"
-    token:
-      secure: $SONAR_TOKEN
+    token: $SONAR_TOKEN
 install: true
 script: mvn clean jacoco:prepare-agent install jacoco:report sonar:sonar
 cache:
