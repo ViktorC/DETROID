@@ -326,9 +326,10 @@ public final class TexelOptimizer extends NadamSGD<String, Float> implements Aut
   }
 
   /**
-   * Computes the total cost, the first derivative of K, and the second derivative of K over the training data set.
+   * Computes the total cost, the first derivative of the loss function w.r.t. K, and the second derivative of the loss function w.r.t. 
+   * K over the training data set.
    *
-   * @return The total cost, the 1st derivative of K, and the 2nd derivative of K.
+   * @return The total cost, the 1st derivative of the loss function w.r.t. K, and the 2nd derivative of the loss function w.r.t. K.
    */
   private double[] computeCostAndDerivativesOfK() {
     double cost = 0;
